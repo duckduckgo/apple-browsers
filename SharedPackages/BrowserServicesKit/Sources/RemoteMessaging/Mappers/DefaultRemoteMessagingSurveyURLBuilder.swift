@@ -30,13 +30,13 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
 
     private let statisticsStore: StatisticsStore
     private let vpnActivationDateStore: VPNActivationDateProviding
-    private let subscription: PrivacyProSubscription?
+    private let subscription: DuckDuckGoSubscription?
     private let localeIdentifier: String
     private let autofillUsageStore: AutofillUsageStore?
 
     public init(statisticsStore: StatisticsStore,
                 vpnActivationDateStore: VPNActivationDateProviding,
-                subscription: PrivacyProSubscription?,
+                subscription: DuckDuckGoSubscription?,
                 localeIdentifier: String = Locale.current.identifier,
                 autofillUsageStore: AutofillUsageStore?) {
         self.statisticsStore = statisticsStore
@@ -85,25 +85,25 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
             case .locale:
                 let formattedLocale = LocaleMatchingAttribute.localeIdentifierAsJsonFormat(localeIdentifier)
                 queryItems.append(URLQueryItem(name: parameter.rawValue, value: formattedLocale))
-            case .privacyProStatus:
-                if let privacyProStatusSurveyParameter = subscription?.privacyProStatusSurveyParameter {
-                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: privacyProStatusSurveyParameter))
+            case .subscriptionStatus:
+                if let subscriptionStatusSurveyParameter = subscription?.subscriptionStatusSurveyParameter {
+                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: subscriptionStatusSurveyParameter))
                 }
-            case .privacyProPlatform:
-                if let privacyProPlatformSurveyParameter = subscription?.privacyProPlatformSurveyParameter {
-                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: privacyProPlatformSurveyParameter))
+            case .subscriptionPlatform:
+                if let subscriptionPlatformSurveyParameter = subscription?.subscriptionPlatformSurveyParameter {
+                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: subscriptionPlatformSurveyParameter))
                 }
-            case .privacyProBilling:
-                if let privacyProBillingSurveyParameter = subscription?.privacyProBillingSurveyParameter {
-                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: privacyProBillingSurveyParameter))
+            case .subscriptionBilling:
+                if let subscriptionBillingSurveyParameter = subscription?.subscriptionBillingSurveyParameter {
+                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: subscriptionBillingSurveyParameter))
                 }
 
-            case .privacyProDaysSincePurchase:
+            case .subscriptionDaysSincePurchase:
                 if let startDate = subscription?.startedAt,
                    let daysSincePurchase = Calendar.current.numberOfDaysBetween(startDate, and: Date()) {
                     queryItems.append(URLQueryItem(name: parameter.rawValue, value: String(describing: daysSincePurchase)))
                 }
-            case .privacyProDaysUntilExpiry:
+            case .subscriptionDaysUntilExpiry:
                 if let expiryDate = subscription?.expiresOrRenewsAt,
                    let daysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: expiryDate) {
                     queryItems.append(URLQueryItem(name: parameter.rawValue, value: String(describing: daysUntilExpiry)))
@@ -178,8 +178,8 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
     }
 }
 
-extension PrivacyProSubscription {
-    var privacyProStatusSurveyParameter: String {
+extension DuckDuckGoSubscription {
+    var subscriptionStatusSurveyParameter: String {
         switch status {
         case .autoRenewable:
             return "auto_renewable"
@@ -196,7 +196,7 @@ extension PrivacyProSubscription {
         }
     }
 
-    var privacyProPlatformSurveyParameter: String {
+    var subscriptionPlatformSurveyParameter: String {
         switch platform {
         case .apple:
             return "apple"
@@ -209,7 +209,7 @@ extension PrivacyProSubscription {
         }
     }
 
-    var privacyProBillingSurveyParameter: String {
+    var subscriptionBillingSurveyParameter: String {
         switch billingPeriod {
         case .monthly:
             return "monthly"

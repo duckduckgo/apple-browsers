@@ -25,6 +25,7 @@ import SubscriptionTestingUtilities
 import BrowserServicesKit
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
+import Persistence
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -107,7 +108,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
 
     @MainActor
-    private func setupMoreOptionsMenu(isFireWindowDefault: Bool = false) {
+    private func setupMoreOptionsMenu(isFireWindowDefault: Bool = false, freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard)) {
         let aiChatPreferencesStorage = MockAIChatPreferencesStorage()
         aiChatPreferencesStorage.showShortcutInApplicationMenu = true
 
@@ -135,7 +136,8 @@ final class MoreOptionsMenuTests: XCTestCase {
                                             featureFlagger: mockFeatureFlagger
                                           ),
                                           isFireWindowDefault: isFireWindowDefault,
-                                          isUsingAuthV2: true)
+                                          isUsingAuthV2: true,
+                                          freeTrialBadgePersistor: freeTrialBadgePersistor)
 
         moreOptionsMenu.actionDelegate = capturingActionDelegate
     }
@@ -164,7 +166,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
 
     @MainActor
-    func testThatPrivacyProIsNotPresentWhenUnauthenticatedAndPurchaseNotAllowedOnAppStore () {
+    func testThatSubscriptionIsNotPresentWhenUnauthenticatedAndPurchaseNotAllowedOnAppStore() {
         subscriptionManager.canPurchase = false
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
 
@@ -175,7 +177,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
 
     @MainActor
-    func testThatPrivacyProIsPresentWhenUnauthenticatedAndPurchaseAllowedOnAppStore () {
+    func testThatSubscriptionIsPresentWhenUnauthenticatedAndPurchaseAllowedOnAppStore() {
         subscriptionManager.canPurchase = true
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
 
@@ -186,7 +188,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
 
     @MainActor
-    func testThatPrivacyProIsPresentDespiteCanPurchaseFlagOnStripe () {
+    func testThatSubscriptionIsPresentDespiteCanPurchaseFlagOnStripe() {
         subscriptionManager.canPurchase = false
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
 
@@ -347,11 +349,11 @@ final class MoreOptionsMenuTests: XCTestCase {
         setupMoreOptionsMenu()
 
         // When
-        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
-        XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
+        let subscriptionItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
+        XCTAssertTrue(subscriptionItem.hasSubmenu, "Subscription item should have submenu when user is authenticated")
 
         await waitForSubscriptionSubmenuBuilding()
-        let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
+        let subscriptionSubmenu = try XCTUnwrap(subscriptionItem.submenu)
 
         // Then
         let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
@@ -366,11 +368,11 @@ final class MoreOptionsMenuTests: XCTestCase {
         setupMoreOptionsMenu()
 
         // When
-        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
-        XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
+        let subscriptionItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
+        XCTAssertTrue(subscriptionItem.hasSubmenu, "Subscription item should have submenu when user is authenticated")
 
         await waitForSubscriptionSubmenuBuilding()
-        let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
+        let subscriptionSubmenu = try XCTUnwrap(subscriptionItem.submenu)
 
         // Then
         let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
@@ -386,11 +388,11 @@ final class MoreOptionsMenuTests: XCTestCase {
         setupMoreOptionsMenu()
 
         // When
-        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
-        XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
+        let subscriptionItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
+        XCTAssertTrue(subscriptionItem.hasSubmenu, "Subscription item should have submenu when user is authenticated")
 
         await waitForSubscriptionSubmenuBuilding()
-        let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
+        let subscriptionSubmenu = try XCTUnwrap(subscriptionItem.submenu)
 
         // Then
         let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
@@ -405,8 +407,8 @@ final class MoreOptionsMenuTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
         moreOptionsMenu.actionDelegate = capturingActionDelegate
-        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
-        let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
+        let subscriptionItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
+        let subscriptionSubmenu = try XCTUnwrap(subscriptionItem.submenu)
 
         await waitForSubscriptionSubmenuBuilding()
 
@@ -470,7 +472,6 @@ final class MoreOptionsMenuTests: XCTestCase {
 #if SPARKLE
     @MainActor
     func testWhenBrowserIsNotAddedToDockThenMenuItemIsVisible() {
-        dockCustomizer.didShowFeatureFromMoreOptionsMenu = true
         dockCustomizer.dockStatus = false
 
         setupMoreOptionsMenu()
@@ -481,7 +482,6 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testWhenBrowserIsNotInTheDockAndIsNotSetAsDefaultThenTheOrderIsCorrect() {
-        dockCustomizer.didShowFeatureFromMoreOptionsMenu = true
         dockCustomizer.dockStatus = false
         defaultBrowserProvider.isDefault = false
 
@@ -706,7 +706,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     // MARK: - Feedback sub-menu tests
 
-    func testCorrectItemsAreShown_whenNotInternalAndNotPrivacyProUser() {
+    func testCorrectItemsAreShown_whenNotInternalAndNotSubscriptionUser() {
         let sut = FeedbackSubMenu(targetting: self,
                                   authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(),
                                   internalUserDecider: MockInternalUserDecider(),
@@ -718,7 +718,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
     }
 
-    func testCorrectItemsAreShown_whenNotInternalUserAndPrivacyProUser() {
+    func testCorrectItemsAreShown_whenNotInternalUserAndSubscriptionUser() {
         let sut = FeedbackSubMenu(targetting: self,
                                   authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: true),
                                   internalUserDecider: MockInternalUserDecider(),
@@ -732,7 +732,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(sut.item(at: 3)?.title, UserText.sendSubscriptionFeedback)
     }
 
-    func testCorrectItemsAreShown_whenInternalUserAndNotPrivacyProUser() {
+    func testCorrectItemsAreShown_whenInternalUserAndNotSubscriptionUser() {
         let sut = FeedbackSubMenu(targetting: self,
                                   authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: false),
                                   internalUserDecider: MockInternalUserDecider(isInternalUser: true),
@@ -746,7 +746,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(sut.item(at: 3)?.title, "Copy Version")
     }
 
-    func testCorrectItemsAreShown_whenInternalUserAndPrivacyProUser() {
+    func testCorrectItemsAreShown_whenInternalUserAndSubscriptionUser() {
         let sut = FeedbackSubMenu(targetting: self,
                                   authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: true),
                                   internalUserDecider: MockInternalUserDecider(isInternalUser: true),
@@ -793,6 +793,68 @@ final class MoreOptionsMenuTests: XCTestCase {
 
         XCTAssertEqual(moreOptionsMenu.items[3].title, UserText.newBurnerWindowMenuItem)
         XCTAssertEqual(moreOptionsMenu.items[4].title, UserText.newWindowMenuItem)
+    }
+
+    // MARK: - Free Trial Badge Visibility
+
+    @MainActor
+    func testSubscriptionBadge_ShowsWhenEligibleAndUnderCap() {
+        // Given
+        let persistor = MockFreeTrialBadgePersistor(initialCount: 3, cap: 4)
+
+        subscriptionManager.canPurchase = true
+        subscriptionManager.isEligibleForFreeTrialResult = true
+        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
+
+        setupMoreOptionsMenu(freeTrialBadgePersistor: persistor)
+
+        // When
+        let subscriptionItem = moreOptionsMenu.items.first {
+            $0.action == #selector(MoreOptionsMenu.openSubscriptionPurchasePage(_:))
+        }
+
+        // Then
+        XCTAssertNotNil(subscriptionItem, "Subscription item should be present")
+        XCTAssertNotNil(subscriptionItem?.view, "Free trial badge should be shown when under view limit and eligible")
+    }
+
+    @MainActor
+    func testSubscriptionBadge_HidesWhenEligibleAndAtOrAboveCap() {
+        // Given
+        let persistor = MockFreeTrialBadgePersistor(initialCount: 4, cap: 4)
+
+        subscriptionManager.canPurchase = true
+        subscriptionManager.isEligibleForFreeTrialResult = true
+        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
+
+        setupMoreOptionsMenu(freeTrialBadgePersistor: persistor)
+
+        // When
+        let subscriptionItem = moreOptionsMenu.items.first {
+            $0.action == #selector(MoreOptionsMenu.openSubscriptionPurchasePage(_:))
+        }
+
+        // Then
+        XCTAssertNotNil(subscriptionItem, "Subscription item should be present")
+        XCTAssertNil(subscriptionItem?.view, "Free trial badge should be hidden when view limit has been reached")
+    }
+}
+
+// MARK: - Test Doubles
+
+private final class MockFreeTrialBadgePersistor: FreeTrialBadgePersisting {
+    private(set) var viewCount: Int
+    private let cap: Int
+
+    init(initialCount: Int, cap: Int) {
+        self.viewCount = initialCount
+        self.cap = cap
+    }
+
+    var hasReachedViewLimit: Bool { viewCount >= cap }
+
+    func incrementViewCount() {
+        if viewCount < cap { viewCount += 1 }
     }
 }
 

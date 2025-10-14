@@ -106,7 +106,8 @@ public enum DataBrokerProtectionSharedPixels {
         public static let totalByBroker = "total_by_broker"
         public static let stalledByBroker = "stalled_by_broker"
         public static let jsFile = "jsFile"
-
+        public static let dataBrokerJsonFileKey = "data_broker_json_file"
+        public static let removedAtParamKey = "removed_at"
     }
 
     case httpError(error: Error, code: Int, dataBroker: String, version: String)
@@ -211,6 +212,10 @@ public enum DataBrokerProtectionSharedPixels {
     case serviceEmailConfirmationAttemptFailure(dataBrokerURL: String, brokerVersion: String, attemptNumber: Int, duration: Double, attemptId: UUID, actionId: String?)
     case serviceEmailConfirmationMaxRetriesExceeded(dataBrokerURL: String, brokerVersion: String, attemptId: UUID, actionId: String?)
     case serviceEmailConfirmationJobSuccess(dataBrokerURL: String, brokerVersion: String)
+
+    // Broker update pixels
+    case updateDataBrokersSuccess(dataBrokerFileName: String, removedAt: Int64?)
+    case updateDataBrokersFailure(dataBrokerFileName: String, removedAt: Int64?, error: Error)
 }
 
 extension DataBrokerProtectionSharedPixels: PixelKitEvent {
@@ -314,6 +319,10 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .serviceEmailConfirmationAttemptFailure: return "dbp_service_email-confirmation_attempt-failure"
         case .serviceEmailConfirmationMaxRetriesExceeded: return "dbp_service_email-confirmation_max-retries-exceeded"
         case .serviceEmailConfirmationJobSuccess: return "dbp_service_email-confirmation_job-success"
+
+            // Broker update pixels
+        case .updateDataBrokersSuccess: return "dbp_update_databrokers_success"
+        case .updateDataBrokersFailure: return "dbp_update_databrokers_failure"
         }
     }
 
@@ -540,6 +549,18 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .serviceEmailConfirmationJobSuccess(let dataBrokerURL, let brokerVersion):
             return [Consts.dataBrokerURL: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion]
+        case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt):
+            var params = [Consts.dataBrokerJsonFileKey: dataBrokerFileName]
+            if let removedAt = removedAt {
+                params[Consts.removedAtParamKey] = String(removedAt)
+            }
+            return params
+        case .updateDataBrokersFailure(let dataBrokerFileName, let removedAt, _):
+            var params = [Consts.dataBrokerJsonFileKey: dataBrokerFileName]
+            if let removedAt = removedAt {
+                params[Consts.removedAtParamKey] = String(removedAt)
+            }
+            return params
         }
     }
 }
@@ -645,9 +666,12 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .serviceEmailConfirmationAttemptSuccess,
                     .serviceEmailConfirmationAttemptFailure,
                     .serviceEmailConfirmationMaxRetriesExceeded,
-                    .serviceEmailConfirmationJobSuccess:
+                    .serviceEmailConfirmationJobSuccess,
+                    .updateDataBrokersSuccess:
 
                 self.pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
+            case .updateDataBrokersFailure(_, _, let error):
+                self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
 #if os(iOS)
             case .scanStarted:
                 self.pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)

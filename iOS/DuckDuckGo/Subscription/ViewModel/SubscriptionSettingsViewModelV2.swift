@@ -43,7 +43,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         var isShowingGoogleView: Bool = false
         var isShowingFAQView: Bool = false
         var isShowingLearnMoreView: Bool = false
-        var subscriptionInfo: PrivacyProSubscription?
+        var subscriptionInfo: DuckDuckGoSubscription?
         var isLoadingSubscriptionInfo: Bool = false
 
         // Used to display stripe WebUI
@@ -205,7 +205,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
     }
 
     @MainActor
-    private func updateSubscriptionsStatusMessage(subscription: PrivacyProSubscription, date: Date, product: String, billingPeriod: PrivacyProSubscription.BillingPeriod) {
+    private func updateSubscriptionsStatusMessage(subscription: DuckDuckGoSubscription, date: Date, product: String, billingPeriod: DuckDuckGoSubscription.BillingPeriod) {
         let date = dateFormatter.string(from: date)
 
         let hasActiveTrialOffer = subscription.hasActiveTrialOffer

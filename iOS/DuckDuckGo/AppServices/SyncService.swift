@@ -65,7 +65,8 @@ final class SyncService {
             favoritesDisplayModeStorage: FavoritesDisplayModeStorage(),
             syncErrorHandler: syncErrorHandler,
             faviconStoring: Favicons.shared,
-            tld: AppDependencyProvider.shared.storageCache.tld
+            tld: AppDependencyProvider.shared.storageCache.tld,
+            featureFlagger: AppDependencyProvider.shared.featureFlagger
         )
 
         sync = DDGSync(

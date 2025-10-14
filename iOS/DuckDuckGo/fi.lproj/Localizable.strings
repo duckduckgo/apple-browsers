@@ -184,6 +184,15 @@
 /* Title for alert shown when sync credentials paused for too many items */
 "alert.sync-credentials-paused-title" = "Salasanojen synkronointi on keskeytetty";
 
+/* Description for alert shown when sync error occurs because of bad credit cards data */
+"alert.sync-credit-cards-bad-data-error-description" = "Jotkin luottokortit on muotoiltu väärin tai ovat liian pitkiä, eikä niitä synkronoitu.";
+
+/* Description for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-description" = "Luottokorttikiintiösi on täynnä. Poista joitakin luottokortteja, jotta voit jatkaa synkronointia.";
+
+/* Title for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-title" = "Luottokorttien synkronointi on keskeytetty";
+
 /* Title for sync error alert */
 "alert.sync-error" = "Synkronointi- ja varmuuskopiointivirhe";
 
@@ -1311,6 +1320,18 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo-tekoälyominaisuudet ovat yksityisiä ja valinnaisia. Tietojasi ei käytetä tekoälyn kouluttamiseen.";
+
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "Näytä Duck.ai-painikkeet ja -linkit DuckDuckGo-hakutuloksissa.";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "Haun pikanäppäimet";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "Esitä jatkokysymyksiä";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "Selaimen pikakuvakkeet";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Osoitekenttä";
@@ -2581,11 +2602,11 @@
 /* Caption of the option to show the Threat Protection preferences */
 "preferences.threat-protection.caption" = "DuckDuckGon parannetut suojaustoiminnot pysäyttävät yleisimmät uhat ja pitävät yhteytesi suojattuna.\n[Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
-/* Description of incorrectly formatted data error when syncing. */
-"prefrences.sync.bad-request.description" = "Jotkin kirjanmerkit tai salasanat on väärin muotoiltuja tai liian pitkiä, eikä niitä ole synkronoitu.";
+/* Description of incorrectly formatted bookmarks data error when syncing. */
+"prefrences.sync.bookmarks-bad-request.description" = "Jotkin kirjanmerkit on muotoiltu väärin tai ovat liian pitkiä, eikä niitä ole synkronoitu.";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
-"prefrences.sync.bookmarks-limit-exceeded-action" = "Hallitse kirjanmerkkejä";
+"prefrences.sync.bookmarks-limit-exceeded-action" = "Hallitse kirjanmerkkejä…";
 
 /* Description for sync bookmarks limits exceeded warning */
 "prefrences.sync.bookmarks-limit-exceeded-description" = "Kirjanmerkkikiintiösi on täynnä. Poista jotakin niistä jatkaaksesi synkronointia.";
@@ -2596,11 +2617,20 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Salasanakiintiösi on täynnä. Poista joitain salasanoja jatkaaksesi synkronointia.";
 
+/* Description of incorrectly formatted credit card data error when syncing. */
+"prefrences.sync.credit-cards-bad-request.description" = "Jotkin luottokortit on muotoiltu väärin tai ovat liian pitkiä, eikä niitä synkronoitu.";
+
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Hallitse luottokortteja…";
+
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Synkronoinnin aikana havaittiin virhe. Yritä poistaa synkronointi käytöstä tällä laitteella. Muodosta sitten yhteys uudelleen toisella laitteella tai palautuskoodilla.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Synkronointi keskeytetty";
+
+/* Description of incorrectly formatted password data error when syncing. */
+"prefrences.sync.passwords-bad-request.description" = "Jotkin salasanat on muotoiltu väärin tai ovat liian pitkiä, eikä niitä ole synkronoitu.";
 
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Synkronointi ja varmuuskopiointi on tilapäisesti poissa käytöstä.";
@@ -3232,8 +3262,17 @@
 /* Caption of the Duck.ai settings (do not modify link) */
 "subscription.duck.ai.caption" = "Keskustele yksityisesti tilaajien käytettävissä olevien tekoälymallien kanssa.\n[Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
 
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "Määritä Duck.ai tekoälyominaisuuksien asetuksissa.";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "Ota käyttöön tekoälyominaisuuksien asetuksissa";
+
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Avaa Duck.ai";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "Hallinnoi tekoälyominaisuuksien asetuksissa";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";
@@ -3420,6 +3459,36 @@
 
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Synkronoi ja varmuuskopioi salasanasi";
+
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Synkronoi ja varmuuskopioi tämä laite";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Tallentamalla palautuskoodisi voit varmistaa, että pystyt palauttamaan salasanasi helposti tulevaisuudessa.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Synkronoidut salasanat voidaan palauttaa vain, jos sinulla on pääsy toiseen laitteeseen tai käyttämällä palautuskoodia, joka annetaan osana Synkronoi ja varmuuskopioi -asetusta (Sync & Backup).";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Skannaa palautuskoodi";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Eikö toista laitetta ei ole käytettävissä? Skannaa palautuskoodisi.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Eikö sinulla ole toista laitetta?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "DuckDuckGo-salasanat eivät siirry iCloudin kautta, koska ne on salattu laitteeseesi. Kaikki muu on jo täällä.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Synkronoi toisen laitteen kanssa";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Uusi %@-laite? Synkronoidaanpa salasanasi.";
 
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Poista";

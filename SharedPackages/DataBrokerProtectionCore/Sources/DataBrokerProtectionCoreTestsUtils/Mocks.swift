@@ -22,6 +22,7 @@ import Common
 import Foundation
 import GRDB
 import SecureStorage
+import PixelKit
 
 @testable import DataBrokerProtectionCore
 
@@ -42,20 +43,23 @@ public extension BrokerProfileQueryData {
                      scanHistoryEvents: [HistoryEvent] = [HistoryEvent](),
                      mirrorSites: [MirrorSite] = [MirrorSite](),
                      deprecated: Bool = false,
-                     optOutJobData: [OptOutJobData]? = nil) -> BrokerProfileQueryData {
-        BrokerProfileQueryData(
-            dataBroker: DataBroker(
-                name: dataBrokerName,
-                url: url,
-                steps: steps,
-                version: "1.0.0",
-                schedulingConfig: DataBrokerScheduleConfig.mock,
-                parent: parentURL,
-                mirrorSites: mirrorSites,
-                optOutUrl: optOutUrl ?? "",
-                eTag: "",
-                removedAt: nil
-            ),
+                     optOutJobData: [OptOutJobData]? = nil,
+                     dataBrokerRemovedAt: Date? = nil) -> BrokerProfileQueryData {
+        let dataBroker = DataBroker(
+            name: dataBrokerName,
+            url: url,
+            steps: steps,
+            version: "1.0.0",
+            schedulingConfig: DataBrokerScheduleConfig.mock,
+            parent: parentURL,
+            mirrorSites: mirrorSites,
+            optOutUrl: optOutUrl ?? "",
+            eTag: "",
+            removedAt: dataBrokerRemovedAt
+        )
+
+        return BrokerProfileQueryData(
+            dataBroker: dataBroker,
             profileQuery: ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 50, deprecated: deprecated),
             scanJobData: ScanJobData(brokerId: 1,
                                      profileQueryId: 1,
@@ -527,16 +531,21 @@ public final class BrokerUpdaterRepositoryMock: BrokerUpdaterRepository {
 public final class ResourcesRepositoryMock: ResourcesRepository {
     public var wasFetchBrokerFromResourcesFilesCalled = false
     public var brokersList: [DataBroker]?
+    public var shouldThrowOnFetch = false
 
     public init() {}
 
-    public func fetchBrokerFromResourceFiles() -> [DataBroker]? {
+    public func fetchBrokerFromResourceFiles() throws -> [DataBroker]? {
         wasFetchBrokerFromResourcesFilesCalled = true
+        if shouldThrowOnFetch {
+            throw DataBrokerProtectionError.unknown("Mock fetch error")
+        }
         return brokersList
     }
 
     public func reset() {
         wasFetchBrokerFromResourcesFilesCalled = false
+        shouldThrowOnFetch = false
         brokersList?.removeAll()
         brokersList = nil
     }
@@ -583,6 +592,7 @@ public final class SecureStorageDatabaseProviderMock: SecureStorageDatabaseProvi
 public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecureVault {
     public var shouldReturnOldVersionBroker = false
     public var shouldReturnNewVersionBroker = false
+    public var shouldThrowOnUpdate = false
     public var wasBrokerUpdateCalled = false
     public var wasBrokerSavedCalled = false
     public var wasUpdateProfileQueryCalled = false
@@ -601,6 +611,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public var lastDeletedEmailConfirmationExtractedProfileId: Int64?
     public var wasIncrementAttemptCountCalled = false
     public var incrementAttemptCountCallCount = 0
+    public var incrementShouldThrow = false
 
     public typealias DatabaseProvider = SecureStorageDatabaseProviderMock
 
@@ -610,6 +621,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     public func reset() {
         shouldReturnOldVersionBroker = false
         shouldReturnNewVersionBroker = false
+        shouldThrowOnUpdate = false
         wasBrokerUpdateCalled = false
         wasBrokerSavedCalled = false
         wasUpdateProfileQueryCalled = false
@@ -642,6 +654,9 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 
     public func update(_ broker: DataBroker, with id: Int64) throws {
         wasBrokerUpdateCalled = true
+        if shouldThrowOnUpdate {
+            throw DataBrokerProtectionError.unknown("Mock update error")
+        }
     }
 
     public func fetchBroker(with id: Int64) throws -> DataBroker? {
@@ -943,6 +958,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var attemptCount: Int64 = 0
     public private(set) var scanEvents = [HistoryEvent]()
     public private(set) var optOutEvents = [HistoryEvent]()
+    public var optOutToReturn: OptOutJobData?
 
     public var brokerToReturn: DataBroker?
     public var profileQueryToReturn: ProfileQuery?
@@ -953,9 +969,11 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var lastDeletedEmailConfirmationExtractedProfileId: Int64?
     public var wasIncrementAttemptCountCalled = false
     public var incrementAttemptCountCallCount = 0
+    public var incrementAttemptShouldThrow = false
     public var lastAddedHistoryEvent: HistoryEvent?
 
     public var saveResult: Result<Void, Error> = .success(())
+    public var addHistoryEventError: Error?
 
     public lazy var callsList: [Bool] = [
         wasSaveProfileCalled,
@@ -1100,6 +1118,9 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     }
 
     public func incrementAttemptCount(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
+        if incrementAttemptShouldThrow {
+            throw MockError.saveFailed
+        }
         attemptCount += 1
     }
 
@@ -1133,9 +1154,14 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasUpdateRemoveDateCalled = true
     }
 
-    public func add(_ historyEvent: HistoryEvent) {
+    public func add(_ historyEvent: HistoryEvent) throws {
         wasAddHistoryEventCalled = true
         lastAddedHistoryEvent = historyEvent
+
+        if let addHistoryEventError {
+            throw addHistoryEventError
+        }
+
         if historyEvent.extractedProfileId != nil {
             optOutEvents.append(historyEvent)
         } else {
@@ -1151,12 +1177,16 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         return lastHistoryEventToReturn
     }
 
-    public func fetchScanHistoryEvents(brokerId: Int64, profileQueryId: Int64) -> [HistoryEvent] {
+    public func fetchScanHistoryEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent] {
         return scanEvents
     }
 
-    public func fetchOptOutHistoryEvents(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) -> [HistoryEvent] {
+    public func fetchOptOutHistoryEvents(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> [HistoryEvent] {
         return optOutEvents
+    }
+
+    public func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> OptOutJobData? {
+        optOutToReturn
     }
 
     public func hasMatches() -> Bool {
@@ -1240,6 +1270,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         scanEvents.removeAll()
         optOutEvents.removeAll()
         backgroundTaskEventsToReturn.removeAll()
+        addHistoryEventError = nil
     }
 
     public var backgroundTaskEventsToReturn: [BackgroundTaskEvent] = []
@@ -1847,6 +1878,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
     public var vpnBypassService: (any VPNBypassFeatureProvider)?
     public var jobSortPredicate: BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default
     public var featureFlagger: DBPFeatureFlagging
+    public var wideEvent: WideEventManaging?
 
     public var mockScanRunner = MockScanSubJobWebRunner()
     public var mockOptOutRunner = MockOptOutSubJobWebRunner()
@@ -2618,7 +2650,8 @@ public extension DataBroker {
                                  parent: String? = nil,
                                  mirrorSites: [MirrorSite] = [MirrorSite](),
                                  optOutUrl: String = "testbroker.com/optout",
-                                 eTag: String = "") -> DataBroker {
+                                 eTag: String = "",
+                                 removedAt: Date? = nil) -> DataBroker {
         return DataBroker(
             id: id,
             name: name,
@@ -2630,7 +2663,7 @@ public extension DataBroker {
             mirrorSites: mirrorSites,
             optOutUrl: optOutUrl,
             eTag: eTag,
-            removedAt: nil)
+            removedAt: removedAt)
     }
 
     static func mock(withId id: Int64) -> DataBroker {
@@ -2822,6 +2855,28 @@ public final class MockWebViewHandler: NSObject, WebViewHandler {
     }
 
     public func setCookies(_ cookies: [HTTPCookie]) async {
+    }
+}
+
+public final class SubmissionRecorderMock: OptOutSubmissionWideEventRecording {
+    private(set) var recordedStages: [(stage: Stage, duration: Double?, tries: Int, actionID: String?)] = []
+    private(set) var submissionEndMarked = false
+    private(set) var completionStatus: WideEventStatus?
+
+    public func recordStage(_ stage: Stage, duration: Double?, tries: Int, actionID: String?) {
+        recordedStages.append((stage, duration, tries, actionID))
+    }
+
+    public func markSubmissionCompleted(at date: Date, tries: Int, actionID: String?) {
+        submissionEndMarked = true
+    }
+
+    public func complete(status: WideEventStatus, with error: Error?) {
+        completionStatus = status
+    }
+
+    public func cancel(with error: Error?) {
+        completionStatus = .cancelled
     }
 }
 

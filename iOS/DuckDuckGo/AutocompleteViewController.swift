@@ -97,7 +97,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210975623943806?focus=true
         let isExperimentalAddressBarEnabled = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
         let isAddressBarAtBottom = !isExperimentalAddressBarEnabled && appSettings.currentAddressBarPosition == .bottom
-        self.showAskAIChat = featureFlagger.isFeatureOn(.askAIChatSuggestion) && aiChatSettings.isAIChatEnabled
+        self.showAskAIChat = aiChatSettings.isAIChatEnabled
         self.model = AutocompleteViewModel(isAddressBarAtBottom: isAddressBarAtBottom,
                                            showMessage: historyMessageManager.shouldShow(),
                                            showAskAIChat: showAskAIChat)

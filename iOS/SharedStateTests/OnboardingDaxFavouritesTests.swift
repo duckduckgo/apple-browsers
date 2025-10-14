@@ -55,7 +55,8 @@ import SystemSettingsPiPTutorialTestSupport
             favoritesDisplayModeStorage: MockFavoritesDisplayModeStoring(),
             syncErrorHandler: SyncErrorHandler(),
             faviconStoring: MockFaviconStore(),
-            tld: TLD()
+            tld: TLD(),
+            featureFlagger: MockFeatureFlagger()
         )
 
         let remoteMessagingClient = RemoteMessagingClient(
@@ -70,7 +71,7 @@ import SystemSettingsPiPTutorialTestSupport
             configurationURLProvider: MockCustomURLProvider(),
             syncService: MockDDGSyncing()
         )
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter(), isStillOnboarding: { false })
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
         let tabsModel = TabsModel(desktop: true)
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
@@ -79,7 +80,7 @@ import SystemSettingsPiPTutorialTestSupport
         let featureFlagger = MockFeatureFlagger()
         let fireproofing = MockFireproofing()
         let textZoomCoordinator = MockTextZoomCoordinator()
-        let privacyProDataReporter = MockPrivacyProDataReporter()
+        let subscriptionDataReporter = MockSubscriptionDataReporter()
         let onboardingPixelReporter = OnboardingPixelReporterMock()
         let tabsPersistence = TabsModelPersistence(store: keyValueStore, legacyStore: MockKeyValueStore())
         let variantManager = MockVariantManager()
@@ -94,7 +95,7 @@ import SystemSettingsPiPTutorialTestSupport
                                     bookmarksDatabase: db,
                                     historyManager: historyManager,
                                     syncService: syncService,
-                                    privacyProDataReporter: privacyProDataReporter,
+                                    subscriptionDataReporter: subscriptionDataReporter,
                                     contextualOnboardingPresenter: contextualOnboardingPresenter,
                                     contextualOnboardingLogic: contextualOnboardingLogicMock,
                                     onboardingPixelReporter: onboardingPixelReporter,
@@ -121,7 +122,7 @@ import SystemSettingsPiPTutorialTestSupport
             previewsSource: MockTabPreviewsSource(),
             tabManager: tabManager,
             syncPausedStateManager: CapturingSyncPausedStateManager(),
-            privacyProDataReporter: privacyProDataReporter,
+            subscriptionDataReporter: subscriptionDataReporter,
             contextualOnboardingLogic: contextualOnboardingLogicMock,
             contextualOnboardingPixelReporter: onboardingPixelReporter,
             tutorialSettings: tutorialSettingsMock,

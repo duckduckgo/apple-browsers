@@ -25,7 +25,7 @@ import Combine
 /// This protocol defines methods for responding to navigation and UI events in the sidebar.
 protocol AIChatSidebarViewControllerDelegate: AnyObject {
     /// Called when the user clicks the "Expand" button
-    func didClickOpenInNewTabButton(currentAIChatURL: URL, aiChatRestorationData: AIChatRestorationData?)
+    func didClickOpenInNewTabButton()
     /// Called when the user clicks the "Close" button
     func didClickCloseButton()
 }
@@ -52,8 +52,11 @@ final class AIChatSidebarViewController: NSViewController {
     weak var delegate: AIChatSidebarViewControllerDelegate?
     public var aiChatPayload: AIChatPayload?
     private(set) var currentAIChatURL: URL
+
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
     private let burnerMode: BurnerMode
-    private let visualStyle: VisualStyleProviding
 
     private var openInNewTabButton: MouseOverButton!
     private var closeButton: MouseOverButton!
@@ -67,10 +70,10 @@ final class AIChatSidebarViewController: NSViewController {
 
     init(currentAIChatURL: URL,
          burnerMode: BurnerMode,
-         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
         self.currentAIChatURL = currentAIChatURL
         self.burnerMode = burnerMode
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -83,15 +86,24 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     public func setPageContext(_ pageContext: AIChatPageContextData?) {
-        aiTab.aiChat?.submitPageContext(pageContext)
+        aiTab.aiChat?.submitAIChatPageContext(pageContext)
+    }
+
+    public func setAIChatRestorationData(_ restorationData: AIChatRestorationData?) {
+        aiTab.aiChat?.setAIChatRestorationData(restorationData)
     }
 
     public var pageContextRequestedPublisher: AnyPublisher<Void, Never>? {
         aiTab.aiChat?.pageContextRequestedPublisher
     }
 
+    public var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>? {
+        aiTab.aiChat?.chatRestorationDataPublisher
+    }
+
     override func loadView() {
-        let container = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.navigationBackgroundColor)
+        let colorsProvider = themeManager.theme.colorsProvider
+        let container = ColorView(frame: .zero, backgroundColor: colorsProvider.navigationBackgroundColor)
 
         if let aiChatPayload {
             aiTab.aiChat?.setAIChatNativeHandoffData(payload: aiChatPayload)
@@ -119,6 +131,7 @@ final class AIChatSidebarViewController: NSViewController {
         updateWebViewMask()
         subscribeToURLChanges()
         subscribeToUserInteractionDialogChanges()
+        subscribeToThemeChanges()
     }
 
     private func createAndSetupSeparator(in container: NSView) {
@@ -279,9 +292,7 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     @objc private func openInNewTabButtonClicked() {
-        let aiChatRestorationData = aiTab.aiChat?.aiChatUserScript?.handler.messageHandling.getDataForMessageType(.chatRestorationData) as? AIChatRestorationData
-
-        delegate?.didClickOpenInNewTabButton(currentAIChatURL: currentAIChatURL.removingAIChatPlacementParameter(), aiChatRestorationData: aiChatRestorationData)
+        delegate?.didClickOpenInNewTabButton()
     }
 
     @objc private func closeButtonClicked() {
@@ -294,6 +305,19 @@ final class AIChatSidebarViewController: NSViewController {
 
         aiTab.webView.stopLoading()
         aiTab.webView.loadHTMLString("", baseURL: nil)
+    }
+}
+
+// MARK: - ThemeUpdateListening
+extension AIChatSidebarViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        guard let contentView = view as? ColorView else {
+            assertionFailure()
+            return
+        }
+
+        contentView.backgroundColor = theme.colorsProvider.bookmarksPanelBackgroundColor
     }
 }
 

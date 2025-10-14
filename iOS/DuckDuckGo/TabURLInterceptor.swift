@@ -24,7 +24,7 @@ import Subscription
 import AIChat
 
 enum InterceptedURLType: String {
-    case privacyPro
+    case subscription
     case aiChat
 }
 
@@ -49,7 +49,7 @@ final class TabURLInterceptorDefault: TabURLInterceptor {
     }
 
     static let interceptedURLs: [InterceptedURLInfo] = [
-        InterceptedURLInfo(id: .privacyPro, path: "/pro")
+        InterceptedURLInfo(id: .subscription, path: "/pro")
     ]
     
     func allowsNavigatingTo(url: URL) -> Bool {
@@ -88,8 +88,8 @@ extension TabURLInterceptorDefault {
 
     private func handleURLInterception(interceptedURLType: InterceptedURLType, interceptedURLComponents: URLComponents? = nil) -> Bool {
         switch interceptedURLType {
-            // Opens the Privacy Pro Subscription Purchase page (if user can purchase)
-        case .privacyPro:
+            // Opens the DuckDuckGo Subscription Purchase page (if user can purchase)
+        case .subscription:
             if canPurchase() {
                 // We pass `interceptedURLComponents` to properly resolve final purchase URL
                 // and to capture `origin` query parameter as it is needed for the Pixel to track subscription attributions
@@ -100,7 +100,7 @@ extension TabURLInterceptorDefault {
                 }
 
                 NotificationCenter.default.post(
-                    name: .urlInterceptPrivacyPro,
+                    name: .urlInterceptSubscription,
                     object: nil,
                     userInfo: userInfo
                 )
@@ -119,7 +119,7 @@ extension TabURLInterceptorDefault {
 }
 
 extension NSNotification.Name {
-    static let urlInterceptPrivacyPro: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.urlInterceptPrivacyPro")
+    static let urlInterceptSubscription: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.urlInterceptSubscription")
     static let urlInterceptAIChat: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.urlInterceptAIChat")
 }
 

@@ -38,6 +38,9 @@ final class BookmarkListViewController: NSViewController {
     weak var delegate: BookmarkListViewControllerDelegate?
     var currentTabWebsite: WebsiteInfo?
 
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
     private lazy var titleTextField = NSTextField(string: UserText.bookmarks)
 
     private lazy var stackView = NSStackView()
@@ -77,7 +80,6 @@ final class BookmarkListViewController: NSViewController {
     private let sortBookmarksViewModel: SortBookmarksViewModel
     private let bookmarkMetrics: BookmarksSearchAndSortMetrics
     private let navigationEngagementMetrics: BookmarksNavigationEngagementMetrics
-    private let visualStyle: VisualStyleProviding
 
     private let treeController: BookmarkTreeController
 
@@ -155,7 +157,7 @@ final class BookmarkListViewController: NSViewController {
          dragDropManager: BookmarkDragDropManager,
          metrics: BookmarksSearchAndSortMetrics = BookmarksSearchAndSortMetrics(),
          navigationEngagementMetrics: BookmarksNavigationEngagementMetrics = .init(),
-         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.treeControllerDataSource = BookmarkListTreeControllerDataSource(bookmarkManager: bookmarkManager)
@@ -167,7 +169,7 @@ final class BookmarkListViewController: NSViewController {
                                                      sortMode: sortBookmarksViewModel.selectedSortMode,
                                                      searchDataSource: treeControllerSearchDataSource,
                                                      isBookmarksBarMenu: false)
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -179,7 +181,8 @@ final class BookmarkListViewController: NSViewController {
 
     override func loadView() {
         let showSyncPromo = syncPromoManager.shouldPresentPromoFor(.bookmarks)
-        view = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.bookmarksPanelBackgroundColor)
+        let colorsProvider = themeManager.theme.colorsProvider
+        view = ColorView(frame: .zero, backgroundColor: colorsProvider.bookmarksPanelBackgroundColor)
 
         view.addSubview(titleTextField)
         view.addSubview(boxDivider)
@@ -383,8 +386,12 @@ final class BookmarkListViewController: NSViewController {
     }
 
     override func viewDidLoad() {
+        super.viewDidLoad()
+
         outlineView.setDraggingSourceOperationMask([.move], forLocal: true)
         outlineView.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
+
+        subscribeToThemeChanges()
     }
 
     override func viewWillAppear() {
@@ -752,8 +759,21 @@ final class BookmarkListViewController: NSViewController {
 
         outlineView.selectRowIndexes(indexes, byExtendingSelection: false)
     }
-
 }
+
+// MARK: - ThemeUpdateListening
+extension BookmarkListViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        guard let contentView = view as? ColorView else {
+            assertionFailure()
+            return
+        }
+
+        contentView.backgroundColor = theme.colorsProvider.bookmarksPanelBackgroundColor
+    }
+}
+
 // MARK: - BookmarksContextMenuDelegate
 extension BookmarkListViewController: BookmarksContextMenuDelegate {
 

@@ -119,7 +119,7 @@ final class UnifiedFeedbackFormViewController: NSViewController {
                 heightConstraint?.constant = Constants.landingPageHeight
             } else if UnifiedFeedbackReportType(rawValue: viewModel.selectedReportType) == .reportIssue,
                       UnifiedFeedbackCategory(rawValue: viewModel.selectedCategory) == .prompt ||
-                      viewModel.selectedSubcategory == PrivacyProFeedbackSubcategory.prompt.rawValue {
+                      viewModel.selectedSubcategory == SubscriptionFeedbackSubcategory.prompt.rawValue {
                 heightConstraint?.constant = Constants.feedbackFormMiniHeight
             } else {
                 heightConstraint?.constant = viewModel.usesCompactForm ? Constants.feedbackFormCompactHeight : Constants.feedbackFormHeight

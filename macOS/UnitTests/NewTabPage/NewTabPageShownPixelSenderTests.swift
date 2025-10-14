@@ -31,12 +31,14 @@ final class MockNewTabPageProtectionsReportVisibleFeedProvider: NewTabPageProtec
 final class NewTabPageShownPixelSenderTests: XCTestCase {
 
     var appearancePreferences: AppearancePreferences!
+    var themeManager: ThemeManaging!
     var visibleFeedProvider: MockNewTabPageProtectionsReportVisibleFeedProvider!
     var customizationModel: NewTabPageCustomizationModel!
     var handler: NewTabPageShownPixelSender!
     var keyValueStore: MockKeyValueStore!
     var firePixelCalls: [PixelKitEvent] = []
 
+    @MainActor
     override func setUp() async throws {
         try await super.setUp()
 
@@ -49,6 +51,7 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
             featureFlagger: MockFeatureFlagger()
         )
 
+        themeManager = MockThemeManager()
         visibleFeedProvider = MockNewTabPageProtectionsReportVisibleFeedProvider()
 
         customizationModel = NewTabPageCustomizationModel(
@@ -57,7 +60,7 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
             sendPixel: { _ in },
             openFilePanel: { nil },
             showAddImageFailedAlert: {},
-            visualStyle: VisualStyle.current
+            themeManager: themeManager
         )
 
         handler = NewTabPageShownPixelSender(
@@ -74,6 +77,7 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
         firePixelCalls = []
         handler = nil
         visibleFeedProvider = nil
+        themeManager = nil
     }
 
     func testWhenFirePixelIsCalledThenPixelIsSent() {

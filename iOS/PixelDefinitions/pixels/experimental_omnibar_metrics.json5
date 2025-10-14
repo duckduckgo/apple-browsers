@@ -1,267 +1,273 @@
 // See https://app.asana.com/1/137249556945/project/72649045549333/task/1211121614418052?focus=true
 // Experimental omnibar metrics for Duck.ai discovery, usage, and mode switching
 {
-    m_aichat_experimental_omnibar_shown: {
-        description: 'Fires when the experimental omnibar with Duck.ai toggle is displayed to the user',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
-    },
-    m_aichat_experimental_omnibar_prompt_submitted: {
-        description: 'Fires when user submits an AI chat prompt through the experimental omnibar',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-            {
-                key: 'was_used_before',
-                description: 'Indicates if AI Chat was used before this submission: 1=returning user, 0=first-time user',
-                type: 'integer',
-            },
-            {
-                key: 'text_length_bucket',
-                description: 'Indicates length of AI prompt text using buckets: short (1-15), medium (16-40), long (41-100), very_long (100+)',
-                type: 'string',
-            },
+    "m_aichat_experimental_omnibar_shown": {
+        "description": "Fires when the experimental omnibar with Duck.ai toggle is displayed to the user",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["first_daily_count", "platform", "form_factor"],
+            ["platform", "form_factor"]
         ],
+        "parameters": ["appVersion", "pixelSource"]
     },
-    m_aichat_experimental_omnibar_query_submitted: {
-        description: 'Fires when user submits a search query through the experimental omnibar',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
+    "m_aichat_experimental_omnibar_prompt_submitted": {
+        "description": "Fires when user submits an AI chat prompt through the experimental omnibar",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
             {
-                key: 'text_length_bucket',
-                description: 'Indicates length of search query text using buckets: short (1-15), medium (16-40), long (41-100), very_long (100+)',
-                type: 'string',
+                "key": "was_used_before",
+                "description": "Indicates if AI Chat was used before this submission: 1=returning user, 0=first-time user",
+                "type": "integer"
             },
+            {
+                "key": "text_length_bucket",
+                "description": "Indicates length of AI prompt text using buckets: short (1-15), medium (16-40), long (41-100), very_long (100+)",
+                "type": "string"
+            }
+        ]
+    },
+    "m_aichat_experimental_omnibar_query_submitted": {
+        "description": "Fires when user submits a search query through the experimental omnibar",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "text_length_bucket",
+                "description": "Indicates length of search query text using buckets: short (1-15), medium (16-40), long (41-100), very_long (100+)",
+                "type": "string"
+            }
+        ]
+    },
+    "m_aichat_experimental_omnibar_mode_switched": {
+        "description": "Fires when user toggles between search and AI chat modes in the experimental omnibar",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "direction",
+                "description": "Direction of the mode switch: to_search or to_duckai",
+                "type": "string"
+            },
+            {
+                "key": "had_text",
+                "description": "Whether text was present in the input when mode was switched: true or false",
+                "type": "boolean"
+            }
+        ]
+    },
+    "m_aichat_experimental_omnibar_session_both_modes": {
+        "description": "Fires when user has used BOTH search and AI chat modes within the same app session",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_aichat_experimental_omnibar_first_settings_viewed": {
+        "description": "Fires when user first views the AI Features settings page containing the new input toggle",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_aichat_experimental_omnibar_first_enabled": {
+        "description": "Fires when user first enables the experimental omnibar feature",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_aichat_legacy_omnibar_shown": {
+        "description": "Fires when the legacy omnibar is displayed to the user (baseline comparison for experimental omnibar)",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": [
+            ["first_daily_count", "platform", "form_factor"],
+            ["platform", "form_factor"]
         ],
+        "parameters": ["appVersion", "pixelSource"]
     },
-    m_aichat_experimental_omnibar_mode_switched: {
-        description: 'Fires when user toggles between search and AI chat modes in the experimental omnibar',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
+    "m_aichat_legacy_omnibar_query_submitted": {
+        "description": "Fires when user submits a search query through the legacy omnibar (baseline comparison for experimental omnibar)",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_aichat_legacy_omnibar_aichat_button_pressed": {
+        "description": "Fires when user presses the AI chat button in the legacy omnibar (baseline comparison for experimental omnibar AI prompts)",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_aichat_experimental_omnibar_first_interaction": {
+        "description": "Fires when user first enters text after enabling the experimental omnibar",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_aichat_experimental_omnibar_first_search_submission": {
+        "description": "Fires when user submits their first successful search query through the experimental omnibar",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_aichat_experimental_omnibar_first_prompt_submission": {
+        "description": "Fires when user submits their first successful Duck.ai prompt through the experimental omnibar",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_aichat_experimental_omnibar_full_conversion_user": {
+        "description": "Fires when user achieves full conversion by using both search AND Duck.ai modes",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_aichat_experimental_omnibar_text_area_focused": {
+        "description": "Fires when user focuses the text input area in the experimental omnibar",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
             {
-                key: 'direction',
-                description: 'Direction of the mode switch: to_search or to_duckai',
-                type: 'string',
+                "key": "orientation",
+                "description": "Device orientation when text area was focused: portrait or landscape",
+                "type": "string"
+            }
+        ]
+    },
+    "m_aichat_experimental_omnibar_clear_button_pressed": {
+        "description": "Fires when user presses the X (clear) button in the experimental omnibar",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "mode",
+                "description": "Current toggle mode when button was pressed: search or aiChat",
+                "type": "string"
+            }
+        ]
+    },
+    "m_aichat_experimental_omnibar_back_button_pressed": {
+        "description": "Fires when user presses the back button in the experimental omnibar",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "mode",
+                "description": "Current toggle mode when button was pressed: search or aiChat",
+                "type": "string"
+            }
+        ]
+    },
+    "m_aichat_experimental_omnibar_keyboard_go_pressed": {
+        "description": "Fires when user presses the keyboard return/go button in the experimental omnibar",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "mode",
+                "description": "Current toggle mode when button was pressed: search or aiChat",
+                "type": "string"
+            }
+        ]
+    },
+    "m_aichat_experimental_omnibar_floating_submit_pressed": {
+        "description": "Fires when user presses the floating submit button in the experimental omnibar",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "mode",
+                "description": "Current toggle mode when button was pressed: search or aiChat",
+                "type": "string"
+            }
+        ]
+    },
+    "m_aichat_experimental_omnibar_floating_return_pressed": {
+        "description": "Fires when user presses the floating return button (new line) in the experimental omnibar",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_aichat_legacy_omnibar_back_button_pressed": {
+        "description": "Fires when user presses the back/dismiss button in the legacy omnibar (baseline comparison for experimental omnibar back navigation)",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_aichat_experimental_omnibar_session_summary": {
+        "description": "Fires when app session ends to compare search/prompt activity across session types",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "searches_in_session",
+                "description": "Number of search queries submitted during the session",
+                "type": "integer"
             },
             {
-                key: 'had_text',
-                description: 'Whether text was present in the input when mode was switched: true or false',
-                type: 'boolean',
-            },
-        ],
+                "key": "prompts_in_session",
+                "description": "Number of AI prompts submitted during the session",
+                "type": "integer"
+            }
+        ]
     },
-    m_aichat_experimental_omnibar_session_both_modes: {
-        description: 'Fires when user has used BOTH search and AI chat modes within the same app session',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
-    },
-    m_aichat_experimental_omnibar_first_settings_viewed: {
-        description: 'Fires when user first views the AI Features settings page containing the new input toggle',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
-    },
-    m_aichat_experimental_omnibar_first_enabled: {
-        description: 'Fires when user first enables the experimental omnibar feature',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
-    },
-    m_aichat_legacy_omnibar_shown: {
-        description: 'Fires when the legacy omnibar is displayed to the user (baseline comparison for experimental omnibar)',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
-    },
-    m_aichat_legacy_omnibar_query_submitted: {
-        description: 'Fires when user submits a search query through the legacy omnibar (baseline comparison for experimental omnibar)',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
-    },
-    m_aichat_legacy_omnibar_aichat_button_pressed: {
-        description: 'Fires when user presses the AI chat button in the legacy omnibar (baseline comparison for experimental omnibar AI prompts)',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
-    },
-    m_aichat_experimental_omnibar_first_interaction: {
-        description: 'Fires when user first enters text after enabling the experimental omnibar',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
-    },
-    m_aichat_experimental_omnibar_first_search_submission: {
-        description: 'Fires when user submits their first successful search query through the experimental omnibar',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
-    },
-    m_aichat_experimental_omnibar_first_prompt_submission: {
-        description: 'Fires when user submits their first successful Duck.ai prompt through the experimental omnibar',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
-    },
-    m_aichat_experimental_omnibar_full_conversion_user: {
-        description: 'Fires when user achieves full conversion by using both search AND Duck.ai modes',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
-    },
-    m_aichat_experimental_omnibar_text_area_focused: {
-        description: 'Fires when user focuses the text input area in the experimental omnibar',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
+    "m_aichat_experimental_omnibar_daily_retention": {
+        "description": "Fires for users who had the experimental omnibar enabled during their last app session (≥24 hours ago) and returned today - measures feature retention vs churn",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
             {
-                key: 'orientation',
-                description: 'Device orientation when text area was focused: portrait or landscape',
-                type: 'string',
-            },
-        ],
+                "key": "still_enabled",
+                "description": "Whether user still has feature enabled on return: true=retention, false=churn",
+                "type": "string"
+            }
+        ]
     },
-    m_aichat_experimental_omnibar_clear_button_pressed: {
-        description: 'Fires when user presses the X (clear) button in the experimental omnibar',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-            {
-                key: 'mode',
-                description: 'Current toggle mode when button was pressed: search or aiChat',
-                type: 'string',
-            },
-        ],
-    },
-    m_aichat_experimental_omnibar_back_button_pressed: {
-        description: 'Fires when user presses the back button in the experimental omnibar',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-            {
-                key: 'mode',
-                description: 'Current toggle mode when button was pressed: search or aiChat',
-                type: 'string',
-            },
-        ],
-    },
-    m_aichat_experimental_omnibar_keyboard_go_pressed: {
-        description: 'Fires when user presses the keyboard return/go button in the experimental omnibar',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-            {
-                key: 'mode',
-                description: 'Current toggle mode when button was pressed: search or aiChat',
-                type: 'string',
-            },
-        ],
-    },
-    m_aichat_experimental_omnibar_floating_submit_pressed: {
-        description: 'Fires when user presses the floating submit button in the experimental omnibar',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-            {
-                key: 'mode',
-                description: 'Current toggle mode when button was pressed: search or aiChat',
-                type: 'string',
-            },
-        ],
-    },
-    m_aichat_experimental_omnibar_floating_return_pressed: {
-        description: 'Fires when user presses the floating return button (new line) in the experimental omnibar',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
-    },
-    m_aichat_legacy_omnibar_back_button_pressed: {
-        description: 'Fires when user presses the back/dismiss button in the legacy omnibar (baseline comparison for experimental omnibar back navigation)',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['first_daily_count', 'platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
-    },
-    m_aichat_experimental_omnibar_session_summary: {
-        description: 'Fires when app session ends to compare search/prompt activity across session types',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-            {
-                key: 'searches_in_session',
-                description: 'Number of search queries submitted during the session',
-                type: 'integer',
-            },
-            {
-                key: 'prompts_in_session',
-                description: 'Number of AI prompts submitted during the session',
-                type: 'integer',
-            },
-        ],
-    },
-    m_aichat_experimental_omnibar_daily_retention: {
-        description: 'Fires for users who had the experimental omnibar enabled during their last app session (≥24 hours ago) and returned today - measures feature retention vs churn',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
-            {
-                key: 'still_enabled',
-                description: 'Whether user still has feature enabled on return: true=retention, false=churn',
-                type: 'string',
-            },
-        ],
-    },
-    m_aichat_duckai_keyboard_return_pressed: {
-        description: 'Fires when user presses return/enter key in full Duck AI interface',
-        owners: ['aataraxiaa'],
-        triggers: ['other'],
-        suffixes: ['platform', 'form_factor'],
-        parameters: ['appVersion', 'pixelSource'],
-    },
+    "m_aichat_duckai_keyboard_return_pressed": {
+        "description": "Fires when user presses return/enter key in full Duck AI interface",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    }
 }

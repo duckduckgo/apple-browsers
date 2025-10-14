@@ -154,9 +154,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210926332858859?focus=true
     case aiFeaturesSettingsUpdate
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210839825079760?focus=true
-    case askAIChatSuggestion
-
     /// Adds kbg=-1 parameter to search URLs when DuckAI is disabled
     case duckAISearchParameter
 
@@ -176,11 +173,26 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1210947754188321/task/1210869716452616?focus=true
     case refreshButtonPosition
 
-    /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1211257304926910
-    case aiSearchAnimatedDaxLogo
+    /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211394727337421?focus=true
+    case newDeviceSyncPrompt
+    
+    /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211245201777978?focus=true
+    case serpSettingsFollowUpQuestions
 
-    /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1210716480546568?focus=true
-    case adjustNewSearchForLandscape
+    /// https://app.asana.com/1/137249556945/task/1211354430557015?focus=true
+    case subscriptionRestoreWidePixelMeasurement
+
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210659895188821?focus=true
+    case embeddedSERPSettings
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211555469558398?focus=true
+    case authV2WideEventEnabled
+
+    /// https://app.asana.com/1/137249556945/project/1210594645229050/task/1211494295271901?focus=true
+    case winBackOffer
+
+    ///  https://app.asana.com/1/137249556945/project/72649045549333/task/1207055705580443?focus=true
+    case syncCreditCards
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -196,8 +208,12 @@ extension FeatureFlag: FeatureFlagDescribing {
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .daxEasterEggLogos,
              .subscriptionPurchaseWidePixelMeasurement,
-             .askAIChatSuggestion,
-             .refreshButtonPosition:
+             .refreshButtonPosition,
+             .newDeviceSyncPrompt,
+             .subscriptionRestoreWidePixelMeasurement,
+             .authV2WideEventEnabled,
+             .embeddedSERPSettings,
+             .syncCreditCards:
             true
         default:
             false
@@ -241,7 +257,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .scheduledSetDefaultBrowserPrompts,
              .scheduledSetDefaultBrowserPromptsForInactiveUsers,
-             .askAIChatSuggestion,
              .duckAISearchParameter,
              .inactivityNotification,
              .daxEasterEggLogos,
@@ -250,8 +265,13 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
              .refreshButtonPosition,
-             .aiSearchAnimatedDaxLogo,
-             .adjustNewSearchForLandscape:
+             .newDeviceSyncPrompt,
+             .serpSettingsFollowUpQuestions,
+             .subscriptionRestoreWidePixelMeasurement,
+             .embeddedSERPSettings,
+             .authV2WideEventEnabled,
+             .winBackOffer,
+             .syncCreditCards:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -429,8 +449,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .enabled
         case .duckAISearchParameter:
             return .enabled
-        case .askAIChatSuggestion:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.askAIChatSuggestion))
         case .inactivityNotification:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:
@@ -441,9 +459,20 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.refreshButtonPosition))
         case .showAIChatAddressBarChoiceScreen:
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
-        case .aiSearchAnimatedDaxLogo,
-             .adjustNewSearchForLandscape:
-            return .internalOnly()
+        case .newDeviceSyncPrompt:
+            return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
+        case .serpSettingsFollowUpQuestions:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.serpSettingsFollowUpQuestions))
+        case .subscriptionRestoreWidePixelMeasurement:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
+        case .embeddedSERPSettings:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.embeddedSERPSettings))
+        case .authV2WideEventEnabled:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
+        case .winBackOffer:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
+        case .syncCreditCards:
+            return .remoteReleasable(.subfeature(SyncSubfeature.syncCreditCards))
         }
     }
 }

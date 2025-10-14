@@ -38,18 +38,22 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func updateOptions()
     func launchBookmarksViewController()
     func launchAutofillViewController()
+    func launchAutofillCreditCardsViewController()
     func showOtherPlatformLinks()
     func fireOtherPlatformLinksPixel(event: SyncSettingsViewModel.PlatformLinksPixelEvent, with source: SyncSettingsViewModel.PlatformLinksPixelSource)
     func shareLink(for url: URL, with message: String, from rect: CGRect)
 
     var syncBookmarksPausedTitle: String? { get }
     var syncCredentialsPausedTitle: String? { get }
+    var syncCreditCardsPausedTitle: String? { get }
     var syncPausedTitle: String? { get }
     var syncBookmarksPausedDescription: String? { get }
     var syncCredentialsPausedDescription: String? { get }
+    var syncCreditCardsPausedDescription: String? { get }
     var syncPausedDescription: String? { get }
     var syncBookmarksPausedButtonTitle: String? { get }
     var syncCredentialsPausedButtonTitle: String? { get }
+    var syncCreditCardsPausedButtonTitle: String? { get }
 }
 
 public class SyncSettingsViewModel: ObservableObject {
@@ -111,8 +115,10 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isSyncPaused = false
     @Published public var isSyncBookmarksPaused = false
     @Published public var isSyncCredentialsPaused = false
+    @Published public var isSyncCreditCardsPaused = false
     @Published public var invalidBookmarksTitles: [String] = []
     @Published public var invalidCredentialsTitles: [String] = []
+    @Published public var invalidCreditCardsTitles: [String] = []
 
     @Published var isBusy = false
     @Published var recoveryCode = ""
@@ -122,6 +128,7 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isAccountCreationAvailable: Bool = true
     @Published public var isAccountRecoveryAvailable: Bool = true
     @Published public var isAppVersionNotSupported: Bool = false
+    @Published public var isSyncWithSetUpSheetVisible: Bool = false
 
     @Published var shouldShowPasscodeRequiredAlert: Bool = false
 
@@ -210,6 +217,17 @@ public class SyncSettingsViewModel: ObservableObject {
         }
     }
 
+    @MainActor
+    public func presentSyncWithSetUpSheetIfNeeded() async {
+        guard isAccountCreationAvailable else {
+            return
+        }
+
+        if await commonAuthenticate() {
+            isSyncWithSetUpSheetVisible = true
+        }
+    }
+
     func createEditDeviceModel(_ device: Device) -> EditDeviceViewModel {
         return EditDeviceViewModel(device: device) { [weak self] newValue in
             self?.delegate?.updateDeviceName(newValue.name)
@@ -241,6 +259,10 @@ public class SyncSettingsViewModel: ObservableObject {
         delegate?.launchAutofillViewController()
     }
 
+    public func manageCreditCards() {
+        delegate?.launchAutofillCreditCardsViewController()
+    }
+
     public func shareLinkPressed(for url: URL, with message: String, from rect: CGRect) {
         delegate?.shareLink(for: url, with: message, from: rect)
     }
@@ -267,6 +289,9 @@ public class SyncSettingsViewModel: ObservableObject {
     public var syncCredentialsPausedTitle: String? {
         delegate?.syncCredentialsPausedTitle
     }
+    public var syncCreditCardsPausedTitle: String? {
+        delegate?.syncCreditCardsPausedTitle
+    }
     public var syncPausedTitle: String? {
         delegate?.syncPausedTitle
     }
@@ -276,6 +301,9 @@ public class SyncSettingsViewModel: ObservableObject {
     public var syncCredentialsPausedDescription: String? {
         delegate?.syncCredentialsPausedDescription
     }
+    public var syncCreditCardsPausedDescription: String? {
+        delegate?.syncCreditCardsPausedDescription
+    }
     public var syncPausedDescription: String? {
         delegate?.syncPausedDescription
     }
@@ -284,6 +312,9 @@ public class SyncSettingsViewModel: ObservableObject {
     }
     public var syncCredentialsPausedButtonTitle: String? {
         delegate?.syncCredentialsPausedButtonTitle
+    }
+    public var syncCreditCardsPausedButtonTitle: String? {
+        delegate?.syncCreditCardsPausedButtonTitle
     }
 
 }

@@ -1,7 +1,7 @@
 {
   "name": "MugshotLook",
   "url": "mugshotlook.com",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "parent": "privatereports.com",
   "optOutUrl": "https://www.mugshotlook.com/optOut/name/landing",
   "steps": [
@@ -57,7 +57,7 @@
           "elements": [
             {
               "type": "button",
-              "selector": "#ux-2"
+              "selector": ".refine-search-button"
             }
           ],
           "id": "b60ba41a-3d7b-42ff-ba44-46a84570eb79"

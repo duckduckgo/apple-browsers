@@ -33,6 +33,9 @@ public protocol AIChatPreferencesStorage {
     var showShortcutInAddressBar: Bool { get set }
     var showShortcutInAddressBarPublisher: AnyPublisher<Bool, Never> { get }
 
+    var showShortcutInAddressBarWhenTyping: Bool { get set }
+    var showShortcutInAddressBarWhenTypingPublisher: AnyPublisher<Bool, Never> { get }
+
     var openAIChatInSidebar: Bool { get set }
     var openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> { get }
 
@@ -60,6 +63,10 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
 
     public var showShortcutInAddressBarPublisher: AnyPublisher<Bool, Never> {
         userDefaults.showAIChatShortcutInAddressBarPublisher
+    }
+
+    public var showShortcutInAddressBarWhenTypingPublisher: AnyPublisher<Bool, Never> {
+        userDefaults.showAIChatShortcutInAddressBarWhenTypingPublisher
     }
 
     public var openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> {
@@ -96,6 +103,11 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         set { userDefaults.showAIChatShortcutInAddressBar = newValue }
     }
 
+    public var showShortcutInAddressBarWhenTyping: Bool {
+        get { userDefaults.showAIChatShortcutInAddressBarWhenTyping }
+        set { userDefaults.showAIChatShortcutInAddressBarWhenTyping = newValue }
+    }
+
     public var openAIChatInSidebar: Bool {
         get { userDefaults.openAIChatInSidebar }
         set { userDefaults.openAIChatInSidebar = newValue }
@@ -111,6 +123,7 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         userDefaults.showAIChatShortcutOnNewTabPage = UserDefaults.showAIChatShortcutOnNewTabPageDefaultValue
         userDefaults.showAIChatShortcutInApplicationMenu = UserDefaults.showAIChatShortcutInApplicationMenuDefaultValue
         userDefaults.showAIChatShortcutInAddressBar = UserDefaults.showAIChatShortcutInAddressBarDefaultValue
+        userDefaults.showAIChatShortcutInAddressBarWhenTyping = UserDefaults.showAIChatShortcutInAddressBarWhenTypingDefaultValue
         userDefaults.openAIChatInSidebar = UserDefaults.openAIChatInSidebarDefaultValue
         userDefaults.shouldAutomaticallySendPageContext = UserDefaults.shouldAutomaticallySendPageContextDefaultValue
     }
@@ -122,6 +135,7 @@ private extension UserDefaults {
         static let showAIChatShortcutOnNewTabPage = "aichat.showAIChatShortcutOnNewTabPage"
         static let showAIChatShortcutInApplicationMenu = "aichat.showAIChatShortcutInApplicationMenu"
         static let showAIChatShortcutInAddressBar = "aichat.showAIChatShortcutInAddressBar"
+        static let showAIChatShortcutInAddressBarWhenTyping = "aichat.showAIChatShortcutInAddressBarWhenTyping"
         static let openAIChatInSidebar = "aichat.openAIChatInSidebar"
         static let shouldAutomaticallySendPageContext = "aichat.automaticallySendPageContext"
     }
@@ -130,6 +144,7 @@ private extension UserDefaults {
     static let showAIChatShortcutOnNewTabPageDefaultValue = true
     static let showAIChatShortcutInApplicationMenuDefaultValue = true
     static let showAIChatShortcutInAddressBarDefaultValue = true
+    static let showAIChatShortcutInAddressBarWhenTypingDefaultValue = true
     static let openAIChatInSidebarDefaultValue = true
     static let shouldAutomaticallySendPageContextDefaultValue = false
 
@@ -177,6 +192,17 @@ private extension UserDefaults {
         }
     }
 
+    @objc dynamic var showAIChatShortcutInAddressBarWhenTyping: Bool {
+        get {
+            value(forKey: Keys.showAIChatShortcutInAddressBarWhenTyping) as? Bool ?? Self.showAIChatShortcutInAddressBarWhenTypingDefaultValue
+        }
+
+        set {
+            guard newValue != showAIChatShortcutInAddressBarWhenTyping else { return }
+            set(newValue, forKey: Keys.showAIChatShortcutInAddressBarWhenTyping)
+        }
+    }
+
     @objc dynamic var openAIChatInSidebar: Bool {
         get {
             value(forKey: Keys.openAIChatInSidebar) as? Bool ?? Self.openAIChatInSidebarDefaultValue
@@ -213,6 +239,10 @@ private extension UserDefaults {
 
     var showAIChatShortcutInAddressBarPublisher: AnyPublisher<Bool, Never> {
         publisher(for: \.showAIChatShortcutInAddressBar).eraseToAnyPublisher()
+    }
+
+    var showAIChatShortcutInAddressBarWhenTypingPublisher: AnyPublisher<Bool, Never> {
+        publisher(for: \.showAIChatShortcutInAddressBarWhenTyping).eraseToAnyPublisher()
     }
 
     var openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> {

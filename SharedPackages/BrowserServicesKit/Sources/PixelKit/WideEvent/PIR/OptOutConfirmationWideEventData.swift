@@ -1,0 +1,67 @@
+//
+//  OptOutConfirmationWideEventData.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+
+public final class OptOutConfirmationWideEventData: WideEventData {
+    public static let pixelName = "pir_opt_out_confirmation"
+    private static let featureName = "pir-opt-out-confirmation"
+
+    public var globalData: WideEventGlobalData
+    public var contextData: WideEventContextData
+    public var appData: WideEventAppData
+
+    public var dataBrokerURL: String
+    public var dataBrokerVersion: String?
+    public var confirmationInterval: WideEvent.MeasuredInterval?
+
+    public var errorData: WideEventErrorData?
+
+    public init(globalData: WideEventGlobalData,
+                contextData: WideEventContextData = WideEventContextData(),
+                appData: WideEventAppData = WideEventAppData(),
+                dataBrokerURL: String,
+                dataBrokerVersion: String?,
+                confirmationInterval: WideEvent.MeasuredInterval? = nil) {
+        self.globalData = globalData
+        self.contextData = contextData
+        self.appData = appData
+        self.dataBrokerURL = dataBrokerURL
+        self.dataBrokerVersion = dataBrokerVersion
+        self.confirmationInterval = confirmationInterval
+    }
+}
+
+extension OptOutConfirmationWideEventData {
+    public func pixelParameters() -> [String: String] {
+        var parameters: [String: String] = [:]
+
+        parameters[WideEventParameter.Feature.name] = Self.featureName
+        parameters[WideEventParameter.PIR.OptOutConfirmationFeature.dataBrokerURL] = dataBrokerURL
+
+        if let dataBrokerVersion {
+            parameters[WideEventParameter.PIR.OptOutConfirmationFeature.dataBrokerVersion] = dataBrokerVersion
+        }
+
+        if let duration = confirmationInterval?.durationMilliseconds {
+            parameters[WideEventParameter.PIR.OptOutConfirmationFeature.confirmationLatency] = String(duration)
+        }
+
+        return parameters
+    }
+}

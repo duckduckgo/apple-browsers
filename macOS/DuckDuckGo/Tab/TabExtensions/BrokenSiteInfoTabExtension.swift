@@ -33,6 +33,8 @@ final class BrokenSiteInfoTabExtension {
     private(set) var refreshCountSinceLoad: Int = 0
 
     private(set) var performanceMetrics: PerformanceMetricsSubfeature?
+    private(set) var breakageReportingSubfeature: BreakageReportingSubfeature?
+    private(set) var lastPageLoadTiming: WKPageLoadTiming?
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -42,11 +44,19 @@ final class BrokenSiteInfoTabExtension {
 
         webViewPublisher.sink { [weak self] webView in
             self?.performanceMetrics = PerformanceMetricsSubfeature(targetWebview: webView)
+            self?.breakageReportingSubfeature = BreakageReportingSubfeature(targetWebview: webView)
         }.store(in: &cancellables)
 
         contentScopeUserScriptPublisher.sink { [weak self] contentScopeUserScript in
-            guard let self, let performanceMetrics else { return }
-            contentScopeUserScript.registerSubfeature(delegate: performanceMetrics)
+            guard let self else { return }
+
+            if let performanceMetrics {
+                contentScopeUserScript.registerSubfeature(delegate: performanceMetrics)
+            }
+
+            if let breakageReportingSubfeature {
+                contentScopeUserScript.registerSubfeature(delegate: breakageReportingSubfeature)
+            }
         }.store(in: &cancellables)
     }
 
@@ -121,6 +131,10 @@ extension BrokenSiteInfoTabExtension: NavigationResponder {
         lastWebError = error
     }
 
+    func didGeneratePageLoadTiming(_ timing: WKPageLoadTiming) {
+        lastPageLoadTiming = timing
+    }
+
 }
 
 protocol BrokenSiteInfoTabExtensionProtocol: AnyObject, NavigationResponder {
@@ -131,6 +145,8 @@ protocol BrokenSiteInfoTabExtensionProtocol: AnyObject, NavigationResponder {
     var refreshCountSinceLoad: Int { get }
 
     var performanceMetrics: PerformanceMetricsSubfeature? { get }
+    var breakageReportingSubfeature: BreakageReportingSubfeature? { get }
+    var lastPageLoadTiming: WKPageLoadTiming? { get }
 
     func tabReloadRequested()
 }

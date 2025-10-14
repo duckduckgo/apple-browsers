@@ -80,7 +80,8 @@ class WebsiteBreakageReportTests: XCTestCase {
             cookieConsentInfo: nil,
             debugFlags: "",
             privacyExperiments: "",
-            isPirEnabled: nil
+            isPirEnabled: nil,
+            pageLoadTiming: nil
         )
 
         let urlRequest = makeURLRequest(with: breakage.requestParameters)
@@ -132,7 +133,8 @@ class WebsiteBreakageReportTests: XCTestCase {
             cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true),
             debugFlags: "",
             privacyExperiments: "",
-            isPirEnabled: true
+            isPirEnabled: true,
+            pageLoadTiming: nil
         )
 
         let urlRequest = makeURLRequest(with: breakage.requestParameters)

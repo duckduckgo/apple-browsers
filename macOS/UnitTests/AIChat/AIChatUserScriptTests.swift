@@ -87,11 +87,11 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertNil(result, "Expected result to be nil")
     }
 
-    @MainActor func testGetPageContext() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getPageContext.rawValue))
+    @MainActor func testGetAIChatPageContext() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatPageContext.rawValue))
         let result = try await handler([""], WKScriptMessage())
 
-        XCTAssertTrue(mockHandler.didGetPageContext, "getPageContext should be called")
+        XCTAssertTrue(mockHandler.didGetAIChatPageContext, "getAIChatPageContext should be called")
         XCTAssertNil(result, "Expected result to be nil")
     }
 }
@@ -113,11 +113,12 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didSubmitAIChatNativePrompt = false
     var aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
 
-    var didGetPageContext = false
-    var didSubmitPageContext = false
+    var didGetAIChatPageContext = false
+    var didSubmitAIChatPageContext = false
     var didTogglePageContextTelemetry = false
     var pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     var pageContextRequestedSubject = PassthroughSubject<Void, Never>()
+    var chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
 
     var didReportMetric = false
 
@@ -190,8 +191,8 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    func getPageContext(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
-        didGetPageContext = true
+    func getAIChatPageContext(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        didGetAIChatPageContext = true
         return nil
     }
 
@@ -203,8 +204,12 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         pageContextRequestedSubject.eraseToAnyPublisher()
     }
 
-    func submitPageContext(_ pageContext: AIChatPageContextData?) {
-        didSubmitPageContext = true
+    var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> {
+        chatRestorationDataSubject.eraseToAnyPublisher()
+    }
+
+    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
+        didSubmitAIChatPageContext = true
     }
 
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {

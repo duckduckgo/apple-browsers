@@ -50,7 +50,7 @@ struct Launching: LaunchingHandling {
     private let isAppLaunchedInBackground = UIApplication.shared.applicationState == .background
     private let window: UIWindow = UIWindow(frame: UIScreen.main.bounds)
 
-    private let configuration = AppConfiguration()
+    private let configuration: AppConfiguration
     private let services: AppServices
     private let mainCoordinator: MainCoordinator
     private let launchTaskManager = LaunchTaskManager()
@@ -62,10 +62,13 @@ struct Launching: LaunchingHandling {
         Logger.lifecycle.info("Launching: \(#function)")
 
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
+        
+        // Initialize configuration with the key-value store
+        configuration = AppConfiguration(appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
         // MARK: - Application Setup
         // Handles one-time application setup during launch
-        let isBookmarksStructureMissing = try configuration.start(syncKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        try configuration.start()
 
         // MARK: - Service Initialization (continued)
         // Create and initialize remaining core services
@@ -77,7 +80,7 @@ struct Launching: LaunchingHandling {
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared)
         let configurationService = RemoteConfigurationService()
-        let crashCollectionService = CrashCollectionService(isBookmarksStructureMissing: isBookmarksStructureMissing)
+        let crashCollectionService = CrashCollectionService()
         let statisticsService = StatisticsService()
         let reportingService = ReportingService(fireproofing: fireproofing, featureFlagging: featureFlagger)
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
@@ -95,8 +98,8 @@ struct Launching: LaunchingHandling {
         let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
-        let widePixelService = WidePixelService(
-            widePixel: AppDependencyProvider.shared.widePixel,
+        let wideEventService = WideEventService(
+            wideEvent: AppDependencyProvider.shared.wideEvent,
             featureFlagger: featureFlagger,
             subscriptionBridge: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
         )
@@ -189,7 +192,8 @@ struct Launching: LaunchingHandling {
                                defaultBrowserPromptService: defaultBrowserPromptService,
                                systemSettingsPiPTutorialService: systemSettingsPiPTutorialService,
                                inactivityNotificationSchedulerService: inactivityNotificationSchedulerService,
-                               widePixelService: widePixelService
+                               wideEventService: wideEventService,
+                               aiChatService: AIChatService(aiChatSettings: aiChatSettings)
         )
 
         // Register background tasks that run after app is ready
@@ -197,8 +201,8 @@ struct Launching: LaunchingHandling {
                                                                    interactionStateSource: mainCoordinator.interactionStateSource,
                                                                    tabManager: mainCoordinator.tabManager))
         
-        // Clean up wide pixel data at launch
-        launchTaskManager.register(task: WidePixelLaunchCleanupTask(widePixelService: widePixelService))
+        // Clean up wide event data at launch
+        launchTaskManager.register(task: WideEventLaunchCleanupTask(wideEventService: wideEventService))
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window
@@ -206,8 +210,7 @@ struct Launching: LaunchingHandling {
         configuration.finalize(
             reportingService: reportingService,
             mainViewController: mainCoordinator.controller,
-            launchTaskManager: launchTaskManager,
-            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+            launchTaskManager: launchTaskManager
         )
 
         setupWindow()

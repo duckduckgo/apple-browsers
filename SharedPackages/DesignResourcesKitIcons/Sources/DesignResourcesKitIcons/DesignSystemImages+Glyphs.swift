@@ -167,6 +167,7 @@ public extension DesignSystemImages {
             public static var folderNew: DesignSystemImage { .init(resource: .folderNew16) }
             public static var gift: DesignSystemImage { .init(resource: .gift16) }
             public static var globe: DesignSystemImage { .init(resource: .globe16) }
+            public static var globeBlocked: DesignSystemImage { .init(resource: .globeBlocked16) }
             public static var help: DesignSystemImage { .init(resource: .help16) }
             public static var history: DesignSystemImage { .init(resource: .history16) }
             public static var home: DesignSystemImage { .init(resource: .home16) }
@@ -199,7 +200,6 @@ public extension DesignSystemImages {
             public static var pointUpSolid: DesignSystemImage { .init(resource: .pointUpSolid16) }
             public static var popupBlocked: DesignSystemImage { .init(resource: .popupBlocked16) }
             public static var print: DesignSystemImage { .init(resource: .print16) }
-            public static var privacyPro: DesignSystemImage { .init(resource: .privacyPro16) }
             public static var profile: DesignSystemImage { .init(resource: .profile16) }
             public static var profileBlocked: DesignSystemImage { .init(resource: .profileBlocked16) }
             public static var qr: DesignSystemImage { .init(resource: .QR_16) }
@@ -223,6 +223,7 @@ public extension DesignSystemImages {
             public static var sortAscending: DesignSystemImage { .init(resource: .sortAscending16) }
             public static var sortDescending: DesignSystemImage { .init(resource: .sortDescending16) }
             public static var sortManually: DesignSystemImage { .init(resource: .sortManually16) }
+            public static var subscription: DesignSystemImage { .init(resource: .privacyPro16) }
             public static var support: DesignSystemImage { .init(resource: .support16) }
             public static var sync: DesignSystemImage { .init(resource: .sync16) }
             public static var systemTheme: DesignSystemImage { .init(resource: .systemTheme16) }
@@ -295,12 +296,12 @@ public extension DesignSystemImages {
             public static var menuHamburger: DesignSystemImage { .init(resource: .menuHamburger20) }
             public static var microphone: DesignSystemImage { .init(resource: .microphone20) }
             public static var microphoneSolid: DesignSystemImage { .init(resource: .microphoneSolid20) }
-            public static var privacyPro: DesignSystemImage { .init(resource: .privacyPro20) }
             public static var shield: DesignSystemImage { .init(resource: .shield20) }
             public static var shieldDisabled: DesignSystemImage { .init(resource: .shieldDisabled20) }
             public static var stop: DesignSystemImage { .init(resource: .stop20) }
             public static var stopRecolorable: DesignSystemImage { .init(resource: .stopRecolorable20) }
             public static var stopSolid: DesignSystemImage { .init(resource: .stopSolid20) }
+            public static var subscription: DesignSystemImage { .init(resource: .privacyPro20) }
             public static var tab: DesignSystemImage { .init(resource: .tab20) }
             public static var upload: DesignSystemImage { .init(resource: .upload20) }
             public static var uploadFile: DesignSystemImage { .init(resource: .uploadFile20) }
@@ -372,6 +373,7 @@ public extension DesignSystemImages {
             public static var email: DesignSystemImage { .init(resource: .email24) }
             public static var emailCheck: DesignSystemImage { .init(resource: .emailCheck24) }
             public static var emailForward: DesignSystemImage { .init(resource: .emailForward24) }
+            public static var enter: DesignSystemImage { .init(resource: .enter24) }
             public static var eye: DesignSystemImage { .init(resource: .eye24) }
             public static var eyeClosed: DesignSystemImage { .init(resource: .eyeClosed24) }
             public static var exclamation: DesignSystemImage { .init(resource: .exclamation24) }
@@ -438,6 +440,7 @@ public extension DesignSystemImages {
             public static var subtraction: DesignSystemImage { .init(resource: .subtraction24) }
             public static var support: DesignSystemImage { .init(resource: .support24) }
             public static var syncCloud: DesignSystemImage { .init(resource: .syncCloud24) }
+            public static var tabDesktop: DesignSystemImage { .init(resource: .tabDesktop24) }
             public static var tabMobile: DesignSystemImage { .init(resource: .tabMobile24) }
             public static var tabsMobile: DesignSystemImage { .init(resource: .tabsMobile24) }
             public static var tabMobileAlert: DesignSystemImage { .init(resource: .tabMobileAlert24) }
@@ -451,6 +454,8 @@ public extension DesignSystemImages {
             public static var videoPlayer: DesignSystemImage { .init(resource: .videoPlayer24) }
             public static var videoSolid: DesignSystemImage { .init(resource: .videoSolid24) }
             public static var viewGrid: DesignSystemImage { .init(resource: .viewGrid24) }
+            public static var window: DesignSystemImage { .init(resource: .window24) }
+            public static var windowsAndTabs: DesignSystemImage { .init(resource: .windowsAndTabs24) }
             public static var zoomIn: DesignSystemImage { .init(resource: .zoomIn24) }
        }
    }

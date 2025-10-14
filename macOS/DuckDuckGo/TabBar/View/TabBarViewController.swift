@@ -81,13 +81,15 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private let bookmarkManager: BookmarkManager
     private let fireproofDomains: FireproofDomains
-    private let visualStyle: VisualStyleProviding
     private var pinnedTabsViewModel: PinnedTabsViewModel?
     private var pinnedTabsView: PinnedTabsView?
     private var pinnedTabsHostingView: PinnedTabsHostingView?
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
     private var pinnedTabsDiscoveryPopover: NSPopover?
     private weak var crashPopoverViewController: PopoverMessageViewController?
+
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
 
     var tabPreviewsEnabled: Bool = true
 
@@ -136,9 +138,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     var footerCurrentWidthDimension: CGFloat {
         if tabMode == .overflow {
             return 0.0
-        } else {
-            return visualStyle.tabBarButtonSize + visualStyle.addressBarStyleProvider.addTabButtonPadding
         }
+
+        return theme.tabBarButtonSize + theme.addressBarStyleProvider.addTabButtonPadding
     }
 
     // MARK: - View Lifecycle
@@ -169,17 +171,18 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
           bookmarkManager: BookmarkManager,
           fireproofDomains: FireproofDomains,
           activeRemoteMessageModel: ActiveRemoteMessageModel,
-          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+          themeManager: ThemeManager = NSApp.delegateTyped.themeManager) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.fireproofDomains = fireproofDomains
         let tabBarActiveRemoteMessageModel = TabBarActiveRemoteMessage(activeRemoteMessageModel: activeRemoteMessageModel)
         self.tabBarRemoteMessageViewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: tabBarActiveRemoteMessageModel,
                                                                          isFireWindow: tabCollectionViewModel.isBurner)
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
         if !tabCollectionViewModel.isBurner, let pinnedTabCollection = tabCollectionViewModel.pinnedTabsManager?.tabCollection {
             let pinnedTabsViewModel = PinnedTabsViewModel(collection: pinnedTabCollection, fireproofDomains: fireproofDomains, bookmarkManager: bookmarkManager)
-            let pinnedTabsView = PinnedTabsView(model: pinnedTabsViewModel)
+            let pinnedTabsView = PinnedTabsView(model: pinnedTabsViewModel, themeManager: themeManager)
+
             self.pinnedTabsViewModel = pinnedTabsViewModel
             self.pinnedTabsView = pinnedTabsView
             self.pinnedTabsHostingView = PinnedTabsHostingView(rootView: pinnedTabsView)
@@ -189,14 +192,15 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             self.pinnedTabsHostingView = nil
         }
 
-        standardTabHeight = visualStyle.tabStyleProvider.standardTabHeight
+        standardTabHeight = themeManager.theme.tabStyleProvider.standardTabHeight
 
         super.init(coder: coder)
     }
 
     override func viewDidLoad() {
-        shadowView.isHidden = visualStyle.tabStyleProvider.shouldShowSShapedTab
-        backgroundColorView.backgroundColor = visualStyle.colorsProvider.baseBackgroundColor
+        super.viewDidLoad()
+
+        shadowView.isHidden = theme.tabStyleProvider.shouldShowSShapedTab
         scrollView.updateScrollElasticity(with: tabMode)
         observeToScrollNotifications()
         subscribeToSelectionIndex()
@@ -208,6 +212,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         subscribeToPinnedTabsSettingChanged()
         setupScrollButtons()
         setupTabsContainersHeight()
+        subscribeToThemeChanges()
+
+        applyThemeStyle()
     }
 
     override func viewWillAppear() {
@@ -298,7 +305,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func setupFireButton() {
-        let style = visualStyle.iconsProvider.fireButtonStyleProvider
+        let style = theme.iconsProvider.fireButtonStyleProvider
         fireButton.image = style.icon
         fireButton.toolTip = UserText.clearBrowsingHistoryTooltip
 
@@ -307,9 +314,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         fireButton.setAccessibilityIdentifier("TabBarViewController.fireButton")
         fireButton.setAccessibilityTitle(UserText.clearBrowsingHistoryTooltip)
 
-        fireButton.normalTintColor = visualStyle.colorsProvider.iconsColor
-        fireButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
-        fireButton.setCornerRadius(visualStyle.toolbarButtonsCornerRadius)
+        fireButton.setCornerRadius(theme.toolbarButtonsCornerRadius)
         fireButton.animationNames = MouseOverAnimationButton.AnimationNames(aqua: style.lightAnimation,
                                                                             dark: style.darkAnimation)
         fireButton.sendAction(on: .leftMouseDown)
@@ -319,32 +324,29 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 self?.stopFireButtonPulseAnimation()
             })
 
-        fireButtonWidthConstraint.constant = visualStyle.tabBarButtonSize
-        fireButtonHeightConstraint.constant = visualStyle.tabBarButtonSize
+        fireButtonWidthConstraint.constant = theme.tabBarButtonSize
+        fireButtonHeightConstraint.constant = theme.tabBarButtonSize
     }
 
     private func setupScrollButtons() {
-        leftScrollButton.setCornerRadius(visualStyle.addressBarStyleProvider.addressBarButtonsCornerRadius)
-        leftScrollButton.normalTintColor = visualStyle.colorsProvider.iconsColor
-        leftScrollButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
-        leftScrollButtonWidth.constant = visualStyle.tabBarButtonSize
-        leftScrollButtonHeight.constant = visualStyle.tabBarButtonSize
+        leftScrollButton.setCornerRadius(theme.addressBarStyleProvider.addressBarButtonsCornerRadius)
+        leftScrollButtonWidth.constant = theme.tabBarButtonSize
+        leftScrollButtonHeight.constant = theme.tabBarButtonSize
 
-        rightScrollButton.setCornerRadius(visualStyle.addressBarStyleProvider.addressBarButtonsCornerRadius)
-        rightScrollButton.normalTintColor = visualStyle.colorsProvider.iconsColor
-        rightScrollButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
-        rightScrollButtonWidth.constant = visualStyle.tabBarButtonSize
-        rightScrollButtonHeight.constant = visualStyle.tabBarButtonSize
+        rightScrollButton.setCornerRadius(theme.addressBarStyleProvider.addressBarButtonsCornerRadius)
+
+        rightScrollButtonWidth.constant = theme.tabBarButtonSize
+        rightScrollButtonHeight.constant = theme.tabBarButtonSize
     }
 
     private func setupTabsContainersHeight() {
-        scrollViewHeightConstraint.constant = visualStyle.tabStyleProvider.tabsScrollViewHeight
-        pinnedTabsContainerHeightConstraint.constant = visualStyle.tabStyleProvider.pinnedTabsContainerViewHeight
+        scrollViewHeightConstraint.constant = theme.tabStyleProvider.tabsScrollViewHeight
+        pinnedTabsContainerHeightConstraint.constant = theme.tabStyleProvider.pinnedTabsContainerViewHeight
     }
 
     private func setupAsBurnerWindowIfNeeded() {
         if tabCollectionViewModel.isBurner {
-            burnerWindowBackgroundView.image = visualStyle.fireWindowGraphic
+            burnerWindowBackgroundView.image = theme.fireWindowGraphic
             burnerWindowBackgroundView.isHidden = false
             fireButton.isAnimationEnabled = false
             fireButton.backgroundColor = NSColor.fireButtonRedBackground
@@ -405,7 +407,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         pinnedTabsHostingView.translatesAutoresizingMaskIntoConstraints = false
         pinnedTabsContainerView.addSubview(pinnedTabsHostingView)
 
-        let trailingConstant: CGFloat = visualStyle.tabStyleProvider.shouldShowSShapedTab ? 12 : 0
+        let trailingConstant: CGFloat = theme.tabStyleProvider.shouldShowSShapedTab ? 12 : 0
 
         NSLayoutConstraint.activate([
             pinnedTabsHostingView.leadingAnchor.constraint(equalTo: pinnedTabsContainerView.leadingAnchor),
@@ -668,7 +670,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         var requiredWidth: CGFloat
 
-        if visualStyle.tabStyleProvider.shouldShowSShapedTab {
+        if theme.tabStyleProvider.shouldShowSShapedTab {
             requiredWidth = max(0, (items - 1)) * TabBarViewItem.Width.minimum + TabBarViewItem.Width.minimumSelected + footerWidth
         } else {
             requiredWidth = max(0, (items - 1)) * TabBarViewItem.Width.minimum + TabBarViewItem.Width.minimumSelected
@@ -820,7 +822,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         /// When we need to show the s-shaped tabs, given that the pinned tabs view is moved 12 points to the left
         /// we need to do the same with the left side scroll view (when on overflow), if not the pinned tabs container
         /// will overlap the arrow button.
-        let shouldShowSShapedTabs = visualStyle.tabStyleProvider.shouldShowSShapedTab
+        let shouldShowSShapedTabs = theme.tabStyleProvider.shouldShowSShapedTab
         let noPinnedTabs = pinnedTabsViewModel?.items.isEmpty ?? true
         let isLeftScrollButtonVisible = !leftScrollButton.isHidden
 
@@ -871,11 +873,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         addTabButton.registerForDraggedTypes([.string])
         addTabButton.target = self
         addTabButton.action = #selector(addButtonAction(_:))
-        addTabButton.setCornerRadius(visualStyle.addressBarStyleProvider.addressBarButtonsCornerRadius)
-        addTabButton.normalTintColor = visualStyle.colorsProvider.iconsColor
-        addTabButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
-        addTabButtonWidth.constant = visualStyle.tabBarButtonSize
-        addTabButtonHeight.constant = visualStyle.tabBarButtonSize
+        addTabButton.setCornerRadius(theme.addressBarStyleProvider.addressBarButtonsCornerRadius)
+        addTabButtonWidth.constant = theme.tabBarButtonSize
+        addTabButtonHeight.constant = theme.tabBarButtonSize
         addTabButton.toolTip = UserText.newTabTooltip
         addTabButton.setAccessibilityIdentifier("NewTabButton")
         addTabButton.setAccessibilityTitle(UserText.newTabTooltip)
@@ -931,7 +931,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
 
-        let pinnedTabWidth = visualStyle.tabStyleProvider.pinnedTabWidth
+        let pinnedTabWidth = theme.tabStyleProvider.pinnedTabWidth
         let position = pinnedTabsContainerView.frame.minX + pinnedTabWidth * CGFloat(index)
         showTabPreview(for: tabViewModel, from: position)
     }
@@ -989,6 +989,30 @@ extension TabBarViewController: MouseOverButtonDelegate {
         return true
     }
 }
+
+// MARK: - ThemeUpdateListening
+extension TabBarViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: any ThemeStyleProviding) {
+        let colorsProvider = theme.colorsProvider
+        let isFireWindow = tabCollectionViewModel.isBurner
+
+        backgroundColorView.backgroundColor = colorsProvider.baseBackgroundColor
+
+        fireButton.normalTintColor = isFireWindow ? .white : colorsProvider.iconsColor
+        fireButton.mouseOverColor = isFireWindow ? .fireButtonRedHover : colorsProvider.buttonMouseOverColor
+
+        leftScrollButton.normalTintColor = colorsProvider.iconsColor
+        leftScrollButton.mouseOverColor = colorsProvider.buttonMouseOverColor
+
+        rightScrollButton.normalTintColor = colorsProvider.iconsColor
+        rightScrollButton.mouseOverColor = colorsProvider.buttonMouseOverColor
+
+        addTabButton.normalTintColor = colorsProvider.iconsColor
+        addTabButton.mouseOverColor = colorsProvider.buttonMouseOverColor
+    }
+}
+
 // MARK: - TabCollectionViewModelDelegate
 extension TabBarViewController: TabCollectionViewModelDelegate {
 
@@ -1200,7 +1224,7 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
     }
 
     func collectionView(_ collectionView: NSCollectionView, layout collectionViewLayout: NSCollectionViewLayout, insetForSectionAt section: Int) -> NSEdgeInsets {
-        if visualStyle.tabStyleProvider.shouldShowSShapedTab {
+        if theme.tabStyleProvider.shouldShowSShapedTab {
             let isRightScrollButtonVisible = !rightScrollButton.isHidden
             let isLeftScrollButonVisible = !leftScrollButton.isHidden
             return NSEdgeInsets(top: 0, left: isLeftScrollButonVisible ? 6 : 12, bottom: 0, right: isRightScrollButtonVisible ? 6 : -12)
@@ -1417,6 +1441,15 @@ extension TabBarViewController: TabBarViewItemDelegate {
         tabCollectionViewModel.tabViewModel(at: indexPath.item)?.tab.killWebContentProcess()
     }
 
+    func tabBarViewItemCrashMultipleTimesAction(_ tabBarViewItem: TabBarViewItem) {
+        guard let indexPath = collectionView.indexPath(for: tabBarViewItem) else {
+            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
+            return
+        }
+
+        tabCollectionViewModel.tabViewModel(at: indexPath.item)?.tab.killWebContentProcessMultipleTimes()
+    }
+
     func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_ tabBarViewItem: TabBarViewItem, sender: NSButton, shouldShow: Bool) {
         guard shouldShow else {
             crashPopoverViewController?.dismiss()
@@ -1510,7 +1543,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
             self.pinnedTabsDiscoveryPopover = popover
 
             guard let view = self.pinnedTabsHostingView else { return }
-            let pinnedTabWidth = visualStyle.tabStyleProvider.pinnedTabWidth
+            let pinnedTabWidth = theme.tabStyleProvider.pinnedTabWidth
             popover.show(relativeTo: NSRect(x: view.bounds.maxX - pinnedTabWidth,
                                             y: view.bounds.minY,
                                             width: pinnedTabWidth,

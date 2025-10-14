@@ -18,25 +18,30 @@
 
 import XCTest
 import Onboarding
+import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ContextualDaxDialogsFactoryTests: XCTestCase {
     private var factory: ContextualDaxDialogsFactory!
     private var delegate: CapturingOnboardingNavigationDelegate!
     private var reporter: CapturingOnboardingPixelReporter!
+    private var featureFlagger: MockFeatureFlagger!
 
     @MainActor
     override func setUpWithError() throws {
         reporter = CapturingOnboardingPixelReporter()
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
         factory = DefaultContextualDaxDialogViewFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
         delegate = CapturingOnboardingNavigationDelegate()
+        featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.contextualOnboarding, .newTabPagePerTab]
     }
 
     @MainActor override func tearDownWithError() throws {
         factory = nil
         delegate = nil
         reporter = nil
+        featureFlagger = nil
         Application.appDelegate.windowControllersManager.lastKeyMainWindowController = nil
     }
 
@@ -238,11 +243,11 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let onFireButtonPressed = { onFireButtonRun = true }
         let onDismiss = { onDismissRun = true }
 
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
-            aiChatSidebarProvider: AIChatSidebarProvider(),
+            aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()),
             fireCoordinator: fireCoordinator
         )
         let window = MockWindow(isVisible: false)
@@ -250,7 +255,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             window: window,
             mainViewController: mainViewController,
             fireViewModel: fireCoordinator.fireViewModel,
-            visualStyle: NSApp.delegateTyped.visualStyle
+            themeManager: MockThemeManager()
         )
         mainWindowController.window = window
         Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController

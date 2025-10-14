@@ -1,34 +1,34 @@
 // Push Notification-related pixel definitions
 {
-    'm_push-notification_local-provisional_inactive-user-tap': {
-        description: 'Fires when a user taps a local provisional push notification that was scheduled due to inactivity.',
-        owners: ['hanyutang-sandra'],
-        triggers: ['other'],
-        suffixes: ['form_factor'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
+    "m_push-notification_local-provisional_inactive-user-tap": {
+        "description": "Fires when a user taps a local provisional push notification that was scheduled due to inactivity.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
             {
-                key: 'daysInactive',
-                description: 'Number of days the user has been inactive',
-                type: 'integer',
-            },
-        ],
+                "key": "daysInactive",
+                "description": "Number of days the user has been inactive",
+                "type": "integer"
+            }
+        ]
     },
-    'm_push-notification_user-notification-authorization-status': {
-        description: 'Fires daily at launch with users current notification center authorization status. Currently accepting authorized and denied as status value.',
-        owners: ['hanyutang-sandra'],
-        triggers: ['other'],
-        suffixes: ['form_factor', 'daily'],
-        parameters: [
-            'appVersion',
-            'pixelSource',
+    "m_push-notification_user-notification-authorization-status": {
+        "description": "Fires daily at launch with users current notification center authorization status. Currently accepting authorized and denied as status value.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
             {
-                key: 'status',
-                description: 'UNNotificationAuthorizationStatus string',
-                type: 'string',
-                enum: ['denied', 'authorized'],
-            },
-        ],
-    },
+                "key": "status",
+                "description": "UNNotificationAuthorizationStatus string",
+                "type": "string",
+                "enum": ["denied", "authorized"]
+            }
+        ]
+    }
 }

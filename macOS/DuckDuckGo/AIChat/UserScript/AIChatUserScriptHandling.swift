@@ -43,13 +43,14 @@ protocol AIChatUserScriptHandling {
     @MainActor func openTranslationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
     var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> { get }
 
-    func getPageContext(params: Any, message: UserScriptMessage) -> Encodable?
+    func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
     var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
+    var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }
 
     var messageHandling: AIChatMessageHandling { get }
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
-    func submitPageContext(_ pageContext: AIChatPageContextData?)
+    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -60,10 +61,12 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never>
     public let pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never>
     public let pageContextRequestedPublisher: AnyPublisher<Void, Never>
+    public let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
     private let pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
+    private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
     private let storage: AIChatPreferencesStorage
     private let windowControllersManager: WindowControllersManagerProtocol
     private let notificationCenter: NotificationCenter
@@ -87,6 +90,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
         self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
+        self.chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
     }
 
     enum AIChatKeys {
@@ -118,16 +122,18 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         messageHandling.getDataForMessageType(.nativePrompt)
     }
 
-    func getPageContext(params: Any, message: any UserScriptMessage) -> Encodable? {
+    func getAIChatPageContext(params: Any, message: any UserScriptMessage) -> Encodable? {
         guard let payload: GetPageContext = DecodableHelper.decode(from: params) else {
             return nil
         }
 
-        let data = messageHandling.getDataForMessageType(.pageContext) as? PageContextPayload
-        if data?.serializedPageData == nil, payload.explicitConsent {
+        let pageContext = messageHandling.getDataForMessageType(.pageContext) as? AIChatPageContextData
+
+        if pageContext == nil, payload.reason == "userAction" {
             pageContextRequestedSubject.send()
         }
-        return data
+
+        return PageContextResponse(pageContext: pageContext)
     }
 
     @MainActor
@@ -151,6 +157,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         else { return nil }
 
         messageHandling.setData(data, forMessageType: .chatRestorationData)
+        chatRestorationDataSubject.send(data)
         return nil
     }
 
@@ -163,6 +170,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     public func removeChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
         messageHandling.setData(nil, forMessageType: .chatRestorationData)
+        chatRestorationDataSubject.send(nil)
         return nil
     }
 
@@ -202,7 +210,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         aiChatNativePromptSubject.send(prompt)
     }
 
-    func submitPageContext(_ pageContext: AIChatPageContextData?) {
+    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
         pageContextSubject.send(pageContext)
     }
 
@@ -255,7 +263,7 @@ extension AIChatUserScriptHandler {
     }
 
     struct GetPageContext: Codable, Equatable {
-        let explicitConsent: Bool
+        let reason: String
     }
 
     struct TogglePageContextTelemetry: Codable, Equatable {

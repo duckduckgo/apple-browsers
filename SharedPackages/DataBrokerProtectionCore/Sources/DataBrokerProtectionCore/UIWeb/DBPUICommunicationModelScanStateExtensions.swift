@@ -23,8 +23,9 @@ public extension DBPUIInitialScanState {
 
     init(from brokerProfileQueryData: [BrokerProfileQueryData]) {
         let withoutDeprecated = brokerProfileQueryData.filter { !$0.profileQuery.deprecated }
+        let withoutRemoved = withoutDeprecated.filter { !$0.dataBroker.isRemoved }
 
-        let groupedByBroker = Dictionary(grouping: withoutDeprecated, by: { $0.dataBroker.name }).values
+        let groupedByBroker = Dictionary(grouping: withoutRemoved, by: { $0.dataBroker.name }).values
 
         // totalScans is the overall number of brokers (including only currently extant mirrorSites)
         let totalScans = groupedByBroker.reduce(0) { accumulator, brokerQueryDataArray in
@@ -43,11 +44,15 @@ public extension DBPUIInitialScanState {
         }
 
         // currentScans is the number that have been fully or partially scanned
+        // scanProgress must have removed brokers filtered out
+        // https://app.asana.com/1/137249556945/task/1211375571700466/comment/1211467916936711
         self.scanProgress = DBPUIScanProgress(currentScans: partiallyScannedBrokers.completeBrokerScansCount,
                                               totalScans: totalScans,
                                               scannedBrokers: partiallyScannedBrokers)
 
-        self.resultsFound = DBPUIDataBrokerProfileMatch.profileMatches(from: withoutDeprecated)
+        // resultsFound must have removed brokers filtered out
+        // https://app.asana.com/1/137249556945/project/1203581873609357/task/1211564057688647
+        self.resultsFound = DBPUIDataBrokerProfileMatch.profileMatches(from: withoutRemoved)
     }
 }
 
@@ -136,10 +141,15 @@ public extension DBPUIScanAndOptOutMaintenanceState {
     private static func getNextScansInformation(brokerProfileQueryData: [BrokerProfileQueryData],
                                                 currentDate: Date = Date()) -> DBPUIScanDate {
         let eightDaysAfterToday = currentDate.addingTimeInterval(8 * 24 * 60 * 60)
-        let brokers = brokerProfileQueryData.uiBrokersSortedByScanPreferredRunDateWhereDateIsBetween(earlierDate: currentDate,
-                                                                                                     laterDate: eightDaysAfterToday)
 
-        let earliestScanPreferredRunDate = brokerProfileQueryData.earliestScanPreferredRunDate() ?? currentDate
+        // Next scans must have removed brokers filtered out when sent to the Web UI
+        // https://app.asana.com/1/137249556945/task/1211375571700466/comment/1211467916936711
+        let nonRemovedBrokerProfileQueryData = brokerProfileQueryData.filter { !$0.dataBroker.isRemoved }
+        let brokers = nonRemovedBrokerProfileQueryData
+            .uiBrokersSortedByScanPreferredRunDateWhereDateIsBetween(earlierDate: currentDate,
+                                                                     laterDate: eightDaysAfterToday)
+
+        let earliestScanPreferredRunDate = nonRemovedBrokerProfileQueryData.earliestScanPreferredRunDate() ?? currentDate
 
         return DBPUIScanDate(date: earliestScanPreferredRunDate.timeIntervalSince1970, dataBrokers: brokers)
     }

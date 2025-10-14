@@ -57,6 +57,12 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: Address bar shortcut for AI Chat is turned off
     case aiChatSettingsAddressBarShortcutTurnedOff
 
+    /// Event Trigger: Address bar typing shortcut for AI Chat is turned on
+    case aiChatSettingsAddressBarTypingShortcutTurnedOn
+
+    /// Event Trigger: Address bar typing shortcut for AI Chat is turned off
+    case aiChatSettingsAddressBarTypingShortcutTurnedOff
+
     /// Event Trigger: Application menu shortcut for AI Chat is turned off
     case aiChatSettingsApplicationMenuShortcutTurnedOff
 
@@ -76,7 +82,7 @@ enum AIChatPixel: PixelKitEvent {
     // MARK: - Sidebar
 
     /// Event Trigger: User opens a tab sidebar
-    case aiChatSidebarOpened(source: AIChatSidebarOpenSource, shouldAutomaticallySendPageContext: Bool?)
+    case aiChatSidebarOpened(source: AIChatSidebarOpenSource, shouldAutomaticallySendPageContext: Bool?, minutesSinceSidebarHidden: Int?)
 
     /// Event Trigger: User closes a tab sidebar
     case aiChatSidebarClosed(source: AIChatSidebarCloseSource)
@@ -130,6 +136,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_settings_addressbar_on"
         case .aiChatSettingsAddressBarShortcutTurnedOff:
             return "aichat_settings_addressbar_off"
+        case .aiChatSettingsAddressBarTypingShortcutTurnedOn:
+            return "aichat_settings_addressbar_typing_on"
+        case .aiChatSettingsAddressBarTypingShortcutTurnedOff:
+            return "aichat_settings_addressbar_typing_off"
         case .aiChatSettingsApplicationMenuShortcutTurnedOff:
             return "aichat_settings_application_menu_off"
         case .aiChatSettingsApplicationMenuShortcutTurnedOn:
@@ -172,6 +182,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSettingsNewTabPageShortcutTurnedOff,
                 .aiChatSettingsAddressBarShortcutTurnedOn,
                 .aiChatSettingsAddressBarShortcutTurnedOff,
+                .aiChatSettingsAddressBarTypingShortcutTurnedOn,
+                .aiChatSettingsAddressBarTypingShortcutTurnedOff,
                 .aiChatSettingsApplicationMenuShortcutTurnedOff,
                 .aiChatSettingsApplicationMenuShortcutTurnedOn,
                 .aiChatSettingsDisplayed,
@@ -183,10 +195,13 @@ enum AIChatPixel: PixelKitEvent {
             return nil
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
-        case .aiChatSidebarOpened(let source, let shouldAutomaticallySendPageContext):
+        case .aiChatSidebarOpened(let source, let shouldAutomaticallySendPageContext, let minutesSinceSidebarHidden):
             var params = ["source": source.rawValue]
             if let shouldAutomaticallySendPageContext {
                 params["automaticPageContext"] = String(shouldAutomaticallySendPageContext)
+            }
+            if let minutesSinceSidebarHidden {
+                params["minutesSinceSidebarHidden"] = String(minutesSinceSidebarHidden)
             }
             return params
         case .aiChatSidebarClosed(let source):

@@ -74,7 +74,7 @@ extension FireProtocol {
     }
 
     @MainActor
-    func burnEntity(_ entity: Fire.BurningEntity, completion: (() -> Void)? = nil) {
+    func burnEntity(_ entity: Fire.BurningEntity, completion: (@MainActor () -> Void)? = nil) {
         burnEntity(entity, includingHistory: true, includingChatHistory: false, completion: completion)
     }
 
@@ -278,7 +278,7 @@ final class Fire: FireProtocol {
     func burnEntity(_ entity: BurningEntity,
                     includingHistory: Bool,
                     includingChatHistory: Bool,
-                    completion: (() -> Void)?) {
+                    completion: (@MainActor () -> Void)?) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()

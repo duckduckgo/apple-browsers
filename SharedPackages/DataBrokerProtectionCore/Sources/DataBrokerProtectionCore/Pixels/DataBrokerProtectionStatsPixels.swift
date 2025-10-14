@@ -206,6 +206,12 @@ extension DataBrokerProtectionStatsPixels {
             return hasEnoughTimePassedToFirePixel && !optOutJob.twentyOneDaysConfirmationPixelFired
         }
 
+        let fortyTwoDayOldPlusOptOutsThatHaveNotFiredPixel = successfullySubmittedOptOuts.filter { optOutJob in
+            guard let submittedSuccessfullyDate = optOutJob.submittedSuccessfullyDate else { return false }
+            let hasEnoughTimePassedToFirePixel = submittedSuccessfullyDate.hasBeenExceededByNumberOfDays(42)
+            return hasEnoughTimePassedToFirePixel && !optOutJob.fortyTwoDaysConfirmationPixelFired
+        }
+
         let brokerIDsToURLs = brokerProfileQueryData.reduce(into: [Int64: String]()) {
             // Really the ID should never be zero
             $0[$1.dataBroker.id ?? -1] = $1.dataBroker.url
@@ -261,6 +267,23 @@ extension DataBrokerProtectionStatsPixels {
                                                                     forBrokerId: optOutJob.brokerId,
                                                                     profileQueryId: optOutJob.profileQueryId,
                                                                     extractedProfileId: extractedProfileID)
+        }
+
+        for optOutJob in fortyTwoDayOldPlusOptOutsThatHaveNotFiredPixel {
+            let brokerURL = brokerIDsToURLs[optOutJob.brokerId] ?? ""
+            let isOptOutConfirmed = optOutJob.extractedProfile.removedDate != nil
+
+            if isOptOutConfirmed {
+                handler.fire(.optOutJobAt42DaysConfirmed(dataBroker: brokerURL))
+            } else {
+                handler.fire(.optOutJobAt42DaysUnconfirmed(dataBroker: brokerURL))
+            }
+
+            guard let extractedProfileID = optOutJob.extractedProfile.id else { continue }
+            try? database.updateFortyTwoDaysConfirmationPixelFired(true,
+                                                                   forBrokerId: optOutJob.brokerId,
+                                                                   profileQueryId: optOutJob.profileQueryId,
+                                                                   extractedProfileId: extractedProfileID)
         }
     }
 }

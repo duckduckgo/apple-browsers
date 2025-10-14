@@ -39,6 +39,36 @@
             }
         ]
     },
+    "m_ios_dbp_optoutjob_at-42-days_confirmed": {
+        "description": "Fired when a confirmed opt-out reaches 42 days since submission",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "data_broker",
+                "description": "The URL of the data broker the opt out was acting on",
+                "type": "string"
+            }
+        ]
+    },
+    "m_ios_dbp_optoutjob_at-42-days_unconfirmed": {
+        "description": "Fired when an opt-out remains unconfirmed 42 days after submission",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "data_broker",
+                "description": "The URL of the data broker the opt out was acting on",
+                "type": "string"
+            }
+        ]
+    },
     "m_ios_dbp_optout_stage_condition-not-found": {
         "description": "Fired when DBP runs a condition action and its expectation is not met",
         "owners": ["samsymons", "quanganhdo"],

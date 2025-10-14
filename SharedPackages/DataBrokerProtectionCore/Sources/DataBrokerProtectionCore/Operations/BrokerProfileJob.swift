@@ -208,9 +208,19 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
             } catch {
                 Logger.dataBrokerProtection.error("Error: \(error.localizedDescription, privacy: .public)")
 
+                let stepType: StepType? = {
+                    switch jobData {
+                    case is ScanJobData: return .scan
+                    case is OptOutJobData: return .optOut
+                    default: return nil
+                    }
+                }()
+                let dataBroker = brokerProfileQueriesData.first?.dataBroker
                 errorDelegate?.dataBrokerOperationDidError(error,
-                                                           withBrokerURL: brokerProfileQueriesData.first?.dataBroker.url,
-                                                           version: brokerProfileQueriesData.first?.dataBroker.version)
+                                                           withBrokerURL: dataBroker?.url,
+                                                           version: dataBroker?.url,
+                                                           stepType: stepType,
+                                                           dataBrokerParent: dataBroker?.parent)
             }
         }
     }

@@ -323,6 +323,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                 scheduleAnimation {
                     self.updateDaxVisibility()
                     self.updateSwipeContainerSafeArea()
+                    self.view.layoutIfNeeded()
                 }
 
                 self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)

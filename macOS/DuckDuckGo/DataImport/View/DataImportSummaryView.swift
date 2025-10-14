@@ -50,6 +50,9 @@ struct DataImportSummaryView: View {
 
                 case .fileImportComplete(.passwords):
                     Text("Password import complete. You can now delete the saved passwords file.", comment: "message about Passwords Data Import completion")
+
+                case .fileImportComplete(.creditCards), .importComplete(.creditCards):
+                    Text("Credit cards import complete. You can now delete the saved credit cards file.", comment: "message about Credit Cards Data Import completion")
                 }
             }().padding(.bottom, 4)
 
@@ -95,6 +98,23 @@ struct DataImportSummaryView: View {
                 }
             }
             .applyConditionalModifiers(!model.resultsFiltered(by: .passwords).isEmpty)
+
+            ForEach(model.resultsFiltered(by: .creditCards), id: \.dataType) { item in
+                switch item.result {
+                case (.success(let summary)):
+                    creditCardsSuccessSummary(summary)
+                case (.failure(let error)) where error.errorType == .noData:
+                    importSummaryRow(image: .failed,
+                                     text: "Credit Cards:",
+                                     comment: "Data import summary format of how many credit cards were successfully imported.",
+                                     count: zero)
+                case (.failure):
+                    importSummaryRow(image: .failed,
+                                     text: "Credit card import failed.",
+                                     comment: "Data import summary message of failed credit card import.",
+                                     count: nil)
+                }
+            }.applyConditionalModifiers(!model.resultsFiltered(by: .creditCards).isEmpty)
 
             if !model.resultsFiltered(by: .passwords).isEmpty {
                 importPasswordSubtitle()
@@ -144,6 +164,29 @@ private func passwordsSuccessSummary(_ summary: DataImport.DataTypeSummary) -> s
             importSummaryRow(image: .failed,
                              text: "Duplicates Skipped: ",
                              comment: "Data import summary format of how many passwords (%lld) were skipped due to being duplicates.",
+                             count: summary.duplicate)
+        }
+    }
+}
+
+private func creditCardsSuccessSummary(_ summary: DataImport.DataTypeSummary) -> some View {
+    VStack {
+        importSummaryRow(image: .success,
+                         text: "Credit Cards:",
+                         comment: "Data import summary format of how many credit cards (%lld) were successfully imported.",
+                         count: summary.successful)
+        if summary.failed > 0 {
+            lineSeparator()
+            importSummaryRow(image: .failed,
+                             text: "Credit card import failed: ",
+                             comment: "Data import summary format of how many credit cards (%lld) failed to import.",
+                             count: summary.failed)
+        }
+        if summary.duplicate > 0 {
+            lineSeparator()
+            importSummaryRow(image: .failed,
+                             text: "Duplicates Skipped: ",
+                             comment: "Data import summary format of how many credit cards (%lld) were skipped due to being duplicates.",
                              count: summary.duplicate)
         }
     }

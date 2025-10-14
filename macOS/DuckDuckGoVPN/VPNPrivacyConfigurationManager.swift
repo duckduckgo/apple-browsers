@@ -97,7 +97,7 @@ public final class VPNPrivacyConfigurationManager: PrivacyConfigurationManaging 
                 let configData = try PrivacyConfigurationData(data: data)
                 fetchedConfigData = (data, configData, etag)
             } catch {
-                let event = NetworkProtectionPixelEvent.couldNotParseConfiguration(configuration: .privacyConfiguration, error:error)
+                let event = NetworkProtectionPixelEvent.couldNotParseConfiguration(configuration: .privacyConfiguration, error: error)
                 PixelKit.fire(event, frequency: .dailyAndCount)
                 fetchedConfigData = nil
                 return .embeddedFallback

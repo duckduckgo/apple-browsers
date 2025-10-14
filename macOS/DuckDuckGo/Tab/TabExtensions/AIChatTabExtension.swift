@@ -21,6 +21,7 @@ import Foundation
 import Combine
 import WebKit
 import AIChat
+import BrowserServicesKit
 
 protocol AIChatUserScriptProvider {
     var aiChatUserScript: AIChatUserScript? { get }
@@ -33,6 +34,7 @@ final class AIChatTabExtension {
     private var userScriptCancellables = Set<AnyCancellable>()
     private let isLoadedInSidebar: Bool
     private weak var webView: WKWebView?
+    private let featureDiscovery: FeatureDiscovery
 
     private(set) weak var aiChatUserScript: AIChatUserScript? {
         didSet {
@@ -42,8 +44,10 @@ final class AIChatTabExtension {
 
     init(scriptsPublisher: some Publisher<some AIChatUserScriptProvider, Never>,
          webViewPublisher: some Publisher<WKWebView, Never>,
-         isLoadedInSidebar: Bool) {
+         isLoadedInSidebar: Bool,
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.isLoadedInSidebar = isLoadedInSidebar
+        self.featureDiscovery = featureDiscovery
         pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
         chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
 
@@ -74,9 +78,9 @@ final class AIChatTabExtension {
                 }
 
                 if let pageContext = self?.temporaryPageContext {
-                    /// See the comment in `self.submitPageContext` for the explanation of why we're calling user script twice.
+                    /// See the comment in `self.submitAIChatPageContext` for the explanation of why we're calling user script twice.
                     self?.aiChatUserScript?.handler.messageHandling.setData(pageContext, forMessageType: .pageContext)
-                    self?.aiChatUserScript?.handler.submitPageContext(pageContext)
+                    self?.aiChatUserScript?.handler.submitAIChatPageContext(pageContext)
                     self?.temporaryPageContext = nil
                 }
             }
@@ -142,7 +146,7 @@ final class AIChatTabExtension {
     }
 
     private var temporaryPageContext: AIChatPageContextData?
-    func submitPageContext(_ pageContext: AIChatPageContextData?) {
+    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
         // Page Context functionality is only for the sidebar.
         guard isLoadedInSidebar else {
             return
@@ -155,16 +159,16 @@ final class AIChatTabExtension {
         }
 
         ///
-        /// We're both making the data available for `getPageContext` (by storing it in the page context handler)
-        /// and calling `submitPageContext`, because when sidebar is just presented, it's not ready to receive
-        /// `submitPageContext` and will call `getPageContext` at a later time (when fully initialized).
-        /// After that it will exclusively use `submitPageContext`.
+        /// We're both making the data available for `getAIChatPageContext` (by storing it in the page context handler)
+        /// and calling `submitAIChatPageContext`, because when sidebar is just presented, it's not ready to receive
+        /// `submitAIChatPageContext` and will call `getAIChatPageContext` at a later time (when fully initialized).
+        /// After that it will exclusively use `submitAIChatPageContext`.
         ///
-        /// This can be optimized later to only call one function, depending on whether `getPageContext`
+        /// This can be optimized later to only call one function, depending on whether `getAIChatPageContext`
         /// was received by this user script.
         ///
         aiChatUserScript.handler.messageHandling.setData(pageContext, forMessageType: .pageContext)
-        aiChatUserScript.handler.submitPageContext(pageContext)
+        aiChatUserScript.handler.submitAIChatPageContext(pageContext)
     }
 }
 
@@ -183,6 +187,12 @@ extension AIChatTabExtension: NavigationResponder {
         tabCollectionViewModel.insertOrAppendNewTab(.url(navigationAction.url, source: .link))
         return .cancel
     }
+
+    func navigationDidFinish(_ navigation: Navigation) {
+        if navigation.url.isDuckAIURL {
+            featureDiscovery.setWasUsedBefore(.aiChat)
+        }
+    }
 }
 
 protocol AIChatProtocol: AnyObject, NavigationResponder {
@@ -190,7 +200,7 @@ protocol AIChatProtocol: AnyObject, NavigationResponder {
     func setAIChatNativeHandoffData(payload: AIChatPayload)
     func setAIChatRestorationData(_ data: AIChatRestorationData?)
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
-    func submitPageContext(_ pageContext: AIChatPageContextData?)
+    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
 
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }

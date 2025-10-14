@@ -31,6 +31,7 @@ public class AppUserDefaults: AppSettings {
         public static let favoritesDisplayModeChange = Notification.Name("com.duckduckgo.app.FavoritesDisplayModeChange")
         public static let syncPausedStateChanged = SyncBookmarksAdapter.syncBookmarksPausedStateChanged
         public static let syncCredentialsPausedStateChanged = SyncCredentialsAdapter.syncCredentialsPausedStateChanged
+        public static let syncCreditCardsPausedStateChanged = SyncCreditCardsAdapter.syncCreditCardsPausedStateChanged
         public static let autofillEnabledChange = Notification.Name("com.duckduckgo.app.AutofillEnabledChange")
         public static let didVerifyInternalUser = Notification.Name("com.duckduckgo.app.DidVerifyInternalUser")
         public static let inspectableWebViewsToggled = Notification.Name("com.duckduckgo.app.DidToggleInspectableWebViews")

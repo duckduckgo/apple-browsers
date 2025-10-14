@@ -1,0 +1,18 @@
+{
+    "m_webview_external-scheme-navigation_x-safari-https_continue": {
+        "description": "Fires when the WebView attempts to navigate to x-safari-https scheme and user decides to leave our browser",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2025-11-21"
+    },
+    "m_webview_external-scheme-navigation_x-safari-https_cancel": {
+        "description": "Fires when the WebView attempts to navigate to x-safari-https scheme and user decides to not leave our browser",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2025-11-21"
+    }
+}

@@ -46,6 +46,7 @@ extension Preferences {
         let action: () -> Void
         let settingsIconProvider: SettingsIconsProviding
         let isNew: Bool
+        var themeManager: ThemeManager
         @ObservedObject var protectionStatus: PrivacyProtectionStatus
 
         init(pane: PreferencePaneIdentifier,
@@ -54,6 +55,7 @@ extension Preferences {
              status: PrivacyProtectionStatus?,
              settingsIconProvider: SettingsIconsProviding,
              isNew: Bool = false,
+             themeManager: ThemeManager,
              action: @escaping () -> Void) {
             self.pane = pane
             self.isSelected = isSelected
@@ -62,6 +64,7 @@ extension Preferences {
             self.protectionStatus = status ?? PrivacyProtectionStatus()
             self.settingsIconProvider = settingsIconProvider
             self.isNew = isNew
+            self.themeManager = themeManager
         }
 
         var body: some View {
@@ -93,7 +96,7 @@ extension Preferences {
                 .lineLimit(1)
                 .truncationMode(.tail)
             }
-            .buttonStyle(SidebarItemButtonStyle(isSelected: isSelected))
+            .buttonStyle(SidebarItemButtonStyle(isSelected: isSelected, theme: themeManager.theme))
             .accessibilityIdentifier("PreferencesSidebar.\(pane.id.rawValue)Button")
             .disabled(!isEnabled)
         }
@@ -141,6 +144,7 @@ extension Preferences {
     }
 
     struct Sidebar: View {
+        @EnvironmentObject var themeManager: ThemeManager
         @EnvironmentObject var model: PreferencesSidebarModel
 
         var body: some View {
@@ -175,6 +179,7 @@ extension Preferences {
                                 status: model.protectionStatus(for: pane),
                                 settingsIconProvider: settingsIconProvider,
                                 isNew: model.isPaneNew(pane: pane),
+                                themeManager: themeManager,
                                 action: {
                                     model.selectPane(pane)
                                 })
@@ -190,17 +195,22 @@ extension Preferences {
     private struct SidebarItemButtonStyle: ButtonStyle {
 
         let isSelected: Bool
+        let theme: ThemeStyleProviding
 
         @State private var isHovered: Bool = false
+
+        private var colorsProvider: ColorsProviding {
+            theme.colorsProvider
+        }
 
         func makeBody(configuration: Self.Configuration) -> some View {
 
             let bgColor: Color = {
                 if isSelected {
-                    return .rowHover
+                    return Color(colorsProvider.buttonMouseDownColor)
                 }
                 if isHovered {
-                    return .buttonMouseOver
+                    return Color(colorsProvider.buttonMouseOverColor)
                 }
                 return Color(NSColor.clear.withAlphaComponent(0.001))
             }()

@@ -167,6 +167,9 @@ public class SitePerformanceTester: NSObject {
 
         // Only collect metrics if navigation completed successfully
         if delegate.isComplete && delegate.error == nil {
+            // Wait additional 2 seconds for page stabilization (lazy content, layout shifts)
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+
             return await collectPerformanceMetrics()
         }
 
@@ -203,8 +206,11 @@ public class SitePerformanceTester: NSObject {
         }
 
         do {
-            let result: Any? = try await webView.evaluateJavaScript(script)
-            if let metrics = result as? [String: Any] {
+            // Load the function definition and then call it
+            let fullScript = script + "; collectPerformanceMetrics();"
+
+            let result: Any? = try await webView.evaluateJavaScript(fullScript)
+           if let metrics = result as? [String: Any] {
                 logger.debug("Raw metrics collected: \(metrics)")
 
                 let detailedMetrics = DetailedPerformanceMetrics(
@@ -213,7 +219,6 @@ public class SitePerformanceTester: NSObject {
                     domContentLoaded: (metrics["domContentLoaded"] as? Double ?? 0) / 1000.0,
                     domInteractive: (metrics["domInteractive"] as? Double ?? 0) / 1000.0,
                     firstContentfulPaint: (metrics["fcp"] as? Double ?? 0) / 1000.0,
-                    largestContentfulPaint: nil, // LCP not available in this context
                     timeToFirstByte: (metrics["ttfb"] as? Double ?? 0) / 1000.0,
                     responseTime: (metrics["responseTime"] as? Double ?? 0) / 1000.0,
                     serverTime: (metrics["serverTime"] as? Double ?? 0) / 1000.0,
@@ -240,7 +245,6 @@ public class SitePerformanceTester: NSObject {
         return nil
     }
 
-    // DetailedMetrics struct removed - using DetailedPerformanceMetrics from Models
 }
 
 private class NavigationDelegate: NSObject, WKNavigationDelegate {

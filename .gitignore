@@ -70,3 +70,4 @@ default.profraw
 # xcode-build-server files
 buildServer.json
 .compile
+/macOS/LocalPackages/PerformanceTest/Sources/PerformanceTest/SafariTestRunner/src/constants/metricsScript.js

@@ -47,11 +47,8 @@ final class BookmarkManagementSidebarViewController: NSViewController {
     private let dragDropManager: BookmarkDragDropManager
     private let treeControllerDataSource: BookmarkSidebarTreeController
 
-    private var themeCancellable: AnyCancellable?
-    private let themeManager: ThemeManaging
-    private var theme: ThemeStyleProviding {
-        themeManager.theme
-    }
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
 
     private lazy var tabSwitcherButton = NSPopUpButton()
     private lazy var scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 232, height: 410))
@@ -301,16 +298,12 @@ final class BookmarkManagementSidebarViewController: NSViewController {
 
         outlineView.selectRowIndexes(indexes, byExtendingSelection: false)
     }
+}
 
-    private func subscribeToThemeChanges() {
-        themeCancellable = themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] style in
-                self?.applyThemeStyle(theme: style)
-            }
-    }
+// MARK: - ThemeUpdateListening
+extension BookmarkManagementSidebarViewController: ThemeUpdateListening {
 
-    private func applyThemeStyle(theme: ThemeStyleProviding) {
+    func applyThemeStyle(theme: ThemeStyleProviding) {
         guard let contentView = view as? ColorView else {
             assertionFailure()
             return

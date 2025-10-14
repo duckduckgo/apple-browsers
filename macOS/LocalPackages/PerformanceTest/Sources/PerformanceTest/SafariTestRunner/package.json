@@ -1,0 +1,50 @@
+{
+  "name": "@duckduckgo/safari-test-runner",
+  "version": "2.0.0",
+  "description": "Production-ready Safari performance testing tool",
+  "main": "./src/core/PerformanceTestRunner.js",
+  "bin": {
+    "safari-performance-test": "./bin/safari-performance-test"
+  },
+  "scripts": {
+    "prepare": "npm run build:metrics",
+    "build:metrics": "node scripts/build-metrics-module.js",
+    "start": "./bin/safari-performance-test",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/ tests/",
+    "format": "prettier --write 'src/**/*.js' 'tests/**/*.js'"
+  },
+  "dependencies": {
+    "selenium-webdriver": "^4.17.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.1",
+    "@types/node": "^20.10.5"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "src/",
+    "bin/",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "safari",
+    "performance",
+    "testing",
+    "webdriver",
+    "metrics"
+  ],
+  "author": "DuckDuckGo",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/duckduckgo/macos-browser.git",
+    "directory": "macOS/LocalPackages/PerformanceTest/Sources/PerformanceTest/SafariTestRunner"
+  }
+}

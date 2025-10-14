@@ -30,7 +30,9 @@ final class MainWindowController: NSWindowController {
     let fireWindowSession: FireWindowSession?
     private let appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences
     let fullscreenController = FullscreenController()
-    private let themeManager: ThemeManaging
+
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
 
     var mainViewController: MainViewController {
         // swiftlint:disable force_cast
@@ -79,7 +81,7 @@ final class MainWindowController: NSWindowController {
         subscribeToKeyWindow()
         subscribeToThemeChanges()
 
-        applyThemeStyles()
+        applyThemeStyle()
 
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
             webExtensionManager.eventsListener.didOpenWindow(self)
@@ -165,24 +167,6 @@ final class MainWindowController: NSWindowController {
                 self?.windowDidResignKeyNotification(notification)
             }
             .store(in: &cancellables)
-    }
-
-    private func subscribeToThemeChanges() {
-        themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                self?.applyThemeStyles(theme: theme)
-            }
-            .store(in: &cancellables)
-    }
-
-    private func applyThemeStyles() {
-        applyThemeStyles(theme: themeManager.theme)
-    }
-
-    private func applyThemeStyles(theme: ThemeStyleProviding) {
-        // Prevent a 2px white line from appearing above the tab bar on macOS 26
-        window?.backgroundColor = theme.colorsProvider.baseBackgroundColor
     }
 
     @objc
@@ -326,6 +310,14 @@ final class MainWindowController: NSWindowController {
         Application.appDelegate.windowControllersManager.register(self)
     }
 
+}
+
+extension MainWindowController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        // Prevent a 2px white line from appearing above the tab bar on macOS 26
+        window?.backgroundColor = theme.colorsProvider.baseBackgroundColor
+    }
 }
 
 extension MainWindowController: NSWindowDelegate {

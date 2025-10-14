@@ -50,9 +50,9 @@ public extension DBPUIInitialScanState {
                                               totalScans: totalScans,
                                               scannedBrokers: partiallyScannedBrokers)
 
-        // resultsFound should continue to have records from removed brokers
-        // https://app.asana.com/1/137249556945/task/1211375571700466/comment/1211467916936711
-        self.resultsFound = DBPUIDataBrokerProfileMatch.profileMatches(from: withoutDeprecated)
+        // resultsFound must have removed brokers filtered out
+        // https://app.asana.com/1/137249556945/project/1203581873609357/task/1211564057688647
+        self.resultsFound = DBPUIDataBrokerProfileMatch.profileMatches(from: withoutRemoved)
     }
 }
 

@@ -465,7 +465,8 @@ func fileImportInstructionsBuilder(source: DataImport.Source, dataType: DataImpo
         (.onePassword8, .bookmarks),
         (.bitwarden, .bookmarks),
         (.lastPass, .bookmarks),
-        (.csv, .bookmarks):
+        (.csv, .bookmarks),
+        (_, .creditCards):
         assertionFailure("Invalid source/dataType")
     }
 }
@@ -493,7 +494,8 @@ struct FileImportView: View {
                 switch dataType {
                 case .bookmarks:
                     Text("Import Bookmarks", comment: "Title of dialog with instruction for the user to import bookmarks from another browser")
-                case .passwords:
+                case .creditCards, // Credit cards not supported on this view. This will never happen; it's just to satisfy the compiler
+                        .passwords:
                     Text("Import Passwords", comment: "Title of dialog with instruction for the user to import passwords from another browser")
                 }
             }().bold()

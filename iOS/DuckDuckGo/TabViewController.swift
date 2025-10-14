@@ -157,6 +157,7 @@ class TabViewController: UIViewController {
     public var inferredOpenerContext: BrokenSiteReport.OpenerContext?
     private var refreshCountSinceLoad: Int = 0
     private var performanceMetrics: PerformanceMetricsSubfeature?
+    private var breakageReportingSubfeature: BreakageReportingSubfeature?
 
     private var detectedLoginURL: URL?
     private var fireproofingWorker: FireproofingWorking?
@@ -1285,6 +1286,7 @@ class TabViewController: UIViewController {
         
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: dontOpen, style: .cancel, handler: { _ in
+            self.reportExternalSchemePixelIfNeeded(url: url, openedExternally: false)
             if self.webView.url == nil {
                 self.delegate?.tabDidRequestClose(self)
             } else {
@@ -1292,6 +1294,7 @@ class TabViewController: UIViewController {
             }
         }))
         alert.addAction(UIAlertAction(title: open, style: .destructive, handler: { _ in
+            self.reportExternalSchemePixelIfNeeded(url: url, openedExternally: true)
             self.openExternally(url: url)
         }))
         delegate?.tab(self, didRequestPresentingAlert: alert)
@@ -1332,7 +1335,8 @@ class TabViewController: UIViewController {
                                                                      openerContext: inferredOpenerContext,
                                                                      vpnOn: netPConnected,
                                                                      userRefreshCount: refreshCountSinceLoad,
-                                                                     performanceMetrics: performanceMetrics)
+                                                                     performanceMetrics: performanceMetrics,
+                                                                     breakageReportingSubfeature: breakageReportingSubfeature)
     }
 
     public func print() {
@@ -2849,6 +2853,9 @@ extension TabViewController: UserContentControllerDelegate {
         
         performanceMetrics = PerformanceMetricsSubfeature(targetWebview: webView)
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: performanceMetrics!)
+        
+        breakageReportingSubfeature = BreakageReportingSubfeature(targetWebview: webView)
+        userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: breakageReportingSubfeature!)
 
         adClickAttributionLogic.onRulesChanged(latestRules: ContentBlocking.shared.contentBlockingManager.currentRules)
         
@@ -3605,6 +3612,7 @@ extension TabViewController: SaveCreditCardViewControllerDelegate {
             guard let self = self else { return }
             self.delegate?.tab(self, didRequestSettingsToCreditCards: card, source: .viewSavedCreditCardPrompt)
         })
+        syncService.scheduler.notifyDataChanged()
     }
     
     func saveCreditCardViewControllerConfirmKeepUsing(_ viewController: SaveCreditCardViewController) {
@@ -3734,6 +3742,16 @@ private extension TabViewController {
         }
 
         return didRestoreWebViewState
+    }
+
+    private func reportExternalSchemePixelIfNeeded(url: URL, openedExternally: Bool) {
+        guard url.scheme == "x-safari-https" else { return }
+
+        if openedExternally {
+            DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationXSafariHTTPSContinue)
+        } else {
+            DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationXSafariHTTPSCancel)
+        }
     }
 }
 

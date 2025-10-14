@@ -919,6 +919,10 @@ struct UserText {
     static let syncBookmarkPausedAlertDescription = NSLocalizedString("alert.sync-bookmarks-paused-description", value: "You've reached the maximum number of bookmarks. Please delete some bookmarks to resume sync.", comment: "Description for alert shown when sync bookmarks paused for too many items")
     static let syncCredentialsPausedAlertTitle = NSLocalizedString("alert.sync-credentials-paused-title", value: "Password Sync is Paused", comment: "Title for alert shown when sync credentials paused for too many items")
     static let syncCredentialsPausedAlertDescription = NSLocalizedString("alert.sync-credentials-paused-description", value: "You've reached the maximum number of passwords. Please delete some passwords to resume sync.", comment: "Description for alert shown when sync credentials paused for too many items")
+    static let syncCreditCardsPausedAlertTitle = NSLocalizedString("alert.sync-credit-cards-paused-title", value: "Credit Cards Sync is Paused", comment: "Title for alert shown when sync credit cards paused for too many items")
+    static let syncCreditCardsPausedAlertDescription = NSLocalizedString("alert.sync-credit-cards-paused-description", value: "You've reached the maximum number of credit cards. Please delete some to resume sync.", comment: "Description for alert shown when sync credit cards paused for too many items")
+    static let syncIdentitiesPausedAlertTitle = NSLocalizedString("alert.sync-identities-paused-title", value: "Identities Sync is Paused", comment: "Title for alert shown when sync identities paused for too many items")
+    static let syncIdentitiesPausedAlertDescription = NSLocalizedString("alert.sync-identities-paused-description", value: "You've reached the maximum number of identities. Please delete some to resume sync.", comment: "Description for alert shown when sync identities paused for too many items")
     static let syncPausedTitle = NSLocalizedString("alert.sync.warning.sync-paused", value: "Sync & Backup is Paused", comment: "Title of the warning message")
     static let syncUnavailableMessage = NSLocalizedString("alert.sync.warning.sync-unavailable-message", value: "Sorry, but Sync & Backup is currently unavailable. Please try again later.", comment: "Data syncing unavailable warning message")
     static let syncUnavailableMessageUpgradeRequired = NSLocalizedString("alert.sync.warning.data-syncing-disabled-upgrade-required", value: "Sorry, but Sync & Backup is no longer available in this app version. Please update DuckDuckGo to the latest version to continue.", comment: "Data syncing unavailable warning message")
@@ -928,6 +932,8 @@ struct UserText {
     static let syncTooManyRequestsAlertDescription = NSLocalizedString("alert.sync-too-many-requests-error-description", value: "Sync & Backup is temporarily unavailable.", comment: "Description for alert shown when sync error occurs because of too many requests")
     static let syncBookmarksBadRequestAlertDescription = NSLocalizedString("alert.sync-bookmarks-bad-data-error-description", value: "Some bookmarks are formatted incorrectly or too long and were not synced.", comment: "Description for alert shown when sync error occurs because of bad data")
     static let syncCredentialsBadRequestAlertDescription = NSLocalizedString("alert.sync-credentials-bad-data-error-description", value: "Some passwords are formatted incorrectly or too long and were not synced.", comment: "Description for alert shown when sync error occurs because of bad data")
+    static let syncCreditCardsBadRequestAlertDescription = NSLocalizedString("alert.sync-credit-cards-bad-data-error-description", value: "Some credit cards are formatted incorrectly or too long and were not synced.", comment: "Description for alert shown when sync error occurs because of bad data")
+    static let syncIdentitiesBadRequestAlertDescription = NSLocalizedString("alert.sync-identities-bad-data-error-description", value: "Some identities are formatted incorrectly or too long and were not synced.", comment: "Description for alert shown when sync error occurs because of bad data")
     static let syncErrorAlertAction  = NSLocalizedString("alert.sync-error-action", value: "Sync Settings", comment: "Sync error alert action button title, takes the user to the sync settings page.")
 
     // Sync Errors
@@ -935,12 +941,14 @@ struct UserText {
     static let syncErrorTitle = NSLocalizedString("alert.sync.warning.sync-error", value: "Sync Error", comment: "Title of the warning message that tells the user that there was an error with the sync feature.")
     static let bookmarksLimitExceededDescription = NSLocalizedString("prefrences.sync.bookmarks-limit-exceeded-description", value: "You've reached the maximum number of bookmarks. Please delete some to resume sync.", comment: "Description for sync bookmarks limits exceeded warning")
     static let credentialsLimitExceededDescription = NSLocalizedString("prefrences.sync.credentials-limit-exceeded-description", value: "You've reached the maximum number of passwords. Please delete some to resume sync.", comment: "Description for sync credentials limits exceeded warning")
+    static let creditCardsLimitExceededDescription = NSLocalizedString("prefrences.sync.credit-cards-limit-exceeded-description", value: "You've reached the maximum number of credit cards. Please delete some to resume sync.", comment: "Description for sync credit cards limits exceeded warning")
+    static let identitiesLimitExceededDescription = NSLocalizedString("prefrences.sync.identities-limit-exceeded-description", value: "You've reached the maximum number of identities. Please delete some to resume sync.", comment: "Description for sync identities limits exceeded warning")
     static let invalidLoginCredentialErrorDescription = NSLocalizedString("prefrences.sync.invalid-login-description", value: "Sync encountered an error. Try disabling sync on this device and then reconnect using another device or your recovery code.", comment: "Description invalid credentials error when syncing.")
     static let tooManyRequestsErrorDescription = NSLocalizedString("prefrences.sync.bookmarks.too-many-requests", value: "Sync & Backup is temporarily unavailable.", comment: "Description of too many requests error when syncing.")
     static let syncBookmarksBadRequestErrorDescription = NSLocalizedString("prefrences.sync.bad.request.description", value: "Some bookmarks are formatted incorrectly or too long and were not synced.", comment: "Description of incorrectly formatted data error when syncing.")
     static let syncCredentialsBadRequestErrorDescription = NSLocalizedString("prefrences.sync.credentials.bad.request.description", value: "Some passwords are formatted incorrectly or too long and were not synced.", comment: "Description of incorrectly formatted data error when syncing.")
-    static let bookmarksLimitExceededAction = NSLocalizedString("prefrences.sync.bookmarks-limit-exceeded-action", value: "Manage Bookmarks", comment: "Button title for sync bookmarks limits exceeded warning to go to manage bookmarks")
-    static let credentialsLimitExceededAction = NSLocalizedString("prefrences.sync.credentials-limit-exceeded-action", value: "Manage passwords…", comment: "Button title for sync credentials limits exceeded warning to go to manage passwords")
+    static let syncCreditCardsBadRequestErrorDescription = NSLocalizedString("prefrences.sync.credit-cards.bad.request.description", value: "Some credit cards are formatted incorrectly or too long and were not synced.", comment: "Description of incorrectly formatted data error when syncing.")
+    static let syncIdentitiesBadRequestErrorDescription = NSLocalizedString("prefrences.sync.identities.bad.request.description", value: "Some identities are formatted incorrectly or too long and were not synced.", comment: "Description of incorrectly formatted data error when syncing.")
 
     static let privacyProtections = NSLocalizedString("preferences.privacy-protections", value: "Privacy Protections", comment: "The section header in Preferences representing browser features related to privacy protection")
     static let subscriptionSettingsHeader = NSLocalizedString("preferences.subscription.header", value: "DuckDuckGo Subscription", comment: "The section header in Preferences representing subscription features")
@@ -1055,6 +1063,7 @@ struct UserText {
     static let themeLight = NSLocalizedString("preferences.appearance.theme.light", value: "Light", comment: "In the preferences for themes, the option to select for activating light mode in the app.")
     static let themeDark = NSLocalizedString("preferences.appearance.theme.dark", value: "Dark", comment: "In the preferences for themes, the option to select for activating dark mode in the app.")
     static let themeSystem = NSLocalizedString("preferences.appearance.theme.system", value: "System", comment: "In the preferences for themes, the option to select for use the change the mode based on the system preferences.")
+    static let themeReset = NSLocalizedString("preferences.appearance.theme.reset", value: "Reset Theme", comment: "In the preferences for themes, the option to reset to the Default Theme Colors.")
     static let addressBar = NSLocalizedString("preferences.appearance.address-bar", value: "Address Bar", comment: "Theme preferences")
     static let showAIChatInAddress = NSLocalizedString("preferences.appearance.show-aichat", value: "Duck.ai", comment: "Option to show AI Chat the address bar")
 
@@ -1121,6 +1130,8 @@ struct UserText {
     static func importLoginsSelectCSVFile(from source: DataImport.Source) -> String {
         String(format: NSLocalizedString("import.logins.select-csv-file.source", value: "Select %@ CSV File…", comment: "Button text for selecting a CSV file exported from (LastPass or Bitwarden or 1Password - %@)"), source.importSourceName)
     }
+    static let importDataSelectFileButtonTitle = NSLocalizedString("import.data.select-file.button.title", value: "Select File…", comment: "Button text for selecting a file")
+    static let importDragAndDropFile = NSLocalizedString("import.drag-and-drop-file", value: "Drag & drop your file here", comment: "Drag-and-drop instruction for importing a file")
 
     static func importNoDataBookmarksSubtitle(from source: DataImport.Source) -> String {
         String(format: NSLocalizedString("import.nodata.bookmarks.subtitle", value: "If you have %@ bookmarks, try importing them manually instead.", comment: "Data import error subtitle: suggestion to import Bookmarks manually by selecting a CSV or HTML file. The placeholder here represents the source browser, e.g Firefox."), source.importSourceName)
@@ -1132,6 +1143,8 @@ struct UserText {
     static let importLoginsPasswords = NSLocalizedString("import.logins.passwords", value: "Passwords", comment: "Title text for the Passwords import option")
     static let importLoginsPasswordsExplainer = NSLocalizedString("import.logins.passwords.explainer2", value: "Passwords are encrypted. Nobody but you can see your passwords, not even us. Find Passwords in DuckDuckGo Settings > Passwords & Autofill.", comment: "Explanatory text for the Passwords import option to alleviate security concerns and explain usage.")
     static let importLoginsPasswordsExplainerAutolockOff = NSLocalizedString("import.logins.passwords.explainer.autolock.off", value: "Passwords are encrypted. We recommend setting up Auto-lock to keep your passwords even more secure. Set it up in DuckDuckGo Settings > Passwords & Autofill.", comment: "Explanatory text for the Passwords import option to alleviate security concerns and explain usage when autolock is disabled")
+
+    static let importCreditCards = NSLocalizedString("import.credit-cards", value: "Credit Cards", comment: "Title text for the Credit Card import option")
 
     static let importBookmarksButtonTitle = NSLocalizedString("bookmarks.import.button.title", value: "Import", comment: "Button text to open bookmark import dialog")
     static let initiateImport = NSLocalizedString("import.data.initiate", value: "Import", comment: "Button text for importing data")
@@ -1243,6 +1256,15 @@ struct UserText {
             return String(format: localized, numberOfPasswords)
         } else {
             return NSLocalizedString("import.passwords.indefinite.progress.text", value: "Importing passwords…", comment: "Operation progress info message about indefinite number of passwords being imported")
+        }
+    }
+
+    static func importingCreditCards(_ numberOfCreditCards: Int?) -> String {
+        if let numberOfCreditCards, numberOfCreditCards > 0 {
+            let localized = NSLocalizedString("import.credit-cards.number.progress.text", value: "Importing credit cards (%d)…", comment: "Operation progress info message about %d number of credit cards being imported")
+            return String(format: localized, numberOfCreditCards)
+        } else {
+            return NSLocalizedString("import.credit-cards.indefinite.progress.text", value: "Importing credit cards…", comment: "Operation progress info message about indefinite number of passwords being imported")
         }
     }
 
@@ -1605,8 +1627,22 @@ struct UserText {
     static let manageFireproofSites = NSLocalizedString("fireproof.manage-sites", value: "Manage Fireproof Sites…", comment: "Fireproof settings button caption")
     static let autoClear = NSLocalizedString("auto.clear", value: "Auto-Clear", comment: "Header of a section in Settings. The setting configures clearing data automatically after quitting the app.")
     static let automaticallyClearData = NSLocalizedString("automatically.clear.data", value: "Automatically delete tabs and browsing data when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing data automatically after quitting the app.")
-    static let warnBeforeQuit = NSLocalizedString("warn.before.quit", value: "Warn me that tabs and data will be deleted when quitting", comment: "Label after the checkbox in Settings which configures a warning before clearing data on the application termination.")
-    static let warnBeforeQuitDialogHeader = NSLocalizedString("warn.before.quit.dialog.header", value: "Clear tabs and browsing data and quit DuckDuckGo?", comment: "A header of warning before clearing data on the application termination.")
+    // Strings to be translated: https://app.asana.com/1/137249556945/project/72649045549333/task/1211370814674975?focus=true
+    static let autoClearAIChatHistory = "Delete Duck.ai chat history when DuckDuckGo quits"
+    static func warnBeforeQuit(_ clearChats: Bool) -> String {
+        if clearChats {
+            return "Warn me that tabs, data, and chats will be deleted when quitting"
+        } else {
+            return NSLocalizedString("warn.before.quit", value: "Warn me that tabs and data will be deleted when quitting", comment: "Label after the checkbox in Settings which configures a warning before clearing data on the application termination.")
+        }
+    }
+    static func warnBeforeQuitDialogHeader(_ clearChats: Bool) -> String {
+        if clearChats {
+            return "Clear tabs, browsing data, and chats and quit DuckDuckGo?"
+        } else {
+            return NSLocalizedString("warn.before.quit.dialog.header", value: "Clear tabs and browsing data and quit DuckDuckGo?", comment: "A header of warning before clearing data on the application termination.")
+        }
+    }
     static let warnBeforeQuitDialogCheckboxMessage = NSLocalizedString("warn.before.quit.dialog.checkbox.message", value: "Warn me every time", comment: "A label after checkbox to configure the warning before clearing data on the application termination.")
     static let disableAutoClearToEnableSessionRestore = NSLocalizedString("disable.auto.clear.to.enable.session.restore",
                                                                           value: "Your session won't be restored if Auto-Clear is turned on. Fire Windows also won’t be restored.",
@@ -1816,9 +1852,11 @@ struct UserText {
 
     // Mark: Sync Promo
     static let syncPromoBookmarksTitle = NSLocalizedString("sync.promo.bookmarks.title", value: "Sync & Back Up Your Bookmarks", comment: "Title for the Sync Promotion banner")
-    static let syncPromoPasswordsTitle = NSLocalizedString("sync.promo.passwords.title", value: "Sync & Back Up Your Passwords  ", comment: "Title for the Sync Promotion banner")
-    static let syncPromoBookmarksMessage = NSLocalizedString("sync.promo.bookmarks.message", value: "No account needed. End-to-end encryption means nobody but you can see your bookmarks, not even us.", comment: "Message for the Sync Promotion banner when user has bookmarks that can be synced")
-    static let syncPromoPasswordsMessage = NSLocalizedString("sync.promo.passwords.message", value: "No account needed. End-to-end encryption means nobody but you can see your passwords, not even us.", comment: "Message for the Sync Promotion banner when user has passwords that can be synced")
+    static let syncPromoAutofillTitle = NSLocalizedString("sync.promo.autofill.title", value: "Sync & Back Up Your Autofill Data", comment: "Title for the Sync Promotion banner")
+    static let syncPromoPasswordsTitle = NSLocalizedString("sync.promo.passwords.title", value: "Sync & Back Up Your Passwords", comment: "Title for the Sync Promotion banner")
+    static let syncPromoCreditCardsTitle = NSLocalizedString("sync.promo.creditcards.title", value: "Sync & Back Up Your Credit Cards", comment: "Title for the Sync Promotion banner")
+    static let syncPromoIdentitiesTitle = NSLocalizedString("sync.promo.identities.title", value: "Sync & Back Up Your Identities", comment: "Title for the Sync Promotion banner")
+    static let syncPromoMessage = NSLocalizedString("sync.promo.message", value: "No account needed. End-to-end encrypted.", comment: "Message for the Sync Promotion banner when user has bookmarks that can be synced")
     static let syncPromoConfirmAction = NSLocalizedString("sync.promo.confirm.action", value: "Set Up Sync", comment: "Title for a button in the Sync Promotion banner to set up Sync")
     static let syncPromoDismissAction = NSLocalizedString("sync.promo.dismiss.action", value: "No Thanks", comment: "Title for a button in the Sync Promotion banner to dismiss Sync promotion banner")
     static let syncPromoSidePanelTitle = NSLocalizedString("sync.promo.passwords.side.panel.title", value: "Setup", comment: "Title for the Sync Promotion in passwords side panel")

@@ -51,13 +51,6 @@ final class ScriptSourceProviderTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger()
         )
-        let dataClearingPreferences = DataClearingPreferences(
-            persistor: MockFireButtonPreferencesPersistor(),
-            fireproofDomains: MockFireproofDomains(domains: []),
-            faviconManager: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock(),
-            featureFlagger: MockFeatureFlagger()
-        )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
             appearancePreferences: appearancePreferences

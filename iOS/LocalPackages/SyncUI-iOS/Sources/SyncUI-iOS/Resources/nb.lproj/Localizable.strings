@@ -35,7 +35,7 @@
 "connect.with.server.sheet.button" = "Slå på Synkronisering og sikkerhetskopiering";
 
 /* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "Dette oppretter en kryptert sikkerhetskopi av bokmerkene og passordene dine på DuckDuckGos sikre server, som kan synkroniseres med dine andre enheter.";
+"connect.with.server.sheet.description.part1" = "Dette oppretter en kryptert sikkerhetskopi av bokmerkene og autofyll-dataene dine på DuckDuckGos sikre server, som kan synkroniseres med de andre enhetene dine.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Krypteringsnøkkelen lagres bare på enheten din. DuckDuckGo har ikke tilgang til den.";
@@ -53,7 +53,13 @@
 "credentials.invalid.objects.present.description" = "credentials.invalid.objects.present.description";
 
 /* Alert title for invalid logins being filtered out of synced data */
-"credentials.invalid.objects.present.title" = "Enkelte pålogginger synkroniseres ikke på grunn av for langt innhold i enkelte felt.";
+"credentials.invalid.objects.present.title" = "Enkelte passord synkroniseres ikke på grunn av for langt innhold i enkelte felt.";
+
+/* Do not translate - stringsdict entry */
+"creditcards.invalid.objects.present.description" = "creditcards.invalid.objects.present.description";
+
+/* Alert title for invalid credit cards being filtered out of synced data */
+"creditCards.invalid.objects.present.title" = "Enkelte kredittkort synkroniseres ikke på grunn av for langt innhold i enkelte felt.";
 
 /* Delete Server Data - Button */
 "delete.server.data" = "Slå av og slett serverdata …";
@@ -130,8 +136,11 @@
 /* Button title for sync credentials limits exceeded warning to go to manage passwords */
 "prefrences.sync.credentials-limit-exceeded-action" = "Administrer passord …";
 
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Administrer kredittkort…";
+
 /* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Bokmerkene og passordene dine klargjøres for synkronisering. Dette tar bare et øyeblikk.";
+"preparing.to.sync.sheet.description" = "Bokmerkene og autofyll-dataene dine klargjøres for synkronisering. Dette tar bare et øyeblikk.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Kobler til…";
@@ -254,7 +263,7 @@
 "sync.get.other.devices.screen.title" = "Få DuckDuckGo";
 
 /* Message included when sharing a url via the system share sheet */
-"sync.get.other.devices.share.link.message" = "Installer DuckDuckGo-nettleseren på enhetene dine for å synkronisere bokmerker og passord på en sikker måte:";
+"sync.get.other.devices.share.link.message" = "Installer DuckDuckGo-nettleseren på enhetene dine for å begynne å synkronisere bokmerker og autofyll-data på en sikker måte:";
 
 /* Sync Menu Path */
 "sync.menu.path" = "Innstillinger > Synkroniser og sikkerhetskopier > Synkroniser med en annen enhet";
@@ -278,7 +287,7 @@
 "sync.with.another.device.footer" = "Dataene dine er ende-til-ende-kryptert og DuckDuckGo har ikke tilgang til krypteringsnøkkelen.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Synkroniser bokmerker og passord på en sikker måte mellom enhetene dine.";
+"sync.with.another.device.message" = "Synkroniser bokmerker og autofyll-data på en sikker måte mellom enhetene dine.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Begynn synkronisering";

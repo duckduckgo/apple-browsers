@@ -137,7 +137,9 @@ private extension UserDefaults {
         static let showAIChatShortcutInAddressBar = "aichat.showAIChatShortcutInAddressBar"
         static let showAIChatShortcutInAddressBarWhenTyping = "aichat.showAIChatShortcutInAddressBarWhenTyping"
         static let openAIChatInSidebar = "aichat.openAIChatInSidebar"
-        static let shouldAutomaticallySendPageContext = "aichat.automaticallySendPageContext"
+        /// The key here is set to a temporary value to allow defaulting to `true`.
+        /// Update to `aichat.automaticallySendPageContext` before releasing it publicly.
+        static let shouldAutomaticallySendPageContext = "aichat.automaticallySendPageContext.temporary.internal"
     }
 
     static let isAIFeaturesEnabledDefaultValue = true
@@ -146,7 +148,8 @@ private extension UserDefaults {
     static let showAIChatShortcutInAddressBarDefaultValue = true
     static let showAIChatShortcutInAddressBarWhenTypingDefaultValue = true
     static let openAIChatInSidebarDefaultValue = true
-    static let shouldAutomaticallySendPageContextDefaultValue = false
+    /// Update to `false` before releasing publicly.
+    static let shouldAutomaticallySendPageContextDefaultValue = true
 
     @objc dynamic var isAIFeaturesEnabled: Bool {
         get {

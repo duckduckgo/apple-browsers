@@ -282,8 +282,6 @@ final class MainWindowController: NSWindowController {
     }
 
     override func showWindow(_ sender: Any?) {
-        Logger.general.info("showWindow: \(String(describing: self.window!))")
-
         window?.makeKeyAndOrderFront(sender)
         register()
     }
@@ -302,10 +300,8 @@ final class MainWindowController: NSWindowController {
 
     func orderWindowBack(_ sender: Any?) {
         if let lastKeyWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window {
-            Logger.general.info("orderWindowBack: \(String(describing: self.window!)) below \(String(describing: lastKeyWindow))")
             window?.order(.below, relativeTo: lastKeyWindow.windowNumber)
         } else {
-            Logger.general.info("orderWindowBack: orderFront: \(String(describing: self.window!))")
             window?.orderFront(sender)
         }
         register()
@@ -328,16 +324,9 @@ extension MainWindowController: ThemeUpdateListening {
 extension MainWindowController: NSWindowDelegate {
 
     private func windowDidBecomeKeyNotification(_ notification: Notification) {
-        Logger.general.info("""
-        windowDidBecomeKey: \(String(describing: notification.object))
-            mainWindow:  \(String(describing: self.window))
-        """)
         guard let keyWindow = notification.object as? NSWindow,
               let mainWindow = self.window,
-              keyWindow.isInHierarchy(of: mainWindow) else {
-            Logger.general.info("Unexpected window object: children: \(String(describing: self.window?.childWindows)); sheets: \(String(describing: self.window?.sheets))")
-            return
-        }
+              keyWindow.isInHierarchy(of: mainWindow) else { return }
 
         mainViewController.windowDidBecomeKey()
 
@@ -356,11 +345,6 @@ extension MainWindowController: NSWindowDelegate {
               exKeyWindow.isInHierarchy(of: mainWindow),
               // if one of the windows in the window controller chain became key instead of a sheet
               NSApp.keyWindow?.isInHierarchy(of: mainWindow) != true else { return }
-
-        Logger.general.info("""
-        windowDidResignKey: \(String(describing: exKeyWindow))
-            mainWindow:  \(String(describing: mainWindow))
-        """)
 
         mainViewController.windowDidResignKey()
     }

@@ -3851,6 +3851,8 @@
 		F124E0F12D6E123A0035C7BA /* SubscriptionTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = F124E0F02D6E123A0035C7BA /* SubscriptionTestingUtilities */; };
 		F1476FC02C1359FB00EAE46A /* SubscriptionUIHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1476FBF2C1359FB00EAE46A /* SubscriptionUIHandler.swift */; };
 		F1476FC12C1359FB00EAE46A /* SubscriptionUIHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1476FBF2C1359FB00EAE46A /* SubscriptionUIHandler.swift */; };
+		F158DE022E9E992C00628DD0 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = F158DE012E9E992C00628DD0 /* ContentBlocking */; };
+		F158DE042E9E995F00628DD0 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = F158DE032E9E995F00628DD0 /* ContentBlocking */; };
 		F1664A682D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1664A672D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift */; };
 		F1664A692D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1664A672D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift */; };
 		F17114822C7C98FB009836C1 /* Logger+Favicons.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17114812C7C98FB009836C1 /* Logger+Favicons.swift */; };
@@ -6172,6 +6174,7 @@
 				9DC5FAC92C6B8B910011F068 /* AppKitExtensions in Frameworks */,
 				4B9EE36C2D76CB3800DDC75C /* PixelKitTestingUtilities in Frameworks */,
 				4B9EE36E2D76CB4000DDC75C /* Common in Frameworks */,
+				F158DE042E9E995F00628DD0 /* ContentBlocking in Frameworks */,
 				F124E0E12D6E12260035C7BA /* NetworkingTestingUtils in Frameworks */,
 				B6AE39F329374AEC00C37AA4 /* OHHTTPStubs in Frameworks */,
 				84494D232E18211500C9E5E8 /* NoARCObjCTestsExtensions in Frameworks */,
@@ -6448,6 +6451,7 @@
 				9DC5FACB2C6B8E050011F068 /* AppKitExtensions in Frameworks */,
 				8448016A2E3BA41A00E8A2C1 /* Clocks in Frameworks */,
 				F1A9DD012E9E42C400D37BE0 /* AttributedMetricTestsUtils in Frameworks */,
+				F158DE022E9E992C00628DD0 /* ContentBlocking in Frameworks */,
 				84EFBCD02D817CC400706739 /* InlineSnapshotTesting in Frameworks */,
 				4B9EE3682D76CB1600DDC75C /* SubscriptionTestingUtilities in Frameworks */,
 				374EFDEF2D01C70300B30939 /* Utilities in Frameworks */,
@@ -11730,6 +11734,7 @@
 				4B9EE36D2D76CB4000DDC75C /* Common */,
 				84494D222E18211500C9E5E8 /* NoARCObjCTestsExtensions */,
 				8448016B2E3BA41F00E8A2C1 /* Clocks */,
+				F158DE032E9E995F00628DD0 /* ContentBlocking */,
 			);
 			productName = "Integration Tests";
 			productReference = 4B1AD89D25FC27E200261379 /* Integration Tests.xctest */;
@@ -12172,6 +12177,7 @@
 				844801692E3BA41A00E8A2C1 /* Clocks */,
 				D66840192E82BE25007DAAB2 /* PerformanceTest */,
 				F1A9DD002E9E42C400D37BE0 /* AttributedMetricTestsUtils */,
+				F158DE012E9E992C00628DD0 /* ContentBlocking */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = AA585D90248FD31400E9A3E2 /* Unit Tests.xctest */;
@@ -19086,6 +19092,14 @@
 		F124E0F02D6E123A0035C7BA /* SubscriptionTestingUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SubscriptionTestingUtilities;
+		};
+		F158DE012E9E992C00628DD0 /* ContentBlocking */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ContentBlocking;
+		};
+		F158DE032E9E995F00628DD0 /* ContentBlocking */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ContentBlocking;
 		};
 		F198C71D2BD18D88000BF24D /* SwiftLintTool */ = {
 			isa = XCSwiftPackageProductDependency;

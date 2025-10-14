@@ -344,6 +344,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         tab.navigateFromOnboarding(to: url)
         wait(for: [expectation], timeout: 3.0)
 
+        let windowControllersManager = WindowControllersManagerMock()
         let fireCoordinator = FireCoordinator(tld: TLD(),
                                               featureFlagger: Application.appDelegate.featureFlagger,
                                               historyCoordinating: HistoryCoordinatingMock(),
@@ -351,7 +352,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                                               onboardingContextualDialogsManager: nil,
                                               fireproofDomains: MockFireproofDomains(),
                                               faviconManagement: FaviconManagerMock(),
-                                              windowControllersManager: WindowControllersManagerMock(),
+                                              windowControllersManager: windowControllersManager,
                                               pixelFiring: nil,
                                               historyProvider: MockHistoryViewDataProvider())
         let mainViewController = MainViewController(
@@ -368,7 +369,10 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
             themeManager: MockThemeManager()
         )
         mainWindowController.window = window
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
+        windowControllersManager.lastKeyMainWindowController = mainWindowController
+        defer {
+            windowControllersManager.lastKeyMainWindowController = nil
+        }
 
         // WHEN
         window.isVisible = true

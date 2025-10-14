@@ -269,6 +269,11 @@ final class FireDialogViewModel: ObservableObject {
 
     // MARK: - Selection
 
+    /// Public accessor to the currently selected cookie/site-data domains (eTLD+1)
+    var selectedCookieDomainsForScope: Set<String> {
+        selectedDomains
+    }
+
     var areAllSelected: Bool {
         Set(0..<selectable.count) == selected
     }
@@ -301,11 +306,6 @@ final class FireDialogViewModel: ObservableObject {
             }
             return selectedDomain
         })
-    }
-
-    /// Public accessor to the currently selected cookie/site-data domains (eTLD+1)
-    var selectedCookieDomainsForScope: Set<String> {
-        selectedDomains
     }
 
 }

@@ -101,10 +101,11 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
 
         // Remove all empty ranges from the end of the array
         var filteredRanges = Array(rangesWithCounts.reversed().drop(while: { visitsByRange[$0.id]?.isEmpty != false }).reversed())
-
         // All = total number of history items (exclude synthetic 'sites')
-        let allCount = historyItems.count
-        filteredRanges.insert(.init(id: .all, count: allCount), at: 0)
+        filteredRanges.insert(.init(id: .all, count: groupingsByRange.values.compactMap {
+            guard $0.range != .allSites else { return nil }
+            return $0.items.count
+        }.reduce(0, +)), at: 0)
 
         // Sites = unique domains count (items in synthetic 'sites' section)
         if isSitesSectionEnabled {

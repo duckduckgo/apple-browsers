@@ -53,18 +53,11 @@ final class ScriptSourceProviderTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger()
         )
-        let dataClearingPreferences = DataClearingPreferences(
-            persistor: MockFireButtonPreferencesPersistor(),
-            fireproofDomains: MockFireproofDomains(domains: []),
-            faviconManager: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock(),
-            featureFlagger: MockFeatureFlagger()
-        )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
             appearancePreferences: appearancePreferences
         )
-
+        let windowControllersManager = WindowControllersManagerMock()
         let fireCoordinator = FireCoordinator(tld: TLD(),
                                               featureFlagger: Application.appDelegate.featureFlagger,
                                               historyCoordinating: HistoryCoordinatingMock(),
@@ -72,7 +65,7 @@ final class ScriptSourceProviderTests: XCTestCase {
                                               onboardingContextualDialogsManager: nil,
                                               fireproofDomains: MockFireproofDomains(),
                                               faviconManagement: FaviconManagerMock(),
-                                              windowControllersManager: WindowControllersManagerMock(),
+                                              windowControllersManager: windowControllersManager,
                                               pixelFiring: nil,
                                               historyProvider: MockHistoryViewDataProvider())
         let sourceProvider = ScriptSourceProvider(
@@ -87,7 +80,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             onboardingNavigationDelegate: CapturingOnboardingNavigation(),
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
-            windowControllersManager: WindowControllersManagerMock(),
+            windowControllersManager: windowControllersManager,
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             fireproofDomains: MockFireproofDomains(domains: []),

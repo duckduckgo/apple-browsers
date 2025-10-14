@@ -93,7 +93,6 @@ final class FireCoordinator {
             (window.contentViewController as? MainViewController)?.tabCollectionViewModel
         }
         self.pixelFiring = pixelFiring
-        let visualizeFireAnimationDecider = visualizeFireAnimationDecider
         self.visualizeFireAnimationDecider = OverridableVisualizeFireSettingsDecider(internalDecider: visualizeFireAnimationDecider)
 
         self.fireDialogViewFactory = fireDialogViewFactory ?? { config in

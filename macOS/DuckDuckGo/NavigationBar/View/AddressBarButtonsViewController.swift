@@ -52,10 +52,8 @@ final class AddressBarButtonsViewController: NSViewController {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let permissionManager: PermissionManagerProtocol
 
-    private let themeManager: ThemeManaging
-    private var theme: ThemeStyleProviding {
-        themeManager.theme
-    }
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
 
     private var permissionAuthorizationPopover: PermissionAuthorizationPopover?
     private func permissionAuthorizationPopoverCreatingIfNeeded() -> PermissionAuthorizationPopover {
@@ -611,12 +609,13 @@ final class AddressBarButtonsViewController: NSViewController {
     private func updateBookmarkButtonImage(isUrlBookmarked: Bool = false) {
         let bookmarksIconsProvider = theme.iconsProvider.bookmarksIconsProvider
         let colorsProvider = theme.colorsProvider
+        let palette = theme.palette
 
         if let url = tabViewModel?.tab.content.userEditableUrl,
            isUrlBookmarked || bookmarkManager.isAnyUrlVariantBookmarked(url: url)
         {
             bookmarkButton.image = bookmarksIconsProvider.bookmarkFilledIcon
-            bookmarkButton.mouseOverTintColor = NSColor.bookmarkFilledTint
+            bookmarkButton.mouseOverTintColor = palette.iconsPrimary
             bookmarkButton.toolTip = UserText.editBookmarkTooltip
             bookmarkButton.setAccessibilityValue("Bookmarked")
             bookmarkButton.setAccessibilityTitle(UserText.editBookmarkTooltip)
@@ -1817,27 +1816,21 @@ final class AddressBarButtonsViewController: NSViewController {
             })
             .store(in: &cancellables)
     }
+}
 
-    private func subscribeToThemeChanges() {
-        themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.applyThemeStyle()
-            }
-            .store(in: &cancellables)
-    }
+extension AddressBarButtonsViewController: ThemeUpdateListening {
 
-    private func applyThemeStyle() {
+    func applyThemeStyle(theme: ThemeStyleProviding) {
         configureAIChatButton()
         updateAIChatButtonState()
         updateBookmarkButtonImage()
         updateImageButton()
         updateZoomButtonVisibility()
         refreshAskAIChatButtonStyle()
-        refreshButtonsThemeStyle()
+        refreshButtonsThemeStyle(theme: theme)
     }
 
-    private func refreshButtonsThemeStyle() {
+    private func refreshButtonsThemeStyle(theme: ThemeStyleProviding) {
         let colorsProvider = theme.colorsProvider
 
         bookmarkButton.normalTintColor = colorsProvider.iconsColor

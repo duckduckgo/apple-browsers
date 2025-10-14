@@ -36,6 +36,7 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
     var showImageFailedAlertCallCount = 0
     var imageURL: URL?
 
+    @MainActor
     override func setUp() async throws {
         sendPixelEvents = []
 

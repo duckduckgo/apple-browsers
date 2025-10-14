@@ -70,6 +70,11 @@ public enum DataModel {
             case term, range, domain
         }
 
+        public var historyRange: HistoryRange? {
+            guard case .rangeFilter(let range) = self else { return nil }
+            return range
+        }
+
         public init(from decoder: any Decoder) throws {
             if let singleValueContainer = try? decoder.singleValueContainer(),
                let value = try? singleValueContainer.decode(Date.self) {

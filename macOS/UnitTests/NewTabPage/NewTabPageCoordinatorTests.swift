@@ -91,7 +91,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                                               onboardingContextualDialogsManager: nil,
                                               fireproofDomains: MockFireproofDomains(),
                                               faviconManagement: FaviconManagerMock(),
-                                              windowControllersManager: WindowControllersManagerMock(),
+                                              windowControllersManager: windowControllersManager,
                                               pixelFiring: nil,
                                               historyProvider: MockHistoryViewDataProvider())
         coordinator = NewTabPageCoordinator(
@@ -114,7 +114,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                 freemiumDBPFeature: MockFreemiumDBPFeature(),
                 freemiumDBPPresenter: MockFreemiumDBPPresenter(),
                 notificationCenter: notificationCenter,
-                dataBrokerProtectionFreemiumPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler()
+                dataBrokerProtectionFreemiumPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler(),
+                contextualOnboardingPublisher: Just(false).eraseToAnyPublisher()
             ),
             tld: Application.appDelegate.tld,
             fireCoordinator: fireCoordinator,

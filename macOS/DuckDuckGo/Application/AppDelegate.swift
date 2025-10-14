@@ -86,6 +86,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
 
     let watchdog: Watchdog
+    private let watchdogSleepMonitor: WatchdogSleepMonitor
 
     let keyValueStore: ThrowingKeyValueStoring
 
@@ -625,7 +626,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
-        themeManager = ThemeManager(appearancePreferences: appearancePreferences)
+        themeManager = ThemeManager(appearancePreferences: appearancePreferences, internalUserDecider: internalUserDecider)
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
@@ -811,7 +812,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                        subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                        freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPPromotionViewCoordinator = FreemiumDBPPromotionViewCoordinator(freemiumDBPUserStateManager: freemiumDBPUserStateManager,
-                                                                                  freemiumDBPFeature: freemiumDBPFeature)
+                                                                                  freemiumDBPFeature: freemiumDBPFeature,
+                                                                                  contextualOnboardingPublisher: onboardingContextualDialogsManager.isContextualOnboardingCompletedPublisher.eraseToAnyPublisher())
 
         brokenSitePromptLimiter = BrokenSitePromptLimiter(privacyConfigManager: privacyConfigurationManager, store: BrokenSitePromptLimiterStore())
 #if DEBUG
@@ -832,6 +834,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let watchdogDiagnosticProvider = MacWatchdogDiagnosticProvider(windowControllersManager: windowControllersManager)
         let eventMapper = WatchdogEventMapper(diagnosticProvider: watchdogDiagnosticProvider)
         watchdog = Watchdog(eventMapper: eventMapper)
+        watchdogSleepMonitor = WatchdogSleepMonitor(watchdog: watchdog)
 
 #if !DEBUG
         // Start UI hang watchdog

@@ -155,6 +155,10 @@ extension NewTabPageActionsManager {
             keyValueStore: keyValueStore,
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider
         )
+        let stateProvider = NewTabPageStateProvider(
+            windowControllersManager: windowControllersManager,
+            featureFlagger: featureFlagger
+        )
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(
@@ -163,7 +167,8 @@ extension NewTabPageActionsManager {
                 omnibarConfigProvider: omnibarConfigProvider,
                 customBackgroundProvider: customizationProvider,
                 linkOpener: NewTabPageLinkOpener(),
-                eventMapper: NewTabPageConfigurationErrorHandler()
+                eventMapper: NewTabPageConfigurationErrorHandler(),
+                stateProvider: stateProvider
             ),
             NewTabPageCustomBackgroundClient(model: customizationProvider),
             NewTabPageRMFClient(remoteMessageProvider: activeRemoteMessageModel),

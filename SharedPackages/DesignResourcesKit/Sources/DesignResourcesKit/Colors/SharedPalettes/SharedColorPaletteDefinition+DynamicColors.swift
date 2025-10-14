@@ -110,12 +110,6 @@ extension SharedColorPaletteDefinition {
             return buttonsWhite
 
         /// Container Colors
-        case .containerDecorationPrimary:
-            return containerDecorationPrimary
-        case .containerDecorationSecondary:
-            return containerDecorationSecondary
-        case .containerDecorationTertiary:
-            return containerDecorationTertiary
         case .containerFillPrimary:
             return containerFillPrimary
         case .containerFillSecondary:
@@ -124,28 +118,12 @@ extension SharedColorPaletteDefinition {
             return containerFillTertiary
 
         /// Controls Colors
-        case .controlsDecorationPrimary:
-            return controlsDecorationPrimary
-        case .controlsDecorationSecondary:
-            return controlsDecorationSecondary
-        case .controlsDecorationTertiary:
-            return controlsDecorationTertiary
-        case .controlsDecorationQuaternary:
-            return controlsDecorationQuaternary
         case .controlsFillPrimary:
             return controlsFillPrimary
         case .controlsFillSecondary:
             return controlsFillSecondary
         case .controlsFillTertiary:
             return controlsFillTertiary
-
-        /// Decoration Colors
-        case .decorationPrimary:
-            return decorationPrimary
-        case .decorationSecondary:
-            return decorationSecondary
-        case .decorationTertiary:
-            return decorationTertiary
 
         /// Destructive Colors
         case .destructiveContentPrimary:
@@ -174,8 +152,6 @@ extension SharedColorPaletteDefinition {
             return highlightPrimary
 
         /// Icons Colors
-        case .icons:
-            return icons
         case .iconsPrimary:
             return iconsPrimary
         case .iconsSecondary:
@@ -196,8 +172,6 @@ extension SharedColorPaletteDefinition {
             return shadowTertiary
 
         /// Surface Colors
-        case .surface:
-            return surface
         case .surfaceBackdrop:
             return surfaceBackdrop
         case .surfaceCanvas:
@@ -208,6 +182,14 @@ extension SharedColorPaletteDefinition {
             return surfaceSecondary
         case .surfaceTertiary:
             return surfaceTertiary
+
+        /// Surface Decoration
+        case .surfaceDecorationPrimary:
+            return surfaceDecorationPrimary
+        case .surfaceDecorationSecondary:
+            return surfaceDecorationSecondary
+        case .surfaceDecorationTertiary:
+            return surfaceDecorationTertiary
 
         /// Text Colors
         case .textPrimary:
@@ -220,8 +202,6 @@ extension SharedColorPaletteDefinition {
         /// Tone Colors
         case .toneShadePrimary:
             return toneShadePrimary
-        case .toneTintPrimary:
-            return toneTintPrimary
 
         /// Fire Dialog
         case .fireDialogBackground:

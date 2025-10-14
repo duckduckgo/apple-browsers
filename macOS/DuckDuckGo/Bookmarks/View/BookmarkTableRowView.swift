@@ -20,6 +20,10 @@ import AppKit
 
 final class BookmarkTableRowView: NSTableRowView {
 
+    private var palette: ColorPalette {
+        NSApp.delegateTyped.themeManager.theme.palette
+    }
+
     var onSelectionChanged: (() -> Void)?
 
     var hasPrevious = false {
@@ -56,7 +60,7 @@ final class BookmarkTableRowView: NSTableRowView {
 
         if mouseInside {
             let path = NSBezierPath(roundedRect: bounds, xRadius: 6, yRadius: 6)
-            NSColor.rowHover.setFill()
+            highlightBackgroundColor.setFill()
             path.fill()
         }
 
@@ -79,7 +83,7 @@ final class BookmarkTableRowView: NSTableRowView {
         }
 
         let path = NSBezierPath(roundedRect: dirtyRect, forCorners: roundedCorners, cornerRadius: 6)
-        NSColor.selectedContentBackgroundColor.setFill()
+        selectionBackgroundColor.setFill()
         path.fill()
     }
 
@@ -109,4 +113,23 @@ final class BookmarkTableRowView: NSTableRowView {
         return .normal
     }
 
+    private var isThemesFeatureEnabled: Bool {
+        NSApp.delegateTyped.featureFlagger.isFeatureOn(.themes)
+    }
+
+    private var selectionBackgroundColor: NSColor {
+        if isThemesFeatureEnabled {
+            return palette.accentPrimary
+        }
+
+        return NSColor.selectedContentBackgroundColor
+    }
+
+    private var highlightBackgroundColor: NSColor {
+        if isThemesFeatureEnabled {
+            return palette.controlsFillPrimary
+        }
+
+        return NSColor.rowHover
+    }
 }

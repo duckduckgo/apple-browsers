@@ -319,40 +319,6 @@ struct OnboardingSecondaryCTAButton: View {
         .padding()
 }
 
-// MARK: - Preview Helper
-
-private class PreviewHistoryProvider: HistoryViewDataProviding {
-    // HistoryView.DataProviding methods
-    var ranges: [DataModel.HistoryRangeWithCount] { [] }
-
-    func refreshData() async {}
-
-    func visitsBatch(for query: DataModel.HistoryQueryKind, source: DataModel.HistoryQuerySource, limit: Int, offset: Int) async -> DataModel.HistoryItemsBatch {
-        return DataModel.HistoryItemsBatch(finished: true, visits: [])
-    }
-
-    // HistoryViewDataProviding methods
-    func titles(for urls: [URL]) -> [URL: String] {
-        return [:]
-    }
-
-    func visits(for identifiers: [VisitIdentifier]) async -> [History.Visit] {
-        []
-    }
-
-    func visits(matching query: HistoryView.DataModel.HistoryQueryKind) async -> [History.Visit] { [] }
-    func deleteVisits(matching query: HistoryView.DataModel.HistoryQueryKind) async {}
-    func burnVisits(matching query: HistoryView.DataModel.HistoryQueryKind) async {}
-
-    func cookieDomains(matching query: DataModel.HistoryQueryKind) async -> Set<String> {
-        return []
-    }
-
-    @MainActor func preferredURL(forSiteDomain domain: String) -> URL? {
-        return URL(string: "https://\(domain)")
-    }
-}
-
 #Preview("Try Fire Button") {
     DaxDialogView(logoPosition: .left) {
         OnboardingFireButtonDialogContent(viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: nil, onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}))

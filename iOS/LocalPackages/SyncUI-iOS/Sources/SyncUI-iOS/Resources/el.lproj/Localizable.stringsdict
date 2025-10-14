@@ -38,5 +38,23 @@
 			<string>Ο κωδικός πρόσβασής σας για τον %2$@ δεν μπορεί να συγχρονιστεί επειδή ένα από τα πεδία του υπερβαίνει το όριο χαρακτήρων.</string>
 		</dict>
 	</dict>
+	<key>creditcards.invalid.objects.present.description</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@cards@</string>
+		<key>cards</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Η πιστωτική κάρτα σας %2$@ και 1 άλλη κάρτα δεν μπορούν να συγχρονιστούν επειδή ορισμένα από τα πεδία τους υπερβαίνουν το όριο χαρακτήρων.</string>
+			<key>other</key>
+			<string>Η πιστωτική κάρτα σας %2$@ και %1$d άλλες κάρτες δεν μπορούν να συγχρονιστούν επειδή ορισμένα από τα πεδία τους υπερβαίνουν το όριο χαρακτήρων.</string>
+			<key>zero</key>
+			<string>Η πιστωτική κάρτα σας %2$@ δεν μπορεί να συγχρονιστεί επειδή ένα από τα πεδία της υπερβαίνει το όριο χαρακτήρων.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

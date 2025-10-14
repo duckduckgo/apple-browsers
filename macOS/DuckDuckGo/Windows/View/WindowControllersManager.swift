@@ -28,6 +28,7 @@ import AIChat
 protocol WindowControllersManagerProtocol: AnyObject {
 
     var stateChanged: AnyPublisher<Void, Never> { get }
+    var tabsChanged: AnyPublisher<Void, Never> { get }
 
     var mainWindowControllers: [MainWindowController] { get }
     var selectedTab: Tab? { get }

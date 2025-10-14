@@ -53,11 +53,11 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
 
     func title(for url: URL) -> String?
 
-    func burnAll(completion: @escaping () -> Void)
-    func burnDomains(_ baseDomains: Set<String>, tld: TLD, completion: @escaping (Set<URL>) -> Void)
-    func burnVisits(_ visits: [Visit], completion: @escaping () -> Void)
+    func burnAll(completion: @escaping @MainActor () -> Void)
+    func burnDomains(_ baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Set<URL>) -> Void)
+    func burnVisits(_ visits: [Visit], completion: @escaping @MainActor () -> Void)
 
-    func removeUrlEntry(_ url: URL, completion: ((Error?) -> Void)?)
+    @MainActor func removeUrlEntry(_ url: URL, completion: (@MainActor (Error?) -> Void)?)
 }
 
 extension HistoryCoordinating {
@@ -183,14 +183,14 @@ final public class HistoryCoordinator: HistoryCoordinating {
         return historyEntry.title
     }
 
-    public func burnAll(completion: @escaping () -> Void) {
+    public func burnAll(completion: @escaping @MainActor () -> Void) {
         clean(until: .distantFuture) {
             self.historyDictionary = [:]
             completion()
         }
     }
 
-    public func burnDomains(_ baseDomains: Set<String>, tld: TLD, completion: @escaping (Set<URL>) -> Void) {
+    public func burnDomains(_ baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Set<URL>) -> Void) {
         guard let historyDictionary = historyDictionary else { return }
 
         var urls = Set<URL>()
@@ -207,7 +207,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
         })
     }
 
-    public func burnVisits(_ visits: [Visit], completion: @escaping () -> Void) {
+    public func burnVisits(_ visits: [Visit], completion: @escaping @MainActor () -> Void) {
         removeVisits(visits) { _ in
             completion()
         }
@@ -217,7 +217,8 @@ final public class HistoryCoordinator: HistoryCoordinating {
         case notAvailable
     }
 
-    public func removeUrlEntry(_ url: URL, completion: ((Error?) -> Void)? = nil) {
+    @MainActor
+    public func removeUrlEntry(_ url: URL, completion: (@MainActor (Error?) -> Void)? = nil) {
         guard let historyDictionary = historyDictionary else { return }
         guard let entry = historyDictionary[url] else {
             completion?(EntryRemovalError.notAvailable)
@@ -233,11 +234,11 @@ final public class HistoryCoordinator: HistoryCoordinating {
         clean(until: cleaningDate)
     }
 
-    private func cleanOldAndLoad(onCleanFinished: @escaping () -> Void) {
+    private func cleanOldAndLoad(onCleanFinished: @escaping @MainActor () -> Void) {
         clean(until: cleaningDate, onCleanFinished: onCleanFinished)
     }
 
-    private func clean(until date: Date, onCleanFinished: (() -> Void)? = nil) {
+    private func clean(until date: Date, onCleanFinished: (@MainActor () -> Void)? = nil) {
         historyStoring.cleanOld(until: date)
             .receive(on: DispatchQueue.main)
             .sink(receiveCompletion: { completion in
@@ -248,7 +249,9 @@ final public class HistoryCoordinator: HistoryCoordinating {
                     // This should really be a pixel
                     Logger.history.error("Cleaning of history failed: \(error.localizedDescription)")
                 }
-                onCleanFinished?()
+                MainActor.assumeMainThread {
+                    onCleanFinished?()
+                }
             }, receiveValue: { [weak self] history in
                 self?.historyDictionary = self?.makeHistoryDictionary(from: history)
             })
@@ -256,7 +259,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
     }
 
     private func removeEntries(_ entries: [HistoryEntry],
-                               completionHandler: ((Error?) -> Void)? = nil) {
+                               completionHandler: (@MainActor (Error?) -> Void)? = nil) {
         // Remove from the local memory
         entries.forEach { entry in
             historyDictionary?.removeValue(forKey: entry.url)
@@ -269,18 +272,22 @@ final public class HistoryCoordinator: HistoryCoordinating {
                 switch completion {
                 case .finished:
                     Logger.history.debug("Entries removed successfully")
-                    completionHandler?(nil)
+                    MainActor.assumeMainThread {
+                        completionHandler?(nil)
+                    }
                 case .failure(let error):
                     assertionFailure("Removal failed")
                     Logger.history.error("Removal failed: \(error.localizedDescription)")
-                    completionHandler?(error)
+                    MainActor.assumeMainThread {
+                        completionHandler?(error)
+                    }
                 }
             }, receiveValue: {})
             .store(in: &cancellables)
     }
 
     private func removeVisits(_ visits: [Visit],
-                              completionHandler: ((Error?) -> Void)? = nil) {
+                              completionHandler: (@MainActor (Error?) -> Void)? = nil) {
         var entriesToRemove = [HistoryEntry]()
 
         // Remove from the local memory
@@ -315,7 +322,9 @@ final public class HistoryCoordinator: HistoryCoordinating {
                 case .failure(let error):
                     assertionFailure("Removal failed")
                     Logger.history.error("Removal failed: \(error.localizedDescription)")
-                    completionHandler?(error)
+                    MainActor.assumeMainThread {
+                        completionHandler?(error)
+                    }
                 }
             }, receiveValue: {})
             .store(in: &cancellables)

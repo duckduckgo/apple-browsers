@@ -47,5 +47,76 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_debug_recreate-tmp-attempt-failed-": {
+        "description": "Fires when temp directory recreation fails on a specific attempt during app startup",
+        "owners": ["jaceklyp"],
+        "triggers": ["startup"],
+        "suffixes": [
+            {
+                "key": "attempt",
+                "description": "The attempt number that failed (0-4)",
+                "type": "integer"
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"],
+        "expires": "2025-11-08"
+    },
+    "m_debug_recreate-tmp-success-on-retry-": {
+        "description": "Fires when temp directory recreation succeeds on a retry attempt during app startup",
+        "owners": ["jaceklyp"],
+        "triggers": ["startup"],
+        "suffixes": [
+            {
+                "key": "attempt",
+                "description": "The retry attempt number that succeeded (1-4)",
+                "type": "integer"
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": ["appVersion"],
+        "expires": "2025-11-08"
+    },
+    "m_debug_recreate-tmp-webview-fallback-succeeded": {
+        "description": "Fires when WKWebView fallback successfully recreates temp directory during app startup",
+        "owners": ["jaceklyp"],
+        "triggers": ["startup"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2025-11-08"
+    },
+    "m_debug_recreate-tmp-webview-fallback-failed": {
+        "description": "Fires when WKWebView fallback fails to recreate temp directory during app startup",
+        "owners": ["jaceklyp"],
+        "triggers": ["startup"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2025-11-08"
+    },
+    "m_debug_content-blocking-compilation-failed-missing-tmp-dir": {
+        "description": "Fires when content blocking compilation is aborted due to missing temp directory",
+        "owners": ["jaceklyp"],
+        "triggers": ["startup"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2025-11-08"
+    },
+    "m_debug_tmp-dir-still-missing-after-recreation": {
+        "description": "Fires when temp directory is still missing after all recreation attempts during app startup",
+        "owners": ["jaceklyp"],
+        "triggers": ["startup"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "isBackground",
+                "description": "Whether the app was in background state when the check was performed",
+                "type": "boolean"
+            }
+        ],
+        "expires": "2025-11-08"
     }
 }

@@ -973,6 +973,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var lastAddedHistoryEvent: HistoryEvent?
 
     public var saveResult: Result<Void, Error> = .success(())
+    public var addHistoryEventError: Error?
 
     public lazy var callsList: [Bool] = [
         wasSaveProfileCalled,
@@ -1153,9 +1154,14 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasUpdateRemoveDateCalled = true
     }
 
-    public func add(_ historyEvent: HistoryEvent) {
+    public func add(_ historyEvent: HistoryEvent) throws {
         wasAddHistoryEventCalled = true
         lastAddedHistoryEvent = historyEvent
+
+        if let addHistoryEventError {
+            throw addHistoryEventError
+        }
+
         if historyEvent.extractedProfileId != nil {
             optOutEvents.append(historyEvent)
         } else {
@@ -1264,6 +1270,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         scanEvents.removeAll()
         optOutEvents.removeAll()
         backgroundTaskEventsToReturn.removeAll()
+        addHistoryEventError = nil
     }
 
     public var backgroundTaskEventsToReturn: [BackgroundTaskEvent] = []

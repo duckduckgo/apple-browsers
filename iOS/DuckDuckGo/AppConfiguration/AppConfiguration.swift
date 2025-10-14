@@ -23,6 +23,7 @@ import Core
 import Networking
 import Configuration
 import Persistence
+import WebKit
 
 struct AppConfiguration {
 
@@ -31,24 +32,29 @@ struct AppConfiguration {
     let persistentStoresConfiguration = PersistentStoresConfiguration()
     let onboardingConfiguration = OnboardingConfiguration()
     let atbAndVariantConfiguration = ATBAndVariantConfiguration()
-    let contentBlockingConfiguration = ContentBlockingConfiguration()
+    private let appKeyValueStore: ThrowingKeyValueStoring
 
-    func start(syncKeyValueStore: ThrowingKeyValueStoring) throws -> Bool {
+    init(appKeyValueStore: ThrowingKeyValueStoring) {
+        self.appKeyValueStore = appKeyValueStore
+    }
+
+    func start() throws {
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
         PixelConfiguration.configure(with: featureFlagger)
 
-        contentBlockingConfiguration.prepareContentBlocking()
+        // Explicitly prepare ContentBlockingUpdating instance before Tabs are created
+        _ = ContentBlockingUpdating.shared
+
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
 
         onboardingConfiguration.migrateToNewOnboarding()
         clearTemporaryDirectory()
-        let isBookmarksStructureMissing = try persistentStoresConfiguration.configure(syncKeyValueStore: syncKeyValueStore)
+        let isBackground = UIApplication.shared.applicationState == .background
+        try persistentStoresConfiguration.configure(syncKeyValueStore: appKeyValueStore, isBackground: isBackground)
         migrateAIChatSettings()
 
         WidgetCenter.shared.reloadAllTimelines()
         PrivacyFeatures.httpsUpgrade.loadDataAsync()
-        
-        return isBookmarksStructureMissing
     }
 
     /// Perform AI Chat settings migration, and needs to happen before AIChatSettings is created
@@ -68,6 +74,13 @@ struct AppConfiguration {
         let tmp = FileManager.default.temporaryDirectory
         removeTempDirectory(at: tmp)
         recreateTempDirectory(at: tmp)
+        
+        if !FileManager.default.fileExists(atPath: tmp.path) {
+            let isBackground = UIApplication.shared.applicationState == .background
+            
+            Logger.general.error("💥 Temp directory still missing after all recreation attempts. Is background: \(isBackground)")
+            Pixel.fire(pixel: .tmpDirStillMissingAfterRecreation, withAdditionalParameters: ["isBackground": String(isBackground)])
+        }
     }
 
     private func removeTempDirectory(at url: URL) {
@@ -81,6 +94,7 @@ struct AppConfiguration {
             Logger.general.info("🧹 Removed temp directory at: \(url.path)")
         } catch {
             Logger.general.error("⚠️ Failed to remove tmp dir: \(error.localizedDescription)")
+            Pixel.fire(pixel: .failedToRemoveTmpDir, error: error)
         }
     }
 
@@ -90,27 +104,60 @@ struct AppConfiguration {
             return
         }
 
-        do {
-            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
-            Logger.general.info("📁 Recreated temp directory at: \(url.path)")
-        } catch {
-            Logger.general.error("❌ Failed to recreate tmp dir: \(error.localizedDescription)")
-            Pixel.fire(pixel: .failedToRecreateTmpDir, error: error)
+        let maxAttempts = 5
+        let retryInterval: TimeInterval = 1.0
+        
+        for attempt in 0..<maxAttempts {
+            do {
+                try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
+                Logger.general.info("📁 Recreated temp directory at: \(url.path)")
+                
+                if attempt > 0 {
+                    Pixel.fire(pixel: .recreateTmpSuccessOnRetry(attempt: attempt))
+                }
+                return
+            } catch {
+                Logger.general.error("❌ Failed to recreate tmp dir (attempt \(attempt)): \(error.localizedDescription)")
+                Pixel.fire(pixel: .recreateTmpAttemptFailed(attempt: attempt), error: error)
+
+                let isLastAttempt = attempt == maxAttempts - 1
+                if isLastAttempt {
+                    attemptWebViewTempDirectoryFallback(at: url)
+                    return
+                } else {
+                    Thread.sleep(forTimeInterval: retryInterval)
+                }
+            }
+        }
+    }
+    
+    private func attemptWebViewTempDirectoryFallback(at url: URL) {
+        Logger.general.info("🌐 Attempting WKWebView fallback for temp directory recreation")
+        // Create a minimal WKWebView to trigger temp directory creation
+        // WebKit may have elevated privileges that could help with directory creation
+        _ = WKWebView(frame: .zero)
+
+        let fallbackSucceeded = FileManager.default.fileExists(atPath: url.path)
+        if fallbackSucceeded {
+            Logger.general.info("✅ WKWebView fallback successfully recreated temp directory")
+            Pixel.fire(pixel: .recreateTmpWebViewFallbackSucceeded)
+        } else {
+            Logger.general.error("❌ WKWebView fallback failed to recreate temp directory")
+            Pixel.fire(pixel: .recreateTmpWebViewFallbackFailed)
         }
     }
 
     @MainActor
     func finalize(reportingService: ReportingService,
                   mainViewController: MainViewController,
-                  launchTaskManager: LaunchTaskManager,
-                  keyValueStore: ThrowingKeyValueStoring) {
+                  launchTaskManager: LaunchTaskManager) {
         atbAndVariantConfiguration.cleanUpATBAndAssignVariant {
             onVariantAssigned(reportingService: reportingService)
         }
         CrashHandlersConfiguration.handleCrashDuringCrashHandlersSetup()
         startAutomationServerIfNeeded(mainViewController: mainViewController)
         UserAgentConfiguration(
-            store: keyValueStore,
+            store: appKeyValueStore,
             launchTaskManager: launchTaskManager
         ).configure() // Called at launch end to avoid IPC race when spawning WebView for content blocking.
     }

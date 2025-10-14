@@ -54,3 +54,36 @@ extension WindowControllersManager {
             .eraseToAnyPublisher()
     }
 }
+
+extension Tab {
+    var contentChanged: AnyPublisher<Void, Never> {
+        $content.asVoid()
+            .eraseToAnyPublisher()
+    }
+}
+
+extension TabCollectionViewModel {
+    var tabsChanged: AnyPublisher<Void, Never> {
+        tabCollection.$tabs.nestedObjectChanges(\.contentChanged)
+            .merge(with: $selectionIndex.asVoid())
+            .eraseToAnyPublisher()
+    }
+}
+
+extension MainWindowController {
+    var tabsChanged: AnyPublisher<Void, Never> {
+        mainViewController.tabCollectionViewModel.tabsChanged
+            .eraseToAnyPublisher()
+    }
+}
+
+extension WindowControllersManager {
+    var tabsChanged: AnyPublisher<Void, Never> {
+        $mainWindowControllers.nestedObjectChanges(\.tabsChanged)
+            .handleEvents(receiveOutput: { [unowned self] in
+                self.updateIsInInitialState()
+            })
+            .filter { [unowned self] in !self.isInInitialState }
+            .eraseToAnyPublisher()
+    }
+}

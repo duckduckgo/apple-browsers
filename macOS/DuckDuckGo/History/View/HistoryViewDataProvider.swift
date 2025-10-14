@@ -94,11 +94,9 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         let rangesWithCounts = ranges.map { DataModel.HistoryRangeWithCount(id: $0, count: groupingsByRange[$0]?.items.count ?? 0) }
 
         // Remove all empty ranges from the end of the array
+        // TODO: exclude `sites` range
         var filteredRanges = Array(rangesWithCounts.reversed().drop(while: { visitsByRange[$0.id]?.isEmpty != false }).reversed())
-
-        // All = total number of history items (exclude synthetic 'sites')
-        let allCount = historyItems.count
-        filteredRanges.insert(.init(id: .all, count: allCount), at: 0)
+        filteredRanges.insert(.init(id: .all, count: groupingsByRange.values.map(\.items.count).reduce(0, +)), at: 0)
 
         return filteredRanges
     }

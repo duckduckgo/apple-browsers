@@ -64,7 +64,7 @@ final class SyncRecoveryPromptServiceTests: XCTestCase {
         )
 
         // When
-        let result = sut.shouldShowPrompt()
+        let result = await sut.shouldShowPrompt()
 
         // Then
         XCTAssertFalse(result)
@@ -81,7 +81,7 @@ final class SyncRecoveryPromptServiceTests: XCTestCase {
         )
 
         // When
-        let result = sut.shouldShowPrompt()
+        let result = await sut.shouldShowPrompt()
 
         // Then
         XCTAssertFalse(result)
@@ -99,7 +99,7 @@ final class SyncRecoveryPromptServiceTests: XCTestCase {
         )
 
         // When
-        let result = sut.shouldShowPrompt()
+        let result = await sut.shouldShowPrompt()
 
         // Then
         XCTAssertFalse(result)
@@ -126,28 +126,10 @@ final class SyncRecoveryPromptServiceTests: XCTestCase {
         )
 
         // When
-        let result = sut.shouldShowPrompt()
+        let result = await sut.shouldShowPrompt()
 
         // Then
         XCTAssertFalse(result)
-    }
-
-    func testShouldShowPrompt_WhenAllConditionsMet_SetsPerformedCheckFlag() async throws {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.newDeviceSyncPrompt]
-        mockSyncService.account = nil
-        sut = SyncRecoveryPromptService(
-            featureFlagger: mockFeatureFlagger,
-            syncService: mockSyncService,
-            keyValueStore: mockKeyValueStore,
-            isOnboardingComplete: true
-        )
-
-        // When
-        _ = sut.shouldShowPrompt()
-
-        let storedValue = try mockKeyValueStore.object(forKey: "com.duckduckgo.syncrecovery.check.performed") as? Bool
-        XCTAssertEqual(storedValue, true)
     }
 
     func testShouldShowPrompt_SetsHasPerformedCheckFlag() async throws {
@@ -161,7 +143,7 @@ final class SyncRecoveryPromptServiceTests: XCTestCase {
         )
 
         // When
-        _ = sut.shouldShowPrompt()
+        _ = await sut.shouldShowPrompt()
 
         // Then
         let storedValue = try mockKeyValueStore.object(forKey: "com.duckduckgo.syncrecovery.check.performed") as? Bool
@@ -187,7 +169,7 @@ final class SyncRecoveryPromptServiceTests: XCTestCase {
         )
 
         // When
-        let result = sut.shouldShowPrompt()
+        let result = await sut.shouldShowPrompt()
 
         // Then
         XCTAssertFalse(result)
@@ -216,7 +198,7 @@ final class SyncRecoveryPromptServiceTests: XCTestCase {
         )
 
         // When
-        let result = sut.shouldShowPrompt()
+        let result = await sut.shouldShowPrompt()
 
         // Then
         XCTAssertFalse(result)
@@ -250,7 +232,7 @@ final class SyncRecoveryPromptServiceTests: XCTestCase {
         )
 
         // When
-        let result = sut.shouldShowPrompt()
+        let result = await sut.shouldShowPrompt()
 
         // Then
         XCTAssertTrue(result)
@@ -284,7 +266,7 @@ final class SyncRecoveryPromptServiceTests: XCTestCase {
         )
 
         // When
-        let result = sut.shouldShowPrompt()
+        let result = await sut.shouldShowPrompt()
 
         // Then
         XCTAssertFalse(result)
@@ -306,42 +288,71 @@ final class SyncRecoveryPromptServiceTests: XCTestCase {
         XCTAssertTrue(sut.presenter is SyncRecoveryPromptPresenter)
     }
 
-    // MARK: - tryPresentSyncRecoveryPrompt Tests
-
-    func testTryPresentSyncRecoveryPrompt_WhenShouldShowPromptFalse_ReturnsFalse() async {
+    func testShouldShowPrompt_WhenAutofillDatesAreDistantPast_ReturnsFalse() async throws {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [] // Feature disabled
+        mockFeatureFlagger.enabledFeatureFlags = [.newDeviceSyncPrompt]
+        mockSyncService.account = nil
+
+        let mockVault = (try? MockSecureVaultFactory.makeVault(reporter: nil))!
+        mockVault.storedAccounts = []
+
+        let mockUserDefaults = UserDefaults(suiteName: "test")!
+        mockUserDefaults.set(Date.distantPast, forKey: AutofillUsageStore.Keys.autofillLastActiveKey)
+        mockUserDefaults.set(Date.distantPast, forKey: AutofillUsageStore.Keys.autofillFillDateKey)
+        let mockAutofillStore = AutofillUsageStore(standardUserDefaults: mockUserDefaults, appGroupUserDefaults: nil)
+
+        let yesterday = Date().addingTimeInterval(-86400)
+        let mockVaultDateProvider = MockVaultDateProvider(vaultCreationDate: yesterday)
+
         sut = SyncRecoveryPromptService(
             featureFlagger: mockFeatureFlagger,
             syncService: mockSyncService,
             keyValueStore: mockKeyValueStore,
-            isOnboardingComplete: true
+            isOnboardingComplete: true,
+            secureVault: mockVault,
+            autofillUsageStore: mockAutofillStore,
+            vaultDateProvider: mockVaultDateProvider
         )
-        let viewController = UIViewController()
 
         // When
-        let result = sut.tryPresentSyncRecoveryPrompt(from: viewController) { _ in }
+        let result = await sut.shouldShowPrompt()
 
         // Then
         XCTAssertFalse(result)
     }
 
-    func testTryPresentSyncRecoveryPrompt_WhenShouldShowPromptTrue_ReturnsTrue() async throws {
+    func testShouldShowPrompt_WhenOnlyLastActiveDateIsValid_AndVaultCreatedAfter_ReturnsTrue() async throws {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.newDeviceSyncPrompt]
         mockSyncService.account = nil
+
+        let mockVault = (try? MockSecureVaultFactory.makeVault(reporter: nil))!
+        mockVault.storedAccounts = []
+
+        let mockUserDefaults = UserDefaults(suiteName: "test")!
+        let twoDaysAgo = Date().addingTimeInterval(-172800)
+        mockUserDefaults.set(twoDaysAgo, forKey: AutofillUsageStore.Keys.autofillLastActiveKey)
+        mockUserDefaults.set(Date.distantPast, forKey: AutofillUsageStore.Keys.autofillFillDateKey)
+        let mockAutofillStore = AutofillUsageStore(standardUserDefaults: mockUserDefaults, appGroupUserDefaults: nil)
+
+        let yesterday = Date().addingTimeInterval(-86400)
+        let mockVaultDateProvider = MockVaultDateProvider(vaultCreationDate: yesterday)
+
         sut = SyncRecoveryPromptService(
             featureFlagger: mockFeatureFlagger,
             syncService: mockSyncService,
             keyValueStore: mockKeyValueStore,
-            isOnboardingComplete: true
+            isOnboardingComplete: true,
+            secureVault: mockVault,
+            autofillUsageStore: mockAutofillStore,
+            vaultDateProvider: mockVaultDateProvider
         )
-        let viewController = UIViewController()
 
         // When
-        let result = sut.tryPresentSyncRecoveryPrompt(from: viewController) { _ in }
+        let result = await sut.shouldShowPrompt()
 
-        XCTAssertNotNil(result)
+        // Then
+        XCTAssertTrue(result)
     }
 }
 

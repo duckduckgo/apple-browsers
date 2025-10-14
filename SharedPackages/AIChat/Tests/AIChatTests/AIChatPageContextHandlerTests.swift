@@ -34,26 +34,47 @@ final class AIChatPageContextHandlerTests: XCTestCase {
     }
 
     func testSetPayload() {
-        let testPayload: AIChatPageContextData = "hello"
+        let testPayload = AIChatPageContextData(
+            title: "Test Title",
+            favicon: [AIChatPageContextData.PageContextFavicon(href: "https://example.com/favicon.ico", rel: "icon")],
+            url: "https://example.com",
+            content: "hello",
+            truncated: false
+        )
         pageContextHandler.setData(testPayload)
 
         let consumedPayload = pageContextHandler.consumeData()
-        XCTAssertEqual(consumedPayload, "hello", "The payload should be set correctly.")
+        XCTAssertEqual(consumedPayload?.content, "hello", "The payload should be set correctly.")
+        XCTAssertEqual(consumedPayload?.title, "Test Title", "The title should be set correctly.")
+        XCTAssertEqual(consumedPayload?.url, "https://example.com", "The url should be set correctly.")
+        XCTAssertEqual(consumedPayload?.truncated, false, "The truncated flag should be set correctly.")
     }
 
     func testConsumePayload() {
-        let testPayload: AIChatPageContextData = "hello"
+        let testPayload = AIChatPageContextData(
+            title: "Test Title",
+            favicon: [AIChatPageContextData.PageContextFavicon(href: "https://example.com/favicon.ico", rel: "icon")],
+            url: "https://example.com",
+            content: "hello",
+            truncated: false
+        )
         pageContextHandler.setData(testPayload)
 
         let consumedPayload = pageContextHandler.consumeData()
-        XCTAssertEqual(consumedPayload, "hello", "The payload should be consumed correctly.")
+        XCTAssertEqual(consumedPayload?.content, "hello", "The payload should be consumed correctly.")
 
         let secondConsume = pageContextHandler.consumeData()
         XCTAssertNil(secondConsume, "The payload should be nil after being consumed.")
     }
 
     func testReset() {
-        let testPayload: AIChatPageContextData = "hello"
+        let testPayload = AIChatPageContextData(
+            title: "Test Title",
+            favicon: [AIChatPageContextData.PageContextFavicon(href: "https://example.com/favicon.ico", rel: "icon")],
+            url: "https://example.com",
+            content: "hello",
+            truncated: false
+        )
         pageContextHandler.setData(testPayload)
 
         pageContextHandler.reset()

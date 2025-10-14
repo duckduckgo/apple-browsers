@@ -154,10 +154,8 @@ final class NavigationBarViewController: NSViewController {
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
     private let showTab: (Tab.TabContent) -> Void
 
-    private let themeManager: ThemeManaging
-    private var theme: ThemeStyleProviding {
-        themeManager.theme
-    }
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
 
     private var leftFocusSpacer: NSView?
     private var rightFocusSpacer: NSView?
@@ -1069,15 +1067,6 @@ final class NavigationBarViewController: NSViewController {
         overflowButton.setCornerRadius(theme.toolbarButtonsCornerRadius)
     }
 
-    private func subscribeToThemeChanges() {
-        themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.applyThemeStyles()
-            }
-            .store(in: &cancellables)
-    }
-
     private func subscribeToSelectedTabViewModel() {
         selectedTabViewModelCancellable = tabCollectionViewModel.$selectedTabViewModel.receive(on: DispatchQueue.main).sink { [weak self] _ in
             self?.subscribeToNavigationActionFlags()
@@ -1199,13 +1188,6 @@ final class NavigationBarViewController: NSViewController {
         view.setAccessibilityRole(.toolbar) // AXToolbar
         view.setAccessibilityEnabled(true) // make the view AX-visible
         view.setAccessibilityElement(true) // is AX control by itself
-    }
-
-    // MARK: - Themes
-
-    private func applyThemeStyles() {
-        setupNavigationButtons()
-        setupBackgroundViewsAndColors()
     }
 
     // MARK: - Actions
@@ -1797,6 +1779,16 @@ final class NavigationBarViewController: NSViewController {
         addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(menu)
     }
 }
+
+// MARK: - ThemeUpdateListening
+extension NavigationBarViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        setupNavigationButtons()
+        setupBackgroundViewsAndColors()
+    }
+}
+
 // MARK: - NSMenuDelegate
 extension NavigationBarViewController: NSMenuDelegate {
 

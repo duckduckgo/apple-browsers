@@ -53,6 +53,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             appearancePreferences: appearancePreferences
         )
 
+        let windowControllersManager = WindowControllersManagerMock()
         let fireCoordinator = FireCoordinator(tld: TLD(),
                                               featureFlagger: Application.appDelegate.featureFlagger,
                                               historyCoordinating: HistoryCoordinatingMock(),
@@ -60,7 +61,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                               onboardingContextualDialogsManager: nil,
                                               fireproofDomains: MockFireproofDomains(),
                                               faviconManagement: FaviconManagerMock(),
-                                              windowControllersManager: WindowControllersManagerMock(),
+                                              windowControllersManager: windowControllersManager,
                                               pixelFiring: nil,
                                               historyProvider: MockHistoryViewDataProvider())
         updating = UserContentUpdating(contentBlockerRulesManager: rulesManager,
@@ -77,7 +78,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        onboardingNavigationDelegate: CapturingOnboardingNavigation(),
                                        appearancePreferences: appearancePreferences,
                                        startupPreferences: startupPreferences,
-                                       windowControllersManager: WindowControllersManagerMock(),
+                                       windowControllersManager: windowControllersManager,
                                        bookmarkManager: MockBookmarkManager(),
                                        historyCoordinator: CapturingHistoryDataSource(),
                                        fireproofDomains: MockFireproofDomains(domains: []),

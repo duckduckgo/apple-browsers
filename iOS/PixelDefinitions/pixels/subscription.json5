@@ -160,83 +160,83 @@
         ]
     },
     // Defined in https://app.asana.com/1/137249556945/task/1211354430557014
-    m_ios_wide_subscription_restore: {
-        description: 'Wide pixel sent at the end of a subscription restore flow',
-        owners: ['hanyutang-sandra'],
-        triggers: ['other'],
-        suffixes: ['daily'],
-        parameters: [
-            'widePixelAppName',
-            'widePixelAppVersion',
-            'widePixelInternalUser',
-            'widePixelPlatform',
-            'widePixelType',
-            'widePixelFormFactor',
-            'widePixelSampleRate',
-            'widePixelFeatureStatus',
-            'widePixelErrorDomain',
-            'widePixelErrorCode',
-            'widePixelUnderlyingErrorDomain',
-            'widePixelUnderlyingErrorCode',
+    "m_ios_wide_subscription_restore": {
+        "description": "Wide pixel sent at the end of a subscription restore flow",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "widePixelAppName",
+            "widePixelAppVersion",
+            "widePixelInternalUser",
+            "widePixelPlatform",
+            "widePixelType",
+            "widePixelFormFactor",
+            "widePixelSampleRate",
+            "widePixelFeatureStatus",
+            "widePixelErrorDomain",
+            "widePixelErrorCode",
+            "widePixelUnderlyingErrorDomain",
+            "widePixelUnderlyingErrorCode",
             {
-                key: 'feature.name',
-                type: 'string',
-                description: 'Feature identifier for this wide pixel',
-                enum: ['subscription-restore'],
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["subscription-restore"]
             },
             {
-                key: 'feature.status_reason',
-                type: 'string',
-                description: 'Reason string for the current status, when applicable - currently applied to UNKNOWN status pixels',
-                enum: ['partial_data', 'timeout'],
+                "key": "feature.status_reason",
+                "type": "string",
+                "description": "Reason string for the current status, when applicable - currently applied to UNKNOWN status pixels",
+                "enum": ["partial_data", "timeout"]
             },
             {
-                key: 'feature.data.ext.restore_platform',
-                type: 'string',
-                description: 'Platform used to complete the restore',
-                enum: ['apple_account', 'email_address', 'purchase_background_task'],
+                "key": "feature.data.ext.restore_platform",
+                "type": "string",
+                "description": "Platform used to complete the restore",
+                "enum": ["apple_account", "email_address", "purchase_background_task"]
             },
             {
-                key: 'feature.data.ext.email_address_restore_last_url',
-                type: 'string',
-                description: 'The url at which the email flow, when applicable',
-                enum: [
-                    'activation_flow',
-                    'activation_flow_email',
-                    'activation_flow_activate_email',
-                    'activation_flow_activate_email_otp',
-                    'activation_flow_success',
-                ],
+                "key": "feature.data.ext.email_address_restore_last_url",
+                "type": "string",
+                "description": "The url at which the email flow, when applicable",
+                "enum": [
+                    "activation_flow",
+                    "activation_flow_email",
+                    "activation_flow_activate_email",
+                    "activation_flow_activate_email_otp",
+                    "activation_flow_success"
+                ]
             },
             {
-                key: 'feature.data.ext.apple_account_restore_latency_ms_bucketed',
-                type: 'integer',
-                description: 'Bucketed latency for restore using apple account (in ms)',
-                enum: [1000, 5000, 10000, 30000, 60000, 300000, 600000],
+                "key": "feature.data.ext.apple_account_restore_latency_ms_bucketed",
+                "type": "integer",
+                "description": "Bucketed latency for restore using apple account (in ms)",
+                "enum": [1000, 5000, 10000, 30000, 60000, 300000, 600000]
             },
             {
-                key: 'feature.data.ext.email_address_restore_latency_ms_bucketed',
-                type: 'integer',
-                description: 'Bucketed latency for restore using email address (in ms)',
-                enum: [-1, 10000, 30000, 60000, 300000, 600000, 900000],
+                "key": "feature.data.ext.email_address_restore_latency_ms_bucketed",
+                "type": "integer",
+                "description": "Bucketed latency for restore using email address (in ms)",
+                "enum": [-1, 10000, 30000, 60000, 300000, 600000, 900000]
             },
             {
-                key: 'app.native_apps_experiments',
-                description: 'The list of enrolled Native Apps experiments in a comma-separated string, e.g. experiment1.cohortX,experiment2.cohortY',
-                type: 'string',
+                "key": "app.native_apps_experiments",
+                "description": "The list of enrolled Native Apps experiments in a comma-separated string, e.g. experiment1.cohortX,experiment2.cohortY",
+                "type": "string"
             },
             {
-                key: 'context.name',
-                type: 'string',
-                description: 'Context name for the flow',
-                enum: [
-                    'funnel_appsettings_ios',
-                    'funnel_purchaseoffer_ios',
-                    'funnel_prepurchasecheck_ios',
-                    'funnel_onpurchasecheck_multiple',
-                ],
-            },
-        ],
+                "key": "context.name",
+                "type": "string",
+                "description": "Context name for the flow",
+                "enum": [
+                    "funnel_appsettings_ios",
+                    "funnel_purchaseoffer_ios",
+                    "funnel_prepurchasecheck_ios",
+                    "funnel_onpurchasecheck_multiple"
+                ]
+            }
+        ]
     },
     // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211468169482228?focus=true
     "m_ios_wide_auth_v2_token_refresh": {

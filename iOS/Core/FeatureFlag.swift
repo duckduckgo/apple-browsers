@@ -178,7 +178,7 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211245201777978?focus=true
     case serpSettingsFollowUpQuestions
-    
+
     /// https://app.asana.com/1/137249556945/task/1211354430557015?focus=true
     case subscriptionRestoreWidePixelMeasurement
 
@@ -187,6 +187,12 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211555469558398?focus=true
     case authV2WideEventEnabled
+
+    /// https://app.asana.com/1/137249556945/project/1210594645229050/task/1211494295271901?focus=true
+    case winBackOffer
+
+    ///  https://app.asana.com/1/137249556945/project/72649045549333/task/1207055705580443?focus=true
+    case syncCreditCards
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -205,7 +211,9 @@ extension FeatureFlag: FeatureFlagDescribing {
              .refreshButtonPosition,
              .newDeviceSyncPrompt,
              .subscriptionRestoreWidePixelMeasurement,
-             .authV2WideEventEnabled:
+             .authV2WideEventEnabled,
+             .embeddedSERPSettings,
+             .syncCreditCards:
             true
         default:
             false
@@ -261,7 +269,9 @@ extension FeatureFlag: FeatureFlagDescribing {
              .serpSettingsFollowUpQuestions,
              .subscriptionRestoreWidePixelMeasurement,
              .embeddedSERPSettings,
-             .authV2WideEventEnabled:
+             .authV2WideEventEnabled,
+             .winBackOffer,
+             .syncCreditCards:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -459,6 +469,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.embeddedSERPSettings))
         case .authV2WideEventEnabled:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
+        case .winBackOffer:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
+        case .syncCreditCards:
+            return .remoteReleasable(.subfeature(SyncSubfeature.syncCreditCards))
         }
     }
 }

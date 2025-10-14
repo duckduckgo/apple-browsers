@@ -59,13 +59,13 @@ final class FireMock: FireProtocol {
     }
 
     @MainActor
-    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab, completion: (() -> Void)? = nil) {
+    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab, completion: (@MainActor () -> Void)? = nil) {
         burnAllCalls.append(.init(isBurnOnExit: isBurnOnExit, url: url))
         completion?()
     }
 
     @MainActor
-    func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool = true, completion: (() -> Void)? = nil) {
+    func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool = true, completion: (@MainActor () -> Void)? = nil) {
         burnEntityCalls.append(.init(entity: entity, includingHistory: includingHistory))
         completion?()
     }
@@ -77,7 +77,7 @@ final class FireMock: FireProtocol {
                     closeWindows: Bool = true,
                     clearSiteData: Bool = true,
                     urlToOpenIfWindowsAreClosed url: URL? = .newtab,
-                    completion: (() -> Void)? = nil) {
+                    completion: (@MainActor () -> Void)? = nil) {
         burnVisitsCalls.append(.init(visits: visits, isToday: isToday, closeWindows: closeWindows, clearSiteData: clearSiteData, url: url))
         completion?()
     }

@@ -34,7 +34,7 @@ struct FireDialogResult {
     var selectedCookieDomains: Set<String>?
     /// Optional explicit visits selection for history flows
     var selectedVisits: [Visit]?
-    /// Optional hint for today to enable animation when burning visits
+    /// Burn all windows in case we are burning visits for today (respecting closeWindows flag)
     var isToday: Bool = false
 }
 
@@ -81,8 +81,8 @@ struct FireDialogView: ModalView {
     @State private var isAnimatingSitesOverlay: Bool = false
 
     init(viewModel: FireDialogViewModel,
-         showSitesOverlay: Bool = false,
-         showIndividualSitesLink: Bool = true,
+         showSitesOverlay: Bool = false, // for Previews - @State flag to show "sites to be removed" overlay
+         showIndividualSitesLink: Bool,
          onConfirm: ((FireDialogView.Response) -> Void)? = nil) {
         self.viewModel = viewModel
         self._isShowingSitesOverlay = State(initialValue: showSitesOverlay)
@@ -272,8 +272,9 @@ struct FireDialogView: ModalView {
     private func presentManageFireproof() {
         // Use the app's preferences presenter to begin a sheet on the parent window (stacks above the Fire sheet)
         Task { @MainActor in
+            // await for the dialog to complete and trigger data reload
             await Application.appDelegate.dataClearingPreferences.presentManageFireproofSitesDialog()
-            viewModel.clearingOption = viewModel.clearingOption // trigger data reload
+            viewModel.clearingOption = viewModel.clearingOption
         }
     }
 
@@ -538,7 +539,7 @@ private class MockFireproofDomains: FireproofDomains {
     )
 
     PreviewView(showWindowTitle: false) {
-        FireDialogView(viewModel: vm)
+        FireDialogView(viewModel: vm, showIndividualSitesLink: true)
     }
 }
 
@@ -579,7 +580,7 @@ private class MockFireproofDomains: FireproofDomains {
     )
 
     return PreviewView(showWindowTitle: false) {
-        FireDialogView(viewModel: vm, showSitesOverlay: true)
+        FireDialogView(viewModel: vm, showSitesOverlay: true, showIndividualSitesLink: true)
     }
 }
 #endif

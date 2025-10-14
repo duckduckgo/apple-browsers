@@ -88,10 +88,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var pinnedTabsDiscoveryPopover: NSPopover?
     private weak var crashPopoverViewController: PopoverMessageViewController?
 
-    private let themeManager: ThemeManaging
-    private var theme: ThemeStyleProviding {
-        themeManager.theme
-    }
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
 
     var tabPreviewsEnabled: Bool = true
 
@@ -216,7 +214,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         setupTabsContainersHeight()
         subscribeToThemeChanges()
 
-        applyThemeStyles()
+        applyThemeStyle()
     }
 
     override func viewWillAppear() {
@@ -243,9 +241,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     deinit {
 #if DEBUG
-        if isLazyVar(named: "tabPreviewWindowController", initializedIn: self) {
-            tabPreviewWindowController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
-        }
+        _tabPreviewWindowController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         tabBarRemoteMessagePopoverHoverTimer?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
 
         feedbackBarButtonHostingController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
@@ -892,40 +888,17 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         .store(in: &cancellables)
     }
 
-    private func subscribeToThemeChanges() {
-        themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                self?.applyThemeStyles(theme: theme)
-            }
-            .store(in: &cancellables)
-    }
-
-    private func applyThemeStyles() {
-        applyThemeStyles(theme: theme)
-    }
-
-    private func applyThemeStyles(theme: ThemeStyleProviding) {
-        let colorsProvider = theme.colorsProvider
-
-        backgroundColorView.backgroundColor = colorsProvider.baseBackgroundColor
-
-        fireButton.normalTintColor = colorsProvider.iconsColor
-        fireButton.mouseOverColor = colorsProvider.buttonMouseOverColor
-
-        leftScrollButton.normalTintColor = colorsProvider.iconsColor
-        leftScrollButton.mouseOverColor = colorsProvider.buttonMouseOverColor
-
-        rightScrollButton.normalTintColor = colorsProvider.iconsColor
-        rightScrollButton.mouseOverColor = colorsProvider.buttonMouseOverColor
-
-        addTabButton.normalTintColor = colorsProvider.iconsColor
-        addTabButton.mouseOverColor = colorsProvider.buttonMouseOverColor
-    }
-
     // MARK: - Tab Preview
 
-    private lazy var tabPreviewWindowController = TabPreviewWindowController()
+    private var _tabPreviewWindowController: TabPreviewWindowController?
+    private var tabPreviewWindowController: TabPreviewWindowController {
+        if let tabPreviewWindowController = _tabPreviewWindowController {
+            return tabPreviewWindowController
+        }
+        let tabPreviewWindowController = TabPreviewWindowController()
+        _tabPreviewWindowController = tabPreviewWindowController
+        return tabPreviewWindowController
+    }
 
     private func subscribeToChildWindows() {
         guard let window = view.window else {
@@ -995,7 +968,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     func hideTabPreview(withDelay: Bool = false, allowQuickRedisplay: Bool = false) {
-        tabPreviewWindowController.hide(withDelay: withDelay, allowQuickRedisplay: allowQuickRedisplay)
+        _tabPreviewWindowController?.hide(withDelay: withDelay, allowQuickRedisplay: allowQuickRedisplay)
     }
 
 }
@@ -1022,6 +995,30 @@ extension TabBarViewController: MouseOverButtonDelegate {
         return true
     }
 }
+
+// MARK: - ThemeUpdateListening
+extension TabBarViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: any ThemeStyleProviding) {
+        let colorsProvider = theme.colorsProvider
+        let isFireWindow = tabCollectionViewModel.isBurner
+
+        backgroundColorView.backgroundColor = colorsProvider.baseBackgroundColor
+
+        fireButton.normalTintColor = isFireWindow ? .white : colorsProvider.iconsColor
+        fireButton.mouseOverColor = isFireWindow ? .fireButtonRedHover : colorsProvider.buttonMouseOverColor
+
+        leftScrollButton.normalTintColor = colorsProvider.iconsColor
+        leftScrollButton.mouseOverColor = colorsProvider.buttonMouseOverColor
+
+        rightScrollButton.normalTintColor = colorsProvider.iconsColor
+        rightScrollButton.mouseOverColor = colorsProvider.buttonMouseOverColor
+
+        addTabButton.normalTintColor = colorsProvider.iconsColor
+        addTabButton.mouseOverColor = colorsProvider.buttonMouseOverColor
+    }
+}
+
 // MARK: - TabCollectionViewModelDelegate
 extension TabBarViewController: TabCollectionViewModelDelegate {
 

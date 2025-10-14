@@ -81,8 +81,8 @@ struct FireDialogView: ModalView {
     @State private var isAnimatingSitesOverlay: Bool = false
 
     init(viewModel: FireDialogViewModel,
-         showSitesOverlay: Bool = false,
-         showIndividualSitesLink: Bool = true,
+         showSitesOverlay: Bool = false, // for Previews - @State flag to show "sites to be removed" overlay
+         showIndividualSitesLink: Bool,
          onConfirm: ((FireDialogView.Response) -> Void)? = nil) {
         self.viewModel = viewModel
         self._isShowingSitesOverlay = State(initialValue: showSitesOverlay)
@@ -538,7 +538,7 @@ private class MockFireproofDomains: FireproofDomains {
     )
 
     PreviewView(showWindowTitle: false) {
-        FireDialogView(viewModel: vm)
+        FireDialogView(viewModel: vm, showIndividualSitesLink: true)
     }
 }
 
@@ -579,7 +579,7 @@ private class MockFireproofDomains: FireproofDomains {
     )
 
     return PreviewView(showWindowTitle: false) {
-        FireDialogView(viewModel: vm, showSitesOverlay: true)
+        FireDialogView(viewModel: vm, showSitesOverlay: true, showIndividualSitesLink: true)
     }
 }
 #endif

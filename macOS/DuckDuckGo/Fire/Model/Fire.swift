@@ -38,15 +38,15 @@ protocol FireProtocol: AnyObject {
     func fireAnimationDidStart()
     func fireAnimationDidFinish()
 
-    @MainActor func burnAll(isBurnOnExit: Bool, opening url: URL, completion: (() -> Void)?)
-    @MainActor func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool, completion: (() -> Void)?)
+    @MainActor func burnAll(isBurnOnExit: Bool, opening url: URL, completion: (@MainActor () -> Void)?)
+    @MainActor func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool, completion: (@MainActor () -> Void)?)
     @MainActor func burnVisits(_ visits: [Visit],
                                except fireproofDomains: DomainFireproofStatusProviding,
                                isToday: Bool,
                                closeWindows: Bool,
                                clearSiteData: Bool,
                                urlToOpenIfWindowsAreClosed url: URL?,
-                               completion: (() -> Void)?)
+                               completion: (@MainActor () -> Void)?)
 }
 extension FireProtocol {
 
@@ -78,7 +78,7 @@ extension FireProtocol {
                     except fireproofDomains: DomainFireproofStatusProviding,
                     isToday: Bool,
                     urlToOpenIfWindowsAreClosed url: URL? = nil,
-                    completion: (() -> Void)? = nil) {
+                    completion: (@MainActor () -> Void)? = nil) {
         burnVisits(visits,
                    except: fireproofDomains,
                    isToday: isToday,
@@ -260,7 +260,7 @@ final class Fire: FireProtocol {
     }
 
     @MainActor
-    func burnEntity(_ entity: BurningEntity, includingHistory: Bool, completion: (() -> Void)?) {
+    func burnEntity(_ entity: BurningEntity, includingHistory: Bool, completion: (@MainActor () -> Void)?) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -322,7 +322,7 @@ final class Fire: FireProtocol {
     }
 
     @MainActor
-    func burnAll(isBurnOnExit: Bool, opening url: URL, completion: (() -> Void)?) {
+    func burnAll(isBurnOnExit: Bool, opening url: URL, completion: (@MainActor () -> Void)?) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -390,7 +390,7 @@ final class Fire: FireProtocol {
                     closeWindows: Bool,
                     clearSiteData: Bool,
                     urlToOpenIfWindowsAreClosed url: URL?,
-                    completion: (() -> Void)?) {
+                    completion: (@MainActor () -> Void)?) {
 
         // Get domains to burn
         var domains = Set<String>()
@@ -491,6 +491,7 @@ final class Fire: FireProtocol {
             /// When we are burning on exit we do not need to open a new window.
             if windowControllersManager.mainWindowControllers.count == 0 && !isBurnOnExit {
                 if case let .allWindows(_, _, customURLToOpen: customURL, _) = entity, let customURL {
+                    // We‘re always reopening a “Regular” window since this logics is only called from a Regular window
                     let tab = Tab(content: .contentFromURL(customURL, source: .ui), shouldLoadInBackground: true, burnerMode: .regular)
                     let tabCollection = TabCollection(tabs: [tab], isPopup: false)
 
@@ -520,7 +521,7 @@ final class Fire: FireProtocol {
     // MARK: - History
 
     @MainActor
-    private func burnHistory(ofEntity entity: BurningEntity, completion: @escaping () -> Void) {
+    private func burnHistory(ofEntity entity: BurningEntity, completion: @escaping @MainActor () -> Void) {
         let visits: [Visit]
         switch entity {
         case .none(selectedDomains: let domains):
@@ -544,11 +545,11 @@ final class Fire: FireProtocol {
         historyCoordinating.burnVisits(visits, completion: completion)
     }
 
-    private func burnHistory(of baseDomains: Set<String>, completion: @escaping (Set<URL>) -> Void) {
+    private func burnHistory(of baseDomains: Set<String>, completion: @escaping @MainActor (Set<URL>) -> Void) {
         historyCoordinating.burnDomains(baseDomains, tld: tld, completion: completion)
     }
 
-    private func burnAllHistory(completion: @escaping () -> Void) {
+    private func burnAllHistory(completion: @escaping @MainActor () -> Void) {
         historyCoordinating.burnAll(completion: completion)
     }
 
@@ -594,11 +595,11 @@ final class Fire: FireProtocol {
 
     // MARK: - Permissions
 
-    private func burnPermissions(completion: @escaping () -> Void) {
+    private func burnPermissions(completion: @escaping @MainActor () -> Void) {
         self.permissionManager.burnPermissions(except: fireproofDomains, completion: completion)
     }
 
-    private func burnPermissions(of baseDomains: Set<String>, completion: @escaping () -> Void) {
+    private func burnPermissions(of baseDomains: Set<String>, completion: @MainActor @escaping () -> Void) {
         self.permissionManager.burnPermissions(of: baseDomains, tld: tld, completion: completion)
     }
 
@@ -624,7 +625,7 @@ final class Fire: FireProtocol {
         return Set(accounts.compactMap { $0.domain })
     }
 
-    private func burnFavicons(completion: @escaping () -> Void) {
+    private func burnFavicons(completion: @escaping @MainActor () -> Void) {
         Task { @MainActor in
             await self.faviconManagement.burn(except: fireproofDomains,
                                               bookmarkManager: bookmarkManager,
@@ -634,7 +635,7 @@ final class Fire: FireProtocol {
     }
 
     @MainActor
-    private func burnFavicons(for baseDomains: Set<String>, completion: @escaping () -> Void) {
+    private func burnFavicons(for baseDomains: Set<String>, completion: @escaping @MainActor () -> Void) {
         Task { @MainActor in
             await self.faviconManagement.burnDomains(baseDomains,
                                                      exceptBookmarks: bookmarkManager,

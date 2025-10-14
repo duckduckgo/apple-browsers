@@ -79,7 +79,7 @@ public class SitePerformanceTester: NSObject {
             )
 
             loadTimes.append(contentsOf: iterationResult.loadTimes)
-            detailedMetrics = iterationResult.metrics
+            mergeMetrics(from: iterationResult.metrics, into: &detailedMetrics)
             failedAttempts += iterationResult.failedAttempts
 
             shouldContinue = checkShouldContinue(
@@ -270,6 +270,23 @@ public class SitePerformanceTester: NSObject {
         logger.info("Consistency metrics: \(statusMsg) (target: <20% AND <2.0x)")
         logger.info("  Median: \(Int(median))ms, IQR: \(Int(iqr))ms, P50: \(Int(sorted[p50Index]))ms, P95: \(Int(sorted[p95Index]))ms")
         progressHandler?(iteration, maxIterations, statusMsg)
+    }
+
+    private func mergeMetrics(from source: CollectedMetrics, into target: inout CollectedMetrics) {
+        target.loadComplete.append(contentsOf: source.loadComplete)
+        target.domComplete.append(contentsOf: source.domComplete)
+        target.domContentLoaded.append(contentsOf: source.domContentLoaded)
+        target.domInteractive.append(contentsOf: source.domInteractive)
+        target.fcp.append(contentsOf: source.fcp)
+        target.ttfb.append(contentsOf: source.ttfb)
+        target.responseTime.append(contentsOf: source.responseTime)
+        target.serverTime.append(contentsOf: source.serverTime)
+        target.transferSize.append(contentsOf: source.transferSize)
+        target.encodedBodySize.append(contentsOf: source.encodedBodySize)
+        target.decodedBodySize.append(contentsOf: source.decodedBodySize)
+        target.resourceCount.append(contentsOf: source.resourceCount)
+        target.totalResourcesSize.append(contentsOf: source.totalResourcesSize)
+        target.tti.append(contentsOf: source.tti)
     }
 
     private func logTestSummary(detailedMetrics: CollectedMetrics, currentIteration: Int) {

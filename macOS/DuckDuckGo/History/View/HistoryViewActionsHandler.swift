@@ -339,22 +339,27 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
 extension DataModel.HistoryQueryKind {
     var deleteMode: HistoryViewDeleteDialogModel.DeleteMode {
         switch self {
-        case .rangeFilter(let range):
-            switch range {
-            case .all:
-                return .all
-            case .today:
-                return .today
-            case .yesterday:
-                return .yesterday
-            case .older:
-                return .older
-            case .sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday:
-                guard let date = range.date(for: Date()) else {
-                    return .unspecified
-                }
-                return .date(date)
+        case .rangeFilter(.all):
+            return .all
+        case .rangeFilter(.today):
+            return .today
+        case .rangeFilter(.yesterday):
+            return .yesterday
+        case .rangeFilter(.older):
+            return .older
+        case .rangeFilter(.sunday),
+             .rangeFilter(.monday),
+             .rangeFilter(.tuesday),
+             .rangeFilter(.wednesday),
+             .rangeFilter(.thursday),
+             .rangeFilter(.friday),
+             .rangeFilter(.saturday):
+            guard let date = historyRange?.date(for: Date()) else {
+                assertionFailure("Daily history range must always compute a valid date")
+                return .unspecified
             }
+            return .date(date)
+
         case .dateFilter(let date):
             return .date(date)
         case .domainFilter(let domains):

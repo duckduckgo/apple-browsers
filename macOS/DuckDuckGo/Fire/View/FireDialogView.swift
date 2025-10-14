@@ -34,7 +34,7 @@ struct FireDialogResult {
     var selectedCookieDomains: Set<String>?
     /// Optional explicit visits selection for history flows
     var selectedVisits: [Visit]?
-    /// Optional hint for today to enable animation when burning visits
+    /// Burn all windows in case we are burning visits for today (respecting closeWindows flag)
     var isToday: Bool = false
 }
 
@@ -272,8 +272,9 @@ struct FireDialogView: ModalView {
     private func presentManageFireproof() {
         // Use the app's preferences presenter to begin a sheet on the parent window (stacks above the Fire sheet)
         Task { @MainActor in
+            // await for the dialog to complete and trigger data reload
             await Application.appDelegate.dataClearingPreferences.presentManageFireproofSitesDialog()
-            viewModel.clearingOption = viewModel.clearingOption // trigger data reload
+            viewModel.clearingOption = viewModel.clearingOption
         }
     }
 

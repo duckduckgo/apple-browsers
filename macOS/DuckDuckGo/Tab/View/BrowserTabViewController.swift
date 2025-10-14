@@ -255,6 +255,7 @@ final class BrowserTabViewController: NSViewController {
 
     override func viewDidAppear() {
         super.viewDidAppear()
+
         subscribeToNotifications()
     }
 
@@ -852,13 +853,9 @@ final class BrowserTabViewController: NSViewController {
     func adjustFirstResponder(force: Bool = false, tabViewModel: TabViewModel? = nil, tabContent: Tab.TabContent? = nil) {
         viewToMakeFirstResponderAfterAdding = nil
         guard let window = view.window, window.isVisible,
-              let tabViewModel = tabViewModel ?? self.tabViewModel else {
-            return
-        }
+              let tabViewModel = tabViewModel ?? self.tabViewModel else { return }
         let tabContent = tabContent ?? tabViewModel.tab.content
-        guard force || shouldMakeContentViewFirstResponder(for: tabContent) else {
-            return
-        }
+        guard force || shouldMakeContentViewFirstResponder(for: tabContent) else { return }
 
         let getView: (() -> NSView?)?
         switch tabContent {
@@ -867,9 +864,7 @@ final class BrowserTabViewController: NSViewController {
             return
         case .url, .subscription, .identityTheftRestoration, .onboarding, .releaseNotes, .history, .aiChat, .webExtensionUrl:
             getView = { [weak self, weak tabViewModel] in
-                guard let self, let tabViewModel else {
-                    return nil
-                }
+                guard let self, let tabViewModel else { return nil }
                 return webView(for: tabViewModel, tabContent: tabContent)
             }
         case .settings:
@@ -889,17 +884,18 @@ final class BrowserTabViewController: NSViewController {
             contentView = nil
         }
 
-        guard window.firstResponder !== contentView ?? window else {
-            return
-        }
+        guard window.firstResponder !== contentView ?? window else { return }
         window.makeFirstResponder(contentView)
     }
 
     private var viewToMakeFirstResponderAfterAdding: (() -> NSView?)?
     private func adjustFirstResponderAfterAddingContentViewIfNeeded() {
         guard let window = view.window,
-              let contentView = viewToMakeFirstResponderAfterAdding?(),
-              contentView.window === window else { return }
+              let contentView = viewToMakeFirstResponderAfterAdding?() else { return }
+        guard contentView.window === window else {
+            Logger.general.error("BrowserTabViewController: Content view window is \(contentView.window?.description ?? "<nil>") but expected: \(window)")
+            return
+        }
 
         viewToMakeFirstResponderAfterAdding = nil
 
@@ -1645,7 +1641,10 @@ extension BrowserTabViewController {
     private func makeWebViewSnapshot(_ webView: WebView? = nil) {
         dispatchPrecondition(condition: .onQueue(.main))
 
-        guard let webView = webView ?? self.webView else { return }
+        guard let webView = webView ?? self.webView else {
+            Logger.general.error("BrowserTabViewController: failed to create a snapshot of webView")
+            return
+        }
 
         let config = WKSnapshotConfiguration()
         config.afterScreenUpdates = false
@@ -1654,7 +1653,10 @@ extension BrowserTabViewController {
         webView.takeSnapshot(with: config) { [weak self] image, _ in
             guard let self, let image,
                   // the window became key while the snapshot was prepared
-                  self.view.window?.isKeyWindow == false else { return }
+                  self.view.window?.isKeyWindow == false else {
+                Logger.general.error("BrowserTabViewController: failed to create a snapshot of webView")
+                return
+            }
 
             showWebViewSnapshot(with: image)
         }

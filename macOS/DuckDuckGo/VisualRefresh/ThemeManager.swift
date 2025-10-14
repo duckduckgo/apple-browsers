@@ -19,6 +19,8 @@
 import Foundation
 import Combine
 import AppKit
+import DesignResourcesKit
+import BrowserServicesKit
 
 protocol ThemeManaging {
     var theme: ThemeStyleProviding { get }
@@ -27,22 +29,36 @@ protocol ThemeManaging {
 
 final class ThemeManager: ObservableObject, ThemeManaging {
     private var cancellables = Set<AnyCancellable>()
+    private var appearancePreferences: AppearancePreferences
     @Published private(set) var theme: ThemeStyleProviding
 
     var themePublisher: Published<any ThemeStyleProviding>.Publisher {
         $theme
     }
 
-    init(appearancePreferences: AppearancePreferences) {
-        theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName)
+    init(appearancePreferences: AppearancePreferences, internalUserDecider: InternalUserDecider) {
+        self.appearancePreferences = appearancePreferences
+        self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName)
+
         subscribeToThemeNameChanges(appearancePreferences: appearancePreferences)
+        subscribeToInternalUserChanges(internalUserDecider: internalUserDecider)
     }
 
     private func subscribeToThemeNameChanges(appearancePreferences: AppearancePreferences) {
         appearancePreferences.$themeName
+            .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] themeName in
                 self?.switchToTheme(named: themeName)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToInternalUserChanges(internalUserDecider: InternalUserDecider) {
+        internalUserDecider.isInternalUserPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isInternalUser in
+                self?.resetThemeNameIfNeeded(isInternalUser: isInternalUser)
             }
             .store(in: &cancellables)
     }
@@ -51,6 +67,23 @@ final class ThemeManager: ObservableObject, ThemeManaging {
 private extension ThemeManager {
 
     func switchToTheme(named themeName: ThemeName) {
+        /// Required to get `DesignResourcesKit` instantiate new Colors with the new Palette
+        DesignSystemPalette.current = themeName.designColorPalette
+
+        /// Relay the change to all of our observers
         theme = ThemeStyle.buildThemeStyle(themeName: themeName)
+    }
+
+    func resetThemeNameIfNeeded(isInternalUser: Bool) {
+        /// Internal Users should not see the `.default` theme
+        if isInternalUser, appearancePreferences.themeName == .default {
+            appearancePreferences.themeName = .figma
+            return
+        }
+
+        /// Non Internal Users should only see the `.default` theme
+        if isInternalUser == false, appearancePreferences.themeName != .default {
+            appearancePreferences.themeName = .default
+        }
     }
 }

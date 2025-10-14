@@ -196,6 +196,16 @@ public extension NewTabPageDataModel {
             self.darkBackgroundColor = darkBackgroundColor
         }
     }
+
+    struct Tabs: Codable, Equatable {
+        public let tabId: String
+        public let tabIds: [String]
+
+        public init(tabId: String, tabIds: [String]) {
+            self.tabId = tabId
+            self.tabIds = tabIds
+        }
+    }
 }
 
 extension NewTabPageDataModel {

@@ -50,11 +50,8 @@ final class BookmarksBarViewController: NSViewController {
     private let tabCollectionViewModel: TabCollectionViewModel
     private let appereancePreferences: AppearancePreferencesPersistor
 
-    private var themeCancellable: AnyCancellable?
-    private let themeManager: ThemeManaging
-    private var theme: ThemeStyleProviding {
-        themeManager.theme
-    }
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
 
     let syncButtonModel: DismissableSyncDeviceButtonModel = .init(source: .bookmarksBar, keyValueStore: UserDefaults.standard)
 
@@ -436,22 +433,12 @@ extension BookmarksBarViewController: BookmarksBarViewModelDelegate {
     func showDialog(_ dialog: any ModalView) {
         dialog.show(in: view.window)
     }
+}
 
-    // MARK: - Themes
+// MARK: - ThemeUpdateListening
+extension BookmarksBarViewController: ThemeUpdateListening {
 
-    private func subscribeToThemeChanges() {
-        themeCancellable = themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] style in
-                self?.applyThemeStyle(theme: style)
-            }
-    }
-
-    private func applyThemeStyle() {
-        applyThemeStyle(theme: themeManager.theme)
-    }
-
-    private func applyThemeStyle(theme: ThemeStyleProviding) {
+    func applyThemeStyle(theme: ThemeStyleProviding) {
         let navigationBackgroundColor = theme.colorsProvider.navigationBackgroundColor
 
         backgroundColorView.backgroundColor = navigationBackgroundColor

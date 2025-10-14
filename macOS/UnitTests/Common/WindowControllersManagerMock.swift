@@ -21,8 +21,8 @@ import AIChat
 @testable import DuckDuckGo_Privacy_Browser
 
 final class WindowControllersManagerMock: WindowControllersManagerProtocol, AIChatTabManaging {
-
     var stateChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
+    var tabsChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
 
     var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
 

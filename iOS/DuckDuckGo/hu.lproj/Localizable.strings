@@ -184,6 +184,15 @@
 /* Title for alert shown when sync credentials paused for too many items */
 "alert.sync-credentials-paused-title" = "A jelszó-szinkronizálás szünetel";
 
+/* Description for alert shown when sync error occurs because of bad credit cards data */
+"alert.sync-credit-cards-bad-data-error-description" = "Néhány hitelkártya formátuma hibás vagy a kártyaszám túl hosszú volt, ezért nem lett szinkronizálva.";
+
+/* Description for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-description" = "Elérted a hitelkártyák maximális számát. A szinkronizálás folytatásához törölj néhány hitelkártyát.";
+
+/* Title for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-title" = "A hitelkártya-szinkronizálás szünetel";
+
 /* Title for sync error alert */
 "alert.sync-error" = "Szinkronizálási és biztonsági mentési hiba";
 
@@ -2593,11 +2602,11 @@
 /* Caption of the option to show the Threat Protection preferences */
 "preferences.threat-protection.caption" = "A DuckDuckGo továbbfejlesztett védelmi megoldásai kivédik a gyakori fenyegetéseket, miközben megőrzik a kapcsolat biztonságát.\n[További információk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
-/* Description of incorrectly formatted data error when syncing. */
-"prefrences.sync.bad-request.description" = "Egyes könyvjelzők vagy jelszavak helytelen formátumúak vagy túl hosszúak, és nem lettek szinkronizálva.";
+/* Description of incorrectly formatted bookmarks data error when syncing. */
+"prefrences.sync.bookmarks-bad-request.description" = "Egyes könyvjelzők helytelen formátumúak vagy túl hosszúak, és nem lettek szinkronizálva.";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
-"prefrences.sync.bookmarks-limit-exceeded-action" = "Könyvjelzők kezelése";
+"prefrences.sync.bookmarks-limit-exceeded-action" = "Könyvjelzők kezelése…";
 
 /* Description for sync bookmarks limits exceeded warning */
 "prefrences.sync.bookmarks-limit-exceeded-description" = "Elérted a könyvjelzők maximális számát. A szinkronizálás folytatásához törölj néhányat.";
@@ -2608,11 +2617,20 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Elérted a jelszavak maximális számát. A szinkronizálás folytatásához törölj néhányat.";
 
+/* Description of incorrectly formatted credit card data error when syncing. */
+"prefrences.sync.credit-cards-bad-request.description" = "Néhány hitelkártya formátuma hibás vagy a kártyaszám túl hosszú volt, ezért nem lett szinkronizálva.";
+
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Hitelkártyák kezelése…";
+
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Szinkronizálási hiba történt. Próbáld meg kikapcsolni a szinkronizálást ezen az eszközön, majd csatlakozz újra egy másik eszközzel vagy a helyreállítási kóddal.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Szinkronizálás szüneteltetve";
+
+/* Description of incorrectly formatted password data error when syncing. */
+"prefrences.sync.passwords-bad-request.description" = "Egyes jelszavak helytelen formátumúak vagy túl hosszúak, és nem lettek szinkronizálva.";
 
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "A szinkronizálás és biztonsági mentés átmenetileg nem érhető el.";

@@ -184,6 +184,15 @@
 /* Title for alert shown when sync credentials paused for too many items */
 "alert.sync-credentials-paused-title" = "Синхронизирането на пароли е на пауза";
 
+/* Description for alert shown when sync error occurs because of bad credit cards data */
+"alert.sync-credit-cards-bad-data-error-description" = "Някои кредитни карти не бяха синхронизирани, защото са форматирани неправилно или са твърде дълги.";
+
+/* Description for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-description" = "Достигнахте максималния брой кредитни карти. Изтрийте някои кредитни карти, за да възобновите синхронизирането.";
+
+/* Title for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-title" = "Синхронизирането на кредитни карти е на пауза";
+
 /* Title for sync error alert */
 "alert.sync-error" = "Грешка при синхронизиране и архивиране";
 
@@ -2593,11 +2602,11 @@
 /* Caption of the option to show the Threat Protection preferences */
 "preferences.threat-protection.caption" = "Усъвършенстваните защити на DuckDuckGo предотвратяват често срещаните заплахи, като същевременно запазват връзката ви сигурна..\n[Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
-/* Description of incorrectly formatted data error when syncing. */
-"prefrences.sync.bad-request.description" = "Някои отметки или пароли са форматирани неправилно или са твърде дълги и не бяха синхронизирани.";
+/* Description of incorrectly formatted bookmarks data error when syncing. */
+"prefrences.sync.bookmarks-bad-request.description" = "Някои отметки са форматирани неправилно или са твърде дълги и не бяха синхронизирани.";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
-"prefrences.sync.bookmarks-limit-exceeded-action" = "Управление на отметки";
+"prefrences.sync.bookmarks-limit-exceeded-action" = "Управление на отметки…";
 
 /* Description for sync bookmarks limits exceeded warning */
 "prefrences.sync.bookmarks-limit-exceeded-description" = "Достигнахте максималния брой отметки. Изтрийте някои от тях, за да възобновите синхронизирането.";
@@ -2608,11 +2617,20 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Достигнахте максималния брой пароли. Изтрийте някои от тях, за да възобновите синхронизирането.";
 
+/* Description of incorrectly formatted credit card data error when syncing. */
+"prefrences.sync.credit-cards-bad-request.description" = "Някои кредитни карти не бяха синхронизирани, защото са форматирани неправилно или са твърде дълги.";
+
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Управление на кредитните карти…";
+
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Грешка при синхронизирането. Опитайте да деактивирате синхронизирането на това устройство и след това се свържете отново чрез друго устройство или със своя код за възстановяване.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Синхронизирането е на пауза";
+
+/* Description of incorrectly formatted password data error when syncing. */
+"prefrences.sync.passwords-bad-request.description" = "Някои пароли са форматирани неправилно или са твърде дълги и не бяха синхронизирани.";
 
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sync & Backup временно не е налична.";

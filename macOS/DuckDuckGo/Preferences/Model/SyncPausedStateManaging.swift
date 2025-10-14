@@ -24,10 +24,14 @@ protocol SyncPausedStateManaging: ObservableObject {
     var isSyncPaused: Bool { get }
     var isSyncBookmarksPaused: Bool { get }
     var isSyncCredentialsPaused: Bool { get }
+    var isSyncCreditCardsPaused: Bool { get }
+    var isSyncIdentitiesPaused: Bool { get }
     var syncPausedChangedPublisher: AnyPublisher<Void, Never> { get }
     var syncPausedMessageData: SyncPausedMessageData? { get }
     var syncBookmarksPausedMessageData: SyncPausedMessageData? { get }
     var syncCredentialsPausedMessageData: SyncPausedMessageData? { get }
+    var syncCreditCardsPausedMessageData: SyncPausedMessageData? { get }
+    var syncIdentitiesPausedMessageData: SyncPausedMessageData? { get }
 
     func syncDidTurnOff()
 }

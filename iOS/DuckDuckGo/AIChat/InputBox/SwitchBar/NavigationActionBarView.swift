@@ -316,6 +316,8 @@ final class NavigationActionBarView: UIView {
     }
     
     private func updateButtonVisibility() {
+        let hasText = viewModel.hasText
+
         let shouldShowMicButton = viewModel.shouldShowMicButton
         microphoneButton.isHidden = !shouldShowMicButton
         microphoneButton.alpha = shouldShowMicButton ? 1.0 : 0.0
@@ -326,7 +328,7 @@ final class NavigationActionBarView: UIView {
 
         let shouldShowSearchButton = viewModel.hasText
         searchButton.isHidden = !shouldShowSearchButton
-        searchButton.alpha = shouldShowSearchButton ? 1.0 : 0.0
+        searchButton.alpha = shouldShowSearchButton ? (hasText ? 1.0 : 0.5) : 0.0
     }
 
     // MARK: - Touch Handling

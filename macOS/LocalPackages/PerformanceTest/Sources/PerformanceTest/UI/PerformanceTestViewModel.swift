@@ -119,132 +119,152 @@ final class PerformanceTestViewModel: ObservableObject {
     func runTest() async {
         guard let url = currentURL else { return }
 
-        // Recreate tester if needed (e.g., after previous test completed)
-        if duckDuckGoTester == nil, let wv = webView {
-            duckDuckGoTester = SitePerformanceTester(
-                webView: wv,
-                createNewTab: createNewTab,
-                closeTab: closeTab
-            )
-            setupDuckDuckGoTester()
-        }
+        prepareTestEnvironment()
+        showTestOverlay()
 
+        let duckDuckGoResults = await runDuckDuckGoTest(url: url)
+        let safariResults = await runSafariTest(url: url)
+
+        hideTestOverlay()
+        await cleanupAfterTests()
+        createComparisonResults(url: url, ddgResults: duckDuckGoResults, safariResults: safariResults)
+
+        finalizeTestRun()
+    }
+
+    private func prepareTestEnvironment() {
+        recreateTesterIfNeeded()
         isRunning = true
         isCancelled = false
         progress = 0
         comparisonResults = nil
         errorMessage = nil
+    }
 
-        // Show overlay on browser window
-        showTestOverlay()
+    private func recreateTesterIfNeeded() {
+        guard duckDuckGoTester == nil, let wv = webView else { return }
 
-        var duckDuckGoResults: PerformanceTestResults?
-        var safariResults: PerformanceTestResults?
+        duckDuckGoTester = SitePerformanceTester(
+            webView: wv,
+            createNewTab: createNewTab,
+            closeTab: closeTab
+        )
+        setupDuckDuckGoTester()
+    }
 
-        // Test 1: DuckDuckGo Browser
-        if !isCancelled {
-            currentBrowser = "DuckDuckGo"
-            browserProgress = "1/2"
-            statusText = "Testing DuckDuckGo..."
+    private func runDuckDuckGoTest(url: URL) async -> PerformanceTestResults? {
+        guard !isCancelled else { return nil }
 
-            if let tester = duckDuckGoTester {
-                do {
-                    duckDuckGoResults = await tester.runPerformanceTest(
-                        url: url,
-                        iterations: minIterations,
-                        maxIterations: maxIterations,
-                        timeout: PerformanceTestConstants.TestConfig.testTimeout
-                    )
-                } catch {
-                    let errorMsg = "DuckDuckGo test failed: \(error.localizedDescription)"
-                    logger.error("\(errorMsg)")
-                    statusText = errorMsg
-                    errorMessage = errorMsg
-                    // Continue anyway - we still want to test Safari
-                    // Wait a bit so user can see the error
-                    try? await Task.sleep(nanoseconds: 2_000_000_000)
-                }
-            }
+        currentBrowser = "DuckDuckGo"
+        browserProgress = "1/2"
+        statusText = "Testing DuckDuckGo..."
 
-            // Clear tester to release webView before Safari test
-            duckDuckGoTester = nil
-        }
+        guard let tester = duckDuckGoTester else { return nil }
 
-        // Test 2: Safari (always run if not cancelled, regardless of DDG results)
-        if !isCancelled {
-            currentBrowser = "Safari"
-            browserProgress = "2/2"
-            statusText = "Testing Safari..."
-            progress = 0
-            currentIteration = 0
-
-            // Safari script handles adaptive iterations internally
-            let runner = safariRunnerFactory(url, minIterations, maxIterations)
-            self.safariRunner = runner
-            setupSafariRunner()
-
-            do {
-                let resultsPath = try await runner.runTest()
-                let parser = SafariResultsParser()
-                safariResults = try parser.parse(filePath: resultsPath)
-                runner.cleanup()
-            } catch {
-                let errorMsg = "Safari test failed: \(error.localizedDescription)"
-                logger.error("\(errorMsg)")
-                statusText = errorMsg
-                errorMessage = errorMsg
-                runner.cleanup()
-                // Wait a bit so user can see the error
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
-            }
-
-            self.safariRunner = nil
-        }
-
-        // Hide overlay
-        hideTestOverlay()
-
-        // Clean up: Open new tab with original URL and close test tab
-        // This breaks any potential retain cycles by replacing the webView entirely
-        if let createNewTab = createNewTab, let closeTab = closeTab {
-            logger.debug("Opening fresh tab with original URL to clean up test state")
-            if let newWebView = await createNewTab() {
-                // Update webView reference to new clean tab
-                webView = newWebView
-                logger.debug("Created fresh tab, closing old test tab")
-
-                // Close the old test tab
-                await closeTab()
-            }
-        } else {
-            // Fallback: If we can't create/close tabs, nil the delegate to break potential cycles
-            // This is a safety measure for test environments or standalone usage
-            logger.debug("No tab management available, clearing delegate to prevent retain cycles")
-            if let wv = webView {
-                wv.navigationDelegate = nil
-            }
-        }
-
-        // Create comparison results if we have both
-        if let ddgResults = duckDuckGoResults, let safResults = safariResults {
-            // Debug logging to verify data integrity
-            logger.debug("=== Data Verification ===")
-            logger.debug("DuckDuckGo loadComplete values: \(ddgResults.detailedMetrics.loadComplete.prefix(3))")
-            logger.debug("Safari loadComplete values: \(safResults.detailedMetrics.loadComplete.prefix(3))")
-            logger.debug("DuckDuckGo fcp values: \(ddgResults.detailedMetrics.fcp.prefix(3))")
-            logger.debug("Safari fcp values: \(safResults.detailedMetrics.fcp.prefix(3))")
-            logger.debug("DuckDuckGo ttfb values: \(ddgResults.detailedMetrics.ttfb.prefix(3))")
-            logger.debug("Safari ttfb values: \(safResults.detailedMetrics.ttfb.prefix(3))")
-            logger.debug("=========================")
-
-            self.comparisonResults = BrowserComparisonResults(
+        do {
+            let results = await tester.runPerformanceTest(
                 url: url,
-                duckDuckGoResults: ddgResults,
-                safariResults: safResults,
-                iterations: minIterations
+                iterations: minIterations,
+                maxIterations: maxIterations,
+                timeout: PerformanceTestConstants.TestConfig.testTimeout
             )
+            duckDuckGoTester = nil
+            return results
+        } catch {
+            handleDuckDuckGoError(error)
+            duckDuckGoTester = nil
+            return nil
+        }
+    }
+
+    private func handleDuckDuckGoError(_ error: Error) async {
+        let errorMsg = "DuckDuckGo test failed: \(error.localizedDescription)"
+        logger.error("\(errorMsg)")
+        statusText = errorMsg
+        errorMessage = errorMsg
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
+    }
+
+    private func runSafariTest(url: URL) async -> PerformanceTestResults? {
+        guard !isCancelled else { return nil }
+
+        currentBrowser = "Safari"
+        browserProgress = "2/2"
+        statusText = "Testing Safari..."
+        progress = 0
+        currentIteration = 0
+
+        let runner = safariRunnerFactory(url, minIterations, maxIterations)
+        self.safariRunner = runner
+        setupSafariRunner()
+
+        do {
+            let resultsPath = try await runner.runTest()
+            let parser = SafariResultsParser()
+            let results = try parser.parse(filePath: resultsPath)
+            runner.cleanup()
+            self.safariRunner = nil
+            return results
+        } catch {
+            await handleSafariError(error, runner: runner)
+            self.safariRunner = nil
+            return nil
+        }
+    }
+
+    private func handleSafariError(_ error: Error, runner: SafariTestExecuting) async {
+        let errorMsg = "Safari test failed: \(error.localizedDescription)"
+        logger.error("\(errorMsg)")
+        statusText = errorMsg
+        errorMessage = errorMsg
+        runner.cleanup()
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
+    }
+
+    private func cleanupAfterTests() async {
+        guard let createNewTab = createNewTab, let closeTab = closeTab else {
+            cleanupWithoutTabManagement()
+            return
         }
 
+        logger.debug("Opening fresh tab with original URL to clean up test state")
+        guard let newWebView = await createNewTab() else { return }
+
+        webView = newWebView
+        logger.debug("Created fresh tab, closing old test tab")
+        await closeTab()
+    }
+
+    private func cleanupWithoutTabManagement() {
+        logger.debug("No tab management available, clearing delegate to prevent retain cycles")
+        webView?.navigationDelegate = nil
+    }
+
+    private func createComparisonResults(url: URL, ddgResults: PerformanceTestResults?, safariResults: PerformanceTestResults?) {
+        guard let ddgResults = ddgResults, let safResults = safariResults else { return }
+
+        logDataVerification(ddgResults: ddgResults, safariResults: safResults)
+
+        self.comparisonResults = BrowserComparisonResults(
+            url: url,
+            duckDuckGoResults: ddgResults,
+            safariResults: safResults,
+            iterations: minIterations
+        )
+    }
+
+    private func logDataVerification(ddgResults: PerformanceTestResults, safariResults: PerformanceTestResults) {
+        logger.debug("=== Data Verification ===")
+        logger.debug("DuckDuckGo loadComplete values: \(ddgResults.detailedMetrics.loadComplete.prefix(3))")
+        logger.debug("Safari loadComplete values: \(safariResults.detailedMetrics.loadComplete.prefix(3))")
+        logger.debug("DuckDuckGo fcp values: \(ddgResults.detailedMetrics.fcp.prefix(3))")
+        logger.debug("Safari fcp values: \(safariResults.detailedMetrics.fcp.prefix(3))")
+        logger.debug("DuckDuckGo ttfb values: \(ddgResults.detailedMetrics.ttfb.prefix(3))")
+        logger.debug("Safari ttfb values: \(safariResults.detailedMetrics.ttfb.prefix(3))")
+        logger.debug("=========================")
+    }
+
+    private func finalizeTestRun() {
         isRunning = false
         browserProgress = ""
         currentBrowser = ""

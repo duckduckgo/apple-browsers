@@ -23,8 +23,8 @@ import SwiftUI
 
 final class PasswordManagementPopover: NSPopover {
 
-    private var themeCancellable: AnyCancellable?
-    private let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
 
     override init() {
         super.init()
@@ -69,19 +69,7 @@ final class PasswordManagementPopover: NSPopover {
     }
 }
 
-private extension PasswordManagementPopover {
-
-    func subscribeToThemeChanges() {
-        themeCancellable = themeManager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] style in
-                self?.applyThemeStyle(theme: style)
-            }
-    }
-
-    func applyThemeStyle() {
-        applyThemeStyle(theme: themeManager.theme)
-    }
+extension PasswordManagementPopover: ThemeUpdateListening {
 
     func applyThemeStyle(theme: ThemeStyleProviding) {
         backgroundColor = theme.colorsProvider.popoverBackgroundColor

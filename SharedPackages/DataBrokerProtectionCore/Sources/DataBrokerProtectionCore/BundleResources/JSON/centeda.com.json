@@ -1,7 +1,7 @@
 {
   "name": "Centeda",
   "url": "centeda.com",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "addedDatetime": 1677736800000,
   "optOutUrl": "https://centeda.com/ng/control/privacy",
   "steps": [
@@ -22,6 +22,17 @@
             "71-80",
             "81+"
           ]
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": ".page-title",
+              "parent": ".search-page"
+            }
+          ],
+          "id": "b4350352-85cc-461c-b520-029002683826"
         },
         {
           "actionType": "extract",
@@ -66,6 +77,17 @@
           "id": "7f9525f8-6195-4dfe-bcc0-b95aab2a0053"
         },
         {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": ".page-title",
+              "parent": ".search-page"
+            }
+          ],
+          "id": "eeeef2aa-1360-4e5e-912b-28b3e067c941"
+        },
+        {
           "actionType": "click",
           "elements": [
             {
@@ -73,7 +95,7 @@
               "selector": "//a[contains(text(), 'Profile control')]",
               "parent": {
                 "profileMatch": {
-                  "selector": ".search-result",
+                  "selector": ".search-item",
                   "profile": {
                     "name": {
                       "selector": ".title",
@@ -91,10 +113,11 @@
                       "findElements": true
                     },
                     "relativesList": {
-                      "selector": ".//div[@class='col-sm-24 col-md-8 related-to']//li"
+                      "selector": ".//div[@class='col-sm-24 col-md-8 related-to']//li",
+                      "findElements": true
                     },
                     "profileUrl": {
-                      "selector": "a",
+                      "selector": "//following-sibling::a[contains(@href, '/ng/control/privacy?pid=')][1]",
                       "identifierType": "param",
                       "identifier": "pid"
                     }

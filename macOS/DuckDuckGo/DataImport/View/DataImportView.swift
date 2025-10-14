@@ -19,8 +19,9 @@
 import AppKit
 import SwiftUI
 import BrowserServicesKit
-import Common
 import PixelKit
+import DesignResourcesKitIcons
+import UniformTypeIdentifiers
 
 @MainActor
 struct DataImportView: ModalView {
@@ -88,7 +89,7 @@ struct DataImportView: ModalView {
             viewBody()
                 .padding(.leading, 20)
                 .padding(.trailing, 20)
-                .padding(.bottom, 20)
+                .padding(.bottom, 26)
                 .padding(.top, 0)
 
             // if import in progress…
@@ -100,8 +101,7 @@ struct DataImportView: ModalView {
             }
 
             viewFooter()
-                .padding(.top, 16)
-                .padding(.bottom, 16)
+                .padding(.bottom, 26)
                 .padding(.horizontal, 20)
 
             if shouldShowDebugView {
@@ -182,8 +182,10 @@ struct DataImportView: ModalView {
                 getReadPermissionBody(url: url)
             case .fileImport(let dataType, let summaryTypes):
                 fileImportBody(dataType: dataType, summaryTypes: summaryTypes)
-            case .summary(let dataTypes, let isFileImport):
-                DataImportSummaryView(model, dataTypes: dataTypes, isFileImport: isFileImport)
+            case .archiveImport:
+                multifileImportBody(fileTypes: model.importSource.archiveImportSupportedFiles)
+            case .summary(let dataTypes, let previousScreen):
+                DataImportSummaryView(model, dataTypes: dataTypes, isFileImport: previousScreen.isFileImport)
             case .feedback:
                 feedbackBody
             case .shortcuts(let dataTypes):
@@ -286,14 +288,43 @@ struct DataImportView: ModalView {
 
     }
 
-    private func importPickerPanel<Content: View>(_ content: () -> Content) -> some View {
+    @ViewBuilder
+    private func multifileImportBody(fileTypes: Set<UTType>) -> some View {
+        importPickerPanel(bottomPadding: 4) {
+            EmptyView()
+        }
+        .padding(.bottom, 20)
+        VStack(alignment: .leading) {
+            // manual file import instructions for CSV/HTML
+            NewFileImportView(source: model.importSource, allowedFileTypes: Array(fileTypes), isButtonDisabled: model.isSelectFileButtonDisabled) {
+                model.selectFile()
+            } onFileDrop: { url in
+                model.initiateImport(fileURL: url)
+            }
+
+            if case .failure(let error) = model.summary.last?.result,
+               let error = error as? SafariArchiveImporter.ImportError,
+               error.type == .unarchive || error.type == .importContents {
+                HStack {
+                    Image(nsImage: DesignSystemImages.Color.Size16.exclamationHigh)
+                    Text("Incorrect file type or format. Please select a different file.")
+                        .foregroundColor(Color(designSystemColor: .destructivePrimary))
+                }
+                .padding(.vertical, 20)
+            }
+        }
+    }
+
+    private func importPickerPanel<Content: View>(bottomPadding: CGFloat = 12, _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             importSourceDataTitle
             importSourcePicker
             content()
         }
         .frame(idealWidth: .infinity, maxWidth: .infinity, alignment: .topLeading)
-        .padding(12)
+        .padding(.bottom, bottomPadding)
+        .padding(.top, 12)
+        .padding(.horizontal, 12)
         .background(Color.surfaceSecondary)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay(
@@ -391,7 +422,7 @@ struct DataImportView: ModalView {
                     .padding(.top, 10)
                     .padding(.leading, 20)
 
-                ForEach(DataImport.DataType.allCases.filter(model.selectedDataTypes.contains), id: \.self) { selectedDataType in
+                ForEach(model.selectableImportTypes.filter(model.selectedDataTypes.contains), id: \.self) { selectedDataType in
                     failureReasonPicker(for: selectedDataType)
                         .padding(.leading, 20)
                         .padding(.trailing, 20)
@@ -488,6 +519,8 @@ extension DataImportProgressEvent {
             fraction
         case .importingPasswords(numberOfPasswords: _, fraction: let fraction):
             fraction
+        case .importingCreditCards(numberOfCreditCards: _, fraction: let fraction):
+            fraction
         case .done:
             nil
         }
@@ -501,6 +534,8 @@ extension DataImportProgressEvent {
             UserText.importingBookmarks(num)
         case .importingPasswords(numberOfPasswords: let num, fraction: _):
             UserText.importingPasswords(num)
+        case .importingCreditCards(numberOfCreditCards: let num, fraction: _):
+            UserText.importingCreditCards(num)
         case .done:
             nil
         }
@@ -534,12 +569,12 @@ extension DataImportViewModel.ButtonType {
             UserText.initiateImport
         case .skip:
             switch dataType {
-            case .bookmarks:
+            case .some(.bookmarks):
                 UserText.skipBookmarksImport
-            case .passwords:
+            case .some(.passwords):
                 UserText.skipPasswordsImport
-            case nil:
-                UserText.skip
+            case .some(.creditCards), nil: // Shouldn't really happen
+                UserText.cancel
             }
         case .cancel:
             UserText.cancel
@@ -615,7 +650,7 @@ extension DataImportViewModel {
             source == .chrome && selectedDataTypes.contains(.passwords) ? true : false
         }
 
-        init(source: DataImport.Source, dataType: DataImport.DataType? = nil) {
+        init(source: DataImport.Source, dataType: DataType? = nil) {
             self.source = source
             self.dataType = dataType
         }

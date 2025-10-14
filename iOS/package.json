@@ -21,7 +21,7 @@
       {
         "files": "*.json5",
         "options": {
-          "parser": "json5",
+          "parser": "json",
           "tabWidth": 4
         }
       }

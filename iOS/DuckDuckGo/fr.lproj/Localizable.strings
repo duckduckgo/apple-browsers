@@ -184,6 +184,15 @@
 /* Title for alert shown when sync credentials paused for too many items */
 "alert.sync-credentials-paused-title" = "La synchronisation des mots de passe est suspendue";
 
+/* Description for alert shown when sync error occurs because of bad credit cards data */
+"alert.sync-credit-cards-bad-data-error-description" = "Certaines cartes bancaires sont mal formatées ou trop longues et n'ont pas été synchronisées.";
+
+/* Description for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-description" = "Vous avez atteint le nombre maximal de cartes bancaires. Veuillez supprimer quelques cartes bancaires pour reprendre la synchronisation.";
+
+/* Title for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-title" = "La synchronisation des cartes bancaires est suspendue";
+
 /* Title for sync error alert */
 "alert.sync-error" = "Erreur de synchronisation et de sauvegarde";
 
@@ -2593,11 +2602,11 @@
 /* Caption of the option to show the Threat Protection preferences */
 "preferences.threat-protection.caption" = "Les protections améliorées de DuckDuckGo bloquent les menaces courantes tout en sécurisant votre connexion.\n[En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
-/* Description of incorrectly formatted data error when syncing. */
-"prefrences.sync.bad-request.description" = "Certains signets ou mots de passe sont mal formatés ou trop longs et n'ont pas été synchronisés.";
+/* Description of incorrectly formatted bookmarks data error when syncing. */
+"prefrences.sync.bookmarks-bad-request.description" = "Certains signets sont mal formatés ou trop longs et n'ont pas été synchronisés.";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
-"prefrences.sync.bookmarks-limit-exceeded-action" = "Gérer les signets";
+"prefrences.sync.bookmarks-limit-exceeded-action" = "Gérer les signets…";
 
 /* Description for sync bookmarks limits exceeded warning */
 "prefrences.sync.bookmarks-limit-exceeded-description" = "Vous avez atteint le nombre maximal de signets. Veuillez en supprimer quelques-uns pour reprendre la synchronisation.";
@@ -2608,11 +2617,20 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Vous avez atteint le nombre maximal de mots de passe. Veuillez en supprimer quelques-uns pour reprendre la synchronisation.";
 
+/* Description of incorrectly formatted credit card data error when syncing. */
+"prefrences.sync.credit-cards-bad-request.description" = "Certaines cartes bancaires sont mal formatées ou trop longues et n'ont pas été synchronisées.";
+
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Gérez les cartes bancaires…";
+
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "La synchronisation a rencontré une erreur. Essayez de désactiver la synchronisation sur cet appareil, puis reconnectez-vous à l’aide d’un autre appareil ou de votre code de récupération.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Synchronisation suspendue";
+
+/* Description of incorrectly formatted password data error when syncing. */
+"prefrences.sync.passwords-bad-request.description" = "Certains mots de passe sont mal formatés ou trop longs et n'ont pas été synchronisés.";
 
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sync & Backup est temporairement indisponible.";

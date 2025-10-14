@@ -55,8 +55,11 @@ final class NewTabPageCustomizationModel: ObservableObject {
 
     private var availableCustomImagesCancellable: AnyCancellable?
     private var customBackgroundPixelCancellable: AnyCancellable?
-    private var themeCancellable: AnyCancellable?
 
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
+    @MainActor
     convenience init(themeManager: ThemeManaging, appearancePreferences: AppearancePreferences) {
         self.init(
             appearancePreferences: appearancePreferences,
@@ -82,6 +85,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
         )
     }
 
+    @MainActor
     init(
         appearancePreferences: AppearancePreferences,
         userBackgroundImagesManager: UserBackgroundImagesManaging?,
@@ -103,10 +107,11 @@ final class NewTabPageCustomizationModel: ObservableObject {
         self.openFilePanel = openFilePanel
         self.showAddImageFailedAlert = showAddImageFailedAlert
         self.backgroundColors = DefaultBackgroundColorStyle(theme: themeManager.theme)
+        self.themeManager = themeManager
 
         subscribeToUserBackgroundImages()
         subscribeToCustomBackground()
-        subscribeToThemeChanges(manager: themeManager)
+        subscribeToThemeChanges()
 
         if let lastPickedCustomColorHexValue, let customColor = NSColor(hex: lastPickedCustomColorHexValue) {
             lastPickedCustomColor = customColor
@@ -152,18 +157,6 @@ final class NewTabPageCustomizationModel: ObservableObject {
                     self?.sendPixel(NewTabBackgroundPixel.newTabBackgroundReset)
                 }
             }
-    }
-
-    private func subscribeToThemeChanges(manager: ThemeManaging) {
-        themeCancellable = manager.themePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] theme in
-                self?.applyThemeStyles(theme: theme)
-            }
-    }
-
-    private func applyThemeStyles(theme: ThemeStyleProviding) {
-        backgroundColors = DefaultBackgroundColorStyle(theme: theme)
     }
 
     @Published var customBackground: CustomBackground? {
@@ -224,5 +217,12 @@ final class NewTabPageCustomizationModel: ObservableObject {
         customImagesManager?.availableImages.forEach { image in
             customImagesManager?.deleteImage(image)
         }
+    }
+}
+
+extension NewTabPageCustomizationModel: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        backgroundColors = DefaultBackgroundColorStyle(theme: theme)
     }
 }

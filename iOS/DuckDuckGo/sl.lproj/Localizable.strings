@@ -184,6 +184,15 @@
 /* Title for alert shown when sync credentials paused for too many items */
 "alert.sync-credentials-paused-title" = "Sinhronizacija gesla je zaustavljena";
 
+/* Description for alert shown when sync error occurs because of bad credit cards data */
+"alert.sync-credit-cards-bad-data-error-description" = "Nekatere kreditne kartice imajo napačno obliko zapisa ali so predolge in niso bile sinhronizirane.";
+
+/* Description for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-description" = "Dosegli ste največje število kreditnih kartic. Nekaj kreditnih kartic izbrišite, če želite nadaljevati sinhronizacijo.";
+
+/* Title for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-title" = "Sinhronizacija kreditnih kartic je začasno zaustavljena";
+
 /* Title for sync error alert */
 "alert.sync-error" = "Napaka pri sinhronizaciji in varnostnem kopiranju";
 
@@ -2593,11 +2602,11 @@
 /* Caption of the option to show the Threat Protection preferences */
 "preferences.threat-protection.caption" = "Izboljšana zaščita DuckDuckGo prestreže pogoste grožnje in obenem skrbi za varnost vaše povezave.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
-/* Description of incorrectly formatted data error when syncing. */
-"prefrences.sync.bad-request.description" = "Nekateri zaznamki ali gesla so napačno oblikovani ali predolgi in niso bili sinhronizirani.";
+/* Description of incorrectly formatted bookmarks data error when syncing. */
+"prefrences.sync.bookmarks-bad-request.description" = "Nekateri zaznamki so napačno oblikovani ali predolgi in niso bili sinhronizirani.";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
-"prefrences.sync.bookmarks-limit-exceeded-action" = "Upravljanje zaznamkov";
+"prefrences.sync.bookmarks-limit-exceeded-action" = "Upravljanje zaznamkov …";
 
 /* Description for sync bookmarks limits exceeded warning */
 "prefrences.sync.bookmarks-limit-exceeded-description" = "Dosegli ste največje število zaznamkov. Izbrišite jih nekaj, če želite nadaljevati sinhronizacijo.";
@@ -2608,11 +2617,20 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Dosegli ste največje število gesel. Izbrišite jih nekaj, če želite nadaljevati sinhronizacijo.";
 
+/* Description of incorrectly formatted credit card data error when syncing. */
+"prefrences.sync.credit-cards-bad-request.description" = "Nekatere kreditne kartice imajo napačno obliko zapisa ali so predolge in niso bile sinhronizirane.";
+
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Upravljaj kreditne kartice…";
+
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Sinhronizacija je naletela na napako. Poskusite onemogočiti sinhronizacijo v tej napravi in nato znova vzpostavite povezavo z drugo napravo ali obnovitveno kodo.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Sinhronizacija je začasno zaustavljena";
+
+/* Description of incorrectly formatted password data error when syncing. */
+"prefrences.sync.passwords-bad-request.description" = "Nekatera gesla so napačno oblikovana ali predolga in niso bila sinhronizirana.";
 
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sinhronizacija in varnostno kopiranje sta začasno nedostopna.";

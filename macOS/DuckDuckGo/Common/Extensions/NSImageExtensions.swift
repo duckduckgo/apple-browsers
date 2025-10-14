@@ -35,7 +35,7 @@ extension NSImage {
         return image
     }
 
-    func resizedToFaviconSize() -> NSImage? {
+    func resizedToFaviconSize() -> NSImage {
         if size.width > NSSize.faviconSize.width ||
             size.height > NSSize.faviconSize.height {
             return resized(to: .faviconSize)

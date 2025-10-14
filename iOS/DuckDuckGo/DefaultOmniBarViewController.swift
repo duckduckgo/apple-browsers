@@ -261,6 +261,11 @@ extension DefaultOmniBarViewController: OmniBarEditingStateViewControllerDelegat
         omniDelegate?.onSelectFavorite(favorite)
     }
 
+    func onEditFavorite(_ favorite: BookmarkEntity) {
+        editingStateViewController?.dismissAnimated()
+        omniDelegate?.onEditFavorite(favorite)
+    }
+
     func onSelectSuggestion(_ suggestion: Suggestion) {
         omniDelegate?.onOmniSuggestionSelected(suggestion)
         editingStateViewController?.dismissAnimated()

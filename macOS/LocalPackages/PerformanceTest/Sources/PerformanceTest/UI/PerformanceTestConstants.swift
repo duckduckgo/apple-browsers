@@ -104,6 +104,7 @@ enum PerformanceTestConstants {
         static let overlayAlpha: CGFloat = 0.7
 
         // Padding
+        static let standardPadding: CGFloat = 16
         static let largePadding: CGFloat = 40
         static let horizontalPadding: CGFloat = 100
 

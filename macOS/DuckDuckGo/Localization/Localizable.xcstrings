@@ -8101,6 +8101,18 @@
         }
       }
     },
+    "automatically.clear.chats" : {
+      "comment" : "Label after the checkbox in Settings which configures clearing Duck.ai chat history automatically after quitting the app.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete Duck.ai chat history when DuckDuckGo quits"
+          }
+        }
+      }
+    },
     "automatically.clear.data" : {
       "comment" : "Label after the checkbox in Settings which configures clearing data automatically after quitting the app.",
       "extractionState" : "extracted_with_value",
@@ -31298,6 +31310,18 @@
         }
       }
     },
+    "fire.active-tabs-and-chats-info" : {
+      "comment" : "Info in the Fire Button popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close active tabs (%1$d) and clear all browsing history and cookies (sites: %2$d), and clear Duck.ai chat history."
+          }
+        }
+      }
+    },
     "fire.active-tabs-info" : {
       "comment" : "Info in the Fire Button popover",
       "extractionState" : "extracted_with_value",
@@ -31834,6 +31858,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Все окна будут закрыты."
+          }
+        }
+      }
+    },
+    "fire.dialog.chats.subtitle" : {
+      "comment" : "Subtitle shown under the Duck.ai chats row to explain that chat history will be deleted.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete all chats."
+          }
+        }
+      }
+    },
+    "fire.dialog.chats.title" : {
+      "comment" : "Section title. Toggle that controls whether Duck.ai chat history is deleted.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai chats"
           }
         }
       }
@@ -37132,6 +37180,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Вы выйдете из учетных записей на всех сайтах, настройки сайтов будут сброшены, сохраненные сеансы — удалены, а все вкладки — закрыты. Куки-файлы и данные «огнеупорных» сайтов не удаляются."
+          }
+        }
+      }
+    },
+    "history.delete.dialog.chats.checkbox.caption" : {
+      "comment" : "Caption for a checkbox to optionally delete Duck.ai chats alongside removing browser history entries",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Also delete Duck.ai chats"
+          }
+        }
+      }
+    },
+    "history.delete.dialog.chats.checkbox.explanation" : {
+      "comment" : "Explanation of what deleting Duck.ai chats means.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This will delete all chats in Duck.ai chat history."
           }
         }
       }
@@ -92916,6 +92988,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Предупреждать о закрытии вкладок и удалении данных при выходе"
+          }
+        }
+      }
+    },
+    "warn.before.quit.clearChats" : {
+      "comment" : "Label after the checkbox in Settings which configures a warning before clearing data and chats on the application termination.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Warn me that tabs, data, and chats will be deleted when quitting"
+          }
+        }
+      }
+    },
+    "warn.before.quit.clearChats.dialog.header" : {
+      "comment" : "A header of warning before clearing data and chats on the application termination.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Clear tabs, browsing data, and chats and quit DuckDuckGo?"
           }
         }
       }

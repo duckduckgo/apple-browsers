@@ -29,6 +29,11 @@ class ViewHighlighter {
     static var addedViews = [WeaklyHeldView]()
     static var highlightedViews = [WeaklyHeldView]()
 
+    static func showIn(_ window: UIWindow, focussedOnButton button: UIBarButtonItem, scale: HighlightScale = .default) {
+        guard let view = (button.value(forKey: "view") as? UIView)?.superview else { return }
+        showIn(window, focussedOnView: view)
+    }
+
     static func showIn(_ window: UIWindow, focussedOnView view: UIView, scale: HighlightScale = .default) {
         guard let center = view.superview?.convert(view.center, to: nil) else { return }
         let size = max(view.frame.width, view.frame.height) * scale.value

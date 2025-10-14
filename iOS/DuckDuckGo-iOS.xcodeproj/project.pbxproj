@@ -896,7 +896,6 @@
 		9876DF2D2DEEE21700E30713 /* MockThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9876DF2A2DEEE21700E30713 /* MockThemeManager.swift */; };
 		9876DF2E2DEEE21700E30713 /* MockThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9876DF2A2DEEE21700E30713 /* MockThemeManager.swift */; };
 		98788E9A2521DA1E00D55218 /* Localizable.stringsdict in Resources */ = {isa = PBXBuildFile; fileRef = 98788E9C2521DA1E00D55218 /* Localizable.stringsdict */; };
-		9880722A25FA497B0039EF4B /* MenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9880722925FA497B0039EF4B /* MenuButton.swift */; };
 		9880723725FA4E450039EF4B /* menu_dark.json in Resources */ = {isa = PBXBuildFile; fileRef = 9880723525FA4E440039EF4B /* menu_dark.json */; };
 		9880723825FA4E450039EF4B /* menu_light.json in Resources */ = {isa = PBXBuildFile; fileRef = 9880723625FA4E450039EF4B /* menu_light.json */; };
 		9887DC252354D2AA005C85F5 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9887DC242354D2AA005C85F5 /* Database.swift */; };
@@ -3210,7 +3209,6 @@
 		98788EC22521DA3800D55218 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = es; path = es.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
 		98788EC32521DA3900D55218 /* sv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = sv; path = sv.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
 		98788EC42521DA3900D55218 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = tr; path = tr.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
-		9880722925FA497B0039EF4B /* MenuButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuButton.swift; sourceTree = "<group>"; };
 		9880723525FA4E440039EF4B /* menu_dark.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = menu_dark.json; sourceTree = "<group>"; };
 		9880723625FA4E450039EF4B /* menu_light.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = menu_light.json; sourceTree = "<group>"; };
 		9887DC242354D2AA005C85F5 /* Database.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
@@ -5553,7 +5551,6 @@
 				6F23316A2DD4E2C4004D102D /* TabSwitcherButton.swift */,
 				6F2331652DD4D046004D102D /* TabSwitcherStaticButton.swift */,
 				8C4838B4221C8F7F008A6739 /* GestureToolbarButton.swift */,
-				9880722925FA497B0039EF4B /* MenuButton.swift */,
 				6F23315C2DD4AAEB004D102D /* TabSwitcherStaticView.swift */,
 			);
 			path = ToolbarButtons;
@@ -10468,7 +10465,6 @@
 				85DFEDF124C7EEA400973FE7 /* LargeOmniBarState.swift in Sources */,
 				CBF259812D42852B00AC63E4 /* PixelConfiguration.swift in Sources */,
 				CB3CC3372D9EFFB4004D6B33 /* SiteThemeColorManager.swift in Sources */,
-				9880722A25FA497B0039EF4B /* MenuButton.swift in Sources */,
 				D6E83C602B22B3C9006C8AFB /* SettingsState.swift in Sources */,
 				D6E83C482B20C812006C8AFB /* SettingsHostingController.swift in Sources */,
 				F46FEC5727987A5F0061D9DF /* KeychainItemsDebugViewController.swift in Sources */,

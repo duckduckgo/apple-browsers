@@ -258,6 +258,43 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         handler.clear()
     }
 
+    func testWhenSubmittedDateIs43DaysAgoAndOptOutConfirmed_thenAllConfirmedPixelsAreFired() async {
+        // Given
+        let mockDatabase = MockDatabase()
+        let submittedDate = Calendar.current.date(byAdding: .day, value: -43, to: Date())
+        let optOutJobData = OptOutJobData.mock(with: .optOutConfirmed,
+                                               submittedDate: submittedDate,
+                                               sevenDaysConfirmationPixelFired: false,
+                                               fourteenDaysConfirmationPixelFired: false,
+                                               twentyOneDaysConfirmationPixelFired: false)
+        let brokerProfileQueryData = BrokerProfileQueryData(
+            dataBroker: .mock,
+            profileQuery: .mock,
+            scanJobData: .mockWith(historyEvents: optOutJobData.historyEvents),
+            optOutJobData: [optOutJobData])
+
+        let sut = DataBrokerProtectionStatsPixels(database: mockDatabase,
+                                                  handler: handler,
+                                                  repository: MockDataBrokerProtectionStatsPixelsRepository())
+
+        // When
+        sut.fireRegularIntervalConfirmationPixelsForSubmittedOptOuts(for: [brokerProfileQueryData])
+
+        // Then
+        validatePixelsFired([optOutJobAt7DaysConfirmedPixel,
+                             optOutJobAt14DaysConfirmedPixel,
+                             optOutJobAt21DaysConfirmedPixel,
+                             optOutJobAt42DaysConfirmedPixel])
+        validatePixelsNotFired([optOutJobAt7DaysUnconfirmedPixel,
+                                optOutJobAt14DaysUnconfirmedPixel,
+                                optOutJobAt21DaysUnconfirmedPixel,
+                                optOutJobAt42DaysUnconfirmedPixel])
+        XCTAssertTrue(mockDatabase.wasUpdateFortyTwoDaysConfirmationPixelFired)
+
+        // Cleanup
+        handler.clear()
+    }
+
     func testWhenPixelAlreadySentFlagsTrue_thenPixelsNotSent() async {
         // Given
         let mockDatabase = MockDatabase()

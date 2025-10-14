@@ -77,9 +77,10 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
         let isFullscreen: Bool
     }
     var openWindowCalls: [OpenWindowCall] = []
+    var onOpenNewWindow: ((OpenWindowCall) -> Void)?
     @discardableResult
     func openNewWindow(with tabCollectionViewModel: DuckDuckGo_Privacy_Browser.TabCollectionViewModel?, burnerMode: DuckDuckGo_Privacy_Browser.BurnerMode, droppingPoint: NSPoint?, contentSize: NSSize?, showWindow: Bool, popUp: Bool, lazyLoadTabs: Bool, isMiniaturized: Bool, isMaximized: Bool, isFullscreen: Bool) -> NSWindow? {
-        openWindowCalls.append(OpenWindowCall(
+        let call = OpenWindowCall(
             contents: tabCollectionViewModel?.tabs.map(\.content),
             burnerMode: burnerMode,
             droppingPoint: droppingPoint,
@@ -90,7 +91,9 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
             isMiniaturized: isMiniaturized,
             isMaximized: isMaximized,
             isFullscreen: isFullscreen
-        ))
+        )
+        openWindowCalls.append(call)
+        onOpenNewWindow?(call)
         return nil
     }
 

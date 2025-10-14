@@ -53,7 +53,8 @@ final class FireDialogViewModelTests: XCTestCase {
                     permissionManager: permissionManager,
                     windowControllersManager: windowControllersManager,
                     faviconManagement: faviconManager,
-                    tld: TLD())
+                    tld: TLD(),
+                    isAppActiveProvider: { true })
 
         fireViewModel = FireViewModel(fire: fire)
 
@@ -79,7 +80,6 @@ final class FireDialogViewModelTests: XCTestCase {
                 completion?()
             }
         })
-        NSApp.activate(ignoringOtherApps: true)
     }
 
     override func tearDown() {
@@ -103,6 +103,13 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertFalse(onboardingContextualDialogsManager.gotItPressedCalled)
         XCTAssertFalse(onboardingContextualDialogsManager.fireButtonUsedCalled)
 
+        let openNewWindowExp = expectation(description: "openNewWindow called if windows close")
+        windowControllersManager.onOpenNewWindow = { call in
+            XCTAssertEqual(call.burnerMode, .regular)
+            XCTAssertEqual(call.showWindow, true)
+            openNewWindowExp.fulfill()
+        }
+
         // When
         let result = FireDialogResult(clearingOption: vm.clearingOption,
                                       includeHistory: vm.includeHistory,
@@ -118,6 +125,67 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertNil(onboardingContextualDialogsManager.updatedForTab)
         XCTAssertFalse(onboardingContextualDialogsManager.gotItPressedCalled)
         XCTAssertTrue(onboardingContextualDialogsManager.fireButtonUsedCalled)
+
+        await fulfillment(of: [openNewWindowExp], timeout: 0.1)
+    }
+
+    @MainActor func testOnBurn_WhenAppIsNotActive_DoesNotOpenNewWindow() async throws {
+        // Scenario: App is not active (e.g., in background)
+        // Action: Burn with all options enabled (which would normally close windows)
+        // Expectation: openNewWindow should NOT be called when app is inactive
+
+        // Create Fire with isActiveProvider returning false
+        let manager = WebCacheManagerMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
+        let inactiveFire = Fire(cacheManager: manager,
+                                historyCoordinating: historyCoordinator,
+                                permissionManager: permissionManager,
+                                windowControllersManager: windowControllersManager,
+                                faviconManagement: faviconManager,
+                                tld: TLD(),
+                                isAppActiveProvider: { false })  // App is NOT active
+
+        let inactiveFireViewModel = FireViewModel(fire: inactiveFire)
+
+        let openNewWindowExp = XCTestExpectation(description: "openNewWindow should NOT be called when app inactive")
+        openNewWindowExp.isInverted = true
+        windowControllersManager.onOpenNewWindow = { _ in
+            openNewWindowExp.fulfill()
+        }
+
+        let result = FireDialogResult(clearingOption: .allData,
+                                      includeHistory: true,
+                                      includeTabsAndWindows: true,
+                                      includeCookiesAndSiteData: true)
+
+        fireDialogViewResponse = .burn(options: result)
+
+        // Use the inactive fire coordinator
+        let inactiveFireCoordinator = FireCoordinator(tld: TLD(),
+                                                      featureFlagger: Application.appDelegate.featureFlagger,
+                                                      historyCoordinating: historyCoordinator,
+                                                      visualizeFireAnimationDecider: nil,
+                                                      onboardingContextualDialogsManager: { [unowned self] in self.onboardingContextualDialogsManager },
+                                                      fireproofDomains: MockFireproofDomains(),
+                                                      faviconManagement: FaviconManagerMock(),
+                                                      windowControllersManager: windowControllersManager,
+                                                      pixelFiring: nil,
+                                                      historyProvider: MockHistoryViewDataProvider(),
+                                                      fireViewModel: inactiveFireViewModel,
+                                                      tabViewModelGetter: { [tabCollectionVM] _ in tabCollectionVM },
+                                                      fireDialogViewFactory: { [unowned self] config in
+            return TestPresenter { [unowned self] _, completion in
+                config.onConfirm(self.fireDialogViewResponse)
+                completion?()
+            }
+        })
+
+        let window = MockWindow()
+        _ = await inactiveFireCoordinator.presentFireDialog(mode: .fireButton, in: window)
+
+        // Validate openNewWindow was NOT called
+        await fulfillment(of: [openNewWindowExp], timeout: 0.1)
     }
 
     @MainActor func testBurn_WithIncludeHistoryFalse_DoesNotCallBurnHistory() async throws {
@@ -133,7 +201,8 @@ final class FireDialogViewModelTests: XCTestCase {
                         permissionManager: permissionManager,
                         windowControllersManager: windowControllersManager,
                         faviconManagement: faviconManager,
-                        tld: TLD())
+                        tld: TLD(),
+                        isAppActiveProvider: { true })
 
         let viewModel = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -143,6 +212,11 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: faviconManager,
             tld: TLD(),
         )
+
+        let openNewWindowExp = XCTestExpectation(description: "openNewWindow should be called")
+        windowControllersManager.onOpenNewWindow = { _ in
+            openNewWindowExp.fulfill()
+        }
 
         viewModel.clearingOption = .allData
         viewModel.includeHistory = false
@@ -160,6 +234,8 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertFalse(historyCoordinator.burnAllCalled)
         XCTAssertFalse(historyCoordinator.burnVisitsCalled)
         XCTAssertFalse(historyCoordinator.burnDomainsCalled)
+
+        await fulfillment(of: [openNewWindowExp], timeout: 0.1)
     }
 
     @MainActor func testClearingOption_UpdatesSelectableAndFireproofed() async throws {
@@ -175,7 +251,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllersManager: windowControllersManager,
                         faviconManagement: faviconManager,
-                        tld: TLD())
+                        tld: TLD(),
+                        isAppActiveProvider: { true })
 
         let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD())
         fireproofDomains.add(domain: URL.duckduckgoDomain)
@@ -208,7 +285,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllersManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
-                        tld: TLD())
+                        tld: TLD(),
+                        isAppActiveProvider: { true })
 
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -219,17 +297,28 @@ final class FireDialogViewModelTests: XCTestCase {
             tld: TLD(),
         )
         vm.clearingOption = .currentTab
+
+        // Set up expectations
         let exp = expectation(description: "burnVisits called")
         historyCoordinator.onBurnVisits = { exp.fulfill() }
         historyCoordinator.onBurnAll = { XCTFail("onBurnAll should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
+
+        let openNewWindowExp = expectation(description: "openNewWindow called if windows close")
+        windowControllersManager.onOpenNewWindow = { call in
+            // Validate arguments
+            XCTAssertEqual(call.burnerMode, .regular)
+            XCTAssertEqual(call.showWindow, true)
+            openNewWindowExp.fulfill()
+        }
+
         vm.includeHistory = true
         let r1 = FireDialogResult(clearingOption: vm.clearingOption,
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
         _=handle(vm, r1)
-        wait(for: [exp], timeout: 2.0)
+        wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
 
     @MainActor func testBurn_CurrentWindow_WithIncludeHistoryTrue_BurnVisitsCalled() {
@@ -244,7 +333,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllersManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
-                        tld: TLD())
+                        tld: TLD(),
+                        isAppActiveProvider: { true })
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
@@ -254,17 +344,28 @@ final class FireDialogViewModelTests: XCTestCase {
             tld: TLD(),
         )
         vm.clearingOption = .currentWindow
+
+        // Set up expectations
         let exp = expectation(description: "burnVisits called")
         historyCoordinator.onBurnVisits = { exp.fulfill() }
         historyCoordinator.onBurnAll = { XCTFail("onBurnAll should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
+
+        let openNewWindowExp = expectation(description: "openNewWindow called if windows close")
+        windowControllersManager.onOpenNewWindow = { call in
+            // Validate arguments
+            XCTAssertEqual(call.burnerMode, .regular)
+            XCTAssertEqual(call.showWindow, true)
+            openNewWindowExp.fulfill()
+        }
+
         vm.includeHistory = true
         let r2 = FireDialogResult(clearingOption: vm.clearingOption,
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
         _=handle(vm, r2)
-        wait(for: [exp], timeout: 2.0)
+        wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
 
     @MainActor func testBurn_CurrentTab_WithIncludeHistoryTrue_AndDoNotCloseTabs_BurnVisitsCalled() {
@@ -275,7 +376,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllersManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
-                        tld: TLD())
+                        tld: TLD(),
+                        isAppActiveProvider: { true })
 
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -291,10 +393,20 @@ final class FireDialogViewModelTests: XCTestCase {
         tabCollectionVM.append(tab: exampleTab)
         tabCollectionVM.select(at: .unpinned(1))
 
+        // Set up expectations
         let exp = expectation(description: "burnVisits called")
         historyCoordinator.onBurnVisits = { exp.fulfill() }
         historyCoordinator.onBurnAll = { XCTFail("onBurnAll should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
+
+        // Validate openNewWindow not called (tabs/windows not being closed)
+        let openNewWindowExp = XCTestExpectation(description: "openNewWindow should not be called")
+        // openNewWindow should not be called even with isAppActiveProvider: { true } when no Tabs closing performed
+        openNewWindowExp.isInverted = true
+        windowControllersManager.onOpenNewWindow = { _ in
+            openNewWindowExp.fulfill()
+        }
+
         vm.includeHistory = true
         vm.includeTabsAndWindows = false
         let r3 = FireDialogResult(clearingOption: vm.clearingOption,
@@ -302,7 +414,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
         _=handle(vm, r3)
-        wait(for: [exp], timeout: 2.0)
+        wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
 
     @MainActor func testBurn_CurrentWindow_WithIncludeHistoryTrue_AndDoNotCloseTabs_BurnVisitsCalled() {
@@ -313,7 +425,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllersManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
-                        tld: TLD())
+                        tld: TLD(),
+                        isAppActiveProvider: { true })
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
@@ -323,10 +436,20 @@ final class FireDialogViewModelTests: XCTestCase {
             tld: TLD(),
         )
         vm.clearingOption = .currentWindow
+
+        // Set up expectations
         let exp = expectation(description: "burnVisits called")
         historyCoordinator.onBurnVisits = { exp.fulfill() }
         historyCoordinator.onBurnAll = { XCTFail("onBurnAll should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
+
+        // Validate openNewWindow not called (tabs/windows not being closed)
+        let openNewWindowExp = XCTestExpectation(description: "openNewWindow should not be called")
+        openNewWindowExp.isInverted = true
+        windowControllersManager.onOpenNewWindow = { _ in
+            openNewWindowExp.fulfill()
+        }
+
         vm.includeHistory = true
         vm.includeTabsAndWindows = false
         let r4 = FireDialogResult(clearingOption: vm.clearingOption,
@@ -334,7 +457,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
         _=handle(vm, r4)
-        wait(for: [exp], timeout: 2.0)
+        wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
 
     @MainActor func testBurn_AllData_WithIncludeHistoryTrue_AndDoNotCloseWindows_BurnAllCalled() {
@@ -345,7 +468,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllersManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
-                        tld: TLD())
+                        tld: TLD(),
+                        isAppActiveProvider: { true })
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
@@ -355,10 +479,20 @@ final class FireDialogViewModelTests: XCTestCase {
             tld: TLD(),
         )
         vm.clearingOption = .allData
+
+        // Set up expectations
         let exp = expectation(description: "burnAll called")
         historyCoordinator.onBurnAll = { exp.fulfill() }
         historyCoordinator.onBurnVisits = { XCTFail("onBurnVisits should not be called when expecting onBurnAll") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnAll") }
+
+        // Validate openNewWindow not called (tabs/windows not being closed)
+        let openNewWindowExp = XCTestExpectation(description: "openNewWindow should not be called")
+        openNewWindowExp.isInverted = true
+        windowControllersManager.onOpenNewWindow = { _ in
+            openNewWindowExp.fulfill()
+        }
+
         vm.includeHistory = true
         vm.includeTabsAndWindows = false
         let r5 = FireDialogResult(clearingOption: vm.clearingOption,
@@ -366,7 +500,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
         _=handle(vm, r5)
-        wait(for: [exp], timeout: 2.0)
+        wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
 
     @MainActor func testBurn_AllData_WithIncludeHistoryTrue_BurnAllCalled() {
@@ -377,7 +511,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllersManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
-                        tld: TLD())
+                        tld: TLD(),
+                        isAppActiveProvider: { true })
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
@@ -387,17 +522,28 @@ final class FireDialogViewModelTests: XCTestCase {
             tld: TLD(),
         )
         vm.clearingOption = .allData
+
+        // Set up expectations
         let exp = expectation(description: "burnAll called")
         historyCoordinator.onBurnAll = { exp.fulfill() }
         historyCoordinator.onBurnVisits = { XCTFail("onBurnVisits should not be called when expecting onBurnAll") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnAll") }
+
+        let openNewWindowExp = expectation(description: "openNewWindow called if windows close")
+        windowControllersManager.onOpenNewWindow = { call in
+            // Validate arguments
+            XCTAssertEqual(call.burnerMode, .regular)
+            XCTAssertEqual(call.showWindow, true)
+            openNewWindowExp.fulfill()
+        }
+
         vm.includeHistory = true
         let r6 = FireDialogResult(clearingOption: vm.clearingOption,
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
         _=handle(vm, r6)
-        wait(for: [exp], timeout: 2.0)
+        wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
 
     @MainActor func testBurn_CurrentTab_WithCookiesToggleOff_BurnVisitsCalled() {
@@ -411,7 +557,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllersManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
-                        tld: TLD())
+                        tld: TLD(),
+                        isAppActiveProvider: { true })
 
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -422,10 +569,21 @@ final class FireDialogViewModelTests: XCTestCase {
             tld: TLD(),
         )
         vm.clearingOption = .currentTab
+
+        // Set up expectations
         let exp = expectation(description: "burnVisits called")
         historyCoordinator.onBurnVisits = { exp.fulfill() }
         historyCoordinator.onBurnAll = { XCTFail("onBurnAll should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
+
+        let openNewWindowExp = expectation(description: "openNewWindow called if windows close")
+        windowControllersManager.onOpenNewWindow = { call in
+            // Validate arguments
+            XCTAssertEqual(call.burnerMode, .regular)
+            XCTAssertEqual(call.showWindow, true)
+            openNewWindowExp.fulfill()
+        }
+
         vm.includeHistory = true
         vm.includeTabsAndWindows = true
         vm.includeCookiesAndSiteData = false
@@ -434,7 +592,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
         _=handle(vm, r7)
-        wait(for: [exp], timeout: 2.0)
+        wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
 
     @MainActor func testBurn_CurrentWindow_WithCookiesToggleOff_BurnVisitsCalled() {
@@ -448,7 +606,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllersManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
-                        tld: TLD())
+                        tld: TLD(),
+                        isAppActiveProvider: { true })
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
@@ -458,10 +617,20 @@ final class FireDialogViewModelTests: XCTestCase {
             tld: TLD(),
         )
         vm.clearingOption = .currentWindow
+
+        // Set up expectations
         let exp = expectation(description: "burnVisits called")
         historyCoordinator.onBurnVisits = { exp.fulfill() }
         historyCoordinator.onBurnAll = { XCTFail("onBurnAll should not be called when expecting onBurnVisits") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnVisits") }
+
+        let openNewWindowExp = expectation(description: "openNewWindow called if windows close")
+        windowControllersManager.onOpenNewWindow = { call in
+            // Validate arguments
+            XCTAssertEqual(call.burnerMode, .regular)
+            XCTAssertEqual(call.showWindow, true)
+            openNewWindowExp.fulfill()
+        }
 
         vm.includeHistory = true
         vm.includeTabsAndWindows = true
@@ -471,7 +640,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
         _=handle(vm, r8)
-        wait(for: [exp], timeout: 2.0)
+        wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
 
     @MainActor func testBurn_AllData_WithCookiesToggleOff_BurnAllCalled() {
@@ -482,7 +651,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllersManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
-                        tld: TLD())
+                        tld: TLD(),
+                        isAppActiveProvider: { true })
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
@@ -492,10 +662,21 @@ final class FireDialogViewModelTests: XCTestCase {
             tld: TLD(),
         )
         vm.clearingOption = .allData
+
+        // Set up expectations
         let exp = expectation(description: "burnAll called")
         historyCoordinator.onBurnAll = { exp.fulfill() }
         historyCoordinator.onBurnVisits = { XCTFail("onBurnVisits should not be called when expecting onBurnAll") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnAll") }
+
+        let openNewWindowExp = expectation(description: "openNewWindow called if windows close")
+        windowControllersManager.onOpenNewWindow = { call in
+            // Validate arguments
+            XCTAssertEqual(call.burnerMode, .regular)
+            XCTAssertEqual(call.showWindow, true)
+            openNewWindowExp.fulfill()
+        }
+
         // includeCookiesAndSiteData: false forces switch path (.allData, false)
         vm.includeHistory = true
         vm.includeTabsAndWindows = true
@@ -505,7 +686,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
         _=handle(vm, r9)
-        wait(for: [exp], timeout: 2.0)
+        wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
 
     @MainActor func testBurn_CurrentTab_WithIncludeHistoryFalse_DoesNotBurnHistory() async throws {
@@ -519,7 +700,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllersManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
-                        tld: TLD())
+                        tld: TLD(),
+                        isAppActiveProvider: { true })
 
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -529,6 +711,14 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: FaviconManagerMock(),
             tld: TLD(),
         )
+        let openNewWindowExp = expectation(description: "openNewWindow called if windows close")
+        windowControllersManager.onOpenNewWindow = { call in
+            // Validate arguments
+            XCTAssertEqual(call.burnerMode, .regular)
+            XCTAssertEqual(call.showWindow, true)
+            openNewWindowExp.fulfill()
+        }
+
         vm.clearingOption = .currentTab
         vm.includeHistory = false
         let result = FireDialogResult(clearingOption: vm.clearingOption,
@@ -545,6 +735,8 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertFalse(historyCoordinator.burnAllCalled)
         XCTAssertFalse(historyCoordinator.burnVisitsCalled)
         XCTAssertFalse(historyCoordinator.burnDomainsCalled)
+
+        wait(for: [openNewWindowExp], timeout: 0.1)
     }
 
     @MainActor func testBurn_CurrentWindow_WithIncludeHistoryFalse_DoesNotBurnHistory() async throws {
@@ -558,7 +750,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllersManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
-                        tld: TLD())
+                        tld: TLD(),
+                        isAppActiveProvider: { true })
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
@@ -567,6 +760,15 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: FaviconManagerMock(),
             tld: TLD(),
         )
+
+        let openNewWindowExp = expectation(description: "openNewWindow called if windows close")
+        windowControllersManager.onOpenNewWindow = { call in
+            // Validate arguments
+            XCTAssertEqual(call.burnerMode, .regular)
+            XCTAssertEqual(call.showWindow, true)
+            openNewWindowExp.fulfill()
+        }
+
         vm.clearingOption = .currentWindow
         vm.includeHistory = false
         let resultB = FireDialogResult(clearingOption: vm.clearingOption,
@@ -582,6 +784,8 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertFalse(historyCoordinator.burnAllCalled)
         XCTAssertFalse(historyCoordinator.burnVisitsCalled)
         XCTAssertFalse(historyCoordinator.burnDomainsCalled)
+
+        wait(for: [openNewWindowExp], timeout: 0.1)
     }
 
     @MainActor func testUpdateItems_InitialAndOnChange_UpdatesHistoryVisitsAndSelection() {
@@ -600,7 +804,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllersManager: windowControllersManager,
                         faviconManagement: FaviconManagerMock(),
-                        tld: TLD())
+                        tld: TLD(),
+                        isAppActiveProvider: { true })
 
         let vm = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -988,7 +1193,8 @@ final class FireDialogViewModelTests: XCTestCase {
                         permissionManager: permissionManager,
                         windowControllersManager: windowControllersManager,
                         faviconManagement: faviconManager,
-                        tld: TLD())
+                        tld: TLD(),
+                        isAppActiveProvider: { true })
 
         let viewModel = FireDialogViewModel(
             fireViewModel: .init(fire: fire),

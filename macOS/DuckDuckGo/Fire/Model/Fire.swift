@@ -149,6 +149,7 @@ final class Fire: FireProtocol {
     let getVisitedLinkStore: () -> WKVisitedLinkStoreWrapper?
     let getPrivacyStats: () async -> PrivacyStatsCollecting
     let visualizeFireAnimationDecider: VisualizeFireSettingsDecider
+    let isAppActiveProvider: @MainActor () -> Bool
 
     private var dispatchGroup: DispatchGroup?
 
@@ -228,7 +229,8 @@ final class Fire: FireProtocol {
          secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
          getPrivacyStats: (() async -> PrivacyStatsCollecting)? = nil,
          getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil,
-         visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil
+         visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil,
+         isAppActiveProvider: @escaping @MainActor () -> Bool = { @MainActor in NSApp.isActive }
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
@@ -249,6 +251,7 @@ final class Fire: FireProtocol {
         self.getVisitedLinkStore = getVisitedLinkStore ?? { WKWebViewConfiguration.sharedVisitedLinkStore }
         self.autoconsentManagement = autoconsentManagement ?? AutoconsentManagement.shared
         self.visualizeFireAnimationDecider = visualizeFireAnimationDecider ?? NSApp.delegateTyped.visualizeFireSettingsDecider
+        self.isAppActiveProvider = isAppActiveProvider
         if let stateRestorationManager = stateRestorationManager {
             self.stateRestorationManager = stateRestorationManager
         } else {
@@ -479,8 +482,8 @@ final class Fire: FireProtocol {
         }
 
         // If the app is not active, don't retake focus by opening a new window
-        let isActive = NSApp.isActive
-        guard isActive else { return }
+        let isAppActive = isAppActiveProvider()
+        guard isAppActive else { return }
 
         // Open a new window in case there is none
         DispatchQueue.main.async { [weak self] in
@@ -488,12 +491,10 @@ final class Fire: FireProtocol {
             /// When we are burning on exit we do not need to open a new window.
             if windowControllersManager.mainWindowControllers.count == 0 && !isBurnOnExit {
                 if case let .allWindows(_, _, customURLToOpen: customURL, _) = entity, let customURL {
-                    WindowsManager.openNewWindow(with: customURL, source: .ui, isBurner: false, droppingPoint: newWindowDroppingPoint)
                     let tab = Tab(content: .contentFromURL(customURL, source: .ui), shouldLoadInBackground: true, burnerMode: .regular)
                     let tabCollection = TabCollection(tabs: [tab], isPopup: false)
 
                     let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: pinnedTabsManagerProvider, burnerMode: .regular, windowControllersManager: windowControllersManager)
-// TODO: validate this in tests; 
                     windowControllersManager.openNewWindow(with: tabCollectionViewModel, droppingPoint: newWindowDroppingPoint, showWindow: true)
                 } else {
                     windowControllersManager.openNewWindow(droppingPoint: newWindowDroppingPoint)

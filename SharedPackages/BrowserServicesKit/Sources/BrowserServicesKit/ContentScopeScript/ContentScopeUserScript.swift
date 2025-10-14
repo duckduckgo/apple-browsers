@@ -45,7 +45,7 @@ public struct ContentScopeExperimentData: Encodable, Equatable {
 
 public final class ContentScopeProperties: Encodable {
     public let globalPrivacyControlValue: Bool
-    public var debug: Bool
+    public let debug: Bool
     public let sessionKey: String
     public let messageSecret: String
     public let languageCode: String

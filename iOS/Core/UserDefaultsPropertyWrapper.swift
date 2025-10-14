@@ -88,7 +88,6 @@ public struct UserDefaultsWrapper<T> {
         case autofillSaveModalRejectionCount = "com.duckduckgo.ios.autofillSaveModalRejectionCount"
         case autofillSaveModalDisablePromptShown = "com.duckduckgo.ios.autofillSaveModalDisablePromptShown"
         case autofillCreditCardsSaveModalRejectionCount = "com.duckduckgo.ios.autofillCreditCardsSaveModalRejectionCount"
-        case contentScopeDebugStateEnabled = "com.duckduckgo.ios.debug.contentScopeDebugStateEnabled"
         case autofillCreditCardsSaveModalDisablePromptShown = "com.duckduckgo.ios.autofillCreditCardsSaveModalDisablePromptShown"
         case autofillFirstTimeUser = "com.duckduckgo.ios.autofillFirstTimeUser"
         case autofillCreditCardsFirstTimeUser = "com.duckduckgo.ios.autofillCreditCardsFirstTimeUser"
@@ -103,6 +102,8 @@ public struct UserDefaultsWrapper<T> {
         case autofillOnboardedUser = "com.duckduckgo.app.autofill.OnboardedUser"
         case autofillSurveysCompleted = "com.duckduckgo.app.autofill.SurveysCompleted"
         case autofillExtensionEnabled = "com.duckduckgo.app.autofill.ExtensionEnabled"
+
+        case contentScopeDebugStateEnabled = "com.duckduckgo.ios.debug.contentScopeDebugStateEnabled"
 
         case syncPromoBookmarksDismissed = "com.duckduckgo.app.sync.PromoBookmarksDismissed"
         case syncPromoPasswordsDismissed = "com.duckduckgo.app.sync.PromoPasswordsDismissed"

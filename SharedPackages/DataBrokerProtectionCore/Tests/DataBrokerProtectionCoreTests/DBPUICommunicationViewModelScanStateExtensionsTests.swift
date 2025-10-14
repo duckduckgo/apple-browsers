@@ -501,9 +501,7 @@ final class DBPUICommunicationViewModelScanStateExtensionsTests: XCTestCase {
         XCTAssertEqual(result.scanProgress.totalScans, 1)
         XCTAssertEqual(result.scanProgress.currentScans, 1)
         XCTAssertEqual(result.scanProgress.scannedBrokers.map { $0.name }, ["Active Broker"])
-
-        // removed brokers should still be represented in resultsFound
-        XCTAssertEqual(result.resultsFound.count, 2)
+        XCTAssertEqual(result.resultsFound.count, 1)
     }
 
     func testWhenBrokerMarkedAsRemoved_thenMaintenanceNextScanExcludesIt() {

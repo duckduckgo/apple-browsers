@@ -38,5 +38,23 @@
 			<string>Your password for %2$@ can't sync because one of its fields exceeds the character limit.</string>
 		</dict>
 	</dict>
+	<key>creditcards.invalid.objects.present.description</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@cards@</string>
+		<key>cards</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Teie krediitkaarti %2$@ ja 1 muu kaarti ei saa sünkroniseerida, kuna mõned nende väljad ületavad tähemärgilimiidi.</string>
+			<key>other</key>
+			<string>Teie krediitkaarti %2$@ ja %1$d muud kaarti ei saa sünkroonida, kuna mõne nende välja tähemärgilimiit on ületatud.</string>
+			<key>zero</key>
+			<string>"Teie krediitkaarti %2$@ ei saa sünkroonida, kuna ühel selle väljadel on tähemärgilimiit ületatud."</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

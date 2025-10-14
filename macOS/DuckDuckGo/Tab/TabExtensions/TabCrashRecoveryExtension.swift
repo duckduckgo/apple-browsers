@@ -140,12 +140,14 @@ extension TabCrashRecoveryExtension: NavigationResponder {
         let lastFireTime = lastPixelFireTime ?? Date.distantPast
         if now.timeIntervalSince(lastFireTime) >= 0.1 {
             lastPixelFireTime = now
+            let isDuckURL = webView.url?.isDuckURLScheme == true
+            let isDuckURLParameter = ["is_duck_url": String(isDuckURL)]
 
             Task.detached(priority: .utility) {
 #if APPSTORE
-                let additionalParameters = [String: String]()
+                let additionalParameters: [String: String] = isDuckURLParameter
 #else
-                let additionalParameters = await SystemInfo.pixelParameters()
+                let additionalParameters = await SystemInfo.pixelParameters().merging(isDuckURLParameter, uniquingKeysWith: { $1 })
 #endif
                 self.firePixel(DebugEvent(GeneralPixel.webKitDidTerminate, error: error), additionalParameters)
             }

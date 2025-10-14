@@ -35,7 +35,7 @@
 "connect.with.server.sheet.button" = "Įjunkite sinchronizavimą ir atsarginės kopijos kūrimą";
 
 /* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "Taip „DuckDuckGo“ saugiame serveryje sukuriama užšifruota atsarginė žymių ir slaptažodžių kopija, kurią galima sinchronizuoti su kitais įrenginiais.";
+"connect.with.server.sheet.description.part1" = "Taip „DuckDuckGo“ saugiame serveryje sukuriama užšifruota atsarginė žymių ir automatinio pildymo duomenų kopija, kurią galima sinchronizuoti su kitais jūsų įrenginiais.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Šifravimo raktas saugomas tik jūsų įrenginyje, „DuckDuckGo“ negali jo pasiekti.";
@@ -53,7 +53,13 @@
 "credentials.invalid.objects.present.description" = "credentials.invalid.objects.present.description";
 
 /* Alert title for invalid logins being filtered out of synced data */
-"credentials.invalid.objects.present.title" = "Kai kurie prisijungimai nesinchronizuojami dėl pernelyg ilgo turinio tam tikruose laukuose.";
+"credentials.invalid.objects.present.title" = "Kai kurie slaptažodžiai nesinchronizuojami dėl pernelyg ilgo turinio tam tikruose laukuose.";
+
+/* Do not translate - stringsdict entry */
+"creditcards.invalid.objects.present.description" = "creditcards.invalid.objects.present.description";
+
+/* Alert title for invalid credit cards being filtered out of synced data */
+"creditCards.invalid.objects.present.title" = "Kai kurios kredito kortelės nesinchronizuojamos dėl pernelyg ilgo turinio tam tikruose laukuose.";
 
 /* Delete Server Data - Button */
 "delete.server.data" = "Išjungti ir ištrinti serverio duomenis...";
@@ -130,8 +136,11 @@
 /* Button title for sync credentials limits exceeded warning to go to manage passwords */
 "prefrences.sync.credentials-limit-exceeded-action" = "Slaptažodžių valdymas…";
 
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Tvarkykite kredito korteles…";
+
 /* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Jūsų žymės ir slaptažodžiai yra ruošiami sinchronizuoti. Tai turėtų užtrukti tik akimirką.";
+"preparing.to.sync.sheet.description" = "Jūsų žymės ir automatinio pildymo duomenys ruošiami sinchronizuoti. Tai turėtų užtrukti tik akimirką.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Jungiamasi...";
@@ -254,7 +263,7 @@
 "sync.get.other.devices.screen.title" = "Atsisiųskite „DuckDuckGo“";
 
 /* Message included when sharing a url via the system share sheet */
-"sync.get.other.devices.share.link.message" = "Įdiekite „DuckDuckGo“ naršyklę savo įrenginiuose ir pradėkite saugiai sinchronizuoti žymes ir slaptažodžius:";
+"sync.get.other.devices.share.link.message" = "Įdiekite „DuckDuckGo“ naršyklę savo įrenginiuose ir pradėkite saugiai sinchronizuoti žymes ir automatinio pildymo duomenis:";
 
 /* Sync Menu Path */
 "sync.menu.path" = "Nustatymai > Sinchronizavimas ir atsarginė kopijos kūrimas > Sinchronizuoti su kitu įrenginiu";
@@ -278,7 +287,7 @@
 "sync.with.another.device.footer" = "Jūsų duomenys šifruojami ištisiniu būdu, o „DuckDuckGo“ neturi prieigos prie šifravimo rakto.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Saugiai sinchronizuokite žymes ir slaptažodžius tarp savo įrenginių.";
+"sync.with.another.device.message" = "Saugiai sinchronizuokite žymes ir automatinio pildymo duomenis tarp savo įrenginių.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Pradėti sinchronizavimą";

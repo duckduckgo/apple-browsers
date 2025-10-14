@@ -34,8 +34,8 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case openSummarizationSourceLink
     case openTranslationSourceLink
 
-    case getPageContext
-    case submitPageContext
+    case getAIChatPageContext
+    case submitAIChatPageContext
     case togglePageContextTelemetry
     case openKeyboard
 }

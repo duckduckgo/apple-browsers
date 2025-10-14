@@ -80,7 +80,10 @@ enum Preferences {
 
         var body: some View {
             HStack(spacing: 0) {
-                Sidebar().environmentObject(model).frame(minWidth: Const.minSidebarWidth, maxWidth: Const.sidebarWidth)
+                Sidebar()
+                    .environmentObject(model)
+                    .environmentObject(themeManager)
+                    .frame(minWidth: Const.minSidebarWidth, maxWidth: Const.sidebarWidth)
                     .layoutPriority(1)
                 Color(NSColor.separatorColor).frame(width: 1)
                 ScrollView(.vertical) {
@@ -125,7 +128,10 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared, isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences,
+                                   aiChatModel: AIChatPreferences.shared,
+                                   themeManager: themeManager,
+                                   isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
                 case .dataClearing:
                     DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences,
                                      startupModel: NSApp.delegateTyped.startupPreferences)
@@ -297,6 +303,7 @@ enum Preferences {
         let featureFlagger: FeatureFlagger
         let showTab: @MainActor (Tab.TabContent) -> Void
         let aiChatURLSettings: AIChatRemoteSettingsProvider
+        let wideEvent: WideEventManaging
 
         private var colorsProvider: ColorsProviding {
             themeManager.theme.colorsProvider
@@ -308,6 +315,7 @@ enum Preferences {
             subscriptionUIHandler: SubscriptionUIHandling,
             featureFlagger: FeatureFlagger,
             aiChatURLSettings: AIChatRemoteSettingsProvider,
+            wideEvent: WideEventManaging,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
             themeManager: ThemeManager = NSApp.delegateTyped.themeManager
         ) {
@@ -318,6 +326,7 @@ enum Preferences {
             self.featureFlagger = featureFlagger
             self.themeManager = themeManager
             self.aiChatURLSettings = aiChatURLSettings
+            self.wideEvent = wideEvent
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.paidAIChatModel = makePaidAIChatViewModel()
@@ -327,7 +336,10 @@ enum Preferences {
 
         var body: some View {
             HStack(spacing: 0) {
-                Sidebar().environmentObject(model).frame(minWidth: Const.minSidebarWidth, maxWidth: Const.sidebarWidth)
+                Sidebar()
+                    .environmentObject(model)
+                    .environmentObject(themeManager)
+                    .frame(minWidth: Const.minSidebarWidth, maxWidth: Const.sidebarWidth)
                     .layoutPriority(1)
                 Color(NSColor.separatorColor).frame(width: 1)
                 ScrollView(.vertical) {
@@ -373,7 +385,10 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences, aiChatModel: AIChatPreferences.shared, isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences,
+                                   aiChatModel: AIChatPreferences.shared,
+                                   themeManager: themeManager,
+                                   isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
                 case .dataClearing:
                     DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences, startupModel: NSApp.delegateTyped.startupPreferences)
                 case .subscription:
@@ -423,16 +438,31 @@ enum Preferences {
             let sheetActionHandler = SubscriptionAccessActionHandlers(
                 openActivateViaEmailURL: {
                     let url = subscriptionManager.url(for: .activationFlow)
+
+                    let subscriptionRestoreEmailSettingsWideEventData = SubscriptionRestoreWideEventData(
+                        restorePlatform: .emailAddress,
+                        contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
+                    )
                     showTab(.subscription(url))
+
+                    if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
+                        subscriptionRestoreEmailSettingsWideEventData.emailAddressRestoreDuration = WideEvent.MeasuredInterval.startingNow()
+                        wideEvent.startFlow(subscriptionRestoreEmailSettingsWideEventData)
+                    }
                     PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
                     if #available(macOS 12.0, *) {
                         Task {
                             let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
                                                                                    storePurchaseManager: subscriptionManager.storePurchaseManager())
+                            let subscriptionRestoreAppleSettingsWideEventData = SubscriptionRestoreWideEventData(
+                                restorePlatform: .appleAccount,
+                                contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
+                            )
                             let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(subscriptionManager: subscriptionManager,
                                                                                                      appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                                                     uiHandler: subscriptionUIHandler)
+                                                                                                     uiHandler: subscriptionUIHandler,
+                                                                                                     subscriptionRestoreWideEventData: subscriptionRestoreAppleSettingsWideEventData)
                             await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
 
                             PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)

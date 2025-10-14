@@ -346,30 +346,41 @@ class MainViewController: UIViewController {
     
     var swipeTabsCoordinator: SwipeTabsCoordinator?
 
+    lazy var newTabDaxDialogFactory: NewTabDaxDialogFactory = {
+        NewTabDaxDialogFactory(
+            delegate: self,
+            daxDialogsFlowCoordinator: daxDialogsManager,
+            onboardingPixelReporter: contextualOnboardingPixelReporter)
+    }()
+
+    lazy var newTabPageDependencies: SuggestionTrayViewController.NewTabPageDependencies = {
+        SuggestionTrayViewController.NewTabPageDependencies(
+            favoritesModel: favoritesViewModel,
+            homePageMessagesConfiguration: homePageConfiguration,
+            subscriptionDataReporting: subscriptionDataReporter,
+            newTabDialogFactory: newTabDaxDialogFactory,
+            newTabDaxDialogManager: daxDialogsManager,
+            faviconLoader: faviconLoader,
+            messageNavigationDelegate: self,
+            appSettings: appSettings,
+            internalUserCommands: internalUserCommands)
+    }()
+
+    lazy var suggestionTrayDependencies: SuggestionTrayDependencies = {
+        SuggestionTrayDependencies(
+            favoritesViewModel: favoritesViewModel,
+            bookmarksDatabase: bookmarksDatabase,
+            historyManager: historyManager,
+            tabsModel: tabManager.model,
+            featureFlagger: featureFlagger,
+            appSettings: appSettings,
+            aiChatSettings: aiChatSettings,
+            featureDiscovery: featureDiscovery,
+            newTabPageDependencies: newTabPageDependencies)
+    }()
+
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
-
-        let newTabPageDependencies = SuggestionTrayViewController.NewTabPageDependencies(favoritesModel: favoritesViewModel,
-                                                                                         homePageMessagesConfiguration: homePageConfiguration,
-                                                                                         subscriptionDataReporting: subscriptionDataReporter,
-                                                                                         newTabDialogFactory: newTabDaxDialogFactory,
-                                                                                         newTabDaxDialogManager: daxDialogsManager,
-                                                                                         faviconLoader: faviconLoader,
-                                                                                         messageNavigationDelegate: self,
-                                                                                         appSettings: appSettings,
-                                                                                         internalUserCommands: internalUserCommands)
-
-        let suggestionTrayDependencies = SuggestionTrayDependencies(favoritesViewModel: favoritesViewModel,
-                                                                    bookmarksDatabase: bookmarksDatabase,
-                                                                    historyManager: historyManager,
-                                                                    tabsModel: tabManager.model,
-                                                                    featureFlagger: featureFlagger,
-                                                                    appSettings: appSettings,
-                                                                    aiChatSettings: aiChatSettings,
-                                                                    featureDiscovery: featureDiscovery,
-                                                                    newTabPageDependencies: newTabPageDependencies)
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
@@ -562,18 +573,20 @@ class MainViewController: UIViewController {
                                          featureFlagger: self.featureFlagger,
                                          appSettings: self.appSettings,
                                          aiChatSettings: self.aiChatSettings,
-                                         featureDiscovery: self.featureDiscovery)
+                                         featureDiscovery: self.featureDiscovery,
+                                         newTabPageDependencies: self.newTabPageDependencies,
+                                         hideBorder: false)
         }) else {
             assertionFailure()
             return
         }
 
         controller.view.frame = viewCoordinator.suggestionTrayContainer.bounds
+        controller.newTabPageControllerDelegate = self
         viewCoordinator.suggestionTrayContainer.addSubview(controller.view)
 
         controller.dismissHandler = dismissSuggestionTray
         controller.autocompleteDelegate = self
-        controller.favoritesOverlayDelegate = self
         suggestionTrayController = controller
     }
 
@@ -645,8 +658,7 @@ class MainViewController: UIViewController {
         }
     }
 
-    @discardableResult
-    func presentSyncRecoveryPromptIfNeeded() -> Bool {
+    func presentSyncRecoveryPromptIfNeeded() {
         syncRecoveryPromptService = SyncRecoveryPromptService(
             featureFlagger: featureFlagger,
             syncService: syncService,
@@ -654,9 +666,9 @@ class MainViewController: UIViewController {
             isOnboardingComplete: tutorialSettings.hasSeenOnboarding
         )
 
-        guard let syncRecoveryPromptService = syncRecoveryPromptService else { return false }
+        guard let syncRecoveryPromptService = syncRecoveryPromptService else { return }
 
-        return syncRecoveryPromptService.tryPresentSyncRecoveryPrompt(
+        syncRecoveryPromptService.tryPresentSyncRecoveryPrompt(
             from: self,
             onSyncFlowSelected: { [weak self] source in
                 self?.segueToSettingsSync(with: source)
@@ -2471,6 +2483,10 @@ extension MainViewController: OmniBarDelegate {
         handleFavoriteSelected(favorite)
     }
 
+    func onEditFavorite(_ favorite: BookmarkEntity) {
+        segueToEditBookmark(favorite)
+    }
+
     func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
         openAIChat(query, autoSend: true, tools: tools)
     }
@@ -2811,13 +2827,6 @@ extension MainViewController: OmniBarDelegate {
     }
 }
 
-extension MainViewController: FavoritesOverlayDelegate {
-
-    func favoritesOverlay(_ overlay: FavoritesOverlay, didSelect favorite: BookmarkEntity) {
-        handleFavoriteSelected(favorite)
-    }
-}
-
 // MARK: - AutocompleteViewControllerDelegate Methods
 extension MainViewController: AutocompleteViewControllerDelegate {
 
@@ -2908,10 +2917,6 @@ extension MainViewController: NewTabPageControllerDelegate {
 
     func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
         segueToEditBookmark(favorite)
-    }
-
-    func newTabPageDidDeleteFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
-        // no-op for now
     }
 
     func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {

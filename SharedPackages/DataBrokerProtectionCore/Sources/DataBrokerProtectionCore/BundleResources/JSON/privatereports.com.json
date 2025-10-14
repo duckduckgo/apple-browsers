@@ -1,7 +1,7 @@
 {
   "name": "PrivateReports",
   "url": "privatereports.com",
-  "version": "0.9.4",
+  "version": "0.10.0",
   "optOutUrl": "https://www.privatereports.com/optOut/name/landingPage",
   "steps": [
     {
@@ -438,6 +438,43 @@
             }
           ],
           "id": "d770cb5e-506b-4d59-9767-45106ab2d834"
+        },
+        {
+          "actionType": "condition",
+          "_comment": "captcha is not always present after optout search",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#svg-captcha-rendering svg",
+              "failSilently": true
+            }
+          ],
+          "actions": [
+            {
+              "actionType": "getCaptchaInfo",
+              "captchaType": "image",
+              "selector": "#svg-captcha-rendering svg",
+              "id": "66673c7a-aef4-4ca3-bccc-123f73e54df5"
+            },
+            {
+              "actionType": "solveCaptcha",
+              "captchaType": "image",
+              "selector": "#svgCaptchaInputId",
+              "id": "22253ce7-b1f3-4a55-9f16-3c9de00edceb"
+            },
+            {
+              "actionType": "click",
+              "failSilently": true,
+              "elements": [
+                {
+                  "type": "button",
+                  "selector": "#svgCaptchaButtonId"
+                }
+              ],
+              "id": "fff4d19f-2aa9-4155-ae3d-87454ee91818"
+            }
+          ],
+          "id": "33335607-e720-4e68-b464-5eb2f75ba5a0"
         },
         {
           "actionType": "expectation",

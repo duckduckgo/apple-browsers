@@ -241,6 +241,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
+
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1209949983074592?focus=true
+    case pinnedTabsViewRewrite
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -350,7 +353,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatDataClearing,
                 .dataImportNewSafariFilePicker,
                 .serpSettings,
-                .blurryAddressBarTahoeFix:
+                .blurryAddressBarTahoeFix,
+                .pinnedTabsViewRewrite:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -530,6 +534,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .blurryAddressBarTahoeFix:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
+        case .pinnedTabsViewRewrite:
+            return .disabled
         }
     }
 }

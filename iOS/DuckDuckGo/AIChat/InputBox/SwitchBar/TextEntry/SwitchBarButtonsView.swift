@@ -69,7 +69,7 @@ class SwitchBarButtonsView: UIView {
 
     private let stack = UIStackView()
     private let clearButton = BrowserChromeButton(.secondary)
-    private let voiceButton = BrowserChromeButton(.secondary)
+    private let voiceButton = BrowserChromeButton(.primary)
 
     private enum Constants {
         static let buttonSize: CGFloat = 44

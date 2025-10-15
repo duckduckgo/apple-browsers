@@ -64,7 +64,8 @@ class AutoconsentMessageProtocolTests: XCTestCase {
                                                fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger),
                                                newTabPageActionsManager: nil
                                               ),
-            config: MockPrivacyConfiguration()
+            config: MockPrivacyConfiguration(),
+            statsManager: MockAutoconsentDailyStat()
         )
 
         CookiePopupProtectionPreferences.shared.isAutoconsentEnabled = true

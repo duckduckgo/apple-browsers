@@ -48,6 +48,7 @@ final class RemoteMessagingActionHandler: RemoteMessagingActionHandling {
         self.browserTabUrlOpener = browserTabUrlOpener
     }
 
+    @MainActor
     func handleAction(_ remoteAction: RemoteAction, presenter: RemoteMessagingPresenter) async {
         switch remoteAction {
         case .share(let value, let title):

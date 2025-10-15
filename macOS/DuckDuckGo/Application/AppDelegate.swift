@@ -626,7 +626,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionManager: subscriptionAuthV1toV2Bridge
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
-        self.autoconsentDailyStats = AutoconsentDailyStats(keyValueStore: keyValueStore)
+        self.autoconsentDailyStats = AutoconsentDailyStats(keyValueStore: keyValueStore, featureFlagger: featureFlagger)
 
         themeManager = ThemeManager(appearancePreferences: appearancePreferences, internalUserDecider: internalUserDecider)
 

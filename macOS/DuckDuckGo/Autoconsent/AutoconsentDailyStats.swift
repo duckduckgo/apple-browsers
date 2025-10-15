@@ -21,6 +21,8 @@ import Persistence
 import Common
 import PixelKit
 import OSLog
+import BrowserServicesKit
+import FeatureFlags
 
 protocol AutoconsentDailyStatsManaging {
     func incrementPopupCount()
@@ -39,16 +41,19 @@ final class AutoconsentDailyStats: AutoconsentDailyStatsManaging {
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
+    private let featureFlagger: FeatureFlagger
     private let currentDateProvider: () -> Date
     private let queue: DispatchQueue
     private let firePixel: (AutoconsentPixel, PixelKit.Frequency) -> Void
 
     init(keyValueStore: ThrowingKeyValueStoring,
+         featureFlagger: FeatureFlagger,
          currentDateProvider: @escaping () -> Date = { Date() },
          queue: DispatchQueue = DispatchQueue(label: "com.duckduckgo.autoconsent.stats"),
          firePixel: @escaping (AutoconsentPixel, PixelKit.Frequency) -> Void = { PixelKit.fire($0, frequency: $1) }
     ) {
         self.keyValueStore = keyValueStore
+        self.featureFlagger = featureFlagger
         self.currentDateProvider = currentDateProvider
         self.queue = queue
         self.firePixel = firePixel
@@ -79,6 +84,7 @@ final class AutoconsentDailyStats: AutoconsentDailyStatsManaging {
     }
 
     func incrementPopupCount() {
+        guard featureFlagger.isFeatureOn(.cpmCountPixel) else { return }
         queue.async {
             let today = self.startOfDay(for: self.currentDateProvider())
             self.dailyStats[today, default: 0] += 1
@@ -97,6 +103,7 @@ final class AutoconsentDailyStats: AutoconsentDailyStatsManaging {
     }
 
     func sendDailyPixelIfNeeded() {
+        guard featureFlagger.isFeatureOn(.cpmCountPixel) else { return }
         queue.async {
             let today = self.startOfDay(for: self.currentDateProvider())
 

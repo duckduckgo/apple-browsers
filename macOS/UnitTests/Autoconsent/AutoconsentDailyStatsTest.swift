@@ -19,6 +19,7 @@
 import Testing
 import Common
 import PixelKit
+import FeatureFlags
 import PersistenceTestingUtils
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -30,9 +31,12 @@ class AutoconsentDailyStatsTest {
     let mockStore: MockKeyValueFileStore
     let calendar = Calendar.current
     var currentDate = Date()
+    let featureFlagger: MockFeatureFlagger
 
     init() throws {
         mockStore = try MockKeyValueFileStore()
+        featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.cpmCountPixel]
     }
 
     private func startOfDay(for date: Date) -> Date {
@@ -42,6 +46,7 @@ class AutoconsentDailyStatsTest {
     func makeStat(firePixel: @escaping (AutoconsentPixel, PixelKit.Frequency) -> Void = { _, _ in }) -> AutoconsentDailyStats {
         return AutoconsentDailyStats(
             keyValueStore: mockStore,
+            featureFlagger: featureFlagger,
             currentDateProvider: { self.currentDate },
             queue: DispatchQueue.main,
             firePixel: firePixel

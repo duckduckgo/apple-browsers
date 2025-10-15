@@ -36,7 +36,7 @@ enum HomeSupportedMessageDisplayType {
 
 struct HomeMessageViewModel {
 
-    enum ButtonAction {
+    enum ButtonAction: Equatable {
         case close
         case action(isShare: Bool) // a generic action that is specific to the type of message
         case primaryAction(isShare: Bool)
@@ -46,7 +46,7 @@ struct HomeMessageViewModel {
     let messageId: String
     let sendPixels: Bool
     let modelType: HomeSupportedMessageDisplayType
-    let navigator: MessageNavigator
+    let messageActionHandler: RemoteMessagingActionHandling
 
     var image: String? {
         switch modelType {
@@ -136,54 +136,15 @@ struct HomeMessageViewModel {
     let onDidAppear: () -> Void
     let onAttachAdditionalParameters: ((_ useCase: SubscriptionDataReportingUseCase, _ params: [String: String]) -> [String: String])?
 
-    func mapActionToViewModel(remoteAction: RemoteAction,
-                              buttonAction: HomeMessageViewModel.ButtonAction,
-                              onDidClose: @escaping (HomeMessageViewModel.ButtonAction?) async -> Void) -> () async -> Void {
-
-        switch remoteAction {
-        case .share:
-            return { @MainActor in
-                await onDidClose(buttonAction)
-            }
-        case .url(let value):
-            return { @MainActor in
-                LaunchTabNotification.postLaunchTabNotification(urlString: value)
-                await onDidClose(buttonAction)
-            }
-        case .urlInContext:
-            // Handle action when implementing centralised remote action handler
-            return { @MainActor in }
-        case .survey(let value):
-            return { @MainActor in
-                let refreshedURL = refreshLastSearchState(in: value)
-                LaunchTabNotification.postLaunchTabNotification(urlString: refreshedURL)
-                await onDidClose(buttonAction)
-            }
-        case .appStore:
-            return { @MainActor in
-                let url = URL.appStore
-                if UIApplication.shared.canOpenURL(url as URL) {
-                    UIApplication.shared.open(url)
-                }
-                await onDidClose(buttonAction)
-            }
-        case .dismiss:
-            return { @MainActor in
-                await onDidClose(buttonAction)
-            }
-
-        case .navigation(let target):
-            return { @MainActor in
-                navigator.navigateTo(target)
-                await onDidClose(buttonAction)
-            }
+    func mapActionToViewModel(
+        remoteAction: RemoteAction,
+        buttonAction: HomeMessageViewModel.ButtonAction,
+        onDidClose: @escaping (HomeMessageViewModel.ButtonAction?) async -> Void
+    ) -> (_ presenter: RemoteMessagingPresenter) async -> Void {
+        return { @MainActor presenter in
+            await self.messageActionHandler.handleAction(remoteAction, presenter: presenter)
+            await onDidClose(buttonAction)
         }
-    }
-    
-    /// If `last_search_state` is present, refresh before opening URL
-    private func refreshLastSearchState(in urlString: String) -> String {
-        let lastSearchDate = AutofillUsageStore().searchDauDate
-        return DefaultRemoteMessagingSurveyURLBuilder.refreshLastSearchState(in: urlString, lastSearchDate: lastSearchDate)
     }
 }
 
@@ -193,10 +154,10 @@ struct HomeMessageButtonViewModel {
         case share(value: String, title: String?)
         case cancel
     }
-    
+
     let title: String
     var actionStyle: ActionStyle = .default
-    let action: () async -> Void
+    let action: (RemoteMessagingPresenter) async -> Void
 
 }
 

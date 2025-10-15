@@ -131,7 +131,8 @@ import SystemSettingsPiPTutorialTestSupport
             systemSettingsPiPTutorialManager: MockSystemSettingsPiPTutorialManager(),
             daxDialogsManager: DummyDaxDialogsManager(),
             dbpIOSPublicInterface: nil,
-            launchSourceManager: LaunchSourceManager()
+            launchSourceManager: LaunchSourceManager(),
+            remoteMessagingActionHandler: MockRemoteMessagingActionHandler()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

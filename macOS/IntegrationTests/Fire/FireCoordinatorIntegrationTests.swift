@@ -1393,7 +1393,6 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
         if case .burn(let opts?) = response { XCTAssertTrue(opts.includeHistory); XCTAssertTrue(opts.includeTabsAndWindows) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
         _ = try XCTUnwrap(fire.burnAllCalls.onlyValue)
     }
-    // TODO: assert when dialog value changes but is disabled (in fire coordinator)
     /**
      Provider config:
      - domains: [cook.ie]
@@ -1902,7 +1901,6 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                     XCTAssertEqual(config.viewModel.includeTabsAndWindows, expected.expectedIncludeTabsAndWindows, "includeTabsAndWindows", file: expected.file, line: expected.line + 8)
                     XCTAssertEqual(config.viewModel.includeHistory, expected.expectedIncludeHistory, "includeHistory", file: expected.file, line: expected.line + 9)
                     XCTAssertEqual(config.viewModel.includeCookiesAndSiteData, expected.expectedIncludeCookiesAndSiteData, "includeCookiesAndSiteData", file: expected.file, line: expected.line + 10)
-                    // TODO: config.viewModel.historyItemsCountForCurrentScope
                     // Validate ViewModel data from provider
                     let actualSelectable = config.viewModel.selectable.map { $0.domain }.sorted()
                     XCTAssertEqual(actualSelectable, expected.expectedSelectable?.sorted() ?? [], "selectable domains", file: expected.file, line: expected.line + 11)

@@ -111,7 +111,7 @@
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
-            "appVersion", 
+            "appVersion",
             "pixelSource",
             {
                 "key": "d0",
@@ -152,7 +152,7 @@
                 "key": "d7",
                 "description": "Number of pop-ups managed 8 days before",
                 "type": "number"
-            },
+            }
         ]
     },
     "m_mac_autoconsent_summary": {

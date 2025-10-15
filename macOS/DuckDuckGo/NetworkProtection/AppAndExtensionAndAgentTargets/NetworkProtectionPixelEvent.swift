@@ -334,7 +334,7 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
         case .networkProtectionConfigurationErrorLoadingCachedConfig:
             return "netp_ev_configuration_error_loading_cached_config"
 
-        case .couldNotParseConfiguration(let configuration):
+        case .couldNotParseConfiguration(let configuration, _):
             return "\(configuration)_parse_failed_vpn".lowercased()
 
         case .networkProtectionUnhandledError:

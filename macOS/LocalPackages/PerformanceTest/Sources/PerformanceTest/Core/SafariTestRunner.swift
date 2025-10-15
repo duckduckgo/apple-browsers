@@ -643,33 +643,33 @@ public class SafariTestRunner: SafariTestExecuting {
         public var errorDescription: String? {
             switch self {
             case .invalidIterationCount:
-                return "Safari test failed. Invalid iteration count."
+                return "Invalid iteration count."
             case .invalidURL:
-                return "Safari test failed. Invalid URL."
+                return "Invalid URL."
             case .scriptNotFound:
-                return "Safari test failed. Test script not found in bundle."
+                return "Test script not found in bundle."
             case .nodeNotFound:
-                return "Safari test failed. Node.js not installed. Install from nodejs.org and restart the app."
+                return "Node.js not installed. Install from nodejs.org and restart the app."
             case .npmNotFound:
-                return "Safari test failed. npm not found. Install Node.js from nodejs.org and restart the app."
+                return "npm not found. Install Node.js from nodejs.org and restart the app."
             case .dependenciesInstallFailed(let details):
                 if details.contains("node: No such file or directory") {
-                    return "Safari test failed. Node.js not installed. Install from nodejs.org and restart the app."
+                    return "Node.js not installed. Install from nodejs.org and restart the app."
                 }
-                return "Safari test failed. Failed to install dependencies."
+                return "Failed to install dependencies."
             case .processExecutionFailed:
-                return "Safari test failed. Failed to start test process."
+                return "Failed to start test process."
             case .processFailedWithExitCode:
-                return "Safari test failed. Test process exited with error."
+                return "Test process exited with error."
             case .processFailedWithError(_, let details):
                 if details.contains("Remote Automation") || details.contains("WebDriver") {
-                    return "Safari test failed. Enable Remote Automation in Safari → Develop menu."
+                    return "Enable Remote Automation in Safari → Develop menu."
                 }
-                return "Safari test failed. Test process error."
+                return "Test process error."
             case .cancelled:
                 return "Test cancelled"
             case .resultsFileNotFound:
-                return "Safari test failed. Results file not found."
+                return "Results file not found."
             }
         }
 

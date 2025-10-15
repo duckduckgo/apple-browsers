@@ -20,13 +20,45 @@ import Cocoa
 import Common
 import os.log
 
-final class TabBarCollectionView: NSCollectionView {
+final class PinnedTabsCollectionView: TabBarCollectionView {
 
-    override var acceptsFirstResponder: Bool {
+    // Make the view prefer to hug its intrinsic width/height
+    override var intrinsicContentSize: NSSize {
+        guard let layout = collectionViewLayout else { return .zero }
+        layout.invalidateLayout()
+        let size = layout.collectionViewContentSize
+        // When empty, report zero to collapse
+        return numberOfItems(inSection: 0) == 0 ? .zero : size
+    }
+
+    override func reloadData() {
+        super.reloadData()
+        invalidateIntrinsicContentSize()
+    }
+
+    override func insertItems(at indexPaths: Set<IndexPath>) {
+        super.insertItems(at: indexPaths)
+        invalidateIntrinsicContentSize()
+    }
+
+    override func deleteItems(at indexPaths: Set<IndexPath>) {
+        super.deleteItems(at: indexPaths)
+        invalidateIntrinsicContentSize()
+    }
+
+    override func moveItem(at indexPath: IndexPath, to newIndexPath: IndexPath) {
+        super.moveItem(at: indexPath, to: newIndexPath)
+        invalidateIntrinsicContentSize()
+    }
+}
+
+open class TabBarCollectionView: NSCollectionView {
+
+    open override var acceptsFirstResponder: Bool {
         return false
     }
 
-    override func awakeFromNib() {
+    open override func awakeFromNib() {
         super.awakeFromNib()
 
         register(TabBarViewItem.self, forItemWithIdentifier: TabBarViewItem.identifier)
@@ -38,7 +70,7 @@ final class TabBarCollectionView: NSCollectionView {
         setDraggingSourceOperationMask([.private], forLocal: true)
     }
 
-    override func selectItems(at indexPaths: Set<IndexPath>, scrollPosition: NSCollectionView.ScrollPosition) {
+    open override func selectItems(at indexPaths: Set<IndexPath>, scrollPosition: NSCollectionView.ScrollPosition) {
         super.selectItems(at: indexPaths, scrollPosition: scrollPosition)
 
         updateItemsLeftToSelectedItems(indexPaths)
@@ -110,12 +142,12 @@ final class TabBarCollectionView: NSCollectionView {
 
     // MARK: - Accessibility
 
-    override func accessibilityChildren() -> [Any]? {
+    open override func accessibilityChildren() -> [Any]? {
         // matches the internal [NSCollectionViewAccessibilityHelper accessibilityChildren] implementation
         return accessibilityVisibleChildren()
     }
 
-    override func accessibilityVisibleChildren() -> [Any]? {
+    open override func accessibilityVisibleChildren() -> [Any]? {
         let children = super.accessibilityVisibleChildren()
 
         // return children from first section (TabBarViewItem-s)
@@ -132,7 +164,7 @@ final class TabBarCollectionView: NSCollectionView {
     }
 
     /// prevent NSCollectionView default implementation from returning NSCollectionViewSectionAccessibility object
-    override func accessibilityArrayAttributeValues(_ attribute: NSAccessibility.Attribute, index: Int, maxCount: Int) -> [Any] {
+    open override func accessibilityArrayAttributeValues(_ attribute: NSAccessibility.Attribute, index: Int, maxCount: Int) -> [Any] {
         let values: [Any]
         if case .children = attribute {
             guard let children = accessibilityVisibleChildren(),

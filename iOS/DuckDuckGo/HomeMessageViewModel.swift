@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import RemoteMessaging
 import UIKit
+import Core
 
 struct HomeMessageViewModel {
 
@@ -35,6 +36,7 @@ struct HomeMessageViewModel {
     let sendPixels: Bool
     let modelType: RemoteMessageModelType
     let navigator: MessageNavigator
+    let urlOpener: URLOpener
 
     var image: String? {
         switch modelType {
@@ -147,9 +149,7 @@ struct HomeMessageViewModel {
         case .appStore:
             return { @MainActor in
                 let url = URL.appStore
-                if UIApplication.shared.canOpenURL(url as URL) {
-                    UIApplication.shared.open(url)
-                }
+                urlOpener.open(url, withStrategy: .external)
                 await onDidClose(buttonAction)
             }
         case .dismiss:

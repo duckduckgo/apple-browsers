@@ -19,13 +19,17 @@
 
 import UIKit
 
-public protocol URLOpener: AnyObject {
-    func canOpenURL(_ url: URL) -> Bool
-    func open(_ url: URL)
+/// A limited number of URL opening strategies.
+public enum URLOpenerStrategy {
+
+    case newTab
+    case external
+
 }
 
-extension UIApplication: URLOpener {
-    public func open(_ url: URL) {
-        open(url, options: [:], completionHandler: nil)
-    }
+/// Fire and forget methods for opening URLs
+public protocol URLOpener: AnyObject {
+
+    /// Open a URL using the specified strategy
+    func open(_ url: URL, withStrategy: URLOpenerStrategy)
 }

@@ -56,7 +56,7 @@ final class SettingsViewModel: ObservableObject {
     private let duckPlayerSettings: DuckPlayerSettings
     private let duckPlayerPixelHandler: DuckPlayerPixelFiring.Type
     let featureDiscovery: FeatureDiscovery
-    private let urlOpener: URLOpener
+    let urlOpener: URLOpener
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
 
@@ -566,7 +566,7 @@ final class SettingsViewModel: ObservableObject {
          duckPlayerPixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
          subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
-         urlOpener: URLOpener = UIApplication.shared,
+         urlOpener: URLOpener,
          keyValueStore: ThrowingKeyValueStoring,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
@@ -873,37 +873,37 @@ extension SettingsViewModel {
     }
 
     func openEmailProtection() {
-        urlOpener.open(URL.emailProtectionQuickLink)
+        urlOpener.open(URL.emailProtectionQuickLink, withStrategy: .newTab)
     }
 
     func openEmailAccountManagement() {
-        urlOpener.open(URL.emailProtectionAccountLink)
+        urlOpener.open(URL.emailProtectionAccountLink, withStrategy: .newTab)
     }
 
     func openEmailSupport() {
-        urlOpener.open(URL.emailProtectionSupportLink)
+        urlOpener.open(URL.emailProtectionSupportLink, withStrategy: .newTab)
     }
 
     func openOtherPlatforms() {
-        urlOpener.open(URL.otherDevices)
+        urlOpener.open(URL.otherDevices, withStrategy: .newTab)
     }
 
     func openMoreSearchSettings() {
         Pixel.fire(pixel: .settingsMoreSearchSettings)
         let url = URL.searchSettings.appendingParameter(name: SERPSettingsConstants.returnParameterKey,
                                                         value: SERPSettingsConstants.privateSearch)
-        urlOpener.open(url)
+        urlOpener.open(url, withStrategy: .newTab)
     }
 
     func openAssistSettings() {
         Pixel.fire(pixel: .settingsOpenAssistSettings)
         let url = URL.assistSettings.appendingParameter(name: SERPSettingsConstants.returnParameterKey,
                                                         value: SERPSettingsConstants.aiFeatures)
-        urlOpener.open(url)
+        urlOpener.open(url, withStrategy: .newTab)
     }
 
     func openAIChat() {
-        urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
+        urlOpener.open(AppDeepLinkSchemes.openAIChat.url, withStrategy: .newTab)
     }
 
     func openAIFeaturesSettings() {
@@ -911,11 +911,11 @@ extension SettingsViewModel {
     }
 
     func openWebTrackingProtectionLearnMore() {
-        urlOpener.open(URL.webTrackingProtection)
+        urlOpener.open(URL.webTrackingProtection, withStrategy: .newTab)
     }
     
     func openGPCLearnMore() {
-        urlOpener.open(URL.gpcLearnMore)
+        urlOpener.open(URL.gpcLearnMore, withStrategy: .newTab)
     }
 
     var shouldDisplayDuckPlayerContingencyMessage: Bool {
@@ -925,7 +925,7 @@ extension SettingsViewModel {
     func openDuckPlayerContingencyMessageSite() {
         guard let url = duckPlayerContingencyHandler.learnMoreURL else { return }
         Pixel.fire(pixel: .duckPlayerContingencyLearnMoreClicked)
-        urlOpener.open(url)
+        urlOpener.open(url, withStrategy: .newTab)
     }
 
     @MainActor func openCookiePopupManagement() {
@@ -1387,7 +1387,7 @@ extension SettingsViewModel {
     }
 
     func launchAIFeaturesLearnMore() {
-        urlOpener.open(URL.aiFeaturesLearnMore)
+        urlOpener.open(URL.aiFeaturesLearnMore, withStrategy: .newTab)
     }
 
 }

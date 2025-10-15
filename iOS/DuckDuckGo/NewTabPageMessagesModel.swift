@@ -32,17 +32,20 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let pixelFiring: PixelFiring.Type
     private let subscriptionDataReporter: SubscriptionDataReporting?
     private let navigator: MessageNavigator
+    private let urlOpener: URLOpener
 
     init(homePageMessagesConfiguration: HomePageMessagesConfiguration,
          notificationCenter: NotificationCenter = .default,
          pixelFiring: PixelFiring.Type = Pixel.self,
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
-         navigator: MessageNavigator) {
+         navigator: MessageNavigator,
+         urlOpener: URLOpener) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
         self.notificationCenter = notificationCenter
         self.pixelFiring = pixelFiring
         self.subscriptionDataReporter = subscriptionDataReporter
         self.navigator = navigator
+        self.urlOpener = urlOpener
     }
 
     func load() {
@@ -83,7 +86,8 @@ final class NewTabPageMessagesModel: ObservableObject {
             return HomeMessageViewModel(messageId: "",
                                         sendPixels: false,
                                         modelType: .small(titleText: "", descriptionText: ""),
-                                        navigator: navigator) { [weak self] _ in
+                                        navigator: navigator,
+                                        urlOpener: urlOpener) { [weak self] _ in
                 await self?.dismissHomeMessage(message)
             } onDidAppear: {
                 // no-op
@@ -98,7 +102,8 @@ final class NewTabPageMessagesModel: ObservableObject {
 
             return HomeMessageViewModelBuilder.build(for: remoteMessage,
                                                      with: subscriptionDataReporter,
-                                                     navigator: navigator) { @MainActor [weak self] action in
+                                                     navigator: navigator,
+                                                     urlOpener: urlOpener) { @MainActor [weak self] action in
                 guard let action,
                       let self else { return }
 

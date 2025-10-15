@@ -67,6 +67,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             faviconLoader: EmptyFaviconLoading(),
             messageNavigationDelegate: MockMessageNavigationDelegate(),
             appSettings: AppSettingsMock(),
+            urlOpener: MockURLOpener(),
             internalUserCommands: MockURLBasedDebugCommands()
         )
 

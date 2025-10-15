@@ -40,7 +40,7 @@ final class MaliciousSiteProtectionSettingsViewModel: ObservableObject {
     init(
         manager: MaliciousSiteProtectionPreferencesManaging,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-        urlOpener: URLOpener = UIApplication.shared
+        urlOpener: URLOpener
     ) {
         self.manager = manager
         self.featureFlagger = featureFlagger
@@ -52,7 +52,7 @@ final class MaliciousSiteProtectionSettingsViewModel: ObservableObject {
     }
 
     func learnMoreAction() {
-        urlOpener.open(URL.maliciousSiteProtectionLearnMore)
+        urlOpener.open(URL.maliciousSiteProtectionLearnMore, withStrategy: .newTab)
     }
 
     private func updateMaliciousSiteProtection(enabled isEnabled: Bool) {

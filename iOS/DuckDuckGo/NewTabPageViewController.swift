@@ -57,6 +57,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          faviconLoader: FavoritesFaviconLoading,
          messageNavigationDelegate: MessageNavigationDelegate,
          appSettings: AppSettings,
+         urlOpener: URLOpener,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
          appWidthObserver: AppWidthObserver = .shared) {
@@ -74,7 +75,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             faviconLoader: faviconLoader)
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 subscriptionDataReporter: subscriptionDataReporting,
-                                                navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate))
+                                                navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate),
+                                                urlOpener: urlOpener)
 
         super.init(rootView: NewTabPageView(narrowLayoutInLandscape: narrowLayoutInLandscape,
                                             viewModel: self.newTabPageViewModel,

@@ -35,7 +35,7 @@ struct ThreatProtectionView: View {
     var body: some View {
         List {
             SettingsDescriptionView(content: description)
-            ThreatProtectionViewSettings(model: MaliciousSiteProtectionSettingsViewModel(manager: viewModel.maliciousSiteProtectionPreferencesManager))
+            ThreatProtectionViewSettings(model: MaliciousSiteProtectionSettingsViewModel(manager: viewModel.maliciousSiteProtectionPreferencesManager, urlOpener: viewModel.urlOpener))
         }
         .applySettingsListModifiers(title: UserText.threatProtection,
                                     displayMode: .inline,

@@ -21,6 +21,7 @@ import Foundation
 import Subscription
 import Combine
 import DataBrokerProtection_iOS
+import Core
 
 final class SubscriptionContainerViewModel: ObservableObject {
 
@@ -36,6 +37,7 @@ final class SubscriptionContainerViewModel: ObservableObject {
          isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
+         urlOpener: URLOpener,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
 
         self.userScript = userScript
@@ -48,6 +50,7 @@ final class SubscriptionContainerViewModel: ObservableObject {
                                               userScript: userScript,
                                               subFeature: subFeature,
                                               subscriptionManager: subscriptionManager,
+                                              urlOpener: urlOpener,
                                               dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider)
         self.restore = SubscriptionRestoreViewModel(userScript: userScript,
                                                     subFeature: subFeature)
@@ -55,6 +58,7 @@ final class SubscriptionContainerViewModel: ObservableObject {
                                                 userScript: userScript,
                                                 subFeature: subFeature,
                                                 subscriptionManager: subscriptionManager,
+                                                urlOpener: urlOpener,
                                                 dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider)
     }
 

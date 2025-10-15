@@ -151,6 +151,7 @@ struct SettingsRootView: View {
                                                                  subscriptionDataReporter: viewModel.subscriptionDataReporter,
                                                                  tld: AppDependencyProvider.shared.storageCache.tld,
                                                                  internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                                 urlOpener: viewModel.urlOpener,
                                                                  dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
                                                                  wideEvent: AppDependencyProvider.shared.wideEvent)
         } else {
@@ -161,6 +162,7 @@ struct SettingsRootView: View {
                                                                subscriptionDataReporter: viewModel.subscriptionDataReporter,
                                                                tld: AppDependencyProvider.shared.storageCache.tld,
                                                                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                               urlOpener: viewModel.urlOpener,
                                                                dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider)
         }
     }
@@ -172,6 +174,7 @@ struct SettingsRootView: View {
                                                              subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                              internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                              emailFlow: .restoreFlow,
+                                                             urlOpener: viewModel.urlOpener,
                                                              dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
                                                              wideEvent: AppDependencyProvider.shared.wideEvent,
                                                              onDisappear: {})
@@ -181,6 +184,7 @@ struct SettingsRootView: View {
                                                            subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                            emailFlow: .restoreFlow,
+                                                           urlOpener: viewModel.urlOpener,
                                                            dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
                                                            onDisappear: {})
         }

@@ -51,6 +51,7 @@ struct SettingsSubscriptionView: View {
                                                          subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
                                                          subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                                                          internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                         urlOpener: settingsViewModel.urlOpener,
                                                          dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider)
     }
 
@@ -60,6 +61,7 @@ struct SettingsSubscriptionView: View {
                                                            subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                                                            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                            wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                           urlOpener: settingsViewModel.urlOpener,
                                                            dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider)
     }
 

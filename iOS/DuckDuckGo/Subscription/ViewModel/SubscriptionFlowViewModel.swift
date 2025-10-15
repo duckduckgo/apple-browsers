@@ -79,7 +79,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
          subscriptionManager: SubscriptionAuthV1toV2Bridge,
          selectedFeature: SettingsViewModel.SettingsDeepLinkSection? = nil,
-         urlOpener: URLOpener = UIApplication.shared,
+         urlOpener: URLOpener,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
@@ -145,7 +145,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
                      self.state.selectedFeature = .itr
                  case .paidAIChat:
                      UniquePixel.fire(pixel: .subscriptionWelcomeAIChat)
-                     self.urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
+                     self.urlOpener.open(AppDeepLinkSchemes.openAIChat.url, withStrategy: .newTab)
                  case .unknown:
                      break
                  }

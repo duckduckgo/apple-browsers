@@ -357,7 +357,8 @@ class MainViewController: UIViewController {
             faviconLoader: faviconLoader,
             messageNavigationDelegate: self,
             appSettings: appSettings,
-            internalUserCommands: internalUserCommands)
+            internalUserCommands: internalUserCommands,
+            urlOpener: self)
     }()
 
     lazy var suggestionTrayDependencies: SuggestionTrayDependencies = {
@@ -1089,6 +1090,7 @@ class MainViewController: UIViewController {
                                                   faviconLoader: faviconLoader,
                                                   messageNavigationDelegate: self,
                                                   appSettings: appSettings,
+                                                  urlOpener: self,
                                                   internalUserCommands: internalUserCommands,
                                                   narrowLayoutInLandscape: narrowLayoutInLandscape
         )

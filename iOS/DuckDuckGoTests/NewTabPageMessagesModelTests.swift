@@ -273,7 +273,8 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         NewTabPageMessagesModel(homePageMessagesConfiguration: messagesConfiguration,
                                 notificationCenter: notificationCenter,
                                 pixelFiring: PixelFiringMock.self,
-                                navigator: DefaultMessageNavigator(delegate: self))
+                                navigator: DefaultMessageNavigator(delegate: self),
+                                urlOpener: MockURLOpener())
     }
 }
 

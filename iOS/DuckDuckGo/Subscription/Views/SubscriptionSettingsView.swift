@@ -95,6 +95,7 @@ struct SubscriptionSettingsView: View {
                     subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                     internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                     emailFlow: .manageEmailFlow,
+                    urlOpener: settingsViewModel.urlOpener,
                     dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
                     onDisappear: {
                         Task {
@@ -113,6 +114,7 @@ struct SubscriptionSettingsView: View {
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 emailFlow: .activationFlow,
+                urlOpener: settingsViewModel.urlOpener,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
                 onDisappear: {
                     Task {
@@ -723,6 +725,7 @@ struct SubscriptionSettingsViewV2: View {
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 emailFlow: .manageEmailFlow,
+                urlOpener: settingsViewModel.urlOpener,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
                 wideEvent: AppDependencyProvider.shared.wideEvent,
                 onDisappear: {
@@ -742,6 +745,7 @@ struct SubscriptionSettingsViewV2: View {
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 emailFlow: .activationFlow,
+                urlOpener: settingsViewModel.urlOpener,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
                 wideEvent: AppDependencyProvider.shared.wideEvent,
                 onDisappear: {

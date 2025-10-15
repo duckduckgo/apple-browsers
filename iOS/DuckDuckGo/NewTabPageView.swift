@@ -20,6 +20,7 @@
 import SwiftUI
 import DuckUI
 import RemoteMessaging
+import Core
 
 struct NewTabPageView: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -172,7 +173,8 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            navigator: DefaultMessageNavigator(delegate: nil)
+            navigator: DefaultMessageNavigator(delegate: nil),
+            urlOpener: PreviewURLOpener()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -195,7 +197,8 @@ private struct Metrics {
                     )
                 ]
             ),
-            navigator: DefaultMessageNavigator(delegate: nil)
+            navigator: DefaultMessageNavigator(delegate: nil),
+            urlOpener: PreviewURLOpener()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -208,7 +211,8 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            navigator: DefaultMessageNavigator(delegate: nil)
+            navigator: DefaultMessageNavigator(delegate: nil),
+            urlOpener: PreviewURLOpener()
         ),
         favoritesViewModel: FavoritesPreviewModel(favorites: [])
     )
@@ -221,7 +225,8 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            navigator: DefaultMessageNavigator(delegate: nil)
+            navigator: DefaultMessageNavigator(delegate: nil),
+            urlOpener: PreviewURLOpener()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -245,4 +250,8 @@ private final class PreviewMessagesConfiguration: HomePageMessagesConfiguration 
     func dismissHomeMessage(_ homeMessage: HomeMessage) {
         homeMessages = homeMessages.dropLast()
     }
+}
+
+private final class PreviewURLOpener: URLOpener {
+    func open(_ url: URL, withStrategy: Core.URLOpenerStrategy) {}
 }

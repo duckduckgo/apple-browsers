@@ -1,8 +1,8 @@
 //
-//  MockURLOpener.swift
+//  MainViewConroller+URLOpener.swift
 //  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,18 +17,22 @@
 //  limitations under the License.
 //
 
-import Foundation
-@testable import Core
+import Core
 
-final class MockURLOpener: URLOpener {
-    private(set) var didCallOpenURL = false
-    private(set) var capturedURL: URL?
-    private(set) var capturedStrategy: URLOpenerStrategy?
+extension MainViewController: URLOpener {
 
     func open(_ url: URL, withStrategy strategy: URLOpenerStrategy) {
-        didCallOpenURL = true
-        capturedURL = url
-        capturedStrategy = strategy
+        switch strategy {
+        case .newTab:
+            loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: .noAttribution)
+
+        case .external:
+            if UIApplication.shared.canOpenURL(url) {
+                UIApplication.shared.open(url)
+            } else {
+                assertionFailure("Cannot open specified URL externally")
+            }
+        }
     }
 
 }

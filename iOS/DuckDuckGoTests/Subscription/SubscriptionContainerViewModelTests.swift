@@ -72,6 +72,7 @@ final class SubscriptionContainerViewModelTests: XCTestCase {
                                                                                appStorePurchaseFlow: appStorePurchaseFlow,
                                                                                appStoreRestoreFlow: appStoreRestoreFlow,
                                                                                appStoreAccountManagementFlow: appStoreAccountManagementFlow),
+                    urlOpener: MockURLOpener(),
                     dataBrokerProtectionViewControllerProvider: nil)
 
         // THEN
@@ -102,6 +103,7 @@ final class SubscriptionContainerViewModelTests: XCTestCase {
                                                                                appStorePurchaseFlow: appStorePurchaseFlow,
                                                                                appStoreRestoreFlow: appStoreRestoreFlow,
                                                                                appStoreAccountManagementFlow: appStoreAccountManagementFlow),
+                    urlOpener: MockURLOpener(),
                     dataBrokerProtectionViewControllerProvider: nil)
 
         // THEN

@@ -327,30 +327,35 @@ struct HomeMessageView_Previews: PreviewProvider {
                                                             sendPixels: false,
                                                             modelType: small,
                                                             navigator: DefaultMessageNavigator(delegate: nil),
+                                                            urlOpener: PreviewURLOpener(),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Critical",
                                                             sendPixels: false,
                                                             modelType: critical,
                                                             navigator: DefaultMessageNavigator(delegate: nil),
+                                                            urlOpener: PreviewURLOpener(),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Single",
                                                             sendPixels: false,
                                                             modelType: bigSingle,
                                                             navigator: DefaultMessageNavigator(delegate: nil),
+                                                            urlOpener: PreviewURLOpener(),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Two",
                                                             sendPixels: false,
                                                             modelType: bigTwo,
                                                             navigator: DefaultMessageNavigator(delegate: nil),
+                                                            urlOpener: PreviewURLOpener(),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Promo",
                                                             sendPixels: false,
                                                             modelType: promo,
                                                             navigator: DefaultMessageNavigator(delegate: nil),
+                                                            urlOpener: PreviewURLOpener(),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
         }
         .frame(height: 200)
@@ -362,5 +367,9 @@ struct HomeMessageView_Previews: PreviewProvider {
         func navigateTo(_ target: RemoteMessaging.NavigationTarget) {
             // no-op
         }
+    }
+
+    private final class PreviewURLOpener: URLOpener {
+        func open(_ url: URL, withStrategy: Core.URLOpenerStrategy) { }
     }
 }

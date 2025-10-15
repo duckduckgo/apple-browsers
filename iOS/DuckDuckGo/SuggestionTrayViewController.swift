@@ -110,6 +110,7 @@ class SuggestionTrayViewController: UIViewController {
         let messageNavigationDelegate: MessageNavigationDelegate
         let appSettings: AppSettings
         let internalUserCommands: URLBasedDebugCommands
+        let urlOpener: URLOpener
     }
 
     required init?(coder: NSCoder,
@@ -281,6 +282,7 @@ class SuggestionTrayViewController: UIViewController {
             faviconLoader: dependencies.faviconLoader,
             messageNavigationDelegate: dependencies.messageNavigationDelegate,
             appSettings: dependencies.appSettings,
+            urlOpener: dependencies.urlOpener,
             internalUserCommands: dependencies.internalUserCommands
         )
 

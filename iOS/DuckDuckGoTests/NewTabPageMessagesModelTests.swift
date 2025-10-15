@@ -270,10 +270,13 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     }
 
     private func createSUT() -> NewTabPageMessagesModel {
-        NewTabPageMessagesModel(homePageMessagesConfiguration: messagesConfiguration,
+        let remoteMessageActionHandler = RemoteMessagingActionHandler(lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher())
+        remoteMessageActionHandler.messageNavigator = DefaultMessageNavigator(delegate: self)
+
+        return NewTabPageMessagesModel(homePageMessagesConfiguration: messagesConfiguration,
                                 notificationCenter: notificationCenter,
                                 pixelFiring: PixelFiringMock.self,
-                                navigator: DefaultMessageNavigator(delegate: self))
+                                messageActionHandler: remoteMessageActionHandler)
     }
 }
 

@@ -1,0 +1,358 @@
+{
+    "version": 1,
+    "messages": [
+        {
+            "id": "1",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+            "id": "2",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description",
+                "placeholder": "Announce"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+            "id": "3",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description",
+                "placeholder": "DDGAnnounce"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+            "id": "4",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description",
+                "placeholder": "CriticalUpdate"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+            "id": "5",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description",
+                "placeholder": "AppUpdate"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+            "id": "6",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description",
+                "placeholder": "MacComputer"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+            "id": "7",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description",
+                "placeholder": "NewForMacAndWindows"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+            "id": "8",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description",
+                "placeholder": "PrivacyShield"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+            "id": "9",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description",
+                "placeholder": "Duck.ai"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+            "id": "10",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description",
+                "placeholder": "VisualDesignUpdate"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+            "id": "11",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description",
+                "placeholder": "ImageAI"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+            "id": "12",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description",
+                "placeholder": "Radar"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+            "id": "13",
+            "surfaces": [
+                "new_tab_page"
+            ],
+            "content": {
+                "messageType": "medium",
+                "titleText": "Here goes a title",
+                "descriptionText": "description",
+                "placeholder": "KeyImport"
+            },
+            "metrics": {
+                "state": "enabled"
+            }
+        },
+        {
+          "id": "14",
+          "surfaces": ["modal"],
+          "content": {
+            "messageType": "cards_list",
+            "titleText": "What's New",
+            "descriptionText": "",
+            "listItems": [
+              {
+                "id": "1",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
+              },
+              {
+                "id": "2",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "placeholder": "Announce",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
+              },
+              {
+                "id": "3",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "placeholder": "DDGAnnounce",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
+              },
+              {
+                "id": "4",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "placeholder": "CriticalUpdate",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
+              },
+              {
+                "id": "5",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "placeholder": "AppUpdate",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
+              },
+              {
+                "id": "6",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "placeholder": "MacComputer",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
+              },
+              {
+                "id": "7",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "placeholder": "NewForMacAndWindows",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
+              },
+              {
+                "id": "8",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "placeholder": "PrivacyShield",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
+              },
+              {
+                "id": "9",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "placeholder": "Duck.ai",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
+              },
+              {
+                "id": "10",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "placeholder": "VisualDesignUpdate",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
+              },
+              {
+                "id": "11",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "placeholder": "ImageAI",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
+              },
+              {
+                "id": "12",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "placeholder": "Radar",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
+              },
+              {
+                "id": "13",
+                "type": "two_line_list_item",
+                "titleText": "Hide AI Images in Search",
+                "descriptionText": "Easily hide AI images from your search results",
+                "placeholder": "KeyImport",
+                "primaryAction": {
+                  "type": "url_in_context",
+                  "value": "https://example.com"
+                }
+              }
+            ],
+            "primaryActionText": "Got It",
+            "primaryAction": {
+              "type": "dismiss",
+              "value": ""
+            }
+          }
+        }
+    ],
+    "rules": []
+}

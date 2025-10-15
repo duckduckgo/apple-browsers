@@ -181,7 +181,7 @@ public enum RemoteAction: Codable, Equatable {
     case navigation(value: NavigationTarget)
 }
 
-public enum RemotePlaceholder: String, Codable {
+public enum RemotePlaceholder: String, Codable, CaseIterable {
     case announce = "RemoteMessageAnnouncement"
     case ddgAnnounce = "RemoteMessageDDGAnnouncement"
     case criticalUpdate = "RemoteMessageCriticalAppUpdate"
@@ -191,4 +191,7 @@ public enum RemotePlaceholder: String, Codable {
     case privacyShield = "RemoteMessagePrivacyShield"
     case aiChat = "RemoteDuckAi"
     case visualDesignUpdate = "RemoteVisualDesignUpdate"
+    case imageAI = "RemoteImageAI"
+    case radar = "RemoteRadar"
+    case keyImport = "RemoteKeyImport"
 }

@@ -29,6 +29,13 @@ import DDGSync
 final class RemoteMessagingService {
 
     let remoteMessagingClient: RemoteMessagingClient
+    let remoteMessagingActionHandler: RemoteMessagingActionHandler
+
+    var messageNavigator: MessageNavigator? {
+        didSet {
+            remoteMessagingActionHandler.messageNavigator = messageNavigator
+        }
+    }
 
     init(bookmarksDatabase: CoreDataDatabase,
          database: CoreDataDatabase,
@@ -40,6 +47,10 @@ final class RemoteMessagingService {
          syncService: DDGSyncing,
          winBackOfferService: WinBackOfferService
     ) {
+        remoteMessagingActionHandler = RemoteMessagingActionHandler(
+            lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher()
+        )
+
         remoteMessagingClient = RemoteMessagingClient(
             bookmarksDatabase: bookmarksDatabase,
             appSettings: appSettings,

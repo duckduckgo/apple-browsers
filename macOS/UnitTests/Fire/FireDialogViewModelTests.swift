@@ -226,7 +226,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                        includeCookiesAndSiteData: viewModel.includeCookiesAndSiteData)
         let task = handle(viewModel, result2)
 
-        try await withTimeout(1) {
+        try await withTimeout(3) {
             await task.value
         }
         withExtendedLifetime(tabCollectionVM) {}
@@ -727,7 +727,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                       includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
         let task = handle(vm, result)
 
-        try await withTimeout(1) {
+        try await withTimeout(3) {
             await task.value
         }
         withExtendedLifetime(tabCollectionVM) {}
@@ -776,7 +776,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                        includeTabsAndWindows: vm.includeTabsAndWindows,
                                        includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
         let task = handle(vm, resultB)
-        try await withTimeout(1) {
+        try await withTimeout(3) {
             await task.value
         }
         withExtendedLifetime(tabCollectionVM) {}

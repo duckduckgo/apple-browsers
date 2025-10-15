@@ -53,7 +53,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     @IBOutlet weak var windowDraggingViewLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var burnerWindowBackgroundView: NSImageView!
 
-    private var pinnedTabsCollectionView: TabBarCollectionView?
+    private var pinnedTabsCollectionView: PinnedTabsCollectionView?
 
     @IBOutlet weak var fireButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var fireButtonHeightConstraint: NSLayoutConstraint!
@@ -197,11 +197,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 self.pinnedTabsViewModel = nil
                 self.pinnedTabsView = nil
                 self.pinnedTabsHostingView = nil
-                pinnedTabsCollectionView = TabBarCollectionView(frame: .zero)
+                pinnedTabsCollectionView = PinnedTabsCollectionView(frame: .zero)
                 pinnedTabsCollectionView?.isSelectable = true
                 pinnedTabsCollectionView?.backgroundColors = [.clear]
 
                 let layout = NSCollectionViewFlowLayout()
+                layout.scrollDirection = .horizontal
                 layout.itemSize = NSSize(width: 120, height: 32)
                 layout.sectionInset = NSEdgeInsets(top: 2, left: 0, bottom: 0, right: 0)
                 layout.minimumInteritemSpacing = 0
@@ -210,7 +211,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 pinnedTabsCollectionView?.collectionViewLayout = layout
 
                 pinnedTabsCollectionView?.register(TabBarViewItem.self, forItemWithIdentifier: TabBarViewItem.identifier)
-                pinnedTabsCollectionView?.register(TabBarFooter.self, forSupplementaryViewOfKind: NSCollectionView.elementKindSectionFooter, withIdentifier: TabBarFooter.identifier)
+                pinnedTabsCollectionView?.register(NSView.self, forSupplementaryViewOfKind: NSCollectionView.elementKindSectionFooter, withIdentifier: TabBarFooter.identifier)
 
                 // Register for the dropped object types we can accept.
                 pinnedTabsCollectionView?.registerForDraggedTypes([.URL, .fileURL, TabBarViewItemPasteboardWriter.utiInternalType, .string])
@@ -440,13 +441,22 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func setupPinnedTabsView() {
         if featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) {
             layoutPinnedTabsCollectionView()
+            pinnedTabsWindowDraggingView.isHidden = true
+
+            tabCollectionViewModel.pinnedTabsCollection?.$tabs.map(\.count)
+                .removeDuplicates()
+                .asVoid()
+                .sink { [weak self] in
+                    self?.pinnedTabsCollectionView?.reloadData()
+                }
+                .store(in: &cancellables)
+
         } else {
             layoutPinnedTabsView()
             subscribeToPinnedTabsHostingView()
+            subscribeToPinnedTabsViewModelOutputs()
+            subscribeToPinnedTabsViewModelInputs()
         }
-        subscribeToPinnedTabsViewModelOutputs()
-        subscribeToPinnedTabsViewModelInputs()
-        pinnedTabsWindowDraggingView.isHidden = true
     }
 
     private func layoutPinnedTabsView() {
@@ -471,16 +481,17 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         pinnedTabsCollectionView.translatesAutoresizingMaskIntoConstraints = false
         pinnedTabsContainerView.addSubview(pinnedTabsCollectionView)
 
-        let trailingConstant: CGFloat = theme.tabStyleProvider.shouldShowSShapedTab ? 12 : 0
-
         NSLayoutConstraint.activate([
             pinnedTabsCollectionView.leadingAnchor.constraint(equalTo: pinnedTabsContainerView.leadingAnchor),
             pinnedTabsCollectionView.topAnchor.constraint(lessThanOrEqualTo: pinnedTabsContainerView.topAnchor),
             pinnedTabsCollectionView.bottomAnchor.constraint(equalTo: pinnedTabsContainerView.bottomAnchor),
-            pinnedTabsCollectionView.trailingAnchor.constraint(equalTo: pinnedTabsContainerView.trailingAnchor, constant: trailingConstant),
-            pinnedTabsCollectionView.widthAnchor.constraint(equalToConstant: 250)
+            pinnedTabsCollectionView.trailingAnchor.constraint(equalTo: pinnedTabsContainerView.trailingAnchor)
         ])
 
+        pinnedTabsCollectionView.setContentHuggingPriority(.required, for: .horizontal)
+        pinnedTabsCollectionView.setContentCompressionResistancePriority(.required, for: .horizontal)
+        pinnedTabsContainerView.setContentHuggingPriority(.required, for: .horizontal)
+        pinnedTabsContainerView.setContentCompressionResistancePriority(.required, for: .horizontal)
     }
 
     private func subscribeToPinnedTabsViewModelInputs() {
@@ -1303,6 +1314,9 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
 
     func collectionView(_ collectionView: NSCollectionView, layout collectionViewLayout: NSCollectionViewLayout, insetForSectionAt section: Int) -> NSEdgeInsets {
         let isPinnedTabs = collectionView == pinnedTabsCollectionView
+        if isPinnedTabs {
+            return NSEdgeInsetsZero
+        }
         if theme.tabStyleProvider.shouldShowSShapedTab {
             let isRightScrollButtonVisible = !isPinnedTabs && !rightScrollButton.isHidden
             let isLeftScrollButonVisible = !isPinnedTabs && !leftScrollButton.isHidden
@@ -1353,9 +1367,10 @@ extension TabBarViewController: NSCollectionViewDataSource {
     }
 
     func collectionView(_ collectionView: NSCollectionView, viewForSupplementaryElementOfKind kind: NSCollectionView.SupplementaryElementKind, at indexPath: IndexPath) -> NSView {
-        // swiftlint:disable:next force_cast
-        let view = collectionView.makeSupplementaryView(ofKind: kind, withIdentifier: TabBarFooter.identifier, for: indexPath) as! TabBarFooter
-        view.target = self
+        let view = collectionView.makeSupplementaryView(ofKind: kind, withIdentifier: TabBarFooter.identifier, for: indexPath)
+        if let tabBarFooter = view as? TabBarFooter {
+            tabBarFooter.target = self
+        }
         return view
     }
 
@@ -1381,6 +1396,12 @@ extension TabBarViewController: NSCollectionViewDelegate {
             self.collectionView.clearSelection()
             let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(indexPath.item) : .unpinned(indexPath.item)
             tabCollectionViewModel.select(at: tabIndex)
+
+            if collectionView == pinnedTabsCollectionView {
+                view.addSubview(pinnedTabsContainerView, positioned: .above, relativeTo: scrollView)
+            } else {
+                view.addSubview(scrollView, positioned: .above, relativeTo: pinnedTabsContainerView)
+            }
 
             // Poor old NSCollectionView
             DispatchQueue.main.async {
@@ -1508,6 +1529,9 @@ extension TabBarViewController: NSCollectionViewDelegate {
     func collectionView(_ collectionView: NSCollectionView,
                         layout collectionViewLayout: NSCollectionViewLayout,
                         referenceSizeForFooterInSection section: Int) -> NSSize {
+        guard collectionView != pinnedTabsCollectionView else {
+            return .zero
+        }
         if tabMode == .overflow {
             return .zero
         } else {

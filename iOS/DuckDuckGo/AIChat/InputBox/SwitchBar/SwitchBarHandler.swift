@@ -40,6 +40,7 @@ protocol SwitchBarHandling: AnyObject {
     var hasUserInteractedWithText: Bool { get }
     var isCurrentTextValidURL: Bool { get }
     var buttonState: SwitchBarButtonState { get }
+    var isTopBarPosition: Bool { get }
 
     var currentTextPublisher: AnyPublisher<String, Never> { get }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
@@ -61,6 +62,7 @@ protocol SwitchBarHandling: AnyObject {
     func microphoneButtonTapped()
     func markUserInteraction()
     func clearButtonTapped()
+    func updateBarPosition(isTop: Bool)
 }
 
 // MARK: - SwitchBarHandler Implementation
@@ -88,6 +90,8 @@ final class SwitchBarHandler: SwitchBarHandling {
     // MARK: - Mode Usage Detection
     private static var hasUsedSearchInSession = false
     private static var hasUsedAIChatInSession = false
+
+    private(set) var isTopBarPosition: Bool = true
 
     var isVoiceSearchEnabled: Bool {
         voiceSearchHelper.isVoiceSearchEnabled
@@ -134,7 +138,8 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
     private var backgroundObserver: NSObjectProtocol?
 
-    init(voiceSearchHelper: VoiceSearchHelperProtocol, storage: KeyValueStoring,
+    init(voiceSearchHelper: VoiceSearchHelperProtocol,
+         storage: KeyValueStoring,
          aiChatSettings: AIChatSettingsProvider,
          funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
          sessionStateMetrics: SessionStateMetricsProviding) {
@@ -143,7 +148,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         self.aiChatSettings = aiChatSettings
         self.funnelState = funnelState
         self.sessionStateMetrics = sessionStateMetrics
-        
+
         // Set up app lifecycle observers to reset session flags
         backgroundObserver = NotificationCenter.default.addObserver(
             forName: UIApplication.didEnterBackgroundNotification,
@@ -160,13 +165,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         currentText = text
         /// URL.webUrl converts spaces to %20, but this is not a concern in this context, as we are validating the user's input in the address bar to ensure it is a valid URL.
         isCurrentTextValidURL = !text.contains(where: { $0.isWhitespace }) && URL.webUrl(from: text) != nil
-        if !text.isEmpty {
-            buttonState = .clearOnly
-        } else if voiceSearchHelper.isVoiceSearchEnabled {
-            buttonState = .voiceOnly
-        } else {
-            buttonState = .noButtons
-        }
+        updateButtonState(currentText: text)
     }
 
     func submitText(_ text: String) {
@@ -193,6 +192,11 @@ final class SwitchBarHandler: SwitchBarHandling {
         }
     }
 
+    func updateBarPosition(isTop: Bool) {
+        isTopBarPosition = isTop
+        updateButtonState(currentText: currentText)
+    }
+
     func clearText() {
         updateCurrentText("")
     }
@@ -215,7 +219,16 @@ final class SwitchBarHandler: SwitchBarHandling {
         clearButtonTappedSubject.send(())
     }
     
-    
+    private func updateButtonState(currentText: String) {
+        if !currentText.isEmpty {
+            buttonState = .clearOnly
+        } else if voiceSearchHelper.isVoiceSearchEnabled && !isTopBarPosition {
+            buttonState = .voiceOnly
+        } else {
+            buttonState = .noButtons
+        }
+    }
+
     /// Process funnel step when user submits text
     private func processSubmissionFunnelStep(mode: TextEntryMode) {
         switch mode {

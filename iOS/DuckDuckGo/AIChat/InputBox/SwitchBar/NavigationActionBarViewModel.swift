@@ -118,9 +118,13 @@ final class NavigationActionBarViewModel: ObservableObject {
     // MARK: - Public Methods
     var shouldShowMicButton: Bool {
         // https://app.asana.com/1/137249556945/project/72649045549333/task/1210777323867681?focus=true
-        // If no text, there's a small voice button visible in input field
-        if !hasText || !isVoiceSearchEnabled {
-            return false
+        guard isVoiceSearchEnabled else { return false }
+
+        // If no text, show mic only for top position,
+        // for bottom we show mic inside input field.
+        let hasNoTextInTopBar: Bool = !hasText && switchBarHandler.isTopBarPosition
+        if hasNoTextInTopBar {
+            return true
         }
 
         return hasText && !hasUserInteractedWithText

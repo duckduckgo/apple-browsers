@@ -115,42 +115,42 @@
             "pixelSource",
             {
                 "key": "d0",
-                "description": "Number of pop up managed the day before,
+                "description": "Number of pop-ups managed the day before",
                 "type": "number"
             },
             {
                 "key": "d1",
-                "description": "Number of pop up managed 2 days before,
+                "description": "Number of pop-ups managed 2 days before",
                 "type": "number"
             },
             {
                 "key": "d2",
-                "description": "Number of pop up managed 3 days before,
+                "description": "Number of pop-ups managed 3 days before",
                 "type": "number"
             },
             {
                 "key": "d3",
-                "description": "Number of pop up managed 4 days before,
+                "description": "Number of pop-ups managed 4 days before",
                 "type": "number"
             },
             {
                 "key": "d4",
-                "description": "Number of pop up managed 5 days before,
+                "description": "Number of pop-ups managed 5 days before",
                 "type": "number"
             },
             {
                 "key": "d5",
-                "description": "Number of pop up managed 6 days before,
+                "description": "Number of pop-ups managed 6 days before",
                 "type": "number"
             },
             {
                 "key": "d6",
-                "description": "Number of pop up managed 7 days before,
+                "description": "Number of pop-ups managed 7 days before",
                 "type": "number"
             },
             {
                 "key": "d7",
-                "description": "Number of pop up managed 8 days before,
+                "description": "Number of pop-ups managed 8 days before",
                 "type": "number"
             },
         ]

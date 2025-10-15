@@ -46,7 +46,7 @@ final class AutoconsentDailyStats: AutoconsentDailyStatsManaging {
     init(keyValueStore: ThrowingKeyValueStoring,
          currentDateProvider: @escaping () -> Date = { Date() },
          queue: DispatchQueue = DispatchQueue(label: "com.duckduckgo.autoconsent.stats"),
-         firePixel: @escaping (AutoconsentPixel, PixelKit.Frequency) -> Void = { PixelKit.fire($0, frequency: $1) },
+         firePixel: @escaping (AutoconsentPixel, PixelKit.Frequency) -> Void = { PixelKit.fire($0, frequency: $1) }
     ) {
         self.keyValueStore = keyValueStore
         self.currentDateProvider = currentDateProvider
@@ -98,7 +98,7 @@ final class AutoconsentDailyStats: AutoconsentDailyStatsManaging {
 
     func sendDailyPixelIfNeeded() {
         queue.async {
-            let today = self.startOfDay(for: self.self.currentDateProvider())
+            let today = self.startOfDay(for: self.currentDateProvider())
 
             if self.dailyStats[today] == nil {
                 self.dailyStats[today] = 0

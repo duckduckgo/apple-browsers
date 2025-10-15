@@ -179,7 +179,7 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            navigator: DefaultMessageNavigator(delegate: nil)
+            messageActionHandler: RemoteMessagingActionHandler()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -203,7 +203,7 @@ private struct Metrics {
                     )
                 ]
             ),
-            navigator: DefaultMessageNavigator(delegate: nil)
+            messageActionHandler: RemoteMessagingActionHandler()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -216,7 +216,7 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            navigator: DefaultMessageNavigator(delegate: nil)
+            messageActionHandler: RemoteMessagingActionHandler()
         ),
         favoritesViewModel: FavoritesPreviewModel(favorites: [])
     )
@@ -229,7 +229,7 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            navigator: DefaultMessageNavigator(delegate: nil)
+            messageActionHandler: RemoteMessagingActionHandler()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )

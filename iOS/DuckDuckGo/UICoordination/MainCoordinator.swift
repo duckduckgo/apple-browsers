@@ -155,7 +155,8 @@ final class MainCoordinator {
                                         daxDialogsManager: daxDialogsManager,
                                         dbpIOSPublicInterface: dbpIOSPublicInterface,
                                         launchSourceManager: launchSourceManager,
-                                        winBackOfferVisibilityManager: winBackOfferService.visibilityManager)
+                                        winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
+                                        remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler)
     }
 
     func start() {

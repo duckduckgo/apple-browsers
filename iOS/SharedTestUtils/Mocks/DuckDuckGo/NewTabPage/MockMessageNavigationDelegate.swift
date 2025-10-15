@@ -21,8 +21,30 @@
 import DDGSync
 
 class MockMessageNavigationDelegate: MessageNavigationDelegate {
-    func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, completion: (() -> Void)?) {}
-    func segueToSettings() {}
-    func segueToFeedback() {}
-    func segueToSettingsSync(with source: String?, pairingInfo: PairingInfo?) {}
+    private(set) var didCallSegueToAIChatSettings: Bool = false
+    private(set) var capturedAIChatOpenedFromSERPSettingsButton: Bool?
+    private(set) var didCallSegueToSettings: Bool = false
+    private(set) var didCallSegueToFeedback: Bool = false
+    private(set) var didCallSegueToSettingsSync: Bool = false
+    private(set) var capturedSettingsSyncSource: String?
+    private(set) var capturedSettingsSyncPairingInfo: PairingInfo?
+
+    func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, completion: (() -> Void)?) {
+        didCallSegueToAIChatSettings = true
+        capturedAIChatOpenedFromSERPSettingsButton = openedFromSERPSettingsButton
+    }
+
+    func segueToSettings() {
+        didCallSegueToSettings = true
+    }
+
+    func segueToFeedback() {
+        didCallSegueToFeedback = true
+    }
+
+    func segueToSettingsSync(with source: String?, pairingInfo: PairingInfo?) {
+        didCallSegueToSettingsSync = true
+        capturedSettingsSyncSource = source
+        capturedSettingsSyncPairingInfo = pairingInfo
+    }
 }

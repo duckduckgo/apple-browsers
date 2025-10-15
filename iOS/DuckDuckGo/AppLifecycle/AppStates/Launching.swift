@@ -198,6 +198,7 @@ struct Launching: LaunchingHandling {
 
         systemSettingsPiPTutorialService.setPresenter(mainCoordinator)
         syncService.presenter = mainCoordinator.controller
+        remoteMessagingService.messageNavigator = DefaultMessageNavigator(delegate: mainCoordinator.controller)
         
         let notificationServiceManager = NotificationServiceManager(mainCoordinator: mainCoordinator)
         

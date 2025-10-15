@@ -136,7 +136,8 @@ import Combine
             daxDialogsManager: DummyDaxDialogsManager(),
             dbpIOSPublicInterface: nil,
             launchSourceManager: LaunchSourceManager(),
-            winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager()
+            winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
+            remoteMessagingActionHandler: MockRemoteMessagingActionHandler()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

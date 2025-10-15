@@ -25,6 +25,7 @@ import Core
 import SwiftUI
 import Persistence
 import BrowserServicesKit
+import RemoteMessaging
 import RemoteMessagingTestsUtils
 @testable import Configuration
 
@@ -57,7 +58,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             newTabDialogFactory: dialogFactory,
             daxDialogsManager: specProvider,
             faviconLoader: EmptyFaviconLoading(),
-            messageNavigationDelegate: MockMessageNavigationDelegate(),
+            remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
             appSettings: AppSettingsMock(),
             internalUserCommands: MockURLBasedDebugCommands()
         )

@@ -98,6 +98,7 @@ class MainViewController: UIViewController {
     var suggestionTrayController: SuggestionTrayViewController?
 
     let homePageConfiguration: HomePageConfiguration
+    let remoteMessagingActionHandler: RemoteMessagingActionHandling
     let tabManager: TabManager
     let previewsSource: TabPreviewsSource
     let appSettings: AppSettings
@@ -286,8 +287,10 @@ class MainViewController: UIViewController {
         dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
         launchSourceManager: LaunchSourceManaging,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
-        aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()
+        aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+        remoteMessagingActionHandler: RemoteMessagingActionHandling
     ) {
+        self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
         self.historyManager = historyManager
@@ -376,7 +379,7 @@ class MainViewController: UIViewController {
             newTabDialogFactory: newTabDaxDialogFactory,
             newTabDaxDialogManager: daxDialogsManager,
             faviconLoader: faviconLoader,
-            messageNavigationDelegate: self,
+            remoteMessagingActionHandler: remoteMessagingActionHandler,
             appSettings: appSettings,
             internalUserCommands: internalUserCommands)
     }()
@@ -1112,7 +1115,7 @@ class MainViewController: UIViewController {
                                                   newTabDialogFactory: newTabDaxDialogFactory,
                                                   daxDialogsManager: daxDialogsManager,
                                                   faviconLoader: faviconLoader,
-                                                  messageNavigationDelegate: self,
+                                                  remoteMessagingActionHandler: remoteMessagingActionHandler,
                                                   appSettings: appSettings,
                                                   internalUserCommands: internalUserCommands,
                                                   narrowLayoutInLandscape: narrowLayoutInLandscape

@@ -1538,12 +1538,12 @@ class MainViewController: UIViewController {
         }
     }
 
-    // TODO rename this?
     func refreshMenuButtonState() {
         if newTabPageViewController != nil {
             viewCoordinator.omniBar.barView.menuButton.accessibilityLabel = UserText.bookmarksButtonHint
             viewCoordinator.updateToolbarWithState(.newTab)
         } else {
+            viewCoordinator.omniBar.barView.menuButton.accessibilityLabel = UserText.menuButtonHint
             if let currentTab = currentTab {
                 viewCoordinator.updateToolbarWithState(.pageLoaded(currentTab: currentTab))
             }
@@ -2582,7 +2582,6 @@ extension MainViewController: OmniBarDelegate {
             }
         }
 
-        // self.presentedMenuButton.setState(.closeImage, animated: true)
         tab.didLaunchBrowsingMenu()
 
         if newTabPageViewController != nil {

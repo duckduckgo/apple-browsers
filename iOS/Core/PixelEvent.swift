@@ -2064,7 +2064,7 @@ extension Pixel.Event {
             
         case .couldNotParseConfiguration(let configuration, let target):
             switch target {
-            case .app: return "m_debug_\(configuration)_parse_failed_".lowercased()
+            case .app: return "m_debug_\(configuration)_parse_failed".lowercased()
             case .vpn: return "m_debug_\(configuration)_parse_failed_\(target.rawValue)".lowercased()
             }
 

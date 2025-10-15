@@ -30,7 +30,7 @@ struct JsonToRemoteMessageModelMapperPlaceholdersTests {
             RemotePlaceholder.allCases
         )
     )
-    func missingRequiredFieldDiscardsMessage(apiValue: RemoteMessageResponse.JsonPlaceholder, expectedDomainValue: RemotePlaceholder) {
+    func placeholderAPIModelIsMappedCorrectly(apiValue: RemoteMessageResponse.JsonPlaceholder, expectedDomainValue: RemotePlaceholder) {
         // WHEN
         let result = JsonToRemoteMessageModelMapper.mapToPlaceholder(apiValue.rawValue)
 
@@ -69,13 +69,13 @@ struct JsonToRemoteMessageModelMapperPlaceholdersIntegrationTests {
             ("13", .keyImport),
         ] as [(String, RemotePlaceholder)]
     )
-    func validCardsListConfigurationDecodesAndMapsSuccessfully(id: String, expectedDomainValue: RemotePlaceholder) throws {
+    func placeholderIsMappedCorrectlyForMessages(id: String, expectedDomainValue: RemotePlaceholder) throws {
         // GIVEN
         let message = try #require(config.messages.first(where: { $0.id == id }))
 
         // WHEN
         guard case let .medium(_, _, placeholder) = message.content else {
-            Issue.record("Expected cardsList content type")
+            Issue.record("Expected medium content type")
             return
         }
 
@@ -102,7 +102,7 @@ struct JsonToRemoteMessageModelMapperPlaceholdersIntegrationTests {
             ("13", .keyImport),
         ] as [(String, RemotePlaceholder)]
     )
-    func validCardsListConfigurationDecodesAndMapsSuccessfully(itemId: String, expectedDomainValue: RemotePlaceholder) throws {
+    func placeholderIsMappedCorrectlyForItemsInList(itemId: String, expectedDomainValue: RemotePlaceholder) throws {
         // GIVEN
         let messageId = "14"
         let message = try #require(config.messages.first(where: { $0.id == messageId }))

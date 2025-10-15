@@ -426,7 +426,28 @@ public class SafariTestRunner: SafariTestExecuting {
     }
 
     private func findNpmPath() async throws -> String {
-        // Try common npm installation locations
+        // First, try using 'which npm' to find whatever is in the user's PATH
+        // This works with all node version managers (nvm, fnm, volta, etc.)
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        process.arguments = ["-l", "-c", "which npm"]
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+
+        try process.run()
+        process.waitUntilExit()
+
+        if process.terminationStatus == 0 {
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let path = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !path.isEmpty,
+               FileManager.default.fileExists(atPath: path) {
+                return path
+            }
+        }
+
+        // Fall back to common npm installation locations
         let commonPaths = [
             "/usr/local/bin/npm",
             "/opt/homebrew/bin/npm",
@@ -453,10 +474,15 @@ public class SafariTestRunner: SafariTestExecuting {
             }
         }
 
-        // Fall back to using shell (works when running normally, not from Xcode)
+        throw RunnerError.npmNotFound
+    }
+
+    private func findNodePath() async throws -> String {
+        // First, try using 'which node' to find whatever is in the user's PATH
+        // This works with all node version managers (nvm, fnm, volta, etc.)
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        process.arguments = ["-l", "-c", "which npm"]
+        process.arguments = ["-l", "-c", "which node"]
 
         let pipe = Pipe()
         process.standardOutput = pipe
@@ -467,16 +493,13 @@ public class SafariTestRunner: SafariTestExecuting {
         if process.terminationStatus == 0 {
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             if let path = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
-               !path.isEmpty {
+               !path.isEmpty,
+               FileManager.default.fileExists(atPath: path) {
                 return path
             }
         }
 
-        throw RunnerError.npmNotFound
-    }
-
-    private func findNodePath() async throws -> String {
-        // Try common Node.js installation locations
+        // Fall back to common Node.js installation locations
         let commonPaths = [
             "/usr/local/bin/node",
             "/opt/homebrew/bin/node",
@@ -504,25 +527,6 @@ public class SafariTestRunner: SafariTestExecuting {
                 }
             } else if FileManager.default.fileExists(atPath: pathPattern) {
                 return pathPattern
-            }
-        }
-
-        // Fall back to using shell (works when running normally, not from Xcode)
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        process.arguments = ["-l", "-c", "which node"]
-
-        let pipe = Pipe()
-        process.standardOutput = pipe
-
-        try process.run()
-        process.waitUntilExit()
-
-        if process.terminationStatus == 0 {
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if let path = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
-               !path.isEmpty {
-                return path
             }
         }
 

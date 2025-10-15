@@ -112,7 +112,7 @@
         "suffixes": [],
         "parameters": [
             "appVersion", 
-            "pixelSource"
+            "pixelSource",
             {
                 "key": "d0",
                 "description": "Number of pop up managed the day before,

@@ -107,7 +107,7 @@
     },
     "m_mac_autoconsent_popup-managed-count_daily": {
         "description": "Fires (for internal users only) on app use once per day.",
-        "owners": ["sabrinatardio"],
+        "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [

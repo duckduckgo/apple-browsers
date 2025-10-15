@@ -139,6 +139,10 @@ final class PerformanceTestViewModel: ObservableObject {
         progress = 0
         comparisonResults = nil
         errorMessage = nil
+        currentBrowser = ""
+        browserProgress = ""
+        currentIteration = 0
+        statusText = ""
     }
 
     private func recreateTesterIfNeeded() {

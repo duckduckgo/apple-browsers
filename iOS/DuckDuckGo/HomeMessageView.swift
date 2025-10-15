@@ -146,10 +146,7 @@ struct HomeMessageView: View {
         ForEach(viewModel.buttons, id: \.title) { buttonModel in
             Button {
                 Task { @MainActor in
-                    await buttonModel.action()
-                    if case .share(let value, let title) = buttonModel.actionStyle {
-                        activityItem = ShareItem(value: value, title: title)
-                    }
+                    await buttonModel.action(self)
                 }
             } label: {
                 HStack {
@@ -228,6 +225,20 @@ struct ActivityViewPresentationModifier: ViewModifier {
         } else {
             content
         }
+    }
+
+}
+
+extension HomeMessageView: RemoteMessagingPresenter {
+
+    @MainActor
+    func presentActivitySheet(value: String, title: String?) async {
+        activityItem = ShareItem(value: value, title: title)
+    }
+
+    @MainActor
+    func presentEmbeddedWebView(url: URL) async {
+        // Not implemented yet
     }
 
 }
@@ -326,31 +337,31 @@ struct HomeMessageView_Previews: PreviewProvider {
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Small",
                                                             sendPixels: false,
                                                             modelType: small,
-                                                            navigator: DefaultMessageNavigator(delegate: nil),
+                                                            messageActionHandler: RemoteMessagingActionHandler(),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Critical",
                                                             sendPixels: false,
                                                             modelType: critical,
-                                                            navigator: DefaultMessageNavigator(delegate: nil),
+                                                            messageActionHandler: RemoteMessagingActionHandler(),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Single",
                                                             sendPixels: false,
                                                             modelType: bigSingle,
-                                                            navigator: DefaultMessageNavigator(delegate: nil),
+                                                            messageActionHandler: RemoteMessagingActionHandler(),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Two",
                                                             sendPixels: false,
                                                             modelType: bigTwo,
-                                                            navigator: DefaultMessageNavigator(delegate: nil),
+                                                            messageActionHandler: RemoteMessagingActionHandler(),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Promo",
                                                             sendPixels: false,
                                                             modelType: promo,
-                                                            navigator: DefaultMessageNavigator(delegate: nil),
+                                                            messageActionHandler: RemoteMessagingActionHandler(),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
         }
         .frame(height: 200)

@@ -165,7 +165,7 @@ final class ConfigurationStore: ConfigurationStoring {
                 let nserror = error as NSError
 
                 if nserror.domain != NSCocoaErrorDomain || nserror.code != NSFileReadNoSuchFileError {
-                    let pixel = GeneralPixel.couldNotLoadConfiguration(configuration: config, target: nil)
+                    let pixel = GeneralPixel.couldNotLoadConfiguration(configuration: config)
                     let parameters: [String: String] = if config == .trackerDataSet, let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
                         [
                             "experimentName": experimentName,

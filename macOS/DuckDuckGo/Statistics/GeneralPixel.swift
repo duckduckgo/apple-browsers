@@ -344,7 +344,7 @@ enum GeneralPixel: PixelKitEvent {
 
     case configurationFetchError(error: Error)
 
-    case couldNotLoadConfiguration(configuration: Configuration, target: String?)
+    case couldNotLoadConfiguration(configuration: Configuration)
     case couldNotParseConfiguration(configuration: Configuration)
 
     case trackerDataReloadFailed
@@ -981,12 +981,8 @@ enum GeneralPixel: PixelKitEvent {
         case .configurationFetchError:
             return "cfgfetch"
 
-        case .couldNotLoadConfiguration(let configuration, let target):
-            if let target {
-                return "\(configuration)_load_failed_\(target)".lowercased()
-            } else {
-                return "\(configuration)_load_failed".lowercased()
-            }
+        case .couldNotLoadConfiguration(let configuration):
+            return "\(configuration)_load_failed".lowercased()
 
         case .couldNotParseConfiguration(let configuration):
             return "\(configuration)_parse_failed".lowercased()

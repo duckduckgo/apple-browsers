@@ -182,7 +182,7 @@ final class AppContentBlocking {
             domainEvent = .trackerDataReloadFailed
 
         case .trackerDataCouldNotBeLoaded:
-            domainEvent = .couldNotLoadConfiguration(configuration: .trackerDataSet, target: nil)
+            domainEvent = .couldNotLoadConfiguration(configuration: .trackerDataSet)
 
         case .privacyConfigurationReloadFailed:
             domainEvent = .privacyConfigurationReloadFailed

@@ -128,19 +128,27 @@ class NullHistoryCoordinator: HistoryCoordinating {
     }
 
     func burnAll(completion: @escaping @MainActor () -> Void) {
-        completion()
+        DispatchQueue.main.asyncOrNow {
+            completion()
+        }
     }
 
     func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Set<URL>) -> Void) {
-        completion([])
+        DispatchQueue.main.asyncOrNow {
+            completion([])
+        }
     }
 
     func burnVisits(_ visits: [History.Visit], completion: @escaping @MainActor () -> Void) {
-        completion()
+        DispatchQueue.main.asyncOrNow {
+            completion()
+        }
     }
 
     func removeUrlEntry(_ url: URL, completion: (@MainActor ((any Error)?) -> Void)?) {
-        completion?(nil)
+        DispatchQueue.main.asyncOrNow {
+            completion?(nil)
+        }
     }
 
 }

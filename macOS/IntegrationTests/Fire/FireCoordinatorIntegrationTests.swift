@@ -28,7 +28,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
 
     private var dialogExpectedInput: DialogExpectedInput?
     private var lastDialogScopeDomains: Set<String> = []
-    private var mockHistoryProvider: MockHistoryProvider!
+    private var mockHistoryProvider: MockHistoryViewDataProvider!
     private var mockFireproofDomains: MockFireproofDomains!
     private var coordinator: FireCoordinator!
     private var window: MockWindow!
@@ -46,7 +46,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
     override func setUp() {
         super.setUp()
         FireDialogViewModel.resetPersistedDefaults()
-        mockHistoryProvider = MockHistoryProvider()
+        mockHistoryProvider = MockHistoryViewDataProvider()
         mockHistoryProvider.configureWithTestData()
         XCTAssertFalse(mockHistoryProvider.allCookieDomains.isEmpty)
 
@@ -517,8 +517,8 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedHistoryVisits: expectedVisits
         )
         dialogConfirmedOptions = .init(clearingOption: .allData,
-                              includeHistory: true,
-                              includeTabsAndWindows: true,
+                                       includeHistory: true,
+                                       includeTabsAndWindows: true,
                                        includeCookiesAndSiteData: false,
                                        selectedCookieDomains: ["x.com"],
                                        selectedVisits: [],  // Empty to force burnEntity path
@@ -637,9 +637,9 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
         )
 
         dialogConfirmedOptions = .init(clearingOption: .allData,
-                              includeHistory: true,
-                              includeTabsAndWindows: false,
-                              includeCookiesAndSiteData: true,
+                                       includeHistory: true,
+                                       includeTabsAndWindows: false,
+                                       includeCookiesAndSiteData: true,
                                        selectedCookieDomains: nil,
                                        selectedVisits: [],  // Empty to force burnEntity path
                                        isToday: true)
@@ -869,7 +869,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
         if case .burn(let opts?) = response { XCTAssertTrue(opts.includeHistory); XCTAssertFalse(opts.includeTabsAndWindows) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .allWindows(_, _, _, close) = call.entity {
-        XCTAssertFalse(close)
+            XCTAssertFalse(close)
         } else { XCTFail("Expected allWindows, got \(call.entity)") }
         XCTAssertTrue(call.includingHistory)
     }
@@ -992,9 +992,9 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
         )
 
         dialogConfirmedOptions = .init(clearingOption: .allData,
-                              includeHistory: false,
-                              includeTabsAndWindows: false,
-                              includeCookiesAndSiteData: true,
+                                       includeHistory: false,
+                                       includeTabsAndWindows: false,
+                                       includeCookiesAndSiteData: true,
                                        selectedCookieDomains: nil,
                                        selectedVisits: nil,
                                        isToday: false)
@@ -1067,7 +1067,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .allWindows(_, selectedDomains, _, close) = call.entity {
             XCTAssertEqual(selectedDomains, Set(exampleDomains))
-        XCTAssertFalse(close)
+            XCTAssertFalse(close)
         } else { XCTFail("Expected allWindows, got \(call.entity)") }
         XCTAssertTrue(call.includingHistory)
     }
@@ -1487,20 +1487,9 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
         FireDialogViewModel.lastSelectedClearingOption = .allData
         var capturedWindow: NSWindow?
         let fire = FireMock()
-        let vm = FireViewModel(fire: fire)
-        let coordinator = FireCoordinator(tld: Application.appDelegate.tld,
-                                          featureFlagger: Application.appDelegate.featureFlagger,
-                                          historyProvider: mockHistoryProvider,
-                                          fireViewModel: vm,
-                                          fireDialogViewFactory: { config in
-            return TestPresenter { window, completion in
-                capturedWindow = window
-                config.onConfirm(.burn(options: self.dialogConfirmedOptions))
-                completion?()
-            }
-        }, fireproofDomains: mockFireproofDomains, tabViewModelGetter: { _ in
-            TabCollectionViewModel(isPopup: false)
-        })
+        let coordinator = makeCoordinator(with: fire) { window, completion in
+            capturedWindow = window
+        }
 
         dialogConfirmedOptions = .init(clearingOption: .allData,
                                        includeHistory: true,
@@ -1882,47 +1871,63 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                             trackersFound: false)
     }
 
-    private func makeCoordinator(with fire: FireProtocol) -> FireCoordinator {
+    private func makeCoordinator(
+        with fire: FireProtocol,
+        customPresenterAction: ((NSWindow?, @escaping () -> Void) -> Void)? = nil
+    ) -> FireCoordinator {
         let vm = FireViewModel(fire: fire)
-        return FireCoordinator(tld: Application.appDelegate.tld,
-                               featureFlagger: Application.appDelegate.featureFlagger,
-                               historyProvider: mockHistoryProvider,
-                               fireViewModel: vm,
-                               fireDialogViewFactory: { config in
-            return TestPresenter { window, completion in
-                if let expected = self.dialogExpectedInput {
-                    XCTAssertEqual(config.viewModel.mode, expected.mode, "mode", file: expected.file, line: expected.line + 1)
-                    XCTAssertEqual(config.viewModel.mode.shouldShowSegmentedControl, expected.showSegmentedControl, "showSegmentedControl", file: expected.file, line: expected.line + 2)
-                    XCTAssertEqual(config.viewModel.mode.shouldShowCloseTabsToggle, expected.showCloseWindowsAndTabsToggle, "showCloseWindowsAndTabsToggle", file: expected.file, line: expected.line + 3)
-                    XCTAssertEqual(config.viewModel.mode.shouldShowFireproofSection, expected.showFireproofSection, "showFireproofSection", file: expected.file, line: expected.line + 4)
-                    XCTAssertEqual(config.viewModel.mode.dialogTitle, expected.customTitle, "customTitle", file: expected.file, line: expected.line + 5)
-                    XCTAssertEqual(config.showIndividualSitesLink, expected.showIndividualSitesLink, "showIndividualSitesLink", file: expected.file, line: expected.line + 6)
-                    XCTAssertEqual(config.viewModel.clearingOption, expected.expectedClearingOption, "clearingOption", file: expected.file, line: expected.line + 7)
-                    XCTAssertEqual(config.viewModel.includeTabsAndWindows, expected.expectedIncludeTabsAndWindows, "includeTabsAndWindows", file: expected.file, line: expected.line + 8)
-                    XCTAssertEqual(config.viewModel.includeHistory, expected.expectedIncludeHistory, "includeHistory", file: expected.file, line: expected.line + 9)
-                    XCTAssertEqual(config.viewModel.includeCookiesAndSiteData, expected.expectedIncludeCookiesAndSiteData, "includeCookiesAndSiteData", file: expected.file, line: expected.line + 10)
-                    // Validate ViewModel data from provider
-                    let actualSelectable = config.viewModel.selectable.map { $0.domain }.sorted()
-                    XCTAssertEqual(actualSelectable, expected.expectedSelectable?.sorted() ?? [], "selectable domains", file: expected.file, line: expected.line + 11)
-                    let actualFireproofed = config.viewModel.fireproofed.map { $0.domain }.sorted()
-                    XCTAssertEqual(actualFireproofed, expected.expectedFireproofed?.sorted() ?? [], "fireproofed domains", file: expected.file, line: expected.line + 12)
-                    XCTAssertEqual(config.viewModel.selected, expected.expectedSelected ?? [], "selected indices", file: expected.file, line: expected.line + 13)
-                    XCTAssertEqual(config.viewModel.historyVisits ?? [], expected.expectedHistoryVisits ?? [], "historyVisits", file: expected.file, line: expected.line + 14)
-                }
+        return FireCoordinator(
+            tld: Application.appDelegate.tld,
+            featureFlagger: Application.appDelegate.featureFlagger,
+            historyCoordinating: Application.appDelegate.historyCoordinator,
+            visualizeFireAnimationDecider: nil,
+            onboardingContextualDialogsManager: nil,
+            fireproofDomains: mockFireproofDomains,
+            faviconManagement: FaviconManagerMock(),
+            windowControllersManager: Application.appDelegate.windowControllersManager,
+            pixelFiring: nil,
+            historyProvider: mockHistoryProvider,
+            fireViewModel: vm,
+            tabViewModelGetter: { window in
+                TabCollectionViewModel(isPopup: false)
+            },
+            fireDialogViewFactory: { config in
+                return TestPresenter { window, completion in
+                    // Execute custom action if provided (e.g., capture window)
+                    customPresenterAction?(window, completion ?? {})
 
-                var dialogConfirmedOptions = self.dialogConfirmedOptions
-                if dialogConfirmedOptions.selectedVisits == nil {
-                    dialogConfirmedOptions.selectedVisits = config.viewModel.historyVisits
+                    if let expected = self.dialogExpectedInput {
+                        XCTAssertEqual(config.viewModel.mode, expected.mode, "mode", file: expected.file, line: expected.line + 1)
+                        XCTAssertEqual(config.viewModel.mode.shouldShowSegmentedControl, expected.showSegmentedControl, "showSegmentedControl", file: expected.file, line: expected.line + 2)
+                        XCTAssertEqual(config.viewModel.mode.shouldShowCloseTabsToggle, expected.showCloseWindowsAndTabsToggle, "showCloseWindowsAndTabsToggle", file: expected.file, line: expected.line + 3)
+                        XCTAssertEqual(config.viewModel.mode.shouldShowFireproofSection, expected.showFireproofSection, "showFireproofSection", file: expected.file, line: expected.line + 4)
+                        XCTAssertEqual(config.viewModel.mode.dialogTitle, expected.customTitle, "customTitle", file: expected.file, line: expected.line + 5)
+                        XCTAssertEqual(config.showIndividualSitesLink, expected.showIndividualSitesLink, "showIndividualSitesLink", file: expected.file, line: expected.line + 6)
+                        XCTAssertEqual(config.viewModel.clearingOption, expected.expectedClearingOption, "clearingOption", file: expected.file, line: expected.line + 7)
+                        XCTAssertEqual(config.viewModel.includeTabsAndWindows, expected.expectedIncludeTabsAndWindows, "includeTabsAndWindows", file: expected.file, line: expected.line + 8)
+                        XCTAssertEqual(config.viewModel.includeHistory, expected.expectedIncludeHistory, "includeHistory", file: expected.file, line: expected.line + 9)
+                        XCTAssertEqual(config.viewModel.includeCookiesAndSiteData, expected.expectedIncludeCookiesAndSiteData, "includeCookiesAndSiteData", file: expected.file, line: expected.line + 10)
+                        // Validate ViewModel data from provider
+                        let actualSelectable = config.viewModel.selectable.map { $0.domain }.sorted()
+                        XCTAssertEqual(actualSelectable, expected.expectedSelectable?.sorted() ?? [], "selectable domains", file: expected.file, line: expected.line + 11)
+                        let actualFireproofed = config.viewModel.fireproofed.map { $0.domain }.sorted()
+                        XCTAssertEqual(actualFireproofed, expected.expectedFireproofed?.sorted() ?? [], "fireproofed domains", file: expected.file, line: expected.line + 12)
+                        XCTAssertEqual(config.viewModel.selected, expected.expectedSelected ?? [], "selected indices", file: expected.file, line: expected.line + 13)
+                        XCTAssertEqual(config.viewModel.historyVisits ?? [], expected.expectedHistoryVisits ?? [], "historyVisits", file: expected.file, line: expected.line + 14)
+                    }
+
+                    var dialogConfirmedOptions = self.dialogConfirmedOptions
+                    if dialogConfirmedOptions.selectedVisits == nil {
+                        dialogConfirmedOptions.selectedVisits = config.viewModel.historyVisits
+                    }
+                    if dialogConfirmedOptions.selectedCookieDomains == nil {
+                        dialogConfirmedOptions.selectedCookieDomains = config.viewModel.selectedCookieDomainsForScope
+                    }
+                    config.onConfirm(.burn(options: dialogConfirmedOptions))
+                    completion?()
                 }
-                if dialogConfirmedOptions.selectedCookieDomains == nil {
-                    dialogConfirmedOptions.selectedCookieDomains = config.viewModel.selectedCookieDomainsForScope
-                }
-                config.onConfirm(.burn(options: dialogConfirmedOptions))
-                completion?()
             }
-        }, fireproofDomains: mockFireproofDomains, tabViewModelGetter: { _ in
-            TabCollectionViewModel(isPopup: false)
-        })
+        )
     }
 
     var allCookieDomains: [String] {

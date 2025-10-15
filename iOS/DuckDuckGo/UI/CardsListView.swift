@@ -36,11 +36,12 @@ extension RemoteMessagingUI {
             let title: String
             let description: String
             let disclosureIcon: Image?
-            let action: (() -> Void)?
+            let onTapAction: (() -> Void)?
         }
 
         let screenTitle: String
         let items: [CardsListDisplayModel.Item]
+        let onAppear: (() -> Void)?
         let primaryAction: (title: String, action: () -> Void)?
     }
 
@@ -80,6 +81,9 @@ extension RemoteMessagingUI {
                 }
             }
             .padding(.horizontal, Metrics.CardsList.contentHorizontalPadding)
+            .onFirstAppear {
+                displayModel.onAppear?()
+            }
         }
 
         @ViewBuilder
@@ -137,7 +141,7 @@ extension RemoteMessagingUI {
                     .strokeBorder(.black.opacity(Metrics.Card.borderOpacity), lineWidth: Metrics.Card.borderWidth)
             }
             .onTapGesture {
-                displayModel.action?()
+                displayModel.onTapAction?()
             }
         }
     }
@@ -277,8 +281,9 @@ struct CardsList_Previews: PreviewProvider {
         return .init(displayModel: .init(
             screenTitle: "What’s New",
             items: listItems,
-            primaryAction: action)
-        )
+            onAppear: nil,
+            primaryAction: action
+        ))
     }
 
     static let items: [RemoteMessagingUI.CardsListDisplayModel.Item] = [
@@ -287,21 +292,21 @@ struct CardsList_Previews: PreviewProvider {
             title: "Hide AI Images in Search",
             description: "Easily hide AI images in your search results with the \"AI images\" search filter.",
             disclosureIcon: chevron,
-            action: nil
+            onTapAction: nil
         ),
         .init(
             icon: Image("RemoteRadar"),
             title: "Enhanced Scam Blocker",
             description: "Browse confidently with protection against even more sneaky online threats.",
             disclosureIcon: chevron,
-            action: nil
+            onTapAction: nil
         ),
         .init(
             icon: Image("RemoteKeyImport"),
             title: "Import From Safari",
             description: "Add your saved bookmarks and passwords in seconds!",
             disclosureIcon: chevron,
-            action: nil
+            onTapAction: nil
         )
     ]
 

@@ -1074,7 +1074,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard didFinishLaunching else { return }
 
         fireDailyActiveUserPixel()
-        fireDailyFireWindowConfigurationPixel()
+        fireDailyFireWindowConfigurationPixels()
 
         initializeSync()
 
@@ -1110,10 +1110,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
     }
 
-    private func fireDailyFireWindowConfigurationPixel() {
-        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfiguration(
-            startupFireWindow: startupPreferences.startupWindowType == .fireWindow,
-            openFireWindowByDefault: dataClearingPreferences.shouldOpenFireWindowByDefault,
+    private func fireDailyFireWindowConfigurationPixels() {
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfigurationStartupFireWindow(
+            startupFireWindow: startupPreferences.startupWindowType == .fireWindow
+        )), frequency: .daily)
+
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfigurationOpenFireWindowByDefault(
+            openFireWindowByDefault: dataClearingPreferences.shouldOpenFireWindowByDefault
+        )), frequency: .daily)
+
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfigurationFireAnimationEnabled(
             fireAnimationEnabled: dataClearingPreferences.isFireAnimationEnabled
         )), frequency: .daily)
     }

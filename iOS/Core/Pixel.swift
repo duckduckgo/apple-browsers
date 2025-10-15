@@ -191,9 +191,6 @@ public struct PixelParameters {
 
     // New Address Bar Picker
     public static let selection = "selection"
-
-    // Target type
-    public static let vpnTarget = "vpn"
 }
 
 public struct PixelValues {
@@ -205,6 +202,11 @@ public class Pixel {
     private struct Constants {
         static let tablet = "tablet"
         static let phone = "phone"
+    }
+
+    public enum TargetType: String {
+        case app
+        case vpn
     }
 
     public static var isDryRun = false

@@ -63,7 +63,7 @@ struct ConfigurationStore: ConfigurationStoring {
                 let nserror = error as NSError
 
                 if nserror.domain != NSCocoaErrorDomain || nserror.code != NSFileReadNoSuchFileError {
-                    let pixel = Pixel.Event.couldNotLoadConfiguration(configuration: configuration, target: PixelParameters.vpnTarget)
+                    let pixel = Pixel.Event.couldNotLoadConfiguration(configuration: configuration, target: .vpn)
                     DailyPixel.fireDailyAndCount(pixel: pixel, error: error)
                 }
             }

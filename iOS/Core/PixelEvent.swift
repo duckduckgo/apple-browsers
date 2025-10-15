@@ -725,8 +725,8 @@ extension Pixel {
         case dbLocalAuthenticationError
         
         case configurationFetchInfo
-        case couldNotLoadConfiguration(configuration: Configuration, target: String?)
-        case couldNotParseConfiguration(configuration: Configuration, target: String?)
+        case couldNotLoadConfiguration(configuration: Configuration, target: Pixel.TargetType)
+        case couldNotParseConfiguration(configuration: Configuration, target: Pixel.TargetType)
 
         case trackerDataReloadFailed
         case fileStoreWriteFailed
@@ -2057,17 +2057,15 @@ extension Pixel.Event {
             
         case .configurationFetchInfo: return "m_d_cfgfetch"
         case .couldNotLoadConfiguration(let configuration, let target):
-            if let target {
-                return "m_debug_\(configuration)_load_failed_\(target)".lowercased()
-            } else {
-                return "m_debug_\(configuration)_load_failed".lowercased()
+            switch target {
+            case .app: return "m_debug_\(configuration)_load_failed".lowercased()
+            case .vpn: return "m_debug_\(configuration)_load_failed_\(target.rawValue)".lowercased()
             }
-
+            
         case .couldNotParseConfiguration(let configuration, let target):
-            if let target {
-                return "m_debug_\(configuration)_parse_failed_\(target)".lowercased()
-            } else {
-                return "m_debug_\(configuration)_parse_failed".lowercased()
+            switch target {
+            case .app: return "m_debug_\(configuration)_parse_failed_".lowercased()
+            case .vpn: return "m_debug_\(configuration)_parse_failed_\(target.rawValue)".lowercased()
             }
 
         case .trackerDataReloadFailed: return "m_d_tds_r"

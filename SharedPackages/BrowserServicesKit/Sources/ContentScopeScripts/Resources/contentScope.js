@@ -1369,26 +1369,24 @@
       "duckPlayer",
       "duckPlayerNative",
       "duckAiListener",
-      "duckAiDataClearing",
       "harmfulApis",
       "webCompat",
       "windowsPermissionUsage",
       "brokerProtection",
       "performanceMetrics",
       "breakageReporting",
-      "autofillImport",
+      "autofillPasswordImport",
       "favicon",
       "webTelemetry",
       "pageContext"
     ]
   );
   var platformSupport = {
-    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "duckAiListener", "duckAiDataClearing", "pageContext"],
+    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "duckAiListener", "pageContext"],
     "apple-isolated": [
       "duckPlayer",
       "duckPlayerNative",
       "brokerProtection",
-      "breakageReporting",
       "performanceMetrics",
       "clickToLoad",
       "messageBridge",
@@ -1396,7 +1394,7 @@
     ],
     android: [...baseFeatures, "webCompat", "breakageReporting", "duckPlayer", "messageBridge"],
     "android-broker-protection": ["brokerProtection"],
-    "android-autofill-import": ["autofillImport"],
+    "android-autofill-password-import": ["autofillPasswordImport"],
     "android-adsjs": [
       "apiManipulation",
       "webCompat",
@@ -1419,8 +1417,7 @@
       "messageBridge",
       "webCompat",
       "pageContext",
-      "duckAiListener",
-      "duckAiDataClearing"
+      "duckAiListener"
     ],
     firefox: ["cookie", ...baseFeatures, "clickToLoad"],
     chrome: ["cookie", ...baseFeatures, "clickToLoad"],
@@ -4811,19 +4808,18 @@
       if (this.getFeatureSettingEnabled("enumerateDevices")) {
         this.deviceEnumerationFix();
       }
-      if (this.getFeatureSettingEnabled("viewportWidthLegacy", "disabled")) {
-        this.viewportWidthFix();
-      }
     }
     /**
      * Handle user preference updates when merged during initialization.
      * Re-applies viewport fixes if viewport configuration has changed.
-     * Used in the injectName='android-adsjs' instead of 'viewportWidthLegacy' from init.
      * @param {object} _updatedConfig - The configuration with merged user preferences
      */
     onUserPreferencesMerged(_updatedConfig) {
       if (this.getFeatureSettingEnabled("viewportWidth")) {
-        this.viewportWidthFix();
+        if (!this._viewportWidthFixApplied) {
+          this.viewportWidthFix();
+          this._viewportWidthFixApplied = true;
+        }
       }
     }
     /** Shim Web Share API in Android WebView */
@@ -5286,10 +5282,6 @@
       };
     }
     viewportWidthFix() {
-      if (this._viewportWidthFixApplied) {
-        return;
-      }
-      this._viewportWidthFixApplied = true;
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => this.viewportWidthFixInner());
       } else {
@@ -5453,16 +5445,6 @@
       return deviceInfo;
     }
     /**
-     * Helper to wrap a promise with timeout
-     * @param {Promise} promise - Promise to wrap
-     * @param {number} timeoutMs - Timeout in milliseconds
-     * @returns {Promise} Promise that rejects on timeout
-     */
-    withTimeout(promise, timeoutMs) {
-      const timeout = new Promise((_resolve, reject) => setTimeout(() => reject(new Error("Request timeout")), timeoutMs));
-      return Promise.race([promise, timeout]);
-    }
-    /**
      * Fixes device enumeration to handle permission prompts gracefully
      */
     deviceEnumerationFix() {
@@ -5477,12 +5459,8 @@
          * @returns {Promise<MediaDeviceInfo[]>}
          */
         apply: async (target, thisArg, args) => {
-          const settings = this.getFeatureSetting("enumerateDevices") || {};
-          const timeoutEnabled = settings.timeoutEnabled !== false;
-          const timeoutMs = settings.timeoutMs ?? 2e3;
           try {
-            const messagingPromise = this.messaging.request(MSG_DEVICE_ENUMERATION, {});
-            const response = timeoutEnabled ? await this.withTimeout(messagingPromise, timeoutMs) : await messagingPromise;
+            const response = await this.messaging.request(MSG_DEVICE_ENUMERATION, {});
             if (response.willPrompt) {
               const devices = [];
               if (response.videoInput) {
@@ -9667,87 +9645,6 @@ ${truncatedWarning}
     }
   };
 
-  // src/features/duck-ai-data-clearing.js
-  init_define_import_meta_trackerLookup();
-  var DuckAiDataClearing = class extends ContentFeature {
-    init() {
-      this.messaging.subscribe("duckAiClearData", (_2) => this.clearData());
-    }
-    async clearData() {
-      let success = true;
-      const localStorageKeys = this.getFeatureSetting("chatsLocalStorageKeys");
-      for (const localStorageKey of localStorageKeys) {
-        try {
-          this.clearSavedAIChats(localStorageKey);
-        } catch (error) {
-          success = false;
-          this.log.error("Error clearing saved chats:", error);
-        }
-      }
-      const indexDbNameObjectStoreNamePairs = this.getFeatureSetting("chatImagesIndexDbNameObjectStoreNamePairs");
-      for (const [indexDbName, objectStoreName] of indexDbNameObjectStoreNamePairs) {
-        try {
-          await this.clearChatImagesStore(indexDbName, objectStoreName);
-        } catch (error) {
-          success = false;
-          this.log.error("Error clearing saved chat images:", error);
-        }
-      }
-      if (success) {
-        this.notify("duckAiClearDataCompleted");
-      } else {
-        this.notify("duckAiClearDataFailed");
-      }
-    }
-    clearSavedAIChats(localStorageKey) {
-      this.log.info(`Clearing '${localStorageKey}'`);
-      window.localStorage.removeItem(localStorageKey);
-    }
-    clearChatImagesStore(indexDbName, objectStoreName) {
-      this.log.info(`Clearing '${indexDbName}' object store`);
-      return new Promise((resolve, reject) => {
-        const request = window.indexedDB.open(indexDbName);
-        request.onerror = (event) => {
-          this.log.error("Error opening IndexedDB:", event);
-          reject(event);
-        };
-        request.onsuccess = (_2) => {
-          const db = request.result;
-          if (!db) {
-            this.log.error("IndexedDB onsuccess but no db result");
-            reject(new Error("No DB result"));
-            return;
-          }
-          if (!db.objectStoreNames.contains(objectStoreName)) {
-            this.log.info(`'${objectStoreName}' object store does not exist, nothing to clear`);
-            db.close();
-            resolve(null);
-            return;
-          }
-          try {
-            const transaction = db.transaction([objectStoreName], "readwrite");
-            const objectStore = transaction.objectStore(objectStoreName);
-            const clearRequest = objectStore.clear();
-            clearRequest.onsuccess = () => {
-              db.close();
-              resolve(null);
-            };
-            clearRequest.onerror = (err) => {
-              this.log.error("Error clearing object store:", err);
-              db.close();
-              reject(err);
-            };
-          } catch (err) {
-            this.log.error("Exception during IndexedDB clearing:", err);
-            db.close();
-            reject(err);
-          }
-        };
-      });
-    }
-  };
-  var duck_ai_data_clearing_default = DuckAiDataClearing;
-
   // src/features/page-context.js
   init_define_import_meta_trackerLookup();
 
@@ -9770,66 +9667,25 @@ ${truncatedWarning}
 
   // src/features/page-context.js
   var MSG_PAGE_CONTEXT_RESPONSE = "collectionResult";
-  function checkNodeIsVisible(node) {
-    try {
-      const style = window.getComputedStyle(node);
-      if (style.display === "none" || style.visibility === "hidden" || parseFloat(style.opacity) === 0) {
-        return false;
-      }
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
   function collapseWhitespace(str) {
     return typeof str === "string" ? str.replace(/\s+/g, " ") : "";
   }
-  function isHtmlElement(node) {
-    return node.nodeType === Node.ELEMENT_NODE;
-  }
-  function getSameOriginIframeDocument(iframe) {
-    try {
-      const doc = iframe.contentDocument;
-      if (doc && doc.documentElement) {
-        return doc;
-      }
-    } catch (e) {
-      return null;
-    }
-    return null;
-  }
-  function domToMarkdownChildren(childNodes, settings, depth = 0) {
-    if (depth > settings.maxDepth) {
-      return "";
-    }
-    let children = "";
-    for (const childNode of childNodes) {
-      const childContent = domToMarkdown(childNode, settings, depth + 1);
-      children += childContent;
-      if (children.length > settings.maxLength) {
-        children = children.substring(0, settings.maxLength) + "...";
-        break;
-      }
-    }
-    return children;
-  }
-  function domToMarkdown(node, settings, depth = 0) {
-    if (depth > settings.maxDepth) {
-      return "";
-    }
+  function domToMarkdown(node, maxLength = Infinity) {
     if (node.nodeType === Node.TEXT_NODE) {
       return collapseWhitespace(node.textContent);
     }
-    if (!isHtmlElement(node)) {
-      return "";
-    }
-    if (!checkNodeIsVisible(node) || node.matches(settings.excludeSelectors)) {
+    if (node.nodeType !== Node.ELEMENT_NODE) {
       return "";
     }
     const tag = node.tagName.toLowerCase();
-    let children = domToMarkdownChildren(node.childNodes, settings, depth + 1);
-    if (node.shadowRoot) {
-      children += domToMarkdownChildren(node.shadowRoot.childNodes, settings, depth + 1);
+    let children = "";
+    for (const childNode of node.childNodes) {
+      const childContent = domToMarkdown(childNode, maxLength - children.length);
+      children += childContent;
+      if (children.length > maxLength) {
+        children = children.substring(0, maxLength) + "...";
+        break;
+      }
     }
     switch (tag) {
       case "strong":
@@ -9866,26 +9722,6 @@ ${children}
 `;
       case "a":
         return getLinkText(node);
-      case "iframe": {
-        if (!settings.includeIframes) {
-          return children;
-        }
-        const iframeDoc = getSameOriginIframeDocument(
-          /** @type {HTMLIFrameElement} */
-          node
-        );
-        if (iframeDoc && iframeDoc.body) {
-          const iframeContent = domToMarkdown(iframeDoc.body, settings, depth + 1);
-          return iframeContent ? `
-
---- Iframe Content ---
-${iframeContent}
---- End Iframe ---
-
-` : children;
-        }
-        return children;
-      }
       default:
         return children;
     }
@@ -9894,7 +9730,7 @@ ${iframeContent}
     const href = node.getAttribute("href");
     return href ? `[${node.textContent}](${href})` : node.textContent;
   }
-  var _cachedContent, _cachedTimestamp, _delayedRecheckTimer;
+  var _cachedContent, _cachedTimestamp;
   var PageContext = class extends ContentFeature {
     constructor() {
       super(...arguments);
@@ -9905,20 +9741,12 @@ ${iframeContent}
       __publicField(this, "mutationObserver", null);
       __publicField(this, "lastSentContent", null);
       __publicField(this, "listenForUrlChanges", true);
-      /** @type {ReturnType<typeof setTimeout> | null} */
-      __privateAdd(this, _delayedRecheckTimer, null);
-      __publicField(this, "recheckCount", 0);
-      __publicField(this, "recheckLimit", 0);
     }
     init() {
-      this.recheckLimit = this.getFeatureSetting("recheckLimit") || 5;
       if (!this.shouldActivate()) {
         return;
       }
       this.setupListeners();
-    }
-    resetRecheckCount() {
-      this.recheckCount = 0;
     }
     setupListeners() {
       this.observeContentChanges();
@@ -10020,26 +9848,8 @@ ${iframeContent}
         this.mutationObserver = new MutationObserver((_mutations) => {
           this.log.info("MutationObserver", _mutations);
           this.cachedContent = void 0;
-          this.scheduleDelayedRecheck();
         });
       }
-    }
-    /**
-     * Schedule a delayed recheck after navigation events
-     */
-    scheduleDelayedRecheck() {
-      this.clearTimers();
-      if (this.recheckLimit > 0 && this.recheckCount >= this.recheckLimit) {
-        return;
-      }
-      const delayMs = this.getFeatureSetting("navigationRecheckDelayMs") || 1500;
-      this.log.info("Scheduling delayed recheck", { delayMs });
-      __privateSet(this, _delayedRecheckTimer, setTimeout(() => {
-        this.log.info("Performing delayed recheck after navigation");
-        this.recheckCount++;
-        this.invalidateCache();
-        this.handleContentCollectionRequest(false);
-      }, delayMs));
     }
     startObserving() {
       this.log.info("Starting observing", this.mutationObserver, __privateGet(this, _cachedContent));
@@ -10058,11 +9868,8 @@ ${iframeContent}
         this.isObserving = false;
       }
     }
-    handleContentCollectionRequest(resetRecheckCount = true) {
+    handleContentCollectionRequest() {
       this.log.info("Handling content collection request");
-      if (resetRecheckCount) {
-        this.resetRecheckCount();
-      }
       try {
         const content = this.collectPageContent();
         this.sendContentResponse(content);
@@ -10102,50 +9909,35 @@ ${iframeContent}
     getMainContent() {
       const maxLength = this.getFeatureSetting("maxContentLength") || 1e5;
       let excludeSelectors = this.getFeatureSetting("excludeSelectors") || [".ad", ".sidebar", ".footer", ".nav", ".header"];
-      const excludedInertElements = this.getFeatureSetting("excludedInertElements") || [
-        "script",
-        "style",
-        "link",
-        "meta",
-        "noscript",
-        "svg",
-        "canvas"
-      ];
-      excludeSelectors = excludeSelectors.concat(excludedInertElements);
-      const excludeSelectorsString = excludeSelectors.join(",");
+      excludeSelectors = excludeSelectors.concat(["script", "style", "link", "meta", "noscript", "svg", "canvas"]);
       let content = "";
-      const mainContentSelector = this.getFeatureSetting("mainContentSelector") || "main, article, .content, .main, #content, #main";
-      let mainContent = document.querySelector(mainContentSelector);
-      const mainContentLength = this.getFeatureSetting("mainContentLength") || 100;
-      if (mainContent && mainContent.innerHTML.trim().length <= mainContentLength) {
+      let mainContent = document.querySelector("main, article, .content, .main, #content, #main");
+      if (mainContent && mainContent.innerHTML.trim().length <= 100) {
         mainContent = null;
       }
       const contentRoot = mainContent || document.body;
       if (contentRoot) {
         this.log.info("Getting main content", contentRoot);
-        content += domToMarkdown(contentRoot, {
-          maxLength: upperLimit,
-          maxDepth,
-          includeIframes: this.getFeatureSettingEnabled("includeIframes", "enabled"),
-          excludeSelectors: excludeSelectorsString
+        const clone = (
+          /** @type {Element} */
+          contentRoot.cloneNode(true)
+        );
+        excludeSelectors.forEach((selector) => {
+          const elements = clone.querySelectorAll(selector);
+          elements.forEach((el) => el.remove());
         });
         this.log.info("Calling domToMarkdown", clone.innerHTML);
         content += domToMarkdown(clone, maxLength);
       }
       if (content.length > maxLength) {
-        this.log.info("Truncating content", {
-          content,
-          contentLength: content.length,
-          maxLength
-        });
+        this.log.info("Truncating content", content);
         content = content.substring(0, maxLength) + "...";
       }
       return content.trim();
     }
     getHeadings() {
       const headings = [];
-      const headingSelector = this.getFeatureSetting("headingSelector") || "h1, h2, h3, h4, h5, h6";
-      const headingElements = document.querySelectorAll(headingSelector);
+      const headingElements = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
       headingElements.forEach((heading) => {
         const level = parseInt(heading.tagName.charAt(1));
         const text = heading.textContent?.trim();
@@ -10157,8 +9949,7 @@ ${iframeContent}
     }
     getLinks() {
       const links = [];
-      const linkSelector = this.getFeatureSetting("linkSelector") || "a[href]";
-      const linkElements = document.querySelectorAll(linkSelector);
+      const linkElements = document.querySelectorAll("a[href]");
       linkElements.forEach((link) => {
         const text = link.textContent?.trim();
         const href = link.getAttribute("href");
@@ -10170,8 +9961,7 @@ ${iframeContent}
     }
     getImages() {
       const images = [];
-      const imgSelector = this.getFeatureSetting("imgSelector") || "img";
-      const imgElements = document.querySelectorAll(imgSelector);
+      const imgElements = document.querySelectorAll("img");
       imgElements.forEach((img) => {
         const alt = img.getAttribute("alt") || "";
         const src = img.getAttribute("src") || "";
@@ -10204,7 +9994,6 @@ ${iframeContent}
   };
   _cachedContent = new WeakMap();
   _cachedTimestamp = new WeakMap();
-  _delayedRecheckTimer = new WeakMap();
 
   // ddg:platformFeatures:ddg:platformFeatures
   var ddg_platformFeatures_default = {
@@ -10224,7 +10013,6 @@ ${iframeContent}
     ddg_feature_exceptionHandler: ExceptionHandler,
     ddg_feature_apiManipulation: ApiManipulation,
     ddg_feature_duckAiListener: DuckAiListener,
-    ddg_feature_duckAiDataClearing: duck_ai_data_clearing_default,
     ddg_feature_pageContext: PageContext
   };
 

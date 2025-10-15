@@ -32,6 +32,9 @@ enum GeneralPixel: PixelKitEvent {
     case launch
     case dailyActiveUser(isDefault: Bool, isAddedToDock: Bool?)
     case dailyFireWindowConfiguration(startupFireWindow: Bool, openFireWindowByDefault: Bool, fireAnimationEnabled: Bool)
+    case dailyFireWindowConfigurationStartupFireWindow(startupFireWindow: Bool)
+    case dailyFireWindowConfigurationOpenFireWindowByDefault(openFireWindowByDefault: Bool)
+    case dailyFireWindowConfigurationFireAnimationEnabled(fireAnimationEnabled: Bool)
 
     case navigation(NavigationKind)
     case navigationToExternalURL
@@ -577,6 +580,15 @@ enum GeneralPixel: PixelKitEvent {
 
         case .dailyFireWindowConfiguration:
             return "m_mac_fire_window_configuration"
+
+        case .dailyFireWindowConfigurationStartupFireWindow(startupFireWindow: let startupFireWindow):
+            return "m_mac_fire_window_configuration_daily_fire_animation_enabled_\(startupFireWindow ? "true" : "false")"
+
+        case .dailyFireWindowConfigurationOpenFireWindowByDefault(openFireWindowByDefault: let openFireWindowByDefault):
+            return "m_mac_fire_window_configuration_daily_open_fire_window_by_default_\(openFireWindowByDefault ? "true" : "false")"
+
+        case .dailyFireWindowConfigurationFireAnimationEnabled(fireAnimationEnabled: let fireAnimationEnabled):
+            return "m_mac_fire_window_configuration_daily_fire_animation_enabled_\(fireAnimationEnabled ? "true" : "false")"
 
         case .navigation:
             return "m_mac_navigation"

@@ -35,7 +35,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         burner = CapturingHistoryBurner()
         dateFormatter = MockHistoryViewDateFormatter()
         featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.historyView]
+        featureFlagger.enabledFeatureFlags = [.historyView, .historyViewSitesSection]
         pixelHandler = CapturingHistoryViewDataProviderPixelHandler()
         provider = HistoryViewDataProvider(
             historyDataSource: dataSource,
@@ -733,12 +733,12 @@ final class HistoryViewDataProviderTests: XCTestCase {
         let ranges = provider.ranges
 
         // Then: allSites count equals unique eTLD+1 domains (example.com, other.com)
-        let allRange = try XCTUnwrap(ranges.first)
-        let sitesRange = try XCTUnwrap(ranges.last)
-        XCTAssertEqual(allRange.id, .all)
-        XCTAssertEqual(allRange.count, 4)
-        XCTAssertEqual(sitesRange.id, .allSites)
-        XCTAssertEqual(sitesRange.count, 2)
+        // 4 visits from today, deduplicated to 2 unique domains
+        XCTAssertEqual(ranges, [
+            .init(id: .all, count: 4),
+            .init(id: .today, count: 4),
+            .init(id: .allSites, count: 2)
+        ])
     }
 
     @MainActor

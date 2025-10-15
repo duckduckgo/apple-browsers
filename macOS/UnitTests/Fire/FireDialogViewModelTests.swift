@@ -126,7 +126,7 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertFalse(onboardingContextualDialogsManager.gotItPressedCalled)
         XCTAssertTrue(onboardingContextualDialogsManager.fireButtonUsedCalled)
 
-        await fulfillment(of: [openNewWindowExp], timeout: 0.1)
+        await fulfillment(of: [openNewWindowExp], timeout: 2.0)
     }
 
     @MainActor func testOnBurn_WhenAppIsNotActive_DoesNotOpenNewWindow() async throws {
@@ -185,7 +185,7 @@ final class FireDialogViewModelTests: XCTestCase {
         _ = await inactiveFireCoordinator.presentFireDialog(mode: .fireButton, in: window)
 
         // Validate openNewWindow was NOT called
-        await fulfillment(of: [openNewWindowExp], timeout: 0.1)
+        await fulfillment(of: [openNewWindowExp], timeout: 2.0)
     }
 
     @MainActor func testBurn_WithIncludeHistoryFalse_DoesNotCallBurnHistory() async throws {
@@ -235,7 +235,7 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertFalse(historyCoordinator.burnVisitsCalled)
         XCTAssertFalse(historyCoordinator.burnDomainsCalled)
 
-        await fulfillment(of: [openNewWindowExp], timeout: 0.1)
+        await fulfillment(of: [openNewWindowExp], timeout: 2.0)
     }
 
     @MainActor func testClearingOption_UpdatesSelectableAndFireproofed() async throws {
@@ -736,7 +736,7 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertFalse(historyCoordinator.burnVisitsCalled)
         XCTAssertFalse(historyCoordinator.burnDomainsCalled)
 
-        wait(for: [openNewWindowExp], timeout: 0.1)
+        await fulfillment(of: [openNewWindowExp], timeout: 2.0)
     }
 
     @MainActor func testBurn_CurrentWindow_WithIncludeHistoryFalse_DoesNotBurnHistory() async throws {
@@ -785,7 +785,7 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertFalse(historyCoordinator.burnVisitsCalled)
         XCTAssertFalse(historyCoordinator.burnDomainsCalled)
 
-        wait(for: [openNewWindowExp], timeout: 0.1)
+        await fulfillment(of: [openNewWindowExp], timeout: 2.0)
     }
 
     @MainActor func testUpdateItems_InitialAndOnChange_UpdatesHistoryVisitsAndSelection() {

@@ -370,7 +370,14 @@ extension TabContent {
 }
 extension HistoryPaneIdentifier {
     init?(url: URL) {
-        // manually extract path because URLs such as "about:history" can't figure out their host or path
+        // Try query parameter format first (duck://history?range=today)
+        if let rangeValue = url.getParameter(named: "range") {
+            self.init(rawValue: rangeValue)
+            return
+        }
+
+        // Fallback to path format (duck://history/today, about:history/today)
+        // Manually extract path because URLs such as "about:history" can't figure out their host or path
         for urlPrefix in [URL.history, URL.Invalid.aboutHistory] {
             let prefix = urlPrefix.absoluteString + "/"
             guard url.absoluteString.hasPrefix(prefix) else { continue }

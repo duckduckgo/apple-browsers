@@ -105,6 +105,56 @@
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource"]
     },
+    "m_mac_autoconsent_popup-managed-count_daily": {
+        "description": "Fires (for internal users only) on app use once per day.",
+        "owners": ["sabrinatardio"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion", 
+            "pixelSource"
+            {
+                "key": "d0",
+                "description": "Number of pop up managed the day before,
+                "type": "number"
+            },
+            {
+                "key": "d1",
+                "description": "Number of pop up managed 2 days before,
+                "type": "number"
+            },
+            {
+                "key": "d2",
+                "description": "Number of pop up managed 3 days before,
+                "type": "number"
+            },
+            {
+                "key": "d3",
+                "description": "Number of pop up managed 4 days before,
+                "type": "number"
+            },
+            {
+                "key": "d4",
+                "description": "Number of pop up managed 5 days before,
+                "type": "number"
+            },
+            {
+                "key": "d5",
+                "description": "Number of pop up managed 6 days before,
+                "type": "number"
+            },
+            {
+                "key": "d6",
+                "description": "Number of pop up managed 7 days before,
+                "type": "number"
+            },
+            {
+                "key": "d7",
+                "description": "Number of pop up managed 8 days before,
+                "type": "number"
+            },
+        ]
+    },
     "m_mac_autoconsent_summary": {
         "description": "Fires periodically with counts of autoconsent metrics.",
         "owners": ["sammacbeth"],

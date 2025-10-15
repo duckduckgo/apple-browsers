@@ -76,7 +76,7 @@ final class AutoClearHandler {
     // MARK: - Private
 
     private func confirmAutoClear() -> NSApplication.ModalResponse {
-        let alert = NSAlert.autoClearAlert()
+        let alert = NSAlert.autoClearAlert(clearChats: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
         let response = alert.runModal()
         return response
     }

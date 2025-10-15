@@ -56,6 +56,7 @@ extension NewTabPageDataModel {
         var platform: Platform
         var settings: Settings?
         var customizer: NewTabPageDataModel.CustomizerData?
+        var tabs: Tabs?
 
         struct Widget: Encodable, Equatable {
             public var id: WidgetId

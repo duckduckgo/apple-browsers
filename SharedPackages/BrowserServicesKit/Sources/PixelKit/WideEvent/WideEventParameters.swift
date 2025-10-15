@@ -101,7 +101,7 @@ public enum WideEventParameter {
 
     public enum PIR {
         public enum OptOutSubmissionFeature {
-            static let dataBrokerURL = "feature.data.ext.data_broker_url"
+            static let dataBrokerURL = "feature.data.ext.data_broker"
             static let dataBrokerVersion = "feature.data.ext.data_broker_version"
             static let submissionLatency = "feature.data.ext.submission_latency_ms"
 
@@ -111,7 +111,7 @@ public enum WideEventParameter {
         }
 
         public enum OptOutConfirmationFeature {
-            static let dataBrokerURL = "feature.data.ext.data_broker_url"
+            static let dataBrokerURL = "feature.data.ext.data_broker"
             static let dataBrokerVersion = "feature.data.ext.data_broker_version"
             static let confirmationLatency = "feature.data.ext.confirmation_latency_ms"
         }

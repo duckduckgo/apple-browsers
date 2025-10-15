@@ -19,7 +19,6 @@
 import Foundation
 import SecureStorage
 
-#if os(iOS)
 final public class SafariPaymentCardsImporter: DataImporter {
 
     private struct ImportError: DataImportError {
@@ -195,4 +194,3 @@ private struct SafariPaymentCardJSON: Codable {
         case paymentCards = "payment_cards"
     }
 }
-#endif

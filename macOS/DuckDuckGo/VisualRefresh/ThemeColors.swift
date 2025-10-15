@@ -41,15 +41,9 @@ struct ThemeColors: ColorPalette {
     let accentTextPrimary: NSColor
     let accentTextSecondary: NSColor
     let accentTextTertiary: NSColor
-    let controlsDecorationPrimary: NSColor
-    let controlsDecorationSecondary: NSColor
-    let controlsDecorationTertiary: NSColor
     let controlsFillPrimary: NSColor
     let controlsFillSecondary: NSColor
     let controlsFillTertiary: NSColor
-    let decorationPrimary: NSColor
-    let decorationSecondary: NSColor
-    let decorationTertiary: NSColor
     let destructiveContentPrimary: NSColor
     let destructiveContentSecondary: NSColor
     let destructiveContentTertiary: NSColor
@@ -72,17 +66,19 @@ struct ThemeColors: ColorPalette {
     let surfacePrimary: NSColor
     let surfaceSecondary: NSColor
     let surfaceTertiary: NSColor
+    let surfaceDecorationPrimary: NSColor
+    let surfaceDecorationSecondary: NSColor
+    let surfaceDecorationTertiary: NSColor
     let textPrimary: NSColor
     let textSecondary: NSColor
     let textTertiary: NSColor
     let toneShadePrimary: NSColor
-    let toneTintPrimary: NSColor
 }
 
 extension ThemeColors {
 
     init(themeName: ThemeName) {
-        let palette = Self.designColorPalette(for: themeName)
+        let palette = themeName.designColorPalette
 
         accentAltContentPrimary = NSColor(designSystemColor: .accentAltContentPrimary, palette: palette)
         accentAltContentSecondary = NSColor(designSystemColor: .accentAltContentSecondary, palette: palette)
@@ -104,15 +100,9 @@ extension ThemeColors {
         accentTextPrimary = NSColor(designSystemColor: .accentTextPrimary, palette: palette)
         accentTextSecondary = NSColor(designSystemColor: .accentTextSecondary, palette: palette)
         accentTextTertiary = NSColor(designSystemColor: .accentTextTertiary, palette: palette)
-        controlsDecorationPrimary = NSColor(designSystemColor: .controlsDecorationPrimary, palette: palette)
-        controlsDecorationSecondary = NSColor(designSystemColor: .controlsDecorationSecondary, palette: palette)
-        controlsDecorationTertiary = NSColor(designSystemColor: .controlsDecorationTertiary, palette: palette)
         controlsFillPrimary = NSColor(designSystemColor: .controlsFillPrimary, palette: palette)
         controlsFillSecondary = NSColor(designSystemColor: .controlsFillSecondary, palette: palette)
         controlsFillTertiary = NSColor(designSystemColor: .controlsFillTertiary, palette: palette)
-        decorationPrimary = NSColor(designSystemColor: .decorationPrimary, palette: palette)
-        decorationSecondary = NSColor(designSystemColor: .decorationSecondary, palette: palette)
-        decorationTertiary = NSColor(designSystemColor: .decorationTertiary, palette: palette)
         destructiveContentPrimary = NSColor(designSystemColor: .destructiveContentPrimary, palette: palette)
         destructiveContentSecondary = NSColor(designSystemColor: .destructiveContentSecondary, palette: palette)
         destructiveContentTertiary = NSColor(designSystemColor: .destructiveContentTertiary, palette: palette)
@@ -135,33 +125,12 @@ extension ThemeColors {
         surfacePrimary = NSColor(designSystemColor: .surfacePrimary, palette: palette)
         surfaceSecondary = NSColor(designSystemColor: .surfaceSecondary, palette: palette)
         surfaceTertiary = NSColor(designSystemColor: .surfaceTertiary, palette: palette)
+        surfaceDecorationPrimary = NSColor(designSystemColor: .surfaceDecorationPrimary, palette: palette)
+        surfaceDecorationSecondary = NSColor(designSystemColor: .surfaceDecorationSecondary, palette: palette)
+        surfaceDecorationTertiary = NSColor(designSystemColor: .surfaceDecorationTertiary, palette: palette)
         textPrimary = NSColor(designSystemColor: .textPrimary, palette: palette)
         textSecondary = NSColor(designSystemColor: .textSecondary, palette: palette)
         textTertiary = NSColor(designSystemColor: .textTertiary, palette: palette)
         toneShadePrimary = NSColor(designSystemColor: .toneShadePrimary, palette: palette)
-        toneTintPrimary = NSColor(designSystemColor: .toneTintPrimary, palette: palette)
-    }
-
-    private static func designColorPalette(for themeName: ThemeName) -> DesignResourcesKit.ColorPalette {
-        switch themeName {
-        case .default:
-            .default
-        case .figma:
-            .figma
-        case .coolGray:
-            .coolGray
-        case .desert:
-            .desert
-        case .green:
-            .green
-        case .orange:
-            .orange
-        case .rose:
-            .rose
-        case .slateBlue:
-            .slateBlue
-        case .violet:
-            .violet
-        }
     }
 }

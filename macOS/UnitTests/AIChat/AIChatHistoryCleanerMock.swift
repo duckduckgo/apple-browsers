@@ -1,8 +1,7 @@
 //
-//  EmptyCollectionReusableView.swift
-//  DuckDuckGo
+//  AIChatHistoryCleanerMock.swift
 //
-//  Copyright © 2019 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,15 +16,14 @@
 //  limitations under the License.
 //
 
-import UIKit
+import Combine
+@testable import DuckDuckGo_Privacy_Browser
 
-class EmptyCollectionReusableView: UICollectionReusableView {
-    
-    static let reuseIdentifier = "EmptyCollectionReusableView"
-    
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        
-        backgroundColor = .clear
+final class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
+    @Published
+    var shouldDisplayCleanAIChatHistoryOption: Bool = false
+
+    var shouldDisplayCleanAIChatHistoryOptionPublisher: AnyPublisher<Bool, Never> {
+        $shouldDisplayCleanAIChatHistoryOption.eraseToAnyPublisher()
     }
 }

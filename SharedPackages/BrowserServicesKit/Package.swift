@@ -710,6 +710,7 @@ let package = Package(
                 "Subscription",
                 "SubscriptionTestingUtilities",
                 "NetworkingTestingUtils",
+                "PixelKitTestingUtilities",
             ]
         ),
         .testTarget(

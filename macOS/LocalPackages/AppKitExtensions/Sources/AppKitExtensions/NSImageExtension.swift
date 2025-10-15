@@ -142,7 +142,7 @@ extension NSImage {
         return image
     }
 
-    public func resizedToFaviconSize() -> NSImage? {
+    public func resizedToFaviconSize() -> NSImage {
         if size.width > NSSize.faviconSize.width ||
             size.height > NSSize.faviconSize.height {
             return resized(to: .faviconSize)

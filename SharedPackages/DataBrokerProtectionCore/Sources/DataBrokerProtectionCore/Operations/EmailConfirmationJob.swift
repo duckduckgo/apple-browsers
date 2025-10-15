@@ -22,7 +22,7 @@ import BrowserServicesKit
 import os.log
 
 public protocol EmailConfirmationErrorDelegate: AnyObject {
-    func emailConfirmationOperationDidError(_ error: Error, withBrokerName brokerName: String?, version: String?)
+    func emailConfirmationOperationDidError(_ error: Error, withBrokerURL brokerURL: String?, version: String?)
 }
 
 public class EmailConfirmationJob: Operation, @unchecked Sendable {
@@ -120,7 +120,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
               let confirmationURL = URL(string: emailConfirmationLink) else {
             Logger.dataBrokerProtection.error("✉️ Email confirmation job started without valid link")
             await handleError(EmailError.invalidEmailLink,
-                              brokerName: broker.name,
+                              brokerURL: broker.url,
                               version: broker.version,
                               schedulingConfig: broker.schedulingConfig)
             return
@@ -136,7 +136,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         let extractedProfile = extractedProfileData.profile
 
         let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
-            dataBroker: broker.url,
+            dataBrokerURL: broker.url,
             dataBrokerVersion: broker.version,
             handler: jobDependencies.pixelHandler,
             vpnConnectionState: jobDependencies.vpnBypassService?.connectionStatus ?? "unknown",
@@ -326,7 +326,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         try jobDependencies.database.addAttempt(
             extractedProfileId: jobData.extractedProfileId,
             attemptUUID: stageDurationCalculator.attemptId,
-            dataBroker: stageDurationCalculator.dataBroker,
+            dataBroker: stageDurationCalculator.dataBrokerURL,
             lastStageDate: stageDurationCalculator.lastStateTime,
             startTime: stageDurationCalculator.startTime
         )
@@ -381,7 +381,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         )
     }
 
-    private func handleMaxRetriesExceeded(brokerName: String, version: String, schedulingConfig: DataBrokerScheduleConfig) async {
+    private func handleMaxRetriesExceeded(brokerURL: String, version: String, schedulingConfig: DataBrokerScheduleConfig) async {
         do {
             try jobDependencies.database.deleteOptOutEmailConfirmation(
                 profileQueryId: jobData.profileQueryId,
@@ -401,13 +401,13 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             Logger.dataBrokerProtection.error("✉️ Failed to handle max retries exceeded: \(error)")
         }
 
-        await handleError(DataBrokerProtectionError.emailError(.retriesExceeded), brokerName: brokerName, version: version, schedulingConfig: schedulingConfig)
+        await handleError(DataBrokerProtectionError.emailError(.retriesExceeded), brokerURL: brokerURL, version: version, schedulingConfig: schedulingConfig)
     }
 
-    private func handleError(_ error: Error, brokerName: String? = nil, version: String? = nil, schedulingConfig: DataBrokerScheduleConfig? = nil) async {
+    private func handleError(_ error: Error, brokerURL: String? = nil, version: String? = nil, schedulingConfig: DataBrokerScheduleConfig? = nil) async {
         errorDelegate?.emailConfirmationOperationDidError(
             error,
-            withBrokerName: brokerName,
+            withBrokerURL: brokerURL,
             version: version
         )
 
@@ -430,9 +430,9 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                       attemptNumber: Int,
                                       schedulingConfig: DataBrokerScheduleConfig) async {
         if attemptNumber == Self.maxRetries {
-            await handleMaxRetriesExceeded(brokerName: broker.name, version: broker.version, schedulingConfig: schedulingConfig)
+            await handleMaxRetriesExceeded(brokerURL: broker.url, version: broker.version, schedulingConfig: schedulingConfig)
         } else {
-            await handleError(error, brokerName: broker.name, version: broker.version, schedulingConfig: schedulingConfig)
+            await handleError(error, brokerURL: broker.url, version: broker.version, schedulingConfig: schedulingConfig)
         }
     }
 

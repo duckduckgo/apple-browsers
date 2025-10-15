@@ -87,6 +87,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
 
     let watchdog: Watchdog
+    private let watchdogSleepMonitor: WatchdogSleepMonitor
 
     let keyValueStore: ThrowingKeyValueStoring
 
@@ -626,7 +627,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
-        themeManager = ThemeManager(appearancePreferences: appearancePreferences)
+        themeManager = ThemeManager(appearancePreferences: appearancePreferences, internalUserDecider: internalUserDecider)
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
@@ -646,12 +647,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)
 
+        let aiChatHistoryCleaner = AIChatHistoryCleaner(featureFlagger: featureFlagger,
+                                                        aiChatMenuConfiguration: aiChatMenuConfiguration,
+                                                        featureDiscovery: DefaultFeatureDiscovery())
         dataClearingPreferences = DataClearingPreferences(
             fireproofDomains: fireproofDomains,
             faviconManager: faviconManager,
             windowControllersManager: windowControllersManager,
             featureFlagger: featureFlagger,
-            pixelFiring: PixelKit.shared
+            pixelFiring: PixelKit.shared,
+            aiChatHistoryCleaner: aiChatHistoryCleaner
         )
         visualizeFireSettingsDecider = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
         startupPreferences = StartupPreferences(persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore), appearancePreferences: appearancePreferences)
@@ -826,6 +831,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let watchdogDiagnosticProvider = MacWatchdogDiagnosticProvider(windowControllersManager: windowControllersManager)
         let eventMapper = WatchdogEventMapper(diagnosticProvider: watchdogDiagnosticProvider)
         watchdog = Watchdog(eventMapper: eventMapper)
+        watchdogSleepMonitor = WatchdogSleepMonitor(watchdog: watchdog)
 
 #if !DEBUG
         // Start UI hang watchdog

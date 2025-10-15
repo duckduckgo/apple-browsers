@@ -184,6 +184,15 @@
 /* Title for alert shown when sync credentials paused for too many items */
 "alert.sync-credentials-paused-title" = "Synchronizace hesel je pozastavená";
 
+/* Description for alert shown when sync error occurs because of bad credit cards data */
+"alert.sync-credit-cards-bad-data-error-description" = "Některé platební karty jsou nesprávně naformátované nebo příliš dlouhé, takže jsme je nemohli synchronizovat.";
+
+/* Description for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-description" = "Už máš maximální počet platebních karet. Jestli chceš synchronizaci obnovit, některé platební karty smaž.";
+
+/* Title for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-title" = "Synchronizace platební karty je pozastavená";
+
 /* Title for sync error alert */
 "alert.sync-error" = "Chyba synchronizace a zálohování";
 
@@ -2593,11 +2602,11 @@
 /* Caption of the option to show the Threat Protection preferences */
 "preferences.threat-protection.caption" = "Vylepšená ochrana DuckDuckGo zastavuje běžné hrozby a zároveň chrání tvoje připojení.\n[Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
-/* Description of incorrectly formatted data error when syncing. */
-"prefrences.sync.bad-request.description" = "Některé záložky nebo hesla jsou nesprávně naformátované nebo příliš dlouhé, takže jsme je nemohli synchronizovat.";
+/* Description of incorrectly formatted bookmarks data error when syncing. */
+"prefrences.sync.bookmarks-bad-request.description" = "Některé záložky jsou nesprávně naformátované nebo příliš dlouhé, takže jsme je nemohli synchronizovat.";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
-"prefrences.sync.bookmarks-limit-exceeded-action" = "Spravovat záložky";
+"prefrences.sync.bookmarks-limit-exceeded-action" = "Spravovat záložky…";
 
 /* Description for sync bookmarks limits exceeded warning */
 "prefrences.sync.bookmarks-limit-exceeded-description" = "Už máš maximální počet záložek. Jestli chceš synchronizaci obnovit, některé smaž.";
@@ -2608,11 +2617,20 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Už máš maximální počet hesel. Jestli chceš synchronizaci obnovit, některá smaž.";
 
+/* Description of incorrectly formatted credit card data error when syncing. */
+"prefrences.sync.credit-cards-bad-request.description" = "Čísla některých platebních karet jsou nesprávně naformátovaná nebo příliš dlouhá, takže se nesynchronizují.";
+
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Spravovat platební karty…";
+
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Při synchronizaci došlo k chybě. Zkus na tomto zařízení synchronizaci vypnout a pak se znovu připoj pomocí jiného zařízení nebo kódu pro obnovení.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Synchronizace je pozastavená";
+
+/* Description of incorrectly formatted password data error when syncing. */
+"prefrences.sync.passwords-bad-request.description" = "Některá hesla jsou nesprávně naformátovaná nebo příliš dlouhá, takže jsme je nemohli synchronizovat.";
 
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Funkce Sync & Backup je dočasně nedostupná.";

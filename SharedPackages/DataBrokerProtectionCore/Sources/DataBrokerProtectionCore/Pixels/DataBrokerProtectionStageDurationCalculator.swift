@@ -84,7 +84,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     let isImmediateOperation: Bool
     let handler: EventMapping<DataBrokerProtectionSharedPixels>
     let attemptId: UUID
-    let dataBroker: String
+    let dataBrokerURL: String
     let dataBrokerVersion: String
     let startTime: Date
     var lastStateTime: Date
@@ -98,7 +98,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     init(attemptId: UUID = UUID(),
          startTime: Date = Date(),
-         dataBroker: String,
+         dataBrokerURL: String,
          dataBrokerVersion: String,
          handler: EventMapping<DataBrokerProtectionSharedPixels>,
          isImmediateOperation: Bool = false,
@@ -107,7 +107,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.attemptId = attemptId
         self.startTime = startTime
         self.lastStateTime = startTime
-        self.dataBroker = dataBroker
+        self.dataBrokerURL = dataBrokerURL
         self.dataBrokerVersion = dataBrokerVersion
         self.handler = handler
         self.isImmediateOperation = isImmediateOperation
@@ -136,7 +136,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireOptOutStart() {
         setStage(.start)
-        handler.fire(.optOutStart(dataBroker: dataBroker, attemptId: attemptId))
+        handler.fire(.optOutStart(dataBroker: dataBrokerURL, attemptId: attemptId))
         wideEventRecorder?.recordStage(.start,
                                        duration: nil,
                                        tries: tries,
@@ -145,7 +145,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireOptOutEmailGenerate() {
         let duration = durationSinceLastStage()
-        handler.fire(.optOutEmailGenerate(dataBroker: dataBroker,
+        handler.fire(.optOutEmailGenerate(dataBroker: dataBrokerURL,
                                           attemptId: attemptId,
                                           duration: duration,
                                           dataBrokerVersion: dataBrokerVersion,
@@ -159,7 +159,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireOptOutCaptchaParse() {
         let duration = durationSinceLastStage()
-        handler.fire(.optOutCaptchaParse(dataBroker: dataBroker,
+        handler.fire(.optOutCaptchaParse(dataBroker: dataBrokerURL,
                                          attemptId: attemptId,
                                          duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
@@ -173,7 +173,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireOptOutCaptchaSend() {
         let duration = durationSinceLastStage()
-        handler.fire(.optOutCaptchaSend(dataBroker: dataBroker,
+        handler.fire(.optOutCaptchaSend(dataBroker: dataBrokerURL,
                                         attemptId: attemptId,
                                         duration: duration,
                                         dataBrokerVersion: dataBrokerVersion,
@@ -187,7 +187,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireOptOutCaptchaSolve() {
         let duration = durationSinceLastStage()
-        handler.fire(.optOutCaptchaSolve(dataBroker: dataBroker,
+        handler.fire(.optOutCaptchaSolve(dataBroker: dataBrokerURL,
                                          attemptId: attemptId,
                                          duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
@@ -202,7 +202,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     func fireOptOutSubmit() {
         setStage(.submit)
         let duration = durationSinceLastStage()
-        handler.fire(.optOutSubmit(dataBroker: dataBroker,
+        handler.fire(.optOutSubmit(dataBroker: dataBrokerURL,
                                    attemptId: attemptId,
                                    duration: duration,
                                    dataBrokerVersion: dataBrokerVersion,
@@ -216,7 +216,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireOptOutEmailReceive() {
         let duration = durationSinceLastStage()
-        handler.fire(.optOutEmailReceive(dataBroker: dataBroker,
+        handler.fire(.optOutEmailReceive(dataBroker: dataBrokerURL,
                                          attemptId: attemptId,
                                          duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
@@ -230,7 +230,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireOptOutEmailConfirm() {
         let duration = durationSinceLastStage()
-        handler.fire(.optOutEmailConfirm(dataBroker: dataBroker,
+        handler.fire(.optOutEmailConfirm(dataBroker: dataBrokerURL,
                                          attemptId: attemptId,
                                          duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
@@ -245,7 +245,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     func fireOptOutValidate() {
         setStage(.validate)
         let duration = durationSinceLastStage()
-        handler.fire(.optOutValidate(dataBroker: dataBroker,
+        handler.fire(.optOutValidate(dataBroker: dataBrokerURL,
                                      attemptId: attemptId,
                                      duration: duration,
                                      dataBrokerVersion: dataBrokerVersion,
@@ -259,7 +259,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireOptOutFillForm() {
         let duration = durationSinceLastStage()
-        handler.fire(.optOutFillForm(dataBroker: dataBroker,
+        handler.fire(.optOutFillForm(dataBroker: dataBrokerURL,
                                      attemptId: attemptId,
                                      duration: duration,
                                      dataBrokerVersion: dataBrokerVersion,
@@ -274,7 +274,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     func fireOptOutSubmitSuccess(tries: Int) {
         let now = Date()
         let totalDuration = durationSinceStartTime()
-        handler.fire(.optOutSubmitSuccess(dataBroker: dataBroker,
+        handler.fire(.optOutSubmitSuccess(dataBroker: dataBrokerURL,
                                           attemptId: attemptId,
                                           duration: totalDuration,
                                           tries: tries,
@@ -288,7 +288,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     }
 
     func fireOptOutFailure(tries: Int) {
-        handler.fire(.optOutFailure(dataBroker: dataBroker,
+        handler.fire(.optOutFailure(dataBroker: dataBrokerURL,
                                     dataBrokerVersion: dataBrokerVersion,
                                     attemptId: attemptId,
                                     duration: durationSinceStartTime(),
@@ -302,7 +302,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireOptOutConditionFound() {
         let duration = durationSinceLastStage()
-        handler.fire(.optOutConditionFound(dataBroker: dataBroker,
+        handler.fire(.optOutConditionFound(dataBroker: dataBrokerURL,
                                            attemptId: attemptId,
                                            duration: duration,
                                            dataBrokerVersion: dataBrokerVersion,
@@ -316,7 +316,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireOptOutConditionNotFound() {
         let duration = durationSinceLastStage()
-        handler.fire(.optOutConditionNotFound(dataBroker: dataBroker,
+        handler.fire(.optOutConditionNotFound(dataBroker: dataBrokerURL,
                                               attemptId: attemptId,
                                               duration: duration,
                                               dataBrokerVersion: dataBrokerVersion,
@@ -330,16 +330,16 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
 #if os(iOS)
     func fireScanStarted() {
-        handler.fire(.scanStarted(dataBroker: dataBroker))
+        handler.fire(.scanStarted(dataBroker: dataBrokerURL))
     }
 #endif
 
     func fireScanSuccess(matchesFound: Int) {
-        handler.fire(.scanSuccess(dataBroker: dataBroker, matchesFound: matchesFound, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
+        handler.fire(.scanSuccess(dataBroker: dataBrokerURL, matchesFound: matchesFound, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
     }
 
     func fireScanFailed() {
-        handler.fire(.scanFailed(dataBroker: dataBroker, dataBrokerVersion: dataBrokerVersion, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
+        handler.fire(.scanFailed(dataBroker: dataBrokerURL, dataBrokerVersion: dataBrokerVersion, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
     }
 
     func fireScanError(error: Error) {
@@ -373,7 +373,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
         handler.fire(
             .scanError(
-                dataBroker: dataBroker,
+                dataBroker: dataBrokerURL,
                 dataBrokerVersion: dataBrokerVersion,
                 duration: durationSinceStartTime(),
                 category: errorCategory.toString,

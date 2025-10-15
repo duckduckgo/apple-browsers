@@ -238,6 +238,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211708648644692?focus=true
     case serpSettings
+
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1209949983074592?focus=true
+    case pinnedTabsViewRewrite
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -345,7 +348,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncIdentities,
                 .aiChatDataClearing,
                 .dataImportNewSafariFilePicker,
-                .serpSettings:
+                .serpSettings,
+                .pinnedTabsViewRewrite:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -522,6 +526,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .cpmCountPixel:
             return .internalOnly()
         case .serpSettings:
+            return .disabled
+        case .pinnedTabsViewRewrite:
             return .disabled
         }
     }

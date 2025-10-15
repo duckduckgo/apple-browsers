@@ -3842,6 +3842,8 @@
 		EE7E0FD72E3BA8FA00E51C8B /* SyncDialogController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E0FD62E3BA8FA00E51C8B /* SyncDialogController.swift */; };
 		EE7E0FD82E3BA8FA00E51C8B /* SyncDialogController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E0FD62E3BA8FA00E51C8B /* SyncDialogController.swift */; };
 		EE7F74912BB5D76600CD9456 /* BookmarksBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7F74902BB5D76600CD9456 /* BookmarksBarTests.swift */; };
+		EE8C11D62E9E8347002FFD72 /* FileImportScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8C11D52E9E8336002FFD72 /* FileImportScreenView.swift */; };
+		EE8C11D72E9E8347002FFD72 /* FileImportScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8C11D52E9E8336002FFD72 /* FileImportScreenView.swift */; };
 		EE9D81C32BC57A3700338BE3 /* StateRestorationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9D81C22BC57A3700338BE3 /* StateRestorationTests.swift */; };
 		EEA3EEB12B24EBD000E8333A /* NetworkProtectionVPNCountryLabelsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEA3EEB02B24EBD000E8333A /* NetworkProtectionVPNCountryLabelsModel.swift */; };
 		EEA3EEB32B24EC0600E8333A /* VPNLocationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEA3EEB22B24EC0600E8333A /* VPNLocationViewModel.swift */; };
@@ -6089,6 +6091,7 @@
 		EE76B5942E5F248E00600C14 /* DismissableSyncDeviceButtonModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DismissableSyncDeviceButtonModelTests.swift; sourceTree = "<group>"; };
 		EE7E0FD62E3BA8FA00E51C8B /* SyncDialogController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDialogController.swift; sourceTree = "<group>"; };
 		EE7F74902BB5D76600CD9456 /* BookmarksBarTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksBarTests.swift; sourceTree = "<group>"; };
+		EE8C11D52E9E8336002FFD72 /* FileImportScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileImportScreenView.swift; sourceTree = "<group>"; };
 		EE9D81C22BC57A3700338BE3 /* StateRestorationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StateRestorationTests.swift; sourceTree = "<group>"; };
 		EEA3EEB02B24EBD000E8333A /* NetworkProtectionVPNCountryLabelsModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkProtectionVPNCountryLabelsModel.swift; sourceTree = "<group>"; };
 		EEA3EEB22B24EC0600E8333A /* VPNLocationViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VPNLocationViewModel.swift; sourceTree = "<group>"; };
@@ -8042,6 +8045,7 @@
 		4B723DEC26B0002B00E14D75 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				EE8C11D42E9E8324002FFD72 /* New */,
 				EE5F09A72E7C2EEE00341531 /* NewFileImportView.swift */,
 				EEEE200F2E57B6EA0071A566 /* DataImportFlowLauncher.swift */,
 				B66CA41D2AD910B300447CF0 /* DataImportView.swift */,
@@ -11565,6 +11569,14 @@
 			path = AppHealth;
 			sourceTree = "<group>";
 		};
+		EE8C11D42E9E8324002FFD72 /* New */ = {
+			isa = PBXGroup;
+			children = (
+				EE8C11D52E9E8336002FFD72 /* FileImportScreenView.swift */,
+			);
+			path = New;
+			sourceTree = "<group>";
+		};
 		EEA3EEAF2B24EB5100E8333A /* VPNLocation */ = {
 			isa = PBXGroup;
 			children = (
@@ -14218,6 +14230,7 @@
 				B6C0BB6829AEFF8100AE8E3C /* BookmarkExtension.swift in Sources */,
 				B69A14FB2B4D705D00B9417D /* BookmarkFolderPicker.swift in Sources */,
 				CC0942FE2E16AF9C00E67336 /* FavoritesImportProcessor.swift in Sources */,
+				EE8C11D62E9E8347002FFD72 /* FileImportScreenView.swift in Sources */,
 				3706FC6C293F65D500E42796 /* BookmarkViewModel.swift in Sources */,
 				CB63DECC2CDC0BBE0097986A /* PageRefreshMonitor.swift in Sources */,
 				3706FC6E293F65D500E42796 /* DuckURLSchemeHandler.swift in Sources */,
@@ -16282,6 +16295,7 @@
 				B6C00ECB292F839D009C73A6 /* AutofillTabExtension.swift in Sources */,
 				B6E319382953446000DD3BCF /* Assertions.swift in Sources */,
 				84BC21FF2DAFBEE7007EF85C /* BookmarkListInsertionIndicatorView.swift in Sources */,
+				EE8C11D72E9E8347002FFD72 /* FileImportScreenView.swift in Sources */,
 				AAB549DF25DAB8F80058460B /* BookmarkViewModel.swift in Sources */,
 				F118EA7D2BEA2B8700F77634 /* DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift in Sources */,
 				31F28C5328C8EECA00119F70 /* DuckURLSchemeHandler.swift in Sources */,

@@ -48,6 +48,11 @@ public final class OptOutConfirmationWideEventData: WideEventData {
 }
 
 extension OptOutConfirmationWideEventData {
+
+    public enum StatusReason: String {
+        case confirmationWindowExpired = "confirmation_window_expired"
+    }
+
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 

@@ -31,22 +31,16 @@ public final class DBPWideEventSweeper {
     private let submissionWindow: TimeInterval
     private let confirmationWindow: TimeInterval
     private let currentDateForTesting: () -> Date
-    private let queue: DispatchQueue
+    private let queue = DispatchQueue(label: "com.duckduckgo.dbp-wide-event-sweeper", qos: .utility)
 
     public init(wideEvent: WideEventManaging,
                 submissionWindow: TimeInterval = Constants.cappedSubmissionWindow,
                 confirmationWindow: TimeInterval = Constants.cappedConfirmationWindow,
-                currentDateForTesting: @escaping () -> Date = Date.init,
-                queue: DispatchQueue? = nil) {
+                currentDateForTesting: @escaping () -> Date = Date.init) {
         self.wideEvent = wideEvent
         self.submissionWindow = submissionWindow
         self.confirmationWindow = confirmationWindow
         self.currentDateForTesting = currentDateForTesting
-        if let queue {
-            self.queue = queue
-        } else {
-            self.queue = DispatchQueue(label: "com.duckduckgo.dbp-wide-event-sweeper", qos: .utility)
-        }
     }
 
     public func sweep() {
@@ -58,7 +52,7 @@ public final class DBPWideEventSweeper {
         }
     }
 
-    private func performSweep() async {
+    public func performSweep() async {
         await sweepPendingSubmissions()
         await sweepPendingConfirmations()
     }

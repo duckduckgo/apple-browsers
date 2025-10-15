@@ -1111,11 +1111,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func fireDailyFireWindowConfigurationPixels() {
-        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfigurationStartupFireWindow(
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfigurationStartupFireWindowEnabled(
             startupFireWindow: startupPreferences.startupWindowType == .fireWindow
         )), frequency: .daily)
 
-        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfigurationOpenFireWindowByDefault(
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled(
             openFireWindowByDefault: dataClearingPreferences.shouldOpenFireWindowByDefault
         )), frequency: .daily)
 

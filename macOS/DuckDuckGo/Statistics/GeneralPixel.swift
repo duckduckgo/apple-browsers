@@ -31,8 +31,8 @@ enum GeneralPixel: PixelKitEvent {
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
     case launch
     case dailyActiveUser(isDefault: Bool, isAddedToDock: Bool?)
-    case dailyFireWindowConfigurationStartupFireWindow(startupFireWindow: Bool)
-    case dailyFireWindowConfigurationOpenFireWindowByDefault(openFireWindowByDefault: Bool)
+    case dailyFireWindowConfigurationStartupFireWindowEnabled(startupFireWindow: Bool)
+    case dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled(openFireWindowByDefault: Bool)
     case dailyFireWindowConfigurationFireAnimationEnabled(fireAnimationEnabled: Bool)
 
     case navigation(NavigationKind)
@@ -577,14 +577,14 @@ enum GeneralPixel: PixelKitEvent {
         case .dailyActiveUser:
             return  "m_mac_daily_active_user"
 
-        case .dailyFireWindowConfigurationStartupFireWindow(startupFireWindow: let startupFireWindow):
-            return "m_mac_fire_window_configuration_daily_fire_animation_enabled_\(startupFireWindow ? "true" : "false")"
+        case .dailyFireWindowConfigurationStartupFireWindowEnabled(startupFireWindow: let startupFireWindow):
+            return "m_mac_fire_window_configuration_startup_fire_window_is_\(startupFireWindow ? "enabled" : "disabled")"
 
-        case .dailyFireWindowConfigurationOpenFireWindowByDefault(openFireWindowByDefault: let openFireWindowByDefault):
-            return "m_mac_fire_window_configuration_daily_open_fire_window_by_default_\(openFireWindowByDefault ? "true" : "false")"
+        case .dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled(openFireWindowByDefault: let openFireWindowByDefault):
+            return "m_mac_fire_window_configuration_open_fire_window_by_default_is_\(openFireWindowByDefault ? "enabled" : "disabled")"
 
         case .dailyFireWindowConfigurationFireAnimationEnabled(fireAnimationEnabled: let fireAnimationEnabled):
-            return "m_mac_fire_window_configuration_daily_fire_animation_enabled_\(fireAnimationEnabled ? "true" : "false")"
+            return "m_mac_fire_window_configuration_fire_animation_is_\(fireAnimationEnabled ? "enabled" : "disabled")"
 
         case .navigation:
             return "m_mac_navigation"

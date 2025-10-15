@@ -231,14 +231,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateButtonState() {
-        let hasText = !textView.text.isEmpty
-        let newButtonState: SwitchBarButtonState
-
-        if hasText {
-            newButtonState = .clearOnly
-        } else {
-            newButtonState = .noButtons
-        }
+        let newButtonState = handler.buttonState
 
         if newButtonState != currentButtonState {
             currentButtonState = newButtonState
@@ -387,9 +380,16 @@ class SwitchBarTextEntryView: UIView {
                 if self.textView.text != text {
                     self.textView.text = text
                     self.updatePlaceholderVisibility()
-                    self.updateButtonState()
                     self.updateTextViewHeight()
                 }
+            }
+            .store(in: &cancellables)
+
+        handler.currentButtonStatePublisher
+            .receive(on: DispatchQueue.main)
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.updateButtonState()
             }
             .store(in: &cancellables)
     }

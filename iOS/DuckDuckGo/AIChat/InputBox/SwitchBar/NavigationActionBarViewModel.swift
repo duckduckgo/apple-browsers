@@ -117,17 +117,12 @@ final class NavigationActionBarViewModel: ObservableObject {
 
     // MARK: - Public Methods
     var shouldShowMicButton: Bool {
-        /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210777323867681?focus=true
-        guard isVoiceSearchEnabled else { return false }
-
-        if !hasText {
-            return true
-        }
-
-        if hasText && hasUserInteractedWithText {
+        // https://app.asana.com/1/137249556945/project/72649045549333/task/1210777323867681?focus=true
+        // If no text, there's a small voice button visible in input field
+        if !hasText || !isVoiceSearchEnabled {
             return false
         }
 
-        return true
+        return hasText && !hasUserInteractedWithText
     }
 }

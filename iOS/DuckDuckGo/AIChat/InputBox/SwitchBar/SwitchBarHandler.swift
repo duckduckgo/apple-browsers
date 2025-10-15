@@ -39,6 +39,7 @@ protocol SwitchBarHandling: AnyObject {
     var isVoiceSearchEnabled: Bool { get }
     var hasUserInteractedWithText: Bool { get }
     var isCurrentTextValidURL: Bool { get }
+    var buttonState: SwitchBarButtonState { get }
 
     var currentTextPublisher: AnyPublisher<String, Never> { get }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
@@ -47,7 +48,8 @@ protocol SwitchBarHandling: AnyObject {
     var clearButtonTappedPublisher: AnyPublisher<Void, Never> { get }
     var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { get }
     var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { get }
-    
+    var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> { get }
+
     // Provide toggle mode parameters. Used in pixels.
     var modeParameters: [String: String] { get }
 
@@ -81,7 +83,8 @@ final class SwitchBarHandler: SwitchBarHandling {
     @Published private(set) var currentToggleState: TextEntryMode = .search
     @Published private(set) var hasUserInteractedWithText: Bool = false
     @Published private(set) var isCurrentTextValidURL: Bool = false
-    
+    @Published private(set) var buttonState: SwitchBarButtonState = .noButtons
+
     // MARK: - Mode Usage Detection
     private static var hasUsedSearchInSession = false
     private static var hasUsedAIChatInSession = false
@@ -122,6 +125,10 @@ final class SwitchBarHandler: SwitchBarHandling {
         clearButtonTappedSubject.eraseToAnyPublisher()
     }
 
+    var currentButtonStatePublisher: AnyPublisher<SwitchBarButtonState, Never> {
+        $buttonState.eraseToAnyPublisher()
+    }
+
     private let textSubmissionSubject = PassthroughSubject<(text: String, mode: TextEntryMode), Never>()
     private let microphoneButtonTappedSubject = PassthroughSubject<Void, Never>()
     private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
@@ -153,6 +160,13 @@ final class SwitchBarHandler: SwitchBarHandling {
         currentText = text
         /// URL.webUrl converts spaces to %20, but this is not a concern in this context, as we are validating the user's input in the address bar to ensure it is a valid URL.
         isCurrentTextValidURL = !text.contains(where: { $0.isWhitespace }) && URL.webUrl(from: text) != nil
+        if !text.isEmpty {
+            buttonState = .clearOnly
+        } else if voiceSearchHelper.isVoiceSearchEnabled {
+            buttonState = .voiceOnly
+        } else {
+            buttonState = .noButtons
+        }
     }
 
     func submitText(_ text: String) {

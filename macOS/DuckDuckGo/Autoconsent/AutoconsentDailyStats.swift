@@ -113,7 +113,7 @@ final class AutoconsentDailyStats: AutoconsentDailyStatsManaging {
 
             // Get stats for last 7 days
             var params: [String: String] = [:]
-            for daysAgo in 0...Constants.maxDaysToKeep {
+            for daysAgo in 0..<Constants.maxDaysToKeep {
                 if let date = Calendar.current.date(byAdding: .day, value: -(daysAgo + 1), to: today) {
                     let count = self.dailyStats[date] ?? -1
                     params["d\(daysAgo)"] = String(count)

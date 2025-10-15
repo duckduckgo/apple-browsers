@@ -147,11 +147,6 @@
                 "key": "d6",
                 "description": "Number of pop-ups managed 7 days before",
                 "type": "number"
-            },
-            {
-                "key": "d7",
-                "description": "Number of pop-ups managed 8 days before",
-                "type": "number"
             }
         ]
     },

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
@@ -81,6 +82,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private let bookmarkManager: BookmarkManager
     private let fireproofDomains: FireproofDomains
+    private let featureFlagger: FeatureFlagger
     private var pinnedTabsViewModel: PinnedTabsViewModel?
     private var pinnedTabsView: PinnedTabsView?
     private var pinnedTabsHostingView: PinnedTabsHostingView?
@@ -149,7 +151,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         tabCollectionViewModel: TabCollectionViewModel,
         bookmarkManager: BookmarkManager,
         fireproofDomains: FireproofDomains,
-        activeRemoteMessageModel: ActiveRemoteMessageModel
+        activeRemoteMessageModel: ActiveRemoteMessageModel,
+        featureFlagger: FeatureFlagger
     ) -> TabBarViewController {
         NSStoryboard(name: "TabBar", bundle: nil).instantiateInitialController { coder in
             self.init(
@@ -157,7 +160,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 tabCollectionViewModel: tabCollectionViewModel,
                 bookmarkManager: bookmarkManager,
                 fireproofDomains: fireproofDomains,
-                activeRemoteMessageModel: activeRemoteMessageModel
+                activeRemoteMessageModel: activeRemoteMessageModel,
+                featureFlagger: featureFlagger
             )
         }!
     }
@@ -171,10 +175,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
           bookmarkManager: BookmarkManager,
           fireproofDomains: FireproofDomains,
           activeRemoteMessageModel: ActiveRemoteMessageModel,
+          featureFlagger: FeatureFlagger,
           themeManager: ThemeManager = NSApp.delegateTyped.themeManager) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.fireproofDomains = fireproofDomains
+        self.featureFlagger = featureFlagger
         let tabBarActiveRemoteMessageModel = TabBarActiveRemoteMessage(activeRemoteMessageModel: activeRemoteMessageModel)
         self.tabBarRemoteMessageViewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: tabBarActiveRemoteMessageModel,
                                                                          isFireWindow: tabCollectionViewModel.isBurner)

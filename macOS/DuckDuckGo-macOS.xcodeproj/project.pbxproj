@@ -2332,6 +2332,7 @@
 		845F57382E980A1900C7F78A /* HistoryCoordinatingMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845F57362E980A1900C7F78A /* HistoryCoordinatingMock.swift */; };
 		845F573A2E980A3100C7F78A /* HistoryCoordinatingMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845F57392E980A3100C7F78A /* HistoryCoordinatingMock.swift */; };
 		845F573B2E980A3100C7F78A /* HistoryCoordinatingMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845F57392E980A3100C7F78A /* HistoryCoordinatingMock.swift */; };
+		845F573D2E982B2600C7F78A /* SharedTestUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 845F573C2E982B2600C7F78A /* SharedTestUtilities */; };
 		846F4CD12E04829D00266DB7 /* TabContent+DisplayedFavicon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846F4CD02E04829D00266DB7 /* TabContent+DisplayedFavicon.swift */; };
 		846F4CD22E04829D00266DB7 /* TabContent+DisplayedFavicon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846F4CD02E04829D00266DB7 /* TabContent+DisplayedFavicon.swift */; };
 		846F4CDF2E048A0500266DB7 /* BWIntegration in Frameworks */ = {isa = PBXBuildFile; productRef = 846F4CDE2E048A0500266DB7 /* BWIntegration */; };
@@ -6184,6 +6185,7 @@
 				9D84E42E2CD4E66F0046CD8B /* SnapshotTesting in Frameworks */,
 				9D84E42F2CD4E66F0046CD8B /* AppKitExtensions in Frameworks */,
 				9D84E4302CD4E66F0046CD8B /* OHHTTPStubs in Frameworks */,
+				845F573D2E982B2600C7F78A /* SharedTestUtilities in Frameworks */,
 				9D84E4312CD4E66F0046CD8B /* OHHTTPStubsSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -11860,6 +11862,7 @@
 				9D84E4062CD4E66F0046CD8B /* AppKitExtensions */,
 				9D84E4072CD4E66F0046CD8B /* Common */,
 				84BDE7292E1BE3C60082075D /* NoARCObjCTestsExtensions */,
+				845F573C2E982B2600C7F78A /* SharedTestUtilities */,
 			);
 			productName = "Integration Tests";
 			productReference = 9D84E43C2CD4E66F0046CD8B /* DBPE2ETests.xctest */;
@@ -18531,6 +18534,10 @@
 			productName = NoARCObjCTestsExtensions;
 		};
 		845F57342E98036F00C7F78A /* SharedTestUtilities */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SharedTestUtilities;
+		};
+		845F573C2E982B2600C7F78A /* SharedTestUtilities */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SharedTestUtilities;
 		};

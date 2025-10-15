@@ -18,7 +18,6 @@
 //
 
 import Common
-import SharedTestUtilities
 import WebKit
 import XCTest
 

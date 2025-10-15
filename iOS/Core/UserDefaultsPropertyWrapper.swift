@@ -103,6 +103,8 @@ public struct UserDefaultsWrapper<T> {
         case autofillSurveysCompleted = "com.duckduckgo.app.autofill.SurveysCompleted"
         case autofillExtensionEnabled = "com.duckduckgo.app.autofill.ExtensionEnabled"
 
+        case contentScopeDebugStateEnabled = "com.duckduckgo.ios.debug.contentScopeDebugStateEnabled"
+
         case syncPromoBookmarksDismissed = "com.duckduckgo.app.sync.PromoBookmarksDismissed"
         case syncPromoPasswordsDismissed = "com.duckduckgo.app.sync.PromoPasswordsDismissed"
 
@@ -120,9 +122,11 @@ public struct UserDefaultsWrapper<T> {
         case syncEnvironment = "com.duckduckgo.ios.sync-environment"
         case syncBookmarksPaused = "com.duckduckgo.ios.sync-bookmarksPaused"
         case syncCredentialsPaused = "com.duckduckgo.ios.sync-credentialsPaused"
+        case syncCreditCardsPaused = "com.duckduckgo.ios.sync-creditCardsPaused"
         case syncIsPaused = "sync.paused"
         case syncBookmarksPausedErrorDisplayed = "com.duckduckgo.ios.sync-bookmarksPausedErrorDisplayed"
         case syncCredentialsPausedErrorDisplayed = "com.duckduckgo.ios.sync-credentialsPausedErrorDisplayed"
+        case syncCreditCardsPausedErrorDisplayed = "com.duckduckgo.ios.sync-creditCardsPausedErrorDisplayed"
         case syncInvalidLoginPausedErrorDisplayed = "sync.invalid-login-paused-error-displayed"
         case syncAutomaticallyFetchFavicons = "com.duckduckgo.ios.sync-automatically-fetch-favicons"
         case syncIsFaviconsFetcherEnabled = "com.duckduckgo.ios.sync-is-favicons-fetcher-enabled"
@@ -136,6 +140,7 @@ public struct UserDefaultsWrapper<T> {
         case syncCurrentAllPausedError = "sync.current-all-paused-error"
         case syncCurrentBookmarksPausedError = "sync.current-bookmarks-paused-error"
         case syncCurrentCredentialsPausedError = "sync.current-credentials-paused-error"
+        case syncCurrentCreditCardsPausedError = "sync.current-creditCards-paused-error"
 
         case hadVPNEntitlements = "com.duckduckgo.had.vpn.entitlements"
         case networkProtectionDebugOptionAlwaysOnDisabled = "com.duckduckgo.network-protection.always-on.disabled"

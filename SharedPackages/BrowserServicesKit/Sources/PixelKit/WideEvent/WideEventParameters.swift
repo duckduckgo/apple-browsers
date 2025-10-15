@@ -89,24 +89,32 @@ public enum WideEventParameter {
     }
 
     public enum Feature {
-        static let name = "feature.name"
-        static let status = "feature.status"
-        static let statusReason = "feature.status_reason"
+        public static let name = "feature.name"
+        public static let status = "feature.status"
+        public static let statusReason = "feature.status_reason"
 
-        static let errorDomain = "feature.data.error.domain"
-        static let errorCode = "feature.data.error.code"
-        static let underlyingErrorDomain = "feature.data.error.underlying_domain"
-        static let underlyingErrorCode = "feature.data.error.underlying_code"
+        public static let errorDomain = "feature.data.error.domain"
+        public static let errorCode = "feature.data.error.code"
+        public static let underlyingErrorDomain = "feature.data.error.underlying_domain"
+        public static let underlyingErrorCode = "feature.data.error.underlying_code"
     }
 
-    public enum SubscriptionFeature {
-        static let purchasePlatform = "feature.data.ext.purchase_platform"
-        static let failingStep = "feature.data.ext.failing_step"
-        static let subscriptionIdentifier = "feature.data.ext.subscription_identifier"
-        static let freeTrialEligible = "feature.data.ext.free_trial_eligible"
-        static let accountCreationLatency = "feature.data.ext.account_creation_latency_ms_bucketed"
-        static let accountPaymentLatency = "feature.data.ext.account_payment_latency_ms_bucketed"
-        static let accountActivationLatency = "feature.data.ext.account_activation_latency_ms_bucketed"
+    public enum PIR {
+        public enum OptOutSubmissionFeature {
+            static let dataBrokerURL = "feature.data.ext.data_broker"
+            static let dataBrokerVersion = "feature.data.ext.data_broker_version"
+            static let submissionLatency = "feature.data.ext.submission_latency_ms"
+
+            static func stagePrefix(index: Int) -> String {
+                return "feature.data.ext.stages.\(index)"
+            }
+        }
+
+        public enum OptOutConfirmationFeature {
+            static let dataBrokerURL = "feature.data.ext.data_broker"
+            static let dataBrokerVersion = "feature.data.ext.data_broker_version"
+            static let confirmationLatency = "feature.data.ext.confirmation_latency_ms"
+        }
     }
 
 }

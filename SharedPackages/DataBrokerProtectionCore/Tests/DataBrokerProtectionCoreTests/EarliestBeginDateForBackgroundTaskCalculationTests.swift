@@ -40,7 +40,7 @@ final class EarliestBeginDateForBackgroundTaskCalculationTests: XCTestCase {
         databaseProvider = try DefaultDataBrokerProtectionDatabaseProvider(
             file: vaultURL,
             key: "key".data(using: .utf8)!,
-            registerMigrationsHandler: DefaultDataBrokerProtectionDatabaseMigrationsProvider.v8Migrations
+            registerMigrationsHandler: DefaultDataBrokerProtectionDatabaseMigrationsProvider.v10Migrations
         )
 
         let cryptoProvider = NoOpCryptoProvider()

@@ -17,8 +17,12 @@
 //
 
 import AppKit
+import Combine
 
 final class DownloadsPopover: NSPopover {
+
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
 
     init(fireWindowSession: FireWindowSessionRef?) {
         super.init()
@@ -27,6 +31,9 @@ final class DownloadsPopover: NSPopover {
         self.behavior = .semitransient
 
         setupContentController(fireWindowSession: fireWindowSession)
+
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     required init?(coder: NSCoder) {
@@ -48,5 +55,11 @@ final class DownloadsPopover: NSPopover {
         let controller = DownloadsViewController(viewModel: DownloadListViewModel(fireWindowSession: fireWindowSession))
         contentViewController = controller
     }
+}
 
+extension DownloadsPopover: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        backgroundColor = theme.colorsProvider.popoverBackgroundColor
+    }
 }

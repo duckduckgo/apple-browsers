@@ -1,9 +1,9 @@
 GIT
   remote: https://github.com/duckduckgo/fastlane-plugin-ddg_apple_automation
-  revision: e1c54ff75c2b2b95086585bf27b8dc619b8823ff
-  tag: 3.1.2
+  revision: b2cd37327e6bbf027b045e306a4c2b891a5695b7
+  tag: 3.1.3
   specs:
-    fastlane-plugin-ddg_apple_automation (3.1.2)
+    fastlane-plugin-ddg_apple_automation (3.1.3)
       asana
       climate_control
       httpparty
@@ -27,7 +27,7 @@ GEM
       oauth2 (>= 1.4, < 3)
     atomos (0.1.3)
     aws-eventstream (1.4.0)
-    aws-partitions (1.1164.0)
+    aws-partitions (1.1172.0)
     aws-sdk-core (3.233.0)
       aws-eventstream (~> 1, >= 1.3.0)
       aws-partitions (~> 1, >= 1.992.0)
@@ -36,10 +36,10 @@ GEM
       bigdecimal
       jmespath (~> 1, >= 1.6.1)
       logger
-    aws-sdk-kms (1.112.0)
+    aws-sdk-kms (1.113.0)
       aws-sdk-core (~> 3, >= 3.231.0)
       aws-sigv4 (~> 1.5)
-    aws-sdk-s3 (1.199.0)
+    aws-sdk-s3 (1.199.1)
       aws-sdk-core (~> 3, >= 3.231.0)
       aws-sdk-kms (~> 1)
       aws-sigv4 (~> 1.5)
@@ -47,7 +47,7 @@ GEM
       aws-eventstream (~> 1, >= 1.0.2)
     babosa (1.0.4)
     base64 (0.3.0)
-    bigdecimal (3.2.3)
+    bigdecimal (3.3.1)
     claide (1.1.0)
     climate_control (1.2.0)
     colored (1.2)
@@ -179,7 +179,7 @@ GEM
     highline (2.0.3)
     http-cookie (1.0.8)
       domain_name (~> 0.5)
-    httparty (0.23.1)
+    httparty (0.23.2)
       csv
       mini_mime (>= 1.0.0)
       multi_xml (>= 0.5.2)
@@ -188,7 +188,7 @@ GEM
     httpparty (0.2.0)
       httparty (> 0)
     jmespath (1.6.2)
-    json (2.15.0)
+    json (2.15.1)
     jwt (2.10.2)
       base64
     logger (1.7.0)
@@ -217,7 +217,7 @@ GEM
     os (1.1.4)
     plist (3.7.2)
     public_suffix (6.0.2)
-    rack (3.2.1)
+    rack (3.2.3)
     rake (13.3.0)
     representable (3.2.0)
       declarative (< 0.1.0)

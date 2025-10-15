@@ -110,12 +110,6 @@ extension SharedColorPaletteDefinition {
             return buttonsWhite
 
         /// Container Colors
-        case .containerDecorationPrimary:
-            return containerDecorationPrimary
-        case .containerDecorationSecondary:
-            return containerDecorationSecondary
-        case .containerDecorationTertiary:
-            return containerDecorationTertiary
         case .containerFillPrimary:
             return containerFillPrimary
         case .containerFillSecondary:
@@ -124,28 +118,12 @@ extension SharedColorPaletteDefinition {
             return containerFillTertiary
 
         /// Controls Colors
-        case .controlsDecorationPrimary:
-            return controlsDecorationPrimary
-        case .controlsDecorationSecondary:
-            return controlsDecorationSecondary
-        case .controlsDecorationTertiary:
-            return controlsDecorationTertiary
-        case .controlsDecorationQuaternary:
-            return controlsDecorationQuaternary
         case .controlsFillPrimary:
             return controlsFillPrimary
         case .controlsFillSecondary:
             return controlsFillSecondary
         case .controlsFillTertiary:
             return controlsFillTertiary
-
-        /// Decoration Colors
-        case .decorationPrimary:
-            return decorationPrimary
-        case .decorationSecondary:
-            return decorationSecondary
-        case .decorationTertiary:
-            return decorationTertiary
 
         /// Destructive Colors
         case .destructiveContentPrimary:
@@ -174,8 +152,6 @@ extension SharedColorPaletteDefinition {
             return highlightPrimary
 
         /// Icons Colors
-        case .icons:
-            return icons
         case .iconsPrimary:
             return iconsPrimary
         case .iconsSecondary:
@@ -196,8 +172,6 @@ extension SharedColorPaletteDefinition {
             return shadowTertiary
 
         /// Surface Colors
-        case .surface:
-            return surface
         case .surfaceBackdrop:
             return surfaceBackdrop
         case .surfaceCanvas:
@@ -208,6 +182,14 @@ extension SharedColorPaletteDefinition {
             return surfaceSecondary
         case .surfaceTertiary:
             return surfaceTertiary
+
+        /// Surface Decoration
+        case .surfaceDecorationPrimary:
+            return surfaceDecorationPrimary
+        case .surfaceDecorationSecondary:
+            return surfaceDecorationSecondary
+        case .surfaceDecorationTertiary:
+            return surfaceDecorationTertiary
 
         /// Text Colors
         case .textPrimary:
@@ -220,8 +202,36 @@ extension SharedColorPaletteDefinition {
         /// Tone Colors
         case .toneShadePrimary:
             return toneShadePrimary
-        case .toneTintPrimary:
-            return toneTintPrimary
+
+        /// Fire Dialog
+        case .fireDialogBackground:
+            return DynamicColor(lightColor: .white, darkColor: Color(0x333333))
+        case .fireDialogPillBackground:
+            return DynamicColor(lightColor: .xF7F7F7, darkColor: .x1C1C1E)
+        case .fireDialogPillBorder:
+            return DynamicColor(lightColor: Color(0xE8E8E8), darkColor: Color(0x5C5C5C))
+        case .fireDialogPillSelectedSegmentBackground:
+            return DynamicColor(lightColor: .white, darkColor: .gray85)
+        case .fireDialogPillSelectedSegmentBorder:
+            return DynamicColor(lightColor: .gray20, darkColor: Color(0x4D4D4D))
+        case .fireDialogPillSelectedSegmentShadow:
+            return DynamicColor(lightColor: .gray20.opacity(0.05), darkColor: .clear)
+        case .fireDialogPillSelectedSegmentTopStroke:
+            return DynamicColor(lightColor: .clear, darkColor: Color(0x333333))
+        case .fireDialogPillSegmentMouseOver:
+            return DynamicColor(lightColor: Color(0xE0E0E0), darkColor: Color(0x333333))
+        case .fireDialogPillSegmentMouseDown:
+            return DynamicColor(lightColor: .gray30, darkColor: Color(0x404145))
+        case .fireDialogPillHoverOverlay:
+            return DynamicColor(lightColor: .black.opacity(0.06), darkColor: .white.opacity(0.06))
+        case .fireDialogPillSelectedSegmentIconBackground:
+            return DynamicColor(lightColor: Color(designSystemColor: .accentPrimary).opacity(0.12), darkColor: Color(designSystemColor: .accentPrimary).opacity(0.2))
+        case .fireDialogToggleKnob:
+            return DynamicColor(lightColor: .white, darkColor: Color(0x121827))
+        case .fireDialogSectionBackground:
+            return DynamicColor(lightColor: Color(0xFCFCFC), darkColor: Color(0x393939))
+        case .fireDialogSectionBorder:
+            return DynamicColor(lightColor: Color(0xEDEDED), darkColor: Color(0x424242))
         }
     }
 }

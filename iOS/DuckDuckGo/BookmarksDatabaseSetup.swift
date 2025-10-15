@@ -37,8 +37,8 @@ struct BookmarksDatabaseSetup {
         self.migrationAssertion = migrationAssertion
     }
 
-    static func makeValidator(isSyncEnabled: Bool = false) -> BookmarksStateValidator {
-        return BookmarksStateValidator(keyValueStore: UserDefaults.app, isSyncEnabled: isSyncEnabled) { validationError, additionalParams in
+    static func makeValidator() -> BookmarksStateValidator {
+        return BookmarksStateValidator(keyValueStore: UserDefaults.app) { validationError, additionalParams in
             switch validationError {
             case .bookmarksStructureLost:
                 DailyPixel.fireDailyAndCount(pixel: .debugBookmarksStructureLost,
@@ -59,7 +59,8 @@ struct BookmarksDatabaseSetup {
 
     func loadStoreAndMigrate(bookmarksDatabase: CoreDataStoring,
                              formFactorFavoritesMigrator: BookmarkFormFactorFavoritesMigrating = BookmarkFormFactorFavoritesMigration(),
-                             validator: BookmarksStateValidation = Self.makeValidator()) throws -> Bool {
+                             validator: BookmarksStateValidation = Self.makeValidator(),
+                             isBackground: Bool = false) throws {
 
         let oldFavoritesOrder: [String]?
         do {
@@ -74,18 +75,15 @@ struct BookmarksDatabaseSetup {
         var migrationHappened = false
         var loadError: Error?
         var migrationError: Error?
-        var didRepairBookmarksStructure = false
         bookmarksDatabase.loadStore { context, error in
             guard let context = context, error == nil else {
                 loadError = error
                 return
             }
 
+            // Perform pre-setup/migration validation
+            let isMissingStructure = !validator.validateInitialState(context: context, validationError: .bookmarksStructureLost, isBackground: isBackground)
             do {
-                // Perform pre-setup/migration validation
-                didRepairBookmarksStructure = !validator.validateInitialState(context: context,
-                                                                              validationError: .bookmarksStructureLost)
-
                 try self.migrateFromLegacyCoreDataStorageIfNeeded(context)
                 migrationHappened = try self.migrateToFormFactorSpecificFavorites(context, oldFavoritesOrder)
             } catch {
@@ -93,9 +91,10 @@ struct BookmarksDatabaseSetup {
                 return
             }
 
-            if didRepairBookmarksStructure {
+            if isMissingStructure {
                 _ = validator.validateInitialState(context: context,
-                                                   validationError: .bookmarksStructureNotRecovered)
+                                                   validationError: .bookmarksStructureNotRecovered,
+                                                   isBackground: isBackground)
             }
 
             // Add new migrations and set migrationHappened flag above this comment. Only the last migration is relevant.
@@ -125,8 +124,6 @@ struct BookmarksDatabaseSetup {
                 assertionFailure(error.localizedDescription)
             }
         }
-
-        return didRepairBookmarksStructure
     }
 
     private func repairDeletedFlag(context: NSManagedObjectContext) {

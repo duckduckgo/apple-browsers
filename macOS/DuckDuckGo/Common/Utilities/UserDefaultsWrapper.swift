@@ -57,6 +57,7 @@ public struct UserDefaultsWrapper<T> {
 
         case loginDetectionEnabled = "fireproofing.login-detection-enabled"
         case autoClearEnabled = "preferences.auto-clear-enabled"
+        case autoClearAIChatHistoryEnabled = "preferences.auto-clear-ai-chat-history-enabled"
         case warnBeforeClearingEnabled = "preferences.warn-before-clearing-enabled"
         case fireAnimationEnabled = "preferences.fire-animation-enabled"
         case gpcEnabled = "preferences.gpc-enabled"
@@ -78,6 +79,7 @@ public struct UserDefaultsWrapper<T> {
         case askToSavePaymentMethods = "preferences.ask-to-save.payment-methods"
         case autolockLocksFormFilling = "preferences.lock-autofill-form-fill"
         case autofillDebugScriptEnabled = "preferences.enable-autofill-debug-script"
+        case contentScopeDebugStateEnabled = "preferences.enable-content-scope-debug-state"
 
         case saveAsPreferredFileType = "saveAs.selected.filetype"
 
@@ -217,9 +219,13 @@ public struct UserDefaultsWrapper<T> {
         case favoritesDisplayMode = "sync.favorites-display-mode"
         case syncBookmarksPaused = "sync.bookmarks-paused"
         case syncCredentialsPaused = "sync.credentials-paused"
+        case syncCreditCardsPaused = "sync.credit-cards-paused"
+        case syncIdentitiesPaused = "sync.identities-paused"
         case syncIsPaused = "sync.paused"
         case syncBookmarksPausedErrorDisplayed = "sync.bookmarks-paused-error-displayed"
         case syncCredentialsPausedErrorDisplayed = "sync.credentials-paused-error-displayed"
+        case syncCreditCardsPausedErrorDisplayed = "sync.credit-cards-paused-error-displayed"
+        case syncIdentitiesPausedErrorDisplayed = "sync.identities-paused-error-displayed"
         case syncInvalidLoginPausedErrorDisplayed = "sync.invalid-login-paused-error-displayed"
         case syncIsFaviconsFetcherEnabled = "sync.is-favicons-fetcher-enabled"
         case syncIsEligibleForFaviconsFetcherOnboarding = "sync.is-eligible-for-favicons-fetcher-onboarding"
@@ -232,6 +238,8 @@ public struct UserDefaultsWrapper<T> {
         case syncCurrentAllPausedError = "sync.current-all-paused-error"
         case syncCurrentBookmarksPausedError = "sync.current-bookmarks-paused-error"
         case syncCurrentCredentialsPausedError = "sync.current-credentials-paused-error"
+        case syncCurrentCreditCardsPausedError = "sync.current-credit-cards-paused-error"
+        case syncCurrentIdentitiesPausedError = "sync.current-identities-paused-error"
         case syncPromoBookmarksDismissed = "sync.promotion-bookmarks-dismissed"
         case syncPromoPasswordsDismissed = "sync.promotion-passwords-dismissed"
 

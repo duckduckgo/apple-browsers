@@ -31,6 +31,7 @@ public class AppUserDefaults: AppSettings {
         public static let favoritesDisplayModeChange = Notification.Name("com.duckduckgo.app.FavoritesDisplayModeChange")
         public static let syncPausedStateChanged = SyncBookmarksAdapter.syncBookmarksPausedStateChanged
         public static let syncCredentialsPausedStateChanged = SyncCredentialsAdapter.syncCredentialsPausedStateChanged
+        public static let syncCreditCardsPausedStateChanged = SyncCreditCardsAdapter.syncCreditCardsPausedStateChanged
         public static let autofillEnabledChange = Notification.Name("com.duckduckgo.app.AutofillEnabledChange")
         public static let didVerifyInternalUser = Notification.Name("com.duckduckgo.app.DidVerifyInternalUser")
         public static let inspectableWebViewsToggled = Notification.Name("com.duckduckgo.app.DidToggleInspectableWebViews")
@@ -38,6 +39,7 @@ public class AppUserDefaults: AppSettings {
         public static let refreshButtonSettingsChanged = Notification.Name("com.duckduckgo.refreshButton.settings.changed")
         public static let showsFullURLAddressSettingChanged = Notification.Name("com.duckduckgo.app.ShowsFullURLAddressSettingChanged")
         public static let autofillDebugScriptToggled = Notification.Name("com.duckduckgo.app.DidToggleAutofillDebugScript")
+        public static let contentScopeDebugStateToggled = Notification.Name("com.duckduckgo.app.DidToggleContentScopeDebugState")
         public static let duckPlayerSettingsUpdated = Notification.Name("com.duckduckgo.app.DuckPlayerSettingsUpdated")
         public static let appDataClearingUpdated = Notification.Name("com.duckduckgo.app.dataClearingUpdates")
     }
@@ -102,6 +104,7 @@ public class AppUserDefaults: AppSettings {
     private struct DebugKeys {
         static let inspectableWebViewsEnabledKey = "com.duckduckgo.ios.debug.inspectableWebViewsEnabled"
         static let autofillDebugScriptEnabledKey = "com.duckduckgo.ios.debug.autofillDebugScriptEnabled"
+        static let contentScopeDebugStateEnabledKey = "com.duckduckgo.ios.debug.contentScopeDebugStateEnabled"
         static let onboardingIsNewUserKey = "com.duckduckgo.ios.debug.onboardingIsNewUser"
     }
 
@@ -453,6 +456,16 @@ public class AppUserDefaults: AppSettings {
 
         set {
             userDefaults?.set(newValue, forKey: DebugKeys.autofillDebugScriptEnabledKey)
+        }
+    }
+
+    var contentScopeDebugStateEnabled: Bool {
+        get {
+            return userDefaults?.object(forKey: DebugKeys.contentScopeDebugStateEnabledKey) as? Bool ?? false
+        }
+
+        set {
+            userDefaults?.set(newValue, forKey: DebugKeys.contentScopeDebugStateEnabledKey)
         }
     }
 

@@ -2,34 +2,39 @@
 // In your pixel definitions, you can reference these suffixes by their key
 // See TEMPLATE.json for an example
 {
-    first_daily_count: {
-        type: 'string',
-        description: 'Pixel schedule type',
-        enum: ['first', 'daily', 'count'],
+    "first_daily_count": {
+        "type": "string",
+        "description": "Pixel schedule type",
+        "enum": ["first", "daily", "count"]
     },
-    legacy_daily_count: {
-        type: 'string',
-        description: 'Pixel schedule type, legacy suffix',
-        enum: ['d', 'c'],
+    "legacy_daily_count": {
+        "type": "string",
+        "description": "Pixel schedule type, legacy suffix",
+        "enum": ["d", "c"]
     },
-    daily: {
-        type: 'string',
-        description: 'Daily pixel suffix',
-        enum: ['daily'],
+    "daily": {
+        "type": "string",
+        "description": "Daily pixel suffix",
+        "enum": ["daily"]
     },
-    form_factor: {
-        type: 'string',
-        description: 'Device form-factor',
-        enum: ['phone', 'tablet'],
+    "daily_standard": {
+        "type": "string",
+        "description": "Daily and standard pixel suffixes",
+        "enum": ["daily", ""]
     },
-    platform: {
-        type: 'string',
-        description: 'Device platform',
-        enum: ['ios'],
+    "form_factor": {
+        "type": "string",
+        "description": "Device form-factor",
+        "enum": ["phone", "tablet"]
     },
-    time_bucket: {
-        type: 'string',
-        description: 'Corresponding time bucket',
-        enum: ['0', '0.1', '0.5', '1', '5', '10', '20', '40', 'more'],
+    "platform": {
+        "type": "string",
+        "description": "Device platform",
+        "enum": ["ios"]
     },
+    "time_bucket": {
+        "type": "string",
+        "description": "Corresponding time bucket",
+        "enum": ["0", "0.1", "0.5", "1", "5", "10", "20", "40", "more"]
+    }
 }

@@ -29,7 +29,7 @@ struct SuggestionViewModel {
     init(isHomePage: Bool,
          suggestion: Suggestion,
          userStringValue: String,
-         themeManager: ThemeManagerProtocol) {
+         themeManager: ThemeManaging) {
         self.isHomePage = isHomePage
         self.suggestion = suggestion
         self.userStringValue = userStringValue

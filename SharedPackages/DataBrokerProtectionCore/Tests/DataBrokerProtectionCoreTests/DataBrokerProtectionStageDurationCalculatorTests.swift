@@ -20,9 +20,9 @@ import BrowserServicesKit
 import Foundation
 import SecureStorage
 import XCTest
-
+import PixelKit
 @testable import DataBrokerProtectionCore
-import DataBrokerProtectionCoreTestsUtils
+@testable import DataBrokerProtectionCoreTestsUtils
 
 final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     let handler = MockDataBrokerProtectionPixelsHandler()
@@ -32,7 +32,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIs404_thenWeFireScanFailedPixel() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker", dataBrokerVersion: "1.1.1", handler: handler, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 404))
 
@@ -41,7 +41,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last{
             switch failurePixel {
             case .scanFailed(let broker, let brokerVersion, _, _, _, _, _):
-                XCTAssertEqual(broker, "broker")
+                XCTAssertEqual(broker, "broker.com")
                 XCTAssertEqual(brokerVersion, "1.1.1")
             default: XCTFail("The scan failed pixel should be fired")
             }
@@ -51,7 +51,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIs403_thenWeFireScanErrorPixelWithClientErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker", dataBrokerVersion: "1.1.1", handler: handler, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 403))
 
@@ -69,7 +69,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIs500_thenWeFireScanErrorPixelWithServerErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker", dataBrokerVersion: "1.1.1", handler: handler, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 500))
 
@@ -87,7 +87,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIsNotHttp_thenWeFireScanErrorPixelWithValidationErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker", dataBrokerVersion: "1.1.1", handler: handler, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.actionFailed(actionID: "Action-ID", message: "Some message"))
 
@@ -105,7 +105,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIsNotDBPErrorButItIsNSURL_thenWeFireScanErrorPixelWithNetworkErrorErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker", dataBrokerVersion: "1.1.1", handler: handler, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
         let nsURLError = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
 
         sut.fireScanError(error: nsURLError)
@@ -124,7 +124,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIsSecureVaultError_thenWeFireScanErorrPixelWithDatabaseErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker", dataBrokerVersion: "1.1.1", handler: handler, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
         let error = SecureStorageError.encodingFailed
 
         sut.fireScanError(error: error)
@@ -143,7 +143,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
     }
 
     func testWhenErrorIsNotDBPErrorAndNotURL_thenWeFireScanErrorPixelWithUnclassifiedErrorCategory() {
-        let sut = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker", dataBrokerVersion: "1.1.1", handler: handler, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
         let error = NSError(domain: NSCocoaErrorDomain, code: -1)
 
         sut.fireScanError(error: error)
@@ -159,5 +159,46 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         } else {
             XCTFail("A pixel should be fired")
         }
+    }
+
+    func testRecorderReceivesSubmitSuccess() {
+        let recorder = SubmissionRecorderMock()
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
+                                                              dataBrokerVersion: "1.1.1",
+                                                              handler: handler,
+                                                              vpnConnectionState: "disconnected",
+                                                              vpnBypassStatus: "no")
+        sut.attachWideEventRecorder(recorder)
+
+        sut.fireOptOutStart()
+        sut.fireOptOutEmailGenerate()
+        sut.fireOptOutCaptchaParse()
+        sut.fireOptOutSubmit()
+        sut.fireOptOutSubmitSuccess(tries: 2)
+
+        XCTAssertEqual(recorder.completionStatus, .success)
+        XCTAssertTrue(recorder.submissionEndMarked)
+        XCTAssertEqual(recorder.recordedStages.map { $0.stage }, [.start, .emailGenerate, .captchaParse, .submit])
+        XCTAssertEqual(recorder.recordedStages.first?.tries, 1)
+        XCTAssertNil(recorder.recordedStages.first?.duration)
+        XCTAssertEqual(recorder.recordedStages.last?.tries, 1)
+        XCTAssertNotNil(recorder.recordedStages.last?.duration)
+    }
+
+    func testRecorderReceivesFailure() {
+        let recorder = SubmissionRecorderMock()
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
+                                                              dataBrokerVersion: "1.1.1",
+                                                              handler: handler,
+                                                              vpnConnectionState: "disconnected",
+                                                              vpnBypassStatus: "no")
+        sut.attachWideEventRecorder(recorder)
+
+        sut.fireOptOutStart()
+        sut.fireOptOutFailure(tries: 3)
+        recorder.complete(status: .failure)
+
+        XCTAssertEqual(recorder.completionStatus, .failure)
+        XCTAssertEqual(recorder.recordedStages.map { $0.stage }, [.start])
     }
 }

@@ -26,6 +26,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x141415 = Color(0x141415)
     private static let x181818 = Color(0x181818)
     private static let x27282A = Color(0x27282A)
+    private static let x333333 = Color(0x333333)
     private static let x333538 = Color(0x333538)
     private static let x404145 = Color(0x404145)
     private static let xE0E0E0 = Color(0xE0E0E0)
@@ -41,6 +42,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let x282828 = Color(0x282828)
     private static let x373737 = Color(0x373737)
     private static let x474747 = Color(0x474747)
+    private static let x4D4D4D = Color(0x4D4D4D)
     private static let x1C1C1C = Color(0x1C1C1C)
     private static let x7295F6 = Color(0x7295F6)
 

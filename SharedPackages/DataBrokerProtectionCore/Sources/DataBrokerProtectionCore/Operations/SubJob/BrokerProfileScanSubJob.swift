@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import BrowserServicesKit
 import os.log
 
 struct BrokerProfileScanSubJob {
@@ -61,7 +62,7 @@ struct BrokerProfileScanSubJob {
         // 2. Set up dependencies used to report the status of the scan job:
         let eventPixels = DataBrokerProtectionEventPixels(database: dependencies.database, handler: dependencies.pixelHandler)
         let stageCalculator = DataBrokerProtectionStageDurationCalculator(
-            dataBroker: brokerProfileQueryData.dataBroker.name,
+            dataBrokerURL: brokerProfileQueryData.dataBroker.url,
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
             handler: dependencies.pixelHandler,
             isImmediateOperation: isManual,
@@ -285,6 +286,20 @@ struct BrokerProfileScanSubJob {
                     pixelHandler.fire(.optOutFinish(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceLastStage))
                     pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceStart,
                                                      brokerType: brokerProfileQueryData.dataBroker.type, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
+
+                    let recordFoundDate = RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
+                                                                          repository: dependencies.database,
+                                                                          brokerId: brokerId,
+                                                                          profileQueryId: profileQueryId,
+                                                                          extractedProfileId: extractedProfileId)
+                    OptOutConfirmationWideEventEmitter.emitSuccess(
+                        wideEvent: dependencies.wideEvent,
+                        attemptID: attemptUUID,
+                        recordFoundDate: recordFoundDate,
+                        confirmationDate: now,
+                        dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+                        dataBrokerVersion: brokerProfileQueryData.dataBroker.version
+                    )
                 }
             }
         }

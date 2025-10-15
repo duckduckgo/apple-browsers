@@ -73,26 +73,14 @@ public enum SharedDesignSystemColor {
     case buttonsWhite
 
     // Container
-    case containerDecorationPrimary
-    case containerDecorationSecondary
-    case containerDecorationTertiary
     case containerFillPrimary
     case containerFillSecondary
     case containerFillTertiary
 
     // Controls
-    case controlsDecorationPrimary
-    case controlsDecorationSecondary
-    case controlsDecorationTertiary
-    case controlsDecorationQuaternary
     case controlsFillPrimary
     case controlsFillSecondary
     case controlsFillTertiary
-
-    // Decorations
-    case decorationPrimary
-    case decorationSecondary
-    case decorationTertiary
 
     // Destructive
     case destructiveContentPrimary
@@ -110,7 +98,6 @@ public enum SharedDesignSystemColor {
     case highlightPrimary
 
     // Icons
-    case icons
     case iconsPrimary
     case iconsSecondary
     case iconsTertiary
@@ -124,12 +111,16 @@ public enum SharedDesignSystemColor {
     case shadowTertiary
 
     // Surface
-    case surface
     case surfaceBackdrop
     case surfaceCanvas
     case surfacePrimary
     case surfaceSecondary
     case surfaceTertiary
+
+    // Surface Decoration
+    case surfaceDecorationPrimary
+    case surfaceDecorationSecondary
+    case surfaceDecorationTertiary
 
     // Text
     case textPrimary
@@ -138,7 +129,22 @@ public enum SharedDesignSystemColor {
 
     // Tone
     case toneShadePrimary
-    case toneTintPrimary
+
+    // Fire Dialog View
+    case fireDialogBackground
+    case fireDialogPillBackground
+    case fireDialogPillBorder
+    case fireDialogPillSelectedSegmentBackground
+    case fireDialogPillSelectedSegmentBorder
+    case fireDialogPillSelectedSegmentShadow
+    case fireDialogPillSelectedSegmentTopStroke
+    case fireDialogPillSelectedSegmentIconBackground
+    case fireDialogPillSegmentMouseOver
+    case fireDialogPillSegmentMouseDown
+    case fireDialogPillHoverOverlay
+    case fireDialogToggleKnob
+    case fireDialogSectionBackground
+    case fireDialogSectionBorder
 }
 
 #endif

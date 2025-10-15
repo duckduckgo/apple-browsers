@@ -64,6 +64,10 @@ public protocol DataBrokerProtectionRepository {
                                                    forBrokerId brokerId: Int64,
                                                    profileQueryId: Int64,
                                                    extractedProfileId: Int64) throws
+    func updateFortyTwoDaysConfirmationPixelFired(_ pixelFired: Bool,
+                                                  forBrokerId brokerId: Int64,
+                                                  profileQueryId: Int64,
+                                                  extractedProfileId: Int64) throws
     func updateRemovedDate(_ date: Date?, on extractedProfileId: Int64) throws
 
     func add(_ historyEvent: HistoryEvent) throws
@@ -76,6 +80,8 @@ public protocol DataBrokerProtectionRepository {
     func fetchAllAttempts() throws -> [AttemptInformation]
     func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation?
     func addAttempt(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws
+
+    func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> OptOutJobData?
 
     func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)?
 
@@ -366,6 +372,23 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
         }
     }
 
+    public func updateFortyTwoDaysConfirmationPixelFired(_ pixelFired: Bool,
+                                                         forBrokerId brokerId: Int64,
+                                                         profileQueryId: Int64,
+                                                         extractedProfileId: Int64) throws {
+        do {
+            try vault.updateFortyTwoDaysConfirmationPixelFired(
+                pixelFired,
+                forBrokerId: brokerId,
+                profileQueryId: profileQueryId,
+                extractedProfileId: extractedProfileId
+            )
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.updateFortyTwoDaysConfirmationPixelFired pixelFired forBrokerId profileQueryId extractedProfileId")
+            throw error
+        }
+    }
+
     public func updateRemovedDate(_ date: Date?, on extractedProfileId: Int64) throws {
         do {
             try vault.updateRemovedDate(for: extractedProfileId, with: date)
@@ -468,7 +491,8 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
                            submittedSuccessfullyDate: optOut.submittedSuccessfullyDate,
                            sevenDaysConfirmationPixelFired: optOut.sevenDaysConfirmationPixelFired,
                            fourteenDaysConfirmationPixelFired: optOut.fourteenDaysConfirmationPixelFired,
-                           twentyOneDaysConfirmationPixelFired: optOut.twentyOneDaysConfirmationPixelFired)
+                           twentyOneDaysConfirmationPixelFired: optOut.twentyOneDaysConfirmationPixelFired,
+                           fortyTwoDaysConfirmationPixelFired: optOut.fortyTwoDaysConfirmationPixelFired)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.saveOptOutOperation optOut extractedProfile")
             throw error
@@ -527,6 +551,15 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
             return optOut.historyEvents
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchOptOutHistoryEvents brokerId profileQueryId extractedProfileId")
+            throw error
+        }
+    }
+
+    public func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> OptOutJobData? {
+        do {
+            return try vault.fetchOptOut(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchOptOut")
             throw error
         }
     }

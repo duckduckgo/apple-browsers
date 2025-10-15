@@ -19,11 +19,13 @@
 
 import Foundation
 
-/// The SyncErrorHandling protocol defines methods for handling sync errors related to specific data types such as bookmarks and credentials.
+/// The SyncErrorHandling protocol defines methods for handling sync errors related to specific data types such as bookmarks, credentials, and credit cards.
 public protocol SyncErrorHandling {
     func handleBookmarkError(_ error: Error)
     func handleCredentialError(_ error: Error)
+    func handleCreditCardsError(_ error: Error)
     func handleSettingsError(_ error: Error)
     func syncBookmarksSucceded()
     func syncCredentialsSucceded()
+    func syncCreditCardsSucceded()
 }

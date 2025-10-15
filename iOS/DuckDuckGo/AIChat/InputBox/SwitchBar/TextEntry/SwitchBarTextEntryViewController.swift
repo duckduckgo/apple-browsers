@@ -31,6 +31,10 @@ class SwitchBarTextEntryViewController: UIViewController {
 
     let buttonsContainerView = UIView()
 
+    var textHeightChangePublisher: AnyPublisher<Void, Never> {
+        textEntryView.textHeightChangeSubject.eraseToAnyPublisher()
+    }
+
     private var cancellables = Set<AnyCancellable>()
     var isExpandable: Bool {
         get { textEntryView.isExpandable }

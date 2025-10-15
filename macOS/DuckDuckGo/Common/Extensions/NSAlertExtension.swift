@@ -238,9 +238,9 @@ extension NSAlert {
         return alert
     }
 
-    static func autoClearAlert() -> NSAlert {
+    static func autoClearAlert(clearChats: Bool) -> NSAlert {
         let alert = NSAlert()
-        alert.messageText = UserText.warnBeforeQuitDialogHeader
+        alert.messageText = UserText.warnBeforeQuitDialogHeader(clearChats)
         alert.alertStyle = .warning
         alert.icon = .burnAlert
         alert.addButton(withTitle: UserText.clearAndQuit)

@@ -85,6 +85,8 @@ public final actor Watchdog {
         isRunning = state
     }
 
+    public private(set) var isPaused: Bool = false
+
     /// - Parameters:
     ///   - minimumHangDuration: The minimum duration of hang to be detected.
     ///   - maximumHangDuration: The maximum duration of hang to be detected. After this point, the hang will stop being measured
@@ -94,7 +96,7 @@ public final actor Watchdog {
     ///   - crashOnTimeout: Whether the watchdog should kill the app once the maximum hang duration has been reached (used for debugging purposes)
     ///   - killAppFunction: A closure to be executed when the maximum hang duration has been reached (used for testing purposes)
     ///
-    public init(minimumHangDuration: TimeInterval = 1.0, maximumHangDuration: TimeInterval = 10.0, checkInterval: TimeInterval = 0.5, eventMapper: EventMapping<Watchdog.Event>? = nil, crashOnTimeout: Bool = false, killAppFunction: ((TimeInterval) -> Void)? = nil) {
+    public init(minimumHangDuration: TimeInterval = 1.0, maximumHangDuration: TimeInterval = 5.0, checkInterval: TimeInterval = 0.5, eventMapper: EventMapping<Watchdog.Event>? = nil, crashOnTimeout: Bool = false, killAppFunction: ((TimeInterval) -> Void)? = nil) {
 
         assert(checkInterval > 0, "checkInterval must be greater than 0")
         assert(minimumHangDuration >= 0, "minimumHangDuration must be greater than or equal to 0")
@@ -119,10 +121,17 @@ public final actor Watchdog {
         heartbeatUpdateTask = nil
     }
 
+    // MARK: - State management
+
+    /// Starts the watchdog running.
+    ///
     public func start() async {
         // Cancel any existing task
         monitoringTask?.cancel()
         heartbeatUpdateTask?.cancel()
+
+        // Ensure we start in an unpaused state
+        isPaused = false
 
         Self.logger.info("Watchdog started monitoring main thread with timeout: \(self.maximumHangDuration)s")
 
@@ -133,6 +142,8 @@ public final actor Watchdog {
         await setIsRunning(true)
     }
 
+    /// Stops the watchdog entirely.
+    ///
     public func stop() async {
         monitoringTask?.cancel()
         monitoringTask = nil
@@ -144,6 +155,32 @@ public final actor Watchdog {
 
         await setIsRunning(false)
     }
+
+    /// Pauses the watchdog, if running. Can be resumed with `resume`.
+    ///
+    public func pause() async {
+        Self.logger.info("Watchdog paused")
+        isPaused = true
+    }
+
+    /// Resumes the watchdog after being paused. Will only resume if the watchdog was previously running.
+    ///
+    public func resume() async {
+        Self.logger.info("Watchdog resumed")
+
+        // Reset the heartbeat and state to start fresh after resume
+        await monitor.resetHeartbeat()
+        resetHangState()
+
+        isPaused = false
+    }
+
+    private func resetHangState() {
+        hangStartTime = nil
+        hangState = .responsive
+    }
+
+    // MARK: - Monitoring
 
     private func runMonitoringLoop() async {
         await monitor.resetHeartbeat()
@@ -171,12 +208,19 @@ public final actor Watchdog {
             handleHangDetection(timeSinceLastCheck: timeSinceLastCheck)
         }
     }
+
     private func clearHeartbeatTask() {
         heartbeatUpdateTask = nil
     }
 
     private func handleHangDetection(timeSinceLastCheck: TimeInterval) {
         let now = Date()
+
+        // Skip hang detection checks if the watchdog is paused
+        guard !isPaused else {
+            Self.logger.debug("Ignoring hang detection while paused. Last heartbeat: \(timeSinceLastCheck)s ago.")
+            return
+        }
 
         switch hangState {
         case .responsive:
@@ -192,8 +236,7 @@ public final actor Watchdog {
                 logHangDuration(message: "Main thread hang ended.", currentTime: now)
                 fireHangEvent(Watchdog.Event.uiHangRecovered, currentTime: now)
 
-                hangState = .responsive
-                hangStartTime = nil
+                resetHangState()
             } else if timeSinceLastCheck > maximumHangDuration {
                 hangState = .timeout
 
@@ -206,8 +249,8 @@ public final actor Watchdog {
         case .timeout:
             if timeSinceLastCheck <= minimumHangDuration {
                 // Hang became responsive again after timeout. Reset hang state.
-                hangState = .responsive
-                hangStartTime = nil
+                resetHangState()
+
                 logHangDuration(message: "Main thread hang ended after timeout.", currentTime: now)
             } else if timeSinceLastCheck > maximumHangDuration && crashOnTimeout {
                 logHangDuration(message: "Main thread hang timeout reached. Crashing app.", currentTime: now)

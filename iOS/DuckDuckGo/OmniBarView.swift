@@ -63,8 +63,6 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
 
     var searchContainerWidth: CGFloat { get }
 
-    var menuButtonContent: MenuButton { get }
-
     var onTextEntered: (() -> Void)? { get set }
     var onVoiceSearchButtonPressed: (() -> Void)? { get set }
     var onAbortButtonPressed: (() -> Void)? { get set }

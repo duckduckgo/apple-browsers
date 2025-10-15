@@ -52,7 +52,7 @@ let package = Package(
         .library(name: "WKAbstractions", targets: ["WKAbstractions"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.3.1"),
+        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.4.0"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.0.1"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
         .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
@@ -104,6 +104,9 @@ let package = Package(
             dependencies: [
                 "BrowserServicesKit",
                 "WKAbstractions",
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
             ]
         ),
         .target(
@@ -119,6 +122,9 @@ let package = Package(
             name: "PersistenceTestingUtils",
             dependencies: [
                 "Persistence"
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
             ]
         ),
         .target(
@@ -234,6 +240,9 @@ let package = Package(
                 .process("Resources/contentScope.js"),
                 .process("Resources/contentScopeIsolated.js"),
                 .copy("Resources/pages"),
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
             ]
         ),
         .target(
@@ -283,7 +292,8 @@ let package = Package(
                 "Persistence",
                 "BrowserServicesKit",
                 "MaliciousSiteProtection",
-                .product(name: "PrivacyDashboardResources", package: "privacy-dashboard")
+                .product(name: "PrivacyDashboardResources", package: "privacy-dashboard"),
+                "Navigation",
             ],
             path: "Sources/PrivacyDashboard",
             swiftSettings: [
@@ -379,7 +389,9 @@ let package = Package(
                 "Common",
                 "Networking",
                 "UserScript",
-                "PixelKit"
+                "PixelKit",
+                "Persistence",
+                "SecureStorage"
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -707,6 +719,7 @@ let package = Package(
                 "Subscription",
                 "SubscriptionTestingUtilities",
                 "NetworkingTestingUtils",
+                "PixelKitTestingUtilities",
             ]
         ),
         .testTarget(

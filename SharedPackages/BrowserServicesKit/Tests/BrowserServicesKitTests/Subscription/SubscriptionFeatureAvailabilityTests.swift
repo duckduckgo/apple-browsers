@@ -183,7 +183,7 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
         XCTAssertTrue(subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled)
     }
 
-    // MARK: - Tests for Wide Pixel Measurement
+    // MARK: - Tests for Wide Event Measurement
 
     func testIsSubscriptionPurchaseWidePixelMeasurementDisabledWhenProviderReturnsFalse() {
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
@@ -201,6 +201,27 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
                                                                                      supportsAlternateStripePaymentFlowStatusProvider: { false },
                                                                                      isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { true })
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled)
+    }
+
+    // MARK: - Tests for Subscription Restore Wide Pixel Measurement
+
+    func testIsSubscriptionRestoreWidePixelMeasurementDisabledWhenProviderDefaultReturnsFalse() {
+        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                     purchasePlatform: .appStore,
+                                                                                     paidAIChatFlagStatusProvider: { false },
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
+                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false })
+        XCTAssertFalse(subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled)
+    }
+
+    func testIsSubscriptionRestoreWidePixelMeasurementEnabledWhenProviderReturnsTrue() {
+        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                     purchasePlatform: .appStore,
+                                                                                     paidAIChatFlagStatusProvider: { false },
+                                                                                     supportsAlternateStripePaymentFlowStatusProvider: { false },
+                                                                                     isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { false },
+                                                                                     isSubscriptionRestoreWidePixelMeasurementEnabledProvider: { true })
+        XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled)
     }
 
     // MARK: - Helper

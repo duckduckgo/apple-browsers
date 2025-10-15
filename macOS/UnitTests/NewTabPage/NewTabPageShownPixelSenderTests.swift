@@ -31,13 +31,14 @@ final class MockNewTabPageProtectionsReportVisibleFeedProvider: NewTabPageProtec
 final class NewTabPageShownPixelSenderTests: XCTestCase {
 
     var appearancePreferences: AppearancePreferences!
-    var themeManager: ThemeManagerProtocol!
+    var themeManager: ThemeManaging!
     var visibleFeedProvider: MockNewTabPageProtectionsReportVisibleFeedProvider!
     var customizationModel: NewTabPageCustomizationModel!
     var handler: NewTabPageShownPixelSender!
     var keyValueStore: MockKeyValueStore!
     var firePixelCalls: [PixelKitEvent] = []
 
+    @MainActor
     override func setUp() async throws {
         try await super.setUp()
 

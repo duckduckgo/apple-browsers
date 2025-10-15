@@ -128,12 +128,6 @@ extension URL {
             return makeURLUsingNativePredictionLogic(from: addressBarString)
         }
 
-        // Handle VPN URLs first, to avoid them being misclassified. This workaround can be removed when the
-        // URL predictor identifies the networkprotection:// scheme as a navigate action instead of a search.
-        if let vpnURL = URL(string: addressBarString), vpnURL.scheme?.isNetworkProtectionScheme == true {
-            return vpnURL
-        }
-
         let url = makeURLUsingUnifiedPredictionLogic(from: addressBarString)
 
         /// Return early if the metrics feature flag is disabled (only internal users can opt in to metrics collection).
@@ -191,15 +185,17 @@ extension URL {
         return nil
     }
 
-    static func makeURL(fromSuggestionPhrase phrase: String) -> URL? {
-        guard let url = URL(trimmedAddressBarString: phrase),
-              let scheme = url.scheme.map(NavigationalScheme.init),
-              NavigationalScheme.hypertextSchemes.contains(scheme),
-              url.isValid else {
-            return nil
+    static func makeURL(fromSuggestionPhrase phrase: String, useUnifiedLogic: Bool) -> URL? {
+        guard useUnifiedLogic else {
+            guard let url = URL(trimmedAddressBarString: phrase),
+                  let scheme = url.scheme.map(NavigationalScheme.init),
+                  NavigationalScheme.hypertextSchemes.contains(scheme),
+                  url.isValid else {
+                return nil
+            }
+            return url
         }
-
-        return url
+        return .init(trimmedAddressBarString: phrase, useUnifiedLogic: true)
     }
 #endif
 

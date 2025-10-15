@@ -108,7 +108,6 @@ final class MockOmniBar: OmniBar {
         var progressView: DuckDuckGo.ProgressView?
         var privacyIconView: UIView?
         var searchContainerWidth: CGFloat = 0
-        var menuButtonContent: DuckDuckGo.MenuButton = .init()
         var onTextEntered: (() -> Void)?
         var onVoiceSearchButtonPressed: (() -> Void)?
         var onAbortButtonPressed: (() -> Void)?

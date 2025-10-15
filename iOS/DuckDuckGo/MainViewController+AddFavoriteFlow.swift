@@ -50,7 +50,7 @@ extension MainViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             guard self.canDisplayAddFavoriteVisualIndicator else { return }
             ViewHighlighter.hideAll()
-            ViewHighlighter.showIn(window, focussedOnView: self.presentedMenuButton)
+            ViewHighlighter.showIn(window, focussedOnButton: self.viewCoordinator.menuToolbarButton)
         }
 
     }

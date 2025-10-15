@@ -1,8 +1,7 @@
 //
-//  EmptyCollectionReusableView.swift
-//  DuckDuckGo
+//  AttributedMetricDefaultBrowserProvidingMock.swift
 //
-//  Copyright © 2019 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,15 +16,14 @@
 //  limitations under the License.
 //
 
-import UIKit
+import Foundation
+import AttributedMetric
 
-class EmptyCollectionReusableView: UICollectionReusableView {
-    
-    static let reuseIdentifier = "EmptyCollectionReusableView"
-    
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        
-        backgroundColor = .clear
+public final class AttributedMetricDefaultBrowserProvidingMock: AttributedMetricDefaultBrowserProviding {
+
+    public init(isDefaultBrowser: Bool = false) {
+        self.isDefaultBrowser = isDefaultBrowser
     }
+
+    public var isDefaultBrowser: Bool = false
 }

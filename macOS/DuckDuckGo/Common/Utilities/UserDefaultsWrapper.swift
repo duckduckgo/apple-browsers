@@ -57,6 +57,7 @@ public struct UserDefaultsWrapper<T> {
 
         case loginDetectionEnabled = "fireproofing.login-detection-enabled"
         case autoClearEnabled = "preferences.auto-clear-enabled"
+        case autoClearAIChatHistoryEnabled = "preferences.auto-clear-ai-chat-history-enabled"
         case warnBeforeClearingEnabled = "preferences.warn-before-clearing-enabled"
         case fireAnimationEnabled = "preferences.fire-animation-enabled"
         case gpcEnabled = "preferences.gpc-enabled"
@@ -78,6 +79,7 @@ public struct UserDefaultsWrapper<T> {
         case askToSavePaymentMethods = "preferences.ask-to-save.payment-methods"
         case autolockLocksFormFilling = "preferences.lock-autofill-form-fill"
         case autofillDebugScriptEnabled = "preferences.enable-autofill-debug-script"
+        case contentScopeDebugStateEnabled = "preferences.enable-content-scope-debug-state"
 
         case saveAsPreferredFileType = "saveAs.selected.filetype"
 

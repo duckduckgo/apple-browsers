@@ -1,6 +1,5 @@
 //
 //  MockFeatureDiscovery.swift
-//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,39 +16,41 @@
 //  limitations under the License.
 //
 
-@testable import Core
+import BrowserServicesKit
 
-class MockFeatureDiscovery: FeatureDiscovery {
-    
+public class MockFeatureDiscovery: FeatureDiscovery {
+
+    public init() { }
+
     private var wasUsedBeforeValues: [WasUsedBeforeFeature: Bool] = [:]
     private var setWasUsedBeforeCalls: [WasUsedBeforeFeature] = []
-    
-    func setReturnValue(_ value: Bool, for feature: WasUsedBeforeFeature) {
+
+    public func setReturnValue(_ value: Bool, for feature: WasUsedBeforeFeature) {
         wasUsedBeforeValues[feature] = value
     }
-    
-    var setWasUsedBeforeCallCount: Int {
+
+    public var setWasUsedBeforeCallCount: Int {
         setWasUsedBeforeCalls.count
     }
-    
-    func wasSetWasUsedBeforeCalled(for feature: WasUsedBeforeFeature) -> Bool {
+
+    public func wasSetWasUsedBeforeCalled(for feature: WasUsedBeforeFeature) -> Bool {
         setWasUsedBeforeCalls.contains(feature)
     }
-    
-    func reset() {
+
+    public func reset() {
         wasUsedBeforeValues.removeAll()
         setWasUsedBeforeCalls.removeAll()
     }
 
-    func setWasUsedBefore(_ feature: WasUsedBeforeFeature) {
+    public func setWasUsedBefore(_ feature: WasUsedBeforeFeature) {
         setWasUsedBeforeCalls.append(feature)
     }
-    
-    func wasUsedBefore(_ feature: WasUsedBeforeFeature) -> Bool {
+
+    public func wasUsedBefore(_ feature: WasUsedBeforeFeature) -> Bool {
         return wasUsedBeforeValues[feature] ?? false
     }
-    
-    func addToParams(_ params: [String: String], forFeature feature: Core.WasUsedBeforeFeature) -> [String: String] {
+
+    public func addToParams(_ params: [String: String], forFeature feature: WasUsedBeforeFeature) -> [String: String] {
         var updatedParams = params
         let wasUsed = wasUsedBefore(feature)
         updatedParams["was_used_before"] = wasUsed ? "1" : "0"

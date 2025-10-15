@@ -77,7 +77,8 @@ final class AppContentBlocking {
         historyCoordinator: HistoryDataSource,
         fireproofDomains: DomainFireproofStatusProviding,
         fireCoordinator: FireCoordinator,
-        tld: TLD
+        tld: TLD,
+        contentScopePreferences: ContentScopePreferences
     ) {
         let privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
                                                                       fetchedData: configurationStore.loadData(for: .privacyConfiguration),
@@ -99,7 +100,8 @@ final class AppContentBlocking {
             historyCoordinator: historyCoordinator,
             fireproofDomains: fireproofDomains,
             fireCoordinator: fireCoordinator,
-            tld: tld
+            tld: tld,
+            contentScopePreferences: contentScopePreferences
         )
     }
 
@@ -118,7 +120,8 @@ final class AppContentBlocking {
         historyCoordinator: HistoryDataSource,
         fireproofDomains: DomainFireproofStatusProviding,
         fireCoordinator: FireCoordinator,
-        tld: TLD
+        tld: TLD,
+        contentScopePreferences: ContentScopePreferences
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.tld = tld
@@ -152,7 +155,8 @@ final class AppContentBlocking {
                                                   bookmarkManager: bookmarkManager,
                                                   historyCoordinator: historyCoordinator,
                                                   fireproofDomains: fireproofDomains,
-                                                  fireCoordinator: fireCoordinator)
+                                                  fireCoordinator: fireCoordinator,
+                                                  contentScopePreferences: contentScopePreferences)
 
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,
                                                                           compiledRulesSource: contentBlockingManager,

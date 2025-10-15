@@ -104,6 +104,9 @@ let package = Package(
             dependencies: [
                 "BrowserServicesKit",
                 "WKAbstractions",
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
             ]
         ),
         .target(
@@ -119,6 +122,9 @@ let package = Package(
             name: "PersistenceTestingUtils",
             dependencies: [
                 "Persistence"
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
             ]
         ),
         .target(
@@ -234,6 +240,9 @@ let package = Package(
                 .process("Resources/contentScope.js"),
                 .process("Resources/contentScopeIsolated.js"),
                 .copy("Resources/pages"),
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
             ]
         ),
         .target(

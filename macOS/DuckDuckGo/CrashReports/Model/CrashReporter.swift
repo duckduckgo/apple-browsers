@@ -48,6 +48,11 @@ final class CrashReporter {
         let crashReports = reader.getCrashReports(since: lastCheckDate)
         self.lastCheckDate = Date()
 
+        guard AppVersion.runType == .normal else {
+            // Avoid sending crashes when the app is being used in a test suite.
+            return
+        }
+
         guard let latest = crashReports.last else {
             // No new crash reports
             return

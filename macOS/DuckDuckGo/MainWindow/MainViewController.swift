@@ -858,6 +858,24 @@ extension MainViewController {
         let windowController = PerformanceTestWindowController(webView: currentTab.webView)
         windowController.showWindow(nil)
     }
+
+    @objc func testCurrentSitePerformanceWithSafari() {
+        // Get the current tab's URL
+        guard let currentTab = tabCollectionViewModel.selectedTabViewModel?.tab,
+              let url = currentTab.url else {
+            let alert = NSAlert()
+            alert.messageText = "No Active Page"
+            alert.informativeText = "Please navigate to a webpage first to test its performance with Safari."
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+            return
+        }
+
+        // Launch Safari performance test window
+        let windowController = SafariPerformanceTestWindowController(url: url)
+        windowController.showWindow(nil)
+    }
 }
 
 // MARK: - BrowserTabViewControllerDelegate

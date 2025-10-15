@@ -1627,8 +1627,22 @@ struct UserText {
     static let manageFireproofSites = NSLocalizedString("fireproof.manage-sites", value: "Manage Fireproof Sites…", comment: "Fireproof settings button caption")
     static let autoClear = NSLocalizedString("auto.clear", value: "Auto-Clear", comment: "Header of a section in Settings. The setting configures clearing data automatically after quitting the app.")
     static let automaticallyClearData = NSLocalizedString("automatically.clear.data", value: "Automatically delete tabs and browsing data when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing data automatically after quitting the app.")
-    static let warnBeforeQuit = NSLocalizedString("warn.before.quit", value: "Warn me that tabs and data will be deleted when quitting", comment: "Label after the checkbox in Settings which configures a warning before clearing data on the application termination.")
-    static let warnBeforeQuitDialogHeader = NSLocalizedString("warn.before.quit.dialog.header", value: "Clear tabs and browsing data and quit DuckDuckGo?", comment: "A header of warning before clearing data on the application termination.")
+    // Strings to be translated: https://app.asana.com/1/137249556945/project/72649045549333/task/1211370814674975?focus=true
+    static let autoClearAIChatHistory = "Delete Duck.ai chat history when DuckDuckGo quits"
+    static func warnBeforeQuit(_ clearChats: Bool) -> String {
+        if clearChats {
+            return "Warn me that tabs, data, and chats will be deleted when quitting"
+        } else {
+            return NSLocalizedString("warn.before.quit", value: "Warn me that tabs and data will be deleted when quitting", comment: "Label after the checkbox in Settings which configures a warning before clearing data on the application termination.")
+        }
+    }
+    static func warnBeforeQuitDialogHeader(_ clearChats: Bool) -> String {
+        if clearChats {
+            return "Clear tabs, browsing data, and chats and quit DuckDuckGo?"
+        } else {
+            return NSLocalizedString("warn.before.quit.dialog.header", value: "Clear tabs and browsing data and quit DuckDuckGo?", comment: "A header of warning before clearing data on the application termination.")
+        }
+    }
     static let warnBeforeQuitDialogCheckboxMessage = NSLocalizedString("warn.before.quit.dialog.checkbox.message", value: "Warn me every time", comment: "A label after checkbox to configure the warning before clearing data on the application termination.")
     static let disableAutoClearToEnableSessionRestore = NSLocalizedString("disable.auto.clear.to.enable.session.restore",
                                                                           value: "Your session won't be restored if Auto-Clear is turned on. Fire Windows also won’t be restored.",

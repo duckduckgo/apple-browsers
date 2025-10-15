@@ -242,13 +242,13 @@ final class EmailConfirmationJobTests: XCTestCase {
 final class MockEmailConfirmationErrorDelegate: EmailConfirmationErrorDelegate {
     var didCallError = false
     var lastError: Error?
-    var lastBrokerName: String?
+    var lastBrokerURL: String?
     var lastVersion: String?
 
-    func emailConfirmationOperationDidError(_ error: Error, withBrokerName brokerName: String?, version: String?) {
+    func emailConfirmationOperationDidError(_ error: Error, withBrokerURL brokerURL: String?, version: String?) {
         didCallError = true
         lastError = error
-        lastBrokerName = brokerName
+        lastBrokerURL = brokerURL
         lastVersion = version
     }
 }

@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import AttributedMetric
 
 public final class AttributedMetricOriginProviderMock: AttributedMetricOriginProvider {
     public let origin: String?

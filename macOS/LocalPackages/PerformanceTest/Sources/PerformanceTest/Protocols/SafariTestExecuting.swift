@@ -1,5 +1,5 @@
 //
-//  MockAttributionOriginProvider.swift
+//  SafariTestExecuting.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -17,13 +17,14 @@
 //
 
 import Foundation
-import Subscription
-@testable import DuckDuckGo_Privacy_Browser
 
-final class MockAttributionOriginProvider: AttributionOriginProvider {
-    let origin: String?
+@MainActor
+public protocol SafariTestExecuting {
+    var url: URL { get }
+    var iterations: Int { get }
+    var progressHandler: ((Int, Int, String) -> Void)? { get set }
+    var isCancelled: () -> Bool { get set }
 
-    init(origin: String? = nil) {
-        self.origin = origin
-    }
+    func runTest() async throws -> String
+    func cleanup()
 }

@@ -48,7 +48,8 @@ class OnboardingManagerTests: XCTestCase {
             fireproofDomains: MockFireproofDomains(domains: []),
             faviconManager: FaviconManagerMock(),
             windowControllersManager: WindowControllersManagerMock(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner()
         )
         startupPreferences = StartupPreferences(persistor: startupPersistor, appearancePreferences: appearancePreferences)
         importProvider = CapturingDataImportProvider()

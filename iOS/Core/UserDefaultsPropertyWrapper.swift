@@ -103,6 +103,8 @@ public struct UserDefaultsWrapper<T> {
         case autofillSurveysCompleted = "com.duckduckgo.app.autofill.SurveysCompleted"
         case autofillExtensionEnabled = "com.duckduckgo.app.autofill.ExtensionEnabled"
 
+        case contentScopeDebugStateEnabled = "com.duckduckgo.ios.debug.contentScopeDebugStateEnabled"
+
         case syncPromoBookmarksDismissed = "com.duckduckgo.app.sync.PromoBookmarksDismissed"
         case syncPromoPasswordsDismissed = "com.duckduckgo.app.sync.PromoPasswordsDismissed"
 

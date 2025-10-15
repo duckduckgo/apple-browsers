@@ -256,6 +256,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Rollout feature flag for entry point improvements
     case improvements
+
+    /// Allows user to clear AI Chat history with the fire button or auto-clear
+    case clearAIChatHistory
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

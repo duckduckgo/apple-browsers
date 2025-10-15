@@ -427,9 +427,6 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
         }
 
         let updater = SPUUpdater(hostBundle: Bundle.main, applicationBundle: Bundle.main, userDriver: userDriver, delegate: self)
-        Task { @MainActor in
-            updater.checkForUpdateInformation()
-        }
 
 #if DEBUG
         if NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG) {

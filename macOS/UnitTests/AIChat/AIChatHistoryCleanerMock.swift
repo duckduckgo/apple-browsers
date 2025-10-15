@@ -1,5 +1,5 @@
 //
-//  AttributedMetricDefaultBrowserProvidingMock.swift
+//  AIChatHistoryCleanerMock.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,9 +16,14 @@
 //  limitations under the License.
 //
 
-import Foundation
-import AttributedMetric
+import Combine
+@testable import DuckDuckGo_Privacy_Browser
 
-public final class AttributedMetricDefaultBrowserProvidingMock: AttributedMetricDefaultBrowserProviding {
-    public var isDefaultBrowser: Bool = false
+final class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
+    @Published
+    var shouldDisplayCleanAIChatHistoryOption: Bool = false
+
+    var shouldDisplayCleanAIChatHistoryOptionPublisher: AnyPublisher<Bool, Never> {
+        $shouldDisplayCleanAIChatHistoryOption.eraseToAnyPublisher()
+    }
 }

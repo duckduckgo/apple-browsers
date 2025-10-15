@@ -15,6 +15,48 @@
             }
         ]
     },
+    "m_mac_dbp_optoutjob_at-42-days_confirmed": {
+        "description": "Fired when a confirmed opt-out reaches 42 days since submission",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "isInternalUser",
+                "description": "Whether the user is internal",
+                "type": "string",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "data_broker",
+                "description": "The URL of the data broker the opt out was acting on",
+                "type": "string"
+            }
+        ]
+    },
+    "m_mac_dbp_optoutjob_at-42-days_unconfirmed": {
+        "description": "Fired when an opt-out remains unconfirmed 42 days after submission",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "isInternalUser",
+                "description": "Whether the user is internal",
+                "type": "string",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "data_broker",
+                "description": "The URL of the data broker the opt out was acting on",
+                "type": "string"
+            }
+        ]
+    },
     "m_mac_dbp_optout_stage_condition-found": {
         "description": "Fired when DBP runs a condition action and its expectation is met",
         "owners": ["samsymons", "quanganhdo"],
@@ -36,7 +78,7 @@
             },
             {
                 "key": "data_broker",
-                "description": "The name of the data broker that this action was operating on",
+                "description": "The URL of the data broker that this action was operating on",
                 "type": "string"
             },
             {
@@ -82,7 +124,7 @@
             },
             {
                 "key": "data_broker",
-                "description": "The name of the data broker that this action was operating on",
+                "description": "The URL of the data broker that this action was operating on",
                 "type": "string"
             },
             {
@@ -116,7 +158,7 @@
             "appVersion",
             "pixelSource",
             {
-                "key": "data_broker_url",
+                "key": "data_broker",
                 "description": "The URL of the data broker that this action was operating on",
                 "type": "string"
             },
@@ -141,7 +183,7 @@
             "appVersion",
             "pixelSource",
             {
-                "key": "data_broker_url",
+                "key": "data_broker",
                 "description": "The URL of the data broker that this action was operating on",
                 "type": "string"
             },
@@ -173,7 +215,7 @@
             "appVersion",
             "pixelSource",
             {
-                "key": "data_broker_url",
+                "key": "data_broker",
                 "description": "The URL of the data broker that this action was operating on",
                 "type": "string"
             },
@@ -213,7 +255,7 @@
             "appVersion",
             "pixelSource",
             {
-                "key": "data_broker_url",
+                "key": "data_broker",
                 "description": "The URL of the data broker that this action was operating on",
                 "type": "string"
             },
@@ -248,7 +290,7 @@
             "appVersion",
             "pixelSource",
             {
-                "key": "data_broker_url",
+                "key": "data_broker",
                 "description": "The URL of the data broker that this action was operating on",
                 "type": "string"
             },
@@ -288,7 +330,7 @@
             "appVersion",
             "pixelSource",
             {
-                "key": "data_broker_url",
+                "key": "data_broker",
                 "description": "The URL of the data broker that this action was operating on",
                 "type": "string"
             },
@@ -328,7 +370,7 @@
             "appVersion",
             "pixelSource",
             {
-                "key": "data_broker_url",
+                "key": "data_broker",
                 "description": "The URL of the data broker that this action was operating on",
                 "type": "string"
             },
@@ -364,7 +406,7 @@
                 "enum": ["true", "false"]
             },
             {
-                "key": "data_broker_url",
+                "key": "data_broker",
                 "description": "The URL of the data broker that this action was operating on",
                 "type": "string"
             },
@@ -439,7 +481,7 @@
                 "enum": ["pir-opt-out-submission"]
             },
             {
-                "key": "feature.data.ext.data_broker_url",
+                "key": "feature.data.ext.data_broker",
                 "type": "string",
                 "description": "The URL of the data broker associated with this opt-out submission"
             },
@@ -517,7 +559,7 @@
                 "enum": ["pir-opt-out-confirmation"]
             },
             {
-                "key": "feature.data.ext.data_broker_url",
+                "key": "feature.data.ext.data_broker",
                 "type": "string",
                 "description": "The URL of the data broker associated with this confirmation flow"
             },
@@ -530,6 +572,47 @@
                 "key": "feature.data.ext.confirmation_latency_ms",
                 "type": "string",
                 "description": "Duration in milliseconds between the record being found and the opt-out confirmation"
+            }
+        ]
+    },
+    "m_mac_dbp_data_broker_action-failed_error": {
+        "description": "Fired when a scan or opt-out action fails while processing a data broker.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "data_broker",
+                "description": "The URL of the data broker that this action was operating on",
+                "type": "string"
+            },
+            {
+                "key": "broker_version",
+                "description": "The version of the broker JSON file",
+                "type": "string"
+            },
+            {
+                "key": "actionID",
+                "description": "The unique identifier of the action that failed",
+                "type": "string"
+            },
+            {
+                "key": "message",
+                "description": "Failure message describing why the action failed",
+                "type": "string"
+            },
+            {
+                "key": "stepType",
+                "description": "Identifies the failing step type (scan or optOut)",
+                "type": "string",
+                "enum": ["scan", "optOut", "unknown"]
+            },
+            {
+                "key": "parent",
+                "description": "The parent data broker of the one this action was operating on",
+                "type": "string"
             }
         ]
     }

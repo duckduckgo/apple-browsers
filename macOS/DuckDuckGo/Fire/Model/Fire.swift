@@ -325,7 +325,9 @@ final class Fire: FireProtocol {
             self.burnZoomLevels(of: domains)
 
             if includingChatHistory {
+                group.enter()
                 await burnChatHistory()
+                group.leave()
             }
 
             group.notify(queue: .main) {
@@ -375,6 +377,7 @@ final class Fire: FireProtocol {
 
             await self.burnWebCache()
             await self.burnPrivacyStats()
+            await burnChatHistory()
             self.burnAllVisitedLinks()
             self.burnAllHistory {
                 self.burnPermissions {
@@ -388,8 +391,6 @@ final class Fire: FireProtocol {
             self.burnRecentlyClosed()
             self.burnAutoconsentCache()
             self.burnZoomLevels()
-
-            await burnChatHistory()
 
             group.notify(queue: .main) {
                 self.dispatchGroup = nil

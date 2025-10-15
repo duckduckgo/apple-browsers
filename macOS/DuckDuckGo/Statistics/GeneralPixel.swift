@@ -30,7 +30,7 @@ enum GeneralPixel: PixelKitEvent {
     case crashReportCRCIDMissing
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
     case launch
-    case dailyActiveUser(isDefault: Bool, isAddedToDock: Bool?)
+    case dailyActiveUser
     case dailyIsDefaultBrowser(isDefault: Bool)
     case dailyIsAddedToDock(isAddedToDock: Bool)
     case dailyFireWindowConfiguration(startupFireWindow: Bool, openFireWindowByDefault: Bool, fireAnimationEnabled: Bool)

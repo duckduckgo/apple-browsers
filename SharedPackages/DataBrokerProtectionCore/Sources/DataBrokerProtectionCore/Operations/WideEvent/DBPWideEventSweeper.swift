@@ -23,8 +23,8 @@ import PixelKit
 public final class DBPWideEventSweeper {
 
     public enum Constants {
-        public static let cappedSubmissionWindow: TimeInterval = .days(7)
-        public static let cappedConfirmationWindow: TimeInterval = .days(14)
+        public static let defaultSubmissionWindow: TimeInterval = .days(7)
+        public static let defaultConfirmationWindow: TimeInterval = .days(14)
     }
 
     private let wideEvent: WideEventManaging
@@ -34,8 +34,8 @@ public final class DBPWideEventSweeper {
     private let queue = DispatchQueue(label: "com.duckduckgo.dbp-wide-event-sweeper", qos: .utility)
 
     public init(wideEvent: WideEventManaging,
-                submissionWindow: TimeInterval = Constants.cappedSubmissionWindow,
-                confirmationWindow: TimeInterval = Constants.cappedConfirmationWindow,
+                submissionWindow: TimeInterval = Constants.defaultSubmissionWindow,
+                confirmationWindow: TimeInterval = Constants.defaultConfirmationWindow,
                 currentDateForTesting: @escaping () -> Date = Date.init) {
         self.wideEvent = wideEvent
         self.submissionWindow = submissionWindow

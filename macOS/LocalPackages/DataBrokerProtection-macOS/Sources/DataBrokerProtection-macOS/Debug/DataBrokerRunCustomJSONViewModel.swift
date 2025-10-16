@@ -655,7 +655,7 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     func setStage(_ stage: Stage) {
     }
 
-    func setLastActionId(_ actionID: String) {
+    func setLastAction(_ action: Action) {
     }
 
     func fireOptOutConditionFound() {

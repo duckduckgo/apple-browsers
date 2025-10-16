@@ -487,11 +487,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             pinnedTabsCollectionView.bottomAnchor.constraint(equalTo: pinnedTabsContainerView.bottomAnchor),
             pinnedTabsCollectionView.trailingAnchor.constraint(equalTo: pinnedTabsContainerView.trailingAnchor)
         ])
-
-        pinnedTabsCollectionView.setContentHuggingPriority(.required, for: .horizontal)
-        pinnedTabsCollectionView.setContentCompressionResistancePriority(.required, for: .horizontal)
-        pinnedTabsContainerView.setContentHuggingPriority(.required, for: .horizontal)
-        pinnedTabsContainerView.setContentCompressionResistancePriority(.required, for: .horizontal)
     }
 
     private func subscribeToPinnedTabsViewModelInputs() {
@@ -1394,6 +1389,8 @@ extension TabBarViewController: NSCollectionViewDelegate {
 
         if highlightState == .forSelection {
             self.collectionView.clearSelection()
+            pinnedTabsCollectionView?.clearSelection()
+
             let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(indexPath.item) : .unpinned(indexPath.item)
             tabCollectionViewModel.select(at: tabIndex)
 

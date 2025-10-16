@@ -1026,6 +1026,7 @@ extension TabBarViewItem: ThemeUpdateListening {
 extension TabBarViewItem: NSMenuDelegate {
 
     func menuNeedsUpdate(_ menu: NSMenu) {
+        let isPinnedTab = (representedObject as? TabViewModel)?.tab.isPinned == true
         /// Trigger context menu callback from here.
         /// It can't be called from `mouseClickView(_:rightMouseDownEvent:)`
         /// because that one is called after handling the right click,
@@ -1056,15 +1057,19 @@ extension TabBarViewItem: NSMenuDelegate {
         }
         menu.addItem(.separator())
 
-        // Bookmark All Section
-        addBookmarkAllTabsMenuItem(to: menu)
-        menu.addItem(.separator())
+        if !isPinnedTab {
+            // Bookmark All Section
+            addBookmarkAllTabsMenuItem(to: menu)
+            menu.addItem(.separator())
+        }
 
         // Close Section
         addCloseMenuItem(to: menu)
-        addCloseOtherSubmenu(to: menu, tabBarItemState: otherItemsState)
-        if !isBurner {
-            addMoveToNewWindowMenuItem(to: menu, areThereOtherTabs: areThereOtherTabs)
+        if !isPinnedTab {
+            addCloseOtherSubmenu(to: menu, tabBarItemState: otherItemsState)
+            if !isBurner {
+                addMoveToNewWindowMenuItem(to: menu, areThereOtherTabs: areThereOtherTabs)
+            }
         }
 
         if tabViewModel?.canKillWebContentProcess == true {

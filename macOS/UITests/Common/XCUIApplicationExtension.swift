@@ -65,7 +65,9 @@ extension XCUIApplication {
         static let openFireWindowByDefaultCheckbox = "PreferencesDataClearingView.openFireWindowByDefault"
     }
 
-    static func setUp(environment: [String: String]? = nil, featureFlags: [String: Bool] = ["visualUpdates": true]) -> XCUIApplication {
+    static func setUp(environment: [String: String]? = nil,
+                      featureFlags: [String: Bool] = ["visualUpdates": true],
+                      arguments: [String]? = nil) -> XCUIApplication {
         let app = XCUIApplication()
         if let environment {
             app.launchEnvironment = app.launchEnvironment.merging(environment, uniquingKeysWith: { $1 })
@@ -74,6 +76,9 @@ extension XCUIApplication {
         }
         if !featureFlags.isEmpty {
             app.launchEnvironment["FEATURE_FLAGS"] = featureFlags.map { "\($0)=\($1)" }.joined(separator: " ")
+        }
+        if let arguments {
+            app.launchArguments.append(contentsOf: arguments)
         }
         app.launch()
         return app

@@ -35,19 +35,12 @@ final class WideEventService {
     }
 
     func sendPendingEvents() async {
-        let shouldSendSubscriptionPurchaseWidePixel = featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement)
-        let shouldSendSubscriptionRestoreWidePixel = featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement)
-
-        if !shouldSendSubscriptionPurchaseWidePixel && !shouldSendSubscriptionRestoreWidePixel {
-            return
-        }
-
-        if shouldSendSubscriptionPurchaseWidePixel {
+        if featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) {
             await sendAbandonedSubscriptionPurchasePixels()
             await sendDelayedSubscriptionPurchasePixels()
         }
 
-        if shouldSendSubscriptionRestoreWidePixel {
+        if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
             await sendAbandonedSubscriptionRestorePixels()
             await sendDelayedSubscriptionRestorePixels()
         }

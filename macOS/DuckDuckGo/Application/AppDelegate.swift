@@ -1056,7 +1056,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         freemiumDBPScanResultPolling = DefaultFreemiumDBPScanResultPolling(dataManager: DataBrokerProtectionManager.shared.dataManager, freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPScanResultPolling?.startPollingOrObserving()
 
-        wideEventService.sendAbandonedPixels { }
+        Task {
+            await wideEventService.sendPendingEvents()
+        }
 
         PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
     }

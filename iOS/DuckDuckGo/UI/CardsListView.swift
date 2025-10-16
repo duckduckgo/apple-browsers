@@ -241,7 +241,8 @@ private enum Metrics {
         static let titleFontSize: CGFloat = 28.0
         static let titleKerning: CGFloat = 0.38
         static let cardsVerticalSpacing: CGFloat = 12.0
-        static let buttonBottomPadding: CGFloat = 12.0
+        @MainActor
+        static let buttonBottomPadding: CGFloat = MetricBuilder<CGFloat>.init(iPhone: 12.0, iPad: 24.0).build()
     }
 
     enum Card {

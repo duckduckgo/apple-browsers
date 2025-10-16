@@ -62905,62 +62905,14 @@
         }
       }
     },
-    "pm.empty.default.description.extended.v2.autolock.off" : {
+    "pm.empty.default.passwords.description.extended.v2.autolock.off" : {
       "comment" : "Label for default empty state description when the autolock feature is off",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Passwörter sind verschlüsselt."
-          }
-        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Passwords are encrypted."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Las contraseñas están cifradas."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Les mots de passe sont cryptés."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Le password sono crittografate."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Wachtwoorden worden versleuteld."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Hasła są szyfrowane."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "As palavras-passe estão encriptadas."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Пароли подвергаются шифрованию."
           }
         }
       }

@@ -711,9 +711,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     // MARK: - Drag and Drop
 
-    private func moveItemIfNeeded(to newIndex: Int) {
-        guard TabDragAndDropManager.shared.sourceUnit?.tabCollectionViewModel === tabCollectionViewModel,
-              tabCollectionViewModel.tabCollection.tabs.indices.contains(newIndex),
+    private func moveItemIfNeeded(to newIndex: TabIndex) {
+        let tabCollection = newIndex.isPinnedTab ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
+        guard let tabCollection,
+              TabDragAndDropManager.shared.sourceUnit?.tabCollectionViewModel === tabCollectionViewModel,
+              tabCollection.tabs.indices.contains(newIndex.item),
               let oldIndex = TabDragAndDropManager.shared.sourceUnit?.index,
               oldIndex != newIndex else { return }
 
@@ -1147,10 +1149,13 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         appendToCollectionView(selected: selected)
     }
 
-    func tabCollectionViewModelDidInsert(_ tabCollectionViewModel: TabCollectionViewModel,
-                                         at index: Int,
-                                         selected: Bool) {
-        let indexPathSet = Set(arrayLiteral: IndexPath(item: index))
+    func tabCollectionViewModelDidInsert(_ tabCollectionViewModel: TabCollectionViewModel, at index: TabIndex, selected: Bool) {
+        let collectionView = index.isPinnedTab ? pinnedTabsCollectionView : self.collectionView
+        guard let collectionView else {
+            Logger.general.error("collection view is nil")
+            return
+        }
+        let indexPathSet = Set(arrayLiteral: IndexPath(item: index.item))
         if selected {
             clearSelection(animated: true)
         }
@@ -1160,15 +1165,18 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
             collectionView.scrollToSelected()
         }
 
-        updateTabMode()
-        updateEmptyTabArea()
         hideTabPreview()
-        if tabMode == .overflow {
-            let isLastItem = collectionView.numberOfItems(inSection: 0) == index + 1
-            if isLastItem {
-                scrollCollectionViewToEnd()
-            } else {
-                collectionView.scroll(to: IndexPath(item: index))
+
+        if index.isUnpinnedTab {
+            updateTabMode()
+            updateEmptyTabArea()
+            if tabMode == .overflow {
+                let isLastItem = collectionView.numberOfItems(inSection: 0) == index.item + 1
+                if isLastItem {
+                    scrollCollectionViewToEnd()
+                } else {
+                    collectionView.scroll(to: IndexPath(item: index.item))
+                }
             }
         }
     }
@@ -1221,13 +1229,21 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         }
     }
 
-    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: Int, to newIndex: Int) {
-        let indexPath = IndexPath(item: index)
-        let newIndexPath = IndexPath(item: newIndex)
+    /// index and newIndex are guaranteed to be from the same collection (pinned or unpinned)
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: TabIndex, to newIndex: TabIndex) {
+        let collectionView = index.isPinnedTab ? pinnedTabsCollectionView : self.collectionView
+        guard let collectionView else {
+            return
+        }
+
+        let indexPath = IndexPath(item: index.item)
+        let newIndexPath = IndexPath(item: newIndex.item)
         collectionView.animator().moveItem(at: indexPath, to: newIndexPath)
 
-        updateTabMode()
-        hideTabPreview()
+        if index.isUnpinnedTab {
+            updateTabMode()
+            hideTabPreview()
+        }
     }
 
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didSelectAt selectionIndex: Int?) {
@@ -1451,24 +1467,26 @@ extension TabBarViewController: NSCollectionViewDelegate {
     }
 
     func collectionView(_ collectionView: NSCollectionView, draggingSession session: NSDraggingSession, willBeginAt screenPoint: NSPoint, forItemsAt indexPaths: Set<IndexPath>) {
-        guard collectionView != pinnedTabsCollectionView else {
-            return
-        }
-
         session.animatesToStartingPositionsOnCancelOrFail = false
 
         assert(indexPaths.count == 1, "TabBarViewController: More than 1 dragging index path")
         guard let indexPath = indexPaths.first else { return }
 
-        TabDragAndDropManager.shared.setSource(tabCollectionViewModel: tabCollectionViewModel, index: indexPath.item)
+        let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(indexPath.item) : .unpinned(indexPath.item)
+
+        TabDragAndDropManager.shared.setSource(tabCollectionViewModel: tabCollectionViewModel, index: tabIndex)
         hideTabPreview()
     }
 
     private static let dropToOpenDistance: CGFloat = 100
 
     func collectionView(_ collectionView: NSCollectionView, validateDrop draggingInfo: NSDraggingInfo, proposedIndexPath proposedDropIndexPath: AutoreleasingUnsafeMutablePointer<NSIndexPath>, dropOperation proposedDropOperation: UnsafeMutablePointer<NSCollectionView.DropOperation>) -> NSDragOperation {
-        guard collectionView != pinnedTabsCollectionView else {
+        switch (collectionView, draggingInfo.draggingSource as? NSCollectionView) {
+        case (self.collectionView, pinnedTabsCollectionView), (pinnedTabsCollectionView, self.collectionView):
+            /// drag & drop between pinned and unpinned collection is not supported yet
             return .none
+        default:
+            break
         }
 
         // allow dropping URLs or files
@@ -1483,22 +1501,27 @@ extension TabBarViewController: NSCollectionViewDelegate {
         guard case .private = draggingInfo.draggingSourceOperationMask,
               draggingInfo.draggingPasteboard.types == [TabBarViewItemPasteboardWriter.utiInternalType] else { return .none }
 
+        let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(proposedDropIndexPath.pointee.item) : .unpinned(proposedDropIndexPath.pointee.item)
+
         // move tab within one window if needed
-        moveItemIfNeeded(to: proposedDropIndexPath.pointee.item)
+        moveItemIfNeeded(to: tabIndex)
 
         return .private
     }
 
     func collectionView(_ collectionView: NSCollectionView, acceptDrop draggingInfo: NSDraggingInfo, indexPath: IndexPath, dropOperation: NSCollectionView.DropOperation) -> Bool {
-        guard collectionView != pinnedTabsCollectionView else {
+        let tabCollection = collectionView == pinnedTabsCollectionView ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
+        guard let tabCollection else {
             return false
         }
 
-        let newIndex = min(indexPath.item + 1, tabCollectionViewModel.tabCollection.tabs.count)
+        let newIndex = min(indexPath.item + 1, tabCollection.tabs.count)
+        let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(newIndex) : .unpinned(newIndex)
+
         if let url = draggingInfo.draggingPasteboard.url {
             // dropping URL or file
             tabCollectionViewModel.insert(Tab(content: .url(url, source: .appOpenUrl), burnerMode: tabCollectionViewModel.burnerMode),
-                                          at: .unpinned(newIndex),
+                                          at: tabIndex,
                                           selected: true)
             return true
         } else if let string = draggingInfo.draggingPasteboard.string(forType: .string), let url = URL.makeURL(from: string) {
@@ -1510,16 +1533,12 @@ extension TabBarViewController: NSCollectionViewDelegate {
               draggingInfo.draggingPasteboard.types == [TabBarViewItemPasteboardWriter.utiInternalType] else { return false }
 
         // update drop destination
-        TabDragAndDropManager.shared.setDestination(tabCollectionViewModel: tabCollectionViewModel, index: newIndex)
+        TabDragAndDropManager.shared.setDestination(tabCollectionViewModel: tabCollectionViewModel, index: tabIndex)
 
         return true
     }
 
     func collectionView(_ collectionView: NSCollectionView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, dragOperation operation: NSDragOperation) {
-        guard collectionView != pinnedTabsCollectionView else {
-            return
-        }
-
         // dropping a tab, dropping of url handled in collectionView:acceptDrop:
         guard session.draggingPasteboard.types == [TabBarViewItemPasteboardWriter.utiInternalType] else { return }
 
@@ -1554,7 +1573,7 @@ extension TabBarViewController: NSCollectionViewDelegate {
 
         // Create new window if dropped above tab bar or too far away
         if isDroppedAboveTabBar || !screenPoint.isNearRect(frameRelativeToScreen, allowedDistance: Self.dropToOpenDistance) {
-            moveToNewWindow(from: sourceIndex,
+            moveToNewWindow(from: sourceIndex.item,
                            droppingPoint: screenPoint,
                            burner: tabCollectionViewModel.isBurner)
         }

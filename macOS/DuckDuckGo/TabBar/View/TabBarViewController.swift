@@ -1020,7 +1020,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func showTabPreview(for tabBarViewItem: TabBarViewItem) {
-        let isPinned = (tabBarViewItem.representedObject as? TabViewModel)?.tab.isPinned == true
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
 
         // don‘t show tab previews when a child window is shown (Suggestions, Bookmarks etc…)
@@ -1581,7 +1581,7 @@ extension TabBarViewController: NSCollectionViewDelegate {
 extension TabBarViewController: TabBarViewItemDelegate {
 
     func tabBarViewItemSelectTab(_ tabBarViewItem: TabBarViewItem) {
-        let isPinned = (tabBarViewItem.representedObject as? TabViewModel)?.tab.isPinned == true
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
 
         guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
@@ -1594,7 +1594,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemCrashAction(_ tabBarViewItem: TabBarViewItem) {
-        let isPinned = (tabBarViewItem.representedObject as? TabViewModel)?.tab.isPinned == true
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
 
         guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
@@ -1652,7 +1652,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemCanBeDuplicated(_ tabBarViewItem: TabBarViewItem) -> Bool {
-        let isPinned = (tabBarViewItem.representedObject as? TabViewModel)?.tab.isPinned == true
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
 
         guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
@@ -1665,7 +1665,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemDuplicateAction(_ tabBarViewItem: TabBarViewItem) {
-        let isPinned = (tabBarViewItem.representedObject as? TabViewModel)?.tab.isPinned == true
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
 
         guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
@@ -1677,7 +1677,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemCanBePinned(_ tabBarViewItem: TabBarViewItem) -> Bool {
-        let isPinned = (tabBarViewItem.representedObject as? TabViewModel)?.tab.isPinned == true
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         guard !isPinned else {
             return false
         }
@@ -1690,15 +1690,23 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemPinAction(_ tabBarViewItem: TabBarViewItem) {
-        guard let indexPath = collectionView.indexPath(for: tabBarViewItem) else {
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
+        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
+
+        guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
             assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
             return
         }
 
         clearSelection()
-        tabCollectionViewModel.pinTab(at: indexPath.item)
 
-        presentPinnedTabsDiscoveryPopoverIfNecessary()
+        if isPinned {
+            tabCollectionViewModel.unpinTab(at: indexPath.item)
+        } else {
+            tabCollectionViewModel.pinTab(at: indexPath.item)
+            presentPinnedTabsDiscoveryPopoverIfNecessary()
+        }
+
     }
 
     func presentPinnedTabsDiscoveryPopoverIfNecessary() {
@@ -1730,7 +1738,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemCanBeBookmarked(_ tabBarViewItem: TabBarViewItem) -> Bool {
-        let isPinned = (tabBarViewItem.representedObject as? TabViewModel)?.tab.isPinned == true
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
 
         guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
@@ -1778,7 +1786,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemCloseAction(_ tabBarViewItem: TabBarViewItem) {
-        let isPinned = (tabBarViewItem.representedObject as? TabViewModel)?.tab.isPinned == true
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
 
         guard let indexPath = collectionView?.indexPath(for: tabBarViewItem) else {
@@ -1853,7 +1861,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemFireproofSite(_ tabBarViewItem: TabBarViewItem) {
-        let isPinned = (tabBarViewItem.representedObject as? TabViewModel)?.tab.isPinned == true
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
         let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
 
@@ -1868,7 +1876,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemMuteUnmuteSite(_ tabBarViewItem: TabBarViewItem) {
-        let isPinned = (tabBarViewItem.representedObject as? TabViewModel)?.tab.isPinned == true
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
         let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
 
@@ -1883,7 +1891,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemRemoveFireproofing(_ tabBarViewItem: TabBarViewItem) {
-        let isPinned = (tabBarViewItem.representedObject as? TabViewModel)?.tab.isPinned == true
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
         let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
 
@@ -1898,7 +1906,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, replaceContentWithDroppedStringValue stringValue: String) {
-        let isPinned = (tabBarViewItem.representedObject as? TabViewModel)?.tab.isPinned == true
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
         let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
 
@@ -1911,7 +1919,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func otherTabBarViewItemsState(for tabBarViewItem: TabBarViewItem) -> OtherTabBarViewItemsState {
-        let isPinned = (tabBarViewItem.representedObject as? TabViewModel)?.tab.isPinned == true
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
         let tabCollection = isPinned ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
 

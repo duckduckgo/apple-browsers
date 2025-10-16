@@ -576,7 +576,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         hideTabPreview()
         if tabCollectionViewModel.selectionIndex != .pinned(index), tabCollectionViewModel.select(at: .pinned(index)) {
             let previousSelection = collectionView.selectionIndexPaths
-            collectionView.clearSelection(animated: true)
+            clearSelection(animated: true)
             collectionView.reloadItems(at: previousSelection)
         }
     }
@@ -642,6 +642,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         }
 
         guard collectionView.selectionIndexPaths.first?.item != tabCollectionViewModel.selectionIndex?.item else {
+            bringSelectedTabCollectionToFront()
             collectionView.updateItemsLeftToSelectedItems()
             return
         }
@@ -651,9 +652,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
 
-        if collectionView.selectionIndexPaths.count > 0 {
-            collectionView.clearSelection()
-        }
+        clearSelection()
 
         let newSelectionIndexPath = IndexPath(item: selectionIndex.item)
         if tabMode == .divided {
@@ -662,6 +661,21 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             collectionView.selectItems(at: [newSelectionIndexPath], scrollPosition: .centeredHorizontally)
             collectionView.scrollToSelected()
         }
+
+        bringSelectedTabCollectionToFront()
+    }
+
+    private func bringSelectedTabCollectionToFront() {
+        if tabCollectionViewModel.selectionIndex?.isPinnedTab == true {
+            view.addSubview(pinnedTabsContainerView, positioned: .above, relativeTo: scrollView)
+        } else {
+            view.addSubview(scrollView, positioned: .above, relativeTo: pinnedTabsContainerView)
+        }
+    }
+
+    private func clearSelection(animated: Bool = false) {
+        collectionView.clearSelection(animated: animated)
+        pinnedTabsCollectionView?.clearSelection(animated: animated)
     }
 
     private func selectTab(with event: NSEvent) {
@@ -1138,7 +1152,7 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
                                          selected: Bool) {
         let indexPathSet = Set(arrayLiteral: IndexPath(item: index))
         if selected {
-            collectionView.clearSelection(animated: true)
+            clearSelection(animated: true)
         }
         collectionView.animator().insertItems(at: indexPathSet)
         if selected {
@@ -1185,7 +1199,7 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
                 }
 
                 if collectionView.selectionIndexPaths != selectionIndexPathSet {
-                    collectionView.clearSelection()
+                    clearSelection()
                     collectionView.animator().selectItems(at: selectionIndexPathSet, scrollPosition: .centeredHorizontally)
                 }
                 collectionView.animator().deleteItems(at: removedIndexPathSet)
@@ -1217,13 +1231,11 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
     }
 
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didSelectAt selectionIndex: Int?) {
+        clearSelection(animated: true)
         if let selectionIndex = selectionIndex {
             let selectionIndexPathSet = Set(arrayLiteral: IndexPath(item: selectionIndex))
-            collectionView.clearSelection(animated: true)
             collectionView.animator().selectItems(at: selectionIndexPathSet, scrollPosition: .centeredHorizontally)
             collectionView.scrollToSelected()
-        } else {
-            collectionView.clearSelection(animated: true)
         }
     }
 
@@ -1251,7 +1263,7 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         updateTabMode(for: collectionView.numberOfItems(inSection: 0) + 1)
 
         if selected {
-            collectionView.clearSelection()
+            clearSelection()
         }
 
         if tabMode == .divided {
@@ -1283,7 +1295,7 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
 
     private func duplicateTab(at tabIndex: TabIndex) {
         if tabIndex.isUnpinnedTab {
-            collectionView.clearSelection()
+            clearSelection()
         }
         tabCollectionViewModel.duplicateTab(at: tabIndex)
     }
@@ -1420,17 +1432,10 @@ extension TabBarViewController: NSCollectionViewDelegate {
         }
 
         if highlightState == .forSelection {
-            self.collectionView.clearSelection()
-            pinnedTabsCollectionView?.clearSelection()
+            clearSelection()
 
             let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(indexPath.item) : .unpinned(indexPath.item)
             tabCollectionViewModel.select(at: tabIndex)
-
-            if collectionView == pinnedTabsCollectionView {
-                view.addSubview(pinnedTabsContainerView, positioned: .above, relativeTo: scrollView)
-            } else {
-                view.addSubview(scrollView, positioned: .above, relativeTo: pinnedTabsContainerView)
-            }
 
             // Poor old NSCollectionView
             DispatchQueue.main.async {
@@ -1690,7 +1695,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
             return
         }
 
-        collectionView.clearSelection()
+        clearSelection()
         tabCollectionViewModel.pinTab(at: indexPath.item)
 
         presentPinnedTabsDiscoveryPopoverIfNecessary()

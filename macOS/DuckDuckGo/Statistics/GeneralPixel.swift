@@ -31,8 +31,8 @@ enum GeneralPixel: PixelKitEvent {
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
     case launch
     case dailyActiveUser
-    case dailyIsDefaultBrowser(isDefault: Bool)
-    case dailyIsAddedToDock(isAddedToDock: Bool)
+    case dailyDefaultBrowser(isDefault: Bool)
+    case dailyAddedToDock(isAddedToDock: Bool)
     case dailyFireWindowConfiguration(startupFireWindow: Bool, openFireWindowByDefault: Bool, fireAnimationEnabled: Bool)
 
     case navigation(NavigationKind)
@@ -577,11 +577,11 @@ enum GeneralPixel: PixelKitEvent {
         case .dailyActiveUser:
             return  "m_mac_daily_active_user"
 
-        case .dailyIsDefaultBrowser(isDefault: let isDefault):
-            return  "m_mac_is_default_browser_\(isDefault ? "true" : "false")"
+        case .dailyDefaultBrowser(isDefault: let isDefault):
+            return  "m_mac_\(isDefault ? "default" : "non-default")-browser"
 
-        case .dailyIsAddedToDock(isAddedToDock: let isAddedToDock):
-            return  "m_mac_is_added_to_dock_\(isAddedToDock ? "true" : "false")"
+        case .dailyAddedToDock(isAddedToDock: let isAddedToDock):
+            return  "m_mac_\(isAddedToDock ? "added" : "not-added")-to-dock"
 
         case .dailyFireWindowConfiguration:
             return "m_mac_fire_window_configuration"

@@ -1101,11 +1101,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func fireDailyActiveUserPixels() {
 #if SPARKLE
         PixelKit.fire(NonStandardEvent(GeneralPixel.dailyActiveUser), frequency: .legacyDaily)
-        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyIsDefaultBrowser(isDefault: DefaultBrowserPreferences().isDefault)), frequency: .legacyDaily)
-        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyIsAddedToDock(isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .legacyDaily)
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyDefaultBrowser(isDefault: DefaultBrowserPreferences().isDefault)), frequency: .daily)
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyAddedToDock(isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .daily)
 #else
         PixelKit.fire(NonStandardEvent(GeneralPixel.dailyActiveUser), frequency: .legacyDaily)
-        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyIsDefaultBrowser(isDefault: DefaultBrowserPreferences().isDefault)), frequency: .legacyDaily)
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyDefaultBrowser(isDefault: DefaultBrowserPreferences().isDefault)), frequency: .daily)
 #endif
     }
 

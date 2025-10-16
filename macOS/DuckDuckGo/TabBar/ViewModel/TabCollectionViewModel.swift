@@ -26,16 +26,17 @@ import PixelKit
 import WebKit
 
 /**
- * The delegate callbacks are triggered for events related to unpinned tabs only.
+ * The delegate callbacks taking `Int` indexes are triggered for events related to unpinned tabs only.
+ * Callbacks taking `TabIndex` indexes are triggered for events related to both pinned and unpinned tabs.
  */
 protocol TabCollectionViewModelDelegate: AnyObject {
 
     func tabCollectionViewModelDidAppend(_ tabCollectionViewModel: TabCollectionViewModel, selected: Bool)
-    func tabCollectionViewModelDidInsert(_ tabCollectionViewModel: TabCollectionViewModel, at index: Int, selected: Bool)
+    func tabCollectionViewModelDidInsert(_ tabCollectionViewModel: TabCollectionViewModel, at index: TabIndex, selected: Bool)
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel,
                                 didRemoveTabAt removalIndex: Int,
                                 andSelectTabAt selectionIndex: Int?)
-    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: Int, to newIndex: Int)
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: TabIndex, to newIndex: TabIndex)
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didSelectAt selectionIndex: Int?)
     func tabCollectionViewModelDidMultipleChanges(_ tabCollectionViewModel: TabCollectionViewModel)
 
@@ -430,9 +431,7 @@ final class TabCollectionViewModel: NSObject {
         if selected {
             select(at: index)
         }
-        if index.isUnpinnedTab {
-            delegate?.tabCollectionViewModelDidInsert(self, at: index.item, selected: selected)
-        }
+        delegate?.tabCollectionViewModelDidInsert(self, at: index, selected: selected)
     }
 
     func insert(_ tab: Tab, after parentTab: Tab?, selected: Bool) {
@@ -626,6 +625,25 @@ final class TabCollectionViewModel: NSObject {
         didRemoveTab(tab: movedTab!, at: .unpinned(fromIndex), withParent: parentTab)
 
         otherViewModel.selectUnpinnedTab(at: toIndex)
+        otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: .unpinned(toIndex), selected: true)
+    }
+
+    func moveTab(at fromIndex: TabIndex, to otherViewModel: TabCollectionViewModel, at toIndex: TabIndex) {
+        assert(self !== otherViewModel)
+        guard changesEnabled else { return }
+
+        guard let sourceCollection = tabCollection(for: fromIndex), let targetCollection = otherViewModel.tabCollection(for: toIndex) else {
+            return
+        }
+
+        let movedTab = sourceCollection.tabs[safe: fromIndex.item]
+        let parentTab = movedTab?.parentTab
+
+        guard sourceCollection.moveTab(at: fromIndex.item, to: targetCollection, at: toIndex.item) else { return }
+
+        didRemoveTab(tab: movedTab!, at: fromIndex, withParent: parentTab)
+
+        otherViewModel.select(at: toIndex)
         otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: true)
     }
 
@@ -736,9 +754,7 @@ final class TabCollectionViewModel: NSObject {
         tabCollection(for: tabIndex)?.insert(tabCopy, at: newIndex.item)
         select(at: newIndex)
 
-        if newIndex.isUnpinnedTab {
-            delegate?.tabCollectionViewModelDidInsert(self, at: newIndex.item, selected: true)
-        }
+        delegate?.tabCollectionViewModelDidInsert(self, at: newIndex, selected: true)
     }
 
     func pinTab(at index: Int) {
@@ -786,11 +802,11 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
-    func moveTab(at index: Int, to newIndex: Int) {
-        guard changesEnabled else { return }
+    func moveTab(at index: TabIndex, to newIndex: TabIndex) {
+        guard changesEnabled, index.isInSameSection(as: newIndex), let tabCollection = tabCollection(for: index) else { return }
 
-        tabCollection.moveTab(at: index, to: newIndex)
-        selectUnpinnedTab(at: newIndex)
+        tabCollection.moveTab(at: index.item, to: newIndex.item)
+        select(at: newIndex)
 
         delegate?.tabCollectionViewModel(self, didMoveTabAt: index, to: newIndex)
     }

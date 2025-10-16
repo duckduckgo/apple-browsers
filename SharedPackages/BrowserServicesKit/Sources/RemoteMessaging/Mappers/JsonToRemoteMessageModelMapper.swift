@@ -334,6 +334,12 @@ struct JsonToRemoteMessageModelMapper {
             return .aiChat
         case .visualDesignUpdate:
             return .visualDesignUpdate
+        case .imageAI:
+            return .imageAI
+        case .radar:
+            return .radar
+        case .keyImport:
+            return .keyImport
         case .none:
             return .announce
         }

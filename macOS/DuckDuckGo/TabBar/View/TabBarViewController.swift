@@ -992,18 +992,36 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func showTabPreview(for tabBarViewItem: TabBarViewItem) {
+        let isPinned = (tabBarViewItem.representedObject as? TabViewModel)?.tab.isPinned == true
+        let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView
+
         // don‘t show tab previews when a child window is shown (Suggestions, Bookmarks etc…)
         guard view.window?.childWindows?.contains(where: { !($0.windowController is TabPreviewWindowController) }) != true,
-              let indexPath = collectionView.indexPath(for: tabBarViewItem),
-              let tabViewModel = tabCollectionViewModel.tabViewModel(at: indexPath.item),
-              let clipView = collectionView.clipView
+              let collectionView,
+              let indexPath = collectionView.indexPath(for: tabBarViewItem)
         else {
-            Logger.general.error("TabBarViewController: Showing tab preview window failed")
+            Logger.general.error("TabBarViewController: Showing tab preview window failed - cannot determine index path for tab")
             return
         }
 
-        let position = scrollView.frame.minX + tabBarViewItem.view.frame.minX - clipView.bounds.origin.x
-        showTabPreview(for: tabViewModel, from: position)
+        let tabIndex: TabIndex = isPinned ? .pinned(indexPath.item) : .unpinned(indexPath.item)
+
+        guard let tabViewModel = tabCollectionViewModel.tabViewModel(at: tabIndex) else {
+            Logger.general.error("TabBarViewController: Showing tab preview window failed - tabViewModel not found for index \(String(reflecting: tabIndex))")
+            return
+        }
+
+        if isPinned {
+            let position = pinnedTabsContainerView.frame.minX + tabBarViewItem.view.frame.minX
+            showTabPreview(for: tabViewModel, from: position)
+        } else {
+            guard let clipView = collectionView.clipView else {
+                Logger.general.error("TabBarViewController: Showing tab preview window failed - clip view not found")
+                return
+            }
+            let position = scrollView.frame.minX + tabBarViewItem.view.frame.minX - clipView.bounds.origin.x
+            showTabPreview(for: tabViewModel, from: position)
+        }
     }
 
     private func showPinnedTabPreview(at index: Int) {

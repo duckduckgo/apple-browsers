@@ -1120,6 +1120,7 @@ struct UserText {
 
     static let privacyPolicy = NSLocalizedString("preferences.about.privacy-policy", value: "Privacy Policy", comment: "Link to privacy policy page")
     static let clickToCopyVersion = NSLocalizedString("click.to.copy.version", value: "Click to copy version", comment: "Description of a button which copies version to clipboard when clicked")
+    static let termsOfService = NSLocalizedString("preferences.about.terms-of-service", value: "Terms of Service", comment: "Link to Terms of Service page")
 
     // MARK: - Login Import & Export
 

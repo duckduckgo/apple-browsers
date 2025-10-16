@@ -492,7 +492,7 @@ jobs:
       if: failure()
       with:
         name: release-xcodebuild.log
-        path: release-xcodebuild.log
+        path: macOS/release-xcodebuild.log
         retention-days: 7
 
   verify-npm-bundles:

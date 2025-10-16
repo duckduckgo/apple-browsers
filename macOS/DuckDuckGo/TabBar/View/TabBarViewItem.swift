@@ -29,6 +29,7 @@ struct OtherTabBarViewItemsState {
 
 protocol TabBarViewModel {
     var tabContent: Tab.TabContent { get }
+    var isPinned: Bool { get }
     var title: String { get }
     var titlePublisher: Published<String>.Publisher { get }
     var faviconPublisher: Published<NSImage?>.Publisher { get }
@@ -41,6 +42,10 @@ protocol TabBarViewModel {
 
 }
 extension TabViewModel: TabBarViewModel {
+    var isPinned: Bool {
+        tab.isPinned
+    }
+
     var titlePublisher: Published<String>.Publisher { $title }
     var faviconPublisher: Published<NSImage?>.Publisher { $favicon }
     var tabContentPublisher: AnyPublisher<Tab.TabContent, Never> { tab.$content.eraseToAnyPublisher() }
@@ -1026,7 +1031,7 @@ extension TabBarViewItem: ThemeUpdateListening {
 extension TabBarViewItem: NSMenuDelegate {
 
     func menuNeedsUpdate(_ menu: NSMenu) {
-        let isPinnedTab = (representedObject as? TabViewModel)?.tab.isPinned == true
+        let isPinnedTab = tabViewModel?.isPinned == true
         /// Trigger context menu callback from here.
         /// It can't be called from `mouseClickView(_:rightMouseDownEvent:)`
         /// because that one is called after handling the right click,
@@ -1107,9 +1112,13 @@ extension TabBarViewItem: NSMenuDelegate {
     }
 
     private func addPinMenuItem(to menu: NSMenu) {
-        let pinMenuItem = NSMenuItem(title: UserText.pinTab, action: #selector(pinAction(_:)), keyEquivalent: "")
+        let isPinned = tabViewModel?.isPinned == true
+
+        let pinMenuItem = NSMenuItem(title: isPinned ? UserText.unpinTab : UserText.pinTab, action: #selector(pinAction(_:)), keyEquivalent: "")
         pinMenuItem.target = self
-        pinMenuItem.isEnabled = delegate?.tabBarViewItemCanBePinned(self) ?? false
+        if !isPinned {
+            pinMenuItem.isEnabled = delegate?.tabBarViewItemCanBePinned(self) ?? false
+        }
         menu.addItem(pinMenuItem)
     }
 
@@ -1387,6 +1396,7 @@ extension TabBarViewItem {
             var titlePublisher: Published<String>.Publisher { $title }
             @Published var favicon: NSImage?
             var faviconPublisher: Published<NSImage?>.Publisher { $favicon }
+            var isPinned: Bool
             @Published var tabContent: Tab.TabContent = .none
             var tabContentPublisher: AnyPublisher<Tab.TabContent, Never> { $tabContent.eraseToAnyPublisher() }
             @Published var usedPermissions = Permissions()
@@ -1397,11 +1407,12 @@ extension TabBarViewItem {
             }
             let crashIndicatorModel: TabCrashIndicatorModel = TabCrashIndicatorModel()
             var canKillWebContentProcess: Bool = false
-            init(width: CGFloat, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false) {
+            init(width: CGFloat, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, isPinned: Bool = false, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false) {
                 self.width = width
                 self.title = title
                 self.favicon = favicon
                 self.tabContent = tabContent
+                self.isPinned = isPinned
                 self.usedPermissions = usedPermissions
                 self.audioState = audioState ?? .unmuted(isPlayingAudio: false)
                 self.isSelected = selected

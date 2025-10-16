@@ -261,6 +261,9 @@ public struct UserDefaultsWrapper<T> {
 
         // SAD/ATT Debug
         case debugSetDefaultAndAddToDockPromptCurrentDateKey = "com.duckduckgo.ios.debug.setDefaultAndAddToDockPromptCurrentDate"
+
+        // Win-back Offer Debug
+        case debugWinBackOfferSimulatedTodayDate = "com.duckduckgo.debug.winBackOfferSimulatedTodayDate"
     }
 
     enum RemovedKeys: String, CaseIterable {

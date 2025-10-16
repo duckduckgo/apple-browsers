@@ -33,6 +33,14 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
     @Published var email: String?
     var hasEmail: Bool { !(email?.isEmpty ?? true) }
 
+    var expiredSubscriptionPurchaseButtonTitle: String {
+        if winBackOfferVisibilityManager.isOfferAvailable {
+            return UserText.winBackCampaignLoggedInPreferencesCTA
+        } else {
+            return UserText.viewPlansExpiredButtonTitle
+        }
+    }
+
     private var subscriptionPlatform: DuckDuckGoSubscription.Platform?
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
@@ -41,6 +49,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
         subscriptionManager.accountManager
     }
     private let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
+    private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
 
     private var subscriptionChangeObserver: Any?
@@ -51,9 +60,11 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     public init(userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
                 subscriptionManager: SubscriptionManager,
+                winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
                 subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
+        self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
 
         Task {
             await self.updateSubscription(cachePolicy: .returnCacheDataElseLoad)
@@ -111,7 +122,11 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     @MainActor
     func purchaseAction() {
-        userEventHandler(.openURL(.purchase))
+        if winBackOfferVisibilityManager.isOfferAvailable {
+
+        } else {
+            userEventHandler(.openURL(.purchase))
+        }
     }
 
     enum ChangePlanOrBillingAction {

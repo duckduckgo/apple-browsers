@@ -5878,6 +5878,66 @@
           }
         }
       }
+    },
+    "win-back.campaign.logged-in.preferences.cta" : {
+      "comment" : "CTA of the message displayed for logged in users to resubscribe during the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Resubscribe and Save 25%"
+          }
+        }
+      }
+    },
+    "win-back.campaign.logged-in.preferences.message" : {
+      "comment" : "Message of the message displayed for logged in users to resubscribe during the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%. Limited time offer."
+          }
+        }
+      }
+    },
+    "win-back.campaign.logged-out.preferences.cta" : {
+      "comment" : "CTA of the message displayed for logged out users to resubscribe during the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "See Offer"
+          }
+        }
+      }
+    },
+    "win-back.campaign.logged-out.preferences.existing.subscription.button" : {
+      "comment" : "Button for logged out users to resubscribe during the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I Have a Subscription"
+          }
+        }
+      }
+    },
+    "win-back.campaign.logged-out.preferences.title" : {
+      "comment" : "Title of the message displayed for logged out users to resubscribe during the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We want you back! Get 25% off."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

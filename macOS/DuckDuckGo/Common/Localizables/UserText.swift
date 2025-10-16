@@ -1918,4 +1918,16 @@ struct UserText {
         return String(format: localized, entity)
     }
     static let storageAccessPromptLabel3 = NSLocalizedString("storage.access.prompt.label.3", value: "DuckDuckGo protections still apply either way.", comment: "Part 3 of an alert asking users whether to share cookies: DuckDuckGo protections still apply either way.")
+
+    // MARK - Win-back Campaign
+    static let winBackCampaignModalTitle = NSLocalizedString("win-back.campaign.modal.title", value: "We want you back! Get 25% off.", comment: "Title of the modal dialog promoting the win-back campaign")
+    static let winBackCampaignModalMessage = NSLocalizedString("win-back.campaign.modal.message", value: "Stay protected with our VPN, private AI, and more.\nResubscribe today and save 25%. Limited time offer.", comment: "Message of the modal dialog promoting the win-back campaign")
+    static let winBackCampaignModalCTA = NSLocalizedString("win-back.campaign.modal.cta", value: "See Offer", comment: "CTA of the modal dialog promoting the win-back campaign")
+    static let winBackCampaignModalDismiss = NSLocalizedString("win-back.campaign.modal.dismiss", value: "Not Now", comment: "Dismiss of the modal dialog promoting the win-back campaign")
+
+    static let winBackCampaignLastDayMessageTitle = NSLocalizedString("win-back.campaign.last-day.message.title", value: "Last day to save 25%!", comment: "Title of message displayed on the last day of the win-back campaign")
+    static let winBackCampaignLastDayMessageText = NSLocalizedString("win-back.campaign.last-day.message.text", value: "Stay protected with our VPN, private AI, and more.\nResubscribe today and save 25%. Limited time offer.", comment: "Message of the message displayed on the last day of the win-back campaign")
+    static let winBackCampaignLastDayMessageCTA = NSLocalizedString("win-back.campaign.last-day.message.cta", value: "See Offer", comment: "CTA of the message displayed on the last day of the win-back campaign")
+
+    static let winBackCampaignMenuBadgeText = NSLocalizedString("win-back.campaign.menu.badge.text", value: "SAVE 25%", comment: "Text for the badge displayed on the Subscription menu item during the win-back campaign")
 }

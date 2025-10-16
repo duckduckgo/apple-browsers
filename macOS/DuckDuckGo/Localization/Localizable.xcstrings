@@ -93190,6 +93190,102 @@
         }
       }
     },
+    "win-back.campaign.last-day.message.cta" : {
+      "comment" : "CTA of the message displayed on the last day of the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "See Offer"
+          }
+        }
+      }
+    },
+    "win-back.campaign.last-day.message.text" : {
+      "comment" : "Message of the message displayed on the last day of the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Stay protected with our VPN, private AI, and more.\nResubscribe today and save 25%. Limited time offer."
+          }
+        }
+      }
+    },
+    "win-back.campaign.last-day.message.title" : {
+      "comment" : "Title of message displayed on the last day of the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Last day to save 25%!"
+          }
+        }
+      }
+    },
+    "win-back.campaign.menu.badge.text" : {
+      "comment" : "Text for the badge displayed on the Subscription menu item during the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SAVE 25%"
+          }
+        }
+      }
+    },
+    "win-back.campaign.modal.cta" : {
+      "comment" : "CTA of the modal dialog promoting the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "See Offer"
+          }
+        }
+      }
+    },
+    "win-back.campaign.modal.dismiss" : {
+      "comment" : "Dismiss of the modal dialog promoting the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not Now"
+          }
+        }
+      }
+    },
+    "win-back.campaign.modal.message" : {
+      "comment" : "Message of the modal dialog promoting the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Stay protected with our VPN, private AI, and more.\nResubscribe today and save 25%. Limited time offer."
+          }
+        }
+      }
+    },
+    "win-back.campaign.modal.title" : {
+      "comment" : "Title of the modal dialog promoting the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We want you back! Get 25% off."
+          }
+        }
+      }
+    },
     "Window" : {
       "comment" : "Main Menu ",
       "localizations" : {

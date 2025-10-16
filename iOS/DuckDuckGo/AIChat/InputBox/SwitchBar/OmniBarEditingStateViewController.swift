@@ -70,6 +70,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private var isLandscapeOrientation: Bool = false {
         didSet {
             isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
+            switchBarHandler.updateBarPosition(isTop: isUsingTopBarPosition)
         }
     }
     private var isAdjustedForTopBar: Bool

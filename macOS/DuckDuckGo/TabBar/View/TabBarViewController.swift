@@ -625,9 +625,23 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func reloadSelection() {
-        guard tabCollectionViewModel.selectionIndex?.isUnpinnedTab == true,
-              collectionView.selectionIndexPaths.first?.item != tabCollectionViewModel.selectionIndex?.item
-        else {
+        let isPinnedTab = tabCollectionViewModel.selectionIndex?.isPinnedTab == true
+
+        let collectionView: TabBarCollectionView?
+        let shouldContinue: Bool
+        if featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) {
+            shouldContinue = true
+            collectionView = isPinnedTab ? pinnedTabsCollectionView : self.collectionView
+        } else {
+            shouldContinue = !isPinnedTab
+            collectionView = self.collectionView
+        }
+
+        guard shouldContinue, let collectionView else {
+            return
+        }
+
+        guard collectionView.selectionIndexPaths.first?.item != tabCollectionViewModel.selectionIndex?.item else {
             collectionView.updateItemsLeftToSelectedItems()
             return
         }

@@ -217,12 +217,20 @@ extension URL {
         return settings.appendingPathComponent(pane.rawValue)
     }
 
+    static func historyPane(_ pane: HistoryPaneIdentifier) -> URL {
+        return history.appendingParameter(name: "range", value: pane.rawValue)
+    }
+
     var isSettingsURL: Bool {
         isChild(of: .settings) && (pathComponents.isEmpty || PreferencePaneIdentifier(url: self) != nil)
     }
 
     var isErrorURL: Bool {
         return navigationalScheme == .duck && host == URL.error.host
+    }
+
+    var isHistory: Bool {
+        return navigationalScheme == .duck && host == URL.history.host
     }
 
 #endif
@@ -237,6 +245,7 @@ extension URL {
 
         static let aboutSettings = URL(string: "about:settings")!
         static let aboutPreferences = URL(string: "about:preferences")!
+        static let aboutHistory = URL(string: "about:history")!
         static let duckPreferences = URL(string: "duck://preferences")!
         static let aboutConfig = URL(string: "about:config")!
         static let duckConfig = URL(string: "duck://config")!

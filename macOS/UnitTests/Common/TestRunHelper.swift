@@ -36,6 +36,7 @@ private final class Expectation: XCTestExpectation, @unchecked Sendable {
 extension XCTestCase {
 
     var allowedNonNilVariables: Set<String> { [] }
+    var disableDeallocationChecksForTests: Set<String> { [] }
 
     fileprivate func deallocExpectations() -> [XCTestExpectation] {
         TestRunHelper.shared.loadedViews.compactMap { [testName=name] ref in
@@ -196,7 +197,8 @@ extension TestRunHelper: XCTestObservation {
         checkTestCaseVariables(testCase)
 #endif
 
-        if !TestRunHelper.shared.loadedViews.isEmpty {
+        if !testCase.disableDeallocationChecksForTests.map({ $0.dropping(suffix: "WithCompletionHandler:") }).contains(testCase.name.dropping(suffix: "]").components(separatedBy: " ").last!),
+           !TestRunHelper.shared.loadedViews.isEmpty {
             for ref in TestRunHelper.shared.loadedViews {
                 (ref.view as? DuckDuckGo_Privacy_Browser.WebView)?.isLoadingObserver = nil
                 // if the WebView never appears on the screen, `NSView._finalize` method is never called
@@ -234,10 +236,8 @@ extension TestRunHelper: XCTestObservation {
             XCTWaiter(delegate: waiter).wait(for: testCase.deallocExpectations(), timeout: 5)
 
             withExtendedLifetime(waiter) {}
-            TestRunHelper.shared.loadedViews = []
-
-            loadedViews = []
         }
+        loadedViews = []
     }
 
     private func checkTestCaseVariables(_ testCase: XCTestCase) {

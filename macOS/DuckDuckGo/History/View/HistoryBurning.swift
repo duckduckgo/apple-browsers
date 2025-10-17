@@ -18,14 +18,14 @@
 
 import History
 
-protocol HistoryBurning: AnyObject {
+protocol HistoryBurning {
     func burn(_ visits: [Visit], animated: Bool) async
     func burnAll() async
 }
 
-final class FireHistoryBurner: HistoryBurning {
+struct FireHistoryBurner: HistoryBurning {
     let fireproofDomains: DomainFireproofStatusProviding
-    let fire: () async -> Fire
+    let fire: () async -> FireProtocol
 
     /**
      * The arguments here are async closures because FireHistoryBurner is initialized
@@ -33,7 +33,7 @@ final class FireHistoryBurner: HistoryBurning {
      */
     init(
         fireproofDomains: DomainFireproofStatusProviding,
-        fire: @escaping () async -> Fire
+        fire: @escaping () async -> FireProtocol
     ) {
         self.fireproofDomains = fireproofDomains
         self.fire = fire
@@ -46,7 +46,12 @@ final class FireHistoryBurner: HistoryBurning {
 
         await withCheckedContinuation { continuation in
             Task { @MainActor in
-                await fire().burnVisits(visits, except: fireproofDomains, isToday: animated, urlToOpenIfWindowsAreClosed: .history) {
+                await fire().burnVisits(visits,
+                                        except: fireproofDomains,
+                                        isToday: animated,
+                                        closeWindows: false,
+                                        clearSiteData: true,
+                                        urlToOpenIfWindowsAreClosed: .history) {
                     continuation.resume()
                 }
             }
@@ -54,12 +59,6 @@ final class FireHistoryBurner: HistoryBurning {
     }
 
     func burnAll() async {
-        await withCheckedContinuation { continuation in
-            Task { @MainActor in
-                await fire().burnAll(opening: .history) {
-                    continuation.resume()
-                }
-            }
-        }
+        await fire().burnAll(opening: .history)
     }
 }

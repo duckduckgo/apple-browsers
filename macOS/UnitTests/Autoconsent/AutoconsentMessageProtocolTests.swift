@@ -18,6 +18,8 @@
 
 import BrowserServicesKit
 import Common
+import History
+import HistoryView
 import PersistenceTestingUtils
 import WebKit
 import XCTest
@@ -41,6 +43,17 @@ class AutoconsentMessageProtocolTests: XCTestCase {
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
             appearancePreferences: appearancePreferences,
         )
+        let windowControllersManager = WindowControllersManagerMock()
+        let fireCoordinator = FireCoordinator(tld: TLD(),
+                                              featureFlagger: Application.appDelegate.featureFlagger,
+                                              historyCoordinating: HistoryCoordinatingMock(),
+                                              visualizeFireAnimationDecider: nil,
+                                              onboardingContextualDialogsManager: nil,
+                                              fireproofDomains: MockFireproofDomains(),
+                                              faviconManagement: FaviconManagerMock(),
+                                              windowControllersManager: windowControllersManager,
+                                              pixelFiring: nil,
+                                              historyProvider: MockHistoryViewDataProvider())
 
         userScript = AutoconsentUserScript(
             scriptSource: ScriptSourceProvider(configStorage: MockConfigurationStore(),
@@ -57,11 +70,11 @@ class AutoconsentMessageProtocolTests: XCTestCase {
                                                onboardingNavigationDelegate: CapturingOnboardingNavigation(),
                                                appearancePreferences: appearancePreferences,
                                                startupPreferences: startupPreferences,
-                                               windowControllersManager: WindowControllersManagerMock(),
+                                               windowControllersManager: windowControllersManager,
                                                bookmarkManager: MockBookmarkManager(),
                                                historyCoordinator: CapturingHistoryDataSource(),
                                                fireproofDomains: MockFireproofDomains(domains: []),
-                                               fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger),
+                                               fireCoordinator: fireCoordinator,
                                                newTabPageActionsManager: nil
                                               ),
             config: MockPrivacyConfiguration()

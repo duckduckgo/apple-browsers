@@ -602,7 +602,7 @@ final class MoreOptionsMenuTests: XCTestCase {
             .newtab,
             .settings(pane: nil),
             .bookmarks,
-            .history,
+            .anyHistoryPane,
             .onboarding,
             .dataBrokerProtection
         ]
@@ -647,7 +647,7 @@ final class MoreOptionsMenuTests: XCTestCase {
             .releaseNotes,
             .webExtensionUrl(.aboutDuckDuckGo),
             .newtab,
-            .history,
+            .anyHistoryPane,
             .bookmarks,
             .settings(pane: nil)
         ]
@@ -692,7 +692,7 @@ final class MoreOptionsMenuTests: XCTestCase {
             .releaseNotes,
             .webExtensionUrl(.aboutDuckDuckGo),
             .newtab,
-            .history,
+            .anyHistoryPane,
             .bookmarks,
             .settings(pane: nil)
         ]
@@ -967,7 +967,7 @@ final class MockFreemiumDBPFeature: FreemiumDBPFeature {
 final class MockFreemiumDBPPresenter: FreemiumDBPPresenter {
     var didCallShowFreemium = false
 
-    func showFreemiumDBPAndSetActivated(windowControllerManager: WindowControllersManagerProtocol? = nil) {
+    func showFreemiumDBPAndSetActivated(windowControllersManager: WindowControllersManagerProtocol? = nil) {
         didCallShowFreemium = true
     }
 }

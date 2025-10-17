@@ -81,10 +81,10 @@ protocol RecentActivityItemBurning: AnyObject {
 final class RecentActivityItemBurner: RecentActivityItemBurning {
 
     let tld: TLD
-    let fire: () async -> Fire
+    let fire: () async -> FireProtocol
     let fireproofStatusProvider: URLFireproofStatusProviding
 
-    init(fireproofStatusProvider: URLFireproofStatusProviding, tld: TLD, fire: @escaping () async -> Fire) {
+    init(fireproofStatusProvider: URLFireproofStatusProviding, tld: TLD, fire: @escaping () async -> FireProtocol) {
         self.fireproofStatusProvider = fireproofStatusProvider
         self.tld = tld
         self.fire = fire
@@ -101,7 +101,7 @@ final class RecentActivityItemBurner: RecentActivityItemBurning {
 
         // This only starts burning and returns immediately (the await here is to retrieve Fire instance).
         // completion is called when burning completes.
-        await fire().burnEntity(entity: .none(selectedDomains: domains), completion: burningDidComplete)
+        await fire().burnEntity(.none(selectedDomains: domains), completion: burningDidComplete)
 
         return true
     }

@@ -283,12 +283,12 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let mainWindow = app.windows.containing(NSPredicate(format: "title == 'Page #12'")).firstMatch
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #12")).firstMatch
         let popupLink = mainWindow.webViews["Page #12"].links["Open popup"]
         popupLink.click()
 
         // Try to navigate in popup
-        let popupWindow = app.windows.containing(NSPredicate(format: "title == 'Popup Page'")).firstMatch
+        let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open in new tab"]
         XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         link.click()
@@ -326,12 +326,12 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let mainWindow = app.windows.containing(NSPredicate(format: "title == 'Page #12'")).firstMatch
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #12")).firstMatch
         let popupLink = mainWindow.webViews["Page #12"].links["Open popup"]
         popupLink.click()
 
         // Command click in popup - should open in background tab in main window
-        let popupWindow = app.windows.containing(NSPredicate(format: "title == 'Popup Page'")).firstMatch
+        let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open Page #13"]
         XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCUIElement.perform(withKeyModifiers: [.command]) {
@@ -371,12 +371,12 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let mainWindow = app.windows.containing(NSPredicate(format: "title == 'Page #12'")).firstMatch
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #12")).firstMatch
         let popupLink = mainWindow.webViews["Page #12"].links["Open popup"]
         popupLink.click()
 
         // Command shift click in popup - should open in foreground tab in main window
-        let popupWindow = app.windows.containing(NSPredicate(format: "title == 'Popup Page'")).firstMatch
+        let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open Page #14"]
         XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCUIElement.perform(withKeyModifiers: [.command, .shift]) {
@@ -416,12 +416,12 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let mainWindow = app.windows.containing(NSPredicate(format: "title == 'Page #12'")).firstMatch
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #12")).firstMatch
         let popupLink = mainWindow.webViews["Page #12"].links["Open popup"]
         popupLink.click()
 
         // Command option click in popup - should open in background window
-        let popupWindow = app.windows.containing(NSPredicate(format: "title == 'Popup Page'")).firstMatch
+        let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open Page #15"]
         XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCUIElement.perform(withKeyModifiers: [.command, .option]) {
@@ -467,12 +467,12 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let mainWindow = app.windows.containing(NSPredicate(format: "title == 'Page #12'")).firstMatch
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #12")).firstMatch
         let popupLink = mainWindow.webViews["Page #12"].links["Open popup"]
         popupLink.click()
 
         // Command option shift click in popup - should open in foreground window
-        let popupWindow = app.windows.containing(NSPredicate(format: "title == 'Popup Page'")).firstMatch
+        let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open Page #16"]
         XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCUIElement.perform(withKeyModifiers: [.command, .option, .shift]) {
@@ -492,7 +492,7 @@ class TabNavigationTests: UITestCase {
         XCTAssertTrue(popupWindow.webViews["Popup Page"].exists, "Popup window webView should still exist")
 
         // Verify new window is frontmost (foreground window operation)
-        let foregroundWindow = app.windows.containing(NSPredicate(format: "title == 'Page #16'")).firstMatch
+        let foregroundWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #16")).firstMatch
         XCTAssertEqual(app.windows.firstMatch.title, foregroundWindow.title, "New window should be frontmost when opened in foreground")
     }
 
@@ -520,7 +520,7 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let fireWindow = app.windows.containing(NSPredicate(format: "title == 'Fire Page #12'")).firstMatch
+        let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
         let popupLink = fireWindow.webViews["Fire Page #12"].links["Open popup"]
         popupLink.click()
 
@@ -573,7 +573,7 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let fireWindow = app.windows.containing(NSPredicate(format: "title == 'Fire Page #12'")).firstMatch
+        let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
         let popupLink = fireWindow.webViews["Fire Page #12"].links["Open popup"]
         popupLink.click()
 
@@ -649,7 +649,7 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let fireWindow = app.windows.containing(NSPredicate(format: "title == 'Fire Page #12'")).firstMatch
+        let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
         let popupLink = fireWindow.webViews["Fire Page #12"].links["Open popup"]
         popupLink.click()
 
@@ -675,7 +675,7 @@ class TabNavigationTests: UITestCase {
         XCTAssertTrue(popupWindow.webViews["Popup Page"].exists, "Popup window webView should still exist")
 
         // Verify new Fire window is frontmost (foreground Fire window operation)
-        let newFireWindow = app.windows.containing(NSPredicate(format: "title == 'Page #16'")).firstMatch
+        let newFireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #16")).firstMatch
         XCTAssertEqual(app.windows.firstMatch.title, newFireWindow.title, "New Fire window should be frontmost when opened in foreground")
     }
 
@@ -701,7 +701,7 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let fireWindow = app.windows.containing(NSPredicate(format: "title == 'Fire Page #12'")).firstMatch
+        let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
         let popupLink = fireWindow.webViews["Fire Page #12"].links["Open popup"]
         popupLink.click()
 
@@ -721,7 +721,7 @@ class TabNavigationTests: UITestCase {
 
         // Should open new Fire window
         XCTAssertEqual(app.windows.count, 2) // Popup + new Fire window
-        let newFireWindow = app.windows.containing(NSPredicate(format: "title == 'Page #17'")).firstMatch
+        let newFireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #17")).firstMatch
         XCTAssertTrue(newFireWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertTrue(newFireWindow.tabs["Page #17"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertTrue(newFireWindow.webViews["Page #17"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -765,7 +765,7 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let fireWindow = app.windows.containing(NSPredicate(format: "title == 'Fire Page #12'")).firstMatch
+        let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
         let popupLink = fireWindow.webViews["Fire Page #12"].links["Open popup"]
         popupLink.click()
 
@@ -824,7 +824,7 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let fireWindow = app.windows.containing(NSPredicate(format: "title == 'Fire Page #12'")).firstMatch
+        let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
         let popupLink = fireWindow.webViews["Fire Page #12"].links["Open popup"]
         popupLink.click()
 
@@ -877,7 +877,7 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let fireWindow = app.windows.containing(NSPredicate(format: "title == 'Fire Page #12'")).firstMatch
+        let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
         let popupLink = fireWindow.webViews["Fire Page #12"].links["Open popup"]
         popupLink.click()
 

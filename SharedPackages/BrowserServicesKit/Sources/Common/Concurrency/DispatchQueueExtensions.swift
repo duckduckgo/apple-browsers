@@ -16,10 +16,9 @@
 //  limitations under the License.
 //
 
-import Common
 import Foundation
 
-extension DispatchQueue {
+public extension DispatchQueue {
 
     func dispatch(_ workItem: DispatchWorkItem, sync: Bool) {
         if sync {

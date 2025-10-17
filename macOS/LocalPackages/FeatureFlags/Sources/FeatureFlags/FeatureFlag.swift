@@ -48,6 +48,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/1201048563534612/1208850443048685/f
     case historyView
 
+    /// Subfeature: display the Sites section inside History View
+    case historyViewSitesSection
+
     /// Enable WebKit page load timing performance reporting
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/XXXXXXXXX?focus=true
     case webKitPerformanceReporting
@@ -272,6 +275,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .networkProtectionAppStoreSysexMessage,
                 .syncSeamlessAccountSwitching,
                 .historyView,
+                .historyViewSitesSection,
                 .webExtensions,
                 .autoUpdateInDEBUG,
                 .updatesWontAutomaticallyRestartApp,
@@ -372,6 +376,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage))
         case .historyView:
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
+        case .historyViewSitesSection:
+            return .remoteDevelopment(.subfeature(HTMLHistoryPageSubfeature.sitesSection))
         case .autoUpdateInDEBUG:
             return .disabled
         case .updatesWontAutomaticallyRestartApp:
@@ -475,7 +481,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .subscriptionPurchaseWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
         case .fireDialog:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.fireDialog))
+            return .internalOnly()
         case .fireDialogIndividualSitesLink:
             return .enabled
         case .refactorOfSyncPreferences:

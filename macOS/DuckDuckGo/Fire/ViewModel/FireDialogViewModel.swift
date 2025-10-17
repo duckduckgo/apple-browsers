@@ -176,7 +176,10 @@ final class FireDialogViewModel: ObservableObject {
     private(set) var shouldShowPinnedTabsInfo: Bool = false
 
     var shouldShowChatHistoryToggle: Bool {
-        aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption && mode.shouldShowChatHistoryToggle && clearingOption.shouldShowChatHistoryToggle
+        let isPresentedOnAIChatTab = tabCollectionViewModel?.selectedTab?.url?.isDuckAIURL ?? false
+        return aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption
+            && mode.shouldShowChatHistoryToggle
+            && (clearingOption.shouldShowChatHistoryToggle || isPresentedOnAIChatTab)
     }
 
     let fireViewModel: FireViewModel

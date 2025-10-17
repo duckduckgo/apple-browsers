@@ -86,6 +86,7 @@ final class FireMock: FireProtocol {
         completion?()
     }
 
+    @MainActor
     func burnChatHistory() {
         burnChatHistoryCalls.append(.init())
     }

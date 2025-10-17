@@ -51,7 +51,7 @@ protocol FireProtocol: AnyObject {
                                clearChatHistory: Bool,
                                urlToOpenIfWindowsAreClosed url: URL?,
                                completion: (@MainActor () -> Void)?)
-    @MainActor func burnChatHistory()
+    @MainActor func burnChatHistory() async
 }
 extension FireProtocol {
 
@@ -74,7 +74,7 @@ extension FireProtocol {
     }
 
     @MainActor
-    func burnEntity(_ entity: Fire.BurningEntity, completion: (() -> Void)? = nil) {
+    func burnEntity(_ entity: Fire.BurningEntity, completion: (@MainActor () -> Void)? = nil) {
         burnEntity(entity, includingHistory: true, includingChatHistory: false, completion: completion)
     }
 
@@ -270,14 +270,15 @@ final class Fire: FireProtocol {
         }
         self.aiChatHistoryCleaner = aIChatHistoryCleaner ?? AIChatHistoryCleaner(featureFlagger: NSApp.delegateTyped.featureFlagger,
                                                                                  aiChatMenuConfiguration: NSApp.delegateTyped.aiChatMenuConfiguration,
-                                                                                 featureDiscovery: DefaultFeatureDiscovery())
+                                                                                 featureDiscovery: DefaultFeatureDiscovery(),
+                                                                                 privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager)
     }
 
     @MainActor
     func burnEntity(_ entity: BurningEntity,
                     includingHistory: Bool,
                     includingChatHistory: Bool,
-                    completion: (() -> Void)?) {
+                    completion: (@MainActor () -> Void)?) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -322,8 +323,11 @@ final class Fire: FireProtocol {
             self.burnRecentlyClosed(baseDomains: domains)
             self.burnAutoconsentCache()
             self.burnZoomLevels(of: domains)
+
             if includingChatHistory {
-                self.burnChatHistory()
+                group.enter()
+                await burnChatHistory()
+                group.leave()
             }
 
             group.notify(queue: .main) {
@@ -373,6 +377,7 @@ final class Fire: FireProtocol {
 
             await self.burnWebCache()
             await self.burnPrivacyStats()
+            await burnChatHistory()
             self.burnAllVisitedLinks()
             self.burnAllHistory {
                 self.burnPermissions {
@@ -386,7 +391,6 @@ final class Fire: FireProtocol {
             self.burnRecentlyClosed()
             self.burnAutoconsentCache()
             self.burnZoomLevels()
-            self.burnChatHistory()
 
             group.notify(queue: .main) {
                 self.dispatchGroup = nil
@@ -457,8 +461,8 @@ final class Fire: FireProtocol {
     // MARK: - Duck.ai Chat History
 
     @MainActor
-    func burnChatHistory() {
-        aiChatHistoryCleaner.cleanAIChatHistory()
+    func burnChatHistory() async {
+        await aiChatHistoryCleaner.cleanAIChatHistory()
     }
 
     // MARK: - Fire animation

@@ -648,7 +648,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let aiChatHistoryCleaner = AIChatHistoryCleaner(featureFlagger: featureFlagger,
                                                         aiChatMenuConfiguration: aiChatMenuConfiguration,
-                                                        featureDiscovery: DefaultFeatureDiscovery())
+                                                        featureDiscovery: DefaultFeatureDiscovery(),
+                                                        privacyConfig: privacyConfigurationManager)
         dataClearingPreferences = DataClearingPreferences(
             fireproofDomains: fireproofDomains,
             faviconManager: faviconManager,

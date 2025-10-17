@@ -203,7 +203,8 @@ extension FireCoordinator {
             historyCoordinating: self.historyCoordinating,
             aiChatHistoryCleaner: AIChatHistoryCleaner(featureFlagger: Application.appDelegate.featureFlagger,
                                                        aiChatMenuConfiguration: Application.appDelegate.aiChatMenuConfiguration,
-                                                       featureDiscovery: DefaultFeatureDiscovery()),
+                                                       featureDiscovery: DefaultFeatureDiscovery(),
+                                                       privacyConfig: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager),
             fireproofDomains: self.fireproofDomains,
             faviconManagement: self.faviconManagement,
             clearingOption: mode.shouldShowSegmentedControl ? nil /* last selected */ : .allData,
@@ -308,6 +309,9 @@ extension FireCoordinator {
 
         case .allData:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
+            if result.includeChatHistory {
+                PixelKit.fire(AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount)
+            }
             // "All" implies history and chat history too; respect includeHistory and includeChatHistory by routing via burnAll or burnEntity
             if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory && result.includeChatHistory {
                 await fireViewModel.fire.burnAll(isBurnOnExit: false, opening: .newtab)

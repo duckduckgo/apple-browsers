@@ -120,7 +120,7 @@ final class AppStoreUpdateController: NSObject, UpdateController {
             // New flow - check cloud for updates
             Task { @UpdateCheckActor in
                 // User-initiated checks skip rate limiting but still log the attempt
-                guard await updateCheckState.canStartNewCheck(updater: updaterChecker, minimumInterval: 0) else {
+                guard await updateCheckState.canStartNewCheck(updater: updaterChecker, latestUpdate: nil, minimumInterval: 0) else {
                     Logger.updates.debug("User-initiated App Store update check skipped - updater not available")
                     return
                 }

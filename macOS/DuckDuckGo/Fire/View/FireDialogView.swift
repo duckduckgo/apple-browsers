@@ -52,17 +52,27 @@ struct FireDialogView: ModalView {
     }
 
     private var tabsSubtitle: String {
+        // Get base message based on scope
+        let baseMessage: String
         switch viewModel.clearingOption {
         case .currentTab:
-            if viewModel.isPinnedTabSelected {
-                return UserText.fireDialogPinnedTabWillReload
-            }
-            return UserText.fireDialogCloseThisTab
+            baseMessage = UserText.fireDialogCloseThisTab
         case .currentWindow:
-            return UserText.fireDialogCloseThisWindow
+            baseMessage = UserText.fireDialogCloseThisWindow
         case .allData:
-            return UserText.fireDialogCloseAllTabsWindows
+            baseMessage = UserText.fireDialogCloseAllTabsWindows
         }
+
+        // Append pinned tabs message if applicable
+        if let pinnedMessage = viewModel.pinnedTabsReloadMessage {
+            switch viewModel.clearingOption {
+            case .currentTab:
+                return pinnedMessage
+            case .currentWindow, .allData:
+                return "\(baseMessage) \(pinnedMessage)"
+            }
+        }
+        return baseMessage
     }
 
     @ObservedObject var viewModel: FireDialogViewModel

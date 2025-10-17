@@ -38,8 +38,8 @@ protocol FireProtocol: AnyObject {
     func fireAnimationDidStart()
     func fireAnimationDidFinish()
 
-    @MainActor func burnAll(isBurnOnExit: Bool, opening url: URL, completion: (@MainActor () -> Void)?)
-    @MainActor func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool, completion: (@MainActor () -> Void)?)
+    @MainActor func burnAll(isBurnOnExit: Bool, opening url: URL, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?)
+    @MainActor func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?)
     @MainActor func burnVisits(_ visits: [Visit],
                                except fireproofDomains: DomainFireproofStatusProviding,
                                isToday: Bool,
@@ -51,26 +51,26 @@ protocol FireProtocol: AnyObject {
 extension FireProtocol {
 
     @MainActor
-    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab) {
-        burnAll(isBurnOnExit: isBurnOnExit, opening: url, completion: nil)
+    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab, includeCookiesAndSiteData: Bool = true) {
+        burnAll(isBurnOnExit: isBurnOnExit, opening: url, includeCookiesAndSiteData: includeCookiesAndSiteData, completion: nil)
     }
     @MainActor
-    func burnAll(opening url: URL) {
-        burnAll(isBurnOnExit: false, opening: url, completion: nil)
+    func burnAll(opening url: URL, includeCookiesAndSiteData: Bool = true) {
+        burnAll(isBurnOnExit: false, opening: url, includeCookiesAndSiteData: includeCookiesAndSiteData, completion: nil)
     }
     @MainActor
-    func burnAll(completion: (() -> Void)? = nil) {
-        burnAll(isBurnOnExit: false, opening: .newtab, completion: completion)
+    func burnAll(includeCookiesAndSiteData: Bool = true, completion: (() -> Void)? = nil) {
+        burnAll(isBurnOnExit: false, opening: .newtab, includeCookiesAndSiteData: includeCookiesAndSiteData, completion: completion)
     }
 
     @MainActor
     func burnAll(isBurnOnExit: Bool, completion: (() -> Void)? = nil) {
-        burnAll(isBurnOnExit: isBurnOnExit, opening: .newtab, completion: completion)
+        burnAll(isBurnOnExit: isBurnOnExit, opening: .newtab, includeCookiesAndSiteData: true, completion: completion)
     }
 
     @MainActor
     func burnEntity(_ entity: Fire.BurningEntity, completion: (() -> Void)? = nil) {
-        burnEntity(entity, includingHistory: true, completion: completion)
+        burnEntity(entity, includingHistory: true, includeCookiesAndSiteData: true, completion: completion)
     }
 
     @MainActor
@@ -89,9 +89,9 @@ extension FireProtocol {
     }
 
     @MainActor
-    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab) async {
+    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab, includeCookiesAndSiteData: Bool = true) async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            self.burnAll(isBurnOnExit: isBurnOnExit, opening: url) {
+            self.burnAll(isBurnOnExit: isBurnOnExit, opening: url, includeCookiesAndSiteData: includeCookiesAndSiteData) {
                 continuation.resume()
             }
         }
@@ -100,7 +100,16 @@ extension FireProtocol {
     @MainActor
     func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool) async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            self.burnEntity(entity, includingHistory: includingHistory) {
+            self.burnEntity(entity, includingHistory: includingHistory, includeCookiesAndSiteData: true) {
+                continuation.resume()
+            }
+        }
+    }
+
+    @MainActor
+    func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool, includeCookiesAndSiteData: Bool) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            self.burnEntity(entity, includingHistory: includingHistory, includeCookiesAndSiteData: includeCookiesAndSiteData) {
                 continuation.resume()
             }
         }
@@ -260,7 +269,7 @@ final class Fire: FireProtocol {
     }
 
     @MainActor
-    func burnEntity(_ entity: BurningEntity, includingHistory: Bool, completion: (@MainActor () -> Void)?) {
+    func burnEntity(_ entity: BurningEntity, includingHistory: Bool, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -282,9 +291,11 @@ final class Fire: FireProtocol {
             }
 
             group.enter()
-            self.burnTabs(burningEntity: entity, includingHistory: includingHistory)
+            self.burnTabs(burningEntity: entity)
 
-            await self.burnWebCache(baseDomains: domains)
+            if includeCookiesAndSiteData {
+                await self.burnWebCache(baseDomains: domains)
+            }
 
             if includingHistory {
                 self.burnHistory(ofEntity: entity) {
@@ -296,15 +307,18 @@ final class Fire: FireProtocol {
                 group.leave()
             }
 
-            group.enter()
-            self.burnPermissions(of: domains) {
-                self.burnDownloads(of: domains)
-                group.leave()
+            if includeCookiesAndSiteData {
+                group.enter()
+                self.burnPermissions(of: domains) {
+                    self.burnDownloads(of: domains)
+                    group.leave()
+                }
+
+                self.burnAutoconsentCache()
+                self.burnZoomLevels(of: domains)
             }
 
             self.burnRecentlyClosed(baseDomains: domains)
-            self.burnAutoconsentCache()
-            self.burnZoomLevels(of: domains)
 
             group.notify(queue: .main) {
                 self.dispatchGroup = nil
@@ -322,7 +336,7 @@ final class Fire: FireProtocol {
     }
 
     @MainActor
-    func burnAll(isBurnOnExit: Bool, opening url: URL, completion: (@MainActor () -> Void)?) {
+    func burnAll(isBurnOnExit: Bool, opening url: URL, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -349,9 +363,11 @@ final class Fire: FireProtocol {
             await tabCleanupPreparer.prepareTabsForCleanup(tabViewModels)
 
             group.enter()
-            self.burnTabs(burningEntity: .allWindows(mainWindowControllers: windowControllers, selectedDomains: Set(), customURLToOpen: url, close: true), includingHistory: true)
+            self.burnTabs(burningEntity: .allWindows(mainWindowControllers: windowControllers, selectedDomains: Set(), customURLToOpen: url, close: true))
 
-            await self.burnWebCache()
+            if includeCookiesAndSiteData {
+                await self.burnWebCache()
+            }
             await self.burnPrivacyStats()
             self.burnAllVisitedLinks()
             self.burnAllHistory {
@@ -425,7 +441,7 @@ final class Fire: FireProtocol {
                 entity = .none(selectedDomains: domains)
             }
 
-            self.burnEntity(entity, includingHistory: false, completion: completion)
+            self.burnEntity(entity, includingHistory: false, includeCookiesAndSiteData: true, completion: completion)
         }
     }
 
@@ -523,6 +539,7 @@ final class Fire: FireProtocol {
     @MainActor
     private func burnHistory(ofEntity entity: BurningEntity, completion: @escaping @MainActor () -> Void) {
         let visits: [Visit]
+
         switch entity {
         case .none(selectedDomains: let domains):
             burnHistory(of: domains) { urls in
@@ -532,12 +549,35 @@ final class Fire: FireProtocol {
             return
         case .tab(tabViewModel: let tabViewModel, selectedDomains: _, parentTabCollectionViewModel: _, _):
             visits = tabViewModel.tab.localHistory
+            // clear tab navigation history
+            tabViewModel.tab.clearNavigationHistory(keepingCurrent: true)
+
         case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _, _):
             visits = tabCollectionViewModel.localHistory
+            // clear tabs navigation history
+            for vm in tabCollectionViewModel.tabViewModels.values {
+                vm.tab.clearNavigationHistory(keepingCurrent: true)
+            }
+            // also handle pinned tabs
+            tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.forEach {
+                $0.clearNavigationHistory(keepingCurrent: true)
+            }
 
-        case .allWindows:
+        case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _, close: _):
             burnAllVisitedLinks()
             burnAllHistory(completion: completion)
+
+            // clear all tabs navigation history
+            mainWindowControllers.forEach { wc in
+                let vm = wc.mainViewController.tabCollectionViewModel
+                vm.tabViewModels.values.forEach {
+                    $0.tab.clearNavigationHistory(keepingCurrent: true)
+                }
+                vm.pinnedTabsManager?.tabCollection.tabs.forEach {
+                    $0.clearNavigationHistory(keepingCurrent: true)
+                }
+            }
+
             return
         }
 
@@ -650,7 +690,7 @@ final class Fire: FireProtocol {
 
     @MainActor
     /// Closes tabs/windows when `close` is true; otherwise clears back/forward history and session state when requested.
-    private func burnTabs(burningEntity: BurningEntity, includingHistory: Bool) {
+    private func burnTabs(burningEntity: BurningEntity) {
 
         func replacementPinnedTab(from pinnedTab: Tab) -> Tab {
             return Tab(content: pinnedTab.content.loadedFromCache(), shouldLoadInBackground: true)
@@ -691,8 +731,6 @@ final class Fire: FireProtocol {
                 } else {
                     tabCollectionViewModel.removeSelected(forceChange: true)
                 }
-            } else if includingHistory {
-                tabViewModel.tab.clearNavigationHistory(keepingCurrent: true)
             }
 
         case .window(tabCollectionViewModel: let tabCollectionViewModel,
@@ -702,14 +740,6 @@ final class Fire: FireProtocol {
                 tabCollectionViewModel.removeAllTabs(forceChange: true)
                 burnPinnedTabs(in: tabCollectionViewModel)
                 selectPinnedTabIfNeeded(in: tabCollectionViewModel)
-            } else if includingHistory {
-                for vm in tabCollectionViewModel.tabViewModels.values {
-                    vm.tab.clearNavigationHistory(keepingCurrent: true)
-                }
-                // also handle pinned tabs
-                tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.forEach {
-                    $0.clearNavigationHistory(keepingCurrent: true)
-                }
             }
 
         case .allWindows(mainWindowControllers: let mainWindowControllers,

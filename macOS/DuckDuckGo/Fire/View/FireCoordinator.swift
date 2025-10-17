@@ -288,7 +288,7 @@ extension FireCoordinator {
                                                 selectedDomains: result.selectedCookieDomains ?? [],
                                                 parentTabCollectionViewModel: tabCollectionViewModel,
                                                 close: result.includeTabsAndWindows)
-            await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory)
+            await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory, includeCookiesAndSiteData: result.includeCookiesAndSiteData)
 
         case .currentWindow:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .window))
@@ -299,19 +299,19 @@ extension FireCoordinator {
             let entity = Fire.BurningEntity.window(tabCollectionViewModel: tabCollectionViewModel,
                                                    selectedDomains: result.selectedCookieDomains ?? [],
                                                    close: result.includeTabsAndWindows)
-            await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory)
+            await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory, includeCookiesAndSiteData: result.includeCookiesAndSiteData)
 
         case .allData:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
             // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
             if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory {
-                await fireViewModel.fire.burnAll(isBurnOnExit: false, opening: .newtab)
+                await fireViewModel.fire.burnAll(isBurnOnExit: false, opening: .newtab, includeCookiesAndSiteData: result.includeCookiesAndSiteData)
             } else {
                 let entity = Fire.BurningEntity.allWindows(mainWindowControllers: windowControllersManager.mainWindowControllers,
                                                            selectedDomains: result.selectedCookieDomains ?? [],
                                                            customURLToOpen: nil,
                                                            close: result.includeTabsAndWindows)
-                await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory)
+                await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory, includeCookiesAndSiteData: result.includeCookiesAndSiteData)
             }
         }
     }

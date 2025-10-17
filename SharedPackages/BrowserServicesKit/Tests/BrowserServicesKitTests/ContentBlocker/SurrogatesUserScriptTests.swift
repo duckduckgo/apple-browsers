@@ -193,6 +193,11 @@ class SurrogatesUserScriptsTests: XCTestCase {
                                           .init(type: .script, url: nonSurrogateScriptURL)])
     }
 
+    override func tearDown() {
+        super.tearDown()
+        webView = nil
+    }
+
     private func setupWebViewForUserScripTests(trackerData: TrackerData,
                                                encodedTrackerData: String,
                                                privacyConfig: PrivacyConfiguration,

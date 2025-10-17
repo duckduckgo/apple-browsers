@@ -39,10 +39,21 @@ final class Update {
     let releaseNotesSubscription: [String]
     let needsLatestReleaseNote: Bool
 
-    var title: String {
+    /// Returns a date formatter configured with the standard date visualization format for release dates.
+    ///
+    /// This formatter uses `.long` date style with no time component, providing locale-appropriate
+    /// date formatting across all update display contexts.
+    ///
+    /// - Returns: A configured `DateFormatter` instance for release date formatting.
+    static func releaseDateFormatter() -> DateFormatter {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM dd yyyy"
-        return formatter.string(from: date)
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        return formatter
+    }
+
+    var title: String {
+        Self.releaseDateFormatter().string(from: date)
     }
 
     internal init(isInstalled: Bool,

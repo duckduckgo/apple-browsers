@@ -32200,7 +32200,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar de %1$#@sitios@. Puede que cierres sesión en tus cuentas."
+            "value" : "Eliminar de %#@sites@.Puede que cierres sesión en tus cuentas."
           },
           "substitutions" : {
             "sites" : {
@@ -32380,7 +32380,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Данные будут удалены с %1$#@сайт.@ Операция может сопровождаться выходом из учетных записей."
+            "value" : "Данные будут удалены с %#@sites@.Операция может сопровождаться выходом из учетных записей."
           },
           "substitutions" : {
             "sites" : {
@@ -32901,7 +32901,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar %1$#@elementos@."
+            "value" : "Eliminar %#@items@."
           },
           "substitutions" : {
             "items" : {
@@ -32929,7 +32929,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Supprimer %1$#@éléments@."
+            "value" : "Supprimer %#@items@."
           },
           "substitutions" : {
             "items" : {
@@ -33081,7 +33081,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удаление %1$#@запис.@"
+            "value" : "Удаление %#@items@."
           },
           "substitutions" : {
             "items" : {
@@ -33182,7 +33182,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar %1$#@elementos@ de esta pestaña."
+            "value" : "Eliminar %#@items@ de esta pestaña."
           },
           "substitutions" : {
             "items" : {
@@ -33210,7 +33210,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Supprimer %1$#@éléments@ de cet onglet."
+            "value" : "Supprimer %#@items@ de cet onglet."
           },
           "substitutions" : {
             "items" : {
@@ -33362,7 +33362,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удаление %1$#@запис.@ с этой вкладки."
+            "value" : "Удаление %#@items@ с этой вкладки."
           },
           "substitutions" : {
             "items" : {
@@ -33463,7 +33463,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar %1$#@elementos@ de esta ventana."
+            "value" : "Eliminar %#@items@ de esta ventana."
           },
           "substitutions" : {
             "items" : {
@@ -33491,7 +33491,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Supprimer %1$#@éléments@ de cette fenêtre."
+            "value" : "Supprimer %#@items@ de cette fenêtre."
           },
           "substitutions" : {
             "items" : {
@@ -33643,7 +33643,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удаление %1$#@запис.@ из этого окна."
+            "value" : "Удаление %#@items@ из этого окна."
           },
           "substitutions" : {
             "items" : {

@@ -24,13 +24,13 @@ import Sparkle
 
 final class SparkleUpdaterAvailabilityCheckerTests: XCTestCase {
 
-    private var mockUpdater: MockSPUUpdater!
+    private var mockUpdater: MockUpdater!
     private var checker: SparkleUpdaterAvailabilityChecker!
 
     override func setUp() {
         super.setUp()
         autoreleasepool {
-            mockUpdater = MockSPUUpdater()
+            mockUpdater = MockUpdater()
             checker = SparkleUpdaterAvailabilityChecker(updater: mockUpdater)
         }
     }

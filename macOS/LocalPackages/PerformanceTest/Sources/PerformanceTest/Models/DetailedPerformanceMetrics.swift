@@ -151,24 +151,11 @@ public struct DetailedPerformanceMetrics: Codable, Equatable {
         return 1.0 - (encodedBodySize / decodedBodySize)
     }
 
-    public var averageResourceSize: Double? {
-        guard resourceCount > 0 else { return nil }
-        return totalResourcesSize / Double(resourceCount)
-    }
-
     public var usesModernProtocol: Bool {
         guard let proto = `protocol` else { return false }
         return proto.contains(Constants.Protocols.http2) ||
                proto.contains(Constants.Protocols.http3) ||
                proto.contains(Constants.Protocols.quic)
-    }
-
-    public var coreWebVitals: CoreWebVitalsAssessment {
-        CoreWebVitalsAssessment(
-            lcp: largestContentfulPaint ?? firstContentfulPaint,
-            fid: firstInputDelay,
-            cls: cumulativeLayoutShift
-        )
     }
 
     /// Overall performance score (0-100)
@@ -238,60 +225,6 @@ public struct DetailedPerformanceMetrics: Codable, Equatable {
         case 70..<80: return Constants.Grades.gradeC
         case 60..<70: return Constants.Grades.gradeD
         default: return Constants.Grades.gradeF
-        }
-    }
-}
-
-public struct CoreWebVitalsAssessment: Codable, Equatable {
-    private typealias Constants = PerformanceConstants
-
-    public let lcp: TimeInterval // Largest Contentful Paint
-    public let fid: TimeInterval? // First Input Delay
-    public let cls: Double? // Cumulative Layout Shift
-
-    public var lcpAssessment: String {
-        if lcp <= 2.5 {
-            return Constants.Assessments.good
-        } else if lcp <= 4.0 {
-            return Constants.Assessments.needsImprovement
-        } else {
-            return Constants.Assessments.poor
-        }
-    }
-
-    public var fidAssessment: String? {
-        guard let fid = fid else { return nil }
-        if fid <= 0.1 {
-            return Constants.Assessments.good
-        } else if fid <= 0.3 {
-            return Constants.Assessments.needsImprovement
-        } else {
-            return Constants.Assessments.poor
-        }
-    }
-
-    public var clsAssessment: String? {
-        guard let cls = cls else { return nil }
-        if cls <= 0.1 {
-            return Constants.Assessments.good
-        } else if cls <= 0.25 {
-            return Constants.Assessments.needsImprovement
-        } else {
-            return Constants.Assessments.poor
-        }
-    }
-
-    public var overallAssessment: String {
-        let assessments = [lcpAssessment, fidAssessment, clsAssessment].compactMap { $0 }
-        let poorCount = assessments.filter { $0 == Constants.Assessments.poor }.count
-        let needsImprovementCount = assessments.filter { $0 == Constants.Assessments.needsImprovement }.count
-
-        if poorCount > 0 {
-            return Constants.Assessments.poor
-        } else if needsImprovementCount > 1 {
-            return Constants.Assessments.needsImprovement
-        } else {
-            return Constants.Assessments.good
         }
     }
 }

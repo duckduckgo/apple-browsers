@@ -2862,24 +2862,15 @@ public final class MockWebViewHandler: NSObject, WebViewHandler {
 }
 
 public final class SubmissionRecorderMock: OptOutSubmissionWideEventRecording {
-    private(set) var recordedStages: [(stage: Stage, duration: Double?, tries: Int, actionID: String?)] = []
     private(set) var submissionEndMarked = false
     private(set) var completionStatus: WideEventStatus?
 
-    public func recordStage(_ stage: Stage, duration: Double?, tries: Int, actionID: String?) {
-        recordedStages.append((stage, duration, tries, actionID))
-    }
-
-    public func markSubmissionCompleted(at date: Date, tries: Int, actionID: String?) {
+    public func markSubmissionCompleted(at date: Date) {
         submissionEndMarked = true
     }
 
-    public func complete(status: WideEventStatus, with error: Error?) {
-        completionStatus = status
-    }
-
-    public func cancel(with error: Error?) {
-        completionStatus = .cancelled
+    public func complete() {
+        completionStatus = .success
     }
 }
 

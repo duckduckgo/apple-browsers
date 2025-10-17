@@ -241,10 +241,8 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                           emailPattern: emailPattern,
                                           vpnConnectionState: vpnConnectionState,
                                           vpnBypassStatus: vpnBypassStatus))
-        wideEventRecorder?.markSubmissionCompleted(at: now,
-                                                   tries: tries,
-                                                   actionID: actionID)
-        wideEventRecorder?.complete(status: .success)
+        wideEventRecorder?.markSubmissionCompleted(at: now)
+        wideEventRecorder?.complete()
     }
 
     func fireOptOutFailure(tries: Int) {

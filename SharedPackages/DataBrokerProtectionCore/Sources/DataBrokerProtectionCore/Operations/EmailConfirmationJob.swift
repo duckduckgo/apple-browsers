@@ -208,50 +208,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                        broker: broker,
                                        attemptNumber: attemptNumber,
                                        schedulingConfig: broker.schedulingConfig)
-
-            handleConfirmationWideEventOutcome(error: error,
-                                               attemptNumber: attemptNumber,
-                                               stageDurationCalculator: stageDurationCalculator,
-                                               broker: broker,
-                                               profileIdentifier: extractedProfile.identifier)
-        }
-    }
-
-    private func handleConfirmationWideEventOutcome(error: Error,
-                                                    attemptNumber: Int,
-                                                    stageDurationCalculator: DataBrokerProtectionStageDurationCalculator,
-                                                    broker: DataBroker,
-                                                    profileIdentifier: String?) {
-        switch error {
-        case is TimeoutError:
-            wideEventRecorder?.cancel(with: error)
-            OptOutConfirmationWideEventEmitter.emitCancelled(
-                wideEvent: jobDependencies.wideEvent,
-                profileIdentifier: profileIdentifier,
-                dataBrokerURL: broker.url,
-                dataBrokerVersion: broker.version,
-                error: error
-            )
-        case let dbpError as DataBrokerProtectionError where dbpError == .jobTimeout:
-            wideEventRecorder?.cancel(with: error)
-            OptOutConfirmationWideEventEmitter.emitCancelled(
-                wideEvent: jobDependencies.wideEvent,
-                profileIdentifier: profileIdentifier,
-                dataBrokerURL: broker.url,
-                dataBrokerVersion: broker.version,
-                error: dbpError
-            )
-        default:
-            if attemptNumber >= Self.maxRetries {
-                wideEventRecorder?.complete(status: .failure, with: error)
-                OptOutConfirmationWideEventEmitter.emitFailure(
-                    wideEvent: jobDependencies.wideEvent,
-                    profileIdentifier: profileIdentifier,
-                    dataBrokerURL: broker.url,
-                    dataBrokerVersion: broker.version,
-                    error: error
-                )
-            }
         }
     }
 

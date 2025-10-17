@@ -64,8 +64,10 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         self.webRunnerForTesting = webRunnerForTesting
         self.webViewHandlerForTesting = webViewHandlerForTesting
 
-        if let attemptID = UUID(uuidString: jobData.attemptID) {
-            self.wideEventRecorder = OptOutSubmissionWideEventRecorder.resumeIfPossible(wideEvent: jobDependencies.wideEvent, attemptID: attemptID)
+        if let profile = try? jobDependencies.database.fetchExtractedProfile(with: jobData.extractedProfileId)?.profile,
+           let identifier = profile.identifier {
+            self.wideEventRecorder = OptOutSubmissionWideEventRecorder.resumeIfPossible(wideEvent: jobDependencies.wideEvent,
+                                                                                        profileIdentifier: identifier)
         } else {
             self.wideEventRecorder = nil
         }

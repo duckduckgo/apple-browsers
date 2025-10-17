@@ -32,43 +32,6 @@ public final class OptOutSubmissionWideEventData: WideEventData {
 
     public var errorData: WideEventErrorData?
 
-    public struct Stage: Codable, Equatable {
-        public let name: StageName
-        public let duration: Double?
-        public let tries: Int?
-        public let actionID: String?
-
-        public init(name: StageName,
-                    duration: Double?,
-                    tries: Int?,
-                    actionID: String?) {
-            self.name = name
-            self.duration = duration
-            self.tries = tries
-            self.actionID = actionID
-        }
-    }
-
-    public enum StageName: String, Codable, CaseIterable {
-        case start
-        case emailGenerate = "email-generate"
-        case captchaParse = "captcha-parse"
-        case captchaSend = "captcha-send"
-        case captchaSolve = "captcha-solve"
-        case submit
-        case emailReceive = "email-receive"
-        case emailConfirm = "email-confirm"
-        case emailConfirmHalted = "email-confirm-halted"
-        case emailConfirmDecoupled = "email-confirm-decoupled"
-        case validate
-        case fillForm = "fill-form"
-        case conditionFound = "condition-found"
-        case conditionNotFound = "condition-not-found"
-        case other
-    }
-
-    public var stages: [Stage] = []
-
     public init(globalData: WideEventGlobalData,
                 contextData: WideEventContextData = WideEventContextData(),
                 appData: WideEventAppData = WideEventAppData(),
@@ -81,10 +44,6 @@ public final class OptOutSubmissionWideEventData: WideEventData {
         self.dataBrokerURL = dataBrokerURL
         self.dataBrokerVersion = dataBrokerVersion
         self.submissionInterval = submissionInterval
-    }
-
-    public func appendStage(_ stage: Stage) {
-        stages.append(stage)
     }
 }
 
@@ -101,23 +60,6 @@ extension OptOutSubmissionWideEventData {
 
         if let duration = submissionInterval?.durationMilliseconds {
             parameters[WideEventParameter.PIR.OptOutSubmissionFeature.submissionLatency] = String(duration)
-        }
-
-        for (index, stage) in stages.enumerated() {
-            let base = WideEventParameter.PIR.OptOutSubmissionFeature.stagePrefix(index: index)
-            parameters["\(base).name"] = stage.name.rawValue
-
-            if let duration = stage.duration {
-                parameters["\(base).duration_ms"] = String(duration)
-            }
-
-            if let tries = stage.tries {
-                parameters["\(base).tries"] = String(tries)
-            }
-
-            if let actionID = stage.actionID {
-                parameters["\(base).action_id"] = actionID.isEmpty ? "unknown" : actionID
-            }
         }
 
         return parameters

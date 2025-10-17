@@ -21,22 +21,10 @@ import BrowserServicesKit
 import PixelKit
 
 protocol OptOutSubmissionWideEventRecording: AnyObject {
-    func recordStage(_ stage: Stage,
-                     duration: Double?,
-                     tries: Int,
-                     actionID: String?)
     func markSubmissionCompleted(at date: Date,
                                  tries: Int,
                                  actionID: String?)
-    func complete(status: WideEventStatus)
-    func complete(status: WideEventStatus, with error: Error?)
-    func cancel(with error: Error?)
-}
-
-extension OptOutSubmissionWideEventRecording {
-    func complete(status: WideEventStatus) {
-        complete(status: status, with: nil)
-    }
+    func completeSuccessfully()
 }
 
 final class OptOutSubmissionWideEventRecorder {
@@ -59,13 +47,14 @@ final class OptOutSubmissionWideEventRecorder {
     }
 
     static func makeIfPossible(wideEvent: WideEventManaging?,
-                               attemptID: UUID,
+                               profileIdentifier: String,
                                dataBrokerURL: String,
                                dataBrokerVersion: String?,
                                recordFoundDate: Date) -> OptOutSubmissionWideEventRecorder? {
         guard let wideEvent else { return nil }
 
-        let global = WideEventGlobalData(id: attemptID.uuidString, sampleRate: sampleRate)
+        let hashedIdentifier = profileIdentifier.sha256
+        let global = WideEventGlobalData(id: hashedIdentifier, sampleRate: sampleRate)
         let submissionInterval = WideEvent.MeasuredInterval(start: recordFoundDate, end: nil)
         let data = OptOutSubmissionWideEventData(globalData: global,
                                                  dataBrokerURL: dataBrokerURL,
@@ -78,31 +67,19 @@ final class OptOutSubmissionWideEventRecorder {
     }
 
     static func resumeIfPossible(wideEvent: WideEventManaging?,
-                                 attemptID: UUID) -> OptOutSubmissionWideEventRecorder? {
-        guard let wideEvent,
-              let existing: OptOutSubmissionWideEventData = wideEvent.getFlowData(OptOutSubmissionWideEventData.self,
-                                                                                  globalID: attemptID.uuidString) else {
+                                 profileIdentifier: String) -> OptOutSubmissionWideEventRecorder? {
+        guard let wideEvent else { return nil }
+
+        let hashedIdentifier = profileIdentifier.sha256
+
+        guard let existing: OptOutSubmissionWideEventData = wideEvent.getFlowData(OptOutSubmissionWideEventData.self,
+                                                                                  globalID: hashedIdentifier) else {
             return nil
         }
 
         return OptOutSubmissionWideEventRecorder(wideEvent: wideEvent,
                                                  data: existing,
                                                  shouldStartFlow: false)
-    }
-
-    private func addStage(name: OptOutSubmissionWideEventData.StageName,
-                          duration: Double?,
-                          tries: Int?,
-                          actionID: String?) {
-        queue.async {
-            let sanitizedDuration = duration.flatMap { max($0, 0) }
-            let stage = OptOutSubmissionWideEventData.Stage(name: name,
-                                                            duration: sanitizedDuration,
-                                                            tries: tries,
-                                                            actionID: actionID)
-            self.data.appendStage(stage)
-            self.updateFlow()
-        }
     }
 
     private func updateFlow() {
@@ -116,14 +93,6 @@ final class OptOutSubmissionWideEventRecorder {
         }
     }
 
-    private func setError(_ error: Error?) {
-        guard let error else { return }
-        queue.async {
-            self.data.errorData = WideEventErrorData(error: error)
-            self.updateFlow()
-        }
-    }
-
     private func completeInternal(status: WideEventStatus) {
         queue.async {
             guard !self.isCompleted else { return }
@@ -133,43 +102,16 @@ final class OptOutSubmissionWideEventRecorder {
             }
         }
     }
-
-    private func mapStageName(_ stage: Stage) -> OptOutSubmissionWideEventData.StageName {
-        if let mapped = OptOutSubmissionWideEventData.StageName(rawValue: stage.rawValue) {
-            return mapped
-        } else {
-            assertionFailure("Unknown stage name")
-            return .other
-        }
-    }
 }
 
 extension OptOutSubmissionWideEventRecorder: OptOutSubmissionWideEventRecording {
-    func recordStage(_ stage: Stage,
-                     duration: Double?,
-                     tries: Int,
-                     actionID: String?) {
-        let sanitizedAction = actionID?.isEmpty == false ? actionID : nil
-        let sanitizedDuration = duration.flatMap { max($0, 0) }
-        addStage(name: mapStageName(stage),
-                 duration: sanitizedDuration,
-                 tries: tries,
-                 actionID: sanitizedAction)
-    }
-
     func markSubmissionCompleted(at date: Date,
                                  tries: Int,
                                  actionID: String?) {
         setSubmissionEnd(date: date)
     }
 
-    func complete(status: WideEventStatus, with error: Error?) {
-        setError(error)
-        completeInternal(status: status)
-    }
-
-    func cancel(with error: Error?) {
-        setError(error)
-        completeInternal(status: .cancelled)
+    func completeSuccessfully() {
+        completeInternal(status: .success)
     }
 }

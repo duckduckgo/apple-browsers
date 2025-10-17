@@ -169,6 +169,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         let context = sut.createStageDurationContext(
             for: brokerData,
             identifiers: identifiers,
+            extractedProfile: brokerData.optOutJobData.first!.extractedProfile,
             database: mockDatabase,
             wideEvent: wideEvent,
             pixelHandler: pixelHandler,
@@ -182,7 +183,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         let calculatorRecorder = context.stageDurationCalculator.wideEventRecorder as? OptOutSubmissionWideEventRecorder
         XCTAssertTrue(recorder === calculatorRecorder)
         if let data = wideEvent.started.last as? OptOutSubmissionWideEventData {
-            XCTAssertEqual(data.globalData.id, context.stageDurationCalculator.attemptId.uuidString)
+            XCTAssertEqual(data.globalData.id, "someURL".sha256)
         } else {
             XCTFail("Expected OptOutSubmissionWideEventData")
         }
@@ -387,196 +388,6 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
             )
         ) { error in
             XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
-        }
-    }
-
-    // MARK: - recordOptOutFailure
-
-    func testRecordOptOutFailure_whenTimeout_emitsCancelledWideEvent() {
-        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
-                                                                     dataBrokerVersion: "1.0",
-                                                                     handler: mockPixelHandler,
-                                                                     vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status")
-        let identifiers = makeFixtureIdentifiers()
-        let wideEvent = WideEventMock()
-        let recorder = OptOutSubmissionWideEventRecorder.makeIfPossible(wideEvent: wideEvent,
-                                                                        attemptID: calculator.attemptId,
-                                                                        dataBrokerURL: "broker.com",
-                                                                        dataBrokerVersion: "1.0",
-                                                                        recordFoundDate: Date())
-        let completionExpectation = expectation(description: "wide event cancelled")
-        completionExpectation.assertForOverFulfill = false
-        wideEvent.onComplete = { (_: WideEventData, status: WideEventStatus) in
-            if status == .cancelled {
-                completionExpectation.fulfill()
-            }
-        }
-
-        sut.recordOptOutFailure(
-            error: TimeoutError(),
-            brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
-            database: mockDatabase,
-            wideEvent: wideEvent,
-            wideEventRecorder: recorder,
-            schedulingConfig: .default,
-            identifiers: identifiers,
-            stageDurationCalculator: calculator
-        )
-
-        wait(for: [completionExpectation], timeout: 1)
-        XCTAssertEqual(wideEvent.completions.first?.1, .cancelled)
-        if case .optOutFailure = mockPixelHandler.lastFiredEvent {
-            // expected
-        } else {
-            XCTFail("Expected opt-out failure pixel")
-        }
-    }
-
-    func testRecordOptOutFailure_whenJobTimeout_emitsCancelledWideEvent() {
-        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
-                                                                     dataBrokerVersion: "1.0",
-                                                                     handler: mockPixelHandler,
-                                                                     vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status")
-        let identifiers = makeFixtureIdentifiers()
-        let wideEvent = WideEventMock()
-        let recorder = OptOutSubmissionWideEventRecorder.makeIfPossible(wideEvent: wideEvent,
-                                                                        attemptID: calculator.attemptId,
-                                                                        dataBrokerURL: "broker.com",
-                                                                        dataBrokerVersion: "1.0",
-                                                                        recordFoundDate: Date())
-        let completionExpectation = expectation(description: "wide event cancelled job timeout")
-        completionExpectation.assertForOverFulfill = false
-        wideEvent.onComplete = { (_: WideEventData, status: WideEventStatus) in
-            if status == .cancelled {
-                completionExpectation.fulfill()
-            }
-        }
-
-        sut.recordOptOutFailure(
-            error: DataBrokerProtectionError.jobTimeout,
-            brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
-            database: mockDatabase,
-            wideEvent: wideEvent,
-            wideEventRecorder: recorder,
-            schedulingConfig: .default,
-            identifiers: identifiers,
-            stageDurationCalculator: calculator
-        )
-
-        wait(for: [completionExpectation], timeout: 1)
-        XCTAssertEqual(wideEvent.completions.first?.1, .cancelled)
-        if case .optOutFailure = mockPixelHandler.lastFiredEvent {
-            // expected
-        } else {
-            XCTFail("Expected opt-out failure pixel")
-        }
-    }
-
-    func testRecordOptOutFailure_whenGenericError_emitsFailureAndRecordsEvent() {
-        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
-                                                                     dataBrokerVersion: "1.0",
-                                                                     handler: mockPixelHandler,
-                                                                     vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status")
-        let identifiers = makeFixtureIdentifiers()
-        let wideEvent = WideEventMock()
-        let recorder = OptOutSubmissionWideEventRecorder.makeIfPossible(wideEvent: wideEvent,
-                                                                        attemptID: calculator.attemptId,
-                                                                        dataBrokerURL: "broker.com",
-                                                                        dataBrokerVersion: "1.0",
-                                                                        recordFoundDate: Date())
-        mockDependencies.wideEvent = wideEvent
-        let completionExpectation = expectation(description: "wide event failure")
-        completionExpectation.assertForOverFulfill = false
-        wideEvent.onComplete = { (_: WideEventData, status: WideEventStatus) in
-            if status == .failure {
-                completionExpectation.fulfill()
-            }
-        }
-
-        sut.recordOptOutFailure(
-            error: DataBrokerProtectionError.actionFailed(actionID: "action", message: "msg"),
-            brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
-            database: mockDatabase,
-            wideEvent: wideEvent,
-            wideEventRecorder: recorder,
-            schedulingConfig: .default,
-            identifiers: identifiers,
-            stageDurationCalculator: calculator
-        )
-
-        wait(for: [completionExpectation], timeout: 1)
-        XCTAssertEqual(wideEvent.completions.first?.1, .failure)
-        XCTAssertTrue(mockDatabase.optOutEvents.contains { $0.isError })
-        if case .optOutFailure = mockPixelHandler.lastFiredEvent {
-            // expected
-        } else {
-            XCTFail("Expected opt-out failure pixel")
-        }
-    }
-
-    func testRecordOptOutFailure_whenHistoryWriteFails_stillEmitsPixels() {
-        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
-                                                                     dataBrokerVersion: "1.0",
-                                                                     handler: mockPixelHandler,
-                                                                     vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status")
-        let identifiers = makeFixtureIdentifiers()
-        let wideEvent = WideEventMock()
-        let recorder = OptOutSubmissionWideEventRecorder.makeIfPossible(wideEvent: wideEvent,
-                                                                        attemptID: calculator.attemptId,
-                                                                        dataBrokerURL: "broker.com",
-                                                                        dataBrokerVersion: "1.0",
-                                                                        recordFoundDate: Date())
-        mockDependencies.wideEvent = wideEvent
-        mockDatabase.saveResult = .failure(MockDatabase.MockError.saveFailed)
-
-        sut.recordOptOutFailure(
-            error: DataBrokerProtectionError.actionFailed(actionID: "action", message: "msg"),
-            brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
-            database: mockDatabase,
-            wideEvent: wideEvent,
-            wideEventRecorder: recorder,
-            schedulingConfig: .default,
-            identifiers: identifiers,
-            stageDurationCalculator: calculator
-        )
-
-        XCTAssertEqual(wideEvent.completions.first?.1, .failure)
-        if case .optOutFailure = mockPixelHandler.lastFiredEvent {
-            // expected even when history write fails
-        } else {
-            XCTFail("Expected opt-out failure pixel")
-        }
-    }
-
-    func testRecordOptOutFailure_whenIncrementAttemptCountFails_stillHandlesFailure() {
-        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
-                                                                     dataBrokerVersion: "1.0",
-                                                                     handler: mockPixelHandler,
-                                                                     vpnConnectionState: "state",
-                                                                     vpnBypassStatus: "status")
-        let identifiers = makeFixtureIdentifiers()
-        mockDatabase.incrementAttemptShouldThrow = true
-
-        sut.recordOptOutFailure(
-            error: DataBrokerProtectionError.unknown("failure"),
-            brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
-            database: mockDatabase,
-            wideEvent: nil,
-            wideEventRecorder: nil,
-            schedulingConfig: .default,
-            identifiers: identifiers,
-            stageDurationCalculator: calculator
-        )
-
-        XCTAssertEqual(mockDatabase.attemptCount, 0)
-        if case .optOutFailure = mockPixelHandler.lastFiredEvent {
-            // expected
-        } else {
-            XCTFail("Expected opt-out failure pixel to fire")
         }
     }
 

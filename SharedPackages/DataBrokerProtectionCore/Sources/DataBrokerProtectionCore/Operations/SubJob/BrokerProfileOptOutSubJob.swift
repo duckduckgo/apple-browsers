@@ -67,6 +67,7 @@ struct BrokerProfileOptOutSubJob {
 
         let stageDurationContext = createStageDurationContext(for: brokerProfileQueryData,
                                                               identifiers: identifiers,
+                                                              extractedProfile: extractedProfile,
                                                               database: dependencies.database,
                                                               wideEvent: dependencies.wideEvent,
                                                               pixelHandler: dependencies.pixelHandler,
@@ -168,6 +169,7 @@ struct BrokerProfileOptOutSubJob {
 
     internal func createStageDurationContext(for brokerProfileQueryData: BrokerProfileQueryData,
                                              identifiers: OptOutIdentifiers,
+                                             extractedProfile: ExtractedProfile,
                                              database: DataBrokerProtectionRepository,
                                              wideEvent: WideEventManaging?,
                                              pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
@@ -187,13 +189,21 @@ struct BrokerProfileOptOutSubJob {
                                                               brokerId: identifiers.brokerId,
                                                               profileQueryId: identifiers.profileQueryId,
                                                               extractedProfileId: identifiers.extractedProfileId)
-        let wideEventRecorder = OptOutSubmissionWideEventRecorder.makeIfPossible(
-            wideEvent: wideEvent,
-            attemptID: stageDurationCalculator.attemptId,
-            dataBrokerURL: brokerProfileQueryData.dataBroker.url,
-            dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-            recordFoundDate: recordFoundDate
-        )
+        let wideEventRecorder: OptOutSubmissionWideEventRecorder?
+        if let identifier = extractedProfile.identifier {
+            wideEventRecorder = OptOutSubmissionWideEventRecorder.resumeIfPossible(
+                wideEvent: wideEvent,
+                profileIdentifier: identifier
+            ) ?? OptOutSubmissionWideEventRecorder.makeIfPossible(
+                wideEvent: wideEvent,
+                profileIdentifier: identifier,
+                dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+                dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+                recordFoundDate: recordFoundDate
+            )
+        } else {
+            wideEventRecorder = nil
+        }
         stageDurationCalculator.attachWideEventRecorder(wideEventRecorder)
 
         // 6. Record the start of the opt-out job:

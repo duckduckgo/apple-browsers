@@ -214,12 +214,6 @@ final class FireDialogViewModel: ObservableObject {
                !pinnedTabsManager.isEmpty {
                 return true
             }
-            // If in shared mode, check if ANY pinned tabs exist globally
-            if let provider = tabCollectionViewModel.pinnedTabsManagerProvider,
-               provider.pinnedTabsMode == .shared,
-               !provider.arePinnedTabsEmpty {
-                return true
-            }
             return false
 
         case .allData:

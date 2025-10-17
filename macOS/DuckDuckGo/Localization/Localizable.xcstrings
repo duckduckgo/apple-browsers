@@ -13641,7 +13641,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cookies und Daten von „Fireproof“-Websites werden nicht gelöscht."
+            "value" : "Cookies und Daten einer „Fireproof“-Website werden nicht gelöscht."
           }
         },
         "en" : {
@@ -31797,7 +31797,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Todas las ventanas se cerrarán."
+            "value" : "Se cerrarán todas las ventanas."
           }
         },
         "fr" : {
@@ -31827,7 +31827,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Serão fechadas todas as janelas."
+            "value" : "Todas as janelas serão fechadas."
           }
         },
         "ru" : {
@@ -32013,7 +32013,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Закрыть все вкладки и окна."
+            "value" : "Закрыть все вкладки и окна"
           }
         }
       }
@@ -32073,7 +32073,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Закрыть эту вкладку."
+            "value" : "Закрыть эту вкладку"
           }
         }
       }
@@ -32133,7 +32133,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Закрыть это окно."
+            "value" : "Закрыть это окно"
           }
         }
       }
@@ -32200,7 +32200,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar de %#@sites@. Puede que cierres sesión en tus cuentas."
+            "value" : "Eliminar de %#@sites@.Puede que cierres sesión en tus cuentas."
           },
           "substitutions" : {
             "sites" : {
@@ -32239,13 +32239,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg site"
+                      "value" : "%arg site"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg sites"
+                      "value" : "%arg sites"
                     }
                   }
                 }
@@ -32284,7 +32284,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verwijder van %#@sites@. Je kan worden uitgelogd bij accounts."
+            "value" : "Verwijderen van %#@sites@. Je kan worden uitgelogd bij accounts."
           },
           "substitutions" : {
             "sites" : {
@@ -32295,13 +32295,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg website"
+                      "value" : "%arg site"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg websites"
+                      "value" : "%arg sites"
                     }
                   }
                 }
@@ -32312,7 +32312,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usuń z %#@sites@. Może spowodować wylogowanie z kont."
+            "value" : "Usuń z %#@sites@. Może nastąpić wylogowanie z kont."
           },
           "substitutions" : {
             "sites" : {
@@ -32335,13 +32335,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg witryny"
+                      "value" : "%arg witryna"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg witryn"
+                      "value" : "%arg witryn(y)"
                     }
                   }
                 }
@@ -32380,7 +32380,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Данные будут удалены с %#@sites@. Операция может сопровождаться выходом из учетных записей."
+            "value" : "Данные будут удалены с %#@sites@.Операция может сопровождаться выходом из учетных записей."
           },
           "substitutions" : {
             "sites" : {
@@ -32403,13 +32403,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg сайта"
+                      "value" : "%arg сайт"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg сайтов"
+                      "value" : "%arg сайта(-ов)"
                     }
                   }
                 }
@@ -32845,7 +32845,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lösche %#@items@."
+            "value" : "%#@items@ löschen."
           },
           "substitutions" : {
             "items" : {
@@ -32912,13 +32912,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elemento"
+                      "value" : "%arg artículo"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementos"
+                      "value" : "%arg artículos"
                     }
                   }
                 }
@@ -32940,13 +32940,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg élément"
+                      "value" : "%arg élément"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg éléments"
+                      "value" : "%arg éléments"
                     }
                   }
                 }
@@ -33013,7 +33013,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usuń %#@items@."
+            "value" : "Usuń 1$#@items@."
           },
           "substitutions" : {
             "items" : {
@@ -33042,7 +33042,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementów"
+                      "value" : "Liczba elementów: %arg"
                     }
                   }
                 }
@@ -33053,7 +33053,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar %#@items@."
+            "value" : "Elimina %#@items@."
           },
           "substitutions" : {
             "items" : {
@@ -33081,7 +33081,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить %#@items@."
+            "value" : "Удаление %#@items@."
           },
           "substitutions" : {
             "items" : {
@@ -33104,13 +33104,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg запись"
+                      "value" : "%arg элемент"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg записей"
+                      "value" : "Записей: %arg"
                     }
                   }
                 }
@@ -33126,7 +33126,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lösche %#@items@ aus diesem Tab."
+            "value" : "%#@items@ aus dieser Registerkarte löschen."
           },
           "substitutions" : {
             "items" : {
@@ -33193,13 +33193,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elemento"
+                      "value" : "%arg artículo"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementos"
+                      "value" : "%arg artículos"
                     }
                   }
                 }
@@ -33221,13 +33221,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg élément"
+                      "value" : "%arg élément"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg éléments"
+                      "value" : "%arg éléments"
                     }
                   }
                 }
@@ -33323,7 +33323,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementów"
+                      "value" : "Liczba elementów: %arg"
                     }
                   }
                 }
@@ -33334,7 +33334,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar %#@items@ deste separador."
+            "value" : "Elimina %#@items@ deste separador."
           },
           "substitutions" : {
             "items" : {
@@ -33362,7 +33362,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить %#@items@ с этой вкладки."
+            "value" : "Удаление %#@items@ с этой вкладки."
           },
           "substitutions" : {
             "items" : {
@@ -33385,13 +33385,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg запись"
+                      "value" : "%arg элемент"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg записей"
+                      "value" : "Записей: %arg"
                     }
                   }
                 }
@@ -33407,7 +33407,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lösche %#@items@ aus diesem Fenster."
+            "value" : "%#@items@ aus diesem Fenster löschen."
           },
           "substitutions" : {
             "items" : {
@@ -33474,13 +33474,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elemento"
+                      "value" : "%arg artículo"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementos"
+                      "value" : "%arg artículos"
                     }
                   }
                 }
@@ -33502,13 +33502,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg élément"
+                      "value" : "%arg élément"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg éléments"
+                      "value" : "%arg éléments"
                     }
                   }
                 }
@@ -33604,7 +33604,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementów"
+                      "value" : "%arg elem."
                     }
                   }
                 }
@@ -33615,7 +33615,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar %#@items@ desta janela."
+            "value" : "Elimina %#@items@ desta janela."
           },
           "substitutions" : {
             "items" : {
@@ -33643,7 +33643,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить %#@items@ из этого окна."
+            "value" : "Удаление %#@items@ из этого окна."
           },
           "substitutions" : {
             "items" : {
@@ -33666,13 +33666,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg запись"
+                      "value" : "%arg элемент"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg записей"
+                      "value" : "Записей: %arg"
                     }
                   }
                 }
@@ -33968,7 +33968,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Separador"
+            "value" : "Tab"
           }
         },
         "ru" : {
@@ -34044,7 +34044,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Diese Websites werden gelöscht."
+            "value" : "Diese Seiten werden gelöscht."
           }
         },
         "en" : {
@@ -34056,7 +34056,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Estos sitios se eliminarán."
+            "value" : "Estos sitios serán eliminados."
           }
         },
         "fr" : {
@@ -34074,7 +34074,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deze sites worden verwijderd."
+            "value" : "Deze sites zullen worden verwijderd."
           }
         },
         "pl" : {
@@ -34092,7 +34092,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Данные сайтов будут удалены."
+            "value" : "Эти сайты будут удалены."
           }
         }
       }
@@ -34103,7 +34103,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Website-Details"
+            "value" : "Websitedetails"
           }
         },
         "en" : {
@@ -34115,43 +34115,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Detalles de los sitios"
+            "value" : "Detalles del sitio"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Détails des sites"
+            "value" : "Détails du site"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dettagli dei siti"
+            "value" : "Dettagli del sito"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sitedetails"
+            "value" : "Site details"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Szczegóły witryn"
+            "value" : "Szczegóły witryny"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Detalhes dos sites"
+            "value" : "Detalhes do site"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Сведения о сайтах"
+            "value" : "Подробнее о сайте"
           }
         }
       }
@@ -34193,7 +34193,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Huidige tabblad wordt gesloten."
+            "value" : "Huidig tabblad wordt gesloten."
           }
         },
         "pl" : {
@@ -34259,7 +34259,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Przypięta karta zostanie załadowana ponownie."
+            "value" : "Przypięta karta zostanie ponownie załadowana."
           }
         },
         "pt" : {
@@ -34354,7 +34354,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar los datos de navegación"
+            "value" : "Elimina los datos de navegación"
           }
         },
         "fr" : {
@@ -34372,7 +34372,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browsegegevens verwijderen"
+            "value" : "Surfgegevens verwijderen"
           }
         },
         "pl" : {
@@ -34402,7 +34402,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aktuelles Fenster wird geschlossen."
+            "value" : "Das aktuelle Fenster wird geschlossen."
           }
         },
         "en" : {
@@ -34414,7 +34414,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La ventana actual se cerrará."
+            "value" : "Se cerrará la ventana actual."
           }
         },
         "fr" : {
@@ -52634,7 +52634,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keine"
+            "value" : "gar nichts"
           }
         },
         "en" : {
@@ -52658,7 +52658,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nessuno"
+            "value" : "Niente"
           }
         },
         "nl" : {
@@ -52682,7 +52682,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Нет"
+            "value" : "Без анимации"
           }
         }
       }
@@ -62731,8 +62731,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Passwörter sind verschlüsselt. Niemand außer dir kann sie sehen, nicht einmal wir."
+            "state" : "translated",
+            "value" : "Passwörter und Kreditkarten sind verschlüsselt. Niemand außer dir kann sie sehen, nicht einmal wir."
           }
         },
         "en" : {
@@ -62743,44 +62743,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Las contraseñas están cifradas. Nadie más que tú puede verlas, ni siquiera nosotros."
+            "state" : "translated",
+            "value" : "Las contraseñas y las tarjetas de crédito están cifradas. Nadie más que tú puede verlas, ni siquiera nosotros."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Les mots de passe sont cryptés. Personne d'autre que vous ne peut les voir, pas même nous."
+            "state" : "translated",
+            "value" : "Les mots de passe et les cartes bancaires sont cryptés. Personne d'autre que vous ne peut les voir, pas même nous."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Le password sono crittografate. Nessuno tranne te può vederle, nemmeno noi."
+            "state" : "translated",
+            "value" : "Password e carte di credito sono crittografate. Nessuno tranne te può vederle, nemmeno noi."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Wachtwoorden worden versleuteld. Niemand anders kan ze zien, zelfs wij niet."
+            "state" : "translated",
+            "value" : "Wachtwoorden en creditcards worden versleuteld. Niemand anders kan ze zien, zelfs wij niet."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Hasła są szyfrowane. Nikt poza Tobą ich nie widzi, nawet my."
+            "state" : "translated",
+            "value" : "Hasła i dane kart kredytowych są szyfrowane. Nikt poza Tobą ich nie widzi, nawet my."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "As palavras-passe estão encriptadas. Ninguém além de ti pode vê-las, nem mesmo nós."
+            "state" : "translated",
+            "value" : "As palavras-passe e os cartões de crédito estão encriptados. Ninguém além de ti pode vê-las, nem mesmo nós."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Пароли подвергаются шифрованию. Никто, кроме вас, их не увидит. Даже мы."
+            "state" : "translated",
+            "value" : "Пароли и реквизиты карт подвергаются шифрованию. Никто, кроме вас, их не увидит. Даже мы."
           }
         }
       }
@@ -62791,8 +62791,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Passwörter sind verschlüsselt."
+            "state" : "translated",
+            "value" : "Passwörter und Kreditkarten sind verschlüsselt."
           }
         },
         "en" : {
@@ -62803,44 +62803,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Las contraseñas están cifradas."
+            "state" : "translated",
+            "value" : "Las contraseñas y las tarjetas de crédito están cifradas."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Les mots de passe sont cryptés."
+            "state" : "translated",
+            "value" : "Les mots de passe et les cartes bancaires sont cryptés."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Le password sono crittografate."
+            "state" : "translated",
+            "value" : "Password e carte di credito sono crittografate."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Wachtwoorden worden versleuteld."
+            "state" : "translated",
+            "value" : "Wachtwoorden en creditcards worden versleuteld."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Hasła są szyfrowane."
+            "state" : "translated",
+            "value" : "Hasła i dane kart kredytowych są szyfrowane."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "As palavras-passe estão encriptadas."
+            "state" : "translated",
+            "value" : "As palavras-passe e os cartões de crédito estão encriptados."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Пароли подвергаются шифрованию."
+            "state" : "translated",
+            "value" : "Пароли и реквизиты карт подвергаются шифрованию."
           }
         }
       }
@@ -62851,7 +62851,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Passwörter sind verschlüsselt. Niemand außer dir kann sie sehen, nicht einmal wir."
           }
         },
@@ -62863,55 +62863,55 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Las contraseñas están cifradas. Nadie más que tú puede verlas, ni siquiera nosotros."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Les mots de passe sont cryptés. Personne d'autre que vous ne peut les voir, pas même nous."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Le password sono crittografate. Nessuno tranne te può vederle, nemmeno noi."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Wachtwoorden worden versleuteld. Niemand anders kan ze zien, zelfs wij niet."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Hasła są szyfrowane. Nikt poza Tobą ich nie widzi, nawet my."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "As palavras-passe estão encriptadas. Ninguém além de ti pode vê-las, nem mesmo nós."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Пароли подвергаются шифрованию. Никто, кроме вас, их не увидит. Даже мы."
           }
         }
       }
     },
-    "pm.empty.default.description.extended.v2.autolock.off" : {
+    "pm.empty.default.passwords.description.extended.v2.autolock.off" : {
       "comment" : "Label for default empty state description when the autolock feature is off",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Passwörter sind verschlüsselt."
           }
         },
@@ -62923,43 +62923,43 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Las contraseñas están cifradas."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Les mots de passe sont cryptés."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Le password sono crittografate."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Wachtwoorden worden versleuteld."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Hasła są szyfrowane."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "As palavras-passe estão encriptadas."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Пароли подвергаются шифрованию."
           }
         }
@@ -63296,7 +63296,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sincronizza carte di credito"
+            "value" : "Sincronizza Carte di credito"
           }
         },
         "nl" : {
@@ -63320,7 +63320,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Синхронизировать платежные карты"
+            "value" : "Синхронизировать карты"
           }
         }
       }
@@ -63356,7 +63356,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sincronizza identità"
+            "value" : "Sincronizza le identità"
           }
         },
         "nl" : {
@@ -63380,7 +63380,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Синхронизировать учетные данные"
+            "value" : "Синхронизировать данные"
           }
         }
       }
@@ -63416,7 +63416,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sincronizza password"
+            "value" : "Sincronizza le password"
           }
         },
         "nl" : {
@@ -69320,6 +69320,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отправить отзыв"
+          }
+        }
+      }
+    },
+    "preferences.about.terms-of-service" : {
+      "comment" : "Link to Terms of Service page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nutzungsbedingungen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Terms of Service"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Condiciones del servicio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conditions d'utilisation"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Termini di servizio"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servicevoorwaarden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warunki korzystania"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Termos de Serviço"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Условия предоставления услуг"
           }
         }
       }
@@ -93194,10 +93254,58 @@
       "comment" : "CTA of the message displayed on the last day of the win-back campaign",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angebot ansehen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "See Offer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver oferta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir l'offre"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedi l'offerta"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bekijk de aanbieding"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobacz ofertę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver oferta"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Посмотреть"
           }
         }
       }
@@ -93206,10 +93314,58 @@
       "comment" : "Message of the message displayed on the last day of the win-back campaign",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bleib geschützt mit unserem VPN, privater KI und mehr. Abonniere noch heute erneut und spare 25 %.\nZeitlich begrenztes Angebot."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Stay protected with our VPN, private AI, and more.\nResubscribe today and save 25%. Limited time offer."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantente protegido con nuestra VPN, IA privada y mucho más. Vuelve a suscribirte hoy y ahorra un 25 %.Oferta por tiempo limitado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protégez-vous grâce à notre VPN, à notre IA privée et plus encore. Réabonnez-vous aujourd'hui et économisez 25 %.Offre à durée limitée."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proteggiti con la nostra VPN, AI privata e altro ancora. Rinnova oggi stesso e risparmia il 25%.\nOfferta a tempo limitato."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blijf beschermd met onze VPN, private AI en meer. Meld je vandaag nog opnieuw aan en bespaar 25%.\nTijdelijke aanbieding."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zachowaj bezpieczeństwo dzięki naszej sieci VPN, prywatnej AI i innym usługom.Odnów subskrypcję już dziś i zaoszczędź 25%. Oferta ograniczona czasowo."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantém a tua proteção com a nossa VPN, IA privada e muito mais. Volta a subscrever hoje mesmo e poupa 25%.Oferta por tempo limitado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всегда под защитой: VPN, приватный ИИ и не только.Скидка 25% при возобновлении подписки. Срок действия предложения ограничен."
           }
         }
       }
@@ -93218,10 +93374,58 @@
       "comment" : "Title of message displayed on the last day of the win-back campaign",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letzter Tag, um 25 % zu sparen!"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Last day to save 25%!"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Último día para ahorrar un 25 %!"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dernier jour pour économiser 25 % !"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ultimo giorno per risparmiare il 25%!"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alleen vandaag nog 25% korting!"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ostatni dzień, aby zaoszczędzić 25%!"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Último dia para poupar 25%!"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скидка 25%: последний день акции!"
           }
         }
       }
@@ -93230,10 +93434,58 @@
       "comment" : "Text for the badge displayed on the Subscription menu item during the win-back campaign",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SPARE 25 %"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "SAVE 25%"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AHORRA UN 25 %"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ÉCONOMISEZ 25 %"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RISPARMIA IL 25%"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "BESPAAR 25%"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZAOSZCZĘDŹ 25%"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "POUPA 25%"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "СКИДКА 25%"
           }
         }
       }
@@ -93242,10 +93494,58 @@
       "comment" : "CTA of the modal dialog promoting the win-back campaign",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angebot ansehen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "See Offer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver oferta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir l'offre"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedi l'offerta"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bekijk de aanbieding"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobacz ofertę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver oferta"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Акция"
           }
         }
       }
@@ -93254,10 +93554,58 @@
       "comment" : "Dismiss of the modal dialog promoting the win-back campaign",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt nicht"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Not Now"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora no"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas maintenant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non adesso"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet nu"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie teraz"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora não"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не сейчас"
           }
         }
       }
@@ -93266,10 +93614,58 @@
       "comment" : "Message of the modal dialog promoting the win-back campaign",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bleib geschützt mit unserem VPN, privater KI und mehr. Abonniere noch heute erneut und spare 25 %.\nZeitlich begrenztes Angebot."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Stay protected with our VPN, private AI, and more.\nResubscribe today and save 25%. Limited time offer."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantente protegido con nuestra VPN, IA privada y mucho más. Vuelve a suscribirte hoy y ahorra un 25 %.Oferta por tiempo limitado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protégez-vous grâce à notre VPN, à notre IA privée et plus encore. Réabonnez-vous aujourd'hui et économisez 25 %.Offre à durée limitée."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proteggiti con la nostra VPN, AI privata e altro ancora. Rinnova oggi stesso e risparmia il 25%.\nOfferta a tempo limitato."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blijf beschermd met onze VPN, private AI en meer. Meld je vandaag nog opnieuw aan en bespaar 25%.\nTijdelijke aanbieding."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zachowaj bezpieczeństwo dzięki naszej sieci VPN, prywatnej AI i innym usługom.\nOdnów subskrypcję już dziś i zaoszczędź 25%. Oferta ograniczona czasowo."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantém a tua proteção com a nossa VPN, IA privada e muito mais. Volta a subscrever hoje mesmo e poupa 25%.Oferta por tempo limitado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы всегда под защитой: VPN, приватный ИИ и многое другое.Скидка 25% при возобновлении подписки. Срок акции ограничен."
           }
         }
       }
@@ -93278,10 +93674,58 @@
       "comment" : "Title of the modal dialog promoting the win-back campaign",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir wollen dich zurück!\nErhalte 25 % Rabatt."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "We want you back! Get 25% off."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Queremos que vuelvas!\nConsigue un 25 % de descuento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous voulons vous revoir !\nBénéficiez de 25 % de réduction."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Torna indietro!\nOttieni il 25% di sconto."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wij willen je terug!\nKrijg 25% korting."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wróć do nas! Otrzymasz 25% zniżki."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Queremos-te de volta!\nRecebe 25% de desconto."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ждем вашего возвращения. Держите скидку 25%!"
           }
         }
       }

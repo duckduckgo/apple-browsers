@@ -505,6 +505,10 @@ extension URL {
         return URL(string: "https://duckduckgo.com/privacy")!
     }
 
+    static var termsOfService: URL {
+        URL(string: "https://duckduckgo.com/terms")!
+    }
+
     static var subscription: URL {
         return URL(string: "https://duckduckgo.com/pro")!
     }

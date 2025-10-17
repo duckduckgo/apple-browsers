@@ -36,7 +36,7 @@ final class SafariPerformanceTestViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.totalIterations, 10)
         XCTAssertEqual(viewModel.selectedIterations, 10)
         XCTAssertFalse(viewModel.isCancelled)
-        XCTAssertNil(viewModel.resultsFilePath)
+        XCTAssertNil(viewModel.testResults)
         XCTAssertNil(viewModel.errorMessage)
     }
 
@@ -50,9 +50,9 @@ final class SafariPerformanceTestViewModelTests: XCTestCase {
 
         await viewModel.runTest()
 
-        // Should have results from mock
-        XCTAssertNotNil(viewModel.resultsFilePath)
-        XCTAssertEqual(viewModel.resultsFilePath, "/tmp/mock-results.json")
+        // Should have parsed results from mock
+        XCTAssertNotNil(viewModel.testResults)
+        XCTAssertEqual(viewModel.testResults?.url, url)
 
         // Should not be running anymore
         XCTAssertFalse(viewModel.isRunning)
@@ -141,7 +141,7 @@ final class SafariPerformanceTestViewModelTests: XCTestCase {
 
         await viewModel.runTest()
 
-        XCTAssertEqual(viewModel.resultsFilePath, "/tmp/test-results.json")
+        XCTAssertNotNil(viewModel.testResults)
         XCTAssertNil(viewModel.errorMessage)
         XCTAssertFalse(viewModel.isRunning)
     }
@@ -177,10 +177,98 @@ final class SafariPerformanceTestViewModelTests: XCTestCase {
         _ = viewModel.totalIterations
         _ = viewModel.selectedIterations
         _ = viewModel.isCancelled
-        _ = viewModel.resultsFilePath
+        _ = viewModel.testResults
+        _ = viewModel.selectedStatView
         _ = viewModel.errorMessage
 
         // If we get here without compilation errors, all properties exist
         XCTAssertTrue(true)
+    }
+
+    // MARK: - Error Details Tests
+
+    func testErrorDetails_nodeNotFound_returnsCorrectMessage() async {
+        let url = URL(string: "https://example.com")!
+        let viewModel = SafariPerformanceTestViewModel(url: url, runnerFactory: { url, iterations in
+            let mock = MockSafariTestExecutor(url: url, iterations: iterations)
+            mock.shouldThrowError = SafariTestRunner.RunnerError.nodeNotFound
+            return mock
+        })
+
+        await viewModel.runTest()
+
+        XCTAssertEqual(viewModel.errorMessage, "Node.js not found. Please install Node.js to run Safari performance tests.")
+        XCTAssertEqual(viewModel.statusText, "Error: Node.js not found")
+    }
+
+    func testErrorDetails_npmNotFound_returnsCorrectMessage() async {
+        let url = URL(string: "https://example.com")!
+        let viewModel = SafariPerformanceTestViewModel(url: url, runnerFactory: { url, iterations in
+            let mock = MockSafariTestExecutor(url: url, iterations: iterations)
+            mock.shouldThrowError = SafariTestRunner.RunnerError.npmNotFound
+            return mock
+        })
+
+        await viewModel.runTest()
+
+        XCTAssertEqual(viewModel.errorMessage, "npm not found. Please install Node.js (which includes npm) to run Safari performance tests.")
+        XCTAssertEqual(viewModel.statusText, "Error: npm not found")
+    }
+
+    func testErrorDetails_dependenciesInstallFailed_returnsCorrectMessage() async {
+        let url = URL(string: "https://example.com")!
+        let sampleErrorOutput = "npm ERR! some error output"
+        let viewModel = SafariPerformanceTestViewModel(url: url, runnerFactory: { url, iterations in
+            let mock = MockSafariTestExecutor(url: url, iterations: iterations)
+            mock.shouldThrowError = SafariTestRunner.RunnerError.dependenciesInstallFailed(sampleErrorOutput)
+            return mock
+        })
+
+        await viewModel.runTest()
+
+        XCTAssertEqual(viewModel.errorMessage, "Failed to install test dependencies:\n\n\(sampleErrorOutput)")
+        XCTAssertEqual(viewModel.statusText, "Error: Dependency installation failed")
+    }
+
+    func testErrorDetails_scriptNotFound_returnsCorrectMessage() async {
+        let url = URL(string: "https://example.com")!
+        let viewModel = SafariPerformanceTestViewModel(url: url, runnerFactory: { url, iterations in
+            let mock = MockSafariTestExecutor(url: url, iterations: iterations)
+            mock.shouldThrowError = SafariTestRunner.RunnerError.scriptNotFound
+            return mock
+        })
+
+        await viewModel.runTest()
+
+        XCTAssertEqual(viewModel.errorMessage, "Safari test script not found in bundle.")
+        XCTAssertEqual(viewModel.statusText, "Error: Script not found")
+    }
+
+    func testErrorDetails_processFailedWithExitCode_returnsCorrectMessage() async {
+        let url = URL(string: "https://example.com")!
+        let viewModel = SafariPerformanceTestViewModel(url: url, runnerFactory: { url, iterations in
+            let mock = MockSafariTestExecutor(url: url, iterations: iterations)
+            mock.shouldThrowError = SafariTestRunner.RunnerError.processFailedWithExitCode(1)
+            return mock
+        })
+
+        await viewModel.runTest()
+
+        XCTAssertEqual(viewModel.errorMessage, "Safari test process failed with exit code 1. Check Console.app for details.")
+        XCTAssertEqual(viewModel.statusText, "Error: Process failed")
+    }
+
+    func testErrorDetails_cancelled_setsCorrectStatus() async {
+        let url = URL(string: "https://example.com")!
+        let viewModel = SafariPerformanceTestViewModel(url: url, runnerFactory: { url, iterations in
+            let mock = MockSafariTestExecutor(url: url, iterations: iterations)
+            mock.shouldThrowError = SafariTestRunner.RunnerError.cancelled
+            return mock
+        })
+
+        await viewModel.runTest()
+
+        XCTAssertEqual(viewModel.errorMessage, "Test was cancelled")
+        XCTAssertEqual(viewModel.statusText, "Test cancelled")
     }
 }

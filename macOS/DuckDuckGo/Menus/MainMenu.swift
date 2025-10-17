@@ -746,10 +746,8 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Performance Tests") {
                 NSMenuItem(title: "Test Network Quality", action: #selector(MainViewController.testNetworkQuality))
                     .withAccessibilityIdentifier("MainMenu.testNetworkQuality")
-                NSMenuItem(title: "Test Current Site Performance", action: #selector(MainViewController.testCurrentSitePerformance))
+                NSMenuItem(title: "Test Site Performance (DDG vs Safari)", action: #selector(MainViewController.testCurrentSitePerformance))
                     .withAccessibilityIdentifier("MainMenu.testCurrentSitePerformance")
-                NSMenuItem(title: "Test Current Site Performance (Safari)", action: #selector(MainViewController.testCurrentSitePerformanceWithSafari))
-                    .withAccessibilityIdentifier("MainMenu.testCurrentSitePerformanceSafari")
             }
             NSMenuItem(title: "Content Scopes Experiment") {
                 NSMenuItem(title: "Show Active Experiments", action: #selector(AppDelegate.showContentScopeExperiments))

@@ -45,6 +45,16 @@ class TestExecutor {
                 executionLogger.debug('Fresh WebDriver session started with clean cache');
             }
 
+            // Navigate to duckduckgo.com to warm up JavaScript engine
+            executionLogger.debug('Navigating to duckduckgo.com for JS warmup');
+            await this.webDriver.navigateTo('https://duckduckgo.com');
+
+            // Wait for warmup page to be ready
+            await this._waitForPageReady();
+
+            // Brief pause after warmup
+            await new Promise(resolve => setTimeout(resolve, 500));
+
             // Navigate to URL
             await this._navigateToUrl(url);
 

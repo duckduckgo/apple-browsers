@@ -211,22 +211,23 @@ final class SafariPerformanceTestViewModelTests: XCTestCase {
 
         await viewModel.runTest()
 
-        XCTAssertEqual(viewModel.errorMessage, "npm not found. Please install npm to run Safari performance tests.")
+        XCTAssertEqual(viewModel.errorMessage, "npm not found. Please install Node.js (which includes npm) to run Safari performance tests.")
         XCTAssertEqual(viewModel.statusText, "Error: npm not found")
     }
 
-    func testErrorDetails_npmInstallFailed_returnsCorrectMessage() async {
+    func testErrorDetails_dependenciesInstallFailed_returnsCorrectMessage() async {
         let url = URL(string: "https://example.com")!
+        let sampleErrorOutput = "npm ERR! some error output"
         let viewModel = SafariPerformanceTestViewModel(url: url, runnerFactory: { url, iterations in
             let mock = MockSafariTestExecutor(url: url, iterations: iterations)
-            mock.shouldThrowError = SafariTestRunner.RunnerError.npmInstallFailed
+            mock.shouldThrowError = SafariTestRunner.RunnerError.dependenciesInstallFailed(sampleErrorOutput)
             return mock
         })
 
         await viewModel.runTest()
 
-        XCTAssertEqual(viewModel.errorMessage, "Failed to install npm dependencies. Check Console.app for details.")
-        XCTAssertEqual(viewModel.statusText, "Error: npm install failed")
+        XCTAssertEqual(viewModel.errorMessage, "Failed to install test dependencies:\n\n\(sampleErrorOutput)")
+        XCTAssertEqual(viewModel.statusText, "Error: Dependency installation failed")
     }
 
     func testErrorDetails_scriptNotFound_returnsCorrectMessage() async {

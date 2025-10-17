@@ -112,7 +112,7 @@ public final class SafariPerformanceTestViewModel: ObservableObject {
         totalIterations = total
         statusText = status
 
-        if total > 0 {
+        if total > 0, iteration > 0 {
             progress = Double(iteration) / Double(total)
         }
     }

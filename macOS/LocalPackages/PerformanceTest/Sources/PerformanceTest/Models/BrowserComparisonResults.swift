@@ -55,15 +55,27 @@ public struct BrowserComparisonResults {
     }
 
     /// Determine which browser won for a time-based metric (lower is better)
-    /// Takes into account standard deviation to check statistical significance
+    /// Uses statistical significance testing to determine if differences are meaningful
+    /// - Parameters:
+    ///   - duckduckgoValue: Median time value for DuckDuckGo
+    ///   - safariValue: Median time value for Safari
+    ///   - ddgStdDev: IQR (Interquartile Range) for DuckDuckGo, automatically converted to std dev
+    ///   - safariStdDev: IQR (Interquartile Range) for Safari, automatically converted to std dev
+    /// - Returns: Winner based on 95% confidence interval testing
+    /// - Note: IQR values are converted to standard deviation using σ ≈ IQR/1.349 (assumes normal distribution)
     public func timeBasedWinner(_ duckduckgoValue: Double, _ safariValue: Double, ddgStdDev: Double = 0, safariStdDev: Double = 0) -> BrowserWinner {
         // Check if the difference is statistically significant
         let diff = abs(duckduckgoValue - safariValue)
 
-        // If we have standard deviation data, use it
+        // If we have IQR data, convert to standard deviation and use it for significance testing
         if ddgStdDev > 0 || safariStdDev > 0 {
+            // Convert IQR to approximate standard deviation: σ ≈ IQR/1.349
+            // This assumes a normal distribution where IQR ≈ 1.349σ
+            let ddgStdDevConverted = ddgStdDev / 1.349
+            let safariStdDevConverted = safariStdDev / 1.349
+
             // Use proper quadrature for combining standard deviations: sqrt(σ1² + σ2²)
-            let combinedStdDev = sqrt(ddgStdDev * ddgStdDev + safariStdDev * safariStdDev)
+            let combinedStdDev = sqrt(ddgStdDevConverted * ddgStdDevConverted + safariStdDevConverted * safariStdDevConverted)
 
             // Use 1.96 multiplier for 95% confidence interval (two-tailed test)
             let confidenceMargin = 1.96 * combinedStdDev
@@ -86,15 +98,27 @@ public struct BrowserComparisonResults {
     }
 
     /// Determine which browser won for a size-based metric (smaller is better)
-    /// Takes into account standard deviation to check statistical significance
+    /// Uses statistical significance testing to determine if differences are meaningful
+    /// - Parameters:
+    ///   - duckduckgoValue: Median size value for DuckDuckGo
+    ///   - safariValue: Median size value for Safari
+    ///   - ddgStdDev: IQR (Interquartile Range) for DuckDuckGo, automatically converted to std dev
+    ///   - safariStdDev: IQR (Interquartile Range) for Safari, automatically converted to std dev
+    /// - Returns: Winner based on 95% confidence interval testing
+    /// - Note: IQR values are converted to standard deviation using σ ≈ IQR/1.349 (assumes normal distribution)
     public func sizeBasedWinner(_ duckduckgoValue: Double, _ safariValue: Double, ddgStdDev: Double = 0, safariStdDev: Double = 0) -> BrowserWinner {
         // Check if the difference is statistically significant
         let diff = abs(duckduckgoValue - safariValue)
 
-        // If we have standard deviation data, use it
+        // If we have IQR data, convert to standard deviation and use it for significance testing
         if ddgStdDev > 0 || safariStdDev > 0 {
+            // Convert IQR to approximate standard deviation: σ ≈ IQR/1.349
+            // This assumes a normal distribution where IQR ≈ 1.349σ
+            let ddgStdDevConverted = ddgStdDev / 1.349
+            let safariStdDevConverted = safariStdDev / 1.349
+
             // Use proper quadrature for combining standard deviations: sqrt(σ1² + σ2²)
-            let combinedStdDev = sqrt(ddgStdDev * ddgStdDev + safariStdDev * safariStdDev)
+            let combinedStdDev = sqrt(ddgStdDevConverted * ddgStdDevConverted + safariStdDevConverted * safariStdDevConverted)
 
             // Use 1.96 multiplier for 95% confidence interval (two-tailed test)
             let confidenceMargin = 1.96 * combinedStdDev

@@ -109,7 +109,7 @@ public struct SafariResultsParser {
             loadTimes: loadTimes,
             detailedMetrics: collectedMetrics,
             failedAttempts: failedAttempts,
-            iterations: jsonResult.testConfiguration.iterations,
+            iterations: successfulIterations.count,
             cancelled: cancelled
         )
     }

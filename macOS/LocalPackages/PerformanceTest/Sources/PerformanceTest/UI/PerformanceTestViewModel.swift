@@ -217,12 +217,11 @@ final class PerformanceTestViewModel: ObservableObject {
             return
         }
 
-        logger.debug("Opening fresh tab with original URL to clean up test state")
-        guard let newWebView = await createNewTab() else { return }
-
-        webView = newWebView
-        logger.debug("Created fresh tab, closing old test tab")
+        logger.debug("Closing old test tab before opening fresh tab to clean up test state")
         await closeTab()
+        guard let newWebView = await createNewTab() else { return }
+        webView = newWebView
+        logger.debug("Created fresh tab after closing old test tab")
     }
 
     private func cleanupWithoutTabManagement() {

@@ -267,9 +267,9 @@ public class SafariTestRunner: SafariTestExecuting {
             .replacingOccurrences(of: "[WARN] ", with: "")
 
         // Check for consistency metrics
-        if cleanLine.contains("Consistency:") {
+        if cleanLine.contains("Consistency metrics:") {
             // Extract just the metrics part
-            if let metricsRange = cleanLine.range(of: "Consistency: ") {
+            if let metricsRange = cleanLine.range(of: "Consistency metrics: ") {
                 let metrics = String(cleanLine[metricsRange.upperBound...])
                 return (nil, metrics)
             }

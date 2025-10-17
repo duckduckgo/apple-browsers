@@ -7,6 +7,5 @@ if [ "$CONFIGURATION" = "Release" ] || [ "$ENABLE_PREVIEWS" = "YES" ]; then exit
 
 LINTER_BASE="$BUILD_ROOT/../.."
 LINTER=`find "$LINTER_BASE" | grep "\-macos/bin/swiftlint$"`
-find $SRCROOT ! -name 'Package.swift' -path $SRCROOT/vendor -prune -o -name "*.swift" | xargs "$LINTER"
-
+find "$SRCROOT" ! -name 'Package.swift' -prune -o -name "*.swift" | xargs "$LINTER"
 

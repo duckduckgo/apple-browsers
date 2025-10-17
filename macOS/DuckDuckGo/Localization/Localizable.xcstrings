@@ -32391,7 +32391,7 @@
                   "few" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg сайта"
+                      "value" : "%arg сайтов"
                     }
                   },
                   "many" : {

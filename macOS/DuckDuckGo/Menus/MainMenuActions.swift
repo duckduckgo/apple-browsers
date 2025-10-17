@@ -176,7 +176,7 @@ extension AppDelegate {
             let visits = await historyViewDataProvider.visits(matching: .rangeFilter(.all))
 
             let presenter = DefaultHistoryViewDialogPresenter()
-            switch await presenter.showDeleteDialog(for: .rangeFilter(.all), visits: visits, in: window) {
+            switch await presenter.showDeleteDialog(for: .rangeFilter(.all), visits: visits, in: window, fromMainMenu: true) {
             case .burn:
                 guard !featureFlagger.isFeatureOn(.fireDialog) /* FireCoordinator handles burning for Fire Dialog View */ else { break }
                 await fireCoordinator.fireViewModel.fire.burnAll()

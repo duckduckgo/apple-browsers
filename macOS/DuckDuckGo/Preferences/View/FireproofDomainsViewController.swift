@@ -448,9 +448,13 @@ extension FireproofDomainsViewController: NSSearchFieldDelegate {
                 }
             }
             return true
-        case #selector(NSResponder.cancelOperation(_:)),
-             #selector(NSResponder.insertNewline(_:)):
-            // If search field is active, first press just deactivates it
+        case #selector(NSResponder.cancelOperation(_:)):
+            // If search field is active and non-empty, first Esc press just deactivates it, second – closes the dialog
+            guard !textView.string.isEmpty else { return false }
+            tableView.makeMeFirstResponder()
+            return true
+        case #selector(NSResponder.insertNewline(_:)):
+            // If search field is active, first Enter press just deactivates it, second - burns
             tableView.makeMeFirstResponder()
             return true
         default:

@@ -1,6 +1,5 @@
 //
-//  FeatureDiscoveryTests.swift
-//  DuckDuckGo
+//  DefaultFeatureDiscoveryTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,23 +16,25 @@
 //  limitations under the License.
 //
 import XCTest
-@testable import DuckDuckGo
-@testable import Core
+@testable import BrowserServicesKit
 import PersistenceTestingUtils
 
 final class DefaultFeatureDiscoveryTests: XCTestCase {
 
     var featureDiscovery: DefaultFeatureDiscovery!
     var mockStorage: MockKeyValueStore!
+    var mockNotificationCenter: NotificationCenter!
 
     override func setUp() {
         super.setUp()
         mockStorage = MockKeyValueStore()
-        featureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: mockStorage)
+        mockNotificationCenter = NotificationCenter()
+        featureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: mockStorage, notificationCenter: mockNotificationCenter)
     }
 
     override func tearDown() {
         featureDiscovery = nil
+        mockNotificationCenter = nil
         mockStorage = nil
         super.tearDown()
     }
@@ -61,5 +62,18 @@ final class DefaultFeatureDiscoveryTests: XCTestCase {
     func testAddToParamsWhenNotUsedBefore() {
         let params = featureDiscovery.addToParams(["key": "value"], forFeature: .privacyDashboard)
         XCTAssertEqual(params["was_used_before"], "0")
+    }
+
+    func testNotificationPostedWhenSetWasUsedBefore() {
+        let expectation = self.expectation(description: "Notification should be posted")
+
+        let observer = mockNotificationCenter.addObserver(forName: .featureDiscoverySetWasUsedBefore, object: nil, queue: nil) { _ in
+            expectation.fulfill()
+        }
+
+        featureDiscovery.setWasUsedBefore(.aiChat)
+
+        waitForExpectations(timeout: 1, handler: nil)
+        mockNotificationCenter.removeObserver(observer)
     }
 }

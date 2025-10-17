@@ -266,7 +266,8 @@ struct MapperToModel {
             extractedProfile: try mapToModel(extractedProfileDB),
             sevenDaysConfirmationPixelFired: optOutDB.sevenDaysConfirmationPixelFired,
             fourteenDaysConfirmationPixelFired: optOutDB.fourteenDaysConfirmationPixelFired,
-            twentyOneDaysConfirmationPixelFired: optOutDB.twentyOneDaysConfirmationPixelFired
+            twentyOneDaysConfirmationPixelFired: optOutDB.twentyOneDaysConfirmationPixelFired,
+            fortyTwoDaysConfirmationPixelFired: optOutDB.fortyTwoDaysConfirmationPixelFired
         )
     }
 

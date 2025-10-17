@@ -106,7 +106,7 @@ enum AttributedMetricPixel: PixelKitEvent {
             var result = [ConstantKeys.numberOfDevices: devices]
             addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
             return result
-        case .dataStoreError(error: let error):
+        case .dataStoreError:
             return [:]
         }
     }

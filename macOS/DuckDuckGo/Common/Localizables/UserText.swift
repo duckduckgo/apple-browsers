@@ -1157,6 +1157,7 @@ struct UserText {
 
     static let privacyPolicy = NSLocalizedString("preferences.about.privacy-policy", value: "Privacy Policy", comment: "Link to privacy policy page")
     static let clickToCopyVersion = NSLocalizedString("click.to.copy.version", value: "Click to copy version", comment: "Description of a button which copies version to clipboard when clicked")
+    static let termsOfService = NSLocalizedString("preferences.about.terms-of-service", value: "Terms of Service", comment: "Link to Terms of Service page")
 
     // MARK: - Login Import & Export
 
@@ -1668,8 +1669,22 @@ struct UserText {
     
     static let autoClear = NSLocalizedString("auto.clear", value: "Auto-Clear", comment: "Header of a section in Settings. The setting configures clearing data automatically after quitting the app.")
     static let automaticallyClearData = NSLocalizedString("automatically.clear.data", value: "Automatically delete tabs and browsing data when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing data automatically after quitting the app.")
-    static let warnBeforeQuit = NSLocalizedString("warn.before.quit", value: "Warn me that tabs and data will be deleted when quitting", comment: "Label after the checkbox in Settings which configures a warning before clearing data on the application termination.")
-    static let warnBeforeQuitDialogHeader = NSLocalizedString("warn.before.quit.dialog.header", value: "Clear tabs and browsing data and quit DuckDuckGo?", comment: "A header of warning before clearing data on the application termination.")
+    // Strings to be translated: https://app.asana.com/1/137249556945/project/72649045549333/task/1211370814674975?focus=true
+    static let autoClearAIChatHistory = "Delete Duck.ai chat history when DuckDuckGo quits"
+    static func warnBeforeQuit(_ clearChats: Bool) -> String {
+        if clearChats {
+            return "Warn me that tabs, data, and chats will be deleted when quitting"
+        } else {
+            return NSLocalizedString("warn.before.quit", value: "Warn me that tabs and data will be deleted when quitting", comment: "Label after the checkbox in Settings which configures a warning before clearing data on the application termination.")
+        }
+    }
+    static func warnBeforeQuitDialogHeader(_ clearChats: Bool) -> String {
+        if clearChats {
+            return "Clear tabs, browsing data, and chats and quit DuckDuckGo?"
+        } else {
+            return NSLocalizedString("warn.before.quit.dialog.header", value: "Clear tabs and browsing data and quit DuckDuckGo?", comment: "A header of warning before clearing data on the application termination.")
+        }
+    }
     static let warnBeforeQuitDialogCheckboxMessage = NSLocalizedString("warn.before.quit.dialog.checkbox.message", value: "Warn me every time", comment: "A label after checkbox to configure the warning before clearing data on the application termination.")
     static let disableAutoClearToEnableSessionRestore = NSLocalizedString("disable.auto.clear.to.enable.session.restore",
                                                                           value: "Your session won't be restored if Auto-Clear is turned on. Fire Windows also won’t be restored.",
@@ -1945,4 +1960,16 @@ struct UserText {
         return String(format: localized, entity)
     }
     static let storageAccessPromptLabel3 = NSLocalizedString("storage.access.prompt.label.3", value: "DuckDuckGo protections still apply either way.", comment: "Part 3 of an alert asking users whether to share cookies: DuckDuckGo protections still apply either way.")
+
+    // MARK - Win-back Campaign
+    static let winBackCampaignModalTitle = NSLocalizedString("win-back.campaign.modal.title", value: "We want you back! Get 25% off.", comment: "Title of the modal dialog promoting the win-back campaign")
+    static let winBackCampaignModalMessage = NSLocalizedString("win-back.campaign.modal.message", value: "Stay protected with our VPN, private AI, and more.\nResubscribe today and save 25%. Limited time offer.", comment: "Message of the modal dialog promoting the win-back campaign")
+    static let winBackCampaignModalCTA = NSLocalizedString("win-back.campaign.modal.cta", value: "See Offer", comment: "CTA of the modal dialog promoting the win-back campaign")
+    static let winBackCampaignModalDismiss = NSLocalizedString("win-back.campaign.modal.dismiss", value: "Not Now", comment: "Dismiss of the modal dialog promoting the win-back campaign")
+
+    static let winBackCampaignLastDayMessageTitle = NSLocalizedString("win-back.campaign.last-day.message.title", value: "Last day to save 25%!", comment: "Title of message displayed on the last day of the win-back campaign")
+    static let winBackCampaignLastDayMessageText = NSLocalizedString("win-back.campaign.last-day.message.text", value: "Stay protected with our VPN, private AI, and more.\nResubscribe today and save 25%. Limited time offer.", comment: "Message of the message displayed on the last day of the win-back campaign")
+    static let winBackCampaignLastDayMessageCTA = NSLocalizedString("win-back.campaign.last-day.message.cta", value: "See Offer", comment: "CTA of the message displayed on the last day of the win-back campaign")
+
+    static let winBackCampaignMenuBadgeText = NSLocalizedString("win-back.campaign.menu.badge.text", value: "SAVE 25%", comment: "Text for the badge displayed on the Subscription menu item during the win-back campaign")
 }

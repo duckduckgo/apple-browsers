@@ -1,5 +1,5 @@
 //
-//  AttributedMetricOriginProviderMock.swift
+//  MockWinBackOfferVisibilityManager.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,11 +17,22 @@
 //
 
 import Foundation
+import Subscription
 
-public final class AttributedMetricOriginProviderMock: AttributedMetricOriginProvider {
-    public let origin: String?
+final class MockWinBackOfferVisibilityManager: WinBackOfferVisibilityManaging {
+    var isOfferAvailable = false
+    var shouldShowUrgencyMessage = false
+    var shouldShowLaunchMessage = false
+    var didDismissUrgencyMessage = false
 
-    public init(origin: String? = nil) {
-        self.origin = origin
+    var lastReceivedLaunchMessagePresented = false
+    var lastReceivedOfferRedeemed = false
+
+    func setLaunchMessagePresented(_ newValue: Bool) {
+        lastReceivedLaunchMessagePresented = newValue
+    }
+
+    func setOfferRedeemed(_ newValue: Bool) {
+        lastReceivedOfferRedeemed = newValue
     }
 }

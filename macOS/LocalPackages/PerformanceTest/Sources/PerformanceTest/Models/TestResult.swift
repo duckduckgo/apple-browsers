@@ -62,35 +62,6 @@ public struct TestResult: Codable, Equatable {
         self.timestamp = timestamp
         self.endTime = endTime
     }
-
-    /// Duration of the test if endTime is available
-    public var duration: TimeInterval? {
-        guard let endTime = endTime else { return nil }
-        return endTime.timeIntervalSince(timestamp)
-    }
-
-    /// Display-friendly status
-    public var displayStatus: String {
-        success ? "✅ Success" : "❌ Failed"
-    }
-
-    /// Display-friendly duration
-    public var displayDuration: String {
-        if let metrics = metrics {
-            return String(format: "%.2fs", metrics.loadTime)
-        } else {
-            return "Failed"
-        }
-    }
-
-    /// Extract site name from URL
-    public var siteName: String {
-        guard let host = url.host else {
-            return url.absoluteString
-        }
-        // Remove www. prefix if present
-        return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
-    }
 }
 
 /// Error types for test results

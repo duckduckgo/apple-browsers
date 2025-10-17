@@ -22,13 +22,11 @@ enum RecordFoundDateResolver {
 
     static let defaultDate = Date(timeIntervalSince1970: 0)
 
-    /// This resolves the found date for an extracted profile record
+    /// This resolves the found date for an extracted profile record based on history events
     ///
-    /// It mirrors DBPUIDataBrokerProfileMatch flow:
-    /// 1. use the opt-out job's stored createdDate when valid
-    /// 2. otherwise retrieve the first matches-found timestamp from job or DB history
-    /// 3. otherwise defer to the supplied fallback (defaulting to unix epoch zero so we
-    /// know it's an outlier)
+    /// - When no clear event exists, returns the earliest .matchesFound.
+    /// - When a clear exists, returns the first .matchesFound that happens afterwards; if none exists, returns the fallback
+    /// value (defaults to unix epoch zero)
     static func resolve(brokerQueryProfileData: BrokerProfileQueryData? = nil,
                         repository: DataBrokerProtectionRepository,
                         brokerId: Int64,
@@ -44,53 +42,45 @@ enum RecordFoundDateResolver {
                                                     extractedProfileId: extractedProfileId)
         }
 
-        if let createdDate = optOutJob?.validCreatedDate {
-            return createdDate
-        }
-
-        if let historyDate = firstFoundDate(from: optOutJob?.historyEvents) {
+        if let historyDate = resolvedFoundDate(from: optOutJob?.historyEvents) {
             return historyDate
         }
 
-        if let historyDate = firstFoundDateFromRepository(repository: repository,
-                                                          brokerId: brokerId,
-                                                          profileQueryId: profileQueryId,
-                                                          extractedProfileId: extractedProfileId) {
+        let repositoryEvents = try? repository.fetchOptOutHistoryEvents(brokerId: brokerId,
+                                                                        profileQueryId: profileQueryId,
+                                                                        extractedProfileId: extractedProfileId)
+
+        if let historyDate = resolvedFoundDate(from: repositoryEvents) {
             return historyDate
         }
 
         return fallback
     }
 
-    private static func firstFoundDate(from events: [HistoryEvent]?) -> Date? {
-        events?
-            .filter { $0.isMatchesFoundEvent() }
-            .min(by: { $0.date < $1.date })?.date
-    }
-
-    private static func firstFoundDateFromRepository(repository: DataBrokerProtectionRepository,
-                                                     brokerId: Int64,
-                                                     profileQueryId: Int64,
-                                                     extractedProfileId: Int64) -> Date? {
-        guard let events = try? repository.fetchOptOutHistoryEvents(brokerId: brokerId,
-                                                                    profileQueryId: profileQueryId,
-                                                                    extractedProfileId: extractedProfileId) else {
+    /// We want to know how long an _active_ opt-out submission attempt has been running since the record was found
+    /// - If the record was never cleared, stick to the first found date as the baseline
+    /// - When the record has been removed at least once (either optOutConfirmed or manuallyRemovedByUser is triggered),
+    /// the associated opt-out attempt is considered done. The subsequent match found starts a new attempt, so we want
+    /// the timestamp of that next found date.
+    /// - If the record is removed but there's no following match found event, we default to the fallback so it acts as
+    /// a signal that the data point is an outlier.
+    private static func resolvedFoundDate(from events: [HistoryEvent]?) -> Date? {
+        guard let events, !events.isEmpty else {
             return nil
         }
 
-        return firstFoundDate(from: events)
-    }
+        let sortedEvents = events.sorted(by: { $0.date < $1.date })
 
+        guard let latestClearDate = sortedEvents.last(where: { $0.isClearEvent() })?.date else {
+            return sortedEvents.first(where: { $0.isMatchesFoundEvent() })?.date
+        }
+
+        return sortedEvents.first(where: { $0.isMatchesFoundEvent() && $0.date > latestClearDate })?.date
+    }
 }
 
 extension BrokerProfileQueryData {
     fileprivate func optOutJobDataMatching(_ extractedProfileId: Int64) -> OptOutJobData? {
         optOutJobData.first(where: { $0.extractedProfile.id == extractedProfileId })
-    }
-}
-
-extension OptOutJobData {
-    fileprivate var validCreatedDate: Date? {
-        createdDate == RecordFoundDateResolver.defaultDate ? nil : createdDate
     }
 }

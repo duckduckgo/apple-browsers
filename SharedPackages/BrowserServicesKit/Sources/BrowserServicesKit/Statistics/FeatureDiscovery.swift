@@ -1,6 +1,5 @@
 //
 //  FeatureDiscovery.swift
-//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,9 +16,8 @@
 //  limitations under the License.
 //
 
-import DDGSync
-import BrowserServicesKit
 import Persistence
+import Foundation
 
 /// These features don't have a way to see if have been used before so storage is provided here.
 ///  Don't change these unless you intend to reset the feature discovery flag.
@@ -30,7 +28,7 @@ public enum WasUsedBeforeFeature: String {
     case vpn
     case privacyDashboard
 
-    var storageKey: String {
+    public var storageKey: String {
         "featureUsedBefore_\(rawValue)"
     }
 
@@ -54,15 +52,21 @@ public protocol FeatureDiscovery {
 final public class DefaultFeatureDiscovery: FeatureDiscovery {
 
     private let wasUsedBeforeStorage: KeyValueStoring
+    private let notificationCenter: NotificationCenter
 
-    public init(wasUsedBeforeStorage: KeyValueStoring = UserDefaults.standard) {
+    public init(wasUsedBeforeStorage: KeyValueStoring = UserDefaults.standard,
+                notificationCenter: NotificationCenter = NotificationCenter.default) {
         self.wasUsedBeforeStorage = wasUsedBeforeStorage
+        self.notificationCenter = notificationCenter
     }
 
     public func setWasUsedBefore(_ feature: WasUsedBeforeFeature) {
         wasUsedBeforeStorage.set(true, forKey: feature.storageKey)
+        notificationCenter.post(name: .featureDiscoverySetWasUsedBefore,
+                                object: self,
+                                userInfo: ["feature": feature.rawValue])
     }
-    
+
     public func wasUsedBefore(_ feature: WasUsedBeforeFeature) -> Bool {
         return wasUsedBeforeStorage.object(forKey: feature.storageKey) as? Bool ?? false
     }
@@ -73,4 +77,8 @@ final public class DefaultFeatureDiscovery: FeatureDiscovery {
         return params
     }
 
+}
+
+public extension Notification.Name {
+    static let featureDiscoverySetWasUsedBefore = Notification.Name("featureDiscoverySetWasUsedBefore")
 }

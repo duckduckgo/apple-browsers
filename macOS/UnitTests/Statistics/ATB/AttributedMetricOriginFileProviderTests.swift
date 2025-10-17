@@ -1,5 +1,5 @@
 //
-//  AttributionOriginFileProviderTests.swift
+//  AttributedMetricOriginFileProviderTests.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -18,9 +18,10 @@
 
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
+@testable import AttributedMetric
 
-final class AttributionOriginFileProviderTests: XCTestCase {
-    private var sut: AttributionOriginFileProvider!
+final class AttributedMetricOriginFileProviderTests: XCTestCase {
+    private var sut: AttributedMetricOriginProvider!
 
     override func tearDown() {
         sut = nil
@@ -28,7 +29,7 @@ final class AttributionOriginFileProviderTests: XCTestCase {
 
     func testWhenFileAndValueExistThenReturnOriginValue() {
         // GIVEN
-        sut = AttributionOriginFileProvider(bundle: .test)
+        sut = AttributedMetricOriginFileProvider(bundle: .test)
 
         // WHEN
         let result = sut.origin
@@ -39,7 +40,7 @@ final class AttributionOriginFileProviderTests: XCTestCase {
 
     func testWhenFileDoesNotExistThenReturnNil() {
         // GIVEN
-        sut = AttributionOriginFileProvider(resourceName: #function, bundle: .test)
+        sut = AttributedMetricOriginFileProvider(resourceName: #function, bundle: .test)
 
         // WHEN
         let result = sut.origin
@@ -50,7 +51,7 @@ final class AttributionOriginFileProviderTests: XCTestCase {
 
     func testWhenFileExistAndIsEmptyThenReturnNil() {
         // GIVEN
-        sut = AttributionOriginFileProvider(resourceName: "Origin-empty", bundle: .test)
+        sut = AttributedMetricOriginFileProvider(resourceName: "Origin-empty", bundle: .test)
 
         // WHEN
         let result = sut.origin
@@ -61,5 +62,5 @@ final class AttributionOriginFileProviderTests: XCTestCase {
 }
 
 private extension Bundle {
-    static let test = Bundle(for: AttributionOriginFileProviderTests.self)
+    static let test = Bundle(for: AttributedMetricOriginFileProviderTests.self)
 }

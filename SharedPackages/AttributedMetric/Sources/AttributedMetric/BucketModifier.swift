@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 protocol BucketModifier {
 
     /// Convert a Int value in it's bucketed string version based on the bucket configuration received from the privacy configuration.

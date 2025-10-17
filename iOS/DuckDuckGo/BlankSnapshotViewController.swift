@@ -37,8 +37,6 @@ class BlankSnapshotViewController: UIViewController {
 
     private var tapInterceptView: UIView?
 
-    let menuButton = MenuButton()
-
     var tabSwitcherButton: TabSwitcherButton!
 
     let addressBarPosition: AddressBarPosition
@@ -91,9 +89,6 @@ class BlankSnapshotViewController: UIViewController {
             configureTabBar()
         } else {
             viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
-            viewCoordinator.menuToolbarButton.customView = menuButton
-            menuButton.setState(.menuImage, animated: false)
-            viewCoordinator.menuToolbarButton.customView = menuButton
         }
 
         addTapInterceptor()

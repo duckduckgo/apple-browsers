@@ -49,7 +49,8 @@ extension NewTabPageActionsManager {
         featureFlagger: FeatureFlagger,
         windowControllersManager: WindowControllersManagerProtocol & AIChatTabManaging,
         tabsPreferences: TabsPreferences,
-        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
+        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
+        winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator
     ) {
         let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: legacyKeyValueStore)
         let protectionsReportModel = NewTabPageProtectionsReportModel(
@@ -80,7 +81,8 @@ extension NewTabPageActionsManager {
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
-            newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider
+            newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
+            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
         )
     }
 
@@ -105,7 +107,8 @@ extension NewTabPageActionsManager {
         featureFlagger: FeatureFlagger,
         windowControllersManager: WindowControllersManagerProtocol  & AIChatTabManaging,
         tabsPreferences: TabsPreferences,
-        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
+        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
+        winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -118,6 +121,7 @@ extension NewTabPageActionsManager {
 
         let customizationProvider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences)
         let freemiumDBPBannerProvider = NewTabPageFreemiumDBPBannerProvider(model: freemiumDBPPromotionViewCoordinator)
+        let winBackOfferBannerProvider = NewTabPageWinBackOfferBannerProvider(model: winBackOfferPromotionViewCoordinator)
 
         let privacyStatsModel = NewTabPagePrivacyStatsModel(
             visibilityProvider: protectionsReportModel,
@@ -189,7 +193,8 @@ extension NewTabPageActionsManager {
             NewTabPageRecentActivityClient(model: recentActivityModel),
             NewTabPageOmnibarClient(configProvider: omnibarConfigProvider,
                                     suggestionsProvider: suggestionsProvider,
-                                    actionHandler: omnibarActionHandler)
+                                    actionHandler: omnibarActionHandler),
+            NewTabPageWinBackOfferClient(provider: winBackOfferBannerProvider)
         ])
     }
 }

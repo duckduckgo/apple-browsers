@@ -35,6 +35,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onQuerySubmitted(_ query: String)
     func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?)
     func onSelectFavorite(_ favorite: BookmarkEntity)
+    func onEditFavorite(_ favorite: BookmarkEntity)
     func onSelectSuggestion(_ suggestion: Suggestion)
     func onVoiceSearchRequested(from mode: TextEntryMode)
     func onDismissRequested()
@@ -69,6 +70,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private var isLandscapeOrientation: Bool = false {
         didSet {
             isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
+            switchBarHandler.updateBarPosition(isTop: isUsingTopBarPosition)
         }
     }
     private var isAdjustedForTopBar: Bool
@@ -90,6 +92,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private let daxLogoManager: DaxLogoManager
     private var notificationCancellable: AnyCancellable?
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
+
+    private weak var contentAnimator: UIViewPropertyAnimator?
 
     // MARK: - Initialization
 
@@ -286,27 +290,45 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func installNavigationActionBar() {
         let manager = NavigationActionBarManager(switchBarHandler: switchBarHandler)
-        manager.delegate = self
         if isUsingTopBarPosition {
             // Note this is not installed in contentContainerView - this is floating over content.
             manager.installInViewController(self)
         } else {
             manager.installInViewController(switchBarVC.textEntryViewController, inView: switchBarVC.textEntryViewController.buttonsContainerView)
         }
+        manager.delegate = self
+        manager.animationDelegate = self
         navigationActionBarManager = manager
     }
 
     private func setupSubscriptions() {
+        switchBarVC.textEntryViewController.textHeightChangePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+
+                self?.scheduleAnimation({
+                    self?.updateSwipeContainerSafeArea()
+                    self?.view.layoutIfNeeded()
+                }, completion: nil)
+
+            }
+            .store(in: &cancellables)
+
         switchBarHandler.currentTextPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] currentText in
-                self?.delegate?.onQueryUpdated(currentText)
-                self?.suggestionTrayManager?.handleQueryUpdate(currentText)
-                self?.updateDaxVisibility()
-                DispatchQueue.main.async {
-                    // Delay to next runloop so the text field size is updated.
-                    self?.updateSwipeContainerSafeArea()
+
+                guard let self else { return }
+
+                self.delegate?.onQueryUpdated(currentText)
+
+                scheduleAnimation {
+                    self.updateDaxVisibility()
+                    self.updateSwipeContainerSafeArea()
+                    self.view.layoutIfNeeded()
                 }
+
+                self.suggestionTrayManager?.handleQueryUpdate(currentText, animated: true)
             }
             .store(in: &cancellables)
 
@@ -390,6 +412,25 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             }
     }
 
+    private func scheduleAnimation(_ animation: @escaping () -> Void, completion: ((UIViewAnimatingPosition) -> Void)? = nil) {
+
+        if contentAnimator?.state == .stopped {
+            contentAnimator = nil
+        }
+
+        let animator = self.contentAnimator ?? UIViewPropertyAnimator(duration: 0.4, dampingRatio: 0.73)
+
+        contentAnimator = animator
+
+        animator.addAnimations(animation)
+        if let completion {
+            animator.addCompletion(completion)
+        }
+
+        // Starts the animation. No effect if it's already running.
+        animator.startAnimation()
+    }
+
     // MARK: - Action Handlers
 
     @objc private func dismissButtonTapped(_ sender: UIButton) {
@@ -439,6 +480,19 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 }
 
+// MARK: - NavigationActionBarViewAnimationDelegate
+
+extension OmniBarEditingStateViewController: NavigationActionBarViewAnimationDelegate {
+    func animateActionBarView(_ view: NavigationActionBarView,
+                              animations: @escaping () -> Void,
+                              completion: ((UIViewAnimatingPosition) -> Void)?) {
+        scheduleAnimation({
+            animations()
+            self.view.layoutIfNeeded()
+        }, completion: completion)
+    }
+}
+
 // MARK: - SwipeContainerManagerDelegate
 
 extension OmniBarEditingStateViewController: SwipeContainerViewControllerDelegate {
@@ -469,6 +523,10 @@ extension OmniBarEditingStateViewController: SuggestionTrayManagerDelegate {
 
     func suggestionTrayManager(_ manager: SuggestionTrayManager, shouldUpdateTextTo text: String) {
         switchBarHandler.updateCurrentText(text)
+    }
+
+    func suggestionTrayManager(_ manager: SuggestionTrayManager, requestsEditFavorite favorite: BookmarkEntity) {
+        delegate?.onEditFavorite(favorite)
     }
 
 }
@@ -528,5 +586,6 @@ private extension OmniBarEditingStateViewController {
         // Adjusts for two buttons in the action bar
         static let horizontalMarginForCompactLayout: CGFloat = 108
         static let backgroundColor = UIColor(designSystemColor: .background)
+        static let animationDuration: TimeInterval = 0.15
     }
 }

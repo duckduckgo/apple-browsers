@@ -21,6 +21,7 @@ import Foundation
 import Combine
 import WebKit
 import AIChat
+import BrowserServicesKit
 
 protocol AIChatUserScriptProvider {
     var aiChatUserScript: AIChatUserScript? { get }
@@ -33,6 +34,7 @@ final class AIChatTabExtension {
     private var userScriptCancellables = Set<AnyCancellable>()
     private let isLoadedInSidebar: Bool
     private weak var webView: WKWebView?
+    private let featureDiscovery: FeatureDiscovery
 
     private(set) weak var aiChatUserScript: AIChatUserScript? {
         didSet {
@@ -42,8 +44,10 @@ final class AIChatTabExtension {
 
     init(scriptsPublisher: some Publisher<some AIChatUserScriptProvider, Never>,
          webViewPublisher: some Publisher<WKWebView, Never>,
-         isLoadedInSidebar: Bool) {
+         isLoadedInSidebar: Bool,
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.isLoadedInSidebar = isLoadedInSidebar
+        self.featureDiscovery = featureDiscovery
         pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
         chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
 
@@ -182,6 +186,12 @@ extension AIChatTabExtension: NavigationResponder {
         let tabCollectionViewModel = parentWindowController.mainViewController.tabCollectionViewModel
         tabCollectionViewModel.insertOrAppendNewTab(.url(navigationAction.url, source: .link))
         return .cancel
+    }
+
+    func navigationDidFinish(_ navigation: Navigation) {
+        if navigation.url.isDuckAIURL {
+            featureDiscovery.setWasUsedBefore(.aiChat)
+        }
     }
 }
 

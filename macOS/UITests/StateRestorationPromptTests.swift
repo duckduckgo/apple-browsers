@@ -57,7 +57,7 @@ class StateRestorationPromptTests: UITestCase {
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
-        sleep(1) // Give some time for the session to be saved
+        waitForSessionFileToBeSaved()
 
         app.terminate()
         app.launch()
@@ -92,7 +92,7 @@ class StateRestorationPromptTests: UITestCase {
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
-        sleep(1) // Give some time for the session to be saved
+        waitForSessionFileToBeSaved()
 
         app.terminate()
         app.launch()
@@ -112,7 +112,28 @@ class StateRestorationPromptTests: UITestCase {
     }
 }
 
-internal extension XCUIApplication {
+private extension StateRestorationPromptTests {
+    static let persistenceFileLocation: URL = {
+        let fileName = "persistentState"
+        let sandboxPathComponent = "Containers/com.duckduckgo.macos.browser.review/Data/Library/Application Support/"
+        let libraryURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first!
+        return libraryURL.appendingPathComponent(sandboxPathComponent).appendingPathComponent(fileName)
+    }()
+
+    func waitForSessionFileToBeSaved() {
+        let fileSavedExpectation = expectation(description: "Session persistence file should be saved")
+        let checkTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
+            if FileManager.default.fileExists(atPath: Self.persistenceFileLocation.path) {
+                fileSavedExpectation.fulfill()
+                timer.invalidate()
+            }
+        }
+        wait(for: [fileSavedExpectation], timeout: UITests.Timeouts.elementExistence)
+        checkTimer.invalidate()
+    }
+}
+
+private extension XCUIApplication {
     var sessionRestoreAcceptButton: XCUIElement {
         buttons["session.restore.prompt.accept"]
     }

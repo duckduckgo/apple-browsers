@@ -24,68 +24,22 @@ enum OptOutConfirmationWideEventEmitter {
     static let sampleRate: Float = 1.0
 
     static func emitSuccess(wideEvent: WideEventManaging?,
-                            attemptID: UUID?,
+                            profileIdentifier: String?,
                             recordFoundDate: Date,
                             confirmationDate: Date,
                             dataBrokerURL: String,
                             dataBrokerVersion: String?) {
-        emit(wideEvent: wideEvent,
-             attemptID: attemptID,
-             recordFoundDate: recordFoundDate,
-             confirmationDate: confirmationDate,
-             dataBrokerURL: dataBrokerURL,
-             dataBrokerVersion: dataBrokerVersion,
-             status: .success)
-    }
+        guard let wideEvent,
+              let identifier = profileIdentifier?.sha256 else { return }
 
-    static func emitFailure(wideEvent: WideEventManaging?,
-                            attemptID: UUID?,
-                            dataBrokerURL: String,
-                            dataBrokerVersion: String?,
-                            error: Error?) {
-        emit(wideEvent: wideEvent,
-             attemptID: attemptID,
-             dataBrokerURL: dataBrokerURL,
-             dataBrokerVersion: dataBrokerVersion,
-             status: .failure,
-             error: error)
-    }
-
-    static func emitCancelled(wideEvent: WideEventManaging?,
-                              attemptID: UUID?,
-                              dataBrokerURL: String,
-                              dataBrokerVersion: String?,
-                              error: Error?) {
-        emit(wideEvent: wideEvent,
-             attemptID: attemptID,
-             dataBrokerURL: dataBrokerURL,
-             dataBrokerVersion: dataBrokerVersion,
-             status: .cancelled,
-             error: error)
-    }
-
-    private static func emit(wideEvent: WideEventManaging?,
-                             attemptID: UUID?,
-                             recordFoundDate: Date = RecordFoundDateResolver.defaultDate,
-                             confirmationDate: Date? = nil,
-                             dataBrokerURL: String,
-                             dataBrokerVersion: String?,
-                             status: WideEventStatus,
-                             error: Error? = nil) {
-        guard let wideEvent, let attemptID else { return }
-
-        let global = WideEventGlobalData(id: attemptID.uuidString, sampleRate: Self.sampleRate)
-        let interval = confirmationDate.map { WideEvent.MeasuredInterval(start: recordFoundDate, end: $0) }
+        let global = WideEventGlobalData(id: identifier, sampleRate: sampleRate)
+        let interval = WideEvent.MeasuredInterval(start: recordFoundDate, end: confirmationDate)
         let data = OptOutConfirmationWideEventData(globalData: global,
                                                    dataBrokerURL: dataBrokerURL,
                                                    dataBrokerVersion: dataBrokerVersion,
                                                    confirmationInterval: interval)
 
-        if let error {
-            data.errorData = WideEventErrorData(error: error)
-        }
-
         wideEvent.startFlow(data)
-        wideEvent.completeFlow(data, status: status) { _, _ in }
+        wideEvent.completeFlow(data, status: .success) { _, _ in }
     }
 }

@@ -210,24 +210,22 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             handleConfirmationWideEventOutcome(error: error,
                                                attemptNumber: attemptNumber,
                                                stageDurationCalculator: stageDurationCalculator,
-                                               recordFoundDate: recordFoundDate,
                                                broker: broker,
-                                               attemptUUID: UUID(uuidString: jobData.attemptID))
+                                               profileIdentifier: extractedProfile.identifier)
         }
     }
 
     private func handleConfirmationWideEventOutcome(error: Error,
                                                     attemptNumber: Int,
                                                     stageDurationCalculator: DataBrokerProtectionStageDurationCalculator,
-                                                    recordFoundDate: Date,
                                                     broker: DataBroker,
-                                                    attemptUUID: UUID?) {
+                                                    profileIdentifier: String?) {
         switch error {
         case is TimeoutError:
             wideEventRecorder?.cancel(with: error)
             OptOutConfirmationWideEventEmitter.emitCancelled(
                 wideEvent: jobDependencies.wideEvent,
-                attemptID: attemptUUID,
+                profileIdentifier: profileIdentifier,
                 dataBrokerURL: broker.url,
                 dataBrokerVersion: broker.version,
                 error: error
@@ -236,7 +234,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             wideEventRecorder?.cancel(with: error)
             OptOutConfirmationWideEventEmitter.emitCancelled(
                 wideEvent: jobDependencies.wideEvent,
-                attemptID: attemptUUID,
+                profileIdentifier: profileIdentifier,
                 dataBrokerURL: broker.url,
                 dataBrokerVersion: broker.version,
                 error: dbpError
@@ -246,7 +244,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 wideEventRecorder?.complete(status: .failure, with: error)
                 OptOutConfirmationWideEventEmitter.emitFailure(
                     wideEvent: jobDependencies.wideEvent,
-                    attemptID: attemptUUID,
+                    profileIdentifier: profileIdentifier,
                     dataBrokerURL: broker.url,
                     dataBrokerVersion: broker.version,
                     error: error

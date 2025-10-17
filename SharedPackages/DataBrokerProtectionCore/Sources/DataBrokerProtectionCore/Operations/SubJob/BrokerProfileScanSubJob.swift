@@ -294,7 +294,7 @@ struct BrokerProfileScanSubJob {
                                                                           extractedProfileId: extractedProfileId)
                     OptOutConfirmationWideEventEmitter.emitSuccess(
                         wideEvent: dependencies.wideEvent,
-                        attemptID: attemptUUID,
+                        profileIdentifier: removedProfile.identifier,
                         recordFoundDate: recordFoundDate,
                         confirmationDate: now,
                         dataBrokerURL: brokerProfileQueryData.dataBroker.url,

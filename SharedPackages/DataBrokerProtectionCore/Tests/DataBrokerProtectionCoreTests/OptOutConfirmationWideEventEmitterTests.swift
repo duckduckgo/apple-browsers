@@ -19,12 +19,13 @@
 import XCTest
 import PixelKit
 import PixelKitTestingUtilities
+import BrowserServicesKit
 @testable import DataBrokerProtectionCore
 
 final class OptOutConfirmationWideEventEmitterTests: XCTestCase {
 
     private var wideEventMock: WideEventMock!
-    private let attemptID = UUID()
+    private let profileIdentifier = "profile-identifier"
     private let recordFoundDate = Date(timeIntervalSince1970: 1_000)
     private let confirmationDate = Date(timeIntervalSince1970: 2_000)
 
@@ -40,7 +41,7 @@ final class OptOutConfirmationWideEventEmitterTests: XCTestCase {
 
     func testEmitSuccessStartsAndCompletesFlow() {
         OptOutConfirmationWideEventEmitter.emitSuccess(wideEvent: wideEventMock,
-                                                       attemptID: attemptID,
+                                                       profileIdentifier: profileIdentifier,
                                                        recordFoundDate: recordFoundDate,
                                                        confirmationDate: confirmationDate,
                                                        dataBrokerURL: "broker.com",
@@ -54,47 +55,10 @@ final class OptOutConfirmationWideEventEmitterTests: XCTestCase {
             return XCTFail("Expected OptOutConfirmationWideEventData")
         }
 
-        XCTAssertEqual(data.globalData.id, attemptID.uuidString)
+        XCTAssertEqual(data.globalData.id, profileIdentifier.sha256)
         XCTAssertEqual(data.dataBrokerURL, "broker.com")
         XCTAssertEqual(data.dataBrokerVersion, "1.0")
         XCTAssertEqual(data.confirmationInterval?.start, recordFoundDate)
         XCTAssertEqual(data.confirmationInterval?.end, confirmationDate)
-    }
-
-    func testEmitFailureIncludesErrorData() {
-        let error = NSError(domain: "test", code: 9)
-
-        OptOutConfirmationWideEventEmitter.emitFailure(wideEvent: wideEventMock,
-                                                       attemptID: attemptID,
-                                                       dataBrokerURL: "broker.com",
-                                                       dataBrokerVersion: nil,
-                                                       error: error)
-
-        XCTAssertEqual(wideEventMock.started.count, 1)
-        XCTAssertEqual(wideEventMock.completions.first?.1, .failure)
-
-        guard let data = wideEventMock.completions.first?.0 as? OptOutConfirmationWideEventData else {
-            return XCTFail("Expected OptOutConfirmationWideEventData")
-        }
-
-        XCTAssertEqual(data.errorData?.domain, error.domain)
-        XCTAssertEqual(data.errorData?.code, error.code)
-    }
-
-    func testEmitCancelledWithoutError() {
-        OptOutConfirmationWideEventEmitter.emitCancelled(wideEvent: wideEventMock,
-                                                         attemptID: attemptID,
-                                                         dataBrokerURL: "broker.com",
-                                                         dataBrokerVersion: "1.0",
-                                                         error: nil)
-
-        XCTAssertEqual(wideEventMock.started.count, 1)
-        XCTAssertEqual(wideEventMock.completions.first?.1, .cancelled)
-
-        guard let data = wideEventMock.completions.first?.0 as? OptOutConfirmationWideEventData else {
-            return XCTFail("Expected OptOutConfirmationWideEventData")
-        }
-
-        XCTAssertNil(data.errorData)
     }
 }

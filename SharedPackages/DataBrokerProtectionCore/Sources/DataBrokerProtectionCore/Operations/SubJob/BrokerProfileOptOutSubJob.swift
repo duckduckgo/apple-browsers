@@ -314,36 +314,6 @@ struct BrokerProfileOptOutSubJob {
                                                           profileQueryId: identifiers.profileQueryId,
                                                           extractedProfileId: identifiers.extractedProfileId)
         stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1)
-        switch error {
-        case is TimeoutError:
-            wideEventRecorder?.cancel(with: error)
-            OptOutConfirmationWideEventEmitter.emitCancelled(
-                wideEvent: wideEvent,
-                attemptID: stageDurationCalculator.attemptId,
-                dataBrokerURL: brokerProfileQueryData.dataBroker.url,
-                dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-                error: error
-            )
-        case let dbpError as DataBrokerProtectionError where dbpError == .jobTimeout:
-            wideEventRecorder?.cancel(with: error)
-            OptOutConfirmationWideEventEmitter.emitCancelled(
-                wideEvent: wideEvent,
-                attemptID: stageDurationCalculator.attemptId,
-                dataBrokerURL: brokerProfileQueryData.dataBroker.url,
-                dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-                error: dbpError
-            )
-        default:
-            wideEventRecorder?.complete(status: .failure, with: error)
-            OptOutConfirmationWideEventEmitter.emitFailure(
-                wideEvent: wideEvent,
-                attemptID: stageDurationCalculator.attemptId,
-                dataBrokerURL: brokerProfileQueryData.dataBroker.url,
-                dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-                error: error
-            )
-        }
-
         handleOperationError(
             origin: .optOut,
             brokerId: identifiers.brokerId,

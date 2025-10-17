@@ -502,7 +502,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dataImportNewSafariFilePicker:
             return .remoteReleasable(.subfeature(DataImportSubfeature.newSafariFilePicker))
         case .duckAiDataClearing:
-            return .remoteDevelopment(.feature(.duckAiDataClearing))
+            return .remoteReleasable(.feature(.duckAiDataClearing))
         }
     }
 }

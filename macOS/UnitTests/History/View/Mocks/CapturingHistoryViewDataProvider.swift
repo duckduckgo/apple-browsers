@@ -38,12 +38,14 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
         return await visitsBatch(query, source, limit, offset)
     }
 
-    func deleteVisits(matching query: DataModel.HistoryQueryKind) async {
+    func deleteVisits(matching query: DataModel.HistoryQueryKind, and deleteChats: Bool) async {
         deleteVisitsMatchingQueryCalls.append(query)
+        clearChatHistoryCallCount += deleteChats ? 1 : 0
     }
 
-    func burnVisits(matching query: DataModel.HistoryQueryKind) async {
+    func burnVisits(matching query: DataModel.HistoryQueryKind, and burnChats: Bool) async {
         burnVisitsMatchingQueryCalls.append(query)
+        clearChatHistoryCallCount += burnChats ? 1 : 0
     }
 
     func titles(for urls: [URL]) -> [URL: String] {
@@ -76,6 +78,7 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
     var _ranges: [DataModel.HistoryRangeWithCount] = []
     var rangesCallCount: Int = 0
     var resetCacheCallCount: Int = 0
+    var clearChatHistoryCallCount: Int = 0
 
     var deleteVisitsMatchingQueryCalls: [DataModel.HistoryQueryKind] = []
     var burnVisitsMatchingQueryCalls: [DataModel.HistoryQueryKind] = []

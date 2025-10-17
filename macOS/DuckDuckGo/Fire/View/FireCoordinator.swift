@@ -203,7 +203,8 @@ extension FireCoordinator {
             historyCoordinating: self.historyCoordinating,
             aiChatHistoryCleaner: AIChatHistoryCleaner(featureFlagger: Application.appDelegate.featureFlagger,
                                                        aiChatMenuConfiguration: Application.appDelegate.aiChatMenuConfiguration,
-                                                       featureDiscovery: DefaultFeatureDiscovery()),
+                                                       featureDiscovery: DefaultFeatureDiscovery(),
+                                                       privacyConfig: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager),
             fireproofDomains: self.fireproofDomains,
             faviconManagement: self.faviconManagement,
             clearingOption: mode.shouldShowSegmentedControl ? nil /* last selected */ : .allData,
@@ -276,6 +277,7 @@ extension FireCoordinator {
                                                 isToday: result.isToday,
                                                 closeWindows: result.includeTabsAndWindows,
                                                 clearSiteData: result.includeCookiesAndSiteData,
+                                                clearChatHistory: result.includeChatHistory,
                                                 urlToOpenIfWindowsAreClosed: nil)
             return
         }
@@ -292,7 +294,10 @@ extension FireCoordinator {
                                                 selectedDomains: result.selectedCookieDomains ?? [],
                                                 parentTabCollectionViewModel: tabCollectionViewModel,
                                                 close: result.includeTabsAndWindows)
-            await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory, includeCookiesAndSiteData: result.includeCookiesAndSiteData)
+            await fireViewModel.fire.burnEntity(entity,
+                                                includingHistory: result.includeHistory,
+                                                includeCookiesAndSiteData: result.includeCookiesAndSiteData,
+                                                includeChatHistory: result.includeChatHistory)
 
         case .currentWindow:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .window))
@@ -303,19 +308,31 @@ extension FireCoordinator {
             let entity = Fire.BurningEntity.window(tabCollectionViewModel: tabCollectionViewModel,
                                                    selectedDomains: result.selectedCookieDomains ?? [],
                                                    close: result.includeTabsAndWindows)
-            await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory, includeCookiesAndSiteData: result.includeCookiesAndSiteData)
+            await fireViewModel.fire.burnEntity(entity,
+                                                includingHistory: result.includeHistory,
+                                                includeCookiesAndSiteData: result.includeCookiesAndSiteData,
+                                                includeChatHistory: result.includeChatHistory)
 
         case .allData:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
+            if result.includeChatHistory {
+                pixelFiring?.fire(AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount)
+            }
             // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
             if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory {
-                await fireViewModel.fire.burnAll(isBurnOnExit: false, opening: .newtab, includeCookiesAndSiteData: result.includeCookiesAndSiteData)
+                await fireViewModel.fire.burnAll(isBurnOnExit: false,
+                                                 opening: .newtab,
+                                                 includeCookiesAndSiteData: result.includeCookiesAndSiteData,
+                                                 includeChatHistory: result.includeChatHistory)
             } else {
                 let entity = Fire.BurningEntity.allWindows(mainWindowControllers: windowControllersManager.mainWindowControllers,
                                                            selectedDomains: result.selectedCookieDomains ?? [],
                                                            customURLToOpen: nil,
                                                            close: result.includeTabsAndWindows)
-                await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory, includeCookiesAndSiteData: result.includeCookiesAndSiteData)
+                await fireViewModel.fire.burnEntity(entity,
+                                                    includingHistory: result.includeHistory,
+                                                    includeCookiesAndSiteData: result.includeCookiesAndSiteData,
+                                                    includeChatHistory: result.includeChatHistory)
             }
         }
         if result.includeHistory,

@@ -167,7 +167,7 @@ extension AppDelegate {
                     guard case .alertFirstButtonReturn = response else {
                         return
                     }
-                    self.fireCoordinator.fireViewModel.fire.burnAll()
+                    self.fireCoordinator.fireViewModel.fire.burnAll(includeChatHistory: false)
                 })
                 return
             }
@@ -177,20 +177,27 @@ extension AppDelegate {
 
             let presenter = DefaultHistoryViewDialogPresenter()
             switch await presenter.showDeleteDialog(for: .rangeFilter(.all), visits: visits, in: window, fromMainMenu: true) {
-            case .burn:
+            case .burn(let includeChats):
                 // FireCoordinator handles burning for Fire Dialog View
                 if featureFlagger.isFeatureOn(.fireDialog) {
                     reloadHistoryTabs()
                 } else {
-                    await fireCoordinator.fireViewModel.fire.burnAll()
+                    let entity = Fire.BurningEntity.allWindows(mainWindowControllers: Application.appDelegate.windowControllersManager.mainWindowControllers,
+                                                               selectedDomains: [],
+                                                               customURLToOpen: nil,
+                                                               close: true)
+                    await fireCoordinator.fireViewModel.fire.burnEntity(entity, includingHistory: true, includeChatHistory: includeChats)
                 }
-            case .delete:
+            case .delete(let burnChats):
                 // FireCoordinator handles burning for Fire Dialog View
                 if featureFlagger.isFeatureOn(.fireDialog) {
                     reloadHistoryTabs()
                 } else {
                     historyCoordinator.burnAll {
                         self.reloadHistoryTabs()
+                    }
+                    if burnChats {
+                        await fireCoordinator.fireViewModel.fire.burnChatHistory()
                     }
                 }
             case .noAction:
@@ -1123,7 +1130,7 @@ extension MainViewController {
                 }
                 switch result {
                 case .burn:
-                    self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: sender.historyTimeWindow == .today)
+                    self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: sender.historyTimeWindow == .today, clearChatHistory: false)
                 case .delete:
                     historyCoordinator.burnVisits(visits) {}
                 default:
@@ -1137,7 +1144,7 @@ extension MainViewController {
                     return
                 }
                 Task {
-                    await self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: self.fireproofDomains, isToday: sender.historyTimeWindow.isToday, closeWindows: true, clearSiteData: true)
+                    await self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: self.fireproofDomains, isToday: sender.historyTimeWindow.isToday, closeWindows: true, clearSiteData: true, clearChatHistory: false)
                 }
             })
         }

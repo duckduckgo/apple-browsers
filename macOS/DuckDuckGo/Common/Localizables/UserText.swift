@@ -74,9 +74,8 @@ struct UserText {
         return String.localizedStringWithFormat(template, count)
     }
 
-    // Strings to be translated: https://app.asana.com/1/137249556945/project/72649045549333/task/1211370814674975?focus=true
-    static let fireDialogChatHistoryTitle = "Duck.ai chats"
-    static let fireDialogChatHistorySubtitle = "Delete all chats."
+    static let fireDialogChatHistoryTitle = NSLocalizedString("fire.dialog.chats.title", value: "Duck.ai chats", comment: "Section title. Toggle that controls whether Duck.ai chat history is deleted.")
+    static let fireDialogChatHistorySubtitle = NSLocalizedString("fire.dialog.chats.subtitle", value: "Delete all chats.", comment: "Subtitle shown under the Duck.ai chats row to explain that chat history will be deleted.")
 
     static let notNow = NSLocalizedString("notnow", value: "Not Now", comment: "Not Now button")
     static let remove = NSLocalizedString("generic.remove.button", value: "Remove", comment: "Label of a button that allows the user to remove an item")
@@ -317,9 +316,8 @@ struct UserText {
     static let deleteCookiesAndSiteData = NSLocalizedString("history.delete.dialog.burn.checkbox.caption", value: "Also delete cookies and site data", comment: "Caption for a checkbox to optionally delete cookies and website data alongside removing browser history entries")
     static let deleteCookiesAndSiteDataExplanation = NSLocalizedString("history.delete.dialog.burn.checkbox.explanation.message", value: "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted.", comment: "Explanation of what deleting site data means.")
     static let deleteCookiesAndSiteDataExplanationWithClosingTabs = NSLocalizedString("history.delete.dialog.burn.checkbox.explanation.with.closing.tabs", value: "This will close all tabs, log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted.", comment: "Explanation of what deleting site data means.")
-    // Strings to be translated: https://app.asana.com/1/137249556945/project/72649045549333/task/1211370814674975?focus=true
-    static let deleteChatHistory = "Also delete Duck.ai chats"
-    static let deleteChatHistoryExplanation = "This will delete all chats in Duck.ai chat history."
+    static let deleteChatHistory = NSLocalizedString("history.delete.dialog.chats.checkbox.caption", value: "Also delete Duck.ai chats", comment: "Caption for a checkbox to optionally delete Duck.ai chats alongside removing browser history entries")
+    static let deleteChatHistoryExplanation = NSLocalizedString("history.delete.dialog.chats.checkbox.explanation", value: "This will delete all chats in Duck.ai chat history.", comment: "Explanation of what deleting Duck.ai chats means.")
 
     static func openMultipleTabsAlertTitle(count: Int) -> String {
         let localized = NSLocalizedString("open.multiple.tabs.alert.title",
@@ -460,7 +458,9 @@ struct UserText {
     static func activeTabsInfo(tabs: Int, sites: Int, includeChats: Bool) -> String {
         let localized: String
         if includeChats {
-            localized = "Close active tabs (%d) and clear all browsing history and cookies (sites: %d), and clear Duck.ai chat history."
+            localized = NSLocalizedString("fire.active-tabs-and-chats-info",
+                                          value: "Close active tabs (%d) and clear all browsing history and cookies (sites: %d), and clear Duck.ai chat history.",
+                                          comment: "Info in the Fire Button popover")
         } else {
             localized = NSLocalizedString("fire.active-tabs-info",
                                           value: "Close active tabs (%d) and clear all browsing history and cookies (sites: %d).",
@@ -1688,18 +1688,17 @@ struct UserText {
     
     static let autoClear = NSLocalizedString("auto.clear", value: "Auto-Clear", comment: "Header of a section in Settings. The setting configures clearing data automatically after quitting the app.")
     static let automaticallyClearData = NSLocalizedString("automatically.clear.data", value: "Automatically delete tabs and browsing data when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing data automatically after quitting the app.")
-    // Strings to be translated: https://app.asana.com/1/137249556945/project/72649045549333/task/1211370814674975?focus=true
-    static let autoClearAIChatHistory = "Delete Duck.ai chat history when DuckDuckGo quits"
+    static let autoClearAIChatHistory = NSLocalizedString("automatically.clear.chats", value: "Delete Duck.ai chat history when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing Duck.ai chat history automatically after quitting the app.")
     static func warnBeforeQuit(_ clearChats: Bool) -> String {
         if clearChats {
-            return "Warn me that tabs, data, and chats will be deleted when quitting"
+            return NSLocalizedString("warn.before.quit.clearChats", value: "Warn me that tabs, data, and chats will be deleted when quitting", comment: "Label after the checkbox in Settings which configures a warning before clearing data and chats on the application termination.")
         } else {
             return NSLocalizedString("warn.before.quit", value: "Warn me that tabs and data will be deleted when quitting", comment: "Label after the checkbox in Settings which configures a warning before clearing data on the application termination.")
         }
     }
     static func warnBeforeQuitDialogHeader(_ clearChats: Bool) -> String {
         if clearChats {
-            return "Clear tabs, browsing data, and chats and quit DuckDuckGo?"
+            return NSLocalizedString("warn.before.quit.clearChats.dialog.header", value: "Clear tabs, browsing data, and chats and quit DuckDuckGo?", comment: "A header of warning before clearing data and chats on the application termination.")
         } else {
             return NSLocalizedString("warn.before.quit.dialog.header", value: "Clear tabs and browsing data and quit DuckDuckGo?", comment: "A header of warning before clearing data on the application termination.")
         }

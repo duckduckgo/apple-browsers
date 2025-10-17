@@ -50,8 +50,8 @@ struct HistoryViewDeleteDialog: ModalView {
                         .font(.system(size: 11))
                         .padding(.leading, 19)
 
-                    if model.canBurnChat {
-                        Toggle(UserText.deleteChatHistory, isOn: $model.shouldBurnChat)
+                    if model.canClearChatHistory {
+                        Toggle(UserText.deleteChatHistory, isOn: $model.shouldClearChatHistory)
                             .font(.system(size: 13))
                             .fixMultilineScrollableText()
                             .toggleStyle(.checkbox)

@@ -128,8 +128,10 @@ struct FireDialogView: ModalView {
                 VStack(spacing: 16) {
                     headerView
                         .padding(.top, 10) // presenter sheet crops the padding 🤷‍♂️
+                        .accessibilityHidden(isShowingSitesOverlay)
                     if viewModel.mode.shouldShowSegmentedControl {
                         segmentedControlView
+                            .accessibilityHidden(isShowingSitesOverlay)
                     }
                     sectionsView
                     if showIndividualSitesLink {
@@ -168,6 +170,8 @@ struct FireDialogView: ModalView {
         }
         .frame(maxWidth: Constants.viewSize.width, maxHeight: .infinity)
         .background(Color(designSystemColor: .fireDialogBackground))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(viewModel.mode.dialogTitle)
     }
 
     private var headerView: some View {
@@ -180,6 +184,7 @@ struct FireDialogView: ModalView {
                 .multilineTextAlignment(.center)
                 .font(.system(size: 15).weight(.semibold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
+                .accessibilityIdentifier("FireDialogView.title")
         }
         .padding(.vertical, 16)
     }
@@ -211,6 +216,7 @@ struct FireDialogView: ModalView {
             hoverOverlay: Color(designSystemColor: .fireDialogPillHoverOverlay)
         )
         .frame(height: 84)
+        .accessibilityIdentifier("FireDialogView.segmentedControl")
     }
 
     private var sectionsView: some View {
@@ -221,8 +227,10 @@ struct FireDialogView: ModalView {
                     title: UserText.fireDialogTabsAndWindows,
                     subtitle: tabsSubtitle,
                     isOn: $viewModel.includeTabsAndWindows,
-                    cornerRadius: .top
+                    cornerRadius: .top,
+                    toggleId: "FireDialogView.tabsToggle"
                 )
+                .accessibilityHidden(isShowingSitesOverlay)
                 sectionDivider()
             }
 
@@ -237,8 +245,10 @@ struct FireDialogView: ModalView {
                     viewModel.includeHistory = $0
                 },
                 isEnabled: isIncludeHistoryEnabled,
-                cornerRadius: viewModel.mode.shouldShowCloseTabsToggle ? .none : .top
+                cornerRadius: viewModel.mode.shouldShowCloseTabsToggle ? .none : .top,
+                toggleId: "FireDialogView.historyToggle"
             )
+            .accessibilityHidden(isShowingSitesOverlay)
             sectionDivider()
 
             // Row 3: Cookies and Site Data
@@ -252,14 +262,17 @@ struct FireDialogView: ModalView {
                 // grey-out the ℹ button when the toggle is Off
                 infoEnabled: viewModel.includeCookiesAndSiteData,
                 isEnabled: isIncludeCookiesAndSiteDataEnabled,
-                cornerRadius: viewModel.mode.shouldShowFireproofSection ? .none : .bottom
+                cornerRadius: viewModel.mode.shouldShowFireproofSection ? .none : .bottom,
+                toggleId: "FireDialogView.cookiesToggle"
             )
             .disabled(!isIncludeCookiesAndSiteDataEnabled)
+            .accessibilityHidden(isShowingSitesOverlay)
             sectionDivider(padding: 0)
 
             // Fireproof section
             if viewModel.mode.shouldShowFireproofSection {
                 fireproofSectionView
+                    .accessibilityHidden(isShowingSitesOverlay)
             }
         }
         .background(
@@ -308,6 +321,8 @@ struct FireDialogView: ModalView {
                     }
                     .buttonStyle(StandardButtonStyle(topPadding: 6, bottomPadding: 6, horizontalPadding: 6))
                     .clipShape(Circle())
+                    .accessibilityLabel(UserText.close)
+                    .accessibilityIdentifier("FireDialogView.sitesOverlayCloseButton")
                     .keyboardShortcut(.cancelAction)
 
                     Spacer()
@@ -377,47 +392,59 @@ struct FireDialogView: ModalView {
         )
     }
 
-    private func sectionRow(icon: NSImage, title: String, subtitle: String, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true, isEnabled: Bool = true, cornerRadius: RowCornerRadius = .none) -> some View {
-        Button(action: {
+    private func sectionRow(icon: NSImage, title: String, subtitle: String, isOn: Binding<Bool>, infoAction: (() -> Void)? = nil, infoEnabled: Bool = true, isEnabled: Bool = true, cornerRadius: RowCornerRadius = .none, toggleId: String) -> some View {
+        RowWithPressEffect(cornerRadius: cornerRadius, isEnabled: isEnabled) {
             guard isEnabled else { return }
             isOn.wrappedValue.toggle()
-        }) {
+        } content: {
             HStack(spacing: 6) {
-                Image(nsImage: icon)
-                    .padding(.trailing, 2)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 13))
-                        .foregroundColor(Color(designSystemColor: .textPrimary))
-                    Text(subtitle)
-                        .font(.system(size: 11))
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .layoutPriority(3)
+                HStack(spacing: 6) {
+                    Image(nsImage: icon)
+                        .padding(.trailing, 2)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(title)
+                            .font(.system(size: 13))
+                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                        Text(subtitle)
+                            .font(.system(size: 11))
+                            .foregroundColor(Color(designSystemColor: .textSecondary))
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .layoutPriority(3)
+                    }
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(title)
+                .accessibilityValue(subtitle)
+                .accessibilityAddTraits(.updatesFrequently)
 
                 Spacer()
+
                 if let infoAction {
                     Button(action: infoAction) {
                         Image(nsImage: DesignSystemImages.Glyphs.Size12.info)
                             .padding(4)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(UserText.fireDialogSitesOverlayTitle)
+                    .accessibilityIdentifier("FireDialogView.cookiesInfoButton")
                     .disabled(!infoEnabled)
                     .opacity(infoEnabled ? 1.0 : 0.4)
                     .padding(.trailing, 4)
                 }
-                Toggle(isOn: isOn)
-                    .toggleStyle(FireToggleStyle(onFill: Color(designSystemColor: .accentPrimary), knobFill: Color(designSystemColor: .fireDialogToggleKnob)))
+
+                Group {
+                    Toggle(isOn: isOn)
+                        .toggleStyle(FireToggleStyle(onFill: Color(designSystemColor: .accentPrimary), knobFill: Color(designSystemColor: .fireDialogToggleKnob)))
+                        .accessibilityLabel(title)
+                        .accessibilityIdentifier(toggleId)
+                }
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
             .frame(width: Constants.viewSize.width - 32, alignment: .leading)
-            .contentShape(Rectangle()) // allow hit-test in empty rect areas
         }
-        .buttonStyle(RowPressButtonStyle(cornerRadius: cornerRadius))
-        .allowsHitTesting(isEnabled)
     }
 
     private func sectionDivider(padding: CGFloat = 16) -> some View {
@@ -428,17 +455,23 @@ struct FireDialogView: ModalView {
     }
 
     private var fireproofSectionView: some View {
-        Button(action: { presentManageFireproof() }) {
+        RowWithPressEffect(cornerRadius: .bottom, isEnabled: true) {
+            presentManageFireproof()
+        } content: {
             HStack(alignment: .center, spacing: 0) {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.fireproof)
-                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                HStack(spacing: 6) {
+                    Image(nsImage: DesignSystemImages.Glyphs.Size16.fireproof)
+                        .foregroundColor(Color(designSystemColor: .iconsSecondary))
 
-                Text(UserText.fireproofCookiesAndSiteDataExplanation)
-                    .font(.system(size: 11))
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.leading, 6)
+                    Text(UserText.fireproofCookiesAndSiteDataExplanation)
+                        .font(.system(size: 11))
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(UserText.fireproofCookiesAndSiteDataExplanation)
+                .accessibilityAddTraits(.isStaticText)
 
                 Spacer(minLength: 4)
 
@@ -446,26 +479,30 @@ struct FireDialogView: ModalView {
                     .buttonStyle(StandardButtonStyle(fontSize: 11, topPadding: 3, bottomPadding: 3, horizontalPadding: 12))
                     .fixedSize(horizontal: true, vertical: true)
                     .frame(alignment: .trailing)
+                    .accessibilityLabel(UserText.manageFireproofSites)
+                    .accessibilityIdentifier("FireDialogView.manageFireproofButton")
             }
-            .contentShape(Rectangle())
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
             .frame(width: Constants.viewSize.width - 32, alignment: .leading)
         }
-        .buttonStyle(RowPressButtonStyle(cornerRadius: .bottom))
     }
 
     private var individualSitesLink: some View {
         HStack(spacing: 8) {
             Image(nsImage: DesignSystemImages.Glyphs.Size16.globeBlocked
                 .tinted(with: .linkBlue))
+                .accessibilityHidden(true)
             TextButton(UserText.fireDialogManageIndividualSitesLink, fontSize: 11) {
                 presentIndividualSites()
             }
+            .accessibilityIdentifier("FireDialogView.individualSitesLink")
+            .accessibilityHidden(isShowingSitesOverlay)
 
             Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight
                 .resized(to: NSSize(width: 12, height: 12))
                 .tinted(with: .linkBlue))
+                .accessibilityHidden(true)
 
         }
     }
@@ -487,6 +524,8 @@ struct FireDialogView: ModalView {
                     )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(UserText.cancel)
+            .accessibilityIdentifier("FireDialogView.cancelButton")
             .keyboardShortcut(.cancelAction)
 
             Button {
@@ -508,7 +547,9 @@ struct FireDialogView: ModalView {
             }
             .buttonStyle(DestructiveActionButtonStyle(enabled: isDeleteEnabled, topPadding: 0, bottomPadding: 0))
             .disabled(!isDeleteEnabled)
+            .accessibilityLabel(UserText.delete)
             .keyboardShortcut(.defaultAction)
+            .accessibilityIdentifier("FireDialogView.burnButton")
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
@@ -525,44 +566,78 @@ private enum RowCornerRadius {
     case none
 }
 
-// Full-row press highlight style
-private struct RowPressButtonStyle: ButtonStyle {
+// Modifier to apply corner clipping based on row position
+private struct RowCornerClipModifier: ViewModifier {
     let cornerRadius: RowCornerRadius
 
-    init(cornerRadius: RowCornerRadius = .none) {
-        self.cornerRadius = cornerRadius
+    func body(content: Content) -> some View {
+        switch cornerRadius {
+        case .none:
+            content
+        case .top:
+            content.clipShape(CustomRoundedCornersShape(tl: 8, tr: 8, bl: 0, br: 0))
+        case .bottom:
+            content.clipShape(CustomRoundedCornersShape(tl: 0, tr: 0, bl: 8, br: 8))
+        case .both:
+            content.clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
     }
+}
 
-    func makeBody(configuration: Configuration) -> some View {
-        let background = configuration.isPressed ? Color.buttonMouseDown : Color.clear
+// Row with press effect - visual feedback without blocking child interactions
+private struct RowWithPressEffect<Content: View>: View {
+    let cornerRadius: RowCornerRadius
+    let isEnabled: Bool
+    let action: () -> Void
+    @ViewBuilder let content: () -> Content
 
-        Group {
-            switch cornerRadius {
-            case .top:
-                configuration.label
-                    .background(
-                        CustomRoundedCornersShape(tl: 12, tr: 12, bl: 0, br: 0)
-                            .fill(background)
-                    )
-            case .bottom:
-                configuration.label
-                    .background(
-                        CustomRoundedCornersShape(tl: 0, tr: 0, bl: 12, br: 12)
-                            .fill(background)
-                    )
-            case .both:
-                configuration.label
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(background)
-                    )
-            case .none:
-                configuration.label
-                    .background(background)
+    @State private var showFeedback = false
+
+    var body: some View {
+        ZStack {
+            // Visual feedback overlay
+            pressBackground
+                .opacity(showFeedback ? 1 : 0)
+                .allowsHitTesting(false)
+
+            content()
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if isEnabled {
+                // Quick flash animation
+                showFeedback = true
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) {
+                    showFeedback = false
+                    DispatchQueue.main.async {
+                        action()
+                    }
+                }
             }
         }
-        .fixedSize(horizontal: true, vertical: true)
-        .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+        .animation(.easeOut(duration: showFeedback ? 0.06 : 0.12), value: showFeedback)
+        .modifier(RowCornerClipModifier(cornerRadius: cornerRadius))
+    }
+
+    @ViewBuilder
+    private var pressBackground: some View {
+        let background = Color.buttonMouseDown
+
+        switch cornerRadius {
+        case .top:
+            CustomRoundedCornersShape(tl: 12, tr: 12, bl: 0, br: 0)
+                .fill(background)
+        case .bottom:
+            CustomRoundedCornersShape(tl: 0, tr: 0, bl: 12, br: 12)
+                .fill(background)
+        case .both:
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(background)
+        case .none:
+            Rectangle()
+                .fill(background)
+        }
     }
 }
 

@@ -785,6 +785,10 @@ extension AppDelegate {
         EmailManager().resetEmailProtectionInContextPrompt()
     }
 
+    @objc func resetFireproofSites(_ sender: Any?) {
+        Application.appDelegate.fireproofDomains.clearAll()
+    }
+
     @objc func reloadConfigurationNow(_ sender: Any?) {
         Application.appDelegate.configurationManager.forceRefresh(isDebug: true)
     }

@@ -1362,7 +1362,7 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
 
     func collectionView(_ collectionView: NSCollectionView, layout collectionViewLayout: NSCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> NSSize {
         guard collectionView != pinnedTabsCollectionView else {
-            return NSSize(width: pinnedTabWidth - 3, height: pinnedTabHeight)
+            return NSSize(width: pinnedTabWidth, height: pinnedTabHeight)
         }
         let isItemSelected = tabCollectionViewModel.selectionIndex == .unpinned(indexPath.item)
         return NSSize(width: self.currentTabWidth(selected: isItemSelected), height: standardTabHeight)
@@ -1573,7 +1573,8 @@ extension TabBarViewController: NSCollectionViewDelegate {
         let isDroppedAboveTabBar = screenPoint.y > (frameRelativeToScreen.maxY + 10)
 
         // Create new window if dropped above tab bar or too far away
-        if isDroppedAboveTabBar || !screenPoint.isNearRect(frameRelativeToScreen, allowedDistance: Self.dropToOpenDistance) {
+        // But not for pinned tabs
+        if collectionView != pinnedTabsCollectionView && (isDroppedAboveTabBar || !screenPoint.isNearRect(frameRelativeToScreen, allowedDistance: Self.dropToOpenDistance)) {
             moveToNewWindow(from: sourceIndex.item,
                            droppingPoint: screenPoint,
                            burner: tabCollectionViewModel.isBurner)

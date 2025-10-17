@@ -64,6 +64,7 @@ struct MetricBuilderTests {
     }
 
     @MainActor
+    // swiftlint:disable:next type_name
     struct iPhoneTests {
 
         @Test("Configure iPhone with single value")
@@ -103,6 +104,7 @@ struct MetricBuilderTests {
     }
 
     @MainActor
+    // swiftlint:disable:next type_name
     struct iPadTests {
         static let portraitBounds = CGRect(x: 0, y: 0, width: 768, height: 1024)
         static let landscapeBounds = CGRect(x: 0, y: 0, width: 1024, height: 768)
@@ -149,6 +151,7 @@ struct MetricBuilderTests {
     }
 
     @MainActor
+    // swiftlint:disable:next type_name
     struct iPhoneSmallScreenTests {
 
         @Test("Configure small screen iPhone")

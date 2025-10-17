@@ -137,6 +137,8 @@ final class TabBarItemCellView: NSView {
         return faviconImageView
     }()
 
+    fileprivate let faviconPlaceholderView = LetterView()
+
     fileprivate let crashIndicatorButton = {
         let crashIndicatorButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.crashButtonAction))
         crashIndicatorButton.bezelStyle = .shadowlessSquare
@@ -301,6 +303,7 @@ final class TabBarItemCellView: NSView {
         }
 
         faviconImageView.setAccessibilityIdentifier("TabBarViewItem.favicon")
+        faviconPlaceholderView.setAccessibilityIdentifier("TabBarViewItem.faviconPlaceholder")
         titleTextField.setAccessibilityIdentifier("TabBarViewItem.title")
 
         closeButton.toolTip = UserText.closeTab
@@ -323,6 +326,7 @@ final class TabBarItemCellView: NSView {
         crashIndicatorButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsCornerRadius
 
         addSubview(faviconImageView)
+        addSubview(faviconPlaceholderView)
         addSubview(crashIndicatorButton)
         addSubview(audioButton)
         addSubview(titleTextField)
@@ -371,8 +375,10 @@ final class TabBarItemCellView: NSView {
         switch widthStage {
         case .full, .withoutCloseButton:
             layoutForNormalMode()
-        case .withoutTitle, .pinned:
+        case .withoutTitle:
             layoutForCompactMode()
+        case .pinned:
+            layoutForPinnedMode()
         }
 
         let separatorHeight = theme.tabStyleProvider.separatorHeight
@@ -456,6 +462,32 @@ final class TabBarItemCellView: NSView {
             // close button appears in place of favicon in compact mode
             closeButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
             x = closeButton.frame.maxX + spacing
+        }
+    }
+
+    private func layoutForPinnedMode() {
+        assert(closeButton.isHidden)
+        assert(permissionButton.isHidden)
+        assert(titleTextField.isHidden)
+
+        let elementWidth: CGFloat = 16
+        let x = (bounds.width - elementWidth) / 2
+        let faviconFrame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
+        if faviconImageView.isShown {
+            faviconImageView.frame = faviconFrame
+        } else if faviconPlaceholderView.isShown {
+            faviconPlaceholderView.frame = faviconFrame
+        }
+        if crashIndicatorButton.isShown {
+            crashIndicatorButton.frame = faviconFrame.offsetBy(dx: 8, dy: 8)
+            crashIndicatorButton.cornerRadius = faviconFrame.height/2
+            crashIndicatorButton.backgroundColor = .pinnedTabMuteStateCircle
+            crashIndicatorButton.mouseOverColor = nil
+        } else if audioButton.isShown {
+            audioButton.frame = faviconFrame.offsetBy(dx: 8, dy: 8)
+            audioButton.cornerRadius = faviconFrame.height/2
+            audioButton.backgroundColor = .pinnedTabMuteStateCircle
+            audioButton.mouseOverColor = nil
         }
     }
 
@@ -921,12 +953,19 @@ final class TabBarViewItem: NSCollectionViewItem {
             }
         }
 
-        let showCloseButton = !isPinned && ((isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected)
-        print("TABX widthStage \(widthStage) showCloseButton \(showCloseButton)")
-        cell.closeButton.isShown = showCloseButton
-        cell.faviconImageView.isShown = (cell.faviconImageView.image != nil) && (widthStage != .withoutTitle || !showCloseButton)
-        updateSeparatorView()
-        cell.titleTextField.isShown = !widthStage.isTitleHidden || (cell.faviconImageView.image == nil && !showCloseButton)
+        if isPinned {
+            cell.closeButton.isShown = false
+            cell.faviconImageView.isShown = cell.faviconImageView.image != nil
+            cell.faviconPlaceholderView.isShown = !cell.faviconImageView.isShown
+            cell.titleTextField.isShown = false
+        } else {
+            let showCloseButton = (isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected
+            cell.closeButton.isShown = showCloseButton
+            cell.faviconImageView.isShown = (cell.faviconImageView.image != nil) && (widthStage != .withoutTitle || !showCloseButton)
+            cell.faviconPlaceholderView.isShown = false
+            updateSeparatorView()
+            cell.titleTextField.isShown = !widthStage.isTitleHidden || (cell.faviconImageView.image == nil && !showCloseButton)
+        }
 
         // Adjust colors for burner window
         if isBurner && cell.titleTextField.stringValue == UserText.burnerTabHomeTitle {
@@ -962,6 +1001,11 @@ final class TabBarViewItem: NSCollectionViewItem {
             permission = .microphone
             isActive = false
         } else {
+            cell.permissionButton.isHidden = true
+            return
+        }
+
+        guard isPinned else {
             cell.permissionButton.isHidden = true
             return
         }
@@ -1005,6 +1049,12 @@ final class TabBarViewItem: NSCollectionViewItem {
         cell.needsLayout = true
         cell.faviconImageView.isHidden = (favicon == nil)
         cell.faviconImageView.image = favicon
+        if isPinned && cell.faviconImageView.isHidden {
+            cell.faviconPlaceholderView.isHidden = false
+            cell.faviconPlaceholderView.displayURL(tabViewModel?.tabContent.urlForWebView)
+        } else {
+            cell.faviconPlaceholderView.isHidden = true
+        }
     }
 
     private func updateAudioPlayState(_ audioState: WKWebView.AudioState) {
@@ -1571,3 +1621,83 @@ extension TabBarViewItem {
     }
 }
 #endif
+
+import SwiftUIExtensions
+
+final class LetterView: NSView {
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setup()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+
+    func displayURL(_ url: URL?) {
+        guard let domain = url?.host,
+           let eTLDplus1 = NSApp.delegateTyped.tld.eTLDplus1(domain),
+           let firstLetter = eTLDplus1.capitalized.first.flatMap(String.init)
+        else {
+            placeholderView.isHidden = false
+            return
+        }
+
+        placeholderView.isHidden = true
+        label.stringValue = firstLetter
+        backgroundView.layer?.backgroundColor = Color.forString(eTLDplus1).cgColor
+    }
+
+    private let backgroundView: NSView = {
+        let view = NSView()
+        view.wantsLayer = true
+        view.layer?.backgroundColor = NSColor.clear.cgColor
+        view.layer?.cornerRadius = 4.0
+        return view
+    }()
+
+    private let label: NSTextField = {
+        let label = NSTextField(labelWithString: "")
+        label.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        label.textColor = .white
+        label.alignment = .center
+        return label
+    }()
+
+    private let placeholderView: NSImageView = {
+        let imageView = NSImageView()
+        imageView.image = .web
+        imageView.imageScaling = .scaleProportionallyUpOrDown
+        return imageView
+    }()
+
+    override var intrinsicContentSize: NSSize { NSSize(width: 16, height: 16) }
+
+    private func setup() {
+        wantsLayer = true
+        addSubview(backgroundView)
+        addSubview(label)
+        addSubview(placeholderView)
+
+        backgroundView.translatesAutoresizingMaskIntoConstraints = false
+        label.translatesAutoresizingMaskIntoConstraints = false
+        placeholderView.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            backgroundView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            backgroundView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            backgroundView.topAnchor.constraint(equalTo: topAnchor),
+            backgroundView.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            label.centerXAnchor.constraint(equalTo: centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            placeholderView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            placeholderView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            placeholderView.topAnchor.constraint(equalTo: topAnchor),
+            placeholderView.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
+    }
+}

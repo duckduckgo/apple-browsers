@@ -504,9 +504,13 @@ final class FireDialogViewModelTests: XCTestCase {
     }
 
     @MainActor func testBurn_AllData_WithIncludeHistoryTrue_BurnAllCalled() {
-        // Scenario: All Data scope with full clearing.
-        // Action: Burn with includeHistory=true.
-        // Expectation: burnAll is called; others are not.
+        // Scenario: All Data scope with full clearing, NO EXISTING WINDOWS.
+        // Action: Burn with includeHistory=true, includeTabsAndWindows=true.
+        // Expectation: burnAll is called; openNewWindow called since no windows exist.
+
+        // Ensure no windows exist in the mock
+        XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 0,
+                       "Test setup: should start with no windows")
 
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllersManager: windowControllersManager,
@@ -529,7 +533,7 @@ final class FireDialogViewModelTests: XCTestCase {
         historyCoordinator.onBurnVisits = { XCTFail("onBurnVisits should not be called when expecting onBurnAll") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnAll") }
 
-        let openNewWindowExp = expectation(description: "openNewWindow called if windows close")
+        let openNewWindowExp = expectation(description: "openNewWindow called when no windows exist")
         windowControllersManager.onOpenNewWindow = { call in
             // Validate arguments
             XCTAssertEqual(call.burnerMode, .regular)
@@ -644,9 +648,13 @@ final class FireDialogViewModelTests: XCTestCase {
     }
 
     @MainActor func testBurn_AllData_WithCookiesToggleOff_BurnAllCalled() {
-        // Scenario: All Data, cookies/site data excluded.
+        // Scenario: All Data, cookies/site data excluded, NO EXISTING WINDOWS.
         // Action: Burn with includeCookiesAndSiteData=false.
-        // Expectation: burnAll is called via (.allData, false) path; others not.
+        // Expectation: burnAll is called; openNewWindow called since no windows exist.
+
+        // Ensure no windows exist
+        XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 0,
+                       "Test setup: should start with no windows")
 
         let fire = Fire(historyCoordinating: historyCoordinator,
                         windowControllersManager: windowControllersManager,
@@ -669,7 +677,7 @@ final class FireDialogViewModelTests: XCTestCase {
         historyCoordinator.onBurnVisits = { XCTFail("onBurnVisits should not be called when expecting onBurnAll") }
         historyCoordinator.onBurnDomains = { XCTFail("onBurnDomains should not be called when expecting onBurnAll") }
 
-        let openNewWindowExp = expectation(description: "openNewWindow called if windows close")
+        let openNewWindowExp = expectation(description: "openNewWindow called when no windows exist")
         windowControllersManager.onOpenNewWindow = { call in
             // Validate arguments
             XCTAssertEqual(call.burnerMode, .regular)

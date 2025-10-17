@@ -39,7 +39,8 @@ final class FireTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenBurnAll_ThenAllWindowsAreClosed() async {
+    func testWhenBurnAll_WithExistingWindow_ThenWindowStaysOpenAndTabsAreCleared() async {
+        // When burning "Everything", keep window open and just close tabs + open a new tab
         let manager = WebCacheManagerMock()
         let historyCoordinator = HistoryCoordinatingMock()
         let permissionManager = PermissionManagerMock()
@@ -53,18 +54,105 @@ final class FireTests: XCTestCase {
                         windowControllersManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         tld: Application.appDelegate.tld,
-                        visualizeFireAnimationDecider: visualizeFire)
+                        visualizeFireAnimationDecider: visualizeFire,
+                        isAppActiveProvider: { true })  // App is active - should manage windows
 
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel()
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
+        let windowCountBeforeBurning = Application.appDelegate.windowControllersManager.mainWindowControllers.count
+        let windowControllersBeforeBurning = Set(Application.appDelegate.windowControllersManager.mainWindowControllers.map { ObjectIdentifier($0) })
 
         XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 3)
         XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.first?.content, .newtab)
+        XCTAssertGreaterThan(windowCountBeforeBurning, 0, "Should have at least one window before burning")
 
         let burningExpectation = expectation(description: "Burning")
 
         fire.burnAll {
-            XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 0)
+            burningExpectation.fulfill()
+        }
+
+        await fulfillment(of: [burningExpectation], timeout: 5)
+
+        // Verify: All old tabs cleared and a new tab was added to keep window open
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 1,
+                       "A new tab should be added to keep the window open (original 3 tabs cleared)")
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.first?.content, .newtab,
+                       "New tab should be a newtab")
+
+        // Verify: Window is still open (not closed and reopened)
+        let windowCountAfterBurning = Application.appDelegate.windowControllersManager.mainWindowControllers.count
+        XCTAssertEqual(windowCountAfterBurning, windowCountBeforeBurning,
+                       "Window count should remain the same - window should not be closed and reopened")
+
+        // Verify: The same window controller instances are still present
+        let windowControllersAfterBurning = Set(Application.appDelegate.windowControllersManager.mainWindowControllers.map { ObjectIdentifier($0) })
+        XCTAssertEqual(windowControllersBeforeBurning, windowControllersAfterBurning,
+                      "Original window controllers should still be registered (not closed and reopened)")
+    }
+
+    @MainActor
+    func testWhenBurnAll_WithNoExistingWindows_ThenNewWindowIsOpened() async {
+        // When no windows exist, should still open a new window (preserve existing behavior)
+        let manager = WebCacheManagerMock()
+        let historyCoordinator = HistoryCoordinatingMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
+
+        let fire = Fire(cacheManager: manager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
+                        faviconManagement: faviconManager,
+                        tld: Application.appDelegate.tld,
+                        isAppActiveProvider: { true })  // App is active - should open new window
+
+        // Ensure no windows exist
+        XCTAssertEqual(Application.appDelegate.windowControllersManager.mainWindowControllers.count, 0,
+                       "Should start with no windows")
+
+        let burningExpectation = expectation(description: "Burning")
+
+        fire.burnAll {
+            burningExpectation.fulfill()
+        }
+
+        await fulfillment(of: [burningExpectation], timeout: 5)
+
+        // Wait a bit for async window opening
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+
+        // Verify: A new window was opened
+        XCTAssertEqual(Application.appDelegate.windowControllersManager.mainWindowControllers.count, 1,
+                       "A new window should be opened when no windows existed before burning")
+    }
+
+    @MainActor
+    func testWhenBurnAll_WithAppInactive_ThenNoWindowIsOpened() async {
+        // When app is inactive, should NOT open a new window even if none exist
+        let manager = WebCacheManagerMock()
+        let historyCoordinator = HistoryCoordinatingMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
+
+        let fire = Fire(cacheManager: manager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
+                        faviconManagement: faviconManager,
+                        tld: Application.appDelegate.tld,
+                        isAppActiveProvider: { false })  // App is INACTIVE - should NOT open window
+
+        // Ensure no windows exist
+        XCTAssertEqual(Application.appDelegate.windowControllersManager.mainWindowControllers.count, 0,
+                       "Should start with no windows")
+
+        let burningExpectation = expectation(description: "Burning")
+
+        fire.burnAll {
+            // Verify: NO window was opened (app is inactive)
+            XCTAssertEqual(Application.appDelegate.windowControllersManager.mainWindowControllers.count, 0,
+                           "No window should be opened when app is inactive")
             burningExpectation.fulfill()
         }
 

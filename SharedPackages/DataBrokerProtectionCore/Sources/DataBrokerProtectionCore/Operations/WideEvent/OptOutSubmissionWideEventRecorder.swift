@@ -28,12 +28,16 @@ protocol OptOutSubmissionWideEventRecording: AnyObject {
 final class OptOutSubmissionWideEventRecorder {
     static let sampleRate: Float = 1.0
 
+    /// We want a stable ID for different opt-out attempts associated with an extracted profile,
+    /// so we can measure the time spent to successfully submit an opt-out request
     struct Identifier {
         let profileIdentifier: String?
         let brokerId: Int64
         let profileQueryId: Int64
         let extractedProfileId: Int64
 
+        /// Ideally we use the profile identifier on the broker (which falls back to the profile URL),
+        /// but we need another fallback in case it's nil, so that we won't under count wide events
         var toGlobalId: String {
             profileIdentifier?.sha256 ?? "\(brokerId)-\(profileQueryId)-\(extractedProfileId)"
         }

@@ -59,6 +59,10 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
     private var task: URLSessionDataTask?
 
+    private var isUsingUnifiedPrediction: Bool {
+        featureFlagger.isFeatureOn(.unifiedURLPredictor)
+    }
+
     lazy var dataSource: AutocompleteSuggestionsDataSource = {
         return AutocompleteSuggestionsDataSource(
             historyManager: historyManager,
@@ -196,11 +200,12 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private func requestSuggestions(query: String) {
         model.selection = nil
 
-        loader = SuggestionLoader(urlFactory: { phrase in
-            guard let url = URL(trimmedAddressBarString: phrase),
+        loader = SuggestionLoader(urlFactory: { [weak self] phrase in
+            guard let self,
+                  let url = URL(trimmedAddressBarString: phrase, useUnifiedLogic: self.isUsingUnifiedPrediction),
                   let scheme = url.scheme,
                   scheme.description.hasPrefix("http"),
-                  url.isValid else {
+                  url.isValid(usingUnifiedLogic: self.isUsingUnifiedPrediction) else {
                 return nil
             }
 

@@ -12784,7 +12784,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"$CONFIGURATION\" != \"Debug\" ] || [ \"$ENABLE_PREVIEWS\" = \"YES\" ]; then exit 0; fi\n${BUILT_PRODUCTS_DIR}/SwiftLintTool\n";
+			shellScript = "env $SOURCE_ROOT/../scripts/xcode-swiftlint.sh\n";
 		};
 		3121F62B2B64266A002F706A /* Copy Swift Package resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -12936,7 +12936,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"$CONFIGURATION\" != \"Debug\" ] || [ \"$ENABLE_PREVIEWS\" = \"YES\" ]; then exit 0; fi\n${BUILT_PRODUCTS_DIR}/SwiftLintTool\n";
+			shellScript = "env $SOURCE_ROOT/../scripts/xcode-swiftlint.sh\n";
 		};
 		7B2E361D2D6DE89600A08CB7 /* Embed System Network Extension */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -19134,6 +19134,22 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = Freemium;
 		};
+		CC55B2332E82BD0D0032E8BD /* BrowserServicesKitTestsUtils */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BrowserServicesKitTestsUtils;
+		};
+		CC55B2352E82BD160032E8BD /* BrowserServicesKitTestsUtils */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BrowserServicesKitTestsUtils;
+		};
+		CC55B23A2E82BF430032E8BD /* BrowserServicesKitTestsUtils */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BrowserServicesKitTestsUtils;
+		};
+		CC55B23C2E82BF4D0032E8BD /* BrowserServicesKitTestsUtils */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BrowserServicesKitTestsUtils;
+		};
 		D65D0F9E2E7239680075A784 /* NetworkQualityMonitor */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NetworkQualityMonitor;
@@ -19157,22 +19173,6 @@
 		D668401B2E82BE31007DAAB2 /* PerformanceTest */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = PerformanceTest;
-		};
-		CC55B2332E82BD0D0032E8BD /* BrowserServicesKitTestsUtils */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = BrowserServicesKitTestsUtils;
-		};
-		CC55B2352E82BD160032E8BD /* BrowserServicesKitTestsUtils */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = BrowserServicesKitTestsUtils;
-		};
-		CC55B23A2E82BF430032E8BD /* BrowserServicesKitTestsUtils */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = BrowserServicesKitTestsUtils;
-		};
-		CC55B23C2E82BF4D0032E8BD /* BrowserServicesKitTestsUtils */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = BrowserServicesKitTestsUtils;
 		};
 		DC3F73D49B2D44464AFEFCD8 /* Subscription */ = {
 			isa = XCSwiftPackageProductDependency;

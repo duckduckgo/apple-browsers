@@ -9941,7 +9941,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"$CONFIGURATION\" = \"Release\" ] || [ \"$ENABLE_PREVIEWS\" = \"YES\" ]; then exit 0; fi\n\nLINTER_BASE=\"$BUILD_ROOT/../..\"\nLINTER=`find \"$LINTER_BASE\" | grep \"\\-macos/bin/swiftlint$\"`\nfind $SRCROOT ! -name 'Package.swift' -path $SRCROOT/vendor -prune -o -name \"*.swift\" | xargs \"$LINTER\"\n";
+			shellScript = "env $SOURCE_ROOT/../scripts/xcode-swiftlint.sh\n";
 		};
 		CBCCF59B29940C3800C02DFE /* Assert Xcode version */ = {
 			isa = PBXShellScriptBuildPhase;

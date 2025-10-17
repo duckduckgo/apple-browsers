@@ -1208,9 +1208,6 @@
     };
   }
   function getPlatformVersion(preferences) {
-    if (preferences.platform?.version !== void 0 && preferences.platform?.version !== "") {
-      return preferences.platform.version;
-    }
     if (preferences.versionNumber) {
       return preferences.versionNumber;
     }
@@ -1372,26 +1369,24 @@
       "duckPlayer",
       "duckPlayerNative",
       "duckAiListener",
-      "duckAiDataClearing",
       "harmfulApis",
       "webCompat",
       "windowsPermissionUsage",
       "brokerProtection",
       "performanceMetrics",
       "breakageReporting",
-      "autofillImport",
+      "autofillPasswordImport",
       "favicon",
       "webTelemetry",
       "pageContext"
     ]
   );
   var platformSupport = {
-    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "duckAiListener", "duckAiDataClearing", "pageContext"],
+    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "duckAiListener", "pageContext"],
     "apple-isolated": [
       "duckPlayer",
       "duckPlayerNative",
       "brokerProtection",
-      "breakageReporting",
       "performanceMetrics",
       "clickToLoad",
       "messageBridge",
@@ -1399,7 +1394,7 @@
     ],
     android: [...baseFeatures, "webCompat", "breakageReporting", "duckPlayer", "messageBridge"],
     "android-broker-protection": ["brokerProtection"],
-    "android-autofill-import": ["autofillImport"],
+    "android-autofill-password-import": ["autofillPasswordImport"],
     "android-adsjs": [
       "apiManipulation",
       "webCompat",
@@ -1422,8 +1417,7 @@
       "messageBridge",
       "webCompat",
       "pageContext",
-      "duckAiListener",
-      "duckAiDataClearing"
+      "duckAiListener"
     ],
     firefox: ["cookie", ...baseFeatures, "clickToLoad"],
     chrome: ["cookie", ...baseFeatures, "clickToLoad"],
@@ -4808,22 +4802,24 @@
       if (this.getFeatureSettingEnabled("modifyCookies")) {
         this.modifyCookies();
       }
+      if (this.getFeatureSettingEnabled("disableDeviceEnumeration")) {
+        this.preventDeviceEnumeration();
+      }
       if (this.getFeatureSettingEnabled("enumerateDevices")) {
         this.deviceEnumerationFix();
-      }
-      if (this.getFeatureSettingEnabled("viewportWidthLegacy", "disabled")) {
-        this.viewportWidthFix();
       }
     }
     /**
      * Handle user preference updates when merged during initialization.
      * Re-applies viewport fixes if viewport configuration has changed.
-     * Used in the injectName='android-adsjs' instead of 'viewportWidthLegacy' from init.
      * @param {object} _updatedConfig - The configuration with merged user preferences
      */
     onUserPreferencesMerged(_updatedConfig) {
       if (this.getFeatureSettingEnabled("viewportWidth")) {
-        this.viewportWidthFix();
+        if (!this._viewportWidthFixApplied) {
+          this.viewportWidthFix();
+          this._viewportWidthFixApplied = true;
+        }
       }
     }
     /** Shim Web Share API in Android WebView */
@@ -5286,10 +5282,6 @@
       };
     }
     viewportWidthFix() {
-      if (this._viewportWidthFixApplied) {
-        return;
-      }
-      this._viewportWidthFixApplied = true;
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => this.viewportWidthFixInner());
       } else {
@@ -5370,6 +5362,32 @@
       }
     }
     /**
+     * Prevents device enumeration by returning an empty array when enabled
+     */
+    preventDeviceEnumeration() {
+      if (!window.MediaDevices) {
+        return;
+      }
+      let disableDeviceEnumeration = false;
+      const isFrame = window.self !== window.top;
+      if (isFrame) {
+        disableDeviceEnumeration = this.getFeatureSettingEnabled("disableDeviceEnumerationFrames");
+      } else {
+        disableDeviceEnumeration = this.getFeatureSettingEnabled("disableDeviceEnumeration");
+      }
+      if (disableDeviceEnumeration) {
+        const enumerateDevicesProxy = new DDGProxy(this, MediaDevices.prototype, "enumerateDevices", {
+          /**
+           * @returns {Promise<MediaDeviceInfo[]>}
+           */
+          apply() {
+            return Promise.resolve([]);
+          }
+        });
+        enumerateDevicesProxy.overload();
+      }
+    }
+    /**
      * Creates a valid MediaDeviceInfo or InputDeviceInfo object that passes instanceof checks
      * @param {'videoinput' | 'audioinput' | 'audiooutput'} kind - The device kind
      * @returns {MediaDeviceInfo | InputDeviceInfo}
@@ -5427,16 +5445,6 @@
       return deviceInfo;
     }
     /**
-     * Helper to wrap a promise with timeout
-     * @param {Promise} promise - Promise to wrap
-     * @param {number} timeoutMs - Timeout in milliseconds
-     * @returns {Promise} Promise that rejects on timeout
-     */
-    withTimeout(promise, timeoutMs) {
-      const timeout = new Promise((_resolve, reject) => setTimeout(() => reject(new Error("Request timeout")), timeoutMs));
-      return Promise.race([promise, timeout]);
-    }
-    /**
      * Fixes device enumeration to handle permission prompts gracefully
      */
     deviceEnumerationFix() {
@@ -5451,12 +5459,8 @@
          * @returns {Promise<MediaDeviceInfo[]>}
          */
         apply: async (target, thisArg, args) => {
-          const settings = this.getFeatureSetting("enumerateDevices") || {};
-          const timeoutEnabled = settings.timeoutEnabled !== false;
-          const timeoutMs = settings.timeoutMs ?? 2e3;
           try {
-            const messagingPromise = this.messaging.request(MSG_DEVICE_ENUMERATION, {});
-            const response = timeoutEnabled ? await this.withTimeout(messagingPromise, timeoutMs) : await messagingPromise;
+            const response = await this.messaging.request(MSG_DEVICE_ENUMERATION, {});
             if (response.willPrompt) {
               const devices = [];
               if (response.videoInput) {
@@ -9009,7 +9013,6 @@ ul.messages {
 
   // src/features/duck-ai-listener.js
   init_define_import_meta_trackerLookup();
-  var __isPageContextEnabled;
   var DuckAiListener = class extends ContentFeature {
     constructor() {
       super(...arguments);
@@ -9024,48 +9027,15 @@ ul.messages {
       /** @type {HTMLElement | null} */
       __publicField(this, "contextChip", null);
       /** @type {boolean} */
-      __privateAdd(this, __isPageContextEnabled, false);
+      __publicField(this, "isPageContextEnabled", true);
       /** @type {boolean} */
       __publicField(this, "hasContextBeenUsed", false);
-      /** @type {boolean} */
-      __publicField(this, "userExplicitlyDisabledContext", false);
       /** @type {string | null} */
       __publicField(this, "lastInjectedContext", null);
       /** @type {string | null} */
       __publicField(this, "globalPageContext", null);
       /** @type {HTMLButtonElement | null} */
       __publicField(this, "sendButton", null);
-      /** @type {boolean} */
-      __publicField(this, "isRequestInProgress", false);
-      /** @type {Function | null} */
-      __publicField(this, "contextPromiseResolve", null);
-      /** @type {DuckAiPromptTelemetry | null} */
-      __publicField(this, "promptTelemetry", null);
-    }
-    /**
-     * Get the page context enabled state
-     * @returns {boolean}
-     */
-    get isPageContextEnabled() {
-      return __privateGet(this, __isPageContextEnabled);
-    }
-    /**
-     * Set the page context enabled state and update UI accordingly
-     * @param {boolean} enabled - Whether page context should be enabled
-     */
-    set isPageContextEnabled(enabled) {
-      if (__privateGet(this, __isPageContextEnabled) === enabled) {
-        return;
-      }
-      __privateSet(this, __isPageContextEnabled, enabled);
-      if (enabled) {
-        if (this.pageData && this.pageData.content && !this.hasContextBeenUsed) {
-          this.createContextChip();
-        }
-      } else {
-        this.removeContextChip();
-      }
-      this.updateButtonAppearance();
     }
     init() {
       if (!this.shouldActivate()) {
@@ -9080,11 +9050,8 @@ ul.messages {
     }
     async setup() {
       this.createButtonUI();
-      this.setupTelemetry();
       await this.setupMessageBridge();
       this.setupTextBoxDetection();
-      this.cleanupExistingPrompts();
-      this.setupPromptCleanupObserver();
     }
     /**
      * Check if this feature should be active on the current domain
@@ -9243,64 +9210,27 @@ ul.messages {
       this.log.info("Created page context button with wrapper structure");
     }
     /**
-     * Set up telemetry for prompt tracking
-     */
-    setupTelemetry() {
-      this.promptTelemetry = new DuckAiPromptTelemetry(this.messaging, this.log, this.getSizeCategories());
-      this.log.info("Set up prompt telemetry");
-    }
-    /**
-     * Get the defined size categories for prompt bucketing
-     * @returns {Array} Array of size category objects with name and maxSize
-     */
-    getSizeCategories() {
-      const defaultCategories = [
-        { name: "small", maxSize: 2499 },
-        { name: "medium", maxSize: 4999 },
-        { name: "large", maxSize: 7499 },
-        { name: "xlarge", maxSize: 9999 },
-        { name: "xxl", maxSize: Infinity }
-      ];
-      const configCategories = this.getFeatureSetting("sizeCategories");
-      if (configCategories && Array.isArray(configCategories) && configCategories.length > 0) {
-        const validCategories = configCategories.filter((cat) => cat && typeof cat.name === "string" && (typeof cat.maxSize === "number" || cat.maxSize === null)).map((cat) => ({
-          name: cat.name,
-          maxSize: cat.maxSize === null ? Infinity : cat.maxSize
-        }));
-        if (validCategories.length > 0) {
-          return validCategories;
-        }
-      }
-      return defaultCategories;
-    }
-    removeContextChip() {
-      if (this.contextChip) {
-        this.contextChip.remove();
-        this.contextChip = null;
-      }
-    }
-    /**
      * Create the context chip below the input field
      */
     createContextChip() {
       if (!this.pageData) {
+        this.log.info("createContextChip: No page data available, skipping");
         return;
       }
       if (this.hasContextBeenUsed) {
-        this.removeContextChip();
+        this.log.info("createContextChip: Context already used, skipping");
         return;
       }
-      this.removeContextChip();
+      if (this.contextChip) {
+        this.contextChip.remove();
+      }
       if (!this.pageData.content) {
         return;
       }
-      if (!this.textBox) {
-        this.findTextBox();
-      }
-      if (!this.textBox) {
+      const textarea = document.querySelector('textarea[name="user-prompt"]');
+      if (!textarea) {
         return;
       }
-      const textarea = this.textBox;
       this.contextChip = document.createElement("div");
       this.contextChip.id = "duck-ai-context-chip";
       this.contextChip.style.cssText = `
@@ -9329,7 +9259,10 @@ ul.messages {
             align-items: center;
             justify-content: center;
         `;
+      this.log.info("createContextChip called, this.pageData:", this.pageData);
+      this.log.info("this.pageData?.favicon:", this.pageData?.favicon);
       const favicon = this.pageData?.favicon?.[0]?.href;
+      this.log.info("favicon extracted:", favicon);
       let innerContent;
       if (favicon) {
         innerContent = `<image href="${favicon}" x="6" y="5" width="16" height="16" rx="1"/>`;
@@ -9403,7 +9336,6 @@ ul.messages {
             color: rgb(102, 102, 102);
             cursor: pointer;
         `;
-      infoIcon.title = "Attach page context to the prompt";
       const warningIcon = document.createElement("div");
       if (this.pageData.truncated) {
         warningIcon.innerHTML = `
@@ -9446,41 +9378,23 @@ ul.messages {
       this.log.info("Created context chip");
     }
     /**
-     * Handle button click to toggle page context or fetch context if not available
+     * Handle button click to toggle page context
      */
-    async handleButtonClick() {
+    handleButtonClick() {
       if (!this.button || this.hasContextBeenUsed) return;
-      const hasContext = this.pageData && this.pageData.content;
-      let newState;
-      if (!hasContext) {
-        this.log.info("No context available, attempting to fetch...");
-        const success = await this.requestPageContext(true);
-        if (success && this.pageData && this.pageData.content) {
-          newState = true;
-        } else {
-          newState = this.isPageContextEnabled;
+      this.isPageContextEnabled = !this.isPageContextEnabled;
+      if (this.isPageContextEnabled) {
+        if (this.pageData && this.pageData.content) {
+          this.createContextChip();
         }
       } else {
-        newState = !this.isPageContextEnabled;
+        if (this.contextChip) {
+          this.contextChip.remove();
+          this.contextChip = null;
+        }
       }
-      if (!newState) {
-        this.userExplicitlyDisabledContext = true;
-      } else {
-        this.userExplicitlyDisabledContext = false;
-      }
-      this.isPageContextEnabled = newState;
-      this.sendToggleTelemetry();
-      this.triggerInputEvents();
-      this.log.info("Page context state:", this.isPageContextEnabled);
-    }
-    /**
-     * Send toggle telemetry if bridge is available
-     * @private
-     */
-    sendToggleTelemetry() {
-      if (this.bridge) {
-        this.bridge.notify("togglePageContextTelemetry", { enabled: this.isPageContextEnabled });
-      }
+      this.updateButtonAppearance();
+      this.log.info("Page context toggled:", this.isPageContextEnabled);
     }
     /**
      * Determine if dark mode is preferred
@@ -9490,12 +9404,11 @@ ul.messages {
       return window?.matchMedia("(prefers-color-scheme: dark)")?.matches;
     }
     /**
-     * Update button appearance based on enabled state, context availability, and theme
+     * Update button appearance based on enabled state and theme
      */
     updateButtonAppearance() {
       if (!this.button) return;
       const isDark = this.isDarkMode();
-      const hasContext = this.pageData && this.pageData.content;
       if (this.hasContextBeenUsed) {
         this.button.style.backgroundColor = "transparent";
         this.button.style.cursor = "not-allowed";
@@ -9504,7 +9417,7 @@ ul.messages {
         } else {
           this.button.style.color = "rgb(204, 204, 204)";
         }
-      } else if (this.isPageContextEnabled && hasContext) {
+      } else if (this.isPageContextEnabled) {
         if (isDark) {
           this.button.style.backgroundColor = "rgba(255, 255, 255, 0.18)";
           this.button.style.color = "rgb(255, 255, 255)";
@@ -9521,53 +9434,6 @@ ul.messages {
         } else {
           this.button.style.color = "rgb(102, 102, 102)";
         }
-      }
-    }
-    /**
-     * Request page context from the bridge with explicit consent tracking
-     * @param {boolean} explicitConsent - Whether this request has explicit user consent
-     * @returns {Promise<boolean>} - Whether context was successfully retrieved
-     */
-    async requestPageContext(explicitConsent = false) {
-      if (!this.bridge) {
-        this.log.warn("No bridge available to fetch context");
-        return false;
-      }
-      if (this.isRequestInProgress) {
-        this.log.info("Request already in progress, ignoring duplicate request");
-        return false;
-      }
-      this.isRequestInProgress = true;
-      try {
-        const getPageContext = await this.bridge.request("getPageContext", { explicitConsent });
-        const logMessage = explicitConsent ? "Fetched page context on demand:" : "Initial page context:";
-        this.log.info(logMessage, getPageContext);
-        this.handlePageContextData(getPageContext);
-        if (!explicitConsent) {
-          return !!(this.pageData && this.pageData.content);
-        }
-        const contextPromise = new Promise((resolve) => {
-          this.contextPromiseResolve = resolve;
-          setTimeout(() => {
-            if (this.contextPromiseResolve === resolve) {
-              this.contextPromiseResolve = null;
-              resolve(false);
-            }
-          }, 3e3);
-        });
-        if (!this.contextPromiseResolve) {
-          return true;
-        }
-        const success = await contextPromise;
-        this.log.info("Context promise resolved:", success);
-        return success;
-      } catch (error) {
-        this.contextPromiseResolve = null;
-        const logMessage = explicitConsent ? "Failed to fetch page context:" : "No initial page context available:";
-        this.log.info(logMessage, error);
-        return false;
-      } finally {
-        this.isRequestInProgress = false;
       }
     }
     /**
@@ -9590,7 +9456,13 @@ ul.messages {
           return;
         }
         this.log.info("Created message bridge successfully");
-        await this.requestPageContext(false);
+        try {
+          const getPageContext = await this.bridge.request("getPageContext");
+          this.log.info("Initial page context:", getPageContext);
+          this.handlePageContextData(getPageContext);
+        } catch (error) {
+          this.log.info("No initial page context available:", error);
+        }
         this.bridge.subscribe("submitPageContext", (event) => {
           this.log.info("Received page context update:", event);
           this.handlePageContextData(event);
@@ -9605,34 +9477,18 @@ ul.messages {
      */
     handlePageContextData(data) {
       try {
-        if (data?.serializedPageData) {
+        if (data.serializedPageData) {
           const pageDataParsed = JSON.parse(data.serializedPageData);
           this.log.info("Parsed page data:", pageDataParsed);
           if (pageDataParsed.content) {
             this.pageData = pageDataParsed;
-            this.promptTelemetry?.sendContextPixelInfo(pageDataParsed, DuckAiPromptTelemetry.CONTEXT_ATTACH_PIXEL_NAME);
-            if (this.contextPromiseResolve) {
-              this.contextPromiseResolve(true);
-              this.contextPromiseResolve = null;
-            }
-            if (!this.hasContextBeenUsed && !this.isPageContextEnabled && !this.userExplicitlyDisabledContext) {
-              this.isPageContextEnabled = true;
-            } else {
-              this.updateButtonAppearance();
-              if (this.isPageContextEnabled && !this.hasContextBeenUsed) {
-                this.createContextChip();
-              }
-            }
+            this.globalPageContext = pageDataParsed.content;
             if (pageDataParsed.truncated) {
               this.log.warn("Page content has been truncated due to size limits");
             }
+            this.createContextChip();
             this.setupMessageInterception();
           }
-        } else {
-          this.log.info("No page data parsed");
-          this.pageData = null;
-          this.updateButtonAppearance();
-          this.removeContextChip();
         }
       } catch (error) {
         this.log.error("Error parsing page context data:", error);
@@ -9653,6 +9509,12 @@ ul.messages {
         this.sendButton = sendButton;
         const handleClick = this.handleSendMessage.bind(this);
         sendButton.addEventListener("click", handleClick, true);
+        sendButton.addEventListener("click", handleClick, false);
+        sendButton.addEventListener("mousedown", () => {
+          setTimeout(() => {
+            this.handleSendMessage();
+          }, 10);
+        });
         this.log.info("Set up message interception with multiple event listeners", sendButton);
       }
     }
@@ -9661,107 +9523,22 @@ ul.messages {
      */
     handleSendMessage() {
       this.log.info("handleSendMessage called");
-      this.triggerInputEvents();
-      if (this.textBox && this.promptTelemetry && !this.hasContextBeenUsed) {
-        const rawPromptText = this.getRawPromptText();
-        const totalPromptText = this.textBox.value;
-        const contextSize = this.pageData?.content?.length || 0;
-        const contextData = this.isPageContextEnabled && this.pageData?.content ? this.pageData : null;
-        this.promptTelemetry.onPromptSent(
-          rawPromptText,
-          totalPromptText,
-          this.isPageContextEnabled && this.pageData?.content ? contextSize : 0,
-          contextData
-        );
+      if (!this.isPageContextEnabled || this.hasContextBeenUsed || !this.pageData?.content) {
+        this.log.info("Context attachment blocked:", {
+          isPageContextEnabled: this.isPageContextEnabled,
+          hasContextBeenUsed: this.hasContextBeenUsed,
+          hasPageData: !!this.pageData,
+          hasContent: !!this.pageData?.content
+        });
+        return;
       }
       this.hasContextBeenUsed = true;
-      this.removeContextChip();
+      if (this.contextChip) {
+        this.contextChip.remove();
+        this.contextChip = null;
+      }
       this.updateButtonAppearance();
-    }
-    /**
-     * Clean up a paragraph element if it contains a prompt structure
-     * @param {HTMLElement} paragraph - The paragraph element to check and clean
-     * @returns {boolean} - True if paragraph was cleaned up
-     */
-    cleanupPromptParagraph(paragraph) {
-      const text = paragraph.textContent || "";
-      const promptRegex = /<prompt-([^>]+)>\s*([\s\S]*?)\s*<\/prompt-\1>/;
-      const match = text.match(promptRegex);
-      if (match) {
-        const extractedPrompt = match[2].trim();
-        if (!this.hasContextBeenUsed) {
-          this.hasContextBeenUsed = true;
-          this.removeContextChip();
-          this.updateButtonAppearance();
-          this.log.info("Context marked as used based on prompt cleanup");
-        }
-        let cleanedContent = "";
-        if (extractedPrompt) {
-          cleanedContent = `${extractedPrompt}
-\u{1F4C4} Page context attached`;
-        }
-        paragraph.textContent = cleanedContent;
-        this.log.info("Cleaned up prompt paragraph");
-        return true;
-      }
-      return false;
-    }
-    /**
-     * Set up observer to continuously clean up prompt displays in conversation
-     */
-    setupPromptCleanupObserver() {
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          mutation.addedNodes.forEach((node) => {
-            if (node.nodeType === Node.ELEMENT_NODE && node instanceof Element) {
-              const paragraphs = node.querySelectorAll("p");
-              const allParagraphs = node.tagName === "P" ? [node, ...paragraphs] : [...paragraphs];
-              allParagraphs.forEach((p) => {
-                this.cleanupPromptParagraph(
-                  /** @type {HTMLElement} */
-                  p
-                );
-              });
-            }
-          });
-        });
-      });
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
-      this.log.info("Set up continuous observer for prompt cleanup");
-    }
-    /**
-     * Clean up any existing prompt structures in the conversation
-     * This runs once on script initialization to handle prompts already displayed
-     */
-    cleanupExistingPrompts() {
-      const allParagraphs = document.querySelectorAll("p");
-      let cleanedCount = 0;
-      allParagraphs.forEach((p) => {
-        if (this.cleanupPromptParagraph(
-          /** @type {HTMLElement} */
-          p
-        )) {
-          cleanedCount++;
-        }
-      });
-      if (cleanedCount > 0) {
-        this.log.info(`Cleaned up ${cleanedCount} existing prompt(s) on page load`);
-      }
-    }
-    /**
-     * Get the raw prompt text without context appended
-     * @returns {string} The raw user prompt text
-     */
-    getRawPromptText() {
-      if (!this.textBox) return "";
-      const originalDescriptor = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value");
-      if (originalDescriptor && originalDescriptor.get) {
-        return originalDescriptor.get.call(this.textBox) || "";
-      }
-      return this.textBox.value || "";
+      this.log.info("Successfully appended context to message");
     }
     /**
      * Set up detection of the text box on the page
@@ -9784,7 +9561,7 @@ ul.messages {
       const callback = (_2, observer) => {
         this.findTextBox();
         this.setupMessageInterception();
-        if (this.textBox && this.pageData && this.sendButton && !this.hasContextBeenUsed) {
+        if (this.textBox && this.pageData && this.sendButton) {
           this.createContextChip();
           observer.disconnect();
         }
@@ -9801,16 +9578,12 @@ ul.messages {
         if (this.textBox !== element) {
           this.textBox = element;
           this.log.info("Found AI text box");
-          element.addEventListener(
-            "keydown",
-            (event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                this.log.info("Enter key pressed");
-                this.handleSendMessage();
-              }
-            },
-            true
-          );
+          element.addEventListener("keyup", (event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              this.log.info("Enter key pressed");
+              this.handleSendMessage();
+            }
+          });
           this.setupValuePropertyDescriptor(element);
         }
       } else if (this.textBox) {
@@ -9819,56 +9592,23 @@ ul.messages {
       }
     }
     /**
-     * Trigger keyboard and input events on the textbox to simulate user input
-     */
-    triggerInputEvents() {
-      if (!this.textBox) return;
-      const keydownEvent = new KeyboardEvent("keydown", {
-        key: "Unidentified",
-        code: "Unidentified",
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      });
-      this.textBox.dispatchEvent(keydownEvent);
-      const inputEvent = new Event("input", {
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      });
-      this.textBox.dispatchEvent(inputEvent);
-      const keyupEvent = new KeyboardEvent("keyup", {
-        key: "Unidentified",
-        code: "Unidentified",
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      });
-      this.textBox.dispatchEvent(keyupEvent);
-      this.log.info("Triggered keyboard events for input simulation");
-    }
-    /**
      * Set up property descriptor to intercept value reads for context appending
      * @param {HTMLTextAreaElement} textarea - The textarea element
      */
     setupValuePropertyDescriptor(textarea) {
       const originalDescriptor = Object.getOwnPropertyDescriptor(textarea, "value");
       this.randomNumber = window.crypto?.randomUUID?.() || Math.floor(Math.random() * 1e3);
-      const instructions = this.getFeatureSetting("instructions") || `
-You are a helpful assistant that can answer questions and help with tasks.
-Do not include prompt, page-title, page-context, or instructions tags in your response.
-Answer the prompt using the page-title, and page-context ONLY if it's relevant to answering the prompt.`;
       Object.defineProperty(textarea, "value", {
         get: () => {
           if (originalDescriptor && originalDescriptor.get) {
             const currentValue = originalDescriptor.get.call(textarea) || "";
-            if (this.hasContextBeenUsed) {
-              return currentValue;
-            }
-            const pageContext = this.pageData?.content || "";
+            const pageContext = this.globalPageContext || "";
             const randomNumber = this.randomNumber;
-            const shouldAddContext = pageContext && this.isPageContextEnabled && currentValue;
-            if (shouldAddContext) {
+            const instructions = this.getFeatureSetting("instructions") || `
+You are a helpful assistant that can answer questions and help with tasks.
+Do not include prompt, page-title, page-context, or instructions tags in your response.
+Answer the prompt using the page-title, and page-context ONLY if it's relevant to answering the prompt.`;
+            if (pageContext && currentValue) {
               const truncatedWarning = this.pageData?.truncated ? " (Content was truncated due to size limits)\n" : "\n";
               return `Prompt:
 <prompt-${randomNumber}>
@@ -9897,322 +9637,13 @@ ${truncatedWarning}
         },
         set: (val) => {
           if (originalDescriptor && originalDescriptor.set) {
-            const oldValue = originalDescriptor.get?.call(textarea) || "";
             originalDescriptor.set.call(textarea, val);
-            if (oldValue !== val) {
-              this.triggerInputEvents();
-            }
           }
         },
         configurable: true
       });
     }
   };
-  __isPageContextEnabled = new WeakMap();
-  var _DuckAiPromptTelemetry = class _DuckAiPromptTelemetry {
-    // 24 hours in milliseconds
-    constructor(messaging, log, sizeCategories) {
-      this.messaging = messaging;
-      this.log = log;
-      this.sizeCategories = sizeCategories;
-      this.setupPixelConfig();
-      this.checkShouldFireDailyTelemetry();
-    }
-    /**
-     * Get current telemetry data from localStorage
-     * @returns {Object|null} Stored telemetry data or null if none exists
-     */
-    getTelemetryData() {
-      try {
-        const stored = localStorage.getItem(_DuckAiPromptTelemetry.STORAGE_KEY);
-        return stored ? JSON.parse(stored) : null;
-      } catch (error) {
-        this.log.error("Error reading telemetry data:", error);
-        return null;
-      }
-    }
-    /**
-     * Save telemetry data to localStorage
-     * @param {Object} data - Data to store
-     */
-    saveTelemetryData(data) {
-      try {
-        localStorage.setItem(_DuckAiPromptTelemetry.STORAGE_KEY, JSON.stringify(data));
-      } catch (error) {
-        this.log.error("Error saving telemetry data:", error);
-      }
-    }
-    /**
-     * Clear stored telemetry data
-     */
-    clearTelemetryData() {
-      try {
-        localStorage.removeItem(_DuckAiPromptTelemetry.STORAGE_KEY);
-        this.log.info("Telemetry data cleared");
-      } catch (error) {
-        this.log.error("Error clearing telemetry data:", error);
-      }
-    }
-    /**
-     * Store prompt telemetry when user sends a prompt
-     * @param {Object} promptData - Prompt size data
-     * @param {number} promptData.rawSize - Size of raw user prompt
-     * @param {number} promptData.totalSize - Total size including context
-     * @param {number} [promptData.contextSize] - Size of page context added
-     */
-    storePromptTelemetry(promptData) {
-      const now = Date.now();
-      let data = this.getTelemetryData();
-      if (!data) {
-        data = {
-          firstPromptDate: now,
-          promptData: []
-        };
-        this.log.info("Initialized telemetry storage for first prompt");
-      }
-      data.promptData.push(promptData);
-      this.saveTelemetryData(data);
-      this.log.info(
-        `Stored prompt telemetry: raw=${promptData.rawSize}, total=${promptData.totalSize}, context=${promptData.contextSize || 0}, total_prompts=${data.promptData.length}`
-      );
-    }
-    /**
-     * Check if daily telemetry should be fired and send if needed
-     * @returns {boolean} True if telemetry was sent, false otherwise
-     */
-    checkShouldFireDailyTelemetry() {
-      const data = this.getTelemetryData();
-      if (!data || !data.firstPromptDate || (data.promptData || data.promptSizes || []).length === 0) {
-        return false;
-      }
-      const now = Date.now();
-      const timeSinceFirstPrompt = now - data.firstPromptDate;
-      if (timeSinceFirstPrompt >= _DuckAiPromptTelemetry.ONE_DAY_MS) {
-        this.sendDailyTelemetry(data);
-        this.clearTelemetryData();
-        return true;
-      }
-      return false;
-    }
-    /**
-     * Send daily telemetry with aggregated prompt data
-     * @param {Object} data - Stored telemetry data
-     */
-    sendDailyTelemetry(data) {
-      const promptData = data.promptData || data.promptSizes?.map((size) => ({ rawSize: size, totalSize: size })) || [];
-      const totalPrompts = promptData.length;
-      if (totalPrompts === 0) {
-        this.log.info("No prompts to report in daily telemetry");
-        return;
-      }
-      const rawSizes = promptData.map((p) => p.rawSize || p.totalSize || p);
-      const totalSizes = promptData.map((p) => p.totalSize || p.rawSize || p);
-      const contextSizes = promptData.map((p) => p.contextSize || 0).filter((size) => size > 0);
-      const totalRawCharacters = rawSizes.reduce((sum, size) => sum + size, 0);
-      const avgRawPromptSize = Math.round(totalRawCharacters / totalPrompts);
-      const totalAllCharacters = totalSizes.reduce((sum, size) => sum + size, 0);
-      const avgTotalPromptSize = Math.round(totalAllCharacters / totalPrompts);
-      const avgContextSize = contextSizes.length > 0 ? Math.round(contextSizes.reduce((sum, size) => sum + size, 0) / contextSizes.length) : 0;
-      const contextUsageRate = contextSizes.length / totalPrompts;
-      const rawSizeBuckets = this.categorizeSizes(rawSizes);
-      const totalSizeBuckets = this.categorizeSizes(totalSizes);
-      const createSizeFields = (prefix, buckets) => {
-        const sizeNames = this.sizeCategories.map((category) => category.name);
-        const capitalizeSize = (size) => size.replace(/(x*)(.*)/, (_2, xs, rest) => xs.toUpperCase() + rest.charAt(0).toUpperCase() + rest.slice(1));
-        return Object.fromEntries(sizeNames.map((size) => [`${prefix}Size${capitalizeSize(size)}`, String(buckets[size] || 0)]));
-      };
-      const telemetryData = {
-        totalPrompts: String(totalPrompts),
-        avgRawPromptSize: this.bucketSize(avgRawPromptSize),
-        ...createSizeFields("raw", rawSizeBuckets),
-        avgTotalPromptSize: this.bucketSize(avgTotalPromptSize),
-        ...createSizeFields("total", totalSizeBuckets),
-        avgContextSize: this.bucketSize(avgContextSize),
-        contextUsageRate: String(Math.round(contextUsageRate * 100))
-      };
-      this.log.info("Sending daily telemetry pixel:", telemetryData);
-      this.sendPixel(_DuckAiPromptTelemetry.DAILY_PIXEL_NAME, telemetryData);
-    }
-    /**
-     * Categorize prompt sizes into privacy-friendly buckets using large size ranges
-     * @param {number[]} promptSizes - Array of prompt sizes
-     * @returns {Object} Bucket counts
-     */
-    categorizeSizes(promptSizes) {
-      const buckets = Object.fromEntries(this.sizeCategories.map((category) => [category.name, 0]));
-      promptSizes.forEach((size) => {
-        const category = this.sizeCategories.find((cat) => size <= cat.maxSize);
-        if (category) {
-          buckets[category.name]++;
-        }
-      });
-      return buckets;
-    }
-    /**
-     * Setup pixel configuration for telemetry
-     */
-    setupPixelConfig() {
-      if (!globalThis?.DDG?.pixel) {
-        return;
-      }
-      globalThis.DDG.pixel._pixels[_DuckAiPromptTelemetry.CONTEXT_SEND_PIXEL_NAME] = {};
-      globalThis.DDG.pixel._pixels[_DuckAiPromptTelemetry.CONTEXT_ATTACH_PIXEL_NAME] = {};
-      globalThis.DDG.pixel._pixels[_DuckAiPromptTelemetry.DAILY_PIXEL_NAME] = {};
-    }
-    /**
-     * Send pixel with telemetry data
-     * @param {string} pixelName - Name of pixel to fire
-     * @param {Object} params - Parameters to send with pixel
-     */
-    sendPixel(pixelName, params) {
-      if (!globalThis?.DDG?.pixel?.fire) {
-        this.log.warn("sendPixel: No pixel object found");
-        return;
-      }
-      globalThis.DDG.pixel.fire(pixelName, params);
-      this.log.info("Pixel sent", { pixelName, params });
-    }
-    /**
-     * Bucket numbers by hundreds for privacy-friendly reporting
-     * @param {number} number - Number to bucket
-     * @returns {string} Bucket lower bound (e.g., '0', '100', '200')
-     */
-    bucketSize(number) {
-      if (number <= 0) {
-        return "0";
-      }
-      const bucketIndex = Math.floor(number / 100);
-      return String(bucketIndex * 100);
-    }
-    /**
-     * Send context pixel info when context is used
-     * @param {Object} contextData - Context data object
-     * @param {string} pixelName - Name of pixel to fire
-     */
-    sendContextPixelInfo(contextData, pixelName) {
-      if (!contextData?.content || contextData.content.length === 0) {
-        this.log.warn("sendContextPixelInfo: No content available for pixel tracking");
-        return;
-      }
-      this.sendPixel(pixelName, {
-        contextLength: contextData.fullContentLength
-      });
-    }
-    /**
-     * Handle prompt sent event - store telemetry and check daily firing
-     * @param {string} rawPromptText - The raw user prompt text
-     * @param {string} totalPromptText - The full prompt including context
-     * @param {number} [contextSize] - Size of page context added
-     * @param {Object} [contextData] - Context data for pixel tracking
-     */
-    onPromptSent(rawPromptText, totalPromptText, contextSize = 0, contextData = null) {
-      if (!rawPromptText || typeof rawPromptText !== "string") {
-        this.log.warn("Invalid raw prompt text provided to telemetry");
-        return;
-      }
-      if (!totalPromptText || typeof totalPromptText !== "string") {
-        this.log.warn("Invalid total prompt text provided to telemetry");
-        return;
-      }
-      const promptData = {
-        rawSize: rawPromptText.length,
-        totalSize: totalPromptText.length,
-        contextSize
-      };
-      if (contextData && contextSize > 0) {
-        this.sendContextPixelInfo(contextData, _DuckAiPromptTelemetry.CONTEXT_SEND_PIXEL_NAME);
-      }
-      this.checkShouldFireDailyTelemetry();
-      this.storePromptTelemetry(promptData);
-    }
-  };
-  __publicField(_DuckAiPromptTelemetry, "STORAGE_KEY", "aiChatPageContextTelemetry");
-  __publicField(_DuckAiPromptTelemetry, "CONTEXT_ATTACH_PIXEL_NAME", "dc_contextInfoOnAttach");
-  __publicField(_DuckAiPromptTelemetry, "CONTEXT_SEND_PIXEL_NAME", "dc_contextInfoOnSubmit");
-  __publicField(_DuckAiPromptTelemetry, "DAILY_PIXEL_NAME", "dc_pageContextDailyTelemetry");
-  __publicField(_DuckAiPromptTelemetry, "ONE_DAY_MS", 24 * 60 * 60 * 1e3);
-  var DuckAiPromptTelemetry = _DuckAiPromptTelemetry;
-
-  // src/features/duck-ai-data-clearing.js
-  init_define_import_meta_trackerLookup();
-  var DuckAiDataClearing = class extends ContentFeature {
-    init() {
-      this.messaging.subscribe("duckAiClearData", (_2) => this.clearData());
-    }
-    async clearData() {
-      let success = true;
-      const localStorageKeys = this.getFeatureSetting("chatsLocalStorageKeys");
-      for (const localStorageKey of localStorageKeys) {
-        try {
-          this.clearSavedAIChats(localStorageKey);
-        } catch (error) {
-          success = false;
-          this.log.error("Error clearing saved chats:", error);
-        }
-      }
-      const indexDbNameObjectStoreNamePairs = this.getFeatureSetting("chatImagesIndexDbNameObjectStoreNamePairs");
-      for (const [indexDbName, objectStoreName] of indexDbNameObjectStoreNamePairs) {
-        try {
-          await this.clearChatImagesStore(indexDbName, objectStoreName);
-        } catch (error) {
-          success = false;
-          this.log.error("Error clearing saved chat images:", error);
-        }
-      }
-      if (success) {
-        this.notify("duckAiClearDataCompleted");
-      } else {
-        this.notify("duckAiClearDataFailed");
-      }
-    }
-    clearSavedAIChats(localStorageKey) {
-      this.log.info(`Clearing '${localStorageKey}'`);
-      window.localStorage.removeItem(localStorageKey);
-    }
-    clearChatImagesStore(indexDbName, objectStoreName) {
-      this.log.info(`Clearing '${indexDbName}' object store`);
-      return new Promise((resolve, reject) => {
-        const request = window.indexedDB.open(indexDbName);
-        request.onerror = (event) => {
-          this.log.error("Error opening IndexedDB:", event);
-          reject(event);
-        };
-        request.onsuccess = (_2) => {
-          const db = request.result;
-          if (!db) {
-            this.log.error("IndexedDB onsuccess but no db result");
-            reject(new Error("No DB result"));
-            return;
-          }
-          if (!db.objectStoreNames.contains(objectStoreName)) {
-            this.log.info(`'${objectStoreName}' object store does not exist, nothing to clear`);
-            db.close();
-            resolve(null);
-            return;
-          }
-          try {
-            const transaction = db.transaction([objectStoreName], "readwrite");
-            const objectStore = transaction.objectStore(objectStoreName);
-            const clearRequest = objectStore.clear();
-            clearRequest.onsuccess = () => {
-              db.close();
-              resolve(null);
-            };
-            clearRequest.onerror = (err) => {
-              this.log.error("Error clearing object store:", err);
-              db.close();
-              reject(err);
-            };
-          } catch (err) {
-            this.log.error("Exception during IndexedDB clearing:", err);
-            db.close();
-            reject(err);
-          }
-        };
-      });
-    }
-  };
-  var duck_ai_data_clearing_default = DuckAiDataClearing;
 
   // src/features/page-context.js
   init_define_import_meta_trackerLookup();
@@ -10236,66 +9667,25 @@ ${truncatedWarning}
 
   // src/features/page-context.js
   var MSG_PAGE_CONTEXT_RESPONSE = "collectionResult";
-  function checkNodeIsVisible(node) {
-    try {
-      const style = window.getComputedStyle(node);
-      if (style.display === "none" || style.visibility === "hidden" || parseFloat(style.opacity) === 0) {
-        return false;
-      }
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
   function collapseWhitespace(str) {
     return typeof str === "string" ? str.replace(/\s+/g, " ") : "";
   }
-  function isHtmlElement(node) {
-    return node.nodeType === Node.ELEMENT_NODE;
-  }
-  function getSameOriginIframeDocument(iframe) {
-    try {
-      const doc = iframe.contentDocument;
-      if (doc && doc.documentElement) {
-        return doc;
-      }
-    } catch (e) {
-      return null;
-    }
-    return null;
-  }
-  function domToMarkdownChildren(childNodes, settings, depth = 0) {
-    if (depth > settings.maxDepth) {
-      return "";
-    }
-    let children = "";
-    for (const childNode of childNodes) {
-      const childContent = domToMarkdown(childNode, settings, depth + 1);
-      children += childContent;
-      if (children.length > settings.maxLength) {
-        children = children.substring(0, settings.maxLength) + "...";
-        break;
-      }
-    }
-    return children;
-  }
-  function domToMarkdown(node, settings, depth = 0) {
-    if (depth > settings.maxDepth) {
-      return "";
-    }
+  function domToMarkdown(node, maxLength = Infinity) {
     if (node.nodeType === Node.TEXT_NODE) {
       return collapseWhitespace(node.textContent);
     }
-    if (!isHtmlElement(node)) {
-      return "";
-    }
-    if (!checkNodeIsVisible(node) || node.matches(settings.excludeSelectors)) {
+    if (node.nodeType !== Node.ELEMENT_NODE) {
       return "";
     }
     const tag = node.tagName.toLowerCase();
-    let children = domToMarkdownChildren(node.childNodes, settings, depth + 1);
-    if (node.shadowRoot) {
-      children += domToMarkdownChildren(node.shadowRoot.childNodes, settings, depth + 1);
+    let children = "";
+    for (const childNode of node.childNodes) {
+      const childContent = domToMarkdown(childNode, maxLength - children.length);
+      children += childContent;
+      if (children.length > maxLength) {
+        children = children.substring(0, maxLength) + "...";
+        break;
+      }
     }
     switch (tag) {
       case "strong":
@@ -10332,38 +9722,15 @@ ${children}
 `;
       case "a":
         return getLinkText(node);
-      case "iframe": {
-        if (!settings.includeIframes) {
-          return children;
-        }
-        const iframeDoc = getSameOriginIframeDocument(
-          /** @type {HTMLIFrameElement} */
-          node
-        );
-        if (iframeDoc && iframeDoc.body) {
-          const iframeContent = domToMarkdown(iframeDoc.body, settings, depth + 1);
-          return iframeContent ? `
-
---- Iframe Content ---
-${iframeContent}
---- End Iframe ---
-
-` : children;
-        }
-        return children;
-      }
       default:
         return children;
     }
   }
-  function collapseAndTrim(str) {
-    return collapseWhitespace(str).trim();
-  }
   function getLinkText(node) {
     const href = node.getAttribute("href");
-    return href ? `[${collapseAndTrim(node.textContent)}](${href})` : collapseWhitespace(node.textContent);
+    return href ? `[${node.textContent}](${href})` : node.textContent;
   }
-  var _cachedContent, _cachedTimestamp, _delayedRecheckTimer;
+  var _cachedContent, _cachedTimestamp;
   var PageContext = class extends ContentFeature {
     constructor() {
       super(...arguments);
@@ -10374,26 +9741,17 @@ ${iframeContent}
       __publicField(this, "mutationObserver", null);
       __publicField(this, "lastSentContent", null);
       __publicField(this, "listenForUrlChanges", true);
-      /** @type {ReturnType<typeof setTimeout> | null} */
-      __privateAdd(this, _delayedRecheckTimer, null);
-      __publicField(this, "recheckCount", 0);
-      __publicField(this, "recheckLimit", 0);
     }
     init() {
-      this.recheckLimit = this.getFeatureSetting("recheckLimit") || 5;
       if (!this.shouldActivate()) {
         return;
       }
       this.setupListeners();
     }
-    resetRecheckCount() {
-      this.recheckCount = 0;
-    }
     setupListeners() {
       this.observeContentChanges();
       if (this.getFeatureSettingEnabled("subscribeToCollect", "enabled")) {
         this.messaging.subscribe("collect", () => {
-          this.invalidateCache();
           this.handleContentCollectionRequest();
         });
       }
@@ -10456,30 +9814,20 @@ ${iframeContent}
     get cachedContent() {
       if (!__privateGet(this, _cachedContent) || this.isCacheExpired()) {
         if (__privateGet(this, _cachedContent)) {
-          this.invalidateCache();
+          __privateSet(this, _cachedContent, void 0);
+          __privateSet(this, _cachedTimestamp, 0);
+          this.stopObserving();
         }
         return void 0;
       }
       return __privateGet(this, _cachedContent);
     }
-    invalidateCache() {
-      this.log.info("Invalidating cache");
-      __privateSet(this, _cachedContent, void 0);
-      __privateSet(this, _cachedTimestamp, 0);
-      this.stopObserving();
-    }
-    /**
-     * Clear all pending timers
-     */
-    clearTimers() {
-      if (__privateGet(this, _delayedRecheckTimer)) {
-        clearTimeout(__privateGet(this, _delayedRecheckTimer));
-        __privateSet(this, _delayedRecheckTimer, null);
-      }
-    }
     set cachedContent(content) {
       if (content === void 0) {
-        this.invalidateCache();
+        this.log.info("Invalidating cache");
+        __privateSet(this, _cachedContent, void 0);
+        __privateSet(this, _cachedTimestamp, 0);
+        this.stopObserving();
         return;
       }
       __privateSet(
@@ -10500,26 +9848,8 @@ ${iframeContent}
         this.mutationObserver = new MutationObserver((_mutations) => {
           this.log.info("MutationObserver", _mutations);
           this.cachedContent = void 0;
-          this.scheduleDelayedRecheck();
         });
       }
-    }
-    /**
-     * Schedule a delayed recheck after navigation events
-     */
-    scheduleDelayedRecheck() {
-      this.clearTimers();
-      if (this.recheckLimit > 0 && this.recheckCount >= this.recheckLimit) {
-        return;
-      }
-      const delayMs = this.getFeatureSetting("navigationRecheckDelayMs") || 1500;
-      this.log.info("Scheduling delayed recheck", { delayMs });
-      __privateSet(this, _delayedRecheckTimer, setTimeout(() => {
-        this.log.info("Performing delayed recheck after navigation");
-        this.recheckCount++;
-        this.invalidateCache();
-        this.handleContentCollectionRequest(false);
-      }, delayMs));
     }
     startObserving() {
       this.log.info("Starting observing", this.mutationObserver, __privateGet(this, _cachedContent));
@@ -10538,11 +9868,8 @@ ${iframeContent}
         this.isObserving = false;
       }
     }
-    handleContentCollectionRequest(resetRecheckCount = true) {
+    handleContentCollectionRequest() {
       this.log.info("Handling content collection request");
-      if (resetRecheckCount) {
-        this.resetRecheckCount();
-      }
       try {
         const content = this.collectPageContent();
         this.sendContentResponse(content);
@@ -10563,8 +9890,6 @@ ${iframeContent}
         metaDescription: this.getMetaDescription(),
         content: mainContent,
         truncated,
-        fullContentLength: this.fullContentLength,
-        // Include full content length before truncation
         headings: this.getHeadings(),
         links: this.getLinks(),
         images: this.getImages(),
@@ -10575,67 +9900,44 @@ ${iframeContent}
       return content;
     }
     getPageTitle() {
-      const title = document.title || "";
-      const maxTitleLength = this.getFeatureSetting("maxTitleLength") || 100;
-      if (title.length > maxTitleLength) {
-        return title.substring(0, maxTitleLength).trim() + "...";
-      }
-      return title;
+      return document.title || "";
     }
     getMetaDescription() {
       const metaDesc = document.querySelector('meta[name="description"]');
       return metaDesc ? metaDesc.getAttribute("content") || "" : "";
     }
     getMainContent() {
-      const maxLength = this.getFeatureSetting("maxContentLength") || 9500;
-      const upperLimit = this.getFeatureSetting("upperLimit") || 5e5;
-      const maxDepth = this.getFeatureSetting("maxDepth") || 5e3;
+      const maxLength = this.getFeatureSetting("maxContentLength") || 1e5;
       let excludeSelectors = this.getFeatureSetting("excludeSelectors") || [".ad", ".sidebar", ".footer", ".nav", ".header"];
-      const excludedInertElements = this.getFeatureSetting("excludedInertElements") || [
-        "script",
-        "style",
-        "link",
-        "meta",
-        "noscript",
-        "svg",
-        "canvas"
-      ];
-      excludeSelectors = excludeSelectors.concat(excludedInertElements);
-      const excludeSelectorsString = excludeSelectors.join(",");
+      excludeSelectors = excludeSelectors.concat(["script", "style", "link", "meta", "noscript", "svg", "canvas"]);
       let content = "";
-      const mainContentSelector = this.getFeatureSetting("mainContentSelector") || "main, article, .content, .main, #content, #main";
-      let mainContent = document.querySelector(mainContentSelector);
-      const mainContentLength = this.getFeatureSetting("mainContentLength") || 100;
-      if (mainContent && mainContent.innerHTML.trim().length <= mainContentLength) {
+      let mainContent = document.querySelector("main, article, .content, .main, #content, #main");
+      if (mainContent && mainContent.innerHTML.trim().length <= 100) {
         mainContent = null;
       }
       const contentRoot = mainContent || document.body;
       if (contentRoot) {
         this.log.info("Getting main content", contentRoot);
-        content += domToMarkdown(contentRoot, {
-          maxLength: upperLimit,
-          maxDepth,
-          includeIframes: this.getFeatureSettingEnabled("includeIframes", "enabled"),
-          excludeSelectors: excludeSelectorsString
+        const clone = (
+          /** @type {Element} */
+          contentRoot.cloneNode(true)
+        );
+        excludeSelectors.forEach((selector) => {
+          const elements = clone.querySelectorAll(selector);
+          elements.forEach((el) => el.remove());
         });
-        this.log.info("Content markdown", content, contentRoot);
+        this.log.info("Calling domToMarkdown", clone.innerHTML);
+        content += domToMarkdown(clone, maxLength);
       }
-      content = content.trim();
-      this.fullContentLength = content.length;
       if (content.length > maxLength) {
-        this.log.info("Truncating content", {
-          content,
-          contentLength: content.length,
-          maxLength
-        });
+        this.log.info("Truncating content", content);
         content = content.substring(0, maxLength) + "...";
       }
-      return content;
+      return content.trim();
     }
     getHeadings() {
       const headings = [];
-      const headingSelector = this.getFeatureSetting("headingSelector") || "h1, h2, h3, h4, h5, h6";
-      const headingElements = document.querySelectorAll(headingSelector);
+      const headingElements = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
       headingElements.forEach((heading) => {
         const level = parseInt(heading.tagName.charAt(1));
         const text = heading.textContent?.trim();
@@ -10647,8 +9949,7 @@ ${iframeContent}
     }
     getLinks() {
       const links = [];
-      const linkSelector = this.getFeatureSetting("linkSelector") || "a[href]";
-      const linkElements = document.querySelectorAll(linkSelector);
+      const linkElements = document.querySelectorAll("a[href]");
       linkElements.forEach((link) => {
         const text = link.textContent?.trim();
         const href = link.getAttribute("href");
@@ -10660,8 +9961,7 @@ ${iframeContent}
     }
     getImages() {
       const images = [];
-      const imgSelector = this.getFeatureSetting("imgSelector") || "img";
-      const imgElements = document.querySelectorAll(imgSelector);
+      const imgElements = document.querySelectorAll("img");
       imgElements.forEach((img) => {
         const alt = img.getAttribute("alt") || "";
         const src = img.getAttribute("src") || "";
@@ -10694,7 +9994,6 @@ ${iframeContent}
   };
   _cachedContent = new WeakMap();
   _cachedTimestamp = new WeakMap();
-  _delayedRecheckTimer = new WeakMap();
 
   // ddg:platformFeatures:ddg:platformFeatures
   var ddg_platformFeatures_default = {
@@ -10714,7 +10013,6 @@ ${iframeContent}
     ddg_feature_exceptionHandler: ExceptionHandler,
     ddg_feature_apiManipulation: ApiManipulation,
     ddg_feature_duckAiListener: DuckAiListener,
-    ddg_feature_duckAiDataClearing: duck_ai_data_clearing_default,
     ddg_feature_pageContext: PageContext
   };
 

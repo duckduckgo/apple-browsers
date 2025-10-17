@@ -32391,7 +32391,7 @@
                   "few" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg сайта"
+                      "value" : "%arg сайтов"
                     }
                   },
                   "many" : {
@@ -34512,7 +34512,7 @@
       }
     },
     "fire.dialog.tab-will-reload" : {
-      "comment" : "Warning label shown in an expanded view of the fire popover",
+      "comment" : "Warning label shown when a single pinned tab will reload after burning",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -34567,6 +34567,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Закрепленная вкладка будет перезагружена."
+          }
+        }
+      }
+    },
+    "fire.dialog.tabs-will-reload" : {
+      "comment" : "Warning label shown when multiple pinned tabs will reload after burning",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angepinnte Tabs werden neu geladen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pinned tabs will reload."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las pestañas ancladas se volverán a cargar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les onglets épinglés se rechargeront."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le schede bloccate si ricaricheranno."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vastgezette tabbladen worden opnieuw geladen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przypięte karty zostaną załadowane ponownie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os separadores afixados serão recarregados."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрепленные вкладки будут перезагружены."
           }
         }
       }
@@ -38212,6 +38272,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Недавно посещенные"
+          }
+        }
+      }
+    },
+    "history.sites.label" : {
+      "comment" : "Label for the Sites section in history view showing unique domains visited",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Seiten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sites"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sitios"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sites"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Siti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sites"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Witryny"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sites"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Сайты"
           }
         }
       }
@@ -84315,49 +84435,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "heute"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "hoy"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "aujourd'hui"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "oggi"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "vandaag"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "dzisiaj"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "hoje"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "сегодня"
           }
         }
       }
@@ -93664,49 +93784,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "gestern"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "ayer"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "hier"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "ieri"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "gisteren"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "wczoraj"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "ontem"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "вчера"
           }
         }
       }

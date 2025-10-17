@@ -61,7 +61,8 @@ final class FireDialogViewModel: ObservableObject {
             switch self {
             case .fireButton, .mainMenuAll,
                  .historyView(query: .rangeFilter(.today)),
-                 .historyView(query: .rangeFilter(.all)):
+                 .historyView(query: .rangeFilter(.all)),
+                 .historyView(query: .rangeFilter(.allSites)):
                 return true
             case .historyView:
                 return false
@@ -83,7 +84,8 @@ final class FireDialogViewModel: ObservableObject {
             let title = switch self {
             case .fireButton: UserText.fireDialogTitle
             case .mainMenuAll,
-                 .historyView(query: .rangeFilter(.all)): HistoryViewDeleteDialogModel.DeleteMode.all.title
+                 .historyView(query: .rangeFilter(.all)),
+                 .historyView(query: .rangeFilter(.allSites)): HistoryViewDeleteDialogModel.DeleteMode.all.title
             case .historyView(query: .rangeFilter(.today)): HistoryViewDeleteDialogModel.DeleteMode.today.title
             case .historyView(query: .rangeFilter(.yesterday)): HistoryViewDeleteDialogModel.DeleteMode.yesterday.title
             case .historyView(query: .dateFilter(let date)): HistoryViewDeleteDialogModel.DeleteMode.date(date).title
@@ -195,6 +197,63 @@ final class FireDialogViewModel: ObservableObject {
 
     var isPinnedTabSelected: Bool {
         tabCollectionViewModel?.selectedTabViewModel?.tab.isPinned ?? false
+    }
+
+    // Determine if pinned tabs are present in the current scope
+    var hasPinnedTabsInScope: Bool {
+        guard let tabCollectionViewModel else { return false }
+
+        switch clearingOption {
+        case .currentTab:
+            // For currentTab scope: only if the selected tab itself is pinned
+            return isPinnedTabSelected
+
+        case .currentWindow:
+            // For currentWindow scope: if current window has pinned tabs
+            if let pinnedTabsManager = tabCollectionViewModel.pinnedTabsManager,
+               !pinnedTabsManager.isEmpty {
+                return true
+            }
+            // If in shared mode, check if ANY pinned tabs exist globally
+            if let provider = tabCollectionViewModel.pinnedTabsManagerProvider,
+               provider.pinnedTabsMode == .shared,
+               !provider.arePinnedTabsEmpty {
+                return true
+            }
+            return false
+
+        case .allData:
+            // For allData scope: if ANY pinned tabs exist globally
+            if let provider = tabCollectionViewModel.pinnedTabsManagerProvider {
+                return !provider.arePinnedTabsEmpty
+            }
+            return false
+        }
+    }
+
+    // Get the appropriate pinned tabs message for the current scope
+    var pinnedTabsReloadMessage: String? {
+        guard hasPinnedTabsInScope, let tabCollectionViewModel else { return nil }
+
+        let count: Int
+        switch clearingOption {
+        case .currentTab:
+            // For currentTab: count is 1 if the selected tab is pinned
+            count = isPinnedTabSelected ? 1 : 0
+        case .currentWindow:
+            // For currentWindow: count pinned tabs in current window
+            count = tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.count ?? 0
+        case .allData:
+            // For allData: count all pinned tabs globally
+            if let provider = tabCollectionViewModel.pinnedTabsManagerProvider {
+                count = provider.currentPinnedTabManagers.reduce(0) { $0 + $1.tabCollection.tabs.count }
+            } else {
+                count = 0
+            }
+        }
+
+        guard count > 0 else { return nil }
+        return count == 1 ? UserText.fireDialogPinnedTabWillReload : UserText.fireDialogPinnedTabsWillReload
     }
 
     let selectableSectionIndex = 0

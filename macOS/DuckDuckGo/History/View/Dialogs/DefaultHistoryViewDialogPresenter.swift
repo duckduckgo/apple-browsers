@@ -28,7 +28,12 @@ protocol HistoryViewDialogPresenting: AnyObject {
     func showMultipleTabsDialog(for itemsCount: Int, in window: NSWindow?) async -> OpenMultipleTabsWarningDialogModel.Response
 
     @MainActor
-    func showDeleteDialog(for query: DataModel.HistoryQueryKind, visits: [Visit], in window: NSWindow?) async -> HistoryViewDeleteDialogModel.Response
+    func showDeleteDialog(for query: DataModel.HistoryQueryKind, visits: [Visit], in window: NSWindow?, fromMainMenu: Bool) async -> HistoryViewDeleteDialogModel.Response
+}
+extension HistoryViewDialogPresenting {
+    func showDeleteDialog(for query: DataModel.HistoryQueryKind, visits: [Visit], in window: NSWindow?) async -> HistoryViewDeleteDialogModel.Response {
+        await showDeleteDialog(for: query, visits: visits, in: window, fromMainMenu: false)
+    }
 }
 
 final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
@@ -55,9 +60,9 @@ final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
     }
 
     @MainActor
-    func showDeleteDialog(for query: DataModel.HistoryQueryKind, visits: [Visit], in window: NSWindow?) async -> HistoryViewDeleteDialogModel.Response {
+    func showDeleteDialog(for query: DataModel.HistoryQueryKind, visits: [Visit], in window: NSWindow?, fromMainMenu: Bool) async -> HistoryViewDeleteDialogModel.Response {
         if featureFlagger.isFeatureOn(.fireDialog) {
-            return await presentFireDialog(for: query, visits: visits, in: window)
+            return await presentFireDialog(for: query, visits: visits, in: window, fromMainMenu: fromMainMenu)
         }
 
         return await withCheckedContinuation { continuation in
@@ -71,7 +76,7 @@ final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
     }
 
     @MainActor
-    private func presentFireDialog(for query: DataModel.HistoryQueryKind, visits: [Visit], in window: NSWindow?) async -> HistoryViewDeleteDialogModel.Response {
+    private func presentFireDialog(for query: DataModel.HistoryQueryKind, visits: [Visit], in window: NSWindow?, fromMainMenu: Bool) async -> HistoryViewDeleteDialogModel.Response {
         let window = window ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
         var mainWindowController: MainWindowController? {
             guard let mainWindowController = window?.windowController as? MainWindowController else {
@@ -80,8 +85,8 @@ final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
             }
             return mainWindowController
         }
-
-        let response = await fireCoordinator.presentFireDialog(mode: .historyView(query: query), in: window, scopeVisits: visits)
+        assert(!fromMainMenu || query == .rangeFilter(.all))
+        let response = await fireCoordinator.presentFireDialog(mode: fromMainMenu ? .mainMenuAll : .historyView(query: query), in: window, scopeVisits: visits)
         switch response {
         case .noAction: return .noAction
         case .burn(options: .some(let options)) where !options.includeHistory:

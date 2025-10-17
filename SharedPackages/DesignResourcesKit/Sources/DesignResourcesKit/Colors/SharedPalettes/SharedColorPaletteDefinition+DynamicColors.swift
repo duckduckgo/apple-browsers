@@ -205,7 +205,7 @@ extension SharedColorPaletteDefinition {
 
         /// Fire Dialog
         case .fireDialogBackground:
-            return DynamicColor(lightColor: .white, darkColor: Color(0x333333))
+            return DynamicColor(lightColor: .white, darkColor: Color(0x272524))
         case .fireDialogPillBackground:
             return DynamicColor(lightColor: .xF7F7F7, darkColor: .x1C1C1E)
         case .fireDialogPillBorder:

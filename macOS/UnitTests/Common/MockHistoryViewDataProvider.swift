@@ -42,7 +42,7 @@ public class MockHistoryViewDataProvider: @preconcurrency HistoryViewDataProvidi
 
     public func visits(matching query: DataModel.HistoryQueryKind) async -> [Visit] {
         switch query {
-        case .rangeFilter(.all):
+        case .rangeFilter(.all), .rangeFilter(.allSites):
             return allVisits
         case .rangeFilter(.today):
             let today = Calendar.current.startOfDay(for: Date())

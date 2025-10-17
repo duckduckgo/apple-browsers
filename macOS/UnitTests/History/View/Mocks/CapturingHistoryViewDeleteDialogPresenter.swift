@@ -34,14 +34,14 @@ final class CapturingHistoryViewDeleteDialogPresenter: HistoryViewDialogPresenti
         let query: HistoryView.DataModel.HistoryQueryKind
         let visits: [History.Visit]
 
-        init(_ query: HistoryView.DataModel.HistoryQueryKind, _ visits: [History.Visit]) {
+        init(_ query: HistoryView.DataModel.HistoryQueryKind, _ visits: [History.Visit], fromMainMenu: Bool = false) {
             self.query = query
             self.visits = visits
         }
     }
 
-    func showDeleteDialog(for query: HistoryView.DataModel.HistoryQueryKind, visits: [History.Visit], in window: NSWindow?) async -> DuckDuckGo_Privacy_Browser.HistoryViewDeleteDialogModel.Response {
-        showDeleteDialogCalls.append(.init(query, visits))
+    func showDeleteDialog(for query: HistoryView.DataModel.HistoryQueryKind, visits: [History.Visit], in window: NSWindow?, fromMainMenu: Bool) async -> DuckDuckGo_Privacy_Browser.HistoryViewDeleteDialogModel.Response {
+        showDeleteDialogCalls.append(.init(query, visits, fromMainMenu: fromMainMenu))
         return deleteDialogResponse
     }
 

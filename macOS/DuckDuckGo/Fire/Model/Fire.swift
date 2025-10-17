@@ -752,16 +752,6 @@ final class Fire: FireProtocol {
                     burnPinnedTabs(in: $0.mainViewController.tabCollectionViewModel)
                     selectPinnedTabIfNeeded(in: $0.mainViewController.tabCollectionViewModel)
                 }
-            } else if includingHistory {
-                mainWindowControllers.forEach { wc in
-                    let vm = wc.mainViewController.tabCollectionViewModel
-                    vm.tabViewModels.values.forEach {
-                        $0.tab.clearNavigationHistory(keepingCurrent: true)
-                    }
-                    vm.pinnedTabsManager?.tabCollection.tabs.forEach {
-                        $0.clearNavigationHistory(keepingCurrent: true)
-                    }
-                }
             }
         }
     }

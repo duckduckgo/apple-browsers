@@ -72,7 +72,7 @@ class StateRestorationPromptTests: UITestCase {
 
         XCTAssertTrue(
             app.sessionRestoreAcceptButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
-            "Session restore reject button should not be in any webview after restore is accepted."
+            "Session restore button should not be in any webview after restore is accepted."
         )
     }
 
@@ -107,7 +107,7 @@ class StateRestorationPromptTests: UITestCase {
 
         XCTAssertTrue(
             app.sessionRestoreRejectButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
-            "Session restore reject button should not be in any webview after restore is rejected."
+            "Session restore button should not be in any webview after restore is rejected."
         )
     }
 }

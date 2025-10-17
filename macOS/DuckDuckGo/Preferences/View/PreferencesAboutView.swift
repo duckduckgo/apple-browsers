@@ -95,6 +95,10 @@ extension Preferences {
                     model.openNewTab(with: .privacyPolicy)
                 }
 
+                TextButton(UserText.termsOfService) {
+                    model.openNewTab(with: .termsOfService)
+                }
+
                 Button(UserText.sendFeedback) {
                     model.openFeedbackForm()
                 }

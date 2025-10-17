@@ -850,7 +850,11 @@ extension MainViewController {
         windowController.showWindow(nil)
     }
 
-    // MARK: - Performance Testing
+}
+
+// MARK: - Performance Testing
+
+extension MainViewController {
 
     @objc func testCurrentSitePerformance() {
         // Get the current tab's web view
@@ -865,27 +869,45 @@ extension MainViewController {
         }
 
         // Use the package to handle everything
-        let windowController = PerformanceTestWindowController(webView: currentTab.webView)
+        let windowController = PerformanceTestWindowController(
+            webView: currentTab.webView,
+            createNewTab: { @MainActor [weak self] in
+                guard let self = self else {
+                    Logger.general.error("MainViewController deallocated during performance test - cannot create new tab")
+                    return nil
+                }
+
+                // Create a new tab with duckduckgo.com for JS warmup
+                guard let warmupURL = URL(string: "https://duckduckgo.com") else {
+                    Logger.general.error("Failed to create warmup URL")
+                    return nil
+                }
+                self.tabCollectionViewModel.appendNewTab(with: .url(warmupURL, source: .ui), selected: true)
+
+                // Return the newly selected tab's webView
+                guard let newWebView = self.tabCollectionViewModel.selectedTabViewModel?.tab.webView else {
+                    Logger.general.error("Failed to get webView from newly created tab")
+                    return nil
+                }
+
+                return newWebView
+            },
+            closeTab: { @MainActor [weak self] in
+                guard let self = self else { return }
+
+                // Close the currently selected tab (the one we just tested in)
+                guard let currentIndex = self.tabCollectionViewModel.selectionIndex else {
+                    Logger.general.debug("closeTab: No tab selected")
+                    return
+                }
+                Logger.general.debug("closeTab: Closing currently selected tab")
+                self.tabCollectionViewModel.remove(at: currentIndex)
+                Logger.general.debug("closeTab: Tab closed")
+            }
+        )
         windowController.showWindow(nil)
     }
 
-    @objc func testCurrentSitePerformanceWithSafari() {
-        // Get the current tab's URL
-        guard let currentTab = tabCollectionViewModel.selectedTabViewModel?.tab,
-              let url = currentTab.url else {
-            let alert = NSAlert()
-            alert.messageText = "No Active Page"
-            alert.informativeText = "Please navigate to a webpage first to test its performance with Safari."
-            alert.alertStyle = .informational
-            alert.addButton(withTitle: "OK")
-            alert.runModal()
-            return
-        }
-
-        // Launch Safari performance test window
-        let windowController = SafariPerformanceTestWindowController(url: url)
-        windowController.showWindow(nil)
-    }
 }
 
 // MARK: - BrowserTabViewControllerDelegate

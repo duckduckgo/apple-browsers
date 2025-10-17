@@ -20,7 +20,7 @@ import Foundation
 import Sparkle
 
 final class SparkleUpdaterAvailabilityChecker: UpdaterAvailabilityChecking {
-    var updater: SPUUpdater?
+    var updater: UpdaterAvailabilityChecking?
 
     /// When the update is not available (equal to nil) we will return true so the Updater can
     /// check for the last try instead.
@@ -28,7 +28,7 @@ final class SparkleUpdaterAvailabilityChecker: UpdaterAvailabilityChecking {
         return updater?.canCheckForUpdates ?? true
     }
 
-    init(updater: SPUUpdater? = nil) {
+    init(updater: UpdaterAvailabilityChecking? = nil) {
         self.updater = updater
     }
 }

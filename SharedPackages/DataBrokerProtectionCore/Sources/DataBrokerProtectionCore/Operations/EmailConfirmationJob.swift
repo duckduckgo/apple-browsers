@@ -67,7 +67,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         if let profile = try? jobDependencies.database.fetchExtractedProfile(with: jobData.extractedProfileId)?.profile,
            let identifier = profile.identifier {
             self.wideEventRecorder = OptOutSubmissionWideEventRecorder.resumeIfPossible(wideEvent: jobDependencies.wideEvent,
-                                                                                        profileIdentifier: identifier)
+                                                                                        identifier: identifier)
         } else {
             self.wideEventRecorder = nil
         }

@@ -42,7 +42,7 @@ final class OptOutSubmissionWideEventRecorderTests: XCTestCase {
 
     func testMakeIfPossibleStartsFlow() {
         let recorder = OptOutSubmissionWideEventRecorder.makeIfPossible(wideEvent: wideEventMock,
-                                                                        profileIdentifier: profileIdentifier,
+                                                                        identifier: profileIdentifier,
                                                                         dataBrokerURL: "broker.com",
                                                                         dataBrokerVersion: "1.0",
                                                                         recordFoundDate: recordFoundDate)
@@ -58,18 +58,18 @@ final class OptOutSubmissionWideEventRecorderTests: XCTestCase {
 
     func testResumeIfPossibleReturnsExistingFlow() {
         XCTAssertNotNil(OptOutSubmissionWideEventRecorder.makeIfPossible(wideEvent: wideEventMock,
-                                                                         profileIdentifier: profileIdentifier,
+                                                                         identifier: profileIdentifier,
                                                                          dataBrokerURL: "broker.com",
                                                                          dataBrokerVersion: "1.0",
                                                                          recordFoundDate: recordFoundDate))
         XCTAssertEqual(wideEventMock.started.count, 1)
 
         let notResumed = OptOutSubmissionWideEventRecorder.resumeIfPossible(wideEvent: wideEventMock,
-                                                                            profileIdentifier: "other-profile")
+                                                                            identifier: "other-profile")
         XCTAssertNil(notResumed)
 
         let resumed = OptOutSubmissionWideEventRecorder.resumeIfPossible(wideEvent: wideEventMock,
-                                                                         profileIdentifier: profileIdentifier)
+                                                                         identifier: profileIdentifier)
 
         XCTAssertNotNil(resumed)
         XCTAssertEqual(wideEventMock.started.count, 1)

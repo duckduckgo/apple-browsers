@@ -193,10 +193,10 @@ struct BrokerProfileOptOutSubJob {
         if let identifier = extractedProfile.identifier {
             wideEventRecorder = OptOutSubmissionWideEventRecorder.resumeIfPossible(
                 wideEvent: wideEvent,
-                profileIdentifier: identifier
+                identifier: identifier
             ) ?? OptOutSubmissionWideEventRecorder.makeIfPossible(
                 wideEvent: wideEvent,
-                profileIdentifier: identifier,
+                identifier: identifier,
                 dataBrokerURL: brokerProfileQueryData.dataBroker.url,
                 dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
                 recordFoundDate: recordFoundDate

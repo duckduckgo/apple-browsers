@@ -45,13 +45,13 @@ final class OptOutSubmissionWideEventRecorder {
     }
 
     static func makeIfPossible(wideEvent: WideEventManaging?,
-                               profileIdentifier: String,
+                               identifier: String,
                                dataBrokerURL: String,
                                dataBrokerVersion: String?,
                                recordFoundDate: Date) -> OptOutSubmissionWideEventRecorder? {
         guard let wideEvent else { return nil }
 
-        let hashedIdentifier = profileIdentifier.sha256
+        let hashedIdentifier = identifier.sha256
         let global = WideEventGlobalData(id: hashedIdentifier, sampleRate: sampleRate)
         let submissionInterval = WideEvent.MeasuredInterval(start: recordFoundDate, end: nil)
         let data = OptOutSubmissionWideEventData(globalData: global,
@@ -65,10 +65,10 @@ final class OptOutSubmissionWideEventRecorder {
     }
 
     static func resumeIfPossible(wideEvent: WideEventManaging?,
-                                 profileIdentifier: String) -> OptOutSubmissionWideEventRecorder? {
+                                 identifier: String) -> OptOutSubmissionWideEventRecorder? {
         guard let wideEvent else { return nil }
 
-        let hashedIdentifier = profileIdentifier.sha256
+        let hashedIdentifier = identifier.sha256
 
         guard let existing: OptOutSubmissionWideEventData = wideEvent.getFlowData(OptOutSubmissionWideEventData.self,
                                                                                   globalID: hashedIdentifier) else {

@@ -1264,9 +1264,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let source = "browser-dmg"
 #endif
 
-        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
-        let trimmedOSVersion = "\(osVersion.majorVersion).\(osVersion.minorVersion)"
-        let userAgent = UserAgent.duckDuckGoUserAgent(systemVersion: trimmedOSVersion)
+        let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: dryRun,
                        appVersion: AppVersion.shared.versionNumber,

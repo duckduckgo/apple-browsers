@@ -28,6 +28,17 @@ protocol OptOutSubmissionWideEventRecording: AnyObject {
 final class OptOutSubmissionWideEventRecorder {
     static let sampleRate: Float = 1.0
 
+    struct Identifier {
+        let profileIdentifier: String?
+        let brokerId: Int64
+        let profileQueryId: Int64
+        let extractedProfileId: Int64
+
+        var toGlobalId: String {
+            profileIdentifier?.sha256 ?? "\(brokerId)-\(profileQueryId)-\(extractedProfileId)"
+        }
+    }
+
     private let wideEvent: WideEventManaging
     private var data: OptOutSubmissionWideEventData
     private let queue = DispatchQueue(label: "com.duckduckgo.dbp.optout-submission-wide-event", qos: .utility)
@@ -45,14 +56,13 @@ final class OptOutSubmissionWideEventRecorder {
     }
 
     static func makeIfPossible(wideEvent: WideEventManaging?,
-                               identifier: String,
+                               identifier: Identifier,
                                dataBrokerURL: String,
                                dataBrokerVersion: String?,
                                recordFoundDate: Date) -> OptOutSubmissionWideEventRecorder? {
         guard let wideEvent else { return nil }
 
-        let hashedIdentifier = identifier.sha256
-        let global = WideEventGlobalData(id: hashedIdentifier, sampleRate: sampleRate)
+        let global = WideEventGlobalData(id: identifier.toGlobalId, sampleRate: sampleRate)
         let submissionInterval = WideEvent.MeasuredInterval(start: recordFoundDate, end: nil)
         let data = OptOutSubmissionWideEventData(globalData: global,
                                                  dataBrokerURL: dataBrokerURL,
@@ -65,13 +75,10 @@ final class OptOutSubmissionWideEventRecorder {
     }
 
     static func resumeIfPossible(wideEvent: WideEventManaging?,
-                                 identifier: String) -> OptOutSubmissionWideEventRecorder? {
-        guard let wideEvent else { return nil }
-
-        let hashedIdentifier = identifier.sha256
-
-        guard let existing: OptOutSubmissionWideEventData = wideEvent.getFlowData(OptOutSubmissionWideEventData.self,
-                                                                                  globalID: hashedIdentifier) else {
+                                 identifier: Identifier) -> OptOutSubmissionWideEventRecorder? {
+        guard let wideEvent,
+              let existing: OptOutSubmissionWideEventData = wideEvent.getFlowData(OptOutSubmissionWideEventData.self,
+                                                                                  globalID: identifier.toGlobalId) else {
             return nil
         }
 

@@ -189,21 +189,21 @@ struct BrokerProfileOptOutSubJob {
                                                               brokerId: identifiers.brokerId,
                                                               profileQueryId: identifiers.profileQueryId,
                                                               extractedProfileId: identifiers.extractedProfileId)
-        let wideEventRecorder: OptOutSubmissionWideEventRecorder?
-        if let identifier = extractedProfile.identifier {
-            wideEventRecorder = OptOutSubmissionWideEventRecorder.resumeIfPossible(
-                wideEvent: wideEvent,
-                identifier: identifier
-            ) ?? OptOutSubmissionWideEventRecorder.makeIfPossible(
-                wideEvent: wideEvent,
-                identifier: identifier,
-                dataBrokerURL: brokerProfileQueryData.dataBroker.url,
-                dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-                recordFoundDate: recordFoundDate
-            )
-        } else {
-            wideEventRecorder = nil
-        }
+        let recorderId = OptOutSubmissionWideEventRecorder.Identifier(profileIdentifier: extractedProfile.identifier,
+                                                                      brokerId: identifiers.brokerId,
+                                                                      profileQueryId: identifiers.profileQueryId,
+                                                                      extractedProfileId: identifiers.extractedProfileId)
+        let wideEventRecorder = OptOutSubmissionWideEventRecorder.resumeIfPossible(
+            wideEvent: wideEvent,
+            identifier: recorderId
+        ) ?? OptOutSubmissionWideEventRecorder.makeIfPossible(
+            wideEvent: wideEvent,
+            identifier: recorderId,
+            dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+            dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+            recordFoundDate: recordFoundDate
+        )
+
         stageDurationCalculator.attachWideEventRecorder(wideEventRecorder)
 
         // 6. Record the start of the opt-out job:

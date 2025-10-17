@@ -273,7 +273,8 @@ struct BrokerProfileScanSubJob {
                     profileIdentifier: removedProfile.identifier,
                     brokerId: brokerId,
                     profileQueryId: profileQueryId,
-                    extractedProfileId: extractedProfileId
+                    extractedProfileId: extractedProfileId,
+                    completionDate: Date()
                 )
 
                 try updateOperationDataDates(
@@ -309,7 +310,8 @@ struct BrokerProfileScanSubJob {
                                                  profileIdentifier: String?,
                                                  brokerId: Int64,
                                                  profileQueryId: Int64,
-                                                 extractedProfileId: Int64) {
+                                                 extractedProfileId: Int64,
+                                                 completionDate: Date) {
         let recordFoundDateProvider = {
             RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
                                             repository: database,
@@ -328,7 +330,7 @@ struct BrokerProfileScanSubJob {
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
             recordFoundDateProvider: recordFoundDateProvider
         )
-        confirmationRecorder?.markConfirmationCompleted(at: Date())
+        confirmationRecorder?.markConfirmationCompleted(at: completionDate)
     }
 
     private func sendProfilesRemovedEventIfNecessary(eventsHandler: EventMapping<JobEvent>,

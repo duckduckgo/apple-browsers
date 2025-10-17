@@ -65,3 +65,10 @@ extension OptOutSubmissionWideEventData {
         return parameters
     }
 }
+
+extension OptOutSubmissionWideEventData: WideEventDataMeasuringInterval {
+    public var measuredInterval: WideEvent.MeasuredInterval? {
+        get { submissionInterval }
+        set { submissionInterval = newValue }
+    }
+}

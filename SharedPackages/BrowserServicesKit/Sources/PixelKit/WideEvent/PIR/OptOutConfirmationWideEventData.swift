@@ -65,3 +65,10 @@ extension OptOutConfirmationWideEventData {
         return parameters
     }
 }
+
+extension OptOutConfirmationWideEventData: WideEventDataMeasuringInterval {
+    public var measuredInterval: WideEvent.MeasuredInterval? {
+        get { confirmationInterval }
+        set { confirmationInterval = newValue }
+    }
+}

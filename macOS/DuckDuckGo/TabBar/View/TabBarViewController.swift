@@ -443,9 +443,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             layoutPinnedTabsCollectionView()
             pinnedTabsWindowDraggingView.isHidden = true
 
-            tabCollectionViewModel.pinnedTabsCollection?.$tabs.map(\.count)
+            tabCollectionViewModel.pinnedTabsCollection?.$tabs
                 .removeDuplicates()
                 .asVoid()
+                .receive(on: DispatchQueue.main)
                 .sink { [weak self] in
                     self?.pinnedTabsCollectionView?.reloadData()
                 }

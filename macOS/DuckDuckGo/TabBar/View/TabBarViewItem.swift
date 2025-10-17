@@ -98,10 +98,11 @@ final class TabBarItemCellView: NSView {
         case full
         case withoutCloseButton
         case withoutTitle
+        case pinned
 
-        var isTitleHidden: Bool { self == .withoutTitle }
+        var isTitleHidden: Bool { self == .withoutTitle || self == .pinned }
         var isCloseButtonHidden: Bool { self != .full }
-        var isFaviconCentered: Bool { !isTitleHidden }
+        var isFaviconCentered: Bool { !isTitleHidden || self == .pinned }
 
         init(width: CGFloat) {
             switch width {
@@ -370,7 +371,7 @@ final class TabBarItemCellView: NSView {
         switch widthStage {
         case .full, .withoutCloseButton:
             layoutForNormalMode()
-        case .withoutTitle:
+        case .withoutTitle, .pinned:
             layoutForCompactMode()
         }
 
@@ -589,6 +590,9 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
 
     private var widthStage: TabBarItemCellView.WidthStage {
+        if isPinned {
+            return .pinned
+        }
         if isSelected || isDragged {
             return .full
         } else {
@@ -614,6 +618,10 @@ final class TabBarViewItem: NSCollectionViewItem {
         didSet {
             updateSubviews()
         }
+    }
+
+    var isPinned: Bool {
+        tabViewModel?.isPinned == true
     }
 
     weak var fireproofDomains: FireproofDomains?
@@ -913,7 +921,8 @@ final class TabBarViewItem: NSCollectionViewItem {
             }
         }
 
-        let showCloseButton = (isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected
+        let showCloseButton = !isPinned && ((isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected)
+        print("TABX widthStage \(widthStage) showCloseButton \(showCloseButton)")
         cell.closeButton.isShown = showCloseButton
         cell.faviconImageView.isShown = (cell.faviconImageView.image != nil) && (widthStage != .withoutTitle || !showCloseButton)
         updateSeparatorView()
@@ -1031,7 +1040,6 @@ extension TabBarViewItem: ThemeUpdateListening {
 extension TabBarViewItem: NSMenuDelegate {
 
     func menuNeedsUpdate(_ menu: NSMenu) {
-        let isPinnedTab = tabViewModel?.isPinned == true
         /// Trigger context menu callback from here.
         /// It can't be called from `mouseClickView(_:rightMouseDownEvent:)`
         /// because that one is called after handling the right click,
@@ -1062,7 +1070,7 @@ extension TabBarViewItem: NSMenuDelegate {
         }
         menu.addItem(.separator())
 
-        if !isPinnedTab {
+        if !isPinned {
             // Bookmark All Section
             addBookmarkAllTabsMenuItem(to: menu)
             menu.addItem(.separator())
@@ -1070,7 +1078,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
         // Close Section
         addCloseMenuItem(to: menu)
-        if !isPinnedTab {
+        if !isPinned {
             addCloseOtherSubmenu(to: menu, tabBarItemState: otherItemsState)
             if !isBurner {
                 addMoveToNewWindowMenuItem(to: menu, areThereOtherTabs: areThereOtherTabs)
@@ -1112,8 +1120,6 @@ extension TabBarViewItem: NSMenuDelegate {
     }
 
     private func addPinMenuItem(to menu: NSMenu) {
-        let isPinned = tabViewModel?.isPinned == true
-
         let pinMenuItem = NSMenuItem(title: isPinned ? UserText.unpinTab : UserText.pinTab, action: #selector(pinAction(_:)), keyEquivalent: "")
         pinMenuItem.target = self
         if !isPinned {

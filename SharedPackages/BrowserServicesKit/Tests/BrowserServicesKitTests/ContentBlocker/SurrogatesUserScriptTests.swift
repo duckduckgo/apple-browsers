@@ -699,9 +699,9 @@ class SurrogatesUserScriptsTests: XCTestCase {
     }
 
     private func waitForJavaScriptCondition(_ condition: String,
-                                           in webView: WKWebView?,
-                                           timeout: TimeInterval,
-                                           completion: @escaping () -> Void) {
+                                            in webView: WKWebView?,
+                                            timeout: TimeInterval,
+                                            completion: @escaping () -> Void) {
         let startTime = Date()
 
         func checkCondition() {

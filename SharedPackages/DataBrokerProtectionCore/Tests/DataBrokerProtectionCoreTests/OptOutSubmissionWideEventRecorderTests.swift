@@ -97,12 +97,12 @@ final class OptOutSubmissionWideEventRecorderTests: XCTestCase {
         )
         XCTAssertNil(notResumed)
 
-        let resumed = OptOutSubmissionWideEventRecorder.resumeIfPossible(
+        let resumedRecorder = OptOutSubmissionWideEventRecorder.resumeIfPossible(
             wideEvent: wideEventMock,
             identifier: identifier
         )
 
-        XCTAssertNotNil(resumed)
+        XCTAssertNotNil(resumedRecorder)
         XCTAssertEqual(wideEventMock.started.count, 1)
     }
 

@@ -2867,9 +2867,6 @@ public final class SubmissionRecorderMock: OptOutSubmissionWideEventRecording {
 
     public func markSubmissionCompleted(at date: Date) {
         submissionEndMarked = true
-    }
-
-    public func complete() {
         completionStatus = .success
     }
 }

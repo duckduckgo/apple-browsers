@@ -22,7 +22,6 @@ import PixelKit
 
 protocol OptOutSubmissionWideEventRecording: AnyObject {
     func markSubmissionCompleted(at date: Date)
-    func complete()
 }
 
 final class OptOutSubmissionWideEventRecorder {
@@ -116,9 +115,6 @@ final class OptOutSubmissionWideEventRecorder {
 extension OptOutSubmissionWideEventRecorder: OptOutSubmissionWideEventRecording {
     func markSubmissionCompleted(at date: Date) {
         setSubmissionEnd(date: date)
-    }
-
-    func complete() {
         completeInternal(status: .success)
     }
 }

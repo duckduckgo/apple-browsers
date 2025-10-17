@@ -16,26 +16,133 @@
 //  limitations under the License.
 //
 
-import Common
-import Foundation
 import BrowserServicesKit
+import Combine
+import Common
 import DDGSync
-import PrivacyDashboard
-import WebKit
-import SecureStorage
-import History
-import PrivacyStats
 import FeatureFlags
+import Foundation
+import History
 import os.log
+import PrivacyDashboard
+import PrivacyStats
+import SecureStorage
+import WebKit
 
-final class Fire {
+protocol FireProtocol: AnyObject {
+    var burningData: Fire.BurningData? { get }
+    var fireproofDomains: FireproofDomains { get }
+    var visualizeFireAnimationDecider: VisualizeFireSettingsDecider { get }
+    var burningDataPublisher: AnyPublisher<Fire.BurningData?, Never> { get }
+
+    func fireAnimationDidStart()
+    func fireAnimationDidFinish()
+
+    @MainActor func burnAll(isBurnOnExit: Bool, opening url: URL, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?)
+    @MainActor func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?)
+    @MainActor func burnVisits(_ visits: [Visit],
+                               except fireproofDomains: DomainFireproofStatusProviding,
+                               isToday: Bool,
+                               closeWindows: Bool,
+                               clearSiteData: Bool,
+                               urlToOpenIfWindowsAreClosed url: URL?,
+                               completion: (@MainActor () -> Void)?)
+}
+extension FireProtocol {
+
+    @MainActor
+    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab, includeCookiesAndSiteData: Bool = true) {
+        burnAll(isBurnOnExit: isBurnOnExit, opening: url, includeCookiesAndSiteData: includeCookiesAndSiteData, completion: nil)
+    }
+    @MainActor
+    func burnAll(opening url: URL, includeCookiesAndSiteData: Bool = true) {
+        burnAll(isBurnOnExit: false, opening: url, includeCookiesAndSiteData: includeCookiesAndSiteData, completion: nil)
+    }
+    @MainActor
+    func burnAll(includeCookiesAndSiteData: Bool = true, completion: (() -> Void)? = nil) {
+        burnAll(isBurnOnExit: false, opening: .newtab, includeCookiesAndSiteData: includeCookiesAndSiteData, completion: completion)
+    }
+
+    @MainActor
+    func burnAll(isBurnOnExit: Bool, completion: (() -> Void)? = nil) {
+        burnAll(isBurnOnExit: isBurnOnExit, opening: .newtab, includeCookiesAndSiteData: true, completion: completion)
+    }
+
+    @MainActor
+    func burnEntity(_ entity: Fire.BurningEntity, completion: (() -> Void)? = nil) {
+        burnEntity(entity, includingHistory: true, includeCookiesAndSiteData: true, completion: completion)
+    }
+
+    @MainActor
+    func burnVisits(_ visits: [Visit],
+                    except fireproofDomains: DomainFireproofStatusProviding,
+                    isToday: Bool,
+                    urlToOpenIfWindowsAreClosed url: URL? = nil,
+                    completion: (@MainActor () -> Void)? = nil) {
+        burnVisits(visits,
+                   except: fireproofDomains,
+                   isToday: isToday,
+                   closeWindows: true,
+                   clearSiteData: true,
+                   urlToOpenIfWindowsAreClosed: url,
+                   completion: completion)
+    }
+
+    @MainActor
+    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab, includeCookiesAndSiteData: Bool = true) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            self.burnAll(isBurnOnExit: isBurnOnExit, opening: url, includeCookiesAndSiteData: includeCookiesAndSiteData) {
+                continuation.resume()
+            }
+        }
+    }
+
+    @MainActor
+    func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            self.burnEntity(entity, includingHistory: includingHistory, includeCookiesAndSiteData: true) {
+                continuation.resume()
+            }
+        }
+    }
+
+    @MainActor
+    func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool, includeCookiesAndSiteData: Bool) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            self.burnEntity(entity, includingHistory: includingHistory, includeCookiesAndSiteData: includeCookiesAndSiteData) {
+                continuation.resume()
+            }
+        }
+    }
+
+    @MainActor
+    func burnVisits(_ visits: [Visit],
+                    except fireproofDomains: DomainFireproofStatusProviding,
+                    isToday: Bool,
+                    closeWindows: Bool,
+                    clearSiteData: Bool,
+                    urlToOpenIfWindowsAreClosed url: URL? = .newtab) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            self.burnVisits(visits,
+                            except: fireproofDomains,
+                            isToday: isToday,
+                            closeWindows: closeWindows,
+                            clearSiteData: clearSiteData,
+                            urlToOpenIfWindowsAreClosed: url) {
+                continuation.resume()
+            }
+        }
+    }
+}
+
+final class Fire: FireProtocol {
 
     let webCacheManager: WebCacheManager
     let historyCoordinating: HistoryCoordinating
     let permissionManager: PermissionManagerProtocol
     let savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating
     let downloadListCoordinator: DownloadListCoordinator
-    let windowControllerManager: WindowControllersManager
+    let windowControllersManager: WindowControllersManagerProtocol
     let faviconManagement: FaviconManagement
     let fireproofDomains: FireproofDomains
     let autoconsentManagement: AutoconsentManagement?
@@ -51,6 +158,7 @@ final class Fire {
     let getVisitedLinkStore: () -> WKVisitedLinkStoreWrapper?
     let getPrivacyStats: () async -> PrivacyStatsCollecting
     let visualizeFireAnimationDecider: VisualizeFireSettingsDecider
+    let isAppActiveProvider: @MainActor () -> Bool
 
     private var dispatchGroup: DispatchGroup?
 
@@ -108,13 +216,15 @@ final class Fire {
 
     @Published private(set) var burningData: BurningData?
 
+    var burningDataPublisher: AnyPublisher<BurningData?, Never> { $burningData.eraseToAnyPublisher() }
+
     @MainActor
     init(cacheManager: WebCacheManager? = nil,
          historyCoordinating: HistoryCoordinating? = nil,
          permissionManager: PermissionManagerProtocol? = nil,
          savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating = AccessibilityPreferences.shared,
          downloadListCoordinator: DownloadListCoordinator = DownloadListCoordinator.shared,
-         windowControllerManager: WindowControllersManager? = nil,
+         windowControllersManager: WindowControllersManagerProtocol? = nil,
          faviconManagement: FaviconManagement? = nil,
          fireproofDomains: FireproofDomains? = nil,
          autoconsentManagement: AutoconsentManagement? = nil,
@@ -128,14 +238,15 @@ final class Fire {
          secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
          getPrivacyStats: (() async -> PrivacyStatsCollecting)? = nil,
          getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil,
-         visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil
+         visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil,
+         isAppActiveProvider: @escaping @MainActor () -> Bool = { @MainActor in NSApp.isActive }
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
         self.permissionManager = permissionManager ?? NSApp.delegateTyped.permissionManager
         self.savedZoomLevelsCoordinating = savedZoomLevelsCoordinating
         self.downloadListCoordinator = downloadListCoordinator
-        self.windowControllerManager = windowControllerManager ?? Application.appDelegate.windowControllersManager
+        self.windowControllersManager = windowControllersManager ?? Application.appDelegate.windowControllersManager
         self.faviconManagement = faviconManagement ?? NSApp.delegateTyped.faviconManager
         self.fireproofDomains = fireproofDomains ?? NSApp.delegateTyped.fireproofDomains
         self.recentlyClosedCoordinator = recentlyClosedCoordinator ?? RecentlyClosedCoordinator.shared
@@ -149,6 +260,7 @@ final class Fire {
         self.getVisitedLinkStore = getVisitedLinkStore ?? { WKWebViewConfiguration.sharedVisitedLinkStore }
         self.autoconsentManagement = autoconsentManagement ?? AutoconsentManagement.shared
         self.visualizeFireAnimationDecider = visualizeFireAnimationDecider ?? NSApp.delegateTyped.visualizeFireSettingsDecider
+        self.isAppActiveProvider = isAppActiveProvider
         if let stateRestorationManager = stateRestorationManager {
             self.stateRestorationManager = stateRestorationManager
         } else {
@@ -157,9 +269,7 @@ final class Fire {
     }
 
     @MainActor
-    func burnEntity(entity: BurningEntity,
-                    includingHistory: Bool = true,
-                    completion: (() -> Void)? = nil) {
+    func burnEntity(_ entity: BurningEntity, includingHistory: Bool, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -181,9 +291,11 @@ final class Fire {
             }
 
             group.enter()
-            self.burnTabs(burningEntity: entity, includingHistory: includingHistory)
+            self.burnTabs(burningEntity: entity)
 
-            await self.burnWebCache(baseDomains: domains)
+            if includeCookiesAndSiteData {
+                await self.burnWebCache(baseDomains: domains)
+            }
 
             if includingHistory {
                 self.burnHistory(ofEntity: entity) {
@@ -195,15 +307,18 @@ final class Fire {
                 group.leave()
             }
 
-            group.enter()
-            self.burnPermissions(of: domains) {
-                self.burnDownloads(of: domains)
-                group.leave()
+            if includeCookiesAndSiteData {
+                group.enter()
+                self.burnPermissions(of: domains) {
+                    self.burnDownloads(of: domains)
+                    group.leave()
+                }
+
+                self.burnAutoconsentCache()
+                self.burnZoomLevels(of: domains)
             }
 
             self.burnRecentlyClosed(baseDomains: domains)
-            self.burnAutoconsentCache()
-            self.burnZoomLevels(of: domains)
 
             group.notify(queue: .main) {
                 self.dispatchGroup = nil
@@ -221,7 +336,7 @@ final class Fire {
     }
 
     @MainActor
-    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab, completion: (() -> Void)? = nil) {
+    func burnAll(isBurnOnExit: Bool, opening url: URL, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -229,7 +344,7 @@ final class Fire {
 
         burningData = .all
 
-        let entity = BurningEntity.allWindows(mainWindowControllers: windowControllerManager.mainWindowControllers, selectedDomains: Set(), customURLToOpen: url, close: true)
+        let entity = BurningEntity.allWindows(mainWindowControllers: windowControllersManager.mainWindowControllers, selectedDomains: Set(), customURLToOpen: url, close: true)
 
         // Close windows first if fire animation is disabled
         let shouldCloseWindowsFirst = !visualizeFireAnimationDecider.shouldShowFireAnimation
@@ -240,7 +355,7 @@ final class Fire {
         burnLastSessionState()
         burnDeletedBookmarks()
 
-        let windowControllers = windowControllerManager.mainWindowControllers
+        let windowControllers = windowControllersManager.mainWindowControllers
 
         let tabViewModels = tabViewModels(of: entity)
 
@@ -248,9 +363,11 @@ final class Fire {
             await tabCleanupPreparer.prepareTabsForCleanup(tabViewModels)
 
             group.enter()
-            self.burnTabs(burningEntity: .allWindows(mainWindowControllers: windowControllers, selectedDomains: Set(), customURLToOpen: url, close: true), includingHistory: true)
+            self.burnTabs(burningEntity: .allWindows(mainWindowControllers: windowControllers, selectedDomains: Set(), customURLToOpen: url, close: true))
 
-            await self.burnWebCache()
+            if includeCookiesAndSiteData {
+                await self.burnWebCache()
+            }
             await self.burnPrivacyStats()
             self.burnAllVisitedLinks()
             self.burnAllHistory {
@@ -286,8 +403,10 @@ final class Fire {
     func burnVisits(_ visits: [Visit],
                     except fireproofDomains: DomainFireproofStatusProviding,
                     isToday: Bool,
-                    urlToOpenIfWindowsAreClosed url: URL? = .newtab,
-                    completion: (() -> Void)? = nil) {
+                    closeWindows: Bool,
+                    clearSiteData: Bool,
+                    urlToOpenIfWindowsAreClosed url: URL?,
+                    completion: (@MainActor () -> Void)?) {
 
         // Get domains to burn
         var domains = Set<String>()
@@ -307,18 +426,22 @@ final class Fire {
 
         burnVisitedLinks(visits)
         historyCoordinating.burnVisits(visits) {
+            // If cookie/site data should not be cleared, finish after history burn
+            guard clearSiteData else {
+                completion?()
+                return
+            }
+
             let entity: BurningEntity
 
-            // Burn all windows in case we are burning visits for today
+            // Burn all windows in case we are burning visits for today (respecting closeWindows flag)
             if isToday {
-                entity = .allWindows(mainWindowControllers: self.windowControllerManager.mainWindowControllers, selectedDomains: domains, customURLToOpen: url, close: true)
+                entity = .allWindows(mainWindowControllers: self.windowControllersManager.mainWindowControllers, selectedDomains: domains, customURLToOpen: url, close: closeWindows)
             } else {
                 entity = .none(selectedDomains: domains)
             }
 
-            self.burnEntity(entity: entity,
-                            includingHistory: false,
-                            completion: completion)
+            self.burnEntity(entity, includingHistory: false, includeCookiesAndSiteData: true, completion: completion)
         }
     }
 
@@ -344,7 +467,7 @@ final class Fire {
         /// This function returns the dropping point of the closed window,
         /// useful for opening a new window after burning in the exact same place.
         func closeWindow(of tabCollectionViewModel: TabCollectionViewModel) -> NSPoint? {
-            guard let windowController = windowControllerManager.windowController(for: tabCollectionViewModel) else {
+            guard let windowController = windowControllersManager.windowController(for: tabCollectionViewModel) else {
                 return nil
             }
             let droppingPoint = windowController.window?.frame.droppingPoint
@@ -375,17 +498,23 @@ final class Fire {
         }
 
         // If the app is not active, don't retake focus by opening a new window
-        guard NSApp.isActive else { return }
+        let isAppActive = isAppActiveProvider()
+        guard isAppActive else { return }
 
         // Open a new window in case there is none
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             /// When we are burning on exit we do not need to open a new window.
-            if self.windowControllerManager.mainWindowControllers.count == 0 && !isBurnOnExit {
+            if windowControllersManager.mainWindowControllers.count == 0 && !isBurnOnExit {
                 if case let .allWindows(_, _, customURLToOpen: customURL, _) = entity, let customURL {
-                    WindowsManager.openNewWindow(with: customURL, source: .ui, isBurner: false, droppingPoint: newWindowDroppingPoint)
+                    // We‘re always reopening a “Regular” window since this logics is only called from a Regular window
+                    let tab = Tab(content: .contentFromURL(customURL, source: .ui), shouldLoadInBackground: true, burnerMode: .regular)
+                    let tabCollection = TabCollection(tabs: [tab], isPopup: false)
+
+                    let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: pinnedTabsManagerProvider, burnerMode: .regular, windowControllersManager: windowControllersManager)
+                    windowControllersManager.openNewWindow(with: tabCollectionViewModel, droppingPoint: newWindowDroppingPoint, showWindow: true)
                 } else {
-                    WindowsManager.openNewWindow(droppingPoint: newWindowDroppingPoint)
+                    windowControllersManager.openNewWindow(droppingPoint: newWindowDroppingPoint)
                 }
             }
         }
@@ -408,8 +537,9 @@ final class Fire {
     // MARK: - History
 
     @MainActor
-    private func burnHistory(ofEntity entity: BurningEntity, completion: @escaping () -> Void) {
+    private func burnHistory(ofEntity entity: BurningEntity, completion: @escaping @MainActor () -> Void) {
         let visits: [Visit]
+
         switch entity {
         case .none(selectedDomains: let domains):
             burnHistory(of: domains) { urls in
@@ -419,12 +549,35 @@ final class Fire {
             return
         case .tab(tabViewModel: let tabViewModel, selectedDomains: _, parentTabCollectionViewModel: _, _):
             visits = tabViewModel.tab.localHistory
+            // clear tab navigation history
+            tabViewModel.tab.clearNavigationHistory(keepingCurrent: true)
+
         case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _, _):
             visits = tabCollectionViewModel.localHistory
+            // clear tabs navigation history
+            for vm in tabCollectionViewModel.tabViewModels.values {
+                vm.tab.clearNavigationHistory(keepingCurrent: true)
+            }
+            // also handle pinned tabs
+            tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.forEach {
+                $0.clearNavigationHistory(keepingCurrent: true)
+            }
 
-        case .allWindows:
+        case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _, close: _):
             burnAllVisitedLinks()
             burnAllHistory(completion: completion)
+
+            // clear all tabs navigation history
+            mainWindowControllers.forEach { wc in
+                let vm = wc.mainViewController.tabCollectionViewModel
+                vm.tabViewModels.values.forEach {
+                    $0.tab.clearNavigationHistory(keepingCurrent: true)
+                }
+                vm.pinnedTabsManager?.tabCollection.tabs.forEach {
+                    $0.clearNavigationHistory(keepingCurrent: true)
+                }
+            }
+
             return
         }
 
@@ -432,11 +585,11 @@ final class Fire {
         historyCoordinating.burnVisits(visits, completion: completion)
     }
 
-    private func burnHistory(of baseDomains: Set<String>, completion: @escaping (Set<URL>) -> Void) {
+    private func burnHistory(of baseDomains: Set<String>, completion: @escaping @MainActor (Set<URL>) -> Void) {
         historyCoordinating.burnDomains(baseDomains, tld: tld, completion: completion)
     }
 
-    private func burnAllHistory(completion: @escaping () -> Void) {
+    private func burnAllHistory(completion: @escaping @MainActor () -> Void) {
         historyCoordinating.burnAll(completion: completion)
     }
 
@@ -482,11 +635,11 @@ final class Fire {
 
     // MARK: - Permissions
 
-    private func burnPermissions(completion: @escaping () -> Void) {
+    private func burnPermissions(completion: @escaping @MainActor () -> Void) {
         self.permissionManager.burnPermissions(except: fireproofDomains, completion: completion)
     }
 
-    private func burnPermissions(of baseDomains: Set<String>, completion: @escaping () -> Void) {
+    private func burnPermissions(of baseDomains: Set<String>, completion: @MainActor @escaping () -> Void) {
         self.permissionManager.burnPermissions(of: baseDomains, tld: tld, completion: completion)
     }
 
@@ -512,7 +665,7 @@ final class Fire {
         return Set(accounts.compactMap { $0.domain })
     }
 
-    private func burnFavicons(completion: @escaping () -> Void) {
+    private func burnFavicons(completion: @escaping @MainActor () -> Void) {
         Task { @MainActor in
             await self.faviconManagement.burn(except: fireproofDomains,
                                               bookmarkManager: bookmarkManager,
@@ -522,7 +675,7 @@ final class Fire {
     }
 
     @MainActor
-    private func burnFavicons(for baseDomains: Set<String>, completion: @escaping () -> Void) {
+    private func burnFavicons(for baseDomains: Set<String>, completion: @escaping @MainActor () -> Void) {
         Task { @MainActor in
             await self.faviconManagement.burnDomains(baseDomains,
                                                      exceptBookmarks: bookmarkManager,
@@ -537,7 +690,7 @@ final class Fire {
 
     @MainActor
     /// Closes tabs/windows when `close` is true; otherwise clears back/forward history and session state when requested.
-    private func burnTabs(burningEntity: BurningEntity, includingHistory: Bool) {
+    private func burnTabs(burningEntity: BurningEntity) {
 
         func replacementPinnedTab(from pinnedTab: Tab) -> Tab {
             return Tab(content: pinnedTab.content.loadedFromCache(), shouldLoadInBackground: true)
@@ -578,8 +731,6 @@ final class Fire {
                 } else {
                     tabCollectionViewModel.removeSelected(forceChange: true)
                 }
-            } else if includingHistory {
-                tabViewModel.tab.clearNavigationHistory(keepingCurrent: true)
             }
 
         case .window(tabCollectionViewModel: let tabCollectionViewModel,
@@ -589,14 +740,6 @@ final class Fire {
                 tabCollectionViewModel.removeAllTabs(forceChange: true)
                 burnPinnedTabs(in: tabCollectionViewModel)
                 selectPinnedTabIfNeeded(in: tabCollectionViewModel)
-            } else if includingHistory {
-                for vm in tabCollectionViewModel.tabViewModels.values {
-                    vm.tab.clearNavigationHistory(keepingCurrent: true)
-                }
-                // also handle pinned tabs
-                tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.forEach {
-                    $0.clearNavigationHistory(keepingCurrent: true)
-                }
             }
 
         case .allWindows(mainWindowControllers: let mainWindowControllers,
@@ -608,16 +751,6 @@ final class Fire {
                     $0.mainViewController.tabCollectionViewModel.removeAllTabs(forceChange: true)
                     burnPinnedTabs(in: $0.mainViewController.tabCollectionViewModel)
                     selectPinnedTabIfNeeded(in: $0.mainViewController.tabCollectionViewModel)
-                }
-            } else if includingHistory {
-                mainWindowControllers.forEach { wc in
-                    let vm = wc.mainViewController.tabCollectionViewModel
-                    vm.tabViewModels.values.forEach {
-                        $0.tab.clearNavigationHistory(keepingCurrent: true)
-                    }
-                    vm.pinnedTabsManager?.tabCollection.tabs.forEach {
-                        $0.clearNavigationHistory(keepingCurrent: true)
-                    }
                 }
             }
         }
@@ -649,7 +782,7 @@ final class Fire {
             return pinnedTabViewModels + tabViewModels
         case .allWindows:
             let pinnedTabViewModels = Array(pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { $0.tabViewModels.values })
-            let tabViewModels = windowControllerManager.allTabViewModels
+            let tabViewModels = windowControllersManager.allTabViewModels
             return pinnedTabViewModels + tabViewModels
         }
     }

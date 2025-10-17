@@ -19,6 +19,7 @@
 import Cocoa
 import Combine
 import Common
+import os.log
 import PixelKit
 
 @MainActor
@@ -207,7 +208,7 @@ final class MainWindowController: NSWindowController {
 
     private var burningDataCancellable: AnyCancellable?
     private func subscribeToBurningData() {
-        burningDataCancellable = fireViewModel.fire.$burningData
+        burningDataCancellable = fireViewModel.fire.burningDataPublisher
             .dropFirst()
             .removeDuplicates()
             .sink(receiveValue: { [weak self] burningData in

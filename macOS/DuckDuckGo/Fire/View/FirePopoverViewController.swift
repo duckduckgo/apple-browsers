@@ -100,8 +100,7 @@ final class FirePopoverViewController: NSViewController {
                                                         includeTabsAndWindows: true,
                                                         includeHistory: true,
                                                         includeCookiesAndSiteData: true,
-                                                        tld: tld,
-                                                        onboardingContextualDialogsManager: Application.appDelegate.onboardingContextualDialogsManager)
+                                                        tld: tld)
 
         super.init(coder: coder)
     }
@@ -300,8 +299,22 @@ final class FirePopoverViewController: NSViewController {
 
     @IBAction func clearButtonAction(_ sender: Any) {
         delegate?.firePopoverViewControllerDidClear(self)
-        firePopoverViewModel.burn()
-
+        let result = FireDialogResult(
+            clearingOption: firePopoverViewModel.clearingOption,
+            includeHistory: firePopoverViewModel.includeHistory,
+            includeTabsAndWindows: firePopoverViewModel.includeTabsAndWindows,
+            includeCookiesAndSiteData: firePopoverViewModel.includeCookiesAndSiteData,
+            selectedCookieDomains: firePopoverViewModel.selectedCookieDomainsForScope,
+            selectedVisits: nil,
+            isToday: false
+        )
+        Task {
+            let isAllHistorySelected = result.selectedCookieDomains == nil || result.selectedCookieDomains?.count == firePopoverViewModel.selectable.count
+            await Application.appDelegate.fireCoordinator.handleDialogResult(result,
+                                                                             tabCollectionViewModel: firePopoverViewModel.tabCollectionViewModel,
+                                                                             isAllHistorySelected: isAllHistorySelected)
+            Application.appDelegate.onboardingContextualDialogsManager.fireButtonUsed()
+        }
     }
 
     @IBAction func cancelButtonAction(_ sender: Any) {

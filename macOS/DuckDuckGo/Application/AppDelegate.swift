@@ -538,9 +538,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
         let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
             PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
-                                                                             accessError: error,
-                                                                             source: KeychainErrorSource.shared,
-                                                                             authVersion: KeychainErrorAuthVersion.v2),
+                                                                                 accessError: error,
+                                                                                 source: KeychainErrorSource.shared,
+                                                                                 authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
 
@@ -696,7 +696,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         startupPreferences = StartupPreferences(persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore), appearancePreferences: appearancePreferences)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(themeManager: themeManager, appearancePreferences: appearancePreferences)
 
-        fireCoordinator = FireCoordinator(tld: tld, featureFlagger: featureFlagger)
+        fireCoordinator = FireCoordinator(tld: tld,
+                                          featureFlagger: featureFlagger,
+                                          historyCoordinating: historyCoordinator,
+                                          visualizeFireAnimationDecider: visualizeFireSettingsDecider,
+                                          onboardingContextualDialogsManager: { Application.appDelegate.onboardingContextualDialogsManager },
+                                          fireproofDomains: fireproofDomains,
+                                          faviconManagement: faviconManager,
+                                          windowControllersManager: windowControllersManager,
+                                          pixelFiring: PixelKit.shared)
 
         var appContentBlocking: AppContentBlocking?
 #if DEBUG
@@ -1256,9 +1264,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let source = "browser-dmg"
 #endif
 
-        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
-        let trimmedOSVersion = "\(osVersion.majorVersion).\(osVersion.minorVersion)"
-        let userAgent = UserAgent.duckDuckGoUserAgent(systemVersion: trimmedOSVersion)
+        let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: dryRun,
                        appVersion: AppVersion.shared.versionNumber,

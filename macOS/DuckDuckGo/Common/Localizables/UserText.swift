@@ -64,6 +64,7 @@ struct UserText {
         )
         return String.localizedStringWithFormat(template, count)
     }
+
     static func fireDialogCookiesCountSubtitle(_ count: Int) -> String {
         let template = NSLocalizedString(
             "fire.dialog.cookies.count",
@@ -270,11 +271,13 @@ struct UserText {
 
     static let today = NSLocalizedString("today", value: "today", comment: "Date section in history view indicating current day")
     static let yesterday = NSLocalizedString("yesterday", value: "yesterday", comment: "Date section in history view indicating previous day")
+    static let historySitesLabel = NSLocalizedString("history.sites.label", value: "Sites", comment: "Label for the Sites section in history view showing unique domains visited")
 
     static let deleteHistory = NSLocalizedString("history.delete.dialog.title1", value: "Delete history?", comment: "Title of a dialog asking the user to confirm deleting history")
     static let deleteAllHistory = NSLocalizedString("history.delete.all.dialog.title", value: "Delete all history?", comment: "Title of a dialog asking the user to confirm deleting all history")
     static let deleteAllHistoryFromToday = NSLocalizedString("history.delete.today.dialog.title", value: "Delete all history from today?", comment: "Title of a dialog asking the user to confirm deleting history from today")
     static let deleteAllHistoryFromYesterday = NSLocalizedString("history.delete.yesterday.dialog.title", value: "Delete all history from yesterday?", comment: "Title of a dialog asking the user to confirm deleting history from yesterday")
+    static let deleteOlderHistory = NSLocalizedString("history.delete.older.dialog.title", value: "Delete older history?", comment: "Title of a dialog asking the user to confirm deleting older history (more than a week old)")
     static func deleteHistory(for date: String) -> String {
         let localized = NSLocalizedString("history.delete.date.dialog.title",
                                           value: "Delete all history from\n%@?",
@@ -423,6 +426,7 @@ struct UserText {
     static let newWindowMenuItem = NSLocalizedString("new.window.menu.item", value: "New Window", comment: "Menu item title")
     static let newBurnerWindowMenuItem = NSLocalizedString("new.burner.window.menu.item", value: "New Fire Window", comment: "Menu item title")
     static let deleteBrowsingDataMenuItem = NSLocalizedString("delete.browsing.data.menu.item", value: "Delete Browsing Data…", comment: "Menu item title")
+    static let deleteHistoryAndBrowsingDataMenuItem = NSLocalizedString("delete.history.and.browsing.data.menu.item", value: "Delete History and Browsing Data…", comment: "Menu item title")
 
     static let fireDialogFireproofSites = NSLocalizedString("fire.dialog.fireproof.sites", value: "Fireproof sites won't be cleared", comment: "Category of domains in fire button dialog")
     static let fireDialogClearSites = NSLocalizedString("fire.dialog.clear.sites", value: "Selected sites will be cleared", comment: "Category of domains in fire button dialog")
@@ -454,7 +458,8 @@ struct UserText {
     static let fireDialogDetails = NSLocalizedString("fire.dialog.details", value: "Details", comment: "Button to show more details")
     static let fireDialogWindowWillClose = NSLocalizedString("fire.dialog.window-will-close", value: "Current window will close.", comment: "Warning label shown in an expanded view of the fire popover")
     static let fireDialogTabWillClose = NSLocalizedString("fire.dialog.tab-will-close", value: "Current tab will close.", comment: "Warning label shown in an expanded view of the fire popover")
-    static let fireDialogPinnedTabWillReload = NSLocalizedString("fire.dialog.tab-will-reload", value: "Pinned tab will reload.", comment: "Warning label shown in an expanded view of the fire popover")
+    static let fireDialogPinnedTabWillReload = NSLocalizedString("fire.dialog.tab-will-reload", value: "Pinned tab will reload.", comment: "Warning label shown when a single pinned tab will reload after burning")
+    static let fireDialogPinnedTabsWillReload = NSLocalizedString("fire.dialog.tabs-will-reload", value: "Pinned tabs will reload.", comment: "Warning label shown when multiple pinned tabs will reload after burning")
     static let fireDialogAllWindowsWillClose = NSLocalizedString("fire.dialog.all-windows-will-close", value: "All windows will close.", comment: "Warning label shown in an expanded view of the fire popover")
 
     // Fire Dialog – new concise segment labels and link row
@@ -471,6 +476,38 @@ struct UserText {
     static let fireDialogSitesOverlaySubtitle = NSLocalizedString("fire.dialog.sites.overlay.subtitle",
                                                                  value: "These sites will be deleted.",
                                                                  comment: "Subtitle above the list of domains in in-dialog overlay")
+
+    // MARK: - Fire dialog single-entry contextual titles
+    /// Title used when reusing the Fire dialog as a single entry point (from History, menu, etc.) with full-time range
+    static let deleteBrowsingDataAll = NSLocalizedString("fire.dialog.single.title.all",
+                                                         value: "Delete browsing data?",
+                                                         comment: "Title asking user to confirm deleting browsing data (all time)")
+
+    /// Title used for 'today' scope
+    static let deleteBrowsingDataFromToday = NSLocalizedString("fire.dialog.single.title.today",
+                                                               value: "Delete browsing data from today?",
+                                                               comment: "Title asking user to confirm deleting browsing data from today")
+
+    /// Title used for 'yesterday' scope
+    static let deleteBrowsingDataFromYesterday = NSLocalizedString("fire.dialog.single.title.yesterday",
+                                                                   value: "Delete browsing data from yesterday?",
+                                                                   comment: "Title asking user to confirm deleting browsing data from yesterday")
+
+    /// Title used for a specific date or formatted day string
+    static func deleteBrowsingData(for formattedDateOrLabel: String) -> String {
+        let localized = NSLocalizedString("fire.dialog.single.title.date",
+                                          value: "Delete browsing data from %@?",
+                                          comment: "Title asking user to confirm deleting browsing data from a specific date label (e.g., Monday, April 1)")
+        return String(format: localized, formattedDateOrLabel)
+    }
+
+    /// Title used when deleting for a specific site/domain
+    static func deleteBrowsingDataFromSite(_ domain: String) -> String {
+        let localized = NSLocalizedString("fire.dialog.single.title.site",
+                                          value: "Delete browsing data from %@?",
+                                          comment: "Title asking user to confirm deleting browsing data from a specific site/domain")
+        return String(format: localized, domain)
+    }
     static let fireproofCookiesAndSiteDataExplanation = NSLocalizedString("burn.fireproofing.explanation.message", value: "Fireproof site cookies and data won’t be deleted.", comment: "Explanation of what Fireproofing site cookies and data means.")
     static let fireproofSite = NSLocalizedString("options.menu.fireproof-site", value: "Fireproof This Site", comment: "Context menu item")
     static let removeFireproofing = NSLocalizedString("options.menu.remove-fireproofing", value: "Remove Fireproofing", comment: "Context menu item")
@@ -1120,6 +1157,7 @@ struct UserText {
 
     static let privacyPolicy = NSLocalizedString("preferences.about.privacy-policy", value: "Privacy Policy", comment: "Link to privacy policy page")
     static let clickToCopyVersion = NSLocalizedString("click.to.copy.version", value: "Click to copy version", comment: "Description of a button which copies version to clipboard when clicked")
+    static let termsOfService = NSLocalizedString("preferences.about.terms-of-service", value: "Terms of Service", comment: "Link to Terms of Service page")
 
     // MARK: - Login Import & Export
 
@@ -1622,9 +1660,13 @@ struct UserText {
     // MARK: Fireproof
     static let fireproofRemoveAllButton = NSLocalizedString("fireproof.domains.remove.all", value: "Remove All", comment: "Label of a button that allows the user to remove all the websites from the fireproofed list")
     static let fireproofSites = NSLocalizedString("fireproof.sites", value: "Fireproof Sites", comment: "Fireproof sites list title")
+    static let fireproofAddCurrentButton = NSLocalizedString("fireproof.domains.add.current", value: "Add Current", comment: "Button adds the current website to the fireproofed list")
+    static let fireproofAddButton = NSLocalizedString("fireproof.domains.add", value: "Add", comment: "Button adds a new fireproofed website")
+    static let fireproofAddTitle = NSLocalizedString("fireproof.domains.add.title", value: "Add Fireproof Site", comment: "Title for the alert to add a fireproof site")
     static let fireproofCheckboxTitle = NSLocalizedString("fireproof.checkbox.title", value: "Ask to Fireproof websites when signing in", comment: "Fireproof settings checkbox title")
     static let fireproofExplanation = NSLocalizedString("fireproof.explanation", value: "When you Fireproof a site, cookies won't be erased and you'll stay signed in, even after using the Fire Button.", comment: "Fireproofing mechanism explanation")
     static let manageFireproofSites = NSLocalizedString("fireproof.manage-sites", value: "Manage Fireproof Sites…", comment: "Fireproof settings button caption")
+    
     static let autoClear = NSLocalizedString("auto.clear", value: "Auto-Clear", comment: "Header of a section in Settings. The setting configures clearing data automatically after quitting the app.")
     static let automaticallyClearData = NSLocalizedString("automatically.clear.data", value: "Automatically delete tabs and browsing data when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing data automatically after quitting the app.")
     // Strings to be translated: https://app.asana.com/1/137249556945/project/72649045549333/task/1211370814674975?focus=true

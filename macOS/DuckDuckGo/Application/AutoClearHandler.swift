@@ -101,7 +101,7 @@ final class AutoClearHandler {
         let shouldBurnOnStart = dataClearingPreferences.isAutoClearEnabled && !appTerminationHandledCorrectly
         guard shouldBurnOnStart else { return false }
 
-        fireViewModel.fire.burnAll()
+        fireViewModel.fire.burnAll(completion: nil)
         return true
     }
 

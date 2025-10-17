@@ -1,7 +1,7 @@
 //
 //  FireDialogViewModel.swift
 //
-//  Copyright © 2021 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import Combine
 import BrowserServicesKit
 import Common
 import History
+import HistoryView
 import PixelKit
 
 @MainActor
@@ -40,6 +41,60 @@ final class FireDialogViewModel: ObservableObject {
             }
         }
 
+    }
+
+    enum Mode: Equatable {
+        case fireButton
+        case mainMenuAll
+        case historyView(query: DataModel.HistoryQueryKind)
+
+        /// Show Tab/Window/All Data segmented pill control only for fire button/MainMenu entry point
+        var shouldShowSegmentedControl: Bool {
+            switch self {
+            case .fireButton, .mainMenuAll: return true
+            case .historyView: return false
+            }
+        }
+
+        /// Show Close Tabs/Windows toggle?
+        var shouldShowCloseTabsToggle: Bool {
+            switch self {
+            case .fireButton, .mainMenuAll,
+                 .historyView(query: .rangeFilter(.today)),
+                 .historyView(query: .rangeFilter(.all)),
+                 .historyView(query: .rangeFilter(.allSites)):
+                return true
+            case .historyView:
+                return false
+            }
+        }
+
+        /// Hide fireproof section when dialog is scoped to specific site(s)
+        var shouldShowFireproofSection: Bool {
+            switch self {
+            case .historyView(query: .domainFilter), .historyView(query: .visits):
+                return false
+            case .fireButton, .mainMenuAll, .historyView:
+                return true
+            }
+        }
+
+        /// Compute custom title for dialog based on mode (when applicable)
+        var dialogTitle: String {
+            let title = switch self {
+            case .fireButton: UserText.fireDialogTitle
+            case .mainMenuAll,
+                 .historyView(query: .rangeFilter(.all)),
+                 .historyView(query: .rangeFilter(.allSites)): HistoryViewDeleteDialogModel.DeleteMode.all.title
+            case .historyView(query: .rangeFilter(.today)): HistoryViewDeleteDialogModel.DeleteMode.today.title
+            case .historyView(query: .rangeFilter(.yesterday)): HistoryViewDeleteDialogModel.DeleteMode.yesterday.title
+            case .historyView(query: .dateFilter(let date)): HistoryViewDeleteDialogModel.DeleteMode.date(date).title
+            case .historyView(query: .domainFilter(let domains)): HistoryViewDeleteDialogModel.DeleteMode.sites(domains).title
+            case .historyView(query: .rangeFilter(.older)): HistoryViewDeleteDialogModel.DeleteMode.older.title
+            case .historyView: UserText.fireDialogTitle
+            }
+            return title.replacingOccurrences(of: #"\n"#, with: " ")
+        }
     }
 
     struct Item {
@@ -70,35 +125,44 @@ final class FireDialogViewModel: ObservableObject {
          includeTabsAndWindows: Bool? = nil,
          includeHistory: Bool? = nil,
          includeCookiesAndSiteData: Bool? = nil,
-         tld: TLD,
-         onboardingContextualDialogsManager: ContextualOnboardingStateUpdater) {
+         mode: Mode = .fireButton,
+         scopeCookieDomains: Set<String>? = nil,
+         scopeVisits: [Visit]? = nil,
+         tld: TLD) {
 
         self.fireViewModel = fireViewModel
         self.tabCollectionViewModel = tabCollectionViewModel
-        self.historyCoordinating = historyCoordinating
         self.fireproofDomains = fireproofDomains
         self.faviconManagement = faviconManagement
+        self.historyCoordinating = historyCoordinating
         self.clearingOption = clearingOption ?? Self.lastSelectedClearingOption
         self.includeTabsAndWindows = includeTabsAndWindows ?? Self.lastIncludeTabsAndWindowsState
         self.includeHistory = includeHistory ?? Self.lastIncludeHistoryState
         self.includeCookiesAndSiteData = includeCookiesAndSiteData ?? Self.lastIncludeCookiesAndSiteDataState
 
         self.tld = tld
-        self.onboardingContextualDialogsManager = onboardingContextualDialogsManager
+        self.mode = mode
+        self.scopeVisits = scopeVisits
 
-        // Initialize selectable/fireproofed lists so counts (e.g., cookiesSitesCountForCurrentScope) are available immediately
+        // Apply provided scope domains BEFORE computing lists to avoid any flash
+        self.scopeCookieDomains = scopeCookieDomains
+
+        // Initialize selectable/fireproofed lists so counts are available immediately
         updateItems(for: self.clearingOption)
     }
 
     private(set) var shouldShowPinnedTabsInfo: Bool = false
 
-    private let fireViewModel: FireViewModel
+    let fireViewModel: FireViewModel
     private(set) weak var tabCollectionViewModel: TabCollectionViewModel?
-    private let historyCoordinating: HistoryCoordinating
     private let fireproofDomains: FireproofDomains
     private let faviconManagement: FaviconManagement
-    private let tld: TLD
-    private let onboardingContextualDialogsManager: ContextualOnboardingStateUpdater
+    private let historyCoordinating: HistoryCoordinating
+    let tld: TLD
+    let mode: Mode
+    private let scopeVisits: [Visit]?
+
+    private(set) var hasOnlySingleFireproofDomain: Bool = false
 
     var clearingOption: ClearingOption {
         didSet {
@@ -128,17 +192,70 @@ final class FireDialogViewModel: ObservableObject {
 
     @Published private(set) var selectable: [Item] = []
     @Published private(set) var fireproofed: [Item] = []
-    @Published private(set) var selected: Set<Int> = Set()
+    @Published private(set) var selected: Set<Int> = []
     @Published private(set) var historyVisits: [Visit] = []
 
     var isPinnedTabSelected: Bool {
         tabCollectionViewModel?.selectedTabViewModel?.tab.isPinned ?? false
     }
 
+    // Determine if pinned tabs are present in the current scope
+    var hasPinnedTabsInScope: Bool {
+        guard let tabCollectionViewModel else { return false }
+
+        switch clearingOption {
+        case .currentTab:
+            // For currentTab scope: only if the selected tab itself is pinned
+            return isPinnedTabSelected
+
+        case .currentWindow:
+            // For currentWindow scope: if current window has pinned tabs
+            if let pinnedTabsManager = tabCollectionViewModel.pinnedTabsManager,
+               !pinnedTabsManager.isEmpty {
+                return true
+            }
+            return false
+
+        case .allData:
+            // For allData scope: if ANY pinned tabs exist globally
+            if let provider = tabCollectionViewModel.pinnedTabsManagerProvider {
+                return !provider.arePinnedTabsEmpty
+            }
+            return false
+        }
+    }
+
+    // Get the appropriate pinned tabs message for the current scope
+    var pinnedTabsReloadMessage: String? {
+        guard hasPinnedTabsInScope, let tabCollectionViewModel else { return nil }
+
+        let count: Int
+        switch clearingOption {
+        case .currentTab:
+            // For currentTab: count is 1 if the selected tab is pinned
+            count = isPinnedTabSelected ? 1 : 0
+        case .currentWindow:
+            // For currentWindow: count pinned tabs in current window
+            count = tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.count ?? 0
+        case .allData:
+            // For allData: count all pinned tabs globally
+            if let provider = tabCollectionViewModel.pinnedTabsManagerProvider {
+                count = provider.currentPinnedTabManagers.reduce(0) { $0 + $1.tabCollection.tabs.count }
+            } else {
+                count = 0
+            }
+        }
+
+        guard count > 0 else { return nil }
+        return count == 1 ? UserText.fireDialogPinnedTabWillReload : UserText.fireDialogPinnedTabsWillReload
+    }
+
     let selectableSectionIndex = 0
     let fireproofedSectionIndex = 1
 
     // MARK: - Options
+
+    let scopeCookieDomains: Set<String>?
 
     private func updateItems(for clearingOption: ClearingOption) {
 
@@ -156,13 +273,16 @@ final class FireDialogViewModel: ObservableObject {
                 }
                 return tabCollectionViewModel.localHistoryDomains
             case .allData:
-                return (historyCoordinating.history?.visitedDomains(tld: tld) ?? Set<String>())
-                    .union(tabCollectionViewModel?.localHistoryDomains ?? Set<String>())
+                if let scopeCookieDomains { return scopeCookieDomains }
+                // Fallback: get all domains from history
+                return historyCoordinating.history?.visitedDomains(tld: tld) ?? Set<String>()
             }
         }
 
-        let visitedDomains = visitedDomains(basedOn: clearingOption)
-        let visitedETLDPlus1Domains = Set(visitedDomains.compactMap { tld.eTLDplus1($0) })
+        let visitedETLDPlus1Domains: Set<String> = {
+            let visitedDomains = visitedDomains(basedOn: clearingOption)
+            return Set(visitedDomains.compactMap { tld.eTLDplus1($0) })
+        }()
 
         let fireproofed = visitedETLDPlus1Domains
             .filter { domain in
@@ -180,22 +300,14 @@ final class FireDialogViewModel: ObservableObject {
 
         selectAll()
 
-        // Update history visits for current scope to mirror burn behavior exactly
+        // Update history visits for current scope
         switch clearingOption {
         case .allData:
-            self.historyVisits = historyCoordinating.allHistoryVisits ?? []
+            self.historyVisits = scopeVisits ?? historyCoordinating.allHistoryVisits ?? []
         case .currentTab:
-            if let tab = tabCollectionViewModel?.selectedTabViewModel?.tab {
-                self.historyVisits = tab.localHistory
-            } else {
-                self.historyVisits = []
-            }
+            self.historyVisits = tabCollectionViewModel?.selectedTabViewModel?.tab.localHistory ?? []
         case .currentWindow:
-            if let vm = tabCollectionViewModel {
-                self.historyVisits = vm.localHistory
-            } else {
-                self.historyVisits = []
-            }
+            self.historyVisits = tabCollectionViewModel?.localHistory ?? []
         }
     }
 
@@ -207,6 +319,11 @@ final class FireDialogViewModel: ObservableObject {
     var cookiesSitesCountForCurrentScope: Int { selectable.count }
 
     // MARK: - Selection
+
+    /// Public accessor to the currently selected cookie/site-data domains (eTLD+1)
+    var selectedCookieDomainsForScope: Set<String> {
+        selectedDomains
+    }
 
     var areAllSelected: Bool {
         Set(0..<selectable.count) == selected
@@ -240,68 +357,6 @@ final class FireDialogViewModel: ObservableObject {
             }
             return selectedDomain
         })
-    }
-
-    // MARK: - Burning
-
-    /// Triggers data clearing for the selected scope using the three toggles.
-    /// - Parameters:
-    ///   - includeHistory: when true, history is cleared for the selected scope.
-    ///   - includeTabsAndWindows: when true, selected tabs/windows are closed; when false, tabs remain open, but their history/session state is cleared if includeHistory is true.
-    ///   - includeCookiesAndSiteData: when true, cookies/site data are cleared for the selected (non-fireproof) domains in scope.
-    func burn() {
-        onboardingContextualDialogsManager.fireButtonUsed()
-        PixelKit.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
-
-        // Domains to clear cookies/site-data for
-        let cookieDomains: Set<String> = includeCookiesAndSiteData ? selectedDomains : []
-
-        switch (clearingOption, areAllSelected && includeCookiesAndSiteData) {
-        case (.currentTab, _):
-            guard let tabCollectionViewModel = tabCollectionViewModel,
-                  let tabViewModel = tabCollectionViewModel.selectedTabViewModel else {
-                assertionFailure("No tab selected")
-                return
-            }
-            PixelKit.fire(GeneralPixel.fireButton(option: .tab))
-            let burningEntity = Fire.BurningEntity.tab(tabViewModel: tabViewModel,
-                                                       selectedDomains: cookieDomains,
-                                                       parentTabCollectionViewModel: tabCollectionViewModel,
-                                                       close: includeTabsAndWindows)
-            fireViewModel.fire.burnEntity(entity: burningEntity, includingHistory: includeHistory)
-
-        case (.currentWindow, _):
-            guard let tabCollectionViewModel = tabCollectionViewModel else {
-                assertionFailure("FireDialogViewModel: TabCollectionViewModel is not present")
-                return
-            }
-            PixelKit.fire(GeneralPixel.fireButton(option: .window))
-            let burningEntity = Fire.BurningEntity.window(tabCollectionViewModel: tabCollectionViewModel,
-                                                          selectedDomains: cookieDomains,
-                                                          close: includeTabsAndWindows)
-            fireViewModel.fire.burnEntity(entity: burningEntity, includingHistory: includeHistory)
-
-        case (.allData, /* allSelected: */ true):
-            PixelKit.fire(GeneralPixel.fireButton(option: .allSites))
-            // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
-            if includeTabsAndWindows && includeHistory {
-                fireViewModel.fire.burnAll()
-            } else {
-                let entity = Fire.BurningEntity.allWindows(mainWindowControllers: Application.appDelegate.windowControllersManager.mainWindowControllers,
-                                                           selectedDomains: cookieDomains,
-                                                           customURLToOpen: nil,
-                                                           close: includeTabsAndWindows)
-                fireViewModel.fire.burnEntity(entity: entity, includingHistory: includeHistory)
-            }
-
-        case (.allData, /* allSelected: */ false):
-            PixelKit.fire(GeneralPixel.fireButton(option: .allSites))
-            let entity = Fire.BurningEntity.allWindows(mainWindowControllers: Application.appDelegate.windowControllersManager.mainWindowControllers,
-                                                       selectedDomains: cookieDomains,
-                                                       customURLToOpen: nil,
-                                                       close: includeTabsAndWindows)
-            fireViewModel.fire.burnEntity(entity: entity, includingHistory: includeHistory)
-        }
     }
 
 }

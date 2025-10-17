@@ -81,7 +81,7 @@ final class TabTests: XCTestCase {
             .subscription(.aboutDuckDuckGo),
             .identityTheftRestoration(.aboutDuckDuckGo),
             .dataBrokerProtection,
-            .history,
+            .anyHistoryPane,
             .settings(pane: .general),
             .newtab,
             .bookmarks

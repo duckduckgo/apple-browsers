@@ -17,17 +17,35 @@
 //
 
 import AppKit
+import BrowserServicesKit
 import Foundation
+import History
+import SwiftUI
+import HistoryView
 
 protocol HistoryViewDialogPresenting: AnyObject {
     @MainActor
     func showMultipleTabsDialog(for itemsCount: Int, in window: NSWindow?) async -> OpenMultipleTabsWarningDialogModel.Response
 
     @MainActor
-    func showDeleteDialog(for itemsCount: Int, deleteMode: HistoryViewDeleteDialogModel.DeleteMode, in window: NSWindow?) async -> HistoryViewDeleteDialogModel.Response
+    func showDeleteDialog(for query: DataModel.HistoryQueryKind, visits: [Visit], in window: NSWindow?, fromMainMenu: Bool) async -> HistoryViewDeleteDialogModel.Response
+}
+extension HistoryViewDialogPresenting {
+    func showDeleteDialog(for query: DataModel.HistoryQueryKind, visits: [Visit], in window: NSWindow?) async -> HistoryViewDeleteDialogModel.Response {
+        await showDeleteDialog(for: query, visits: visits, in: window, fromMainMenu: false)
+    }
 }
 
 final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
+
+    private let featureFlagger: FeatureFlagger
+    private let fireCoordinator: FireCoordinator
+
+    init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+         fireCoordinator: FireCoordinator = Application.appDelegate.fireCoordinator) {
+        self.featureFlagger = featureFlagger
+        self.fireCoordinator = fireCoordinator
+    }
 
     @MainActor
     func showMultipleTabsDialog(for itemsCount: Int, in window: NSWindow?) async -> OpenMultipleTabsWarningDialogModel.Response {
@@ -42,14 +60,42 @@ final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
     }
 
     @MainActor
-    func showDeleteDialog(for itemsCount: Int, deleteMode: HistoryViewDeleteDialogModel.DeleteMode, in window: NSWindow?) async -> HistoryViewDeleteDialogModel.Response {
-        await withCheckedContinuation { continuation in
+    func showDeleteDialog(for query: DataModel.HistoryQueryKind, visits: [Visit], in window: NSWindow?, fromMainMenu: Bool) async -> HistoryViewDeleteDialogModel.Response {
+        if featureFlagger.isFeatureOn(.fireDialog) {
+            return await presentFireDialog(for: query, visits: visits, in: window, fromMainMenu: fromMainMenu)
+        }
+
+        return await withCheckedContinuation { continuation in
             let parentWindow = window ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
-            let model = HistoryViewDeleteDialogModel(entriesCount: itemsCount, mode: deleteMode)
+            let model = HistoryViewDeleteDialogModel(entriesCount: visits.count, mode: query.deleteMode)
             let dialog = HistoryViewDeleteDialog(model: model)
             dialog.show(in: parentWindow) {
-                continuation.resume(returning: model.response)
+                continuation.resume(returning: model.response ?? .noAction)
             }
         }
     }
+
+    @MainActor
+    private func presentFireDialog(for query: DataModel.HistoryQueryKind, visits: [Visit], in window: NSWindow?, fromMainMenu: Bool) async -> HistoryViewDeleteDialogModel.Response {
+        let window = window ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
+        var mainWindowController: MainWindowController? {
+            guard let mainWindowController = window?.windowController as? MainWindowController else {
+                assertionFailure("Unexpected window controller: \(window?.windowController?.description ?? "<nil>")")
+                return nil
+            }
+            return mainWindowController
+        }
+        assert(!fromMainMenu || query == .rangeFilter(.all))
+        let response = await fireCoordinator.presentFireDialog(mode: fromMainMenu ? .mainMenuAll : .historyView(query: query), in: window, scopeVisits: visits)
+        switch response {
+        case .noAction: return .noAction
+        case .burn(options: .some(let options)) where !options.includeHistory:
+            return .noAction // don‘t delete history records from History View, burning is done by FireCoordinator
+        case .burn(options: .some(let options)) where options.includeCookiesAndSiteData:
+            return .burn
+        case .burn:
+            return .delete
+        }
+    }
+
 }

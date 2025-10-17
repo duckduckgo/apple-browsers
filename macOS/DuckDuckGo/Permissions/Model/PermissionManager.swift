@@ -30,8 +30,8 @@ protocol PermissionManagerProtocol: AnyObject {
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType)
 
-    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping () -> Void)
-    func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping () -> Void)
+    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor () -> Void)
+    func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor () -> Void)
 
     var persistedPermissionTypes: Set<PermissionType> { get }
 }
@@ -101,7 +101,7 @@ final class PermissionManager: PermissionManagerProtocol {
         self.set(storedPermission, forDomain: domain, permissionType: permissionType)
     }
 
-    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping () -> Void) {
+    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor () -> Void) {
         dispatchPrecondition(condition: .onQueue(.main))
 
         permissions = permissions.filter {
@@ -114,7 +114,7 @@ final class PermissionManager: PermissionManagerProtocol {
         })
     }
 
-    func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping () -> Void) {
+    func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor () -> Void) {
         dispatchPrecondition(condition: .onQueue(.main))
 
         permissions = permissions.filter { permission in

@@ -64,7 +64,6 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         %N$d - step number
         %2$s - browser name (Chrome)
         %4$@ - hamburger menu icon
-        %8$@ - “Select Passwords CSV File” button
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -79,12 +78,10 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         Instructions to import Passwords as CSV from Brave browser.
         %N$d - step number
         %2$s - browser name (Brave)
-        %4$@, %6$@ - hamburger menu icon
-        %10$@ - “Select Passwords CSV File” button
+        %4$@ - hamburger menu icon
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.menuHamburger16
         NSImage.menuHamburger16
 
     case (.chromium, .passwords),
@@ -98,7 +95,6 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         %N$d - step number
         %2$s - browser name
         %4$@ - hamburger menu icon
-        %8$@ - “Select Passwords CSV File” button
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -106,16 +102,14 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
 
     case (.coccoc, .passwords):
         NSLocalizedString("import.csv.instructions.coccoc.new", value: """
-        %d Open **%s**
-        %d Type “_coccoc://settings/passwords_” into the Address bar
-        %d Click %@ (on the right from _Saved Passwords_) and select **Export passwords**
-        %d Save the passwords file someplace you can find it (e.g., Desktop)
+        %d Type _coccoc://settings/passwords_ into the Address bar
+        %d Click %@ (on the right from _Saved Passwords_) → **Export passwords** and save the file
+        %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords as CSV from Cốc Cốc browser.
         %N$d - step number
         %2$s - browser name (Cốc Cốc)
-        %5$@ - hamburger menu icon
-        %8$@ - “Select Passwords CSV File” button
+        %4$@ - hamburger menu icon
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -123,31 +117,27 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
 
     case (.opera, .passwords):
         NSLocalizedString("import.csv.instructions.opera.new", value: """
-        %d Open **%s** → **View → Show Password Manager → Settings**
-        %d Find “Export Passwords” → click **Download File** and save the file
+        %d Open **%s → View → Show Password Manager → Settings**
+        %d Find **Export Passwords → Download File** and save the file
         %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords as CSV from Opera browser.
         %N$d - step number
         %2$s - browser name (Opera)
-        %8$@ - “Select Passwords CSV File” button
         **bold text**; _italic text_
         """)
         source.importSourceName
 
     case (.vivaldi, .passwords):
         NSLocalizedString("import.csv.instructions.vivaldi.new", value: """
-        %d Open **%s**
-        %d Type “_chrome://settings/passwords_” into the Address bar
-        %d Click %@ (on the right from _Saved Passwords_) and select **Export passwords**
-        %d Save the file someplace you can find it (e.g., Desktop)
-        %d %@
+        %d Type _chrome://settings/passwords_ into the Address bar
+        %d Click %@ (on the right from _Saved Passwords_) → **Export passwords** and save the file
+        %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords exported as CSV from Vivaldi browser.
         %N$d - step number
         %2$s - browser name (Vivaldi)
-        %5$@ - menu button icon
-        %8$@ - “Select Passwords CSV File” button
+        %4$@ - menu button icon
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -155,15 +145,14 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
 
     case (.operaGX, .passwords):
         NSLocalizedString("import.csv.instructions.operagx.new", value: """
-        %d Open **%s** → **View → Show Password Manager → Settings**
-        %d Click %@ (on the right from _Saved Passwords_) → select **Export passwords** and save the file
+        %d Open **%s → View → Show Password Manager → Settings**
+        %d Click %@ (on the right from _Saved Passwords_) → **Export passwords** and save the file
         %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords as CSV from Opera GX browsers.
         %N$d - step number
         %2$s - browser name (Opera GX)
-        %5$@ - menu button icon
-        %8$@ - “Select Passwords CSV File” button
+        %4$@ - menu button icon
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -171,16 +160,15 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
 
     case (.yandex, .passwords):
         NSLocalizedString("import.csv.instructions.yandex.new", value: """
-        %d Open **%s** → %@ → **Passwords and cards**
-        %d Click %@ then **Export passwords**
-        %d Choose **To a text file (not secure)** and click **Export**
-        %d Save the passwords file someplace you can find it (e.g., Desktop)
+        %d Open **%s →** %@ **→ Passwords and cards**
+        %d Click %@ **→ Export passwords → To a text file (not secure) → Export** and save the file
+        %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords as CSV from Yandex Browser.
         %N$d - step number
         %2$s - browser name (Yandex)
         %4$@ - hamburger menu icon
-        %8$@ - “Select Passwords CSV File” button
+        %6$@ - vertical menu icon
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -193,15 +181,14 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         (.coccoc, .bookmarks),
         (.edge, .bookmarks):
         NSLocalizedString("import.html.instructions.chromium.new", value: """
-        %d Open **%s** → **Bookmarks → Bookmark Manager**
-        %d Click %@ → **Export Bookmarks** and save the file
+        %d Open **%s → Bookmarks → Bookmark Manager**
+        %d Click %@ **→ Export Bookmarks** and save the file
         %d Upload the exported HTML file to DuckDuckGo
         """, comment: """
         Instructions to import Bookmarks exported as HTML from Chromium-based browsers.
         %N$d - step number
         %2$s - browser name
-        %5$@ - hamburger menu icon
-        %8$@ - “Select Bookmarks HTML File” button
+        %4$@ - hamburger menu icon
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -209,61 +196,52 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
 
     case (.vivaldi, .bookmarks):
         NSLocalizedString("import.html.instructions.vivaldi.new", value: """
-        %d Open **%s**
-        %d Use the Menu Bar to select **File → Export Bookmarks…**
-        %d Save the file someplace you can find it (e.g., Desktop)
+        %d Open **%s → File → Export Bookmarks…** and save the file
+        %d Upload the exported HTML file to DuckDuckGo
         """, comment: """
         Instructions to import Bookmarks exported as HTML from Vivaldi browser.
         %N$d - step number
         %2$s - browser name (Vivaldi)
-        %6$@ - “Select Bookmarks HTML File” button
         **bold text**; _italic text_
         """)
         source.importSourceName
 
     case (.opera, .bookmarks):
         NSLocalizedString("import.html.instructions.opera.new", value: """
-        %d Open **%s**
-        %d Use the Menu Bar to select **Bookmarks → Bookmarks**
-        %d Click **Open full Bookmarks view…** in the bottom left
-        %d Click **Import/Export…** in the bottom left and select **Export Bookmarks**
-        %d Save the file someplace you can find it (e.g., Desktop)
+        %d Open **%s → Bookmarks → Bookmarks → Open full Bookmarks view…**
+        %d Click **Import/Export… → Export Bookmarks** and save the file
+        %d Upload the exported HTML file to DuckDuckGo
         """, comment: """
         Instructions to import Bookmarks exported as HTML from Opera browser.
         %N$d - step number
         %2$s - browser name (Opera)
-        %8$@ - “Select Bookmarks HTML File” button
         **bold text**; _italic text_
         """)
         source.importSourceName
 
     case (.operaGX, .bookmarks):
         NSLocalizedString("import.html.instructions.operagx.new", value: """
-        %d Open **%s**
-        %d Use the Menu Bar to select **Bookmarks → Bookmarks**
-        %d Click **Import/Export…** in the bottom left and select **Export Bookmarks**
-        %d Save the file someplace you can find it (e.g., Desktop)
+        %d Open **%s → Bookmarks → Bookmarks**
+        %d Click **Import/Export… → Export Bookmarks** and save the file
+        %d Upload the exported HTML file to DuckDuckGo
         """, comment: """
         Instructions to import Bookmarks exported as HTML from Opera GX browser.
         %N$d - step number
         %2$s - browser name (Opera GX)
-        %7$@ - “Select Bookmarks HTML File” button
         **bold text**; _italic text_
         """)
         source.importSourceName
 
     case (.yandex, .bookmarks):
         NSLocalizedString("import.html.instructions.yandex.new", value: """
-        %d Open **%s**
-        %d Use the Menu Bar to select **Favorites → Bookmark Manager**
-        %d Click %@ then **Export bookmarks to HTML file**
-        %d Save the file someplace you can find it (e.g., Desktop)
+        %d Open **%s → Favorites → Bookmark Manager**
+        %d Click %@ **→ Export bookmarks to HTML file** and save the file
+        %d Upload the exported HTML file to DuckDuckGo
         """, comment: """
         Instructions to import Bookmarks exported as HTML from Yandex Browser.
         %N$d - step number
         %2$s - browser name (Yandex)
-        %5$@ - hamburger menu icon
-        %8$@ - “Select Bookmarks HTML File” button
+        %4$@ - hamburger menu icon
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -272,51 +250,45 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
     case (.safari, .passwords), (.safariTechnologyPreview, .passwords):
         if #available(macOS 15.2, *) {
             NSLocalizedString("import.csv.instructions.safari.macos15-2", value: """
-            %d Open **Safari**
-            %d Open the **File menu → Export Browsing Data to File...**
-            %d Select **passwords** and save the file someplace you can find it (e.g., Desktop)
-            %d Double click the .zip file to unzip it
+            %d Open **Safari → File → Export Browsing Data to File...**
+            %d Select **passwords** and save the file
+            %d Double click the .zip file to unzip it, then upload the CSV file to DuckDuckGo
             """, comment: """
             Instructions to import Passwords as CSV from Safari zip file on >= macOS 15.2.
             %N$d - step number
-            %5$@ - “Select Passwords CSV File” button
             **bold text**; _italic text_
             """)
         } else {
             NSLocalizedString("import.csv.instructions.safari", value: """
-            %d Open **Safari**
-            %d Select **File → Export → Passwords**
-            %d Save the passwords file someplace you can find it (e.g., Desktop)
+            %d Open **Safari → File → Export → Passwords** and save the file
+            %d Upload the exported CSV file to DuckDuckGo
             """, comment: """
             Instructions to import Passwords as CSV from Safari.
             %N$d - step number
-            %5$@ - “Select Passwords CSV File” button
             **bold text**; _italic text_
             """)
         }
 
     case (.safari, .bookmarks), (.safariTechnologyPreview, .bookmarks):
         NSLocalizedString("import.html.instructions.safari.new", value: """
-        %d Open **Safari**
-        %d Select **File → Export → Bookmarks**
-        %d Save the passwords file someplace you can find it (e.g., Desktop)
+        %d Open **Safari → File → Export → Bookmarks** and save the file
+        %d Upload the exported HTML file to DuckDuckGo
         """, comment: """
         Instructions to import Bookmarks exported as HTML from Safari.
         %N$d - step number
-        %5$@ - “Select Bookmarks HTML File” button
         **bold text**; _italic text_
         """)
 
     case (.firefox, .passwords):
         NSLocalizedString("import.csv.instructions.firefox.new", value: """
-        %d Open **%s** → %@ → **Passwords** → %@ → **Export Logins…** and save the file
+        %d Open **%s →** %@ **→ Passwords →** %@ **→ Export Logins…** and save the file
         %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords as CSV from Firefox.
         %N$d - step number
         %2$s - browser name (Firefox)
-        %4$@, %6$@ - hamburger menu icon
-        %9$@ - “Select Passwords CSV File” button
+        %4$@ - hamburger menu icon
+        %6$@ - horizontal menu icon
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -325,16 +297,14 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
 
     case (.firefox, .bookmarks), (.tor, .bookmarks):
         NSLocalizedString("import.html.instructions.firefox.new", value: """
-        %d Open **%s**
-        %d Use the Menu Bar to select **Bookmarks → Manage Bookmarks**
-        %d Click %@ then **Export bookmarks to HTML…**
-        %d Save the file someplace you can find it (e.g., Desktop)
+        %d Open **%s → Bookmarks → Manage Bookmarks**
+        %d Click %@ **→ Export bookmarks to HTML…** and save the file
+        %d Upload the exported HTML file to DuckDuckGo
         """, comment: """
         Instructions to import Bookmarks exported as HTML from Firefox based browsers.
         %N$d - step number
         %2$s - browser name (Firefox)
-        %5$@ - hamburger menu icon
-        %8$@ - “Select Bookmarks HTML File” button
+        %4$@ - import/export icon
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -342,47 +312,40 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
 
     case (.onePassword8, .passwords):
         NSLocalizedString("import.csv.instructions.onePassword8.new", value: """
-        %d Open and unlock **%s**
-        %d Select **File → Export** from the Menu Bar and choose the account you want to export
-        %d Enter your 1Password account password
-        %d Select the File Format: **CSV (Logins and Passwords only)**
-        %d Click Export Data and save the file someplace you can find it (e.g., Desktop)
+        %d Open **%s → File → Export** and select an account to export
+        %d Select format **CSV Logins and Passwords only → Export** and save the file
+        %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords as CSV from 1Password 8.
         %2$s - app name (1Password)
-        %8$@ - “Select 1Password CSV File” button
         **bold text**; _italic text_
         """)
         source.importSourceName
 
     case (.onePassword7, .passwords):
         NSLocalizedString("import.csv.instructions.onePassword7.new", value: """
-        %d Open and unlock **%s**
-        %d Select the vault you want to export (you can only export one vault at a time)
-        %d Select **File → Export → All Items** from the Menu Bar
-        %d Enter your 1Password main or account password
-        %d Select the File Format: **iCloud Keychain (.csv)**
-        %d Save the passwords file someplace you can find it (e.g., Desktop)
+        %d Open **%s** and select the vault you want to export (one vault at a time)
+        %d Select **File → Export → All Items**
+        %d Enter your 1Password password
+        %d Select **File Format: iCloud Keychain (.csv)** and save the file
+        %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords as CSV from 1Password 7.
         %2$s - app name (1Password)
-        %9$@ - “Select 1Password CSV File” button
         **bold text**; _italic text_
         """)
         source.importSourceName
 
     case (.bitwarden, .passwords):
         NSLocalizedString("import.csv.instructions.bitwarden.new", value: """
-        %d Open and unlock **%s**
-        %d Select **File → Export vault** from the Menu Bar
-        %d Select the File Format: **.csv**
-        %d Enter your Bitwarden main password
-        %d Click %@ and save the file someplace you can find it (e.g., Desktop)
+        %d Open and unlock **%s → File → Export vault**
+        %d Select **File Format: .csv**
+        %d Enter your Bitwarden password → Click %@ and save the file
+        %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords as CSV from Bitwarden.
         %2$s - app name (Bitwarden)
-        %7$@ - hamburger menu icon
-        %9$@ - “Select Bitwarden CSV File” button
+        %5$@ - download icon
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -390,15 +353,14 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
 
     case (.lastPass, .passwords):
         NSLocalizedString("import.csv.instructions.lastpass.new", value: """
-        %d Click on the **%s** icon in your browser and enter your main password
-        %d Select **Open My Vault**
-        %d From the sidebar select **Advanced Options → Export**
-        %d Enter your LastPass main password
-        %d Select the File Format: **Comma Delimited Text (.csv)**
+        %d Click the **%s** icon in your browser → enter your password → **Open My Vault**
+        %d From the sidebar: **Advanced Options → Export**
+        %d Enter your LastPass password
+        %d Select **File Format: Comma Delimited Text (.csv)** and save the file
+        %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords as CSV from LastPass.
         %2$s - app name (LastPass)
-        %8$@ - “Select LastPass CSV File” button
         **bold text**; _italic text_
         """)
         source.importSourceName
@@ -412,20 +374,17 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         """, comment: """
         Instructions to import a generic CSV passwords file.
         %N$d - step number
-        %3$@ - “Select Passwords CSV File” button
         **bold text**; _italic text_
         """)
 
     case (.bookmarksHTML, .bookmarks):
         NSLocalizedString("import.html.instructions.generic.new", value: """
-        %d Open your old browser
-        %d Open **Bookmark Manager**
-        %d Export bookmarks to HTML…
-        %d Save the file someplace you can find it (e.g., Desktop)
+        %d Open your old browser → **Bookmark Manager**
+        %d **Export bookmarks to HTML…** and save the file
+        %d Upload the exported HTML file to DuckDuckGo
         """, comment: """
         Instructions to import a generic HTML Bookmarks file.
         %N$d - step number
-        %6$@ - “Select Bookmarks HTML File” button
         **bold text**; _italic text_
         """)
 

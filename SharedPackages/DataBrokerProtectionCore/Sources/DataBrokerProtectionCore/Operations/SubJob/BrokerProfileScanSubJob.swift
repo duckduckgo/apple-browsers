@@ -267,6 +267,15 @@ struct BrokerProfileScanSubJob {
                 try database.updateRemovedDate(Date(), on: extractedProfileId)
                 shouldSendProfileRemovedEvent = true
 
+                emitOptOutConfirmationWideEvent(
+                    brokerProfileQueryData: brokerProfileQueryData,
+                    database: database,
+                    profileIdentifier: removedProfile.identifier,
+                    brokerId: brokerId,
+                    profileQueryId: profileQueryId,
+                    extractedProfileId: extractedProfileId
+                )
+
                 try updateOperationDataDates(
                     origin: .scan,
                     brokerId: brokerId,
@@ -286,20 +295,6 @@ struct BrokerProfileScanSubJob {
                     pixelHandler.fire(.optOutFinish(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceLastStage))
                     pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceStart,
                                                      brokerType: brokerProfileQueryData.dataBroker.type, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
-
-                    let recordFoundDate = RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
-                                                                          repository: dependencies.database,
-                                                                          brokerId: brokerId,
-                                                                          profileQueryId: profileQueryId,
-                                                                          extractedProfileId: extractedProfileId)
-                    OptOutConfirmationWideEventEmitter.emitSuccess(
-                        wideEvent: dependencies.wideEvent,
-                        profileIdentifier: removedProfile.identifier,
-                        recordFoundDate: recordFoundDate,
-                        confirmationDate: now,
-                        dataBrokerURL: brokerProfileQueryData.dataBroker.url,
-                        dataBrokerVersion: brokerProfileQueryData.dataBroker.version
-                    )
                 }
             }
         }
@@ -307,6 +302,34 @@ struct BrokerProfileScanSubJob {
         if shouldSendProfileRemovedEvent {
             sendProfilesRemovedEventIfNecessary(eventsHandler: eventsHandler, database: database)
         }
+    }
+
+    private func emitOptOutConfirmationWideEvent(brokerProfileQueryData: BrokerProfileQueryData,
+                                                 database: DataBrokerProtectionRepository,
+                                                 profileIdentifier: String?,
+                                                 brokerId: Int64,
+                                                 profileQueryId: Int64,
+                                                 extractedProfileId: Int64) {
+        let recordFoundDate = RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
+                                                              repository: database,
+                                                              brokerId: brokerId,
+                                                              profileQueryId: profileQueryId,
+                                                              extractedProfileId: extractedProfileId)
+        let confirmationIdentifier = OptOutConfirmationWideEventRecorder.Identifier(profileIdentifier: profileIdentifier,
+                                                                                      brokerId: brokerId,
+                                                                                      profileQueryId: profileQueryId,
+                                                                                      extractedProfileId: extractedProfileId)
+        let confirmationRecorder = OptOutConfirmationWideEventRecorder.resumeIfPossible(
+            wideEvent: dependencies.wideEvent,
+            identifier: confirmationIdentifier
+        ) ?? OptOutConfirmationWideEventRecorder.makeIfPossible(
+            wideEvent: dependencies.wideEvent,
+            identifier: confirmationIdentifier,
+            dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+            dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+            recordFoundDate: recordFoundDate
+        )
+        confirmationRecorder?.markConfirmationCompleted(at: Date())
     }
 
     private func sendProfilesRemovedEventIfNecessary(eventsHandler: EventMapping<JobEvent>,

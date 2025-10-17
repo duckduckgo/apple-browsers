@@ -107,7 +107,8 @@ struct BrokerProfileOptOutSubJob {
                                                       pixelHandler: dependencies.pixelHandler,
                                                       brokerProfileQueryData: brokerProfileQueryData,
                                                       identifiers: identifiers,
-                                                      stageDurationCalculator: stageDurationContext.stageDurationCalculator)
+                                                      stageDurationCalculator: stageDurationContext.stageDurationCalculator,
+                                                      wideEvent: dependencies.wideEvent)
             } else {
                 try finalizeOptOut(database: dependencies.database,
                                    brokerProfileQueryData: brokerProfileQueryData,
@@ -204,6 +205,23 @@ struct BrokerProfileOptOutSubJob {
             recordFoundDate: recordFoundDate
         )
 
+        let confirmationIdentifier = OptOutConfirmationWideEventRecorder.Identifier(
+            profileIdentifier: extractedProfile.identifier,
+            brokerId: identifiers.brokerId,
+            profileQueryId: identifiers.profileQueryId,
+            extractedProfileId: identifiers.extractedProfileId
+        )
+        _ = OptOutConfirmationWideEventRecorder.resumeIfPossible(
+            wideEvent: wideEvent,
+            identifier: confirmationIdentifier
+        ) ?? OptOutConfirmationWideEventRecorder.makeIfPossible(
+            wideEvent: wideEvent,
+            identifier: confirmationIdentifier,
+            dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+            dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+            recordFoundDate: recordFoundDate
+        )
+
         stageDurationCalculator.attachWideEventRecorder(wideEventRecorder)
 
         // 6. Record the start of the opt-out job:
@@ -251,7 +269,8 @@ struct BrokerProfileOptOutSubJob {
                                                     pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                                     brokerProfileQueryData: BrokerProfileQueryData,
                                                     identifiers: OptOutIdentifiers,
-                                                    stageDurationCalculator: DataBrokerProtectionStageDurationCalculator) throws {
+                                                    stageDurationCalculator: DataBrokerProtectionStageDurationCalculator,
+                                                    wideEvent: WideEventManaging?) throws {
         // Halt the opt-out process
         // The EmailConfirmationJob will handle obtaining and clicking the confirmation link,
         // then resume the opt-out from this point

@@ -23,12 +23,35 @@ import DesignResourcesKitIcons
 enum SwitchBarButtonState {
     case noButtons
     case clearOnly
+    case voiceOnly
 
     var showsClearButton: Bool {
         switch self {
         case .noButtons:
             return false
         case .clearOnly:
+            return true
+        case .voiceOnly:
+            return false
+        }
+    }
+
+    var showsVoiceButton: Bool {
+        switch self {
+        case .noButtons:
+            return false
+        case .clearOnly:
+            return false
+        case .voiceOnly:
+            return true
+        }
+    }
+
+    var showsAnyButton: Bool {
+        switch self {
+        case .noButtons:
+            return false
+        case .clearOnly, .voiceOnly:
             return true
         }
     }
@@ -42,9 +65,11 @@ class SwitchBarButtonsView: UIView {
     }
 
     var onClearTapped: (() -> Void)?
+    var onVoiceTapped: (() -> Void)?
 
     private let stack = UIStackView()
     private let clearButton = BrowserChromeButton(.secondary)
+    private let voiceButton = BrowserChromeButton(.primary)
 
     private enum Constants {
         static let buttonSize: CGFloat = 44
@@ -77,6 +102,7 @@ class SwitchBarButtonsView: UIView {
         addSubview(stack)
 
         stack.addArrangedSubview(clearButton)
+        stack.addArrangedSubview(voiceButton)
     }
 
     private func setUpConstraints() {
@@ -87,22 +113,33 @@ class SwitchBarButtonsView: UIView {
             stack.bottomAnchor.constraint(equalTo: bottomAnchor),
 
             clearButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            clearButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize)
+            clearButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+
+            voiceButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            voiceButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
         ])
     }
 
     private func setUpProperties() {
         clearButton.setImage(DesignSystemImages.Glyphs.Size24.closeCircleSmall)
         clearButton.addAction(UIAction { [weak self] _ in self?.onClearTapped?() }, for: .touchUpInside)
+
+        voiceButton.setImage(DesignSystemImages.Glyphs.Size24.microphone)
+        voiceButton.addAction(UIAction { [weak self] _ in self?.onVoiceTapped?() }, for: .touchUpInside)
     }
 
     private func setUpAccessibility() {
         clearButton.accessibilityLabel = "Clear text"
         clearButton.accessibilityIdentifier = "\(Constants.accessibilityPrefix).Button.ClearText"
         clearButton.accessibilityTraits = .button
+
+        voiceButton.accessibilityLabel = "Voice search"
+        voiceButton.accessibilityIdentifier = "\(Constants.accessibilityPrefix).Button.VoiceSearch"
+        voiceButton.accessibilityTraits = .button
     }
 
     private func updateButtonsVisibility() {
         clearButton.isHidden = !buttonState.showsClearButton
+        voiceButton.isHidden = !buttonState.showsVoiceButton
     }
 }

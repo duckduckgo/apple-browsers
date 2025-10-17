@@ -1580,6 +1580,8 @@
 		4B6785482AA8DE69008A5004 /* VPNUninstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6785432AA8DE1F008A5004 /* VPNUninstaller.swift */; };
 		4B67854A2AA8DE75008A5004 /* VPNFeatureGatekeeper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD8679A2A9E9E000063B9F7 /* VPNFeatureGatekeeper.swift */; };
 		4B67854B2AA8DE76008A5004 /* VPNFeatureGatekeeper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD8679A2A9E9E000063B9F7 /* VPNFeatureGatekeeper.swift */; };
+		4B6D15712EA09ADF003ADCEA /* WideEventServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6D15702EA09ADB003ADCEA /* WideEventServiceTests.swift */; };
+		4B6D15722EA09ADF003ADCEA /* WideEventServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6D15702EA09ADB003ADCEA /* WideEventServiceTests.swift */; };
 		4B70C00127B0793D000386ED /* DuckDuckGo-ExampleCrash.ips in Resources */ = {isa = PBXBuildFile; fileRef = 4B70BFFF27B0793D000386ED /* DuckDuckGo-ExampleCrash.ips */; };
 		4B70C00227B0793D000386ED /* CrashReportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B70C00027B0793D000386ED /* CrashReportTests.swift */; };
 		4B723E0526B0003E00E14D75 /* DataImportMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B723DFF26B0003E00E14D75 /* DataImportMocks.swift */; };
@@ -3375,6 +3377,14 @@
 		BB486B552E749A060026B972 /* AppStoreUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB486B532E7499FE0026B972 /* AppStoreUpdateController.swift */; };
 		BB486B572E749A1A0026B972 /* SparkleUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB486B562E749A160026B972 /* SparkleUpdateController.swift */; };
 		BB486B582E749A1A0026B972 /* SparkleUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB486B562E749A160026B972 /* SparkleUpdateController.swift */; };
+		BB4AA66E2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA66D2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift */; };
+		BB4AA66F2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA66D2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift */; };
+		BB4AA6752E96FD600008CC12 /* WinBackOfferPromptPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA6712E96FD600008CC12 /* WinBackOfferPromptPresenter.swift */; };
+		BB4AA6762E96FD600008CC12 /* WinBackOfferPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA6722E96FD600008CC12 /* WinBackOfferPromptView.swift */; };
+		BB4AA6772E96FD600008CC12 /* WinBackOfferPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA6732E96FD600008CC12 /* WinBackOfferPromptViewModel.swift */; };
+		BB4AA6792E96FD600008CC12 /* WinBackOfferPromptPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA6712E96FD600008CC12 /* WinBackOfferPromptPresenter.swift */; };
+		BB4AA67A2E96FD600008CC12 /* WinBackOfferPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA6722E96FD600008CC12 /* WinBackOfferPromptView.swift */; };
+		BB4AA67B2E96FD600008CC12 /* WinBackOfferPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA6732E96FD600008CC12 /* WinBackOfferPromptViewModel.swift */; };
 		BB4EC6952D9B5C8000660600 /* ThemeStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4EC6942D9B5C7800660600 /* ThemeStyleProviding.swift */; };
 		BB4EC6962D9B5C8000660600 /* ThemeStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4EC6942D9B5C7800660600 /* ThemeStyleProviding.swift */; };
 		BB53CF3E2E26CEED007F0B42 /* RequestNewFeatureFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB53CF3D2E26CEE5007F0B42 /* RequestNewFeatureFormView.swift */; };
@@ -3485,12 +3495,16 @@
 		BBDE001D2D6DE6A800109F88 /* DefaultBrowserAndDockPromptPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDE001B2D6DE6A000109F88 /* DefaultBrowserAndDockPromptPopover.swift */; };
 		BBDE001F2D6DE6F500109F88 /* DefaultBrowserAndDockPromptContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDE001E2D6DE6EE00109F88 /* DefaultBrowserAndDockPromptContent.swift */; };
 		BBDE00202D6DE6F500109F88 /* DefaultBrowserAndDockPromptContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDE001E2D6DE6EE00109F88 /* DefaultBrowserAndDockPromptContent.swift */; };
+		BBDFAD2A2E98F41D00418F3E /* WinBackOfferDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDFAD292E98F41D00418F3E /* WinBackOfferDebugMenu.swift */; };
+		BBDFAD2B2E98F41D00418F3E /* WinBackOfferDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDFAD292E98F41D00418F3E /* WinBackOfferDebugMenu.swift */; };
 		BBE013EA2C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE013E92C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift */; };
 		BBE013EB2C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE013E92C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift */; };
 		BBE5FD8A2E393ADE008674A2 /* VPNMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE5FD892E393ADE008674A2 /* VPNMocks.swift */; };
 		BBE5FD8B2E393ADE008674A2 /* VPNMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE5FD892E393ADE008674A2 /* VPNMocks.swift */; };
 		BBE948D02D6FD11200FAC581 /* DefaultBrowserAndDockPromptStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE948CF2D6FD10C00FAC581 /* DefaultBrowserAndDockPromptStoring.swift */; };
 		BBE948D12D6FD11200FAC581 /* DefaultBrowserAndDockPromptStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE948CF2D6FD10C00FAC581 /* DefaultBrowserAndDockPromptStoring.swift */; };
+		BBE9A9AB2E9D1DED00E573AA /* MockWinBackOfferVisibilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE9A9AA2E9D1DED00E573AA /* MockWinBackOfferVisibilityManager.swift */; };
+		BBE9A9AC2E9D1DED00E573AA /* MockWinBackOfferVisibilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE9A9AA2E9D1DED00E573AA /* MockWinBackOfferVisibilityManager.swift */; };
 		BBFB727F2C48047C0088884C /* SortBookmarksViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFB727E2C48047C0088884C /* SortBookmarksViewModel.swift */; };
 		BBFB72802C48047C0088884C /* SortBookmarksViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFB727E2C48047C0088884C /* SortBookmarksViewModel.swift */; };
 		BBFD526E2E12FB930043B00C /* VisualizeFireSettingsDecider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFD526D2E12FB730043B00C /* VisualizeFireSettingsDecider.swift */; };
@@ -3499,6 +3513,10 @@
 		BBFE94ED2E391421000D4920 /* NetworkProtectionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFE94EA2E391421000D4920 /* NetworkProtectionButton.swift */; };
 		BBFE94EE2E391421000D4920 /* NotificationDotProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFE94EB2E391421000D4920 /* NotificationDotProviding.swift */; };
 		BBFE94EF2E391421000D4920 /* NetworkProtectionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFE94EA2E391421000D4920 /* NetworkProtectionButton.swift */; };
+		BBFEE6C92E99229800F9BA45 /* NewTabPageWinBackOfferBannerProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFEE6C82E99229800F9BA45 /* NewTabPageWinBackOfferBannerProvider.swift */; };
+		BBFEE6CA2E99229800F9BA45 /* NewTabPageWinBackOfferBannerProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFEE6C82E99229800F9BA45 /* NewTabPageWinBackOfferBannerProvider.swift */; };
+		BBFEE6CD2E99248F00F9BA45 /* WinBackOfferPromotionViewCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFEE6CC2E99248F00F9BA45 /* WinBackOfferPromotionViewCoordinator.swift */; };
+		BBFEE6CE2E99248F00F9BA45 /* WinBackOfferPromotionViewCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFEE6CC2E99248F00F9BA45 /* WinBackOfferPromotionViewCoordinator.swift */; };
 		BBFF355D2C4AF26200DA3289 /* BookmarksSortModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFF355C2C4AF26200DA3289 /* BookmarksSortModeTests.swift */; };
 		BBFF355E2C4AF26200DA3289 /* BookmarksSortModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFF355C2C4AF26200DA3289 /* BookmarksSortModeTests.swift */; };
 		BD384AC92BBC821A00EF3735 /* vpn-dark-mode.json in Resources */ = {isa = PBXBuildFile; fileRef = BD384AC82BBC821100EF3735 /* vpn-dark-mode.json */; };
@@ -4750,6 +4768,7 @@
 		4B67742A255DBEB800025BD8 /* httpsMobileV2FalsePositives.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = httpsMobileV2FalsePositives.json; sourceTree = "<group>"; };
 		4B677440255DBEEA00025BD8 /* Database.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
 		4B6785432AA8DE1F008A5004 /* VPNUninstaller.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VPNUninstaller.swift; sourceTree = "<group>"; };
+		4B6D15702EA09ADB003ADCEA /* WideEventServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WideEventServiceTests.swift; sourceTree = "<group>"; };
 		4B70BFFF27B0793D000386ED /* DuckDuckGo-ExampleCrash.ips */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "DuckDuckGo-ExampleCrash.ips"; sourceTree = "<group>"; };
 		4B70C00027B0793D000386ED /* CrashReportTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CrashReportTests.swift; sourceTree = "<group>"; };
 		4B723DFD26B0002B00E14D75 /* CSVLoginExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVLoginExporter.swift; sourceTree = "<group>"; };
@@ -5799,6 +5818,10 @@
 		BB486B502E74770D0026B972 /* LatestReleaseCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestReleaseCheckerTests.swift; sourceTree = "<group>"; };
 		BB486B532E7499FE0026B972 /* AppStoreUpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreUpdateController.swift; sourceTree = "<group>"; };
 		BB486B562E749A160026B972 /* SparkleUpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdateController.swift; sourceTree = "<group>"; };
+		BB4AA66D2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferFeatureFlagger.swift; sourceTree = "<group>"; };
+		BB4AA6712E96FD600008CC12 /* WinBackOfferPromptPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferPromptPresenter.swift; sourceTree = "<group>"; };
+		BB4AA6722E96FD600008CC12 /* WinBackOfferPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferPromptView.swift; sourceTree = "<group>"; };
+		BB4AA6732E96FD600008CC12 /* WinBackOfferPromptViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferPromptViewModel.swift; sourceTree = "<group>"; };
 		BB4EC6942D9B5C7800660600 /* ThemeStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeStyleProviding.swift; sourceTree = "<group>"; };
 		BB53CF3D2E26CEE5007F0B42 /* RequestNewFeatureFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestNewFeatureFormView.swift; sourceTree = "<group>"; };
 		BB5789712B2CA70F0009DFE2 /* DataBrokerProtectionSubscriptionEventHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionSubscriptionEventHandler.swift; sourceTree = "<group>"; };
@@ -5856,13 +5879,17 @@
 		BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireButtonIconStyleProviding.swift; sourceTree = "<group>"; };
 		BBDE001B2D6DE6A000109F88 /* DefaultBrowserAndDockPromptPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPopover.swift; sourceTree = "<group>"; };
 		BBDE001E2D6DE6EE00109F88 /* DefaultBrowserAndDockPromptContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptContent.swift; sourceTree = "<group>"; };
+		BBDFAD292E98F41D00418F3E /* WinBackOfferDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferDebugMenu.swift; sourceTree = "<group>"; };
 		BBE013E92C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksEmptyStateContent.swift; sourceTree = "<group>"; };
 		BBE5FD892E393ADE008674A2 /* VPNMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNMocks.swift; sourceTree = "<group>"; };
 		BBE948CF2D6FD10C00FAC581 /* DefaultBrowserAndDockPromptStoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptStoring.swift; sourceTree = "<group>"; };
+		BBE9A9AA2E9D1DED00E573AA /* MockWinBackOfferVisibilityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockWinBackOfferVisibilityManager.swift; sourceTree = "<group>"; };
 		BBFB727E2C48047C0088884C /* SortBookmarksViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortBookmarksViewModel.swift; sourceTree = "<group>"; };
 		BBFD526D2E12FB730043B00C /* VisualizeFireSettingsDecider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualizeFireSettingsDecider.swift; sourceTree = "<group>"; };
 		BBFE94EA2E391421000D4920 /* NetworkProtectionButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionButton.swift; sourceTree = "<group>"; };
 		BBFE94EB2E391421000D4920 /* NotificationDotProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationDotProviding.swift; sourceTree = "<group>"; };
+		BBFEE6C82E99229800F9BA45 /* NewTabPageWinBackOfferBannerProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageWinBackOfferBannerProvider.swift; sourceTree = "<group>"; };
+		BBFEE6CC2E99248F00F9BA45 /* WinBackOfferPromotionViewCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferPromotionViewCoordinator.swift; sourceTree = "<group>"; };
 		BBFF355C2C4AF26200DA3289 /* BookmarksSortModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksSortModeTests.swift; sourceTree = "<group>"; };
 		BD384AC72BBC821100EF3735 /* vpn-light-mode.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "vpn-light-mode.json"; sourceTree = "<group>"; };
 		BD384AC82BBC821100EF3735 /* vpn-dark-mode.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "vpn-dark-mode.json"; sourceTree = "<group>"; };
@@ -7268,6 +7295,7 @@
 				376E8C192D41186200D5D2EC /* DefaultRecentActivityActionsHandler.swift */,
 				37F9AEB02D1316FE007FD19B /* NewTabPageLinkOpener.swift */,
 				3758A38B2D108229001CEAA1 /* NewTabPageFreemiumDBPBannerProvider.swift */,
+				BBFEE6C82E99229800F9BA45 /* NewTabPageWinBackOfferBannerProvider.swift */,
 				37BE08792D09C0EA00C77B8E /* NewTabPageNextStepsCardsProvider.swift */,
 				37E307B12D075B5E00599500 /* NewTabPagePrivacyStatsEventHandler.swift */,
 				374EFDF22D01C99700B30939 /* ActiveRemoteMessageModel+NewTabPage.swift */,
@@ -7768,6 +7796,7 @@
 		4B4D60632A0B29FA00BCD287 /* BothAppTargets */ = {
 			isa = PBXGroup;
 			children = (
+				BB4AA66C2E96F7050008CC12 /* WinBackOffer */,
 				4B975C092E43227E0019F757 /* VPNUpsellNew */,
 				7BB4BC692C5CD96200E06FC8 /* ActiveDomainPublisher.swift */,
 				7BB4BC622C5BC13D00E06FC8 /* ActiveSiteInfoPublisher.swift */,
@@ -9086,6 +9115,7 @@
 				0289041E2A7B23CE0028369C /* AppConfigurationURLProviderTests.swift */,
 				84AECC502DFBFADC00438ACC /* AutoClearHandlerTests.swift */,
 				85F1B0C825EF9759004792B6 /* URLEventHandlerTests.swift */,
+				4B6D15702EA09ADB003ADCEA /* WideEventServiceTests.swift */,
 			);
 			path = AppDelegate;
 			sourceTree = "<group>";
@@ -9315,6 +9345,7 @@
 			children = (
 				9FFBEE722DDEDC600058B11A /* ApplicationBuildTypeMock.swift */,
 				CC34456E2E674E7700019518 /* UserScriptErrorTests.swift */,
+				BBE9A9AA2E9D1DED00E573AA /* MockWinBackOfferVisibilityManager.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -9562,6 +9593,7 @@
 				AACF6FD426BC35C200CF09F9 /* UserAgent */,
 				4B41EDAC2B168A66001EEDF4 /* UnifiedFeedbackForm */,
 				4B9DB0062A983B23000927DB /* Waitlist */,
+				BBFEE6CB2E99244200F9BA45 /* WinBackOffer */,
 				1D2DB9A22CE26B7A00F73E96 /* WebExtensions */,
 				AA6EF9AE25066F99004754E6 /* Windows */,
 				31F28C4B28C8EE9000119F70 /* YoutubePlayer */,
@@ -11033,6 +11065,18 @@
 			path = Feedback;
 			sourceTree = "<group>";
 		};
+		BB4AA66C2E96F7050008CC12 /* WinBackOffer */ = {
+			isa = PBXGroup;
+			children = (
+				BBDFAD292E98F41D00418F3E /* WinBackOfferDebugMenu.swift */,
+				BB4AA6712E96FD600008CC12 /* WinBackOfferPromptPresenter.swift */,
+				BB4AA6722E96FD600008CC12 /* WinBackOfferPromptView.swift */,
+				BB4AA6732E96FD600008CC12 /* WinBackOfferPromptViewModel.swift */,
+				BB4AA66D2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift */,
+			);
+			path = WinBackOffer;
+			sourceTree = "<group>";
+		};
 		BB4EC6902D9B5C6400660600 /* VisualRefresh */ = {
 			isa = PBXGroup;
 			children = (
@@ -11144,6 +11188,14 @@
 				9FFBEE7C2DDF02CE0058B11A /* DefaultBrowserAndDockPromptStatusUpdateNotifier.swift */,
 			);
 			path = DefaultBrowserAndAddToDockPrompts;
+			sourceTree = "<group>";
+		};
+		BBFEE6CB2E99244200F9BA45 /* WinBackOffer */ = {
+			isa = PBXGroup;
+			children = (
+				BBFEE6CC2E99248F00F9BA45 /* WinBackOfferPromotionViewCoordinator.swift */,
+			);
+			path = WinBackOffer;
 			sourceTree = "<group>";
 		};
 		BD7090D42C540C0D009EED82 /* MetadataCollectors */ = {
@@ -13420,6 +13472,7 @@
 				EE098E782C8EDE2C009EBA7F /* AutofillCredentialsImportManager.swift in Sources */,
 				1D39E57B2C2C0F3700757339 /* ReleaseNotesUserScript.swift in Sources */,
 				3706FB33293F65D500E42796 /* DeviceIdleStateDetector.swift in Sources */,
+				BB4AA66E2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift in Sources */,
 				1DB67F2A2B6FEB17003DF243 /* WebViewSnapshotRenderer.swift in Sources */,
 				CC87770A2E1FF39B00113863 /* FirefoxHistoryReader.swift in Sources */,
 				1E15F69A2DF0D1590061395E /* AIChatSidebar.swift in Sources */,
@@ -13475,6 +13528,7 @@
 				B6B5F5802B024105008DB58A /* DataImportSummaryView.swift in Sources */,
 				4B9DB0422A983B24000927DB /* WaitlistDialogView.swift in Sources */,
 				3706FB57293F65D500E42796 /* AppPrivacyConfigurationDataProvider.swift in Sources */,
+				BBFEE6CE2E99248F00F9BA45 /* WinBackOfferPromotionViewCoordinator.swift in Sources */,
 				C1B1CBE22BE1915100B6049C /* DataImportShortcutsViewModel.swift in Sources */,
 				F1D447242D9EAA950085809A /* SubscriptionPixelHandler.swift in Sources */,
 				9F33445F2BBFA77F0040CBEB /* BookmarksBarVisibilityManager.swift in Sources */,
@@ -13595,6 +13649,7 @@
 				3706FB85293F65D500E42796 /* AddBookmarkPopover.swift in Sources */,
 				F18826922BC0105900D9AC4F /* PixelDataRecord.swift in Sources */,
 				F18826932BC0105900D9AC4F /* PixelDataStore.swift in Sources */,
+				BBDFAD2A2E98F41D00418F3E /* WinBackOfferDebugMenu.swift in Sources */,
 				1D8E64D32E832E1900136422 /* SERPSettingsUserScript.swift in Sources */,
 				7BBD45B22A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift in Sources */,
 				3706FB87293F65D500E42796 /* ProcessExtension.swift in Sources */,
@@ -14160,6 +14215,10 @@
 				3706FC9E293F65D500E42796 /* PreferencesAppearanceView.swift in Sources */,
 				3706FC9F293F65D500E42796 /* NSMenuItemExtension.swift in Sources */,
 				3706FCA0293F65D500E42796 /* ContiguousBytesExtension.swift in Sources */,
+				BB4AA6752E96FD600008CC12 /* WinBackOfferPromptPresenter.swift in Sources */,
+				BB4AA6762E96FD600008CC12 /* WinBackOfferPromptView.swift in Sources */,
+				BB4AA6772E96FD600008CC12 /* WinBackOfferPromptViewModel.swift in Sources */,
+				BBFEE6C92E99229800F9BA45 /* NewTabPageWinBackOfferBannerProvider.swift in Sources */,
 				B602E8172A1E2570006D261F /* URL+NetworkProtection.swift in Sources */,
 				C1D3C5732E8ADB080086A2BD /* IdentitiesCleanupErrorHandling.swift in Sources */,
 				C1D3C5742E8ADB080086A2BD /* SyncIdentitiesAdapter.swift in Sources */,
@@ -14406,6 +14465,7 @@
 				9F0FFFB52BCCAE37007C87DD /* BookmarkAllTabsDialogCoordinatorViewModelTests.swift in Sources */,
 				3706FE34293F661700E42796 /* PermissionStoreTests.swift in Sources */,
 				84B479092CCA7A3E00F40329 /* Logger+UnitTests.swift in Sources */,
+				BBE9A9AC2E9D1DED00E573AA /* MockWinBackOfferVisibilityManager.swift in Sources */,
 				3706FE35293F661700E42796 /* ThirdPartyBrowserTests.swift in Sources */,
 				1DFAB5232A8983E100A0F7F6 /* SetExtensionTests.swift in Sources */,
 				56A054002C1AEFA1007D8FAB /* OnboardingManagerTests.swift in Sources */,
@@ -14602,6 +14662,7 @@
 				37A0BA242D747B9F00130447 /* CapturingContextMenuPresenter.swift in Sources */,
 				3706FE7E293F661700E42796 /* RunLoopExtensionTests.swift in Sources */,
 				5681ED412BDB955100F59729 /* SyncCredentialsAdapterTests.swift in Sources */,
+				4B6D15712EA09ADF003ADCEA /* WideEventServiceTests.swift in Sources */,
 				56EA402A2DB7830800B5061E /* LocalizationTests.swift in Sources */,
 				3706FE7F293F661700E42796 /* FileDownloadManagerMock.swift in Sources */,
 				7B1522B12DE9CCA900887371 /* MockFeatureGatekeeper.swift in Sources */,
@@ -15319,6 +15380,7 @@
 				4BB99D0326FE191E001E4761 /* SafariBookmarksReader.swift in Sources */,
 				316913292BD2C7570051B46D /* DataBrokerProtectionErrorViewController.swift in Sources */,
 				1DA6D0FD2A1FF9A100540406 /* HTTPCookie.swift in Sources */,
+				BBDFAD2B2E98F41D00418F3E /* WinBackOfferDebugMenu.swift in Sources */,
 				AACF6FD626BC366D00CF09F9 /* SafariVersionReader.swift in Sources */,
 				BB80DDD32D75EEAC00ED1FFF /* ApplicationBuildType.swift in Sources */,
 				4BE65485271FCD7B008D1D63 /* LoginFaviconView.swift in Sources */,
@@ -15474,12 +15536,14 @@
 				4B9DB0442A983B24000927DB /* WaitlistModalViewController.swift in Sources */,
 				7BC16BAA2E724CF80016EE8E /* ContentScopePreferences.swift in Sources */,
 				4B0AACAE28BC6FD0001038AC /* SafariFaviconsReader.swift in Sources */,
+				BBFEE6CA2E99229800F9BA45 /* NewTabPageWinBackOfferBannerProvider.swift in Sources */,
 				376E8C1A2D41186B00D5D2EC /* DefaultRecentActivityActionsHandler.swift in Sources */,
 				B6B3E0E12657EA7A0040E0A2 /* NSScreenExtension.swift in Sources */,
 				BBBD2A082E2FE548005E7664 /* PillCollectionView.swift in Sources */,
 				B65E6BA026D9F10600095F96 /* NSBezierPathExtension.swift in Sources */,
 				31ECDA112BED339600AE679F /* DataBrokerAuthenticationManagerBuilder.swift in Sources */,
 				4B4D60E02A0C875F00BCD287 /* Bundle+VPN.swift in Sources */,
+				BB4AA66F2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift in Sources */,
 				AA6820E425502F19005ED0D5 /* WebsiteDataStore.swift in Sources */,
 				E274EFF92E1E8DFF00373C41 /* NewTabPageOmnibarActionsHandler.swift in Sources */,
 				7BD504CB2E606097008A0646 /* WebExtensionLoadResult.swift in Sources */,
@@ -15582,6 +15646,9 @@
 				AA9E9A5625A3AE8400D1959D /* NSWindowExtension.swift in Sources */,
 				7BD3AF5D2A8E7AF1006F9F56 /* KeychainType+ClientDefault.swift in Sources */,
 				370A34B12AB24E3700C77F7C /* SyncDebugMenu.swift in Sources */,
+				BB4AA6792E96FD600008CC12 /* WinBackOfferPromptPresenter.swift in Sources */,
+				BB4AA67A2E96FD600008CC12 /* WinBackOfferPromptView.swift in Sources */,
+				BB4AA67B2E96FD600008CC12 /* WinBackOfferPromptViewModel.swift in Sources */,
 				9FDA6C212B79A59D00E099A9 /* BookmarkFavoriteView.swift in Sources */,
 				AAC5E4C725D6A6E8007F5990 /* AddBookmarkPopover.swift in Sources */,
 				B6F7127E29F6779000594A45 /* QRSharingService.swift in Sources */,
@@ -15830,6 +15897,7 @@
 				BB9BA2292D10C0A5009229F3 /* TabBarActiveRemoteMessage.swift in Sources */,
 				B6C0B23926E742610031CB7F /* FileDownloadError.swift in Sources */,
 				B6CC26682BAD959500F53F8D /* DownloadProgress.swift in Sources */,
+				BBFEE6CD2E99248F00F9BA45 /* WinBackOfferPromotionViewCoordinator.swift in Sources */,
 				AAE7527A263B046100B973F8 /* History.xcdatamodeld in Sources */,
 				BBBD2A022E2FE458005E7664 /* ThankYouView.swift in Sources */,
 				B64C853D26944B940048FEBE /* PermissionStore.swift in Sources */,
@@ -16224,6 +16292,7 @@
 				4B9DB05A2A983B55000927DB /* MockWaitlistRequest.swift in Sources */,
 				BB9851922E3102ED00FED56A /* NetworkProtectionNavBarButtonModelTests.swift in Sources */,
 				1D9EB31B2D43C2F7004B7270 /* WebExtensionLoaderMock.swift in Sources */,
+				4B6D15722EA09ADF003ADCEA /* WideEventServiceTests.swift in Sources */,
 				37D2377C287EBDA300BCE03B /* TabIndexTests.swift in Sources */,
 				37EC314D2D8C02C00026C348 /* FaviconTests.swift in Sources */,
 				1DE717D12E44B24D009BDFFA /* NewTabPagePreloaderTests.swift in Sources */,
@@ -16531,6 +16600,7 @@
 				1E8995E12DCD05280093EFBA /* PreferencesSectionTests.swift in Sources */,
 				4B9292C32667103100AD2C21 /* PasteboardBookmarkTests.swift in Sources */,
 				F1AFDBD22C231B7A00710F2C /* SubscriptionAppStoreRestorerTests.swift in Sources */,
+				BBE9A9AB2E9D1DED00E573AA /* MockWinBackOfferVisibilityManager.swift in Sources */,
 				B610F2E427A8F37A00FCEBE9 /* CBRCompileTimeReporterTests.swift in Sources */,
 				31F25F002CC3CA02002F9084 /* AIChatMenuConfigurationTests.swift in Sources */,
 				37D046A42C7DAA8900AEAA50 /* ImageProcessorMock.swift in Sources */,

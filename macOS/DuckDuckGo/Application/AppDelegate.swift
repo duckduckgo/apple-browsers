@@ -156,7 +156,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         featureFlagger: featureFlagger,
         windowControllersManager: windowControllersManager,
         tabsPreferences: TabsPreferences.shared,
-        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration)
+        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
+        winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -241,6 +242,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return DataBrokerProtectionSubscriptionEventHandler(featureDisabler: DataBrokerProtectionFeatureDisabler(),
                                                             authenticationManager: authManager,
                                                             pixelHandler: DataBrokerProtectionMacOSPixelsHandler())
+    }()
+
+    // MARK: - Win-back Campaign
+    lazy var winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = {
+        #if DEBUG || REVIEW
+        let winBackOfferDebugStore = WinBackOfferDebugStore()
+        let dateProvider: () -> Date = { winBackOfferDebugStore.simulatedTodayDate }
+        #else
+        let dateProvider: () -> Date = Date.init
+        #endif
+
+        return WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
+                                            winbackOfferStore: winbackOfferStore,
+                                            winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider,
+                                            dateProvider: dateProvider)
+    }()
+
+    lazy var winbackOfferStore: WinbackOfferStoring = {
+        return WinbackOfferStore(keyValueStore: keyValueStore)
+    }()
+
+    private lazy var winbackOfferFeatureFlagProvider: WinBackOfferFeatureFlagProvider = {
+        return WinBackOfferFeatureFlagger(featureFlagger: featureFlagger)
+    }()
+
+    lazy var winBackOfferPromptPresenter: WinBackOfferPromptPresenting = {
+        return WinBackOfferPromptPresenter(visibilityManager: winBackOfferVisibilityManager)
+    }()
+
+    lazy var winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator = {
+        return WinBackOfferPromotionViewCoordinator(winBackOfferVisibilityManager: winBackOfferVisibilityManager)
     }()
 
     // MARK: - Wide Event Service
@@ -1056,7 +1088,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         freemiumDBPScanResultPolling = DefaultFreemiumDBPScanResultPolling(dataManager: DataBrokerProtectionManager.shared.dataManager, freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPScanResultPolling?.startPollingOrObserving()
 
-        wideEventService.sendAbandonedPixels { }
+        Task(priority: .utility) {
+            await wideEventService.sendPendingEvents()
+        }
 
         PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
     }
@@ -1514,7 +1548,8 @@ extension AppDelegate: UserScriptDependenciesProviding {
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             tabsPreferences: TabsPreferences.shared,
-            newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration)
+            newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
+            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
         )
     }
 }

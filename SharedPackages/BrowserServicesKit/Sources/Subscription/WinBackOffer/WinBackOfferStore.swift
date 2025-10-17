@@ -21,16 +21,18 @@ import Persistence
 import SecureStorage
 
 /// Stores data to be used for the win-back offer feature.
-protocol WinbackOfferStoring {
+public protocol WinbackOfferStoring {
     func storeChurnDate(_ churnDate: Date)
     func getChurnDate() -> Date?
     func setHasRedeemedOffer(_ didRedeem: Bool)
     func hasRedeemedOffer() -> Bool
     var firstDayModalShown: Bool { get set }
+    var didDismissUrgencyMessage: Bool { get set }
 }
 extension WinbackOfferStore {
     enum Key: String {
         case firstDayModalShown = "winback-offer.first-day-modal-shown"
+        case didDismissUrgencyMessage = "winback-offer.did-dismiss-urgency-message"
     }
 
     private enum KeychainKey: String {
@@ -51,23 +53,24 @@ extension WinbackOfferStore {
 /// 
 /// And in user defaults:
 /// - firstDayModalShown
-struct WinbackOfferStore: WinbackOfferStoring {
+/// - didDismissUrgencyMessage
+public struct WinbackOfferStore: WinbackOfferStoring {
     private let keychainService: KeychainService
     private let keyValueStore: ThrowingKeyValueStoring
     private let serviceName = "com.duckduckgo.winback-offer"
 
-    init(keychainService: KeychainService = DefaultKeychainService(),
-         keyValueStore: ThrowingKeyValueStoring) {
+    public init(keychainService: KeychainService = DefaultKeychainService(),
+                keyValueStore: ThrowingKeyValueStoring) {
         self.keychainService = keychainService
         self.keyValueStore = keyValueStore
     }
 
-    var firstDayModalShown: Bool {
+    public var firstDayModalShown: Bool {
         get { (try? keyValueStore.object(forKey: Key.firstDayModalShown.rawValue) as? Bool) ?? false }
         set { try? keyValueStore.set(newValue, forKey: Key.firstDayModalShown.rawValue) }
     }
 
-    func getChurnDate() -> Date? {
+    public func getChurnDate() -> Date? {
         guard let data = try? retrieveData(forKey: .churnDate),
               let timeInterval = try? JSONDecoder().decode(TimeInterval.self, from: data) else {
             return nil
@@ -75,23 +78,28 @@ struct WinbackOfferStore: WinbackOfferStoring {
         return Date(timeIntervalSince1970: timeInterval)
     }
 
-    func storeChurnDate(_ churnDate: Date) {
+    public func storeChurnDate(_ churnDate: Date) {
         let timeInterval = churnDate.timeIntervalSince1970
         guard let data = try? JSONEncoder().encode(timeInterval) else { return }
         try? storeData(data, forKey: .churnDate)
     }
 
-    func setHasRedeemedOffer(_ didRedeem: Bool) {
+    public func setHasRedeemedOffer(_ didRedeem: Bool) {
         guard let data = try? JSONEncoder().encode(didRedeem) else { return }
         try? storeData(data, forKey: .offerRedemption)
     }
 
-    func hasRedeemedOffer() -> Bool {
+    public func hasRedeemedOffer() -> Bool {
         guard let data = try? retrieveData(forKey: .offerRedemption),
               let didRedeem = try? JSONDecoder().decode(Bool.self, from: data) else {
             return false
         }
         return didRedeem
+    }
+
+    public var didDismissUrgencyMessage: Bool {
+        get { (try? keyValueStore.object(forKey: Key.didDismissUrgencyMessage.rawValue) as? Bool) ?? false }
+        set { try? keyValueStore.set(newValue, forKey: Key.didDismissUrgencyMessage.rawValue) }
     }
 }
 

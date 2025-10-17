@@ -114,6 +114,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
+            winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator(winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager()),
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
     }

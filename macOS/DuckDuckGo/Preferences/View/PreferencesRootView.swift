@@ -33,7 +33,7 @@ enum Preferences {
         static var sidebarWidth: CGFloat {
             switch Locale.current.languageCode {
             case "en":
-                return 315
+                return 340
             default:
                 return 355
             }
@@ -57,7 +57,7 @@ enum Preferences {
         let subscriptionManager: SubscriptionManager
         let subscriptionUIHandler: SubscriptionUIHandling
         let featureFlagger: FeatureFlagger
-
+        let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
         private var colorsProvider: ColorsProviding {
             themeManager.theme.colorsProvider
         }
@@ -66,12 +66,14 @@ enum Preferences {
              subscriptionManager: SubscriptionManager,
              subscriptionUIHandler: SubscriptionUIHandling,
              themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
-             featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+             featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager) {
             self.model = model
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
             self.themeManager = themeManager
             self.featureFlagger = featureFlagger
+            self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.identityTheftRestorationModel = makeIdentityTheftRestorationViewModel()
@@ -204,6 +206,7 @@ enum Preferences {
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
                                                         featureFlagger: NSApp.delegateTyped.featureFlagger,
+                                                        winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                         userEventHandler: userEventHandler,
                                                         sheetActionHandler: sheetActionHandler)
         }
@@ -275,6 +278,7 @@ enum Preferences {
 
             return PreferencesSubscriptionSettingsModelV1(userEventHandler: userEventHandler,
                                                           subscriptionManager: subscriptionManager,
+                                                          winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher())
         }
 
@@ -304,7 +308,7 @@ enum Preferences {
         let showTab: @MainActor (Tab.TabContent) -> Void
         let aiChatURLSettings: AIChatRemoteSettingsProvider
         let wideEvent: WideEventManaging
-
+        let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
         private var colorsProvider: ColorsProviding {
             themeManager.theme.colorsProvider
         }
@@ -316,8 +320,9 @@ enum Preferences {
             featureFlagger: FeatureFlagger,
             aiChatURLSettings: AIChatRemoteSettingsProvider,
             wideEvent: WideEventManaging,
+            winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
-            themeManager: ThemeManager = NSApp.delegateTyped.themeManager
+            themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
         ) {
             self.model = model
             self.subscriptionManager = subscriptionManager
@@ -327,6 +332,7 @@ enum Preferences {
             self.themeManager = themeManager
             self.aiChatURLSettings = aiChatURLSettings
             self.wideEvent = wideEvent
+            self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.paidAIChatModel = makePaidAIChatViewModel()
@@ -472,6 +478,7 @@ enum Preferences {
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
                                                         featureFlagger: featureFlagger,
+                                                        winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                         userEventHandler: userEventHandler,
                                                         sheetActionHandler: sheetActionHandler)
         }
@@ -567,7 +574,8 @@ enum Preferences {
             return PreferencesSubscriptionSettingsModelV2(userEventHandler: userEventHandler,
                                                           subscriptionManager: subscriptionManager,
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher(),
-                                                          keyValueStore: NSApp.delegateTyped.keyValueStore)
+                                                          keyValueStore: NSApp.delegateTyped.keyValueStore,
+                                                          winBackOfferVisibilityManager: winBackOfferVisibilityManager)
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {

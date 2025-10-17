@@ -74,7 +74,7 @@ actor UpdateCheckState {
     ///
     /// Used for rate limiting to ensure update checks don't happen too frequently.
     ///
-    internal func recordCheckTime() {
+    func recordCheckTime() {
         lastUpdateCheckTime = Date()
     }
 }

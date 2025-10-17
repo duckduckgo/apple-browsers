@@ -247,7 +247,7 @@ extension FireCoordinator {
             options.isToday = (scopeQuery == .rangeFilter(.today))
 
             let isAllHistorySelected = (options.clearingOption == .allData /* not Current Tab or Window */)
-            && scopeQuery == .rangeFilter(.all)
+            && (scopeQuery == .rangeFilter(.all) || scopeQuery == .rangeFilter(.allSites))
 
             await self.handleDialogResult(options, tabCollectionViewModel: tabCollectionViewModel, isAllHistorySelected: isAllHistorySelected)
 
@@ -288,7 +288,7 @@ extension FireCoordinator {
                                                 selectedDomains: result.selectedCookieDomains ?? [],
                                                 parentTabCollectionViewModel: tabCollectionViewModel,
                                                 close: result.includeTabsAndWindows)
-            await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory)
+            await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory, includeCookiesAndSiteData: result.includeCookiesAndSiteData)
 
         case .currentWindow:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .window))
@@ -299,20 +299,29 @@ extension FireCoordinator {
             let entity = Fire.BurningEntity.window(tabCollectionViewModel: tabCollectionViewModel,
                                                    selectedDomains: result.selectedCookieDomains ?? [],
                                                    close: result.includeTabsAndWindows)
-            await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory)
+            await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory, includeCookiesAndSiteData: result.includeCookiesAndSiteData)
 
         case .allData:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
             // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
             if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory {
-                await fireViewModel.fire.burnAll(isBurnOnExit: false, opening: .newtab)
+                await fireViewModel.fire.burnAll(isBurnOnExit: false, opening: .newtab, includeCookiesAndSiteData: result.includeCookiesAndSiteData)
             } else {
                 let entity = Fire.BurningEntity.allWindows(mainWindowControllers: windowControllersManager.mainWindowControllers,
                                                            selectedDomains: result.selectedCookieDomains ?? [],
                                                            customURLToOpen: nil,
                                                            close: result.includeTabsAndWindows)
-                await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory)
+                await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory, includeCookiesAndSiteData: result.includeCookiesAndSiteData)
             }
+        }
+        if result.includeHistory,
+           result.clearingOption != .allData || !result.includeTabsAndWindows {
+            // History View doesn't currently support having new data pushed to it
+            // so we need to instruct all open history tabs to reload themselves.
+            let historyTabs = self.windowControllersManager.mainWindowControllers
+                .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
+                .filter { $0.content.isHistory }
+            historyTabs.forEach { $0.reload() }
         }
     }
 }

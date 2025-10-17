@@ -116,5 +116,9 @@
   "range_older": {
     "title": "Older",
     "note": "Label on a button that shows older history entries."
+  },
+  "range_sites": {
+    "title": "Sites",
+    "note": "Label on a button that shows which sites have been visited"
   }
 }

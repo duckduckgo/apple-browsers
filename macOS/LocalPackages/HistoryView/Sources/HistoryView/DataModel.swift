@@ -46,6 +46,7 @@ public enum DataModel {
         case friday
         case saturday
         case older
+        case allSites = "sites"
     }
 
     public struct HistoryRangeWithCount: Codable, Equatable {

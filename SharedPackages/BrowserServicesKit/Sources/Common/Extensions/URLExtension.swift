@@ -47,6 +47,7 @@ extension URL {
         return components.url
     }
 
+    /// URL string without the scheme and the '/' suffix of the path.
     public var nakedString: String? {
         naked?.absoluteString.dropping(prefix: "//")
     }

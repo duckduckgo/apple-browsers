@@ -39,8 +39,8 @@ final class FireMock: FireProtocol {
     }
 
     // Captured calls
-    struct BurnAllCall { let isBurnOnExit: Bool; let url: URL }
-    struct BurnEntityCall { let entity: Fire.BurningEntity; let includingHistory: Bool }
+    struct BurnAllCall { let isBurnOnExit: Bool; let includeCookiesAndSiteData: Bool; let url: URL }
+    struct BurnEntityCall { let entity: Fire.BurningEntity; let includingHistory: Bool; let includeCookiesAndSiteData: Bool }
     struct BurnVisitsCall { let visits: [Visit]; let isToday: Bool; let closeWindows: Bool; let clearSiteData: Bool; let url: URL? }
 
     private(set) var burnAllCalls: [BurnAllCall] = []
@@ -59,14 +59,14 @@ final class FireMock: FireProtocol {
     }
 
     @MainActor
-    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab, completion: (@MainActor () -> Void)? = nil) {
-        burnAllCalls.append(.init(isBurnOnExit: isBurnOnExit, url: url))
+    func burnAll(isBurnOnExit: Bool, opening url: URL, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?) {
+        burnAllCalls.append(.init(isBurnOnExit: isBurnOnExit, includeCookiesAndSiteData: includeCookiesAndSiteData, url: url))
         completion?()
     }
 
     @MainActor
-    func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool = true, completion: (@MainActor () -> Void)? = nil) {
-        burnEntityCalls.append(.init(entity: entity, includingHistory: includingHistory))
+    func burnEntity(_ entity: DuckDuckGo_Privacy_Browser.Fire.BurningEntity, includingHistory: Bool, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?) {
+        burnEntityCalls.append(.init(entity: entity, includingHistory: includingHistory, includeCookiesAndSiteData: includeCookiesAndSiteData))
         completion?()
     }
 

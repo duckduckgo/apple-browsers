@@ -28,10 +28,6 @@
     "title" : "Страница новой вкладки",
     "note" : "Heading text describing that there's a list of toggles for customizing the page layout."
   },
-  "ntp_popover_close_button" : {
-    "title" : "Закрыть",
-    "note" : "Button that closes the current popover."
-  },
   "updateNotification_updated_version" : {
     "title" : "Браузер обновлен до версии {version}.",
     "note" : "Text to indicate which new version was updated. `{version}` will be formatted like `1.22.0`"
@@ -179,26 +175,6 @@
   "omnibar_visitSuffix" : {
     "title" : "Посетить {url}",
     "description" : "Text placed after suggestions that will open a webpage."
-  },
-  "omnibar_askDuckAiSuffix" : {
-    "title" : "Спросить у Duck.ai",
-    "description" : "Text placed after aiChat suggestions that will submit a chat query."
-  },
-  "omnibar_switchToTab" : {
-    "title" : "Перейти на вкладку",
-    "description" : "Badge text shown next to open tab suggestions."
-  },
-  "omnibar_customizePopoverTitle" : {
-    "title" : "Переключатель между поиском и чатом с ИИ",
-    "description" : "Title for the popover that introduces the search/AI toggle feature."
-  },
-  "omnibar_customizePopoverBadge" : {
-    "title" : "Новый",
-    "description" : "Badge text for the popover that introduces the search/AI toggle feature."
-  },
-  "omnibar_customizePopoverDescription" : {
-    "title" : "Ваши данные в любом случае остаются в тайне.<br />Не устраивает такой вариант? <button>Настройте свой!</button>",
-    "description" : "Description message in the popover including privacy statement and customize option."
   },
   "nextSteps_sectionTitle" : {
     "title" : "Дальнейшие шаги",

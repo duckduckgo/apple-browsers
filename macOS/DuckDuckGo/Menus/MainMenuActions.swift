@@ -176,31 +176,37 @@ extension AppDelegate {
             let visits = await historyViewDataProvider.visits(matching: .rangeFilter(.all))
 
             let presenter = DefaultHistoryViewDialogPresenter()
-            switch await presenter.showDeleteDialog(for: .rangeFilter(.all), visits: visits, in: window) {
+            switch await presenter.showDeleteDialog(for: .rangeFilter(.all), visits: visits, in: window, fromMainMenu: true) {
             case .burn:
-                guard !featureFlagger.isFeatureOn(.fireDialog) /* FireCoordinator handles burning for Fire Dialog View */ else { break }
-                await fireCoordinator.fireViewModel.fire.burnAll()
-            case .delete:
-                @MainActor func reloadHistoryTabs() {
-                    // History View doesn't currently support having new data pushed to it
-                    // so we need to instruct all open history tabs to reload themselves.
-                    let historyTabs = self.windowControllersManager.mainWindowControllers
-                        .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
-                        .filter { $0.content.isHistory }
-                    historyTabs.forEach { $0.reload() }
+                // FireCoordinator handles burning for Fire Dialog View
+                if featureFlagger.isFeatureOn(.fireDialog) {
+                    reloadHistoryTabs()
+                } else {
+                    await fireCoordinator.fireViewModel.fire.burnAll()
                 }
+            case .delete:
                 // FireCoordinator handles burning for Fire Dialog View
                 if featureFlagger.isFeatureOn(.fireDialog) {
                     reloadHistoryTabs()
                 } else {
                     historyCoordinator.burnAll {
-                        reloadHistoryTabs()
+                        self.reloadHistoryTabs()
                     }
                 }
             case .noAction:
                 break
             }
         }
+    }
+
+    @MainActor
+    private func reloadHistoryTabs() {
+        // History View doesn't currently support having new data pushed to it
+        // so we need to instruct all open history tabs to reload themselves.
+        let historyTabs = self.windowControllersManager.mainWindowControllers
+            .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
+            .filter { $0.content.isHistory }
+        historyTabs.forEach { $0.reload() }
     }
 
     /// History → [Date] → Clear This History…
@@ -779,6 +785,10 @@ extension AppDelegate {
         EmailManager().resetEmailProtectionInContextPrompt()
     }
 
+    @objc func resetFireproofSites(_ sender: Any?) {
+        Application.appDelegate.fireproofDomains.clearAll()
+    }
+
     @objc func reloadConfigurationNow(_ sender: Any?) {
         Application.appDelegate.configurationManager.forceRefresh(isDebug: true)
     }
@@ -1211,7 +1221,7 @@ extension MainViewController {
 
     @objc func showHistory(_ sender: Any?) {
         makeKeyIfNeeded()
-        browserTabViewController.openNewTab(with: .history)
+        browserTabViewController.openNewTab(with: .anyHistoryPane)
         if let menuItem = sender as? NSMenuItem {
             if menuItem.representedObject as? HistoryMenu.Location == .moreOptionsMenu {
                 PixelKit.fire(HistoryViewPixel.historyPageShown(.sideMenu), frequency: .dailyAndStandard)

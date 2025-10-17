@@ -135,6 +135,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.historyViewActionsManager = HistoryViewActionsManager(
             historyCoordinator: historyCoordinator,
             bookmarksHandler: bookmarkManager,
+            featureFlagger: featureFlagger,
             fireproofStatusProvider: fireproofDomains,
             fire: { @MainActor in fireCoordinator.fireViewModel.fire }
         )

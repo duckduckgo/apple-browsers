@@ -314,6 +314,15 @@ extension FireCoordinator {
                 await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory, includeCookiesAndSiteData: result.includeCookiesAndSiteData)
             }
         }
+        if result.includeHistory,
+           result.clearingOption != .allData || !result.includeTabsAndWindows {
+            // History View doesn't currently support having new data pushed to it
+            // so we need to instruct all open history tabs to reload themselves.
+            let historyTabs = self.windowControllersManager.mainWindowControllers
+                .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
+                .filter { $0.content.isHistory }
+            historyTabs.forEach { $0.reload() }
+        }
     }
 }
 /// Allows locally disabling Fire animation depending on context

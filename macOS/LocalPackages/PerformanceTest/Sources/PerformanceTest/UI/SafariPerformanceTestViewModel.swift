@@ -33,7 +33,8 @@ public final class SafariPerformanceTestViewModel: ObservableObject {
     @Published public var totalIterations = PerformanceTestConstants.TestConfig.defaultIterations
     @Published public var selectedIterations = PerformanceTestConstants.TestConfig.defaultIterations
     @Published public var isCancelled = false
-    @Published public var resultsFilePath: String?
+    @Published public var testResults: PerformanceTestResults?
+    @Published public var selectedStatView = PerformanceTestConstants.StatViews.median
     @Published public var errorMessage: String?
 
     // MARK: - Private Properties
@@ -65,70 +66,17 @@ public final class SafariPerformanceTestViewModel: ObservableObject {
             return
         }
 
-        // Reset state
-        isRunning = true
-        isCancelled = false
-        progress = 0
-        errorMessage = nil
-        resultsFilePath = nil
-        statusText = "Initializing Safari test..."
-
+        resetTestState()
         logger.log("Starting Safari performance test for \(url.absoluteString)")
 
-        // Create runner using factory
-        var runner = runnerFactory(url, selectedIterations)
+        let runner = createAndConfigureRunner(url: url)
         self.runner = runner
 
-        // Set up progress handler
-        runner.progressHandler = { [weak self] iteration, total, status in
-            Task { @MainActor in
-                self?.handleProgress(iteration: iteration, total: total, status: status)
-            }
-        }
-
-        // Set up cancellation check
-        runner.isCancelled = { [weak self] in
-            self?.isCancelled ?? false
-        }
-
-        // Run the test
         do {
             let resultsPath = try await runner.runTest()
-            self.resultsFilePath = resultsPath
-            self.statusText = "Test completed successfully"
-            self.progress = 1.0
-            logger.log("Safari test completed. Results saved to: \(resultsPath)")
-        } catch SafariTestRunner.RunnerError.cancelled {
-            self.statusText = "Test cancelled"
-            logger.log("Safari test was cancelled by user")
-        } catch SafariTestRunner.RunnerError.nodeNotFound {
-            self.errorMessage = "Node.js not found. Please install Node.js to run Safari performance tests."
-            self.statusText = "Error: Node.js not found"
-            logger.log("Safari test failed: Node.js not found")
-        } catch SafariTestRunner.RunnerError.npmInstallFailed {
-            self.errorMessage = "Failed to install npm dependencies. Check Console.app for details."
-            self.statusText = "Error: npm install failed"
-            logger.log("Safari test failed: npm install failed")
-        } catch SafariTestRunner.RunnerError.scriptNotFound {
-            self.errorMessage = "Safari test script not found in bundle."
-            self.statusText = "Error: Script not found"
-            logger.log("Safari test failed: Script not found")
-        } catch SafariTestRunner.RunnerError.invalidIterationCount {
-            self.errorMessage = "Invalid iteration count. Please select at least 1 iteration."
-            self.statusText = "Error: Invalid iteration count"
-            logger.log("Safari test failed: Invalid iteration count")
-        } catch SafariTestRunner.RunnerError.invalidURL {
-            self.errorMessage = "Invalid URL. Please provide a valid HTTP or HTTPS URL."
-            self.statusText = "Error: Invalid URL"
-            logger.log("Safari test failed: Invalid URL")
-        } catch SafariTestRunner.RunnerError.processFailedWithExitCode(let code) {
-            self.errorMessage = "Safari test process failed with exit code \(code). Check Console.app for details."
-            self.statusText = "Error: Process failed"
-            logger.log("Safari test failed with exit code: \(code)")
+            try await parseResults(from: resultsPath)
         } catch {
-            self.errorMessage = "Unexpected error: \(error.localizedDescription)"
-            self.statusText = "Error: \(error.localizedDescription)"
-            logger.log("Safari test failed with error: \(error.localizedDescription)")
+            handleTestError(error)
         }
 
         isRunning = false
@@ -147,7 +95,7 @@ public final class SafariPerformanceTestViewModel: ObservableObject {
         statusText = ""
         currentIteration = 0
         isCancelled = false
-        resultsFilePath = nil
+        testResults = nil
         errorMessage = nil
     }
 
@@ -164,8 +112,76 @@ public final class SafariPerformanceTestViewModel: ObservableObject {
         totalIterations = total
         statusText = status
 
-        if total > 0 {
+        if total > 0, iteration > 0 {
             progress = Double(iteration) / Double(total)
+        }
+    }
+
+    // MARK: - Private Methods
+
+    private func resetTestState() {
+        isRunning = true
+        isCancelled = false
+        progress = 0
+        errorMessage = nil
+        testResults = nil
+        statusText = "Initializing Safari test..."
+    }
+
+    private func createAndConfigureRunner(url: URL) -> SafariTestExecuting {
+        var runner = runnerFactory(url, selectedIterations)
+
+        runner.progressHandler = { [weak self] iteration, total, status in
+            Task { @MainActor in
+                self?.handleProgress(iteration: iteration, total: total, status: status)
+            }
+        }
+
+        runner.isCancelled = { [weak self] in
+            self?.isCancelled ?? false
+        }
+
+        return runner
+    }
+
+    private func parseResults(from path: String) async throws {
+        let parser = SafariResultsParser()
+        let results = try parser.parse(filePath: path)
+        self.testResults = results
+        self.statusText = "Test completed successfully"
+        self.progress = 1.0
+        logger.log("Safari test completed and parsed successfully")
+    }
+
+    private func handleTestError(_ error: Error) {
+        let (message, status) = errorDetails(for: error)
+        self.errorMessage = message
+        self.statusText = status
+        logger.log("Safari test failed: \(message)")
+    }
+
+    private func errorDetails(for error: Error) -> (message: String, status: String) {
+        switch error {
+        case SafariTestRunner.RunnerError.cancelled:
+            return ("Test was cancelled", "Test cancelled")
+        case SafariTestRunner.RunnerError.nodeNotFound:
+            return ("Node.js not found. Please install Node.js to run Safari performance tests.", "Error: Node.js not found")
+        case SafariTestRunner.RunnerError.npmNotFound:
+            return ("npm not found. Please install Node.js (which includes npm) to run Safari performance tests.", "Error: npm not found")
+        case SafariTestRunner.RunnerError.dependenciesInstallFailed(let errorOutput):
+            return ("Failed to install test dependencies:\n\n\(errorOutput)", "Error: Dependency installation failed")
+        case SafariTestRunner.RunnerError.scriptNotFound:
+            return ("Safari test script not found in bundle.", "Error: Script not found")
+        case SafariTestRunner.RunnerError.invalidIterationCount:
+            return ("Invalid iteration count. Please select at least 1 iteration.", "Error: Invalid iteration count")
+        case SafariTestRunner.RunnerError.invalidURL:
+            return ("Invalid URL. Please provide a valid HTTP or HTTPS URL.", "Error: Invalid URL")
+        case SafariTestRunner.RunnerError.processFailedWithError(let code, let errorOutput):
+            return ("Safari test failed (exit code \(code)):\n\n\(errorOutput)", "Error: Process failed")
+        case SafariTestRunner.RunnerError.processFailedWithExitCode(let code):
+            return ("Safari test process failed with exit code \(code). Check Console.app for details.", "Error: Process failed")
+        default:
+            return ("Unexpected error: \(error.localizedDescription)", "Error: \(error.localizedDescription)")
         }
     }
 }

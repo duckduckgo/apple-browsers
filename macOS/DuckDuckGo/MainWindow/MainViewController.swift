@@ -840,7 +840,11 @@ extension MainViewController {
         windowController.showWindow(nil)
     }
 
-    // MARK: - Performance Testing
+}
+
+// MARK: - Performance Testing
+
+extension MainViewController {
 
     @objc func testCurrentSitePerformance() {
         // Get the current tab's web view

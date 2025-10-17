@@ -122,21 +122,6 @@ struct ComparisonMetricBox: View {
         .frame(height: PerformanceTestConstants.Layout.progressBarHeight)
     }
 
-    private func progressBarView(value: String, color: Color) -> some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(height: PerformanceTestConstants.Layout.progressBarHeight)
-
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(color)
-                    .frame(width: geometry.size.width * normalizedProgress(value), height: PerformanceTestConstants.Layout.progressBarHeight)
-            }
-        }
-        .frame(height: PerformanceTestConstants.Layout.progressBarHeight)
-    }
-
     private func valueView(value: String, stdDev: String?) -> some View {
         HStack(spacing: 4) {
             Text(value)
@@ -150,26 +135,6 @@ struct ComparisonMetricBox: View {
             }
         }
         .frame(minWidth: PerformanceTestConstants.Layout.metricValueWidth, alignment: .trailing)
-    }
-
-    private var winnerColor: Color {
-        switch winner {
-        case .duckduckgo, .safari:
-            return .green
-        case .tie:
-            return .secondary
-        }
-    }
-
-    private var winnerText: String {
-        switch winner {
-        case .duckduckgo:
-            return "faster"
-        case .safari:
-            return "faster"
-        case .tie:
-            return ""
-        }
     }
 
     // Calculate relative progress between two values (for comparison view)
@@ -193,25 +158,5 @@ struct ComparisonMetricBox: View {
         guard minValue > 0 else { return 0.5 }
 
         return minValue / numericValue
-    }
-
-    // Calculate progress bar width based on value (normalized 0-1)
-    private func normalizedProgress(_ value: String) -> Double {
-        // Extract numeric value from string (remove "ms", "KB", etc)
-        let numericString = value.replacingOccurrences(of: "[^0-9.]", with: "", options: .regularExpression)
-        guard let numericValue = Double(numericString) else { return 0.5 }
-
-        // Normalize based on whether it's time (ms) or size (KB/MB)
-        if value.contains("ms") {
-            // For time: 0ms = 1.0, 5000ms = 0.0
-            return max(0, min(1, 1.0 - (numericValue / PerformanceTestConstants.Thresholds.maxTimeForProgress)))
-        } else if value.contains("KB") || value.contains("MB") {
-            // For size: smaller is better
-            let sizeInKB = value.contains("MB") ? numericValue * 1000 : numericValue
-            return max(0, min(1, 1.0 - (sizeInKB / PerformanceTestConstants.Thresholds.maxSizeForProgress)))
-        } else {
-            // For counts: smaller is better (like time and size)
-            return max(0, min(1, 1.0 - (numericValue / PerformanceTestConstants.Thresholds.maxCountForProgress)))
-        }
     }
 }

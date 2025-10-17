@@ -377,7 +377,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .historyView:
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
         case .historyViewSitesSection:
-            return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.sitesSection))
+            return .remoteDevelopment(.subfeature(HTMLHistoryPageSubfeature.sitesSection))
         case .autoUpdateInDEBUG:
             return .disabled
         case .updatesWontAutomaticallyRestartApp:
@@ -481,7 +481,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .subscriptionPurchaseWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
         case .fireDialog:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.fireDialog))
+            return .internalOnly()
         case .fireDialogIndividualSitesLink:
             return .enabled
         case .refactorOfSyncPreferences:

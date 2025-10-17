@@ -323,7 +323,7 @@ struct BrokerProfileScanSubJob {
                                                             brokerId: brokerId,
                                                             profileQueryId: profileQueryId,
                                                             extractedProfileId: extractedProfileId)
-        let confirmationRecorder = OptOutConfirmationWideEventRecorder.prepareIfPossible(
+        let confirmationRecorder = OptOutConfirmationWideEventRecorder.startIfPossible(
             wideEvent: dependencies.wideEvent,
             identifier: wideEventIdentifier,
             dataBrokerURL: brokerProfileQueryData.dataBroker.url,

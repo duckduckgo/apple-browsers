@@ -67,12 +67,12 @@ final class OptOutConfirmationWideEventRecorder {
     }
 
     @discardableResult
-    static func prepareIfPossible(wideEvent: WideEventManaging?,
-                                  identifier: OptOutWideEventIdentifier,
-                                  dataBrokerURL: String,
-                                  dataBrokerVersion: String?,
-                                  recordFoundDateProvider: () -> Date) -> OptOutConfirmationWideEventRecorder? {
-        guard let recorder = WideEventRecorder<OptOutConfirmationWideEventData>.prepareIfPossible(
+    static func startIfPossible(wideEvent: WideEventManaging?,
+                                identifier: OptOutWideEventIdentifier,
+                                dataBrokerURL: String,
+                                dataBrokerVersion: String?,
+                                recordFoundDateProvider: () -> Date) -> OptOutConfirmationWideEventRecorder? {
+        guard let recorder = WideEventRecorder<OptOutConfirmationWideEventData>.startIfPossible(
             wideEvent: wideEvent,
             identifier: identifier.toGlobalId,
             sampleRate: sampleRate,

@@ -64,11 +64,11 @@ public final class WideEventRecorder<Data: WideEventDataMeasuringInterval> {
     }
 
     @discardableResult
-    public static func prepareIfPossible(wideEvent: WideEventManaging?,
-                                         identifier: String,
-                                         sampleRate: Float,
-                                         intervalStartProvider: () -> Date,
-                                         makeData: (WideEventGlobalData, WideEvent.MeasuredInterval) -> Data) -> WideEventRecorder? {
+    public static func startIfPossible(wideEvent: WideEventManaging?,
+                                       identifier: String,
+                                       sampleRate: Float,
+                                       intervalStartProvider: () -> Date,
+                                       makeData: (WideEventGlobalData, WideEvent.MeasuredInterval) -> Data) -> WideEventRecorder? {
         if let recorder = resumeIfPossible(wideEvent: wideEvent, identifier: identifier) {
             return recorder
         }

@@ -150,12 +150,12 @@ struct BrokerProfileOptOutSubJob {
                                             extractedProfileId: identifiers.extractedProfileId)
         }
 
-        OptOutSubmissionWideEventRecorder.prepareIfPossible(wideEvent: wideEvent,
+        OptOutSubmissionWideEventRecorder.startIfPossible(wideEvent: wideEvent,
                                                             identifier: wideEventId,
                                                             dataBrokerURL: brokerProfileQueryData.dataBroker.url,
                                                             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
                                                             recordFoundDateProvider: recordFoundDateProvider)
-        OptOutConfirmationWideEventRecorder.prepareIfPossible(wideEvent: wideEvent,
+        OptOutConfirmationWideEventRecorder.startIfPossible(wideEvent: wideEvent,
                                                               identifier: wideEventId,
                                                               dataBrokerURL: brokerProfileQueryData.dataBroker.url,
                                                               dataBrokerVersion: brokerProfileQueryData.dataBroker.version,

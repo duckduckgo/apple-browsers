@@ -65,12 +65,12 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         self.webViewHandlerForTesting = webViewHandlerForTesting
 
         if let profile = try? jobDependencies.database.fetchExtractedProfile(with: jobData.extractedProfileId)?.profile {
-            let recorderId = OptOutSubmissionWideEventRecorder.Identifier(profileIdentifier: profile.identifier,
-                                                                          brokerId: jobData.brokerId,
-                                                                          profileQueryId: jobData.profileQueryId,
-                                                                          extractedProfileId: jobData.extractedProfileId)
+            let wideEventId = OptOutWideEventIdentifier(profileIdentifier: profile.identifier,
+                                                        brokerId: jobData.brokerId,
+                                                        profileQueryId: jobData.profileQueryId,
+                                                        extractedProfileId: jobData.extractedProfileId)
             self.wideEventRecorder = OptOutSubmissionWideEventRecorder.resumeIfPossible(wideEvent: jobDependencies.wideEvent,
-                                                                                        identifier: recorderId)
+                                                                                        identifier: wideEventId)
         } else {
             self.wideEventRecorder = nil
         }
@@ -147,11 +147,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             vpnConnectionState: jobDependencies.vpnBypassService?.connectionStatus ?? "unknown",
             vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
         )
-        let recordFoundDate = RecordFoundDateResolver.resolve(repository: jobDependencies.database,
-                                                              brokerId: jobData.brokerId,
-                                                              profileQueryId: jobData.profileQueryId,
-                                                              extractedProfileId: jobData.extractedProfileId)
-        stageDurationCalculator.attachWideEventRecorder(wideEventRecorder)
         stageDurationCalculator.setStage(.emailConfirmDecoupled)
 
         let attemptNumber = Int(jobData.emailConfirmationAttemptCount) + 1

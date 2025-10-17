@@ -17,10 +17,8 @@
 //
 
 import Foundation
-import BrowserServicesKit
-import PixelKit
 
-final class WideEventRecorder<Data: WideEventDataMeasuringInterval> {
+public final class WideEventRecorder<Data: WideEventDataMeasuringInterval> {
 
     private let wideEvent: WideEventManaging
     private var wideEventData: Data
@@ -37,11 +35,11 @@ final class WideEventRecorder<Data: WideEventDataMeasuringInterval> {
         }
     }
 
-    static func makeIfPossible(wideEvent: WideEventManaging?,
-                               identifier: String,
-                               sampleRate: Float,
-                               intervalStart: Date,
-                               makeData: (WideEventGlobalData, WideEvent.MeasuredInterval) -> Data) -> WideEventRecorder? {
+    public static func makeIfPossible(wideEvent: WideEventManaging?,
+                                      identifier: String,
+                                      sampleRate: Float,
+                                      intervalStart: Date,
+                                      makeData: (WideEventGlobalData, WideEvent.MeasuredInterval) -> Data) -> WideEventRecorder? {
         guard let wideEvent else { return nil }
 
         let global = WideEventGlobalData(id: identifier, sampleRate: sampleRate)
@@ -53,8 +51,8 @@ final class WideEventRecorder<Data: WideEventDataMeasuringInterval> {
                                  shouldStartFlow: true)
     }
 
-    static func resumeIfPossible(wideEvent: WideEventManaging?,
-                                 identifier: String) -> WideEventRecorder? {
+    public static func resumeIfPossible(wideEvent: WideEventManaging?,
+                                        identifier: String) -> WideEventRecorder? {
         guard let wideEvent,
               let existing: Data = wideEvent.getFlowData(Data.self, globalID: identifier) else {
             return nil
@@ -65,11 +63,12 @@ final class WideEventRecorder<Data: WideEventDataMeasuringInterval> {
                                  shouldStartFlow: false)
     }
 
-    static func prepareIfPossible(wideEvent: WideEventManaging?,
-                                  identifier: String,
-                                  sampleRate: Float,
-                                  intervalStartProvider: () -> Date,
-                                  makeData: (WideEventGlobalData, WideEvent.MeasuredInterval) -> Data) -> WideEventRecorder? {
+    @discardableResult
+    public static func prepareIfPossible(wideEvent: WideEventManaging?,
+                                         identifier: String,
+                                         sampleRate: Float,
+                                         intervalStartProvider: () -> Date,
+                                         makeData: (WideEventGlobalData, WideEvent.MeasuredInterval) -> Data) -> WideEventRecorder? {
         if let recorder = resumeIfPossible(wideEvent: wideEvent, identifier: identifier) {
             return recorder
         }
@@ -83,10 +82,6 @@ final class WideEventRecorder<Data: WideEventDataMeasuringInterval> {
                               makeData: makeData)
     }
 
-    private func updateFlow() {
-        wideEvent.updateFlow(wideEventData)
-    }
-
     private func completeInternal(status: WideEventStatus) {
         guard !isCompleted else { return }
         isCompleted = true
@@ -96,16 +91,16 @@ final class WideEventRecorder<Data: WideEventDataMeasuringInterval> {
         }
     }
 
-    func markCompleted(at date: Date, status: WideEventStatus = .success) {
+    public func markCompleted(at date: Date, startFallback: Date = .distantPast) {
         queue.async {
             if self.wideEventData.measuredInterval == nil {
-                self.wideEventData.measuredInterval = WideEvent.MeasuredInterval(start: nil, end: date)
+                self.wideEventData.measuredInterval = WideEvent.MeasuredInterval(start: startFallback, end: date)
             } else {
                 self.wideEventData.measuredInterval?.end = date
             }
 
-            self.updateFlow()
-            self.completeInternal(status: status)
+            self.wideEvent.updateFlow(self.wideEventData)
+            self.completeInternal(status: .success)
         }
     }
 }

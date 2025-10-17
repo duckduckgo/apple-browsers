@@ -105,11 +105,14 @@ final class UpdateModelTests: XCTestCase {
 
     // MARK: - Title Formatting Tests
 
-    func testTitle_FormatsDateCorrectly() {
+    func testTitle_FormatsDateCorrectlyForEnglishUS() {
         // Given
         let calendar = Calendar(identifier: .gregorian)
         let components = DateComponents(year: 2022, month: 1, day: 15)
         let specificDate = calendar.date(from: components) ?? Date()
+
+        let formatter = Update.releaseDateFormatter()
+        formatter.locale = Locale(identifier: "en_US")
 
         let update = Update(
             isInstalled: false,
@@ -119,14 +122,15 @@ final class UpdateModelTests: XCTestCase {
             date: specificDate,
             releaseNotes: ["Bug fixes"],
             releaseNotesSubscription: [],
-            needsLatestReleaseNote: false
+            needsLatestReleaseNote: false,
+            dateFormatterProvider: formatter
         )
 
         // When
         let title = update.title
 
         // Then
-        XCTAssertEqual(title, "January 15 2022")
+        XCTAssertEqual(title, "January 15, 2022")
     }
 
     // MARK: - Edge Cases

@@ -310,24 +310,23 @@ struct BrokerProfileScanSubJob {
                                                  brokerId: Int64,
                                                  profileQueryId: Int64,
                                                  extractedProfileId: Int64) {
-        let recordFoundDate = RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
-                                                              repository: database,
-                                                              brokerId: brokerId,
-                                                              profileQueryId: profileQueryId,
-                                                              extractedProfileId: extractedProfileId)
+        let recordFoundDateProvider = {
+            RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
+                                            repository: database,
+                                            brokerId: brokerId,
+                                            profileQueryId: profileQueryId,
+                                            extractedProfileId: extractedProfileId)
+        }
         let confirmationIdentifier = OptOutConfirmationWideEventRecorder.Identifier(profileIdentifier: profileIdentifier,
                                                                                       brokerId: brokerId,
                                                                                       profileQueryId: profileQueryId,
                                                                                       extractedProfileId: extractedProfileId)
-        let confirmationRecorder = OptOutConfirmationWideEventRecorder.resumeIfPossible(
-            wideEvent: dependencies.wideEvent,
-            identifier: confirmationIdentifier
-        ) ?? OptOutConfirmationWideEventRecorder.makeIfPossible(
+        let confirmationRecorder = OptOutConfirmationWideEventRecorder.prepareIfPossible(
             wideEvent: dependencies.wideEvent,
             identifier: confirmationIdentifier,
             dataBrokerURL: brokerProfileQueryData.dataBroker.url,
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-            recordFoundDate: recordFoundDate
+            recordFoundDateProvider: recordFoundDateProvider
         )
         confirmationRecorder?.markConfirmationCompleted(at: Date())
     }

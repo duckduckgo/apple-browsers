@@ -185,24 +185,23 @@ struct BrokerProfileOptOutSubJob {
             vpnBypassStatus: vpnBypassStatus
         )
 
-        let recordFoundDate = RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
-                                                              repository: database,
-                                                              brokerId: identifiers.brokerId,
-                                                              profileQueryId: identifiers.profileQueryId,
-                                                              extractedProfileId: identifiers.extractedProfileId)
+        let recordFoundDateProvider = {
+            RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
+                                            repository: database,
+                                            brokerId: identifiers.brokerId,
+                                            profileQueryId: identifiers.profileQueryId,
+                                            extractedProfileId: identifiers.extractedProfileId)
+        }
         let recorderId = OptOutSubmissionWideEventRecorder.Identifier(profileIdentifier: extractedProfile.identifier,
                                                                       brokerId: identifiers.brokerId,
                                                                       profileQueryId: identifiers.profileQueryId,
                                                                       extractedProfileId: identifiers.extractedProfileId)
-        let wideEventRecorder = OptOutSubmissionWideEventRecorder.resumeIfPossible(
-            wideEvent: wideEvent,
-            identifier: recorderId
-        ) ?? OptOutSubmissionWideEventRecorder.makeIfPossible(
+        let wideEventRecorder = OptOutSubmissionWideEventRecorder.prepareIfPossible(
             wideEvent: wideEvent,
             identifier: recorderId,
             dataBrokerURL: brokerProfileQueryData.dataBroker.url,
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-            recordFoundDate: recordFoundDate
+            recordFoundDateProvider: recordFoundDateProvider
         )
 
         let confirmationIdentifier = OptOutConfirmationWideEventRecorder.Identifier(
@@ -211,15 +210,12 @@ struct BrokerProfileOptOutSubJob {
             profileQueryId: identifiers.profileQueryId,
             extractedProfileId: identifiers.extractedProfileId
         )
-        _ = OptOutConfirmationWideEventRecorder.resumeIfPossible(
-            wideEvent: wideEvent,
-            identifier: confirmationIdentifier
-        ) ?? OptOutConfirmationWideEventRecorder.makeIfPossible(
+        _ = OptOutConfirmationWideEventRecorder.prepareIfPossible(
             wideEvent: wideEvent,
             identifier: confirmationIdentifier,
             dataBrokerURL: brokerProfileQueryData.dataBroker.url,
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-            recordFoundDate: recordFoundDate
+            recordFoundDateProvider: recordFoundDateProvider
         )
 
         stageDurationCalculator.attachWideEventRecorder(wideEventRecorder)

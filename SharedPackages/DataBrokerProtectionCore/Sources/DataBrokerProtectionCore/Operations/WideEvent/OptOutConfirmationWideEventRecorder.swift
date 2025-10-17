@@ -86,6 +86,22 @@ final class OptOutConfirmationWideEventRecorder {
                                                    shouldStartFlow: false)
     }
 
+    static func prepareIfPossible(wideEvent: WideEventManaging?,
+                                  identifier: Identifier,
+                                  dataBrokerURL: String,
+                                  dataBrokerVersion: String?,
+                                  recordFoundDateProvider: () -> Date) -> OptOutConfirmationWideEventRecorder? {
+        if let recorder = resumeIfPossible(wideEvent: wideEvent, identifier: identifier) {
+            return recorder
+        }
+
+        return makeIfPossible(wideEvent: wideEvent,
+                              identifier: identifier,
+                              dataBrokerURL: dataBrokerURL,
+                              dataBrokerVersion: dataBrokerVersion,
+                              recordFoundDate: recordFoundDateProvider())
+    }
+
     private func updateFlow() {
         wideEvent.updateFlow(data)
     }

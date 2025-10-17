@@ -153,12 +153,6 @@ class MainViewController: UIViewController {
     weak var tabSwitcherController: TabSwitcherViewController?
     var tabSwitcherButton: TabSwitcherButton?
 
-    /// Do not reference directly, use `presentedMenuButton`
-    let menuButton = MenuButton()
-    var presentedMenuButton: MenuButton {
-        AppWidthObserver.shared.isLargeWidth ? viewCoordinator.omniBar.barView.menuButtonContent : menuButton
-    }
-
     let gestureBookmarksButton = GestureToolbarButton()
 
     private lazy var fireButtonAnimator: FireButtonAnimator = FireButtonAnimator(appSettings: appSettings)
@@ -346,30 +340,41 @@ class MainViewController: UIViewController {
     
     var swipeTabsCoordinator: SwipeTabsCoordinator?
 
+    lazy var newTabDaxDialogFactory: NewTabDaxDialogFactory = {
+        NewTabDaxDialogFactory(
+            delegate: self,
+            daxDialogsFlowCoordinator: daxDialogsManager,
+            onboardingPixelReporter: contextualOnboardingPixelReporter)
+    }()
+
+    lazy var newTabPageDependencies: SuggestionTrayViewController.NewTabPageDependencies = {
+        SuggestionTrayViewController.NewTabPageDependencies(
+            favoritesModel: favoritesViewModel,
+            homePageMessagesConfiguration: homePageConfiguration,
+            subscriptionDataReporting: subscriptionDataReporter,
+            newTabDialogFactory: newTabDaxDialogFactory,
+            newTabDaxDialogManager: daxDialogsManager,
+            faviconLoader: faviconLoader,
+            messageNavigationDelegate: self,
+            appSettings: appSettings,
+            internalUserCommands: internalUserCommands)
+    }()
+
+    lazy var suggestionTrayDependencies: SuggestionTrayDependencies = {
+        SuggestionTrayDependencies(
+            favoritesViewModel: favoritesViewModel,
+            bookmarksDatabase: bookmarksDatabase,
+            historyManager: historyManager,
+            tabsModel: tabManager.model,
+            featureFlagger: featureFlagger,
+            appSettings: appSettings,
+            aiChatSettings: aiChatSettings,
+            featureDiscovery: featureDiscovery,
+            newTabPageDependencies: newTabPageDependencies)
+    }()
+
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
-
-        let newTabPageDependencies = SuggestionTrayViewController.NewTabPageDependencies(favoritesModel: favoritesViewModel,
-                                                                                         homePageMessagesConfiguration: homePageConfiguration,
-                                                                                         subscriptionDataReporting: subscriptionDataReporter,
-                                                                                         newTabDialogFactory: newTabDaxDialogFactory,
-                                                                                         newTabDaxDialogManager: daxDialogsManager,
-                                                                                         faviconLoader: faviconLoader,
-                                                                                         messageNavigationDelegate: self,
-                                                                                         appSettings: appSettings,
-                                                                                         internalUserCommands: internalUserCommands)
-
-        let suggestionTrayDependencies = SuggestionTrayDependencies(favoritesViewModel: favoritesViewModel,
-                                                                    bookmarksDatabase: bookmarksDatabase,
-                                                                    historyManager: historyManager,
-                                                                    tabsModel: tabManager.model,
-                                                                    featureFlagger: featureFlagger,
-                                                                    appSettings: appSettings,
-                                                                    aiChatSettings: aiChatSettings,
-                                                                    featureDiscovery: featureDiscovery,
-                                                                    newTabPageDependencies: newTabPageDependencies)
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
@@ -562,18 +567,20 @@ class MainViewController: UIViewController {
                                          featureFlagger: self.featureFlagger,
                                          appSettings: self.appSettings,
                                          aiChatSettings: self.aiChatSettings,
-                                         featureDiscovery: self.featureDiscovery)
+                                         featureDiscovery: self.featureDiscovery,
+                                         newTabPageDependencies: self.newTabPageDependencies,
+                                         hideBorder: false)
         }) else {
             assertionFailure()
             return
         }
 
         controller.view.frame = viewCoordinator.suggestionTrayContainer.bounds
+        controller.newTabPageControllerDelegate = self
         viewCoordinator.suggestionTrayContainer.addSubview(controller.view)
 
         controller.dismissHandler = dismissSuggestionTray
         controller.autocompleteDelegate = self
-        controller.favoritesOverlayDelegate = self
         suggestionTrayController = controller
     }
 
@@ -1048,7 +1055,6 @@ class MainViewController: UIViewController {
 
     private func attachOmniBar() {
         viewCoordinator.omniBar.omniDelegate = self
-        viewCoordinator.omniBar.barView.menuButtonContent.delegate = self
     }
     
     fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false) {
@@ -1536,21 +1542,11 @@ class MainViewController: UIViewController {
         if newTabPageViewController != nil {
             viewCoordinator.omniBar.barView.menuButton.accessibilityLabel = UserText.bookmarksButtonHint
             viewCoordinator.updateToolbarWithState(.newTab)
-            presentedMenuButton.setState(.menuImage, animated: false)
-
         } else {
-            let expectedState: MenuButton.State
-            if presentedViewController is BrowsingMenuViewController {
-                expectedState = .closeImage
-            } else {
-                expectedState = .menuImage
-            }
             viewCoordinator.omniBar.barView.menuButton.accessibilityLabel = UserText.menuButtonHint
-
             if let currentTab = currentTab {
                 viewCoordinator.updateToolbarWithState(.pageLoaded(currentTab: currentTab))
             }
-            presentedMenuButton.setState(expectedState, animated: false)
         }
     }
 
@@ -1607,7 +1603,7 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.showSeparator()
         viewCoordinator.suggestionTrayContainer.isHidden = true
         currentTab?.webView.accessibilityElementsHidden = false
-        suggestionTrayController?.didHide()
+        suggestionTrayController?.didHide(animated: false)
     }
     
     func launchAutofillLogins(with currentTabUrl: URL? = nil, currentTabUid: String? = nil, openSearch: Bool = false, source: AutofillSettingsSource, selectedAccount: SecureVaultModels.WebsiteAccount? = nil) {
@@ -2470,6 +2466,10 @@ extension MainViewController: OmniBarDelegate {
         handleFavoriteSelected(favorite)
     }
 
+    func onEditFavorite(_ favorite: BookmarkEntity) {
+        segueToEditBookmark(favorite)
+    }
+
     func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
         openAIChat(query, autoSend: true, tools: tools)
     }
@@ -2582,7 +2582,6 @@ extension MainViewController: OmniBarDelegate {
             }
         }
 
-        self.presentedMenuButton.setState(.closeImage, animated: true)
         tab.didLaunchBrowsingMenu()
 
         if newTabPageViewController != nil {
@@ -2810,13 +2809,6 @@ extension MainViewController: OmniBarDelegate {
     }
 }
 
-extension MainViewController: FavoritesOverlayDelegate {
-
-    func favoritesOverlay(_ overlay: FavoritesOverlay, didSelect favorite: BookmarkEntity) {
-        handleFavoriteSelected(favorite)
-    }
-}
-
 // MARK: - AutocompleteViewControllerDelegate Methods
 extension MainViewController: AutocompleteViewControllerDelegate {
 
@@ -2907,10 +2899,6 @@ extension MainViewController: NewTabPageControllerDelegate {
 
     func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
         segueToEditBookmark(favorite)
-    }
-
-    func newTabPageDidDeleteFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity) {
-        // no-op for now
     }
 
     func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController) {
@@ -3341,19 +3329,6 @@ extension MainViewController: TabSwitcherButtonDelegate {
             ViewHighlighter.hideAll()
             self.segueToTabSwitcher()
         }
-    }
-}
-
-extension MainViewController: MenuButtonDelegate {
-    
-    func showMenu(_ button: MenuButton) {
-        onMenuPressed()
-    }
-    
-    func showBookmarks(_ button: MenuButton) {
-        Pixel.fire(pixel: .bookmarksButtonPressed,
-                   withAdditionalParameters: [PixelParameters.originatedFromMenu: "0"])
-        onBookmarksPressed()
     }
 }
 

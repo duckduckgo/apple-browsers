@@ -229,6 +229,7 @@ public struct OptOutDB: Codable {
     var sevenDaysConfirmationPixelFired: Bool
     var fourteenDaysConfirmationPixelFired: Bool
     var twentyOneDaysConfirmationPixelFired: Bool
+    var fortyTwoDaysConfirmationPixelFired: Bool
 }
 
 extension OptOutDB: PersistableRecord, FetchableRecord {
@@ -254,6 +255,7 @@ extension OptOutDB: PersistableRecord, FetchableRecord {
         case sevenDaysConfirmationPixelFired
         case fourteenDaysConfirmationPixelFired
         case twentyOneDaysConfirmationPixelFired
+        case fortyTwoDaysConfirmationPixelFired
     }
 
     public init(row: Row) throws {
@@ -263,11 +265,25 @@ extension OptOutDB: PersistableRecord, FetchableRecord {
         createdDate = row[Columns.createdDate]
         lastRunDate = row[Columns.lastRunDate]
         preferredRunDate = row[Columns.preferredRunDate]
-        attemptCount = row[Columns.attemptCount]
+
+        // Introduced in v5
+        if row.hasColumn(Columns.attemptCount.rawValue) {
+            attemptCount = row[Columns.attemptCount]
+        } else {
+            attemptCount = 0
+        }
+
         submittedSuccessfullyDate = row[Columns.submittedSuccessfullyDate]
         sevenDaysConfirmationPixelFired = row[Columns.sevenDaysConfirmationPixelFired]
         fourteenDaysConfirmationPixelFired = row[Columns.fourteenDaysConfirmationPixelFired]
         twentyOneDaysConfirmationPixelFired = row[Columns.twentyOneDaysConfirmationPixelFired]
+
+        // Introduced in v10
+        if row.hasColumn(Columns.fortyTwoDaysConfirmationPixelFired.rawValue) {
+            fortyTwoDaysConfirmationPixelFired = row[Columns.fortyTwoDaysConfirmationPixelFired]
+        } else {
+            fortyTwoDaysConfirmationPixelFired = false
+        }
     }
 
     public func encode(to container: inout PersistenceContainer) throws {
@@ -282,6 +298,7 @@ extension OptOutDB: PersistableRecord, FetchableRecord {
         container[Columns.sevenDaysConfirmationPixelFired] = sevenDaysConfirmationPixelFired
         container[Columns.fourteenDaysConfirmationPixelFired] = fourteenDaysConfirmationPixelFired
         container[Columns.twentyOneDaysConfirmationPixelFired] = twentyOneDaysConfirmationPixelFired
+        container[Columns.fortyTwoDaysConfirmationPixelFired] = fortyTwoDaysConfirmationPixelFired
     }
 }
 

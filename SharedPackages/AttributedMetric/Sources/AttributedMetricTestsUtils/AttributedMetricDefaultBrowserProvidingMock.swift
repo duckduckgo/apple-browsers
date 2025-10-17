@@ -1,7 +1,7 @@
 //
-//  MockAttributionOriginProvider.swift
+//  AttributedMetricDefaultBrowserProvidingMock.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 //
 
 import Foundation
-import Subscription
-@testable import DuckDuckGo_Privacy_Browser
+import AttributedMetric
 
-final class MockAttributionOriginProvider: AttributionOriginProvider {
-    let origin: String?
+public final class AttributedMetricDefaultBrowserProvidingMock: AttributedMetricDefaultBrowserProviding {
 
-    init(origin: String? = nil) {
-        self.origin = origin
+    public init(isDefaultBrowser: Bool = false) {
+        self.isDefaultBrowser = isDefaultBrowser
     }
+
+    public var isDefaultBrowser: Bool = false
 }

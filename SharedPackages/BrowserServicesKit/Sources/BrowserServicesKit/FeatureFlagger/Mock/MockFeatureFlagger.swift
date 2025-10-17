@@ -36,7 +36,7 @@ public final class MockFeatureFlagger: FeatureFlagger {
         self.resolveCohortStub = resolveCohortStub
     }
 
-    public var allActiveExperiments: BrowserServicesKit.Experiments = [:]
+    public var allActiveExperiments: Experiments = [:]
 
     private(set) var didCallResolveCohort: Bool = false
 

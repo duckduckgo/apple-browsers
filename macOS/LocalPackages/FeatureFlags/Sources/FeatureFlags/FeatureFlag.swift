@@ -227,6 +227,9 @@ public enum FeatureFlag: String, CaseIterable {
     case syncCreditCards
     case syncIdentities
 
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211185922947392?focus=true
+    case clearAIChatHistory
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211469820985204?focus=true
     case dataImportNewSafariFilePicker
 }
@@ -249,6 +252,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .authV2WideEventEnabled,
                 .syncCreditCards,
                 .syncIdentities,
+                .clearAIChatHistory,
                 .dataImportNewSafariFilePicker:
             true
         default:
@@ -332,6 +336,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .winBackOffer,
                 .syncCreditCards,
                 .syncIdentities,
+                .clearAIChatHistory,
                 .dataImportNewSafariFilePicker:
             return true
         case .debugMenu,
@@ -501,6 +506,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         case .winBackOffer:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
+        case .clearAIChatHistory:
+            return .internalOnly()
         case .dataImportNewSafariFilePicker:
             return .remoteReleasable(.subfeature(DataImportSubfeature.newSafariFilePicker))
         }

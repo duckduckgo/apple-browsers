@@ -175,7 +175,7 @@ struct BrokerProfileOptOutSubJob {
                                              vpnBypassStatus: String) -> StageDurationContext {
         // 5. Set up dependencies used to report the status of the opt-out job:
         let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
-            dataBroker: brokerProfileQueryData.dataBroker.url,
+            dataBrokerURL: brokerProfileQueryData.dataBroker.url,
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
             handler: pixelHandler,
             vpnConnectionState: vpnConnectionState,
@@ -285,7 +285,7 @@ struct BrokerProfileOptOutSubJob {
 
         try database.addAttempt(extractedProfileId: identifiers.extractedProfileId,
                                 attemptUUID: stageDurationCalculator.attemptId,
-                                dataBroker: stageDurationCalculator.dataBroker,
+                                dataBroker: stageDurationCalculator.dataBrokerURL,
                                 lastStageDate: stageDurationCalculator.lastStateTime,
                                 startTime: stageDurationCalculator.startTime)
         try database.add(.init(extractedProfileId: identifiers.extractedProfileId,

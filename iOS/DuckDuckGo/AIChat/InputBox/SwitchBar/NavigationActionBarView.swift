@@ -22,6 +22,12 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Combine
 
+protocol NavigationActionBarViewAnimationDelegate: AnyObject {
+    func animateActionBarView(_ view: NavigationActionBarView,
+                              animations: @escaping () -> Void,
+                              completion: ((UIViewAnimatingPosition) -> Void)?)
+}
+
 final class NavigationActionBarView: UIView {
     
     // MARK: - Constants
@@ -47,6 +53,8 @@ final class NavigationActionBarView: UIView {
         }
     }
 
+    weak var animationDelegate: NavigationActionBarViewAnimationDelegate?
+
     let isFloating: Bool
 
     private let viewModel: NavigationActionBarViewModel
@@ -68,7 +76,7 @@ final class NavigationActionBarView: UIView {
         super.init(frame: .init(x: 0, y: 0, width: 300, height: 100))
         setupUI()
         setupBindings()
-        updateUI()
+        updateUI(animated: false)
     }
     
     required init?(coder: NSCoder) {
@@ -237,12 +245,24 @@ final class NavigationActionBarView: UIView {
     }
 
     // MARK: - UI Updates
-    private func updateUI() {
-        updateMicrophoneButton()
-        updateSearchButton()
-        updateButtonVisibility()
+    private func updateUI(animated: Bool = true) {
+        self.updateMicrophoneButton()
+        self.updateSearchButton()
 
-        updateButtonsStackVisibility()
+        UIView.performWithoutAnimation {
+            self.updateButtonVisibility()
+            self.updateButtonsStackVisibility()
+
+            // This makes stackviews position their arranged subviews properly
+            // so they are not sliding from the side during animation.
+            self.layoutIfNeeded()
+        }
+
+        if animated, let animationDelegate {
+            // Signal parent controller to update views so that all constraints are
+            // re-layouted in one animation block.
+            animationDelegate.animateActionBarView(self, animations: {}, completion: nil)
+        }
     }
 
     private func updateButtonsStackVisibility() {
@@ -250,6 +270,7 @@ final class NavigationActionBarView: UIView {
 
         let allButtonsHidden = rightStackView.arrangedSubviews.allSatisfy(\.isHidden)
         rightStackView.isHidden = allButtonsHidden
+        rightStackView.alpha = allButtonsHidden ? 0.0 : 1.0
         rightStackView.isLayoutMarginsRelativeArrangement = !allButtonsHidden
     }
 
@@ -295,14 +316,19 @@ final class NavigationActionBarView: UIView {
     }
     
     private func updateButtonVisibility() {
+        let hasText = viewModel.hasText
+
         let shouldShowMicButton = viewModel.shouldShowMicButton
         microphoneButton.isHidden = !shouldShowMicButton
-        
+        microphoneButton.alpha = shouldShowMicButton ? 1.0 : 0.0
+
         let shouldShowNewLineButton = viewModel.isKeyboardVisible && viewModel.hasText && !viewModel.isSearchMode
         newLineButton.isHidden = !shouldShowNewLineButton
-        
+        newLineButton.alpha = shouldShowNewLineButton ? 1.0 : 0.0
+
         let shouldShowSearchButton = viewModel.hasText
         searchButton.isHidden = !shouldShowSearchButton
+        searchButton.alpha = shouldShowSearchButton ? (hasText ? 1.0 : 0.5) : 0.0
     }
 
     // MARK: - Touch Handling

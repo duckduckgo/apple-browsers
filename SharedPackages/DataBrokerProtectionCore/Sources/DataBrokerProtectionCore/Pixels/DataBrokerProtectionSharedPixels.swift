@@ -43,10 +43,7 @@ public enum ErrorCategory: Equatable {
 public enum DataBrokerProtectionSharedPixels {
 
     public struct Consts {
-
-        @available(*, deprecated, message: "Use dataBrokerURL instead")
         public static let dataBrokerParamKey = "data_broker"
-
         public static let dataBrokerVersionKey = "broker_version"
         public static let appVersionParamKey = "app_version"
         public static let attemptIdParamKey = "attempt_id"
@@ -63,10 +60,6 @@ public enum DataBrokerProtectionSharedPixels {
         public static let pattern = "pattern"
         public static let isParent = "is_parent"
         public static let actionIDKey = "action_id"
-        public static let hadNewMatch = "had_new_match"
-        public static let hadReAppereance = "had_re-appearance"
-        public static let scanCoverage = "scan_coverage"
-        public static let removals = "removals"
         public static let environmentKey = "environment"
         public static let wasOnWaitlist = "was_on_waitlist"
         public static let httpCode = "http_code"
@@ -76,19 +69,10 @@ public enum DataBrokerProtectionSharedPixels {
         public static let profileQueries = "profile_queries"
         public static let hasError = "has_error"
         public static let brokerURL = "broker_url"
-        public static let dataBrokerURL = "data_broker_url"
         public static let attemptNumber = "attempt_number"
         public static let linkAgeMs = "link_age_ms"
         public static let status = "status"
         public static let errorCode = "error_code"
-        public static let numberOfRecordsFound = "num_found"
-        public static let numberOfOptOutsInProgress = "num_inprogress"
-        public static let numberOfSucessfulOptOuts = "num_optoutsuccess"
-        public static let numberOfOptOutsFailure = "num_optoutfailure"
-        public static let durationOfFirstOptOut = "duration_firstoptout"
-        public static let numberOfNewRecordsFound = "num_new_found"
-        public static let numberOfReappereances = "num_reappeared"
-        public static let numberOfHiddenFound = "num_hidden_found"
         public static let optOutSubmitSuccessRate = "optout_submit_success_rate"
         public static let childParentRecordDifference = "child-parent-record-difference"
         public static let calculatedOrphanedRecords = "calculated-orphaned-records"
@@ -111,7 +95,7 @@ public enum DataBrokerProtectionSharedPixels {
     }
 
     case httpError(error: Error, code: Int, dataBroker: String, version: String)
-    case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String, version: String)
+    case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String, version: String, stepType: StepType?, dataBrokerParent: String?)
     case otherError(error: Error, dataBroker: String, version: String)
     case databaseError(error: Error, functionOccurredIn: String)
     case cocoaError(error: Error, functionOccurredIn: String)
@@ -161,8 +145,6 @@ public enum DataBrokerProtectionSharedPixels {
     case monthlyActiveUser
 
     // KPIs - events
-    case weeklyReportScanning(hadNewMatch: Bool, hadReAppereance: Bool, scanCoverage: String)
-    case weeklyReportRemovals(removals: Int)
     case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double)
     case weeklyReportStalledScans(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String)
     case weeklyReportStalledOptOuts(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String)
@@ -176,6 +158,8 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutJobAt14DaysUnconfirmed(dataBroker: String)
     case optOutJobAt21DaysConfirmed(dataBroker: String)
     case optOutJobAt21DaysUnconfirmed(dataBroker: String)
+    case optOutJobAt42DaysConfirmed(dataBroker: String)
+    case optOutJobAt42DaysUnconfirmed(dataBroker: String)
 
     // Backend service errors
     case generateEmailHTTPErrorDaily(statusCode: Int, environment: String, wasOnWaitlist: Bool)
@@ -188,17 +172,10 @@ public enum DataBrokerProtectionSharedPixels {
     case initialScanPostLoadingDuration(duration: Double, hasError: Bool, brokerURL: String)
     case initialScanPreStartDuration(duration: Double)
 
-    // Measure success/failure rate of Personal Information Removal Pixels
-    // https://app.asana.com/0/1204006570077678/1206889724879222/f
-    case globalMetricsWeeklyStats(profilesFound: Int, optOutsInProgress: Int, successfulOptOuts: Int, failedOptOuts: Int, durationOfFirstOptOut: Int, numberOfNewRecordsFound: Int)
-    case globalMetricsMonthlyStats(profilesFound: Int, optOutsInProgress: Int, successfulOptOuts: Int, failedOptOuts: Int, durationOfFirstOptOut: Int, numberOfNewRecordsFound: Int)
-    case dataBrokerMetricsWeeklyStats(dataBrokerURL: String, profilesFound: Int, optOutsInProgress: Int, successfulOptOuts: Int, failedOptOuts: Int, durationOfFirstOptOut: Int, numberOfNewRecordsFound: Int, numberOfReappereances: Int, numberOfHiddenFound: Int)
-    case dataBrokerMetricsMonthlyStats(dataBrokerURL: String, profilesFound: Int, optOutsInProgress: Int, successfulOptOuts: Int, failedOptOuts: Int, durationOfFirstOptOut: Int, numberOfNewRecordsFound: Int, numberOfReappereances: Int)
-
     // Custom stats
-    case customDataBrokerStatsOptoutSubmit(dataBrokerName: String, optOutSubmitSuccessRate: Double)
+    case customDataBrokerStatsOptoutSubmit(dataBrokerURL: String, optOutSubmitSuccessRate: Double)
     case customGlobalStatsOptoutSubmit(optOutSubmitSuccessRate: Double)
-    case weeklyChildBrokerOrphanedOptOuts(dataBrokerName: String, childParentRecordDifference: Int, calculatedOrphanedRecords: Int)
+    case weeklyChildBrokerOrphanedOptOuts(dataBrokerURL: String, childParentRecordDifference: Int, calculatedOrphanedRecords: Int)
 
     // UserScript
     case userScriptLoadJSFailed(jsFile: String, error: Error)
@@ -271,8 +248,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .weeklyActiveUser: return "dbp_engagement_wau"
         case .monthlyActiveUser: return "dbp_engagement_mau"
 
-        case .weeklyReportScanning: return "dbp_event_weekly-report_scanning"
-        case .weeklyReportRemovals: return "dbp_event_weekly-report_removals"
         case .weeklyReportBackgroundTaskSession: return "dbp_event_weekly-report_background-task_session"
         case .weeklyReportStalledScans: return "dbp_event_weekly-report_stalled-scans"
         case .weeklyReportStalledOptOuts: return "dbp_event_weekly-report_stalled-optouts"
@@ -286,6 +261,8 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .optOutJobAt14DaysUnconfirmed: return "dbp_optoutjob_at-14-days_unconfirmed"
         case .optOutJobAt21DaysConfirmed: return "dbp_optoutjob_at-21-days_confirmed"
         case .optOutJobAt21DaysUnconfirmed: return "dbp_optoutjob_at-21-days_unconfirmed"
+        case .optOutJobAt42DaysConfirmed: return "dbp_optoutjob_at-42-days_confirmed"
+        case .optOutJobAt42DaysUnconfirmed: return "dbp_optoutjob_at-42-days_unconfirmed"
 
             // Backend service errors
         case .generateEmailHTTPErrorDaily: return "dbp_service_email-generate-http-error"
@@ -296,11 +273,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .initialScanSiteLoadDuration: return "dbp_scan_broker_site_loaded"
         case .initialScanPostLoadingDuration: return "dbp_initial_scan_broker_post_loading"
         case .initialScanPreStartDuration: return "dbp_initial_scan_pre_start_duration"
-
-        case .globalMetricsWeeklyStats: return "dbp_weekly_stats"
-        case .globalMetricsMonthlyStats: return "dbp_monthly_stats"
-        case .dataBrokerMetricsWeeklyStats: return "dbp_databroker_weekly_stats"
-        case .dataBrokerMetricsMonthlyStats: return "dbp_databroker_monthly_stats"
 
             // Various monitoring pixels
         case .customDataBrokerStatsOptoutSubmit: return "dbp_databroker_custom_stats_optoutsubmit"
@@ -336,11 +308,13 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             return ["code": String(code),
                     "dataBroker": dataBroker,
                     "version": version]
-        case .actionFailedError(_, let actionId, let message, let dataBroker, let version):
+        case .actionFailedError(_, let actionId, let message, let dataBroker, let version, let stepType, let dataBrokerParent):
             return ["actionID": actionId,
                     "message": message,
                     "dataBroker": dataBroker,
-                    "version": version]
+                    "version": version,
+                    "stepType": stepType?.rawValue ?? "unknown",
+                    "parent": dataBrokerParent ?? ""]
         case .otherError(let error, let dataBroker, let version):
             return ["kind": (error as? DataBrokerProtectionError)?.name ?? "unknown",
                     "dataBroker": dataBroker,
@@ -409,10 +383,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.triesKey: String(tries),
                     Consts.actionIDKey: actionId,
                     Consts.actionTypeKey: actionType]
-        case .weeklyReportScanning(let hadNewMatch, let hadReAppereance, let scanCoverage):
-            return [Consts.hadNewMatch: hadNewMatch ? "1" : "0", Consts.hadReAppereance: hadReAppereance ? "1" : "0", Consts.scanCoverage: scanCoverage.description]
-        case .weeklyReportRemovals(let removals):
-            return [Consts.removals: String(removals)]
         case .weeklyReportBackgroundTaskSession(let started, let orphaned, let completed, let terminated, let durationMinMs, let durationMaxMs, let durationMedianMs):
             return [Consts.started: String(started),
                     Consts.orphaned: String(orphaned),
@@ -436,7 +406,9 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .optOutJobAt14DaysConfirmed(let dataBroker),
                 .optOutJobAt14DaysUnconfirmed(let dataBroker),
                 .optOutJobAt21DaysConfirmed(let dataBroker),
-                .optOutJobAt21DaysUnconfirmed(let dataBroker):
+                .optOutJobAt21DaysUnconfirmed(let dataBroker),
+                .optOutJobAt42DaysConfirmed(let dataBroker),
+                .optOutJobAt42DaysUnconfirmed(let dataBroker):
             return [Consts.dataBrokerParamKey: dataBroker]
         case .dailyActiveUser,
                 .weeklyActiveUser,
@@ -467,87 +439,60 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             return [Consts.durationInMs: String(duration), Consts.hasError: hasError.description, Consts.brokerURL: brokerURL]
         case .initialScanPreStartDuration(let duration):
             return [Consts.durationInMs: String(duration)]
-        case .globalMetricsWeeklyStats(let profilesFound, let optOutsInProgress, let successfulOptOuts, let failedOptOuts, let durationOfFirstOptOut, let numberOfNewRecordsFound),
-                        .globalMetricsMonthlyStats(let profilesFound, let optOutsInProgress, let successfulOptOuts, let failedOptOuts, let durationOfFirstOptOut, let numberOfNewRecordsFound):
-                    return [Consts.numberOfRecordsFound: String(profilesFound),
-                            Consts.numberOfOptOutsInProgress: String(optOutsInProgress),
-                            Consts.numberOfSucessfulOptOuts: String(successfulOptOuts),
-                            Consts.numberOfOptOutsFailure: String(failedOptOuts),
-                            Consts.durationOfFirstOptOut: String(durationOfFirstOptOut),
-                            Consts.numberOfNewRecordsFound: String(numberOfNewRecordsFound)]
-        case .dataBrokerMetricsWeeklyStats(let dataBrokerURL, let profilesFound, let optOutsInProgress, let successfulOptOuts, let failedOptOuts, let durationOfFirstOptOut, let numberOfNewRecordsFound, let numberOfReappereances, let numberOfHiddenFound):
+        case .customDataBrokerStatsOptoutSubmit(let dataBrokerURL, let optOutSubmitSuccessRate):
             return [Consts.dataBrokerParamKey: dataBrokerURL,
-                    Consts.numberOfRecordsFound: String(profilesFound),
-                    Consts.numberOfOptOutsInProgress: String(optOutsInProgress),
-                    Consts.numberOfSucessfulOptOuts: String(successfulOptOuts),
-                    Consts.numberOfOptOutsFailure: String(failedOptOuts),
-                    Consts.durationOfFirstOptOut: String(durationOfFirstOptOut),
-                    Consts.numberOfNewRecordsFound: String(numberOfNewRecordsFound),
-                    Consts.numberOfReappereances: String(numberOfReappereances),
-                    Consts.numberOfHiddenFound: String(numberOfHiddenFound)]
-        case .dataBrokerMetricsMonthlyStats(let dataBrokerURL, let profilesFound, let optOutsInProgress, let successfulOptOuts, let failedOptOuts, let durationOfFirstOptOut, let numberOfNewRecordsFound, let numberOfReappereances):
-                   return [Consts.dataBrokerParamKey: dataBrokerURL,
-                           Consts.numberOfRecordsFound: String(profilesFound),
-                           Consts.numberOfOptOutsInProgress: String(optOutsInProgress),
-                           Consts.numberOfSucessfulOptOuts: String(successfulOptOuts),
-                           Consts.numberOfOptOutsFailure: String(failedOptOuts),
-                           Consts.durationOfFirstOptOut: String(durationOfFirstOptOut),
-                           Consts.numberOfNewRecordsFound: String(numberOfNewRecordsFound),
-                           Consts.numberOfReappereances: String(numberOfReappereances)]
-        case .customDataBrokerStatsOptoutSubmit(let dataBrokerName, let optOutSubmitSuccessRate):
-            return [Consts.dataBrokerParamKey: dataBrokerName,
                     Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate)]
         case .customGlobalStatsOptoutSubmit(let optOutSubmitSuccessRate):
             return [Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate)]
-        case .weeklyChildBrokerOrphanedOptOuts(let dataBrokerName, let childParentRecordDifference, let calculatedOrphanedRecords):
-            return [Consts.dataBrokerParamKey: dataBrokerName,
+        case .weeklyChildBrokerOrphanedOptOuts(let dataBrokerURL, let childParentRecordDifference, let calculatedOrphanedRecords):
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.childParentRecordDifference: String(childParentRecordDifference),
                     Consts.calculatedOrphanedRecords: String(calculatedOrphanedRecords)]
         case .userScriptLoadJSFailed(let jsFile, _):
             return [Consts.jsFile: jsFile]
         case .serviceEmailConfirmationLinkClientReceived(let dataBrokerURL, let brokerVersion, let linkAgeMs):
-            return [Consts.dataBrokerURL: dataBrokerURL,
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion,
                     Consts.linkAgeMs: String(linkAgeMs.rounded(.towardZero))]
         case .serviceEmailConfirmationLinkBackendStatusError(let dataBrokerURL, let brokerVersion, let status, let errorCode):
-            return [Consts.dataBrokerURL: dataBrokerURL,
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion,
                     Consts.status: status,
                     Consts.errorCode: errorCode ?? "unknown"]
         case .optOutStageSubmitAwaitingEmailConfirmation(let dataBrokerURL, let brokerVersion, let attemptId, let actionId, let duration, let tries):
-            return [Consts.dataBrokerURL: dataBrokerURL,
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion,
                     Consts.attemptIdParamKey: attemptId.uuidString,
                     Consts.actionIDKey: actionId,
                     Consts.durationParamKey: String(duration.rounded(.towardZero)),
                     Consts.triesKey: String(tries)]
         case .serviceEmailConfirmationAttemptStart(let dataBrokerURL, let brokerVersion, let attemptNumber, let attemptId, let actionId):
-            return [Consts.dataBrokerURL: dataBrokerURL,
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion,
                     Consts.attemptNumber: String(attemptNumber),
                     Consts.attemptIdParamKey: attemptId.uuidString,
                     Consts.actionIDKey: actionId ?? "unknown"]
         case .serviceEmailConfirmationAttemptSuccess(let dataBrokerURL, let brokerVersion, let attemptNumber, let duration, let attemptId, let actionId):
-            return [Consts.dataBrokerURL: dataBrokerURL,
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion,
                     Consts.attemptNumber: String(attemptNumber),
                     Consts.durationParamKey: String(duration.rounded(.towardZero)),
                     Consts.attemptIdParamKey: attemptId.uuidString,
                     Consts.actionIDKey: actionId ?? "unknown"]
         case .serviceEmailConfirmationAttemptFailure(let dataBrokerURL, let brokerVersion, let attemptNumber, let duration, let attemptId, let actionId):
-            return [Consts.dataBrokerURL: dataBrokerURL,
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion,
                     Consts.attemptNumber: String(attemptNumber),
                     Consts.durationParamKey: String(duration.rounded(.towardZero)),
                     Consts.attemptIdParamKey: attemptId.uuidString,
                     Consts.actionIDKey: actionId ?? "unknown"]
         case .serviceEmailConfirmationMaxRetriesExceeded(let dataBrokerURL, let brokerVersion, let attemptId, let actionId):
-            return [Consts.dataBrokerURL: dataBrokerURL,
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion,
                     Consts.attemptIdParamKey: attemptId.uuidString,
                     Consts.actionIDKey: actionId ?? "unknown"]
         case .serviceEmailConfirmationJobSuccess(let dataBrokerURL, let brokerVersion):
-            return [Consts.dataBrokerURL: dataBrokerURL,
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.dataBrokerVersionKey: brokerVersion]
         case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt):
             var params = [Consts.dataBrokerJsonFileKey: dataBrokerFileName]
@@ -597,7 +542,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
             case .secureVaultDatabaseRecreated:
                 self.pixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: parameters, withNamePrefix: platform.pixelNamePrefix)
             case .httpError(let error, _, _, _),
-                    .actionFailedError(let error, _, _, _, _),
+                    .actionFailedError(let error, _, _, _, _, _, _),
                     .otherError(let error, _, _):
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .databaseError(let error, _),
@@ -635,8 +580,6 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .dailyActiveUser,
                     .weeklyActiveUser,
                     .monthlyActiveUser,
-                    .weeklyReportScanning,
-                    .weeklyReportRemovals,
                     .weeklyReportBackgroundTaskSession,
                     .weeklyReportStalledScans,
                     .weeklyReportStalledOptOuts,
@@ -646,16 +589,14 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .optOutJobAt14DaysUnconfirmed,
                     .optOutJobAt21DaysConfirmed,
                     .optOutJobAt21DaysUnconfirmed,
+                    .optOutJobAt42DaysConfirmed,
+                    .optOutJobAt42DaysUnconfirmed,
                     .scanningEventNewMatch,
                     .scanningEventReAppearance,
                     .initialScanTotalDuration,
                     .initialScanSiteLoadDuration,
                     .initialScanPostLoadingDuration,
                     .initialScanPreStartDuration,
-                    .globalMetricsWeeklyStats,
-                    .globalMetricsMonthlyStats,
-                    .dataBrokerMetricsWeeklyStats,
-                    .dataBrokerMetricsMonthlyStats,
                     .customDataBrokerStatsOptoutSubmit,
                     .customGlobalStatsOptoutSubmit,
                     .weeklyChildBrokerOrphanedOptOuts,

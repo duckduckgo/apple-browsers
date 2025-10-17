@@ -33,7 +33,11 @@ final class NavigationActionBarManager {
     // MARK: - Properties
     
     weak var delegate: NavigationActionBarManagerDelegate?
-    
+    weak var animationDelegate: NavigationActionBarViewAnimationDelegate? {
+        get { navigationActionBarViewController?.navigationActionBarView.animationDelegate }
+        set { navigationActionBarViewController?.navigationActionBarView.animationDelegate = newValue }
+    }
+
     private let switchBarHandler: SwitchBarHandling
     private(set) var navigationActionBarViewController: NavigationActionBarViewController?
     private var navigationActionBarViewModel: NavigationActionBarViewModel?

@@ -218,7 +218,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         var capturedCalculator: StageDurationCalculator?
         var capturedShouldRun: (() -> Bool)?
 
-        let calculator = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker",
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: MockPixelHandler(),
                                                                      vpnConnectionState: "state",
@@ -279,7 +279,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
     // MARK: - handleEmailConfirmationDecoupling
 
     func testHandleEmailConfirmationDecoupling_recordsAwaitingEmailConfirmation() throws {
-        let calculator = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker",
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      vpnConnectionState: "state",
@@ -311,7 +311,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
     // MARK: - finalizeOptOut
 
     func testFinalizeOptOut_updatesRepositoryAndPixels() throws {
-        let calculator = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker",
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      vpnConnectionState: "state",
@@ -345,7 +345,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
     }
 
     func testFinalizeOptOut_whenHistoryWriteFails_rethrows() {
-        let calculator = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker",
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      vpnConnectionState: "state",
@@ -368,7 +368,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
     }
 
     func testHandleEmailConfirmationDecoupling_whenHistoryWriteFails_rethrows() {
-        let calculator = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker",
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      vpnConnectionState: "state",
@@ -393,7 +393,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
     // MARK: - recordOptOutFailure
 
     func testRecordOptOutFailure_whenTimeout_emitsCancelledWideEvent() {
-        let calculator = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker",
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      vpnConnectionState: "state",
@@ -434,7 +434,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
     }
 
     func testRecordOptOutFailure_whenJobTimeout_emitsCancelledWideEvent() {
-        let calculator = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker",
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      vpnConnectionState: "state",
@@ -475,7 +475,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
     }
 
     func testRecordOptOutFailure_whenGenericError_emitsFailureAndRecordsEvent() {
-        let calculator = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker",
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      vpnConnectionState: "state",
@@ -518,7 +518,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
     }
 
     func testRecordOptOutFailure_whenHistoryWriteFails_stillEmitsPixels() {
-        let calculator = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker",
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      vpnConnectionState: "state",
@@ -553,7 +553,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
     }
 
     func testRecordOptOutFailure_whenIncrementAttemptCountFails_stillHandlesFailure() {
-        let calculator = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker",
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
                                                                      vpnConnectionState: "state",

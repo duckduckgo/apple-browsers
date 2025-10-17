@@ -25,10 +25,8 @@ let package = Package(
         .macOS("11.4")
     ],
     products: [
-        .library(
-            name: "AttributedMetric",
-            targets: ["AttributedMetric"]
-        ),
+        .library(name: "AttributedMetric", targets: ["AttributedMetric"]),
+        .library(name: "AttributedMetricTestsUtils", targets: ["AttributedMetricTestsUtils"]),
     ],
     dependencies: [
         .package(path: "../BrowserServicesKit")
@@ -41,9 +39,19 @@ let package = Package(
                 .product(name: "PixelKit", package: "BrowserServicesKit")
             ]
         ),
+        .target(
+            name: "AttributedMetricTestsUtils",
+            dependencies: [
+                "AttributedMetric"
+            ]
+        ),
         .testTarget(
             name: "AttributedMetricTests",
-            dependencies: ["AttributedMetric"]
+            dependencies: [
+                "AttributedMetric",
+                "AttributedMetricTestsUtils",
+                .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit")
+            ]
         )
     ]
 )

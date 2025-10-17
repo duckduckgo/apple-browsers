@@ -1,5 +1,5 @@
 //
-//  AttributedMetricDefaultBrowserProvidingMock.swift
+//  WinBackOfferFeatureFlagger.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,8 +17,17 @@
 //
 
 import Foundation
-import AttributedMetric
+import BrowserServicesKit
+import Subscription
 
-public final class AttributedMetricDefaultBrowserProvidingMock: AttributedMetricDefaultBrowserProviding {
-    public var isDefaultBrowser: Bool = false
+final class WinBackOfferFeatureFlagger: WinBackOfferFeatureFlagProvider {
+    private let featureFlagger: FeatureFlagger
+
+    public var isWinBackOfferFeatureEnabled: Bool {
+        featureFlagger.isFeatureOn(.winBackOffer)
+    }
+
+    public init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
+    }
 }

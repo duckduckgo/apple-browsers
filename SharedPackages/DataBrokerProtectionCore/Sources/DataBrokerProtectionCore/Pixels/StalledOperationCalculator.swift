@@ -120,6 +120,6 @@ extension StalledOperationCalculator {
 
 fileprivate extension BrokerProfileQueryData {
     var key: String {
-        "\(dataBroker.name)-\(dataBroker.version)"
+        "\(dataBroker.url)-\(dataBroker.version)"
     }
 }

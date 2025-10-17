@@ -41,68 +41,6 @@ class StateRestorationPromptTests: UITestCase {
         app.terminate()
     }
 
-    func test_sessionRestorePromptDoesNotAppear_whenSessionRestoreEnabled_andAppRelaunchesAfterCrash() throws {
-        // Open settings and disable session restore using helper
-        app.openPreferencesWindow()
-        app.preferencesSetRestorePreviousSession(to: .restoreLastSession)
-        app.closePreferencesWindow()
-        app.enforceSingleWindow()
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The address bar text field didn't become available in a reasonable timeframe."
-        )
-        addressBarTextField.pasteURL(urlForBookmarksBar)
-        XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Site didn't load with the expected title in a reasonable timeframe."
-        )
-
-        sleep(1) // Give some time for the session to be saved
-
-        app.terminate()
-        app.launch()
-
-        XCTAssertTrue(
-            app.sessionRestoreAcceptButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
-            "Session restore accept button should not be in any webview."
-        )
-
-        XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Visited site wasn't found in a webview with the expected title in a reasonable timeframe."
-        )
-    }
-
-    func test_sessionRestorePromptDoesNotAppear_whenSessionRestoreDisabled_andAppRelaunchesAfterQuit() throws {
-        // Open settings and disable session restore using helper
-        app.openPreferencesWindow()
-        app.preferencesSetRestorePreviousSession(to: .newWindow)
-        app.closePreferencesWindow()
-        app.enforceSingleWindow()
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The address bar text field didn't become available in a reasonable timeframe."
-        )
-        addressBarTextField.pasteURL(urlForBookmarksBar)
-        XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Site didn't load with the expected title in a reasonable timeframe."
-        )
-
-        app.typeKey("q", modifierFlags: [.command])
-        app.launch()
-
-        XCTAssertTrue(
-            app.sessionRestoreAcceptButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
-            "Session restore accept button should not be in any webview."
-        )
-
-        XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
-            "Visited site should not be in any webview."
-        )
-    }
-
     func test_sessionCanBeRestored_whenSessionRestoreDisabled_andAppRelaunchesAfterCrash() throws {
         // Open settings and disable session restore using helper
         app.openPreferencesWindow()

@@ -8105,10 +8105,58 @@
       "comment" : "Label after the checkbox in Settings which configures clearing Duck.ai chat history automatically after quitting the app.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Chatverlauf löschen, wenn DuckDuckGo beendet wird"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Delete Duck.ai chat history when DuckDuckGo quits"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar el historial de chat de Duck.ai al cerrar DuckDuckGo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer l'historique du chat Duck.ai à la fermeture de DuckDuckGo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina la cronologia chat di Duck.ai quando DuckDuckGo esce"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai chatgeschiedenis verwijderen wanneer DuckDuckGo stopt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń historię czatów Duck.ai po zamknięciu DuckDuckGo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar o histórico de conversas do Duck.ai quando sair do DuckDuckGo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалять историю чатов с Duck.ai при закрытии DuckDuckGo"
           }
         }
       }
@@ -13653,7 +13701,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cookies und Daten von „Fireproof“-Websites werden nicht gelöscht."
+            "value" : "Cookies und Daten einer „Fireproof“-Website werden nicht gelöscht."
           }
         },
         "en" : {
@@ -19332,7 +19380,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verlauf und Browserdaten löschen …"
+            "value" : "Verlauf und Browser-Daten löschen …"
           }
         },
         "en" : {
@@ -19344,25 +19392,25 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar el historial y los datos de navegación…"
+            "value" : "Eliminar historial y datos de navegación…"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Supprimer l’historique et les données de navigation…"
+            "value" : "Supprimer l'historique et les données de navigation…"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Elimina cronologia e dati di navigazione…"
+            "value" : "Elimina la cronologia e i dati di navigazione…"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Geschiedenis en browsegegevens verwijderen…"
+            "value" : "Geschiedenis en browsegegevens verwijderen..."
           }
         },
         "pl" : {
@@ -19380,7 +19428,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить историю и данные о посещении сайтов…"
+            "value" : "Удалить историю и данные просмотра…"
           }
         }
       }
@@ -31314,10 +31362,58 @@
       "comment" : "Info in the Fire Button popover",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktive Tabs (%1$d) schließen und alle Browserverläufe und Cookies (Websites: %2$d) sowie Duck.ai-Chatverlauf löschen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Close active tabs (%1$d) and clear all browsing history and cookies (sites: %2$d), and clear Duck.ai chat history."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cierra las pestañas activas (%1$d) y borra todo el historial de navegación y las cookies (sitios: %2$d), y borra el historial de chat de Duck.ai."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermez les onglets actifs (%1$d) et effacez tout l'historique de navigation et les cookies (sites : %2$d), et effacez l'historique du chat Duck.ai."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudi le schede attive (%1$d) e cancella tutta la cronologia di navigazione e i cookie (siti: %2$d) e cancella la cronologia chat di Duck.ai."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actieve tabbladen (%1$d) sluiten en alle browsegeschiedenis en cookies (sites: %2$d) wissen, en de chatgeschiedenis van Duck.ai wissen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij aktywne karty (%1$d) i wyczyść całą historię przeglądania, pliki cookie (witryny: %2$d), oraz historię czatów z Duck.ai."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fecha os separadores ativos (%1$d), limpa todo o histórico de navegação e cookies (sites: %2$d) e limpa o histórico de conversas do Duck.ai."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрывает активные вкладки (%1$d) и стирает всю историю посещений, куки-файлы (сайтов: %2$d) и историю чатов с Duck.ai."
           }
         }
       }
@@ -31821,7 +31917,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Todas las ventanas se cerrarán."
+            "value" : "Se cerrarán todas las ventanas."
           }
         },
         "fr" : {
@@ -31851,7 +31947,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Serão fechadas todas as janelas."
+            "value" : "Todas as janelas serão fechadas."
           }
         },
         "ru" : {
@@ -31866,10 +31962,58 @@
       "comment" : "Subtitle shown under the Duck.ai chats row to explain that chat history will be deleted.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Chats löschen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Delete all chats."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar todos los chats."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimez toutes les discussions."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina tutte le chat."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle chats verwijderen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń wszystkie czaty."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina todas as conversas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все чаты будут удалены."
           }
         }
       }
@@ -31878,10 +32022,58 @@
       "comment" : "Section title. Toggle that controls whether Duck.ai chat history is deleted.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Chats"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Duck.ai chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat di Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai chats"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czaty Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чаты Duck.ai"
           }
         }
       }
@@ -32061,7 +32253,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Закрыть все вкладки и окна."
+            "value" : "Закрыть все вкладки и окна"
           }
         }
       }
@@ -32121,7 +32313,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Закрыть эту вкладку."
+            "value" : "Закрыть эту вкладку"
           }
         }
       }
@@ -32181,7 +32373,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Закрыть это окно."
+            "value" : "Закрыть это окно"
           }
         }
       }
@@ -32248,7 +32440,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar de %#@sites@. Puede que cierres sesión en tus cuentas."
+            "value" : "Eliminar de %#@sites@.Puede que cierres sesión en tus cuentas."
           },
           "substitutions" : {
             "sites" : {
@@ -32287,13 +32479,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg site"
+                      "value" : "%arg site"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg sites"
+                      "value" : "%arg sites"
                     }
                   }
                 }
@@ -32332,7 +32524,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verwijder van %#@sites@. Je kan worden uitgelogd bij accounts."
+            "value" : "Verwijderen van %#@sites@. Je kan worden uitgelogd bij accounts."
           },
           "substitutions" : {
             "sites" : {
@@ -32343,13 +32535,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg website"
+                      "value" : "%arg site"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg websites"
+                      "value" : "%arg sites"
                     }
                   }
                 }
@@ -32360,7 +32552,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usuń z %#@sites@. Może spowodować wylogowanie z kont."
+            "value" : "Usuń z %#@sites@. Może nastąpić wylogowanie z kont."
           },
           "substitutions" : {
             "sites" : {
@@ -32383,13 +32575,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg witryny"
+                      "value" : "%arg witryna"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg witryn"
+                      "value" : "%arg witryn(y)"
                     }
                   }
                 }
@@ -32428,7 +32620,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Данные будут удалены с %#@sites@. Операция может сопровождаться выходом из учетных записей."
+            "value" : "Данные будут удалены с %#@sites@.Операция может сопровождаться выходом из учетных записей."
           },
           "substitutions" : {
             "sites" : {
@@ -32451,13 +32643,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg сайта"
+                      "value" : "%arg сайт"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg сайтов"
+                      "value" : "%arg сайта(-ов)"
                     }
                   }
                 }
@@ -32893,7 +33085,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lösche %#@items@."
+            "value" : "%#@items@ löschen."
           },
           "substitutions" : {
             "items" : {
@@ -32960,13 +33152,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elemento"
+                      "value" : "%arg artículo"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementos"
+                      "value" : "%arg artículos"
                     }
                   }
                 }
@@ -32988,13 +33180,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg élément"
+                      "value" : "%arg élément"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg éléments"
+                      "value" : "%arg éléments"
                     }
                   }
                 }
@@ -33061,7 +33253,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usuń %#@items@."
+            "value" : "Usuń 1$#@items@."
           },
           "substitutions" : {
             "items" : {
@@ -33090,7 +33282,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementów"
+                      "value" : "Liczba elementów: %arg"
                     }
                   }
                 }
@@ -33101,7 +33293,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar %#@items@."
+            "value" : "Elimina %#@items@."
           },
           "substitutions" : {
             "items" : {
@@ -33129,7 +33321,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить %#@items@."
+            "value" : "Удаление %#@items@."
           },
           "substitutions" : {
             "items" : {
@@ -33152,13 +33344,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg запись"
+                      "value" : "%arg элемент"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg записей"
+                      "value" : "Записей: %arg"
                     }
                   }
                 }
@@ -33174,7 +33366,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lösche %#@items@ aus diesem Tab."
+            "value" : "%#@items@ aus dieser Registerkarte löschen."
           },
           "substitutions" : {
             "items" : {
@@ -33241,13 +33433,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elemento"
+                      "value" : "%arg artículo"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementos"
+                      "value" : "%arg artículos"
                     }
                   }
                 }
@@ -33269,13 +33461,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg élément"
+                      "value" : "%arg élément"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg éléments"
+                      "value" : "%arg éléments"
                     }
                   }
                 }
@@ -33371,7 +33563,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementów"
+                      "value" : "Liczba elementów: %arg"
                     }
                   }
                 }
@@ -33382,7 +33574,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar %#@items@ deste separador."
+            "value" : "Elimina %#@items@ deste separador."
           },
           "substitutions" : {
             "items" : {
@@ -33410,7 +33602,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить %#@items@ с этой вкладки."
+            "value" : "Удаление %#@items@ с этой вкладки."
           },
           "substitutions" : {
             "items" : {
@@ -33433,13 +33625,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg запись"
+                      "value" : "%arg элемент"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg записей"
+                      "value" : "Записей: %arg"
                     }
                   }
                 }
@@ -33455,7 +33647,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lösche %#@items@ aus diesem Fenster."
+            "value" : "%#@items@ aus diesem Fenster löschen."
           },
           "substitutions" : {
             "items" : {
@@ -33522,13 +33714,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elemento"
+                      "value" : "%arg artículo"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementos"
+                      "value" : "%arg artículos"
                     }
                   }
                 }
@@ -33550,13 +33742,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg élément"
+                      "value" : "%arg élément"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg éléments"
+                      "value" : "%arg éléments"
                     }
                   }
                 }
@@ -33652,7 +33844,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementów"
+                      "value" : "%arg elem."
                     }
                   }
                 }
@@ -33663,7 +33855,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar %#@items@ desta janela."
+            "value" : "Elimina %#@items@ desta janela."
           },
           "substitutions" : {
             "items" : {
@@ -33691,7 +33883,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить %#@items@ из этого окна."
+            "value" : "Удаление %#@items@ из этого окна."
           },
           "substitutions" : {
             "items" : {
@@ -33714,13 +33906,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg запись"
+                      "value" : "%arg элемент"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg записей"
+                      "value" : "Записей: %arg"
                     }
                   }
                 }
@@ -34016,7 +34208,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Separador"
+            "value" : "Tab"
           }
         },
         "ru" : {
@@ -34092,7 +34284,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browserverlauf löschen?"
+            "value" : "Browsendaten löschen?"
           }
         },
         "en" : {
@@ -34110,7 +34302,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Supprimer les données de navigation ?"
+            "value" : "Supprimer les données de navigation\t?"
           }
         },
         "it" : {
@@ -34122,13 +34314,13 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browsegegevens verwijderen?"
+            "value" : "Surfgegevens verwijderen?"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usunąć dane przeglądania?"
+            "value" : "Usuń dane przeglądania?"
           }
         },
         "pt" : {
@@ -34140,7 +34332,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить данные просмотра?"
+            "value" : "Удалить данные о посещении сайтов?"
           }
         }
       }
@@ -34151,7 +34343,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browserverlauf von %@ löschen?"
+            "value" : "Browsendaten von %@ löschen?"
           }
         },
         "en" : {
@@ -34175,19 +34367,19 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminare i dati di navigazione di %@?"
+            "value" : "Eliminare i dati di navigazione da %@?"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browsegegevens van %@ verwijderen?"
+            "value" : "Browsegegevens verwijderen van %@?"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usunąć dane przeglądania z %@?"
+            "value" : "Usunąć dane przeglądania z: %@?"
           }
         },
         "pt" : {
@@ -34199,7 +34391,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить данные за %@?"
+            "value" : "Удалить данные о посещении сайтов: %@?"
           }
         }
       }
@@ -34210,7 +34402,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browserverlauf von %@ löschen?"
+            "value" : "Browserdaten von %@ löschen?"
           }
         },
         "en" : {
@@ -34234,19 +34426,19 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminare i dati di navigazione di %@?"
+            "value" : "Eliminare i dati di navigazione da %@?"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browsegegevens van %@ verwijderen?"
+            "value" : "Browsegegevens verwijderen van %@?"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usunąć dane przeglądania z %@?"
+            "value" : "Usunąć dane przeglądania z: %@?"
           }
         },
         "pt" : {
@@ -34258,7 +34450,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить данные с %@?"
+            "value" : "Удалить данные о посещении сайта %@?"
           }
         }
       }
@@ -34269,7 +34461,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browserverlauf von heute löschen?"
+            "value" : "Browsendaten von heute löschen?"
           }
         },
         "en" : {
@@ -34287,13 +34479,13 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Supprimer les données de navigation d’aujourd’hui ?"
+            "value" : "Supprimer les données de navigation d'aujourd'hui ?"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminare i dati di navigazione di oggi?"
+            "value" : "Eliminare i dati di navigazione a partire da oggi?"
           }
         },
         "nl" : {
@@ -34305,7 +34497,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usunąć dane przeglądania z dzisiaj?"
+            "value" : "Usunąć dzisiejsze dane przeglądania?"
           }
         },
         "pt" : {
@@ -34317,7 +34509,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить данные за сегодня?"
+            "value" : "Удалить данные о посещениях за сегодня?"
           }
         }
       }
@@ -34328,7 +34520,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browserverlauf von gestern löschen?"
+            "value" : "Browsendaten von gestern löschen?"
           }
         },
         "en" : {
@@ -34352,7 +34544,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminare i dati di navigazione di ieri?"
+            "value" : "Eliminare i dati di navigazione a partire da ieri?"
           }
         },
         "nl" : {
@@ -34364,7 +34556,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usunąć dane przeglądania z wczoraj?"
+            "value" : "Usunąć wczorajsze dane przeglądania?"
           }
         },
         "pt" : {
@@ -34376,7 +34568,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить данные за вчера?"
+            "value" : "Удалить данные о посещениях за вчерашний день?"
           }
         }
       }
@@ -34387,7 +34579,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Diese Websites werden gelöscht."
+            "value" : "Diese Seiten werden gelöscht."
           }
         },
         "en" : {
@@ -34399,7 +34591,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Estos sitios se eliminarán."
+            "value" : "Estos sitios serán eliminados."
           }
         },
         "fr" : {
@@ -34417,7 +34609,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deze sites worden verwijderd."
+            "value" : "Deze sites zullen worden verwijderd."
           }
         },
         "pl" : {
@@ -34435,7 +34627,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Данные сайтов будут удалены."
+            "value" : "Эти сайты будут удалены."
           }
         }
       }
@@ -34446,7 +34638,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Website-Details"
+            "value" : "Websitedetails"
           }
         },
         "en" : {
@@ -34458,43 +34650,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Detalles de los sitios"
+            "value" : "Detalles del sitio"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Détails des sites"
+            "value" : "Détails du site"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dettagli dei siti"
+            "value" : "Dettagli del sito"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sitedetails"
+            "value" : "Site details"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Szczegóły witryn"
+            "value" : "Szczegóły witryny"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Detalhes dos sites"
+            "value" : "Detalhes do site"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Сведения о сайтах"
+            "value" : "Подробнее о сайте"
           }
         }
       }
@@ -34536,7 +34728,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Huidige tabblad wordt gesloten."
+            "value" : "Huidig tabblad wordt gesloten."
           }
         },
         "pl" : {
@@ -34602,7 +34794,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Przypięta karta zostanie załadowana ponownie."
+            "value" : "Przypięta karta zostanie ponownie załadowana."
           }
         },
         "pt" : {
@@ -34697,7 +34889,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar los datos de navegación"
+            "value" : "Elimina los datos de navegación"
           }
         },
         "fr" : {
@@ -34715,7 +34907,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browsegegevens verwijderen"
+            "value" : "Surfgegevens verwijderen"
           }
         },
         "pl" : {
@@ -34745,7 +34937,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aktuelles Fenster wird geschlossen."
+            "value" : "Das aktuelle Fenster wird geschlossen."
           }
         },
         "en" : {
@@ -34757,7 +34949,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La ventana actual se cerrará."
+            "value" : "Se cerrará la ventana actual."
           }
         },
         "fr" : {
@@ -35423,13 +35615,13 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajouter l’actuel"
+            "value" : "Ajouter le site actuel"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aggiungi corrente"
+            "value" : "Aggiungi sito attuale"
           }
         },
         "nl" : {
@@ -35453,7 +35645,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Добавить текущий"
+            "value" : "Добавить этот сайт"
           }
         }
       }
@@ -35465,7 +35657,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Feuerfeste Seite hinzufügen"
+            "value" : "Fireproof-Seite hinzufügen"
           }
         },
         "en" : {
@@ -35477,43 +35669,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Añadir sitio a prueba de fuego"
+            "value" : "Añadir sitio Fireproof"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajouter un site coupe-feu"
+            "value" : "Ajouter un site Fireproof"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aggiungi sito protetto"
+            "value" : "Aggiungi sito Fireproof"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Brandveilig site toevoegen"
+            "value" : "Fireproof-site toevoegen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dodaj chronioną witrynę"
+            "value" : "Dodaj zabezpieczoną witrynę internetową"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adicionar site protegido"
+            "value" : "Adicionar site Fireproof"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Добавить огнеупорный сайт"
+            "value" : "Fireproof: огнеупорный сайт"
           }
         }
       }
@@ -37188,10 +37380,58 @@
       "comment" : "Caption for a checkbox to optionally delete Duck.ai chats alongside removing browser history entries",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auch Duck.ai-Chats löschen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Also delete Duck.ai chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrar también los chats de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer également les discussions Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina anche le chat di Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwijder ook Duck.ai-chats"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń także czaty Duck.ai."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar também as conversas do Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Также удалить чаты с Duck.ai"
           }
         }
       }
@@ -37200,10 +37440,58 @@
       "comment" : "Explanation of what deleting Duck.ai chats means.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dadurch werden alle Chats im Duck.ai-Chatverlauf gelöscht."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "This will delete all chats in Duck.ai chat history."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esto eliminará todos los chats del historial de chats de Duck.ai."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cela supprimera toutes les discussions de l'historique du chat Duck.ai."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo eliminerà tutte le chat nella cronologia di Duck.ai."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hiermee worden alle chats uit de chatgeschiedenis van Duck.ai verwijderd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spowoduje to usunięcie wszystkich czatów w historii czatów Duck.ai."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Isto elimina todas as conversas do histórico de conversas do Duck.ai."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "История чатов с Duck.ai будет полностью удалена."
           }
         }
       }
@@ -37407,19 +37695,19 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Borrar historial más antiguo?"
+            "value" : "¿Eliminar el historial más antiguo?"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Supprimer l'historique plus ancien ?"
+            "value" : "Supprimer l'historique plus ancien\t?"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cancellare la cronologia più vecchia?"
+            "value" : "Eliminare la cronologia precedente?"
           }
         },
         "nl" : {
@@ -37443,7 +37731,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить старую историю?"
+            "value" : "Удалить более старую историю?"
           }
         }
       }
@@ -53241,7 +53529,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keine"
+            "value" : "gar nichts"
           }
         },
         "en" : {
@@ -53265,7 +53553,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nessuno"
+            "value" : "Niente"
           }
         },
         "nl" : {
@@ -53289,7 +53577,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Нет"
+            "value" : "Без анимации"
           }
         }
       }
@@ -63338,8 +63626,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Passwörter sind verschlüsselt. Niemand außer dir kann sie sehen, nicht einmal wir."
+            "state" : "translated",
+            "value" : "Passwörter und Kreditkarten sind verschlüsselt. Niemand außer dir kann sie sehen, nicht einmal wir."
           }
         },
         "en" : {
@@ -63350,44 +63638,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Las contraseñas están cifradas. Nadie más que tú puede verlas, ni siquiera nosotros."
+            "state" : "translated",
+            "value" : "Las contraseñas y las tarjetas de crédito están cifradas. Nadie más que tú puede verlas, ni siquiera nosotros."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Les mots de passe sont cryptés. Personne d'autre que vous ne peut les voir, pas même nous."
+            "state" : "translated",
+            "value" : "Les mots de passe et les cartes bancaires sont cryptés. Personne d'autre que vous ne peut les voir, pas même nous."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Le password sono crittografate. Nessuno tranne te può vederle, nemmeno noi."
+            "state" : "translated",
+            "value" : "Password e carte di credito sono crittografate. Nessuno tranne te può vederle, nemmeno noi."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Wachtwoorden worden versleuteld. Niemand anders kan ze zien, zelfs wij niet."
+            "state" : "translated",
+            "value" : "Wachtwoorden en creditcards worden versleuteld. Niemand anders kan ze zien, zelfs wij niet."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Hasła są szyfrowane. Nikt poza Tobą ich nie widzi, nawet my."
+            "state" : "translated",
+            "value" : "Hasła i dane kart kredytowych są szyfrowane. Nikt poza Tobą ich nie widzi, nawet my."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "As palavras-passe estão encriptadas. Ninguém além de ti pode vê-las, nem mesmo nós."
+            "state" : "translated",
+            "value" : "As palavras-passe e os cartões de crédito estão encriptados. Ninguém além de ti pode vê-las, nem mesmo nós."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Пароли подвергаются шифрованию. Никто, кроме вас, их не увидит. Даже мы."
+            "state" : "translated",
+            "value" : "Пароли и реквизиты карт подвергаются шифрованию. Никто, кроме вас, их не увидит. Даже мы."
           }
         }
       }
@@ -63398,8 +63686,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Passwörter sind verschlüsselt."
+            "state" : "translated",
+            "value" : "Passwörter und Kreditkarten sind verschlüsselt."
           }
         },
         "en" : {
@@ -63410,44 +63698,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Las contraseñas están cifradas."
+            "state" : "translated",
+            "value" : "Las contraseñas y las tarjetas de crédito están cifradas."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Les mots de passe sont cryptés."
+            "state" : "translated",
+            "value" : "Les mots de passe et les cartes bancaires sont cryptés."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Le password sono crittografate."
+            "state" : "translated",
+            "value" : "Password e carte di credito sono crittografate."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Wachtwoorden worden versleuteld."
+            "state" : "translated",
+            "value" : "Wachtwoorden en creditcards worden versleuteld."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Hasła są szyfrowane."
+            "state" : "translated",
+            "value" : "Hasła i dane kart kredytowych są szyfrowane."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "As palavras-passe estão encriptadas."
+            "state" : "translated",
+            "value" : "As palavras-passe e os cartões de crédito estão encriptados."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Пароли подвергаются шифрованию."
+            "state" : "translated",
+            "value" : "Пароли и реквизиты карт подвергаются шифрованию."
           }
         }
       }
@@ -63458,7 +63746,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Passwörter sind verschlüsselt. Niemand außer dir kann sie sehen, nicht einmal wir."
           }
         },
@@ -63470,43 +63758,43 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Las contraseñas están cifradas. Nadie más que tú puede verlas, ni siquiera nosotros."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Les mots de passe sont cryptés. Personne d'autre que vous ne peut les voir, pas même nous."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Le password sono crittografate. Nessuno tranne te può vederle, nemmeno noi."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Wachtwoorden worden versleuteld. Niemand anders kan ze zien, zelfs wij niet."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Hasła są szyfrowane. Nikt poza Tobą ich nie widzi, nawet my."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "As palavras-passe estão encriptadas. Ninguém além de ti pode vê-las, nem mesmo nós."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Пароли подвергаются шифрованию. Никто, кроме вас, их не увидит. Даже мы."
           }
         }
@@ -63518,7 +63806,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Passwörter sind verschlüsselt."
           }
         },
@@ -63530,43 +63818,43 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Las contraseñas están cifradas."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Les mots de passe sont cryptés."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Le password sono crittografate."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Wachtwoorden worden versleuteld."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Hasła są szyfrowane."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "As palavras-passe estão encriptadas."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Пароли подвергаются шифрованию."
           }
         }
@@ -63903,7 +64191,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sincronizza carte di credito"
+            "value" : "Sincronizza Carte di credito"
           }
         },
         "nl" : {
@@ -63927,7 +64215,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Синхронизировать платежные карты"
+            "value" : "Синхронизировать карты"
           }
         }
       }
@@ -63963,7 +64251,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sincronizza identità"
+            "value" : "Sincronizza le identità"
           }
         },
         "nl" : {
@@ -63987,7 +64275,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Синхронизировать учетные данные"
+            "value" : "Синхронизировать данные"
           }
         }
       }
@@ -64023,7 +64311,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sincronizza password"
+            "value" : "Sincronizza le password"
           }
         },
         "nl" : {
@@ -92996,10 +93284,58 @@
       "comment" : "Label after the checkbox in Settings which configures a warning before clearing data and chats on the application termination.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warne mich, dass Tabs, Daten und Chats beim Beenden gelöscht werden"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Warn me that tabs, data, and chats will be deleted when quitting"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisarme de que las pestañas, los datos y los chats se eliminarán al salir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "M'avertir que les onglets, les données et les discussions seront supprimés à la fermeture"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avvisa prima di eliminare schede, dati e chat all'uscita"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waarschuw me dat tabbladen, gegevens en chats worden verwijderd bij het afsluiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ostrzegaj, że karty, dane i czaty zostaną usunięte przy wychodzeniu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisar-me que os separadores, os dados e as conversas forem eliminados na saída"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Предупреждать о закрытии вкладок, удалении данных и чатов при выходе"
           }
         }
       }
@@ -93008,10 +93344,58 @@
       "comment" : "A header of warning before clearing data and chats on the application termination.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabs, Browsendaten und Chats löschen und DuckDuckGo beenden?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Clear tabs, browsing data, and chats and quit DuckDuckGo?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Borrar pestañas, datos de navegación y chats y salir de DuckDuckGo?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Effacer les onglets, les données de navigation et les discussions, puis quitter DuckDuckGo ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancellare le schede, i dati di navigazione e le chat e uscire da DuckDuckGo?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabbladen, browsegegevens en chats wissen en DuckDuckGo afsluiten?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyczyścić karty, dane przeglądania i czaty oraz wyjść z DuckDuckGo?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limpar separadores, dados de navegação, conversas e sair do DuckDuckGo?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть вкладки, очистить данные и чаты, а затем выйти из DuckDuckGo?"
           }
         }
       }

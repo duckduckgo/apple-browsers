@@ -193,7 +193,7 @@ public struct SecureVaultModels {
         public let lastUpdated: Date
 
         public var cardNumberData: Data
-        public var cardSuffix: String // Stored as L1 data, used when presenting a list of cards in the Autofill UIy
+        public var cardSuffix: String // Stored as L1 data, used when presenting a list of cards in the Autofill UI
         public var cardholderName: String?
         public var cardSecurityCode: String?
         public var expirationMonth: Int?

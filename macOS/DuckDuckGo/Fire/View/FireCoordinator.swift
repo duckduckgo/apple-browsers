@@ -105,7 +105,7 @@ final class FireCoordinator {
         }
         var fireCoordinatorGetter: (() -> FireCoordinator)!
         let historyBurner = FireHistoryBurner(fireproofDomains: self.fireproofDomains, fire: { fireCoordinatorGetter().fireViewModel.fire })
-        self.historyProvider = historyProvider ?? HistoryViewDataProvider(historyDataSource: self.historyCoordinating, historyBurner: historyBurner, featureFlagger: featureFlagger)
+        self.historyProvider = historyProvider ?? HistoryViewDataProvider(historyDataSource: self.historyCoordinating, historyBurner: historyBurner, featureFlagger: featureFlagger, tld: tld)
         if let fireViewModel {
             self.fireViewModel = fireViewModel
         }
@@ -188,14 +188,7 @@ extension FireCoordinator {
             // Fallback to querying provider
             scopeVisits = await historyProvider.visits(matching: scopeQuery)
         }
-        let scopeCookieDomains: Set<String> = {
-            let hosts = Set(scopeVisits.compactMap { $0.historyEntry?.url.host })
-            let result: [String] = hosts.compactMap {
-                let eTLDplus1 = tld.eTLDplus1($0)
-                return eTLDplus1
-            }
-            return Set(result)
-        }()
+        let scopeCookieDomains = scopeVisits.lazy.compactMap(\.historyEntry?.url.host).convertedToETLDPlus1(tld: tld)
 
         let vm = FireDialogViewModel(
             fireViewModel: self.fireViewModel,

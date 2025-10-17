@@ -849,7 +849,7 @@ extension Set where Element == String {
     func areAllETLDPlus1(tld: TLD) -> Bool {
         for domain in self {
             guard let eTLDPlus1Host = tld.eTLDplus1(domain) else {
-                return false
+                return true // allow `localhost`-s
             }
             if domain != eTLDPlus1Host {
                 return false

@@ -74,8 +74,8 @@ protocol HistoryViewDataProviding: HistoryView.DataProviding {
 }
 
 extension HistoryViewDataProviding {
-    func deleteVisits(matching query: DataModel.HistoryQueryKind, and deleteChats: Bool = false) async {
-        await deleteVisits(matching: query, and: deleteChats)
+    func deleteVisits(matching query: DataModel.HistoryQueryKind) async {
+        await deleteVisits(matching: query, and: false)
     }
 }
 

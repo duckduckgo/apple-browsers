@@ -58,17 +58,17 @@ protocol FireProtocol: AnyObject {
                                completion: (@MainActor () -> Void)?)
     @MainActor func burnChatHistory() async
 }
+
 extension FireProtocol {
 
     @MainActor
     func burnAll(isBurnOnExit: Bool = false,
                  opening url: URL = .newtab,
-                 includeCookiesAndSiteData: Bool = true,
                  includeChatHistory: Bool = true,
                  completion: (@MainActor () -> Void)? = nil) {
         burnAll(isBurnOnExit: isBurnOnExit,
                 opening: url,
-                includeCookiesAndSiteData: includeCookiesAndSiteData,
+                includeCookiesAndSiteData: true,
                 includeChatHistory: includeChatHistory,
                 completion: completion)
     }

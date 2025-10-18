@@ -32899,6 +32899,18 @@
         }
       }
     },
+    "fire.dialog.fire-window.close-tabs-chats" : {
+      "comment" : "Title of the dialog where the user can close browser tabs and clear data and Duck.ai chat history.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close Tabs and Clear Data and Chats"
+          }
+        }
+      }
+    },
     "fire.dialog.fire-window.description" : {
       "comment" : "Explanation of what a fire window is.",
       "extractionState" : "extracted_with_value",

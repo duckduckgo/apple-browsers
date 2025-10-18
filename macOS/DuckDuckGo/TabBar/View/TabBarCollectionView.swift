@@ -82,6 +82,7 @@ open class TabBarCollectionView: NSCollectionView {
         } else {
             deselectItems(at: selectionIndexPaths)
         }
+        updateItemsLeftToSelectedItems()
     }
 
     func scrollToSelected() {

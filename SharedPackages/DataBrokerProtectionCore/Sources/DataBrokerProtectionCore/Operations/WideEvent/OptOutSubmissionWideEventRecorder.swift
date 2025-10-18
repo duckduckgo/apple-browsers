@@ -20,14 +20,10 @@ import Foundation
 import BrowserServicesKit
 import PixelKit
 
-protocol OptOutSubmissionWideEventRecording: AnyObject {
-    func markSubmissionCompleted(at date: Date)
-}
-
-final class OptOutSubmissionWideEventRecorder {
+final class OptOutSubmissionWideEventRecorder: OptOutWideEventRecording {
     static let sampleRate: Float = 1.0
 
-    private let recorder: WideEventRecorder<OptOutSubmissionWideEventData>
+    let recorder: WideEventRecorder<OptOutSubmissionWideEventData>
 
     private init(recorder: WideEventRecorder<OptOutSubmissionWideEventData>) {
         self.recorder = recorder
@@ -89,10 +85,8 @@ final class OptOutSubmissionWideEventRecorder {
 
         return OptOutSubmissionWideEventRecorder(recorder: recorder)
     }
-}
 
-extension OptOutSubmissionWideEventRecorder: OptOutSubmissionWideEventRecording {
-    func markSubmissionCompleted(at date: Date) {
+    func markCompleted(at date: Date) {
         recorder.markCompleted(at: date)
     }
 }

@@ -20,14 +20,10 @@ import Foundation
 import BrowserServicesKit
 import PixelKit
 
-protocol OptOutConfirmationWideEventRecording: AnyObject {
-    func markConfirmationCompleted(at date: Date)
-}
-
-final class OptOutConfirmationWideEventRecorder {
+final class OptOutConfirmationWideEventRecorder: OptOutWideEventRecording {
     static let sampleRate: Float = 1.0
 
-    private let recorder: WideEventRecorder<OptOutConfirmationWideEventData>
+    let recorder: WideEventRecorder<OptOutConfirmationWideEventData>
 
     private init(recorder: WideEventRecorder<OptOutConfirmationWideEventData>) {
         self.recorder = recorder
@@ -89,10 +85,8 @@ final class OptOutConfirmationWideEventRecorder {
 
         return OptOutConfirmationWideEventRecorder(recorder: recorder)
     }
-}
 
-extension OptOutConfirmationWideEventRecorder: OptOutConfirmationWideEventRecording {
-    func markConfirmationCompleted(at date: Date) {
+    func markCompleted(at date: Date) {
         recorder.markCompleted(at: date)
     }
 }

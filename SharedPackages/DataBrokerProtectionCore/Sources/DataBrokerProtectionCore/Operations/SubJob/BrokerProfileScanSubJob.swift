@@ -330,7 +330,7 @@ struct BrokerProfileScanSubJob {
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
             recordFoundDateProvider: recordFoundDateProvider
         )
-        confirmationRecorder?.markConfirmationCompleted(at: completionDate)
+        confirmationRecorder?.markCompleted(at: completionDate)
     }
 
     private func sendProfilesRemovedEventIfNecessary(eventsHandler: EventMapping<JobEvent>,

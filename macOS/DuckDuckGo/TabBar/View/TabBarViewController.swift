@@ -638,12 +638,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             collectionView = self.collectionView
         }
 
+        bringSelectedTabCollectionToFront()
+
         guard shouldContinue, let collectionView else {
             return
         }
 
         guard collectionView.selectionIndexPaths.first?.item != tabCollectionViewModel.selectionIndex?.item else {
-            bringSelectedTabCollectionToFront()
             collectionView.updateItemsLeftToSelectedItems()
             return
         }
@@ -662,8 +663,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             collectionView.selectItems(at: [newSelectionIndexPath], scrollPosition: .centeredHorizontally)
             collectionView.scrollToSelected()
         }
-
-        bringSelectedTabCollectionToFront()
     }
 
     private func bringSelectedTabCollectionToFront() {

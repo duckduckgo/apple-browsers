@@ -319,6 +319,7 @@ struct FireDialogView: ModalView {
         )
         .padding(.top, 4)
         .padding(.bottom, 8)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func presentManageFireproof() {

@@ -232,6 +232,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211469820985204?focus=true
     case dataImportNewSafariFilePicker
+
+    /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1211625735257812?focus=true
+    case cpmCountPixel
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -346,6 +349,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
                 .scheduledSetDefaultBrowserAndAddToDockPrompts,
+                .cpmCountPixel,
                 .fireDialogIndividualSitesLink:
             return false
         }
@@ -509,6 +513,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DataImportSubfeature.newSafariFilePicker))
         case .aiChatDataClearing:
             return .remoteReleasable(.feature(.duckAiDataClearing))
+        case .cpmCountPixel:
+            return .internalOnly()
         }
     }
 }

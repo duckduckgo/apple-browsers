@@ -117,6 +117,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
     let subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
+    let autoconsentDailyStats: AutoconsentDailyStatsManaging
 
     let appearancePreferences: AppearancePreferences
     let dataClearingPreferences: DataClearingPreferences
@@ -660,6 +661,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionManager: subscriptionAuthV1toV2Bridge
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
+        self.autoconsentDailyStats = AutoconsentDailyStats(keyValueStore: keyValueStore, featureFlagger: featureFlagger)
 
         themeManager = ThemeManager(appearancePreferences: appearancePreferences, internalUserDecider: internalUserDecider)
 
@@ -1123,6 +1125,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         fireDailyActiveUserPixel()
         fireDailyFireWindowConfigurationPixel()
+        autoconsentDailyStats.sendDailyPixelIfNeeded()
 
         initializeSync()
 

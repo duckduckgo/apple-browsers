@@ -177,6 +177,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 )
             )
             stageDurationCalculator.fireOptOutSubmitSuccess(tries: attemptNumber)
+            wideEventRecorder?.markCompleted(at: Date())
             try await markAsSuccessful(stageDurationCalculator: stageDurationCalculator, broker: broker)
             Logger.dataBrokerProtection.log("✉️ Email confirmation completed successfully")
         } catch {

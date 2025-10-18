@@ -298,6 +298,22 @@ struct BrokerProfileOptOutSubJob {
         stageDurationCalculator.fireOptOutValidate()
         stageDurationCalculator.fireOptOutSubmitSuccess(tries: tries)
 
+        if let wideEvent = dependencies.wideEvent {
+            let profileIdentifier = brokerProfileQueryData.optOutJobData
+                .first(where: { $0.extractedProfile.id == identifiers.extractedProfileId })?
+                .extractedProfile.identifier
+            let wideEventId = OptOutWideEventIdentifier(
+                profileIdentifier: profileIdentifier,
+                brokerId: identifiers.brokerId,
+                profileQueryId: identifiers.profileQueryId,
+                extractedProfileId: identifiers.extractedProfileId
+            )
+            OptOutSubmissionWideEventRecorder.resumeIfPossible(
+                wideEvent: wideEvent,
+                identifier: wideEventId
+            )?.markCompleted(at: Date())
+        }
+
         let updater = OperationPreferredDateUpdater(database: database)
         try updater.updateChildrenBrokerForParentBroker(brokerProfileQueryData.dataBroker,
                                                         profileQueryId: identifiers.profileQueryId)

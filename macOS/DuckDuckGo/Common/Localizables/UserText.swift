@@ -443,7 +443,7 @@ struct UserText {
     static let fireDialogFireWindowDescription = NSLocalizedString("fire.dialog.fire-window.description", value: "An isolated window that doesn’t save any data", comment: "Explanation of what a fire window is.")
     public static func fireDialogCloseTabs(includeChats: Bool) -> String {
         if includeChats {
-            return "Close Tabs and Clear Data and Chats"
+            return NSLocalizedString("fire.dialog.fire-window.close-tabs-chats", value: "Close Tabs and Clear Data and Chats", comment: "Title of the dialog where the user can close browser tabs and clear data and Duck.ai chat history.")
         } else {
             return NSLocalizedString("fire.dialog.fire-window.close-tabs", value: "Close Tabs and Clear Data", comment: "Title of the dialog where the user can close browser tabs and clear data.")
         }

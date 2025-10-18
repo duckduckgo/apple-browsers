@@ -228,9 +228,7 @@ final class DBPUICommunicationModelTests: XCTestCase {
 
         // When
         let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOut,
-                                                       dataBrokerName: "doesn't matter for the test",
-                                                       dataBrokerURL: "see above",
-                                                       dataBrokerParentURL: "whatever",
+                                                       dataBroker: makeUIBroker(parentURL: "whatever"),
                                                        parentBrokerOptOutJobData: [parentOptOut],
                                                        optOutUrl: "broker.com")
 

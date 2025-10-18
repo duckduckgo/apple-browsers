@@ -44,7 +44,7 @@ final class OptOutSubmissionWideEventRecorderTests: XCTestCase {
     }
 
     func testMakeIfPossibleStartsFlow() {
-        let recorderIdentifier = OptOutSubmissionWideEventRecorder.Identifier(
+        let recorderIdentifier = OptOutWideEventIdentifier(
             profileIdentifier: profileIdentifier,
             brokerId: brokerId,
             profileQueryId: profileQueryId,
@@ -68,7 +68,7 @@ final class OptOutSubmissionWideEventRecorderTests: XCTestCase {
     }
 
     func testResumeIfPossibleReturnsExistingFlow() {
-        let identifier = OptOutSubmissionWideEventRecorder.Identifier(
+        let identifier = OptOutWideEventIdentifier(
             profileIdentifier: profileIdentifier,
             brokerId: brokerId,
             profileQueryId: profileQueryId,
@@ -85,7 +85,7 @@ final class OptOutSubmissionWideEventRecorderTests: XCTestCase {
         )
         XCTAssertEqual(wideEventMock.started.count, 1)
 
-        let otherIdentifier = OptOutSubmissionWideEventRecorder.Identifier(
+        let otherIdentifier = OptOutWideEventIdentifier(
             profileIdentifier: "other-profile",
             brokerId: brokerId,
             profileQueryId: profileQueryId,
@@ -107,7 +107,7 @@ final class OptOutSubmissionWideEventRecorderTests: XCTestCase {
     }
 
     func testMakeIfPossibleUsesFallbackIdentifierWhenProfileIdentifierMissing() {
-        let identifierWithoutProfile = OptOutSubmissionWideEventRecorder.Identifier(
+        let identifierWithoutProfile = OptOutWideEventIdentifier(
             profileIdentifier: nil,
             brokerId: brokerId,
             profileQueryId: profileQueryId,
@@ -127,5 +127,31 @@ final class OptOutSubmissionWideEventRecorderTests: XCTestCase {
 
         let data = wideEventMock.started.first as? OptOutSubmissionWideEventData
         XCTAssertEqual(data?.globalData.id, "42-13-99")
+    }
+
+    func testStartIfPossibleCreatesRecorderWhenNoneExists() {
+        let identifier = OptOutWideEventIdentifier(
+            profileIdentifier: profileIdentifier,
+            brokerId: brokerId,
+            profileQueryId: profileQueryId,
+            extractedProfileId: extractedProfileId
+        )
+
+        var providerCalled = false
+        let recorder = OptOutSubmissionWideEventRecorder.startIfPossible(
+            wideEvent: wideEventMock,
+            identifier: identifier,
+            dataBrokerURL: "broker.com",
+            dataBrokerVersion: "1.0",
+            recordFoundDateProvider: {
+                providerCalled = true
+                return self.recordFoundDate
+            }
+        )
+
+        XCTAssertNotNil(recorder)
+        XCTAssertTrue(providerCalled)
+        let data = wideEventMock.started.first as? OptOutSubmissionWideEventData
+        XCTAssertEqual(data?.submissionInterval?.start, recordFoundDate)
     }
 }

@@ -159,8 +159,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
     // MARK: - createStageDurationContext
 
-    func testCreateStageDurationContext_whenWideEventAvailable_attachesRecorderAndFiresStart() {
-        let wideEvent = WideEventMock()
+    func testCreateStageDurationContext_configuresCalculatorAndFiresStart() {
         let pixelHandler = MockPixelHandler()
 
         let brokerData = makeFixtureBrokerProfileQueryData()
@@ -171,22 +170,14 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
             identifiers: identifiers,
             extractedProfile: brokerData.optOutJobData.first!.extractedProfile,
             database: mockDatabase,
-            wideEvent: wideEvent,
             pixelHandler: pixelHandler,
             vpnConnectionState: "connected",
             vpnBypassStatus: "enabled"
         )
 
-        XCTAssertEqual(wideEvent.started.count, 1)
-        let recorder = context.wideEventRecorder as? OptOutSubmissionWideEventRecorder
-        XCTAssertNotNil(recorder)
-        let calculatorRecorder = context.stageDurationCalculator.wideEventRecorder as? OptOutSubmissionWideEventRecorder
-        XCTAssertTrue(recorder === calculatorRecorder)
-        if let data = wideEvent.started.last as? OptOutSubmissionWideEventData {
-            XCTAssertEqual(data.globalData.id, "someURL".sha256)
-        } else {
-            XCTFail("Expected OptOutSubmissionWideEventData")
-        }
+        XCTAssertEqual(context.stageDurationCalculator.dataBrokerURL, brokerData.dataBroker.url)
+        XCTAssertEqual(context.stageDurationCalculator.dataBrokerVersion, brokerData.dataBroker.version)
+
         if case .optOutStart = pixelHandler.lastFiredEvent {
             // expected
         } else {
@@ -294,7 +285,8 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             brokerProfileQueryData: brokerData,
             identifiers: identifiers,
-            stageDurationCalculator: calculator
+            stageDurationCalculator: calculator,
+            wideEvent: WideEventMock()
         )
 
         XCTAssertTrue(mockDatabase.optOutEvents.contains { $0.type == .optOutSubmittedAndAwaitingEmailConfirmation })
@@ -384,7 +376,8 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
                 pixelHandler: mockPixelHandler,
                 brokerProfileQueryData: brokerData,
                 identifiers: identifiers,
-                stageDurationCalculator: calculator
+                stageDurationCalculator: calculator,
+                wideEvent: WideEventMock()
             )
         ) { error in
             XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)

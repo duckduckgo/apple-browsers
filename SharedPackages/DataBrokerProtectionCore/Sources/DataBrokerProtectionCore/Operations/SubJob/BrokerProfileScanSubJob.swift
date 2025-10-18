@@ -267,14 +267,13 @@ struct BrokerProfileScanSubJob {
                 try database.updateRemovedDate(Date(), on: extractedProfileId)
                 shouldSendProfileRemovedEvent = true
 
-                emitOptOutConfirmationWideEvent(
+                markConfirmationWideEventCompleted(
                     brokerProfileQueryData: brokerProfileQueryData,
                     database: database,
                     profileIdentifier: removedProfile.identifier,
                     brokerId: brokerId,
                     profileQueryId: profileQueryId,
-                    extractedProfileId: extractedProfileId,
-                    completionDate: Date()
+                    extractedProfileId: extractedProfileId
                 )
 
                 try updateOperationDataDates(
@@ -305,13 +304,12 @@ struct BrokerProfileScanSubJob {
         }
     }
 
-    private func emitOptOutConfirmationWideEvent(brokerProfileQueryData: BrokerProfileQueryData,
-                                                 database: DataBrokerProtectionRepository,
-                                                 profileIdentifier: String?,
-                                                 brokerId: Int64,
-                                                 profileQueryId: Int64,
-                                                 extractedProfileId: Int64,
-                                                 completionDate: Date) {
+    private func markConfirmationWideEventCompleted(brokerProfileQueryData: BrokerProfileQueryData,
+                                                    database: DataBrokerProtectionRepository,
+                                                    profileIdentifier: String?,
+                                                    brokerId: Int64,
+                                                    profileQueryId: Int64,
+                                                    extractedProfileId: Int64) {
         let recordFoundDateProvider = {
             RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
                                             repository: database,
@@ -319,18 +317,17 @@ struct BrokerProfileScanSubJob {
                                             profileQueryId: profileQueryId,
                                             extractedProfileId: extractedProfileId)
         }
-        let wideEventIdentifier = OptOutWideEventIdentifier(profileIdentifier: profileIdentifier,
-                                                            brokerId: brokerId,
-                                                            profileQueryId: profileQueryId,
-                                                            extractedProfileId: extractedProfileId)
-        let confirmationRecorder = OptOutConfirmationWideEventRecorder.startIfPossible(
+        let wideEventId = OptOutWideEventIdentifier(profileIdentifier: profileIdentifier,
+                                                    brokerId: brokerId,
+                                                    profileQueryId: profileQueryId,
+                                                    extractedProfileId: extractedProfileId)
+        OptOutConfirmationWideEventRecorder.startIfPossible(
             wideEvent: dependencies.wideEvent,
-            identifier: wideEventIdentifier,
+            identifier: wideEventId,
             dataBrokerURL: brokerProfileQueryData.dataBroker.url,
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
             recordFoundDateProvider: recordFoundDateProvider
-        )
-        confirmationRecorder?.markCompleted(at: completionDate)
+        )?.markCompleted(at: Date())
     }
 
     private func sendProfilesRemovedEventIfNecessary(eventsHandler: EventMapping<JobEvent>,

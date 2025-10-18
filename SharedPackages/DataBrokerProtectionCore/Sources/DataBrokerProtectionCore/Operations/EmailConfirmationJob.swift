@@ -39,7 +39,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
 
     private let webRunnerForTesting: BrokerProfileOptOutSubJobWebProtocol?
     private let webViewHandlerForTesting: WebViewHandler?
-    private let wideEventRecorder: OptOutSubmissionWideEventRecorder?
 
     private let id = UUID()
     private var _isExecuting = false
@@ -63,17 +62,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         self.jobDependencies = jobDependencies
         self.webRunnerForTesting = webRunnerForTesting
         self.webViewHandlerForTesting = webViewHandlerForTesting
-
-        if let profile = try? jobDependencies.database.fetchExtractedProfile(with: jobData.extractedProfileId)?.profile {
-            let wideEventId = OptOutWideEventIdentifier(profileIdentifier: profile.identifier,
-                                                        brokerId: jobData.brokerId,
-                                                        profileQueryId: jobData.profileQueryId,
-                                                        extractedProfileId: jobData.extractedProfileId)
-            self.wideEventRecorder = OptOutSubmissionWideEventRecorder.resumeIfPossible(wideEvent: jobDependencies.wideEvent,
-                                                                                        identifier: wideEventId)
-        } else {
-            self.wideEventRecorder = nil
-        }
 
         super.init()
     }
@@ -177,7 +165,13 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 )
             )
             stageDurationCalculator.fireOptOutSubmitSuccess(tries: attemptNumber)
-            wideEventRecorder?.markCompleted(at: Date())
+            markSubmissionWideEventCompleted(
+                broker: broker,
+                profileIdentifier: extractedProfile.identifier,
+                brokerId: jobData.brokerId,
+                profileQueryId: jobData.profileQueryId,
+                extractedProfileId: jobData.extractedProfileId
+            )
             try await markAsSuccessful(stageDurationCalculator: stageDurationCalculator, broker: broker)
             Logger.dataBrokerProtection.log("✉️ Email confirmation completed successfully")
         } catch {
@@ -403,6 +397,32 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                                  profileQueryId: profileQueryId,
                                                  extractedProfileId: extractedProfileId,
                                                  schedulingConfig: schedulingConfig)
+    }
+
+    private func markSubmissionWideEventCompleted(broker: DataBroker,
+                                                  profileIdentifier: String?,
+                                                  brokerId: Int64,
+                                                  profileQueryId: Int64,
+                                                  extractedProfileId: Int64) {
+        guard let wideEvent = jobDependencies.wideEvent else { return }
+
+        let recordFoundDateProvider = {
+            RecordFoundDateResolver.resolve(repository: self.jobDependencies.database,
+                                            brokerId: brokerId,
+                                            profileQueryId: profileQueryId,
+                                            extractedProfileId: extractedProfileId)
+        }
+        let wideEventId = OptOutWideEventIdentifier(profileIdentifier: profileIdentifier,
+                                                            brokerId: brokerId,
+                                                            profileQueryId: profileQueryId,
+                                                            extractedProfileId: extractedProfileId)
+        OptOutSubmissionWideEventRecorder.startIfPossible(
+            wideEvent: wideEvent,
+            identifier: wideEventId,
+            dataBrokerURL: broker.url,
+            dataBrokerVersion: broker.version,
+            recordFoundDateProvider: recordFoundDateProvider
+        )?.markCompleted(at: Date())
     }
 
     private func finish() {

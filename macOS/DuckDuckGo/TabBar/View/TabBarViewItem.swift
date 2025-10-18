@@ -963,9 +963,9 @@ final class TabBarViewItem: NSCollectionViewItem {
             cell.closeButton.isShown = showCloseButton
             cell.faviconImageView.isShown = (cell.faviconImageView.image != nil) && (widthStage != .withoutTitle || !showCloseButton)
             cell.faviconPlaceholderView.isShown = false
-            updateSeparatorView()
             cell.titleTextField.isShown = !widthStage.isTitleHidden || (cell.faviconImageView.image == nil && !showCloseButton)
         }
+        updateSeparatorView()
 
         // Adjust colors for burner window
         if isBurner && cell.titleTextField.stringValue == UserText.burnerTabHomeTitle {

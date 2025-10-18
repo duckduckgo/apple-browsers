@@ -278,8 +278,7 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
 extension DBPUIDataBrokerProfileMatch {
     public init(optOutJobData: OptOutJobData,
                 dataBroker: DBPUIDataBroker,
-                parentBrokerOptOutJobData: [OptOutJobData]?,
-                optOutUrl: String) {
+                parentBrokerOptOutJobData: [OptOutJobData]?) {
         let extractedProfile = optOutJobData.extractedProfile
 
         /*
@@ -355,8 +354,7 @@ extension DBPUIDataBrokerProfileMatch {
                 // Create a profile match for the current data broker and append it to the list of profiles.
                 profiles.append(DBPUIDataBrokerProfileMatch(optOutJobData: optOutJobData,
                                                             dataBroker: DBPUIDataBroker(from: dataBroker),
-                                                            parentBrokerOptOutJobData: parentBrokerOptOutJobData,
-                                                            optOutUrl: dataBroker.optOutUrl))
+                                                            parentBrokerOptOutJobData: parentBrokerOptOutJobData))
 
                 // Handle mirror sites associated with the data broker.
                 if !dataBroker.mirrorSites.isEmpty {
@@ -365,8 +363,7 @@ extension DBPUIDataBrokerProfileMatch {
                         if mirrorSite.isExtant() {
                             return DBPUIDataBrokerProfileMatch(optOutJobData: optOutJobData,
                                                                dataBroker: DBPUIDataBroker(from: mirrorSite, parentBroker: dataBroker),
-                                                               parentBrokerOptOutJobData: parentBrokerOptOutJobData,
-                                                               optOutUrl: dataBroker.optOutUrl)
+                                                               parentBrokerOptOutJobData: parentBrokerOptOutJobData)
                         }
                         return nil
                     }

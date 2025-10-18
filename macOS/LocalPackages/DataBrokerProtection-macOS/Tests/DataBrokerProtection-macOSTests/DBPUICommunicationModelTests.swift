@@ -56,8 +56,7 @@ final class DBPUICommunicationModelTests: XCTestCase {
         // When
         let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOut,
                                                        dataBroker: makeUIBroker(parentURL: "whatever"),
-                                                       parentBrokerOptOutJobData: nil,
-                                                       optOutUrl: "broker.com")
+                                                       parentBrokerOptOutJobData: nil)
 
         // Then
         XCTAssertEqual(profileMatch.foundDate, createdDate.timeIntervalSince1970)
@@ -86,8 +85,7 @@ final class DBPUICommunicationModelTests: XCTestCase {
         // When
         let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOut,
                                                        dataBroker: makeUIBroker(parentURL: "whatever"),
-                                                       parentBrokerOptOutJobData: nil,
-                                                       optOutUrl: "broker.com")
+                                                       parentBrokerOptOutJobData: nil)
 
         // Then
         XCTAssertEqual(profileMatch.foundDate, foundEventDate.timeIntervalSince1970)
@@ -124,8 +122,7 @@ final class DBPUICommunicationModelTests: XCTestCase {
         // When
         let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOut,
                                                        dataBroker: makeUIBroker(parentURL: "whatever"),
-                                                       parentBrokerOptOutJobData: nil,
-                                                       optOutUrl: "broker.com")
+                                                       parentBrokerOptOutJobData: nil)
 
         // Then
         XCTAssertEqual(profileMatch.foundDate, foundEventDate2.timeIntervalSince1970)
@@ -154,8 +151,7 @@ final class DBPUICommunicationModelTests: XCTestCase {
         // When
         let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOut,
                                                        dataBroker: makeUIBroker(parentURL: "whatever"),
-                                                       parentBrokerOptOutJobData: [parentOptOut],
-                                                       optOutUrl: "broker.com")
+                                                       parentBrokerOptOutJobData: [parentOptOut])
 
         // Then
         XCTAssertTrue(profileMatch.hasMatchingRecordOnParentBroker)
@@ -183,8 +179,7 @@ final class DBPUICommunicationModelTests: XCTestCase {
                                                        dataBroker: makeUIBroker(parentURL: "whatever"),
                                                        parentBrokerOptOutJobData: [parentOptOutNonmatching1,
                                                                                    parentOptOutMatching,
-                                                                                   parentOptOutNonmatching2],
-                                                       optOutUrl: "broker.com")
+                                                                                   parentOptOutNonmatching2])
 
         // Then
         XCTAssertTrue(profileMatch.hasMatchingRecordOnParentBroker)
@@ -208,8 +203,7 @@ final class DBPUICommunicationModelTests: XCTestCase {
         let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOut,
                                                        dataBroker: makeUIBroker(parentURL: "whatever"),
                                                        parentBrokerOptOutJobData: [parentOptOutNonmatching1,
-                                                                                   parentOptOutNonmatching2],
-                                                       optOutUrl: "broker.com")
+                                                                                   parentOptOutNonmatching2])
 
         // Then
         XCTAssertFalse(profileMatch.hasMatchingRecordOnParentBroker)

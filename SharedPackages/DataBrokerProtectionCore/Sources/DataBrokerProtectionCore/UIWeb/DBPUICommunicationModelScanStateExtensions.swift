@@ -82,8 +82,7 @@ public extension DBPUIScanAndOptOutMaintenanceState {
 
                 let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOutJob,
                                                                dataBroker: DBPUIDataBroker(from: dataBroker),
-                                                               parentBrokerOptOutJobData: parentBrokerOptOutJobData,
-                                                               optOutUrl: dataBroker.optOutUrl)
+                                                               parentBrokerOptOutJobData: parentBrokerOptOutJobData)
 
                 if extractedProfile.removedDate == nil {
                     inProgressOptOuts.append(profileMatch)
@@ -95,8 +94,7 @@ public extension DBPUIScanAndOptOutMaintenanceState {
                     for mirrorSite in dataBroker.mirrorSites where mirrorSite.wasExtant(on: closestMatchesFoundEvent.date) {
                         let mirrorSiteMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOutJob,
                                                                           dataBroker: DBPUIDataBroker(from: mirrorSite, parentBroker: dataBroker),
-                                                                          parentBrokerOptOutJobData: parentBrokerOptOutJobData,
-                                                                          optOutUrl: dataBroker.optOutUrl)
+                                                                          parentBrokerOptOutJobData: parentBrokerOptOutJobData)
 
                         if let extractedProfileRemovedDate = extractedProfile.removedDate,
                            mirrorSite.wasExtant(on: extractedProfileRemovedDate) {

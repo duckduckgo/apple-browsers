@@ -628,12 +628,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         let notificationText: String
 
         switch event {
-        case .beginTemporaryShutdownState:
-            notificationText = "VPN entered temporary shutdown due to connectivity change"
         case .endTemporaryShutdownStateAttemptFailure(let error):
             notificationText = "VPN failed to end temporary shutdown: \(error.localizedDescription)"
-        case .endTemporaryShutdownStateAttemptSuccess:
-            notificationText = "VPN restarted after temporary shutdown"
         case .endTemporaryShutdownStateRecoveryFailure(let error):
             notificationText = "VPN failed to recover from extended temporary shutdown: \(error.localizedDescription)"
         case .endTemporaryShutdownStateRecoverySuccess:

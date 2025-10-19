@@ -189,12 +189,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         guard let self else { return }
 
         switch event {
-        case .beginTemporaryShutdownState:
-            Logger.networkProtection.log("Adapter entering temporary shutdown")
         case .endTemporaryShutdownStateAttemptFailure(let error):
             Logger.networkProtection.error("Adapter failed to exit temporary shutdown: \(error.localizedDescription)")
-        case .endTemporaryShutdownStateAttemptSuccess:
-            Logger.networkProtection.log("Adapter successfully exited temporary shutdown")
         case .endTemporaryShutdownStateRecoveryFailure(let error):
             Logger.networkProtection.error("Adapter recovery from temporary shutdown failed: \(error.localizedDescription)")
         case .endTemporaryShutdownStateRecoverySuccess:

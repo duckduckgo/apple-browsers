@@ -24,12 +24,6 @@ public protocol WireGuardInterface {
 // MARK: - WireGuard Adapter
 
 public enum WireGuardAdapterEvent {
-    /// Sent when the WireGuard backend goes into temporary shutdown state.
-    case beginTemporaryShutdownState
-
-    /// Sent when the WireGuard backend successfully ends the temporary shutdown state.
-    case endTemporaryShutdownStateAttemptSuccess
-
     /// Sent when the attempt to exit the temporary shutdown state fails for any reason.
     case endTemporaryShutdownStateAttemptFailure(Error)
 
@@ -719,7 +713,6 @@ public class WireGuardAdapter {
     private func transitionToTemporaryShutdown(handle: Int32, settingsGenerator: PacketTunnelSettingsGenerator) {
         logHandler(.verbose, "Connectivity offline, pausing backend.")
 
-        eventMapper.fire(.beginTemporaryShutdownState)
         state = .temporaryShutdown(settingsGenerator)
         wireGuardInterface.turnOff(handle: handle)
     }
@@ -769,8 +762,6 @@ public class WireGuardAdapter {
         if adapterRestartPreviouslyFailed {
             eventMapper.fire(.endTemporaryShutdownStateRecoverySuccess)
             adapterRestartPreviouslyFailed = false
-        } else {
-            eventMapper.fire(.endTemporaryShutdownStateAttemptSuccess)
         }
     }
 }

@@ -42,6 +42,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case rekeyAttempt(_ step: RekeyAttemptStep)
         case failureRecoveryAttempt(_ step: FailureRecoveryStep)
         case serverMigrationAttempt(_ step: ServerMigrationAttemptStep)
+
+        case adapterEndTemporaryShutdownStateAttemptFailure(Error)
+        case adapterEndTemporaryShutdownStateRecoverySuccess
+        case adapterEndTemporaryShutdownStateRecoveryFailure(Error)
     }
 
     public enum AttemptStep: CustomDebugStringConvertible {
@@ -191,20 +195,30 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         switch event {
         case .endTemporaryShutdownStateAttemptFailure(let error):
             Logger.networkProtection.error("Adapter failed to exit temporary shutdown: \(error.localizedDescription)")
+            self.providerEvents.fire(.adapterEndTemporaryShutdownStateAttemptFailure(error))
         case .endTemporaryShutdownStateRecoveryFailure(let error):
             Logger.networkProtection.error("Adapter recovery from temporary shutdown failed: \(error.localizedDescription)")
+            self.providerEvents.fire(.adapterEndTemporaryShutdownStateRecoveryFailure(error))
         case .endTemporaryShutdownStateRecoverySuccess:
             Logger.networkProtection.log("Adapter recovery from temporary shutdown succeeded")
+            self.providerEvents.fire(.adapterEndTemporaryShutdownStateRecoverySuccess)
         }
 
-        self.handleWireGuardAdapterEventForDebugNotifications(event)
-    })
+        if settings.showDebugVPNEventNotifications {
+            let notificationText: String
 
-    /// Override this method in subclasses to send debug notifications based on WireGuard adapter events
-    open func handleWireGuardAdapterEventForDebugNotifications(_ event: WireGuardAdapterEvent) {
-        // Default implementation does nothing
-        // Subclasses can override to add platform-specific notification handling
-    }
+            switch event {
+            case .endTemporaryShutdownStateAttemptFailure(let error):
+                notificationText = "VPN failed to end temporary shutdown: \(error.localizedDescription)"
+            case .endTemporaryShutdownStateRecoveryFailure(let error):
+                notificationText = "VPN failed to recover from extended temporary shutdown: \(error.localizedDescription)"
+            case .endTemporaryShutdownStateRecoverySuccess:
+                notificationText = "VPN recovered after extended temporary shutdown"
+            }
+
+            notificationsPresenter.showDebugEventNotification(message: notificationText)
+        }
+    })
 
     private lazy var adapter: WireGuardAdapter = {
         WireGuardAdapter(with: self, wireGuardInterface: self.wireGuardInterface, eventMapper: wireGuardAdapterEventMapper) { logLevel, message in

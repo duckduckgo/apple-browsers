@@ -156,6 +156,7 @@ public class WireGuardAdapter {
     /// Packet tunnel provider.
     private weak var packetTunnelProvider: NEPacketTunnelProvider?
 
+    /// Emits events for pixel and logging purposes.
     private let eventMapper: EventMapping<WireGuardAdapterEvent>
 
     /// Log handler closure.

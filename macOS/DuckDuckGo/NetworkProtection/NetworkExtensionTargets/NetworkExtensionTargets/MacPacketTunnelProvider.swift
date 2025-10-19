@@ -374,6 +374,18 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                 NetworkProtectionPixelEvent.networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken,
                 frequency: .legacyDailyAndCount,
                 includeAppVersionParameter: true)
+        case .adapterEndTemporaryShutdownStateAttemptFailure(let error):
+            PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure(error),
+                          frequency: PixelKit.Frequency.dailyAndCount,
+                          includeAppVersionParameter: true)
+        case .adapterEndTemporaryShutdownStateRecoverySuccess:
+            PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess,
+                          frequency: PixelKit.Frequency.dailyAndCount,
+                          includeAppVersionParameter: true)
+        case .adapterEndTemporaryShutdownStateRecoveryFailure(let error):
+            PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure(error),
+                          frequency: PixelKit.Frequency.dailyAndCount,
+                          includeAppVersionParameter: true)
         }
     }
 

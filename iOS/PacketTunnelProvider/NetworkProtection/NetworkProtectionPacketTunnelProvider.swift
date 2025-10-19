@@ -295,6 +295,12 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             vpnLogger.logStartingWithoutAuthToken()
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+        case .adapterEndTemporaryShutdownStateAttemptFailure(let error):
+            DailyPixel.fireDailyAndCount(pixel: .networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure, error: error)
+        case .adapterEndTemporaryShutdownStateRecoverySuccess:
+            DailyPixel.fireDailyAndCount(pixel: .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess)
+        case .adapterEndTemporaryShutdownStateRecoveryFailure(let error):
+            DailyPixel.fireDailyAndCount(pixel: .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure, error: error)
         }
     }
 
@@ -618,25 +624,6 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         activationDateStore.updateLastActiveDate()
 
         VPNReloadStatusWidgets()
-    }
-
-    public override func handleWireGuardAdapterEventForDebugNotifications(_ event: WireGuardAdapterEvent) {
-        guard settings.showDebugVPNEventNotifications else {
-            return
-        }
-
-        let notificationText: String
-
-        switch event {
-        case .endTemporaryShutdownStateAttemptFailure(let error):
-            notificationText = "VPN failed to end temporary shutdown: \(error.localizedDescription)"
-        case .endTemporaryShutdownStateRecoveryFailure(let error):
-            notificationText = "VPN failed to recover from extended temporary shutdown: \(error.localizedDescription)"
-        case .endTemporaryShutdownStateRecoverySuccess:
-            notificationText = "VPN recovered after extended temporary shutdown"
-        }
-
-        notificationsPresenter.showDebugEventNotification(message: notificationText)
     }
 
     private static func entitlementCheck(accountManager: AccountManager) async -> Result<Bool, Error> {

@@ -115,6 +115,10 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
     case networkProtectionConfigurationErrorLoadingCachedConfig(_ error: Error)
     case networkProtectionConfigurationFailedToParse(_ error: Error)
 
+    case networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure(_ error: Error)
+    case networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess
+    case networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure(_ error: Error)
+
     case networkProtectionUnhandledError(function: String, line: Int, error: Error)
 
     /// Name of the pixel event
@@ -336,6 +340,15 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
         case .networkProtectionConfigurationFailedToParse:
             return "netp_ev_configuration_failed_to_parse"
 
+        case .networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure:
+            return "netp_ev_adapter_end_temporary_shutdown_state_attempt_failure"
+
+        case .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess:
+            return "netp_ev_adapter_end_temporary_shutdown_state_recovery_success"
+
+        case .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure:
+            return "netp_ev_adapter_end_temporary_shutdown_state_recovery_failure"
+
         case .networkProtectionUnhandledError:
             return "netp_unhandled_error"
         }
@@ -406,6 +419,10 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
             return error.pixelParameters
         case .networkProtectionUnmanagedSubscriptionError(let error):
             return error.pixelParameters
+        case .networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure(let error):
+            return error.pixelParameters
+        case .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure(let error):
+            return error.pixelParameters
         case .networkProtectionActiveUser,
                 .networkProtectionNewUser,
                 .networkProtectionControllerStartAttempt,
@@ -452,6 +469,7 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
                 .networkProtectionServerMigrationSuccess,
                 .networkProtectionDNSUpdateCustom,
                 .networkProtectionDNSUpdateDefault,
+                .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess,
                 .networkProtectionConfigurationInvalidPayload:
             return nil
         }

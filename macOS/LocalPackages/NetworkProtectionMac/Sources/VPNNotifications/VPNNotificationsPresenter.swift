@@ -168,6 +168,11 @@ public final class VPNNotificationsPresenter: NSObject, VPNNotificationsPresenti
         }
     }
 
+    public func showDebugEventNotification(message: String) {
+        let content = notificationContent(title: "DuckDuckGo VPN Debug Notification", subtitle: message)
+        showNotification(.debug, content)
+    }
+
 }
 
 public enum VPNNotificationIdentifier: String {
@@ -177,6 +182,7 @@ public enum VPNNotificationIdentifier: String {
     case superseded = "ddg-vpn.notification.superseded"
     case expiredEntitlement = "ddg-vpn.notification.expired-entitlement"
     case test = "ddg-vpn.notification.test"
+    case debug = "ddg-vpn.notification.debug"
 }
 
 extension VPNNotificationsPresenter: UNUserNotificationCenterDelegate {

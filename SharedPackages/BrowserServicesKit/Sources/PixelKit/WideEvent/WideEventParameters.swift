@@ -104,10 +104,6 @@ public enum WideEventParameter {
             static let dataBrokerURL = "feature.data.ext.data_broker"
             static let dataBrokerVersion = "feature.data.ext.data_broker_version"
             static let submissionLatency = "feature.data.ext.submission_latency_ms"
-
-            static func stagePrefix(index: Int) -> String {
-                return "feature.data.ext.stages.\(index)"
-            }
         }
 
         public enum OptOutConfirmationFeature {

@@ -1,5 +1,5 @@
 //
-//  AIChatHistoryCleanerMock.swift
+//  MockAutoconsentDailyStats.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,24 +16,11 @@
 //  limitations under the License.
 //
 
-import Combine
+import Foundation
 @testable import DuckDuckGo_Privacy_Browser
 
-final class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
-    private(set) var didCleanAIChatHistory = false
+class MockAutoconsentDailyStat: AutoconsentDailyStatsManaging  {
+    func incrementPopupCount() {}
 
-    @Published
-    var shouldDisplayCleanAIChatHistoryOption: Bool
-
-    var shouldDisplayCleanAIChatHistoryOptionPublisher: AnyPublisher<Bool, Never> {
-        $shouldDisplayCleanAIChatHistoryOption.eraseToAnyPublisher()
-    }
-
-    func cleanAIChatHistory() {
-        didCleanAIChatHistory = true
-    }
-
-    init(showCleanOption: Bool = false) {
-        shouldDisplayCleanAIChatHistoryOption = showCleanOption
-    }
+    func sendDailyPixelIfNeeded() {}
 }

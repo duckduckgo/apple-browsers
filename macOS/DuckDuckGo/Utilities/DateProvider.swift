@@ -1,5 +1,5 @@
 //
-//  AIChatHistoryCleanerMock.swift
+//  DateProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,24 +16,14 @@
 //  limitations under the License.
 //
 
-import Combine
-@testable import DuckDuckGo_Privacy_Browser
+import Foundation
 
-final class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
-    private(set) var didCleanAIChatHistory = false
+public protocol DateProviding {
+    var currentDate: Date { get }
+}
 
-    @Published
-    var shouldDisplayCleanAIChatHistoryOption: Bool
-
-    var shouldDisplayCleanAIChatHistoryOptionPublisher: AnyPublisher<Bool, Never> {
-        $shouldDisplayCleanAIChatHistoryOption.eraseToAnyPublisher()
-    }
-
-    func cleanAIChatHistory() {
-        didCleanAIChatHistory = true
-    }
-
-    init(showCleanOption: Bool = false) {
-        shouldDisplayCleanAIChatHistoryOption = showCleanOption
+extension Date: DateProviding {
+    public var currentDate: Date {
+        return self
     }
 }

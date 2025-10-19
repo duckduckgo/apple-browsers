@@ -38,45 +38,55 @@ protocol FireProtocol: AnyObject {
     func fireAnimationDidStart()
     func fireAnimationDidFinish()
 
-    @MainActor func burnAll(isBurnOnExit: Bool, opening url: URL, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?)
-    @MainActor func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?)
+    @MainActor func burnAll(isBurnOnExit: Bool,
+                            opening url: URL,
+                            includeCookiesAndSiteData: Bool,
+                            includeChatHistory: Bool,
+                            completion: (@MainActor () -> Void)?)
+    @MainActor func burnEntity(_ entity: Fire.BurningEntity,
+                               includingHistory: Bool,
+                               includeCookiesAndSiteData: Bool,
+                               includeChatHistory: Bool,
+                               completion: (@MainActor () -> Void)?)
     @MainActor func burnVisits(_ visits: [Visit],
                                except fireproofDomains: DomainFireproofStatusProviding,
                                isToday: Bool,
                                closeWindows: Bool,
                                clearSiteData: Bool,
+                               clearChatHistory: Bool,
                                urlToOpenIfWindowsAreClosed url: URL?,
                                completion: (@MainActor () -> Void)?)
+    @MainActor func burnChatHistory() async
 }
+
 extension FireProtocol {
 
     @MainActor
-    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab, includeCookiesAndSiteData: Bool = true) {
-        burnAll(isBurnOnExit: isBurnOnExit, opening: url, includeCookiesAndSiteData: includeCookiesAndSiteData, completion: nil)
-    }
-    @MainActor
-    func burnAll(opening url: URL, includeCookiesAndSiteData: Bool = true) {
-        burnAll(isBurnOnExit: false, opening: url, includeCookiesAndSiteData: includeCookiesAndSiteData, completion: nil)
-    }
-    @MainActor
-    func burnAll(includeCookiesAndSiteData: Bool = true, completion: (() -> Void)? = nil) {
-        burnAll(isBurnOnExit: false, opening: .newtab, includeCookiesAndSiteData: includeCookiesAndSiteData, completion: completion)
-    }
-
-    @MainActor
-    func burnAll(isBurnOnExit: Bool, completion: (() -> Void)? = nil) {
-        burnAll(isBurnOnExit: isBurnOnExit, opening: .newtab, includeCookiesAndSiteData: true, completion: completion)
+    func burnAll(isBurnOnExit: Bool = false,
+                 opening url: URL = .newtab,
+                 includeChatHistory: Bool = true,
+                 completion: (@MainActor () -> Void)? = nil) {
+        burnAll(isBurnOnExit: isBurnOnExit,
+                opening: url,
+                includeCookiesAndSiteData: true,
+                includeChatHistory: includeChatHistory,
+                completion: completion)
     }
 
     @MainActor
     func burnEntity(_ entity: Fire.BurningEntity, completion: (() -> Void)? = nil) {
-        burnEntity(entity, includingHistory: true, includeCookiesAndSiteData: true, completion: completion)
+        burnEntity(entity,
+                   includingHistory: true,
+                   includeCookiesAndSiteData: true,
+                   includeChatHistory: false,
+                   completion: completion)
     }
 
     @MainActor
     func burnVisits(_ visits: [Visit],
                     except fireproofDomains: DomainFireproofStatusProviding,
                     isToday: Bool,
+                    clearChatHistory: Bool,
                     urlToOpenIfWindowsAreClosed url: URL? = nil,
                     completion: (@MainActor () -> Void)? = nil) {
         burnVisits(visits,
@@ -84,32 +94,36 @@ extension FireProtocol {
                    isToday: isToday,
                    closeWindows: true,
                    clearSiteData: true,
+                   clearChatHistory: clearChatHistory,
                    urlToOpenIfWindowsAreClosed: url,
                    completion: completion)
     }
 
     @MainActor
-    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab, includeCookiesAndSiteData: Bool = true) async {
+    func burnAll(isBurnOnExit: Bool = false,
+                 opening url: URL = .newtab,
+                 includeCookiesAndSiteData: Bool = true,
+                 includeChatHistory: Bool) async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            self.burnAll(isBurnOnExit: isBurnOnExit, opening: url, includeCookiesAndSiteData: includeCookiesAndSiteData) {
+            self.burnAll(isBurnOnExit: isBurnOnExit,
+                         opening: url,
+                         includeCookiesAndSiteData: includeCookiesAndSiteData,
+                         includeChatHistory: includeChatHistory) {
                 continuation.resume()
             }
         }
     }
 
     @MainActor
-    func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool) async {
+    func burnEntity(_ entity: Fire.BurningEntity,
+                    includingHistory: Bool,
+                    includeCookiesAndSiteData: Bool = true,
+                    includeChatHistory: Bool) async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            self.burnEntity(entity, includingHistory: includingHistory, includeCookiesAndSiteData: true) {
-                continuation.resume()
-            }
-        }
-    }
-
-    @MainActor
-    func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool, includeCookiesAndSiteData: Bool) async {
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            self.burnEntity(entity, includingHistory: includingHistory, includeCookiesAndSiteData: includeCookiesAndSiteData) {
+            self.burnEntity(entity,
+                            includingHistory: includingHistory,
+                            includeCookiesAndSiteData: includeCookiesAndSiteData,
+                            includeChatHistory: includeChatHistory) {
                 continuation.resume()
             }
         }
@@ -121,6 +135,7 @@ extension FireProtocol {
                     isToday: Bool,
                     closeWindows: Bool,
                     clearSiteData: Bool,
+                    clearChatHistory: Bool,
                     urlToOpenIfWindowsAreClosed url: URL? = .newtab) async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             self.burnVisits(visits,
@@ -128,6 +143,7 @@ extension FireProtocol {
                             isToday: isToday,
                             closeWindows: closeWindows,
                             clearSiteData: clearSiteData,
+                            clearChatHistory: clearChatHistory,
                             urlToOpenIfWindowsAreClosed: url) {
                 continuation.resume()
             }
@@ -159,6 +175,7 @@ final class Fire: FireProtocol {
     let getPrivacyStats: () async -> PrivacyStatsCollecting
     let visualizeFireAnimationDecider: VisualizeFireSettingsDecider
     let isAppActiveProvider: @MainActor () -> Bool
+    let aiChatHistoryCleaner: AIChatHistoryCleaning
 
     private var dispatchGroup: DispatchGroup?
 
@@ -239,7 +256,8 @@ final class Fire: FireProtocol {
          getPrivacyStats: (() async -> PrivacyStatsCollecting)? = nil,
          getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil,
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil,
-         isAppActiveProvider: @escaping @MainActor () -> Bool = { @MainActor in NSApp.isActive }
+         isAppActiveProvider: @escaping @MainActor () -> Bool = { @MainActor in NSApp.isActive },
+         aIChatHistoryCleaner: AIChatHistoryCleaning? = nil
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
@@ -266,10 +284,18 @@ final class Fire: FireProtocol {
         } else {
             self.stateRestorationManager = NSApp.delegateTyped.stateRestorationManager
         }
+        self.aiChatHistoryCleaner = aIChatHistoryCleaner ?? AIChatHistoryCleaner(featureFlagger: NSApp.delegateTyped.featureFlagger,
+                                                                                 aiChatMenuConfiguration: NSApp.delegateTyped.aiChatMenuConfiguration,
+                                                                                 featureDiscovery: DefaultFeatureDiscovery(),
+                                                                                 privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager)
     }
 
     @MainActor
-    func burnEntity(_ entity: BurningEntity, includingHistory: Bool, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?) {
+    func burnEntity(_ entity: BurningEntity,
+                    includingHistory: Bool,
+                    includeCookiesAndSiteData: Bool,
+                    includeChatHistory: Bool,
+                    completion: (@MainActor () -> Void)?) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -320,6 +346,12 @@ final class Fire: FireProtocol {
 
             self.burnRecentlyClosed(baseDomains: domains)
 
+            if includeChatHistory {
+                group.enter()
+                await burnChatHistory()
+                group.leave()
+            }
+
             group.notify(queue: .main) {
                 self.dispatchGroup = nil
                 if entity.shouldClose {
@@ -336,7 +368,11 @@ final class Fire: FireProtocol {
     }
 
     @MainActor
-    func burnAll(isBurnOnExit: Bool, opening url: URL, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?) {
+    func burnAll(isBurnOnExit: Bool,
+                 opening url: URL,
+                 includeCookiesAndSiteData: Bool,
+                 includeChatHistory: Bool,
+                 completion: (@MainActor () -> Void)?) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -369,6 +405,9 @@ final class Fire: FireProtocol {
                 await self.burnWebCache()
             }
             await self.burnPrivacyStats()
+            if includeChatHistory {
+                await burnChatHistory()
+            }
             self.burnAllVisitedLinks()
             self.burnAllHistory {
                 self.burnPermissions {
@@ -405,6 +444,7 @@ final class Fire: FireProtocol {
                     isToday: Bool,
                     closeWindows: Bool,
                     clearSiteData: Bool,
+                    clearChatHistory: Bool,
                     urlToOpenIfWindowsAreClosed url: URL?,
                     completion: (@MainActor () -> Void)?) {
 
@@ -441,8 +481,19 @@ final class Fire: FireProtocol {
                 entity = .none(selectedDomains: domains)
             }
 
-            self.burnEntity(entity, includingHistory: false, includeCookiesAndSiteData: true, completion: completion)
+            self.burnEntity(entity,
+                            includingHistory: false,
+                            includeCookiesAndSiteData: clearSiteData,
+                            includeChatHistory: clearChatHistory,
+                            completion: completion)
         }
+    }
+
+    // MARK: - Duck.ai Chat History
+
+    @MainActor
+    func burnChatHistory() async {
+        await aiChatHistoryCleaner.cleanAIChatHistory()
     }
 
     // MARK: - Fire animation

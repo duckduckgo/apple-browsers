@@ -33,6 +33,7 @@ final class FireDialogViewModelTests: XCTestCase {
     private var fireViewModel: FireViewModel!
     private var fireCoordinator: FireCoordinator!
     private var windowControllersManager: WindowControllersManagerMock!
+    private var aiChatHistoryCleaner: MockAIChatHistoryCleaner!
 
     private var fireDialogViewResponse: FireDialogView.Response!
 
@@ -44,6 +45,7 @@ final class FireDialogViewModelTests: XCTestCase {
         fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD())
         historyCoordinator = HistoryCoordinatingMock()
         windowControllersManager = WindowControllersManagerMock()
+        aiChatHistoryCleaner = MockAIChatHistoryCleaner()
         let manager = WebCacheManagerMock()
         let permissionManager = PermissionManagerMock()
         let faviconManager = FaviconManagerMock()
@@ -92,6 +94,7 @@ final class FireDialogViewModelTests: XCTestCase {
         fireDialogViewResponse = nil
         tabCollectionVM = nil
         historyCoordinator = nil
+        aiChatHistoryCleaner = nil
     }
 
     @MainActor func testOnBurn_OnboardingContextualDialogsManagerFireButtonUsedCalled() async throws {
@@ -114,7 +117,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let result = FireDialogResult(clearingOption: vm.clearingOption,
                                       includeHistory: vm.includeHistory,
                                       includeTabsAndWindows: vm.includeTabsAndWindows,
-                                      includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+                                      includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
+                                      includeChatHistory: vm.includeChatHistory)
 
         fireDialogViewResponse = .burn(options: result)
 
@@ -157,7 +161,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let result = FireDialogResult(clearingOption: .allData,
                                       includeHistory: true,
                                       includeTabsAndWindows: true,
-                                      includeCookiesAndSiteData: true)
+                                      includeCookiesAndSiteData: true,
+                                      includeChatHistory: false)
 
         fireDialogViewResponse = .burn(options: result)
 
@@ -208,6 +213,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: faviconManager,
             tld: TLD(),
@@ -223,7 +229,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let result2 = FireDialogResult(clearingOption: viewModel.clearingOption,
                                        includeHistory: viewModel.includeHistory,
                                        includeTabsAndWindows: viewModel.includeTabsAndWindows,
-                                       includeCookiesAndSiteData: viewModel.includeCookiesAndSiteData)
+                                       includeCookiesAndSiteData: viewModel.includeCookiesAndSiteData,
+                                       includeChatHistory: viewModel.includeChatHistory)
         let task = handle(viewModel, result2)
 
         try await withTimeout(3) {
@@ -261,6 +268,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: faviconManager,
             tld: TLD(),
@@ -292,6 +300,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: TLD(),
@@ -316,7 +325,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let r1 = FireDialogResult(clearingOption: vm.clearingOption,
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
-                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
+                                  includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r1)
         wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
@@ -339,6 +349,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: TLD(),
@@ -363,7 +374,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let r2 = FireDialogResult(clearingOption: vm.clearingOption,
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
-                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
+                                  includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r2)
         wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
@@ -383,6 +395,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: TLD(),
@@ -412,7 +425,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let r3 = FireDialogResult(clearingOption: vm.clearingOption,
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
-                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
+                                  includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r3)
         wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
@@ -431,6 +445,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: TLD(),
@@ -455,7 +470,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let r4 = FireDialogResult(clearingOption: vm.clearingOption,
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
-                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
+                                  includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r4)
         wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
@@ -474,6 +490,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: TLD(),
@@ -498,7 +515,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let r5 = FireDialogResult(clearingOption: vm.clearingOption,
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
-                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
+                                  includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r5)
         wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
@@ -517,6 +535,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: TLD(),
@@ -541,7 +560,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let r6 = FireDialogResult(clearingOption: vm.clearingOption,
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
-                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
+                                  includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r6)
         wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
@@ -564,6 +584,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: TLD(),
@@ -590,7 +611,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let r7 = FireDialogResult(clearingOption: vm.clearingOption,
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
-                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
+                                  includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r7)
         wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
@@ -612,6 +634,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: TLD(),
@@ -638,7 +661,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let r8 = FireDialogResult(clearingOption: vm.clearingOption,
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
-                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
+                                  includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r8)
         wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
@@ -657,6 +681,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: TLD(),
@@ -684,7 +709,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let r9 = FireDialogResult(clearingOption: vm.clearingOption,
                                   includeHistory: vm.includeHistory,
                                   includeTabsAndWindows: vm.includeTabsAndWindows,
-                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+                                  includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
+                                  includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r9)
         wait(for: [exp, openNewWindowExp], timeout: 2.0)
     }
@@ -707,6 +733,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: TLD(),
@@ -724,7 +751,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let result = FireDialogResult(clearingOption: vm.clearingOption,
                                       includeHistory: vm.includeHistory,
                                       includeTabsAndWindows: vm.includeTabsAndWindows,
-                                      includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+                                      includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
+                                      includeChatHistory: vm.includeChatHistory)
         let task = handle(vm, result)
 
         try await withTimeout(3) {
@@ -756,6 +784,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: TLD(),
@@ -774,7 +803,8 @@ final class FireDialogViewModelTests: XCTestCase {
         let resultB = FireDialogResult(clearingOption: vm.clearingOption,
                                        includeHistory: vm.includeHistory,
                                        includeTabsAndWindows: vm.includeTabsAndWindows,
-                                       includeCookiesAndSiteData: vm.includeCookiesAndSiteData)
+                                       includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
+                                       includeChatHistory: vm.includeChatHistory)
         let task = handle(vm, resultB)
         try await withTimeout(3) {
             await task.value
@@ -811,6 +841,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             clearingOption: .allData,
@@ -1200,6 +1231,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
             historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: faviconManager,
             clearingOption: .allData,
@@ -1235,6 +1267,7 @@ final class FireDialogViewModelTests: XCTestCase {
             fireViewModel: fireViewModel,
             tabCollectionViewModel: tabCollectionViewModel,
             historyCoordinating: fire.historyCoordinating,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
             clearingOption: clearingOption,
@@ -1284,6 +1317,134 @@ final class FireDialogViewModelTests: XCTestCase {
             }
         }}
         return Tab(content: .url(url, source: .link), extensionsBuilder: extensionBuilder)
+    }
+
+    // MARK: - Clearing Chat History
+
+    @MainActor func testIncludeChatHistory_OffByDefault() {
+        // Scenario: ViewModel initialized with chat history toggle visible.
+        // Expectation: Chat history toggle is off by default.
+        let viewModel = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            clearingOption: .allData,
+            tld: TLD(),
+        )
+
+        XCTAssertTrue(viewModel.shouldShowChatHistoryToggle)
+        XCTAssertFalse(viewModel.includeChatHistory)
+    }
+
+    @MainActor func testClearingOption_UpdatesIncludeChatHistory_AndPersistsUserSelection() {
+        // Scenario: Changing scope updates when chat history is cleared while persisting the user selection.
+        // Action: Set clearingOption from .allData to .currentWindow and back.
+        // Expectation: includeChatHistory only true when scope is .allData and persists user choice.
+        let historyCoordinator = HistoryCoordinatingMock()
+        let faviconManager = FaviconManagerMock()
+        let fire = Fire(historyCoordinating: historyCoordinator,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
+                        faviconManagement: faviconManager,
+                        tld: Application.appDelegate.tld)
+        let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD())
+        let aiChatHistoryCleaner = MockAIChatHistoryCleaner(showCleanOption: true)
+
+        let viewModel = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: faviconManager,
+            clearingOption: .allData,
+            tld: Application.appDelegate.tld,
+        )
+
+        // User makes selection to clear chat history.
+        viewModel.includeChatHistorySetting = true
+        XCTAssertTrue(viewModel.includeChatHistory)
+
+        // User changes scope to .currentWindow, which disables chat history clearing.
+        viewModel.clearingOption = .currentWindow
+        XCTAssertFalse(viewModel.includeChatHistory)
+
+        // User changes scope to .allData, which re-enables chat history clearing with previous selection.
+        viewModel.clearingOption = .allData
+        XCTAssertTrue(viewModel.includeChatHistory)
+    }
+
+    @MainActor func testHistoryCleaner_UpdatesChatHistoryToggleVisibility() {
+        // Scenario: ViewModel initialized with History Cleaner not showing clean history option.
+        // Action: History Cleaner enabled clean history option.
+        // Expectation: Chat history toggle is now visible.
+        let aiChatHistoryCleaner = MockAIChatHistoryCleaner(showCleanOption: false)
+        let viewModel = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            clearingOption: .allData,
+            tld: TLD(),
+        )
+
+        // Check precondition
+        XCTAssertFalse(viewModel.shouldShowChatHistoryToggle)
+
+        aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption = true
+
+        XCTAssertTrue(viewModel.shouldShowChatHistoryToggle)
+    }
+
+    @MainActor func testClearingOption_UpdatesChatHistoryToggleVisibility() {
+        // Scenario: Changing scope updates chat history toggle.
+        // Action: Set clearingOption to each option.
+        // Expectation: Chat history toggle is only visible for .allData.
+        let viewModel = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            clearingOption: .currentTab,
+            tld: TLD(),
+        )
+
+        // Check precondition (false for current tab)
+        XCTAssertFalse(viewModel.shouldShowChatHistoryToggle)
+
+        viewModel.clearingOption = .currentWindow
+
+        // Check still false for current window
+        XCTAssertFalse(viewModel.shouldShowChatHistoryToggle)
+
+        viewModel.clearingOption = .allData
+
+        // Now true for all data
+        XCTAssertTrue(viewModel.shouldShowChatHistoryToggle)
+    }
+
+    @MainActor func testInitWithLimitedScopeMode_DisablesChatHistoryToggleVisibility() {
+        // Scenario: ViewModel initialized with limited scope mode.
+        // Expectation: Chat history toggle is not visible.
+        let viewModel = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            clearingOption: .allData,
+            mode: .historyView(query: .rangeFilter(.today)),
+            tld: TLD(),
+        )
+
+        XCTAssertFalse(viewModel.shouldShowChatHistoryToggle)
     }
 }
 

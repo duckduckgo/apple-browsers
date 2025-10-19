@@ -63,14 +63,20 @@ protocol HistoryViewDataProviding: HistoryView.DataProviding {
 
     func titles(for urls: [URL]) -> [URL: String]
 
-    func deleteVisits(matching query: DataModel.HistoryQueryKind) async
-    func burnVisits(matching query: DataModel.HistoryQueryKind) async
+    func deleteVisits(matching query: DataModel.HistoryQueryKind, and deleteChats: Bool) async
+    func burnVisits(matching query: DataModel.HistoryQueryKind, and burnChats: Bool) async
 
     /// Get actual visits for a given query (used for burning specific visits)
     func visits(matching query: DataModel.HistoryQueryKind) async -> [Visit]
 
     /// Representative URL for a given eTLD+1 domain, preferring HTTPS and most recent visit.
     @MainActor func preferredURL(forSiteDomain domain: String) -> URL?
+}
+
+extension HistoryViewDataProviding {
+    func deleteVisits(matching query: DataModel.HistoryQueryKind) async {
+        await deleteVisits(matching: query, and: false)
+    }
 }
 
 final class HistoryViewDataProvider: HistoryViewDataProviding {
@@ -129,14 +135,17 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         return DataModel.HistoryItemsBatch(finished: finished, visits: visits)
     }
 
-    func deleteVisits(matching query: DataModel.HistoryQueryKind) async {
+    func deleteVisits(matching query: DataModel.HistoryQueryKind, and deleteChats: Bool) async {
         let visits = await allVisits(matching: query)
         await historyDataSource.delete(visits)
+        if deleteChats {
+            await historyBurner.burnChats()
+        }
         await refreshData()
     }
 
-    func burnVisits(matching query: DataModel.HistoryQueryKind) async {
-        guard query != .rangeFilter(.all) else {
+    func burnVisits(matching query: DataModel.HistoryQueryKind, and burnChats: Bool) async {
+        guard query != .rangeFilter(.all) || !burnChats else {
             await historyBurner.burnAll()
             await refreshData()
             return
@@ -146,7 +155,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         guard !visits.isEmpty else { return }
 
         let animated = query == .rangeFilter(.today)
-        await historyBurner.burn(visits, animated: animated)
+        await historyBurner.burn(visits, and: burnChats, animated: animated)
         await refreshData()
     }
 

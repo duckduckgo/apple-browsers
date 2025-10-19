@@ -22,6 +22,7 @@ import Foundation
 import History
 import SwiftUI
 import HistoryView
+import PixelKit
 
 protocol HistoryViewDialogPresenting: AnyObject {
     @MainActor
@@ -70,6 +71,13 @@ final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
             let model = HistoryViewDeleteDialogModel(entriesCount: visits.count, mode: query.deleteMode)
             let dialog = HistoryViewDeleteDialog(model: model)
             dialog.show(in: parentWindow) {
+                switch model.response {
+                case .burn(includeChats: let burnChats) where burnChats,
+                    .delete(includeChats: let burnChats) where burnChats:
+                    PixelKit.fire(AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount)
+                default:
+                    break
+                }
                 continuation.resume(returning: model.response ?? .noAction)
             }
         }
@@ -92,9 +100,9 @@ final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
         case .burn(options: .some(let options)) where !options.includeHistory:
             return .noAction // don‘t delete history records from History View, burning is done by FireCoordinator
         case .burn(options: .some(let options)) where options.includeCookiesAndSiteData:
-            return .burn
-        case .burn:
-            return .delete
+            return .burn(includeChats: options.includeChatHistory)
+        case .burn(let options):
+            return .delete(includeChats: options?.includeChatHistory ?? false)
         }
     }
 

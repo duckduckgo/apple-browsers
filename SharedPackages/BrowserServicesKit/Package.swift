@@ -715,11 +715,11 @@ let package = Package(
             name: "SubscriptionTests",
             dependencies: [
                 "PixelKit",
+                "PixelKitTestingUtilities",
                 "SharedObjCTestsUtils",
                 "Subscription",
                 "SubscriptionTestingUtilities",
                 "NetworkingTestingUtils",
-                "PixelKitTestingUtilities",
             ]
         ),
         .testTarget(

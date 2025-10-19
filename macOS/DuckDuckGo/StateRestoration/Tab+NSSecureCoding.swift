@@ -32,6 +32,7 @@ extension Tab: NSSecureCoding {
         static let favicon = "icon"
         static let tabType = "tabType"
         static let preferencePane = "preferencePane"
+        static let historyPane = "historyPane"
         static let lastSelectedAt = "lastSelectedAt"
     }
 
@@ -45,10 +46,12 @@ extension Tab: NSSecureCoding {
         let videoTimestamp: String? = decoder.decodeIfPresent(at: NSSecureCodingKeys.videoTimestamp)
         let preferencePane = decoder.decodeIfPresent(at: NSSecureCodingKeys.preferencePane)
             .flatMap(PreferencePaneIdentifier.init(rawValue:))
+        let historyPane = decoder.decodeIfPresent(at: NSSecureCodingKeys.historyPane)
+            .flatMap(HistoryPaneIdentifier.init(rawValue:))
 
         guard let tabTypeRawValue: Int = decoder.decodeIfPresent(at: NSSecureCodingKeys.tabType),
               let tabType = TabContent.ContentType(rawValue: tabTypeRawValue),
-              let content = TabContent(type: tabType, url: url, videoID: videoID, timestamp: videoTimestamp, preferencePane: preferencePane)
+              let content = TabContent(type: tabType, url: url, videoID: videoID, timestamp: videoTimestamp, preferencePane: preferencePane, historyPane: historyPane)
         else { return nil }
 
         let interactionStateData: Data? = decoder.decodeIfPresent(at: NSSecureCodingKeys.interactionStateData) ?? decoder.decodeIfPresent(at: NSSecureCodingKeys.sessionStateData)
@@ -79,6 +82,8 @@ extension Tab: NSSecureCoding {
 
         if let pane = content.preferencePane {
             coder.encode(pane.rawValue, forKey: NSSecureCodingKeys.preferencePane)
+        } else if let pane = content.historyPane {
+            coder.encode(pane.rawValue, forKey: NSSecureCodingKeys.historyPane)
         }
 
         self.encodeExtensions(with: coder)
@@ -105,7 +110,7 @@ private extension Tab.TabContent {
         case aiChat = 13
     }
 
-    init?(type: ContentType, url: URL?, videoID: String?, timestamp: String?, preferencePane: PreferencePaneIdentifier?) {
+    init?(type: ContentType, url: URL?, videoID: String?, timestamp: String?, preferencePane: PreferencePaneIdentifier?, historyPane: HistoryPaneIdentifier?) {
         switch type {
         case .newtab:
             self = .newtab
@@ -115,7 +120,7 @@ private extension Tab.TabContent {
         case .bookmarks:
             self = .bookmarks
         case .history:
-            self = .history
+            self = .history(pane: historyPane)
         case .preferences:
             self = .settings(pane: preferencePane)
         case .duckPlayer:
@@ -165,6 +170,15 @@ private extension Tab.TabContent {
     var preferencePane: PreferencePaneIdentifier? {
         switch self {
         case let .settings(pane: pane):
+            return pane
+        default:
+            return nil
+        }
+    }
+
+    var historyPane: HistoryPaneIdentifier? {
+        switch self {
+        case let .history(pane: pane):
             return pane
         default:
             return nil

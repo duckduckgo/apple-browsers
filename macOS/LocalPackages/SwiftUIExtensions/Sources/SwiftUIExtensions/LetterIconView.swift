@@ -63,5 +63,6 @@ public struct LetterIconView: View {
                 .minimumScaleFactor(0.01)
                 .font(font)
         }
+        .accessibilityHidden(true)
     }
 }

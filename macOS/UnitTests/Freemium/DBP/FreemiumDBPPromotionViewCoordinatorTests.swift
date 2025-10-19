@@ -64,6 +64,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         mockPresenter = nil
         mockPixelHandler = nil
         cancellables = []
+        contextualOnboardingSubject = nil
     }
 
     func testInitialPromotionVisibility_whenFeatureIsAvailable_andNotDismissed() {

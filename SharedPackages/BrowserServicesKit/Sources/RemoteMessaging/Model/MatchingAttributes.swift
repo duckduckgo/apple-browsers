@@ -30,10 +30,10 @@ struct LocaleMatchingAttribute: SingleValueMatching {
 }
 
 struct OSMatchingAttribute: StringRangeMatching {
-    static let defaultMaxValue: String = AppVersion.shared.osVersion
+    static let defaultMaxValue: String = AppVersion.shared.osVersionMajorMinorPatch
 
     var min: String = MatchingAttributeDefaults.stringDefaultValue
-    var max: String = AppVersion.shared.osVersion
+    var max: String = AppVersion.shared.osVersionMajorMinorPatch
     var value: String = MatchingAttributeDefaults.stringDefaultValue
     var fallback: Bool?
 }

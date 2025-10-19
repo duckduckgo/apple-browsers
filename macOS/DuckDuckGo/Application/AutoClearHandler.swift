@@ -83,7 +83,7 @@ final class AutoClearHandler {
 
     @MainActor
     private func performAutoClear() {
-        fireViewModel.fire.burnAll(isBurnOnExit: true) { [weak self] in
+        fireViewModel.fire.burnAll(isBurnOnExit: true, includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled) { [weak self] in
             self?.appTerminationHandledCorrectly = true
             self?.onAutoClearCompleted?()
         }
@@ -101,7 +101,7 @@ final class AutoClearHandler {
         let shouldBurnOnStart = dataClearingPreferences.isAutoClearEnabled && !appTerminationHandledCorrectly
         guard shouldBurnOnStart else { return false }
 
-        fireViewModel.fire.burnAll()
+        fireViewModel.fire.burnAll(includeChatHistory: dataClearingPreferences.isAutoClearAIChatHistoryEnabled)
         return true
     }
 

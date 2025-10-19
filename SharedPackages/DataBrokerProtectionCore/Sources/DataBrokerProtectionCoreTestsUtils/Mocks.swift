@@ -962,8 +962,8 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var profile: DataBrokerProtectionProfile?
     public var attemptInformation: AttemptInformation?
     public var attemptCount: Int64 = 0
-    public private(set) var scanEvents = [HistoryEvent]()
-    public private(set) var optOutEvents = [HistoryEvent]()
+    public var scanEvents = [HistoryEvent]()
+    public var optOutEvents = [HistoryEvent]()
     public var optOutToReturn: OptOutJobData?
 
     public var brokerToReturn: DataBroker?
@@ -2858,16 +2858,6 @@ public final class MockWebViewHandler: NSObject, WebViewHandler {
     }
 
     public func setCookies(_ cookies: [HTTPCookie]) async {
-    }
-}
-
-public final class SubmissionRecorderMock: OptOutSubmissionWideEventRecording {
-    private(set) var submissionEndMarked = false
-    private(set) var completionStatus: WideEventStatus?
-
-    public func markSubmissionCompleted(at date: Date) {
-        submissionEndMarked = true
-        completionStatus = .success
     }
 }
 

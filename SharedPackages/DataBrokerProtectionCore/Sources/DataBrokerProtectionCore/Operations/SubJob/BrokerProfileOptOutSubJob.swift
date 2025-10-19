@@ -298,17 +298,15 @@ struct BrokerProfileOptOutSubJob {
         stageDurationCalculator.fireOptOutValidate()
         stageDurationCalculator.fireOptOutSubmitSuccess(tries: tries)
 
-        if let wideEvent = dependencies.wideEvent {
-            let profileIdentifier = brokerProfileQueryData.optOutJobData
-                .first(where: { $0.extractedProfile.id == identifiers.extractedProfileId })?
-                .extractedProfile.identifier
-            markConfirmationWideEventCompleted(brokerProfileQueryData: brokerProfileQueryData,
-                                               database: database,
-                                               profileIdentifier: profileIdentifier,
-                                               brokerId: identifiers.brokerId,
-                                               profileQueryId: identifiers.profileQueryId,
-                                               extractedProfileId: identifiers.extractedProfileId)
-        }
+        let profileIdentifier = brokerProfileQueryData.optOutJobData
+            .first(where: { $0.extractedProfile.id == identifiers.extractedProfileId })?
+            .extractedProfile.identifier
+        markSubmissionWideEventCompleted(brokerProfileQueryData: brokerProfileQueryData,
+                                         database: database,
+                                         profileIdentifier: profileIdentifier,
+                                         brokerId: identifiers.brokerId,
+                                         profileQueryId: identifiers.profileQueryId,
+                                         extractedProfileId: identifiers.extractedProfileId)
 
         let updater = OperationPreferredDateUpdater(database: database)
         try updater.updateChildrenBrokerForParentBroker(brokerProfileQueryData.dataBroker,
@@ -331,12 +329,12 @@ struct BrokerProfileOptOutSubJob {
         )
     }
 
-    private func markConfirmationWideEventCompleted(brokerProfileQueryData: BrokerProfileQueryData,
-                                                    database: DataBrokerProtectionRepository,
-                                                    profileIdentifier: String?,
-                                                    brokerId: Int64,
-                                                    profileQueryId: Int64,
-                                                    extractedProfileId: Int64) {
+    private func markSubmissionWideEventCompleted(brokerProfileQueryData: BrokerProfileQueryData,
+                                                  database: DataBrokerProtectionRepository,
+                                                  profileIdentifier: String?,
+                                                  brokerId: Int64,
+                                                  profileQueryId: Int64,
+                                                  extractedProfileId: Int64) {
         let recordFoundDateProvider = {
             RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
                                             repository: database,
@@ -348,7 +346,7 @@ struct BrokerProfileOptOutSubJob {
                                                     brokerId: brokerId,
                                                     profileQueryId: profileQueryId,
                                                     extractedProfileId: extractedProfileId)
-        OptOutConfirmationWideEventRecorder.startIfPossible(
+        OptOutSubmissionWideEventRecorder.startIfPossible(
             wideEvent: dependencies.wideEvent,
             identifier: wideEventId,
             dataBrokerURL: brokerProfileQueryData.dataBroker.url,

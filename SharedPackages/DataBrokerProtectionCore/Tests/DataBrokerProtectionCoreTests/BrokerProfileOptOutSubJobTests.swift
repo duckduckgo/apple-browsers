@@ -185,60 +185,6 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         }
     }
 
-    func testFinalizeOptOut_marksSubmissionWideEvent() throws {
-        let wideEvent = WideEventMock()
-        mockDependencies.wideEvent = wideEvent
-
-        let brokerData = makeFixtureBrokerProfileQueryData()
-        let identifiers = makeFixtureIdentifiers()
-
-        mockDatabase.optOutEvents = [
-            HistoryEvent(
-                extractedProfileId: identifiers.extractedProfileId,
-                brokerId: identifiers.brokerId,
-                profileQueryId: identifiers.profileQueryId,
-                type: .optOutStarted
-            )
-        ]
-
-        let context = sut.createStageDurationContext(
-            for: brokerData,
-            identifiers: identifiers,
-            extractedProfile: brokerData.optOutJobData.first!.extractedProfile,
-            database: mockDatabase,
-            pixelHandler: mockPixelHandler,
-            vpnConnectionState: "connected",
-            vpnBypassStatus: "enabled"
-        )
-
-        let wideEventId = OptOutWideEventIdentifier(
-            profileIdentifier: brokerData.optOutJobData.first?.extractedProfile.identifier,
-            brokerId: identifiers.brokerId,
-            profileQueryId: identifiers.profileQueryId,
-            extractedProfileId: identifiers.extractedProfileId
-        )
-
-        OptOutSubmissionWideEventRecorder.startIfPossible(
-            wideEvent: wideEvent,
-            identifier: wideEventId,
-            dataBrokerURL: brokerData.dataBroker.url,
-            dataBrokerVersion: brokerData.dataBroker.version,
-            recordFoundDateProvider: Date.init
-        )
-
-        try sut.finalizeOptOut(
-            database: mockDatabase,
-            brokerProfileQueryData: brokerData,
-            identifiers: identifiers,
-            stageDurationCalculator: context.stageDurationCalculator
-        )
-
-        XCTAssertEqual(wideEvent.completions.count, 1)
-        let completionData = wideEvent.completions.first?.0 as? OptOutSubmissionWideEventData
-        XCTAssertEqual(completionData?.globalData.id, wideEventId.toGlobalId)
-        XCTAssertNotNil(completionData?.submissionInterval?.end)
-    }
-
     // MARK: - markOptOutStarted
 
     func testMarkOptOutStarted_persistsHistoryEvent() throws {

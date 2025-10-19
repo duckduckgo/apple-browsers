@@ -16,9 +16,13 @@
 //  limitations under the License.
 //
 
-import XCTest
-import Onboarding
 import BrowserServicesKit
+import Common
+import History
+import HistoryView
+import Onboarding
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ContextualDaxDialogsFactoryTests: XCTestCase {
@@ -26,11 +30,23 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     private var delegate: CapturingOnboardingNavigationDelegate!
     private var reporter: CapturingOnboardingPixelReporter!
     private var featureFlagger: MockFeatureFlagger!
+    private var fireCoordinator: FireCoordinator!
+    private var windowControllersManager: WindowControllersManagerMock!
 
     @MainActor
     override func setUpWithError() throws {
         reporter = CapturingOnboardingPixelReporter()
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
+        windowControllersManager = WindowControllersManagerMock()
+        fireCoordinator = FireCoordinator(tld: TLD(),
+                                          featureFlagger: Application.appDelegate.featureFlagger,
+                                          historyCoordinating: HistoryCoordinatingMock(),
+                                          visualizeFireAnimationDecider: nil,
+                                          onboardingContextualDialogsManager: nil,
+                                          fireproofDomains: MockFireproofDomains(),
+                                          faviconManagement: FaviconManagerMock(),
+                                          windowControllersManager: windowControllersManager,
+                                          pixelFiring: nil,
+                                          historyProvider: MockHistoryViewDataProvider())
         factory = DefaultContextualDaxDialogViewFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
         delegate = CapturingOnboardingNavigationDelegate()
         featureFlagger = MockFeatureFlagger()
@@ -42,7 +58,9 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         delegate = nil
         reporter = nil
         featureFlagger = nil
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = nil
+        windowControllersManager.lastKeyMainWindowController = nil
+        windowControllersManager = nil
+        fireCoordinator = nil
     }
 
     func testWhenMakeViewForTryASearchThenOnboardingTrySearchDialogViewCreatedAndOnActionExpectedSearchOccurs() throws {
@@ -243,7 +261,6 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let onFireButtonPressed = { onFireButtonRun = true }
         let onDismiss = { onDismissRun = true }
 
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
@@ -258,7 +275,10 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             themeManager: MockThemeManager()
         )
         mainWindowController.window = window
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
+        windowControllersManager.lastKeyMainWindowController = mainWindowController
+        defer {
+            windowControllersManager.lastKeyMainWindowController = nil
+        }
 
         // WHEN
         let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: onDismiss, onGotItPressed: {}, onFireButtonPressed: onFireButtonPressed)

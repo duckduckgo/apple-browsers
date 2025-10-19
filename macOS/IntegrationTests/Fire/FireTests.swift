@@ -50,7 +50,7 @@ final class FireTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         tld: Application.appDelegate.tld,
                         visualizeFireAnimationDecider: visualizeFire)
@@ -90,7 +90,7 @@ final class FireTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld)
@@ -122,7 +122,7 @@ final class FireTests: XCTestCase {
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
                         savedZoomLevelsCoordinating: zoomLevelsCoordinator,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
                         tld: Application.appDelegate.tld,
@@ -170,7 +170,7 @@ final class FireTests: XCTestCase {
             }
         } .store(in: &cancellables)
 
-        fire.burnAll()
+        fire.burnAll(completion: {})
 
         await fulfillment(of: [isBurningExpectation, finishedBurningExpectation], timeout: 5)
     }
@@ -215,7 +215,7 @@ final class FireTests: XCTestCase {
                         tld: Application.appDelegate.tld)
 
         XCTAssertTrue(appStateRestorationManager.canRestoreLastSessionState)
-        fire.burnEntity(entity: .none(selectedDomains: Set()))
+        fire.burnEntity(.none(selectedDomains: Set()))
         XCTAssertFalse(appStateRestorationManager.canRestoreLastSessionState)
     }
 
@@ -227,7 +227,7 @@ final class FireTests: XCTestCase {
                         tld: Application.appDelegate.tld)
 
         let finishedBurningExpectation = expectation(description: "Finished burning")
-        fire.burnEntity(entity: .none(selectedDomains: domainsToBurn)) {
+        fire.burnEntity(.none(selectedDomains: domainsToBurn)) {
             finishedBurningExpectation.fulfill()
         }
 
@@ -248,7 +248,7 @@ final class FireTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
                         tld: Application.appDelegate.tld,
@@ -261,6 +261,7 @@ final class FireTests: XCTestCase {
         fire.burnVisits([],
                         except: Application.appDelegate.fireproofDomains,
                         isToday: true,
+                        clearChatHistory: false,
                         completion: {
             finishedBurningExpectation.fulfill()
         })
@@ -288,7 +289,7 @@ final class FireTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
                         tld: Application.appDelegate.tld,
@@ -309,6 +310,7 @@ final class FireTests: XCTestCase {
                         ],
                         except: Application.appDelegate.fireproofDomains,
                         isToday: false,
+                        clearChatHistory: false,
                         completion: {
             finishedBurningExpectation.fulfill()
         })
@@ -323,6 +325,60 @@ final class FireTests: XCTestCase {
         XCTAssert(recentlyClosedCoordinator.burnCacheCalled)
         XCTAssertFalse(visitedLinkStore.removeAllCalled)
         XCTAssertEqual(visitedLinkStore.removeVisitedLinkCalledWithURLs, [.duckDuckGo, .duckDuckGoEmail])
+    }
+
+    @MainActor
+    func testWhenBurnAllIsCalled_ChatHistoryIsCleared() async {
+        let chatHistoryCleaner = MockAIChatHistoryCleaner()
+        let fire = Fire(tld: Application.appDelegate.tld,
+                        aIChatHistoryCleaner: chatHistoryCleaner)
+
+        let burningExpectation = expectation(description: "Burning")
+
+        fire.burnAll {
+            XCTAssertTrue(chatHistoryCleaner.didCleanAIChatHistory)
+            burningExpectation.fulfill()
+        }
+
+        await fulfillment(of: [burningExpectation], timeout: 5)
+    }
+
+    @MainActor
+    func testWhenBurnVisitsIsCalled_IncludingChatHistory_ChatHistoryIsCleared() async {
+        let chatHistoryCleaner = MockAIChatHistoryCleaner()
+        let fire = Fire(tld: Application.appDelegate.tld,
+                        aIChatHistoryCleaner: chatHistoryCleaner)
+
+        let burningExpectation = expectation(description: "Burning")
+
+        fire.burnVisits([],
+                        except: Application.appDelegate.fireproofDomains,
+                        isToday: false,
+                        clearChatHistory: true) {
+            XCTAssertTrue(chatHistoryCleaner.didCleanAIChatHistory)
+            burningExpectation.fulfill()
+        }
+
+        await fulfillment(of: [burningExpectation], timeout: 5)
+    }
+
+    @MainActor
+    func testWhenBurnVisitsIsCalled_NotIncludingChatHistory_ChatHistoryIsNotCleared() async {
+        let chatHistoryCleaner = MockAIChatHistoryCleaner()
+        let fire = Fire(tld: Application.appDelegate.tld,
+                        aIChatHistoryCleaner: chatHistoryCleaner)
+
+        let burningExpectation = expectation(description: "Burning")
+
+        fire.burnVisits([],
+                        except: Application.appDelegate.fireproofDomains,
+                        isToday: false,
+                        clearChatHistory: false) {
+            XCTAssertFalse(chatHistoryCleaner.didCleanAIChatHistory)
+            burningExpectation.fulfill()
+        }
+
+        await fulfillment(of: [burningExpectation], timeout: 5)
     }
 
     @MainActor

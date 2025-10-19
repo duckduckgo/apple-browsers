@@ -45,19 +45,19 @@ final class HistoryDebugMenu: NSMenu {
                 action: #selector(populateFakeHistory),
                 target: self,
                 representedObject: (10, FakeURLsPool.random10Domains)
-            )
+            ).withAccessibilityIdentifier("HistoryDebugMenu.populate10")
             NSMenuItem(
                 title: "Add 100 history visits each day (10 domains)",
                 action: #selector(populateFakeHistory),
                 target: self,
                 representedObject: (100, FakeURLsPool.random10Domains)
-            )
+            ).withAccessibilityIdentifier("HistoryDebugMenu.populate100")
             NSMenuItem(
-                title: "Add 100 history visits each day (200 domains – SLOW!)",
+                title: "Add 100 history visits each day (200 domains – SLOW!)",
                 action: #selector(populateFakeHistory),
                 target: self,
                 representedObject: (100, FakeURLsPool.random200Domains)
-            )
+            ).withAccessibilityIdentifier("HistoryDebugMenu.populate100slow")
 
             NSMenuItem.separator()
             resetMenuItem

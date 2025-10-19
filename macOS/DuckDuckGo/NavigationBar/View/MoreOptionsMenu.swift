@@ -450,7 +450,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowScan)
         }
 
-        freemiumDBPPresenter.showFreemiumDBPAndSetActivated(windowControllerManager: Application.appDelegate.windowControllersManager)
+        freemiumDBPPresenter.showFreemiumDBPAndSetActivated(windowControllersManager: Application.appDelegate.windowControllersManager)
         notificationCenter.post(name: .freemiumDBPEntryPointActivated, object: nil)
     }
 

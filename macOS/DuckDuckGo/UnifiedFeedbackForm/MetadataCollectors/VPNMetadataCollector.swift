@@ -200,7 +200,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
 
     private func collectDeviceInfoMetadata() -> VPNMetadata.DeviceInfo {
         let buildFlavor = AppVersion.shared.buildType
-        let osVersion = AppVersion.shared.osVersion
+        let osVersion = AppVersion.shared.osVersionMajorMinorPatch
         let lowPowerModeEnabled: Bool
 
         if #available(macOS 12.0, *) {

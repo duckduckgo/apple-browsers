@@ -451,10 +451,10 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     @IBAction func showPurchaseViewV2(_ sender: Any?) {
         if #available(macOS 12.0, *) {
             let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManagerV2,
-                                                                 storePurchaseManager: subscriptionManagerV2.storePurchaseManager())
+                                                                   storePurchaseManager: subscriptionManagerV2.storePurchaseManager())
             let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManagerV2,
-                                                                   storePurchaseManager: subscriptionManagerV2.storePurchaseManager(),
-                                                                   appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                     storePurchaseManager: subscriptionManagerV2.storePurchaseManager(),
+                                                                     appStoreRestoreFlow: appStoreRestoreFlow,
                                                                      wideEvent: wideEvent)
             // swiftlint:disable:next force_cast
             let vc = DebugPurchaseViewControllerV2(storePurchaseManager: subscriptionManagerV2.storePurchaseManager() as! DefaultStorePurchaseManagerV2,

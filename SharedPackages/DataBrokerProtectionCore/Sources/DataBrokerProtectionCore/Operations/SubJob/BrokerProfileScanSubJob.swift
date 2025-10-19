@@ -62,7 +62,7 @@ struct BrokerProfileScanSubJob {
         // 2. Set up dependencies used to report the status of the scan job:
         let eventPixels = DataBrokerProtectionEventPixels(database: dependencies.database, handler: dependencies.pixelHandler)
         let stageCalculator = DataBrokerProtectionStageDurationCalculator(
-            dataBroker: brokerProfileQueryData.dataBroker.name,
+            dataBrokerURL: brokerProfileQueryData.dataBroker.url,
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
             handler: dependencies.pixelHandler,
             isImmediateOperation: isManual,

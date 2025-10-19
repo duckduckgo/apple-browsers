@@ -61,6 +61,12 @@ class SwitchBarTextEntryView: UIView {
     private var heightConstraint: NSLayoutConstraint?
     private var buttonsTrailingConstraint: NSLayoutConstraint?
 
+    let textHeightChangeSubject = PassthroughSubject<Void, Never>()
+
+    /// When true the text entry will expand the text when the selection changes, e.g.  If the user uses the space bar to move the caret then it updates the selection.
+    ///   This gets set to true after selectAll() on the field gets call.
+    var canExpandOnSelectionChange = false
+
     var hasBeenInteractedWith = false
     var isURL: Bool {
         // TODO some kind of text length check?
@@ -115,7 +121,6 @@ class SwitchBarTextEntryView: UIView {
         textView.isScrollEnabled = false
         textView.showsVerticalScrollIndicator = false
 
-
         placeholderLabel.font = textFont
         placeholderLabel.adjustsFontForContentSizeCategory = true
         placeholderLabel.textColor = UIColor(designSystemColor: .textSecondary)
@@ -156,9 +161,14 @@ class SwitchBarTextEntryView: UIView {
 
     private func setupButtonsView() {
         buttonsView.onClearTapped = { [weak self] in
+            self?.hasBeenInteractedWith = true
             self?.fireClearButtonPressedPixel()
             self?.handler.clearText()
             self?.handler.clearButtonTapped()
+        }
+
+        buttonsView.onVoiceTapped = { [weak self] in
+            self?.handler.microphoneButtonTapped()
         }
     }
 
@@ -221,18 +231,16 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateButtonState() {
-        let hasText = !textView.text.isEmpty
-        let newButtonState: SwitchBarButtonState
-
-        if hasText {
-            newButtonState = .clearOnly
-        } else {
-            newButtonState = .noButtons
-        }
+        let newButtonState = handler.buttonState
 
         if newButtonState != currentButtonState {
             currentButtonState = newButtonState
-            adjustTextViewContentInset()
+
+            // Prevent unexpected animations of this change
+            UIView.performWithoutAnimation {
+                adjustTextViewContentInset()
+                buttonsView.layoutIfNeeded()
+            }
         }
     }
 
@@ -240,7 +248,7 @@ class SwitchBarTextEntryView: UIView {
         let buttonsIntersectionWidth = textView.frame.intersection(buttonsView.frame).width
 
         // Use default inset or the amount of how buttons interset with the view + required spacing
-        let rightInset = currentButtonState.showsClearButton ? buttonsIntersectionWidth : Constants.textHorizontalInset
+        let rightInset = currentButtonState.showsAnyButton ? buttonsIntersectionWidth : Constants.textHorizontalInset
 
         textView.textContainerInset = UIEdgeInsets(
             top: Constants.textTopInset,
@@ -275,8 +283,12 @@ class SwitchBarTextEntryView: UIView {
 
     private func updateTextViewHeight() {
 
-        let size = textView.systemLayoutSizeFitting(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude))
-        let contentExceedsMaxHeight = size.height > Constants.maxHeight
+        let currentHeight = heightConstraint?.constant
+        defer {
+            if currentHeight != heightConstraint?.constant {
+                textHeightChangeSubject.send()
+            }
+        }
 
         // Reset defaults
         textView.textContainer.lineBreakMode = .byWordWrapping
@@ -292,7 +304,10 @@ class SwitchBarTextEntryView: UIView {
             textView.showsVerticalScrollIndicator = false
             textView.textContainer.lineBreakMode = .byTruncatingTail
         } else if isExpandable {
-            let newHeight = max(Constants.minHeight, min(Constants.maxHeight, size.height))
+            let contentHeight = getCurrentContentHeight()
+            let contentExceedsMaxHeight = contentHeight > Constants.maxHeight
+            
+            let newHeight = max(Constants.minHeight, min(Constants.maxHeight, contentHeight))
 
             heightConstraint?.constant = newHeight
 
@@ -306,6 +321,16 @@ class SwitchBarTextEntryView: UIView {
         }
 
         adjustScrollPosition()
+    }
+
+    private func getCurrentContentHeight() -> CGFloat {
+        let previousScrollSetting = textView.isScrollEnabled
+        defer {
+            textView.isScrollEnabled = previousScrollSetting
+        }
+
+        textView.isScrollEnabled = false
+        return textView.systemLayoutSizeFitting(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude)).height
     }
 
     /// Computes the min height for one line given current fonts/insets, using the larger of the text view or placeholder font.
@@ -355,9 +380,16 @@ class SwitchBarTextEntryView: UIView {
                 if self.textView.text != text {
                     self.textView.text = text
                     self.updatePlaceholderVisibility()
-                    self.updateButtonState()
                     self.updateTextViewHeight()
                 }
+            }
+            .store(in: &cancellables)
+
+        handler.currentButtonStatePublisher
+            .receive(on: DispatchQueue.main)
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.updateButtonState()
             }
             .store(in: &cancellables)
     }
@@ -374,10 +406,17 @@ class SwitchBarTextEntryView: UIView {
 
     func selectAllText() {
         textView.selectAll(nil)
+        canExpandOnSelectionChange = true
     }
 }
 
 extension SwitchBarTextEntryView: UITextViewDelegate {
+
+    func textViewDidChangeSelection(_ textView: UITextView) {
+        guard canExpandOnSelectionChange else { return }
+        textViewDidChange(textView)
+        canExpandOnSelectionChange = false
+    }
 
     func textViewDidBeginEditing(_ textView: UITextView) {
         fireTextAreaFocusedPixel()

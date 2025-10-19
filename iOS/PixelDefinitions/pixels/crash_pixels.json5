@@ -174,38 +174,13 @@
                 "key": "launch-marker-present",
                 "description": "Whether app has successfully launched before (helps distinguish backup restore from corruption)",
                 "type": "boolean"
+            },
+            {
+                "key": "is-background",
+                "description": "Whether the app was in background state when the validation occurred",
+                "type": "boolean"
             }
         ]
-    },
-
-    // Crash correlation pixel
-    "m_debug_bookmarks_structure_lost_after_crash": {
-        "description": "Fires when structure lost occurs after app crash to identify crash-related corruption.",
-        "owners": ["jaceklyp", "bwaresiak"],
-        "triggers": ["exception"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
-
-    // Sync vulnerability protection pixel
-    "m_debug_bookmarks_sync_attempted_to_delete_root": {
-        "description": "Fires when sync attempts to delete root folders, indicating potential sync vulnerability.",
-        "owners": ["jaceklyp", "bwaresiak"],
-        "triggers": ["exception"],
-        "suffixes": [
-            ["daily", "platform", "form_factor"],
-            ["platform", "form_factor"]
-        ],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "root-uuid",
-                "description": "Name of the root folder that sync attempted to delete",
-                "type": "string",
-                "enum": ["mobile_favorites_root", "desktop_favorites_root", "favorites_root", "bookmarks_root"]
-            }
-        ],
-        "expires": "2025-10-31"
     },
 
     // Specific database setup error pixels

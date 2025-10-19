@@ -5878,6 +5878,306 @@
           }
         }
       }
+    },
+    "win-back.campaign.logged-in.preferences.cta" : {
+      "comment" : "CTA of the message displayed for logged in users to resubscribe during the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erneut abonnieren und 25 % sparen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Resubscribe and Save 25%"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vuelve a suscribirte y ahorra un 25 %"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réabonnez-vous et économisez 25 %"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rinnova l'iscrizione e risparmia il 25%"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonneer je opnieuw en bespaar 25%"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odnów subskrypcję i zaoszczędź 25%"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volta a subscrever e poupa 25%"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "-25% за возобновление подписки"
+          }
+        }
+      }
+    },
+    "win-back.campaign.logged-in.preferences.message" : {
+      "comment" : "Message of the message displayed for logged in users to resubscribe during the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bleib geschützt mit unserem VPN, privater KI und mehr. Abonniere noch heute erneut und spare 25 %.\nZeitlich begrenztes Angebot."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%. Limited time offer."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantente protegido con nuestra VPN, IA privada y mucho más. Vuelve a suscribirte hoy y ahorra un 25 %.Oferta por tiempo limitado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protégez-vous grâce à notre VPN, à notre IA privée et plus encore. Réabonnez-vous aujourd'hui et économisez 25 %.Offre à durée limitée."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proteggiti con la nostra VPN, AI privata e altro ancora. Rinnova oggi stesso e risparmia il 25%.\nOfferta a tempo limitato."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blijf beschermd met onze VPN, private AI en meer. Meld je vandaag nog opnieuw aan en bespaar 25%.\nTijdelijke aanbieding."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zachowaj bezpieczeństwo dzięki naszej sieci VPN, prywatnej AI i innym usługom. Odnów subskrypcję już dziś i zaoszczędź 25%. Oferta ograniczona czasowo."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantém a tua proteção com a nossa VPN, IA privada e muito mais. Volta a subscrever hoje mesmo e poupa 25%.Oferta por tempo limitado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы всегда под защитой: VPN, приватный ИИ и многое другое. Скидка 25% при возобновлении подписки. Срок акции ограничен."
+          }
+        }
+      }
+    },
+    "win-back.campaign.logged-out.preferences.cta" : {
+      "comment" : "CTA of the message displayed for logged out users to resubscribe during the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angebot ansehen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "See Offer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver oferta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir l'offre"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedi l'offerta"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bekijk de aanbieding"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobacz ofertę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver oferta"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Акция"
+          }
+        }
+      }
+    },
+    "win-back.campaign.logged-out.preferences.existing.subscription.button" : {
+      "comment" : "Button for logged out users to resubscribe during the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ich habe ein Abonnement"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I Have a Subscription"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tengo una suscripción"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai un abonnement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ho un abbonamento"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ik heb een abonnement"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mam subskrypcję"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tenho uma Subscrição"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У меня уже есть подписка"
+          }
+        }
+      }
+    },
+    "win-back.campaign.logged-out.preferences.title" : {
+      "comment" : "Title of the message displayed for logged out users to resubscribe during the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir wollen dich zurück!\nErhalte 25 % Rabatt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We want you back! Get 25% off."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Queremos que vuelvas!\nConsigue un 25 % de descuento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous voulons vous revoir !\nBénéficiez de 25 % de réduction."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Torna indietro!\nOttieni il 25% di sconto."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wij willen je terug!\nKrijg 25% korting."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wróć do nas!\n Otrzymasz 25% zniżki."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Queremos-te de volta!\nRecebe 25% de desconto."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ждем вашего возвращения.\n Держите скидку 25%!"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

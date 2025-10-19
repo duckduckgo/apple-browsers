@@ -790,8 +790,6 @@ extension Pixel {
         case debugBookmarksStructureNotRecovered
         case debugBookmarksInvalidRoots
         case debugBookmarksValidationFailed
-        case debugBookmarksStructureLostAfterCrash
-        case debugBookmarksSyncAttemptedToDeleteRoot
 
         case debugBookmarksNoDBSchemeFound
         case debugBookmarksUnableToLoadPersistentStores
@@ -2120,8 +2118,6 @@ extension Pixel.Event {
         case .debugBookmarksStructureNotRecovered: return "m_d_bookmarks_structure_not_recovered"
         case .debugBookmarksInvalidRoots: return "m_d_bookmarks_invalid_roots"
         case .debugBookmarksValidationFailed: return "m_d_bookmarks_validation_failed"
-        case .debugBookmarksStructureLostAfterCrash: return "m_debug_bookmarks_structure_lost_after_crash"
-        case .debugBookmarksSyncAttemptedToDeleteRoot: return "m_debug_bookmarks_sync_attempted_to_delete_root"
         
         case .debugBookmarksNoDBSchemeFound: return "m_debug_bookmarks_no_db_scheme_found"
         case .debugBookmarksUnableToLoadPersistentStores: return "m_debug_bookmarks_unable_to_load_persistent_stores"

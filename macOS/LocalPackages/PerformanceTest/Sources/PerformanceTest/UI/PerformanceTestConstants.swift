@@ -104,6 +104,7 @@ enum PerformanceTestConstants {
         static let overlayAlpha: CGFloat = 0.7
 
         // Padding
+        static let standardPadding: CGFloat = 16
         static let largePadding: CGFloat = 40
         static let horizontalPadding: CGFloat = 100
 
@@ -117,9 +118,9 @@ enum PerformanceTestConstants {
 
     // MARK: - Test Configuration
     enum TestConfig {
-        static let availableIterations = [10, 15, 20, 30, 50]
+        static let availableIterations = [1, 5, 10, 15, 20, 30, 50]
         static let defaultIterations = 10
-        static let testTimeout: TimeInterval = 30.0
+        static let testTimeout: TimeInterval = 120.0  // 2 minutes for very large pages (specs, documentation)
         static let checkInterval: TimeInterval = 0.5
         static let warmupDelay: UInt64 = 500_000_000 // 500ms in nanoseconds
     }
@@ -131,7 +132,8 @@ enum PerformanceTestConstants {
         static let mean = "mean"
         static let min = "min"
         static let max = "max"
-        static let stdDev = "stdDev"
+        static let stdDev = "stdDev"  // Deprecated - use iqr instead
+        static let iqr = "iqr"  // Interquartile Range - robust measure of spread
         static let cv = "cv"
     }
 

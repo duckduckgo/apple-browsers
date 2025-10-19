@@ -83,7 +83,7 @@ struct AlertUI {
     }
 
     static func from(error: DataBrokerProtectionError) -> AlertUI {
-        AlertUI(title: error.title, description: error.description)
+        AlertUI(title: error.title, description: error.localizedDescription)
     }
 }
 
@@ -317,7 +317,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             if dbpError.is404 {
                 return createRowFor(matched: false, result: result, error: "404 - No results")
             } else {
-                return createRowFor(matched: false, result: result, error: "\(dbpError.title)-\(dbpError.description)")
+                return createRowFor(matched: false, result: result, error: "\(dbpError.title)-\(dbpError.localizedDescription)")
             }
         } else {
             return createRowFor(matched: false, result: result, error: error.localizedDescription)

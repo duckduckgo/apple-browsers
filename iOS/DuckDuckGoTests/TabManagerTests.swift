@@ -23,6 +23,7 @@ import Core
 import SubscriptionTestingUtilities
 import BrowserServicesKit
 import PersistenceTestingUtils
+import BrowserServicesKitTestsUtils
 
 // swiftlint:disable force_try
 

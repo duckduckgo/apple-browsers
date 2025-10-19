@@ -23,8 +23,8 @@ struct PerformanceTestWindowView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if let results = viewModel.testResults {
-                resultsView(results)
+            if let comparison = viewModel.comparisonResults {
+                comparisonResultsView(comparison)
             } else if viewModel.isRunning {
                 progressView
             } else {
@@ -42,7 +42,12 @@ struct PerformanceTestWindowView: View {
 
             startViewHeader
             currentURLSection
-            testConfigurationSection
+
+            if let errorMessage = viewModel.errorMessage {
+                errorMessageView(errorMessage)
+            }
+
+            maxIterationsPicker
             startTestButton
 
             Spacer()
@@ -70,7 +75,7 @@ struct PerformanceTestWindowView: View {
                     Text(PerformanceTestConstants.Strings.testing)
                         .font(.body)
                         .foregroundColor(.secondary)
-                    Text(url.host ?? url.absoluteString)
+                    Text(url.absoluteString)
                         .font(.system(.title2, design: .monospaced))
                         .lineLimit(1)
                         .truncationMode(.middle)
@@ -86,27 +91,25 @@ struct PerformanceTestWindowView: View {
         }
     }
 
-    private var testConfigurationSection: some View {
-        VStack(spacing: PerformanceTestConstants.Layout.sectionSpacing) {
-            VStack(spacing: PerformanceTestConstants.Layout.smallSpacing) {
-                Text(PerformanceTestConstants.Strings.testConfiguration)
-                    .font(.headline)
-                    .foregroundColor(.primary)
-
-                iterationsPicker
+    private var maxIterationsPicker: some View {
+        HStack {
+            Text("Max Iterations:")
+                .font(.body)
+                .foregroundColor(.secondary)
+            Picker("", selection: $viewModel.maxIterations) {
+                Text("10").tag(10)
+                Text("15").tag(15)
+                Text("20").tag(20)
+                Text("25").tag(25)
+                Text("30").tag(30)
+                Text("35").tag(35)
+                Text("40").tag(40)
+                Text("45").tag(45)
+                Text("50").tag(50)
             }
+            .pickerStyle(.menu)
+            .frame(width: 100)
         }
-        .padding(.top)
-    }
-
-    private var iterationsPicker: some View {
-        Picker("Iterations", selection: $viewModel.selectedIterations) {
-            ForEach(PerformanceTestConstants.TestConfig.availableIterations, id: \.self) { count in
-                Text("\(count) iterations").tag(count)
-            }
-        }
-        .pickerStyle(.menu)
-        .frame(width: PerformanceTestConstants.Layout.pickerWidth)
     }
 
     private var startTestButton: some View {
@@ -127,7 +130,12 @@ struct PerformanceTestWindowView: View {
     private var progressView: some View {
         VStack(spacing: PerformanceTestConstants.Layout.mainSpacing) {
             progressViewHeader
-            progressBar
+            browserProgressIndicator
+
+            if let errorMessage = viewModel.errorMessage {
+                errorMessageView(errorMessage)
+            }
+
             progressStatusText
             progressIterationText
             stopTestButton
@@ -139,6 +147,24 @@ struct PerformanceTestWindowView: View {
         Text(PerformanceTestConstants.Strings.testingInProgress)
             .font(.title)
             .fontWeight(.semibold)
+    }
+
+    private var browserProgressIndicator: some View {
+        Group {
+            if !viewModel.currentBrowser.isEmpty {
+                HStack(spacing: 8) {
+                    Text("Testing \(viewModel.currentBrowser)")
+                        .font(.headline)
+
+                    if !viewModel.browserProgress.isEmpty {
+                        Text("(\(viewModel.browserProgress))")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .foregroundColor(.primary)
+            }
+        }
     }
 
     private var progressBar: some View {
@@ -154,7 +180,7 @@ struct PerformanceTestWindowView: View {
     }
 
     private var progressIterationText: some View {
-        Text("Iteration \(viewModel.currentIteration) of \(viewModel.totalIterations) (\(Int(viewModel.progress * 100))% Complete)")
+        Text("Iteration \(viewModel.currentIteration)")
             .font(.caption)
             .foregroundColor(.secondary)
     }
@@ -164,6 +190,284 @@ struct PerformanceTestWindowView: View {
             viewModel.cancelTest()
         }
         .buttonStyle(.bordered)
+    }
+
+    private func errorMessageView(_ message: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(.red)
+                .font(.title3)
+
+            Text(message)
+                .font(.callout)
+                .foregroundColor(.primary)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer()
+        }
+        .padding()
+        .background(Color.red.opacity(0.1))
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.red.opacity(0.3), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Comparison Results View
+
+    private func comparisonResultsView(_ comparison: BrowserComparisonResults) -> some View {
+        ScrollView {
+            VStack(spacing: PerformanceTestConstants.Layout.mainSpacing) {
+                comparisonHeader(comparison)
+                comparisonMetricsGrid(comparison)
+                comparisonDetailsSection(comparison)
+                actionButtonsSection
+            }
+            .padding()
+        }
+    }
+
+    private func comparisonHeader(_ comparison: BrowserComparisonResults) -> some View {
+        VStack(spacing: PerformanceTestConstants.Layout.itemSpacing) {
+            Text(comparison.url.absoluteString)
+                .font(.title2)
+                .fontWeight(.semibold)
+                .lineLimit(1)
+                .truncationMode(.middle)
+
+            Text("Browser Comparison")
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            statisticalViewPicker
+            statisticalViewDescription
+        }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(PerformanceTestConstants.Layout.cornerRadius)
+    }
+
+    private func comparisonMetricsGrid(_ comparison: BrowserComparisonResults) -> some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: PerformanceTestConstants.Layout.sectionSpacing) {
+            comparisonMetricBox(
+                title: PerformanceTestConstants.Strings.loadComplete,
+                icon: PerformanceTestConstants.Icons.checkmarkCircle,
+                ddgValues: comparison.duckDuckGoResults.detailedMetrics.loadComplete,
+                safariValues: comparison.safariResults.detailedMetrics.loadComplete,
+                comparison: comparison,
+                isTime: true
+            )
+
+            comparisonMetricBox(
+                title: PerformanceTestConstants.Strings.domComplete,
+                icon: PerformanceTestConstants.Icons.docText,
+                ddgValues: comparison.duckDuckGoResults.detailedMetrics.domComplete,
+                safariValues: comparison.safariResults.detailedMetrics.domComplete,
+                comparison: comparison,
+                isTime: true
+            )
+
+            comparisonMetricBox(
+                title: PerformanceTestConstants.Strings.domContentLoaded,
+                icon: PerformanceTestConstants.Icons.docRichtext,
+                ddgValues: comparison.duckDuckGoResults.detailedMetrics.domContentLoaded,
+                safariValues: comparison.safariResults.detailedMetrics.domContentLoaded,
+                comparison: comparison,
+                isTime: true
+            )
+
+            comparisonMetricBox(
+                title: PerformanceTestConstants.Strings.domInteractive,
+                icon: PerformanceTestConstants.Icons.handTap,
+                ddgValues: comparison.duckDuckGoResults.detailedMetrics.domInteractive,
+                safariValues: comparison.safariResults.detailedMetrics.domInteractive,
+                comparison: comparison,
+                isTime: true
+            )
+
+            comparisonMetricBox(
+                title: PerformanceTestConstants.Strings.fcp,
+                icon: PerformanceTestConstants.Icons.paintbrush,
+                ddgValues: comparison.duckDuckGoResults.detailedMetrics.fcp,
+                safariValues: comparison.safariResults.detailedMetrics.fcp,
+                comparison: comparison,
+                isTime: true
+            )
+
+            comparisonMetricBox(
+                title: PerformanceTestConstants.Strings.ttfb,
+                icon: PerformanceTestConstants.Icons.network,
+                ddgValues: comparison.duckDuckGoResults.detailedMetrics.ttfb,
+                safariValues: comparison.safariResults.detailedMetrics.ttfb,
+                comparison: comparison,
+                isTime: true
+            )
+
+            comparisonMetricBox(
+                title: PerformanceTestConstants.Strings.responseTime,
+                icon: PerformanceTestConstants.Icons.arrowLeftArrowRight,
+                ddgValues: comparison.duckDuckGoResults.detailedMetrics.responseTime,
+                safariValues: comparison.safariResults.detailedMetrics.responseTime,
+                comparison: comparison,
+                isTime: true
+            )
+
+            comparisonMetricBox(
+                title: PerformanceTestConstants.Strings.serverTime,
+                icon: PerformanceTestConstants.Icons.serverRack,
+                ddgValues: comparison.duckDuckGoResults.detailedMetrics.serverTime,
+                safariValues: comparison.safariResults.detailedMetrics.serverTime,
+                comparison: comparison,
+                isTime: true
+            )
+
+            comparisonMetricBox(
+                title: PerformanceTestConstants.Strings.transferSize,
+                icon: PerformanceTestConstants.Icons.arrowDownDoc,
+                ddgValues: comparison.duckDuckGoResults.detailedMetrics.transferSize,
+                safariValues: comparison.safariResults.detailedMetrics.transferSize,
+                comparison: comparison,
+                isTime: false
+            )
+
+            comparisonMetricBox(
+                title: PerformanceTestConstants.Strings.decodedBodySize,
+                icon: PerformanceTestConstants.Icons.docPlaintext,
+                ddgValues: comparison.duckDuckGoResults.detailedMetrics.decodedBodySize,
+                safariValues: comparison.safariResults.detailedMetrics.decodedBodySize,
+                comparison: comparison,
+                isTime: false
+            )
+
+            comparisonMetricBox(
+                title: PerformanceTestConstants.Strings.encodedBodySize,
+                icon: PerformanceTestConstants.Icons.docZipper,
+                ddgValues: comparison.duckDuckGoResults.detailedMetrics.encodedBodySize,
+                safariValues: comparison.safariResults.detailedMetrics.encodedBodySize,
+                comparison: comparison,
+                isTime: false
+            )
+
+            comparisonMetricBox(
+                title: PerformanceTestConstants.Strings.resourceCount,
+                icon: PerformanceTestConstants.Icons.folder,
+                ddgValues: comparison.duckDuckGoResults.detailedMetrics.resourceCount.map { Double($0) },
+                safariValues: comparison.safariResults.detailedMetrics.resourceCount.map { Double($0) },
+                comparison: comparison,
+                isTime: false
+            )
+        }
+    }
+
+    private func comparisonMetricBox(
+        title: String,
+        icon: String,
+        ddgValues: [Double],
+        safariValues: [Double],
+        comparison: BrowserComparisonResults,
+        isTime: Bool
+    ) -> some View {
+        Group {
+            if let ddgValue = getMetricStatValue(ddgValues, viewModel.selectedStatView),
+               let ddgIQR = getMetricStatValue(ddgValues, PerformanceTestConstants.StatViews.iqr),
+               let safariValue = getMetricStatValue(safariValues, viewModel.selectedStatView),
+               let safariIQR = getMetricStatValue(safariValues, PerformanceTestConstants.StatViews.iqr) {
+
+                let percentDiff = comparison.percentageDifference(ddgValue, safariValue)
+                let winner = isTime ? comparison.timeBasedWinner(ddgValue, safariValue, ddgStdDev: ddgIQR, safariStdDev: safariIQR) : comparison.sizeBasedWinner(ddgValue, safariValue, ddgStdDev: ddgIQR, safariStdDev: safariIQR)
+
+                ComparisonMetricBox(
+                    title: title,
+                    icon: icon,
+                    duckduckgoValue: formatMetricValue(ddgValue, isTime: isTime),
+                    duckduckgoStdDev: formatMetricValue(ddgIQR / 2.0, isTime: isTime),  // Display IQR/2 as spread around median
+                    safariValue: formatMetricValue(safariValue, isTime: isTime),
+                    safariStdDev: formatMetricValue(safariIQR / 2.0, isTime: isTime),  // Display IQR/2 as spread around median
+                    percentageDiff: percentDiff,
+                    winner: winner
+                )
+            }
+        }
+    }
+
+    private func comparisonDetailsSection(_ comparison: BrowserComparisonResults) -> some View {
+        VStack(alignment: .leading, spacing: PerformanceTestConstants.Layout.sectionSpacing) {
+            // Test Statistics
+            HStack(spacing: PerformanceTestConstants.Layout.sectionSpacing) {
+                // DuckDuckGo stats
+                VStack(alignment: .leading, spacing: PerformanceTestConstants.Layout.itemSpacing) {
+                    Text("DuckDuckGo Statistics")
+                        .font(.headline)
+
+                    VStack(spacing: PerformanceTestConstants.Layout.smallSpacing) {
+                        statRow("Total Tests", "\(comparison.duckDuckGoResults.iterations)")
+                        statRow("Consistency", comparison.duckDuckGoResults.reliabilityScore,
+                               color: reliabilityColor(comparison.duckDuckGoResults.reliabilityScore))
+                        if let ratio = comparison.duckDuckGoResults.p95ToP50Ratio {
+                            statRow("P95/P50 Ratio", String(format: "%.1fx", ratio))
+                        }
+                    }
+                }
+                .padding()
+                .background(Color.gray.opacity(0.05))
+                .cornerRadius(PerformanceTestConstants.Layout.smallCornerRadius)
+                .frame(maxWidth: .infinity)
+
+                // Safari stats
+                VStack(alignment: .leading, spacing: PerformanceTestConstants.Layout.itemSpacing) {
+                    Text("Safari Statistics")
+                        .font(.headline)
+
+                    VStack(spacing: PerformanceTestConstants.Layout.smallSpacing) {
+                        statRow("Total Tests", "\(comparison.safariResults.iterations)")
+                        statRow("Consistency", comparison.safariResults.reliabilityScore,
+                               color: reliabilityColor(comparison.safariResults.reliabilityScore))
+                        if let ratio = comparison.safariResults.p95ToP50Ratio {
+                            statRow("P95/P50 Ratio", String(format: "%.1fx", ratio))
+                        }
+                    }
+                }
+                .padding()
+                .background(Color.gray.opacity(0.05))
+                .cornerRadius(PerformanceTestConstants.Layout.smallCornerRadius)
+                .frame(maxWidth: .infinity)
+            }
+
+            // Statistical Significance Note
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "info.circle")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
+                    Text("Statistical Significance")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.secondary)
+                }
+
+                Text("Tests use adaptive iterations (minimum 10, maximum 30) to ensure statistical reliability. Testing stops early when results are consistent (IQR/median < 20%), or continues to improve accuracy if variance is high. The first warm-up iteration is excluded, and outliers are filtered using the IQR method (values outside Q1 - 1.5×IQR to Q3 + 1.5×IQR are removed) to eliminate network hiccups and focus on typical site performance. Metrics use the median (50th percentile) from the filtered data as the primary measure. The uncertainty shown (±) is the Interquartile Range (IQR/2), representing the middle 50% spread—lower values indicate more consistent performance. Statistical significance is determined by comparing whether the performance difference exceeds the combined IQR values. When the difference is smaller than this threshold, results are marked as \"Not statistically significant,\" indicating the browsers performed essentially the same.")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding()
+            .background(Color.blue.opacity(0.05))
+            .cornerRadius(PerformanceTestConstants.Layout.smallCornerRadius)
+        }
+    }
+
+    private func statRow(_ label: String, _ value: String, color: Color = .primary) -> some View {
+        HStack {
+            Text(label)
+                .foregroundColor(.secondary)
+                .font(.caption)
+            Spacer()
+            Text(value)
+                .font(.system(.caption, design: .monospaced))
+                .foregroundColor(color)
+        }
     }
 
     // MARK: - Results View
@@ -183,7 +487,7 @@ struct PerformanceTestWindowView: View {
     private var resultsHeader: some View {
         VStack(spacing: PerformanceTestConstants.Layout.itemSpacing) {
             if let url = viewModel.currentURL {
-                Text(url.host ?? url.absoluteString)
+                Text(url.absoluteString)
                     .font(.title2)
                     .fontWeight(.semibold)
                     .lineLimit(1)
@@ -451,8 +755,9 @@ extension PerformanceTestWindowView {
             Text(PerformanceTestConstants.Strings.totalTests)
                 .foregroundColor(.secondary)
             Spacer()
+
             Text("\(results.iterations)")
-                .font(.system(.body, design: .monospaced))
+               .font(.system(.body, design: .monospaced))
         }
     }
 
@@ -523,6 +828,13 @@ extension PerformanceTestWindowView {
 
     private var actionButtonsSection: some View {
         HStack {
+            Button(action: {
+                viewModel.exportResults()
+            }) {
+                Label("Export to JSON", systemImage: "square.and.arrow.down")
+            }
+            .buttonStyle(.bordered)
+
             Spacer()
 
             Button(action: {
@@ -545,17 +857,17 @@ extension PerformanceTestWindowView {
     private func statViewDescription(_ statView: String) -> String {
         switch statView {
         case PerformanceTestConstants.StatViews.median:
-            return "Showing median values (50th percentile) ± standard deviation"
+            return "Showing median values (50th percentile) ± interquartile range (IQR/2)"
         case PerformanceTestConstants.StatViews.p95:
-            return "Showing 95th percentile values (worst 5% of loads) ± standard deviation"
+            return "Showing 95th percentile values (worst 5% of loads) ± interquartile range (IQR/2)"
         case PerformanceTestConstants.StatViews.mean:
-            return "Showing average values ± standard deviation"
+            return "Showing average values ± interquartile range (IQR/2)"
         case PerformanceTestConstants.StatViews.min:
-            return "Showing best case performance ± standard deviation"
+            return "Showing best case performance ± interquartile range (IQR/2)"
         case PerformanceTestConstants.StatViews.max:
-            return "Showing worst case performance ± standard deviation"
+            return "Showing worst case performance ± interquartile range (IQR/2)"
         default:
-            return "Showing \(statView) values ± standard deviation"
+            return "Showing \(statView) values ± interquartile range (IQR/2)"
         }
     }
 
@@ -583,15 +895,11 @@ extension PerformanceTestWindowView {
     private func getMetricStatValue(_ values: [Double], _ statView: String) -> Double? {
         guard !values.isEmpty else { return nil }
 
-        // Exclude first value (warm-up) if we have more than one
-        let relevantValues = values.count > 1 ? Array(values.dropFirst()) : values
-        guard !relevantValues.isEmpty else { return nil }
-
         switch statView {
         case PerformanceTestConstants.StatViews.mean:
-            return relevantValues.reduce(0, +) / Double(relevantValues.count)
+            return values.reduce(0, +) / Double(values.count)
         case PerformanceTestConstants.StatViews.median:
-            let sorted = relevantValues.sorted()
+            let sorted = values.sorted()
             let count = sorted.count
             if count % 2 == 0 {
                 return (sorted[count/2 - 1] + sorted[count/2]) / 2.0
@@ -599,11 +907,11 @@ extension PerformanceTestWindowView {
                 return sorted[count/2]
             }
         case PerformanceTestConstants.StatViews.min:
-            return relevantValues.min()
+            return values.min()
         case PerformanceTestConstants.StatViews.max:
-            return relevantValues.max()
+            return values.max()
         case PerformanceTestConstants.StatViews.p95:
-            let sorted = relevantValues.sorted()
+            let sorted = values.sorted()
             let count = Double(sorted.count)
 
             guard count > 0 else { return nil }
@@ -622,18 +930,20 @@ extension PerformanceTestWindowView {
 
             return lowerValue + weight * (upperValue - lowerValue)
         case PerformanceTestConstants.StatViews.stdDev:
-            let mean = relevantValues.reduce(0, +) / Double(relevantValues.count)
-            let variance = relevantValues.reduce(0) { sum, value in
+            let mean = values.reduce(0, +) / Double(values.count)
+            let variance = values.reduce(0) { sum, value in
                 sum + pow(value - mean, 2)
-            } / Double(relevantValues.count)
+            } / Double(values.count)
             return sqrt(variance)
+        case PerformanceTestConstants.StatViews.iqr:
+            return PerformanceTestResults.calculateIQR(values)
         case PerformanceTestConstants.StatViews.cv:
-            let mean = relevantValues.reduce(0, +) / Double(relevantValues.count)
+            let mean = values.reduce(0, +) / Double(values.count)
             guard mean > 0 else { return nil }
-            // Calculate stdDev directly on relevantValues to avoid recursive dropFirst()
-            let variance = relevantValues.reduce(0) { sum, value in
+
+            let variance = values.reduce(0) { sum, value in
                 sum + pow(value - mean, 2)
-            } / Double(relevantValues.count)
+            } / Double(values.count)
             let stdDev = sqrt(variance)
             return (stdDev / mean) * 100
         default:

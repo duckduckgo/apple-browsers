@@ -25,7 +25,9 @@ import os.log
 @MainActor
 public class SitePerformanceTester: NSObject {
 
-    private let webView: WKWebView
+    private var webView: WKWebView
+    private let createNewTab: (() async -> WKWebView?)?
+    private let closeTab: (() async -> Void)?
     private let logger = Logger(
         subsystem: "com.duckduckgo.macos.browser.performancetest",
         category: "SitePerformanceTester"
@@ -37,95 +39,287 @@ public class SitePerformanceTester: NSObject {
     /// Cancellation check
     public var isCancelled: () -> Bool = { false }
 
-    public init(webView: WKWebView) {
+    public init(
+        webView: WKWebView,
+        createNewTab: (() async -> WKWebView?)? = nil,
+        closeTab: (() async -> Void)? = nil
+    ) {
         self.webView = webView
+        self.createNewTab = createNewTab
+        self.closeTab = closeTab
         super.init()
     }
 
     public func runPerformanceTest(
         url: URL,
         iterations: Int = 10,
+        maxIterations: Int = 30,
         timeout: TimeInterval = 30.0
     ) async -> PerformanceTestResults {
         var loadTimes: [TimeInterval] = []
         var detailedMetrics = CollectedMetrics()
         var failedAttempts = 0
 
-        // Store original delegate
-        let originalDelegate = webView.navigationDelegate
+        let minIterations = iterations
+        var currentIteration = 0
+        var shouldContinue = true
 
-        for iteration in 1...iterations {
-            // Check cancellation
+        while shouldContinue && currentIteration < maxIterations {
+            currentIteration += 1
+
             if isCancelled() {
-                webView.navigationDelegate = originalDelegate
-                return PerformanceTestResults(
-                    url: url,
-                    loadTimes: loadTimes,
-                    detailedMetrics: detailedMetrics,
-                    failedAttempts: failedAttempts,
-                    iterations: loadTimes.count,  // Actual completed tests (excluding warm-up)
-                    cancelled: true
-                )
+                return createCancelledResults(url: url, loadTimes: loadTimes, detailedMetrics: detailedMetrics, failedAttempts: failedAttempts)
             }
 
-            // Progress: Clearing cache
-            progressHandler?(iteration, iterations, "Clearing cache...")
+            let iterationResult = await performSingleIteration(
+                url: url,
+                iteration: currentIteration,
+                minIterations: iterations,
+                timeout: timeout
+            )
 
-            // Clear cache for this specific website
-            await clearCacheForURL(url)
+            loadTimes.append(contentsOf: iterationResult.loadTimes)
+            mergeMetrics(from: iterationResult.metrics, into: &detailedMetrics)
+            failedAttempts += iterationResult.failedAttempts
 
-            // Wait 500ms after cache clearing for it to take effect
-            try? await Task.sleep(nanoseconds: 500_000_000)
-
-            // Progress: Loading page
-            progressHandler?(iteration, iterations, "Loading page...")
-
-            // Measure load time and collect metrics
-            let metrics = await measurePageLoadAndCollectMetrics(url: url, timeout: timeout)
-
-            if let metrics = metrics {
-                loadTimes.append(metrics.loadComplete)
-                detailedMetrics.append(metrics)
-                logger.debug("Iteration \(iteration): Collected metrics successfully")
-            } else {
-                failedAttempts += 1
-                logger.debug("Iteration \(iteration): Failed to collect metrics")
-            }
+            shouldContinue = checkShouldContinue(
+                iteration: currentIteration,
+                minIterations: minIterations,
+                maxIterations: maxIterations,
+                loadTimes: loadTimes
+            )
         }
 
-        // Restore original delegate
-        webView.navigationDelegate = originalDelegate
-
-        // Log summary of collected metrics
-        logger.debug("Test complete. Collected \(detailedMetrics.loadComplete.count) samples")
-        logger.debug("LoadComplete values: \(detailedMetrics.loadComplete)")
-        logger.debug("DomComplete values: \(detailedMetrics.domComplete)")
-        logger.debug("TTFB values: \(detailedMetrics.ttfb)")
+        logTestSummary(detailedMetrics: detailedMetrics, currentIteration: currentIteration)
 
         return PerformanceTestResults(
             url: url,
             loadTimes: loadTimes,
             detailedMetrics: detailedMetrics,
             failedAttempts: failedAttempts,
-            iterations: iterations - 1,  // Exclude warm-up iteration from count
+            iterations: loadTimes.count,
             cancelled: false
         )
     }
 
+    private func createCancelledResults(
+        url: URL,
+        loadTimes: [TimeInterval],
+        detailedMetrics: CollectedMetrics,
+        failedAttempts: Int
+    ) -> PerformanceTestResults {
+        return PerformanceTestResults(
+            url: url,
+            loadTimes: loadTimes,
+            detailedMetrics: detailedMetrics,
+            failedAttempts: failedAttempts,
+            iterations: loadTimes.count,
+            cancelled: true
+        )
+    }
+
+    private func performSingleIteration(
+        url: URL,
+        iteration: Int,
+        minIterations: Int,
+        timeout: TimeInterval
+    ) async -> (loadTimes: [TimeInterval], metrics: CollectedMetrics, failedAttempts: Int) {
+        var loadTimes: [TimeInterval] = []
+        var detailedMetrics = CollectedMetrics()
+        var failedAttempts = 0
+
+        progressHandler?(iteration, minIterations, "Clearing cache...")
+        await clearCacheForURL(url)
+        await verifyCacheClearing()
+        try? await Task.sleep(nanoseconds: 500_000_000)
+
+        guard await prepareTestIteration(iteration: iteration) else {
+            return ([], detailedMetrics, 1)
+        }
+
+        await runWarmup(iteration: iteration, minIterations: minIterations)
+        try? await Task.sleep(nanoseconds: 500_000_000)
+
+        progressHandler?(iteration, minIterations, "Loading page...")
+
+        if let metrics = await measurePageLoadAndCollectMetrics(url: url, timeout: timeout) {
+            loadTimes.append(metrics.loadComplete)
+            detailedMetrics.append(metrics)
+            logger.debug("Iteration \(iteration): Collected metrics successfully")
+        } else {
+            failedAttempts += 1
+            logger.debug("Iteration \(iteration): Failed to collect metrics")
+        }
+
+        return (loadTimes, detailedMetrics, failedAttempts)
+    }
+
+    private func verifyCacheClearing() async {
+        let dataStore = webView.configuration.websiteDataStore
+        let remainingRecords = await dataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
+
+        if !remainingRecords.isEmpty {
+            logger.warning("Warning: \(remainingRecords.count) data records still present after clearing")
+        } else {
+            logger.debug("Cache clearing verified - 0 data records remaining")
+        }
+    }
+
+    private func prepareTestIteration(iteration: Int) async -> Bool {
+        if iteration > 1, let closeTab = closeTab {
+            logger.debug("Iteration \(iteration): Closing previous test tab")
+            await closeTab()
+            logger.debug("Iteration \(iteration): Closed previous test tab")
+            try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5s delay to visualize tab closure
+        }
+
+        guard let createNewTab = createNewTab else {
+            logger.error("createNewTab closure not provided")
+            return false
+        }
+
+        guard let newWebView = await createNewTab() else {
+            logger.warning("Iteration \(iteration): Failed to create new tab")
+            return false
+        }
+
+        logger.debug("Iteration \(iteration): Created new test tab")
+        webView = newWebView
+        try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5s delay to visualize tab creation
+        return true
+    }
+
+    private func runWarmup(iteration: Int, minIterations: Int) async {
+        progressHandler?(iteration, minIterations, "Warming up JavaScript engine...")
+
+        guard let warmupURL = URL(string: "https://duckduckgo.com") else {
+            logger.error("Failed to create warmup URL")
+            return
+        }
+
+        let warmupDelegate = NavigationDelegate()
+        let originalDelegate = webView.navigationDelegate
+
+        defer {
+            webView.navigationDelegate = originalDelegate
+        }
+
+        warmupDelegate.startMeasurement()
+        webView.navigationDelegate = warmupDelegate
+        webView.load(URLRequest(url: warmupURL))
+
+        await waitForWarmupCompletion(delegate: warmupDelegate)
+    }
+
+    private func waitForWarmupCompletion(delegate: NavigationDelegate) async {
+        let warmupTimeout: TimeInterval = 10
+        var warmupElapsed: TimeInterval = 0
+        let checkInterval: TimeInterval = 0.5
+
+        while !delegate.isComplete && warmupElapsed < warmupTimeout {
+            try? await Task.sleep(nanoseconds: UInt64(checkInterval * 1_000_000_000))
+            warmupElapsed += checkInterval
+        }
+
+        logWarmupResult(delegate: delegate)
+    }
+
+    private func logWarmupResult(delegate: NavigationDelegate) {
+        if let error = delegate.error {
+            logger.warning("Warmup navigation failed: \(error.localizedDescription)")
+        } else if !delegate.isComplete {
+            logger.warning("Warmup navigation timed out")
+        } else {
+            logger.debug("Warmup navigation completed in \(delegate.loadTime ?? 0)s")
+        }
+    }
+
+    private func checkShouldContinue(
+        iteration: Int,
+        minIterations: Int,
+        maxIterations: Int,
+        loadTimes: [TimeInterval]
+    ) -> Bool {
+        guard iteration >= minIterations, loadTimes.count >= 4 else {
+            return true
+        }
+
+        let isConsistent = isDataConsistent(loadTimes)
+        logConsistencyMetrics(loadTimes: loadTimes, iteration: iteration, maxIterations: maxIterations)
+
+        if isConsistent {
+            logger.info("✓ Achieved 'Good' consistency after \(iteration) iterations. Stopping.")
+            progressHandler?(iteration, maxIterations, "Good consistency achieved")
+            return false
+        }
+
+        logger.info("Consistency not yet achieved. Testing iteration \(iteration + 1)...")
+        return true
+    }
+
+    private func logConsistencyMetrics(loadTimes: [TimeInterval], iteration: Int, maxIterations: Int) {
+        let sorted = loadTimes.sorted()
+        let median = PerformanceTestResults.calculateMedian(sorted)
+
+        guard let iqr = PerformanceTestResults.calculateIQR(sorted), median > 0 else { return }
+
+        let coeffVar = (iqr / median * 100)
+        let p50Index = Int(Double(sorted.count - 1) * 0.50)
+        let p95Index = Int(Double(sorted.count - 1) * 0.95)
+        let ratio = sorted[p95Index] / sorted[p50Index]
+        let statusMsg = String(format: "CoeffVar: %.1f%%, Ratio: %.2fx", coeffVar, ratio)
+
+        logger.info("Consistency metrics: \(statusMsg) (target: <20% AND <2.0x)")
+        logger.info("  Median: \(Int(median))ms, IQR: \(Int(iqr))ms, P50: \(Int(sorted[p50Index]))ms, P95: \(Int(sorted[p95Index]))ms")
+        progressHandler?(iteration, maxIterations, statusMsg)
+    }
+
+    private func mergeMetrics(from source: CollectedMetrics, into target: inout CollectedMetrics) {
+        target.loadComplete.append(contentsOf: source.loadComplete)
+        target.domComplete.append(contentsOf: source.domComplete)
+        target.domContentLoaded.append(contentsOf: source.domContentLoaded)
+        target.domInteractive.append(contentsOf: source.domInteractive)
+        target.fcp.append(contentsOf: source.fcp)
+        target.ttfb.append(contentsOf: source.ttfb)
+        target.responseTime.append(contentsOf: source.responseTime)
+        target.serverTime.append(contentsOf: source.serverTime)
+        target.transferSize.append(contentsOf: source.transferSize)
+        target.encodedBodySize.append(contentsOf: source.encodedBodySize)
+        target.decodedBodySize.append(contentsOf: source.decodedBodySize)
+        target.resourceCount.append(contentsOf: source.resourceCount)
+        target.totalResourcesSize.append(contentsOf: source.totalResourcesSize)
+        target.tti.append(contentsOf: source.tti)
+    }
+
+    private func logTestSummary(detailedMetrics: CollectedMetrics, currentIteration: Int) {
+        logger.debug("Test complete. Collected \(detailedMetrics.loadComplete.count) samples across \(currentIteration) iterations")
+        logger.debug("LoadComplete values: \(detailedMetrics.loadComplete)")
+        logger.debug("DomComplete values: \(detailedMetrics.domComplete)")
+        logger.debug("TTFB values: \(detailedMetrics.ttfb)")
+    }
+
     private func clearCacheForURL(_ url: URL) async {
-        let dataStore = WKWebsiteDataStore.default()
+        // CRITICAL: Use the webView's actual data store, not .default()
+        // The webView might be using a custom data store (e.g., burner mode)
+        let dataStore = webView.configuration.websiteDataStore
         let dataTypes = WKWebsiteDataStore.allWebsiteDataTypes()
+
+        logger.debug("Clearing all website data types: \(dataTypes)")
 
         // Clear ALL website data to ensure clean test conditions
         // This handles redirects, third-party resources, and cached data
         let records = await dataStore.dataRecords(ofTypes: dataTypes)
+        logger.debug("Found \(records.count) data records to clear")
+
         if !records.isEmpty {
             await dataStore.removeData(ofTypes: dataTypes, for: records)
+            logger.debug("Cleared \(records.count) data records")
         }
 
         // Also clear all cookies to ensure complete cache clearing
         let httpCookieStore = dataStore.httpCookieStore
         let cookies = await httpCookieStore.allCookies()
+        logger.debug("Found \(cookies.count) cookies to clear")
 
         if !cookies.isEmpty {
             await withTaskGroup(of: Void.self) { group in
@@ -135,7 +329,10 @@ public class SitePerformanceTester: NSObject {
                     }
                 }
             }
+            logger.debug("Cleared \(cookies.count) cookies")
         }
+
+        logger.debug("Cache clearing complete")
     }
 
     private func measurePageLoadAndCollectMetrics(
@@ -167,6 +364,17 @@ public class SitePerformanceTester: NSObject {
 
         // Only collect metrics if navigation completed successfully
         if delegate.isComplete && delegate.error == nil {
+            // Initial stability delay
+            try? await Task.sleep(nanoseconds: 500_000_000)  // 500ms
+
+            // Scroll to trigger LCP and lazy content (matching Safari behavior)
+            _ = try? await webView.evaluateJavaScript("window.scrollTo(0, 300);")
+            try? await Task.sleep(nanoseconds: 500_000_000)  // 500ms
+
+            // Additional scroll for layout shifts
+            _ = try? await webView.evaluateJavaScript("window.scrollTo(0, 600);")
+            try? await Task.sleep(nanoseconds: 500_000_000)  // 500ms
+
             return await collectPerformanceMetrics()
         }
 
@@ -203,8 +411,11 @@ public class SitePerformanceTester: NSObject {
         }
 
         do {
-            let result: Any? = try await webView.evaluateJavaScript(script)
-            if let metrics = result as? [String: Any] {
+            // Load the function definition and then call it
+            let fullScript = script + "; collectPerformanceMetrics();"
+
+            let result: Any? = try await webView.evaluateJavaScript(fullScript)
+           if let metrics = result as? [String: Any] {
                 logger.debug("Raw metrics collected: \(metrics)")
 
                 let detailedMetrics = DetailedPerformanceMetrics(
@@ -213,7 +424,6 @@ public class SitePerformanceTester: NSObject {
                     domContentLoaded: (metrics["domContentLoaded"] as? Double ?? 0) / 1000.0,
                     domInteractive: (metrics["domInteractive"] as? Double ?? 0) / 1000.0,
                     firstContentfulPaint: (metrics["fcp"] as? Double ?? 0) / 1000.0,
-                    largestContentfulPaint: nil, // LCP not available in this context
                     timeToFirstByte: (metrics["ttfb"] as? Double ?? 0) / 1000.0,
                     responseTime: (metrics["responseTime"] as? Double ?? 0) / 1000.0,
                     serverTime: (metrics["serverTime"] as? Double ?? 0) / 1000.0,
@@ -240,7 +450,53 @@ public class SitePerformanceTester: NSObject {
         return nil
     }
 
-    // DetailedMetrics struct removed - using DetailedPerformanceMetrics from Models
+    /// Check if data is consistent enough to stop early (low variance)
+    private func isDataConsistent(_ values: [Double]) -> Bool {
+        guard values.count >= 4 else { return false }
+
+        let sorted = values.sorted()
+        let median = PerformanceTestResults.calculateMedian(sorted)
+        guard let iqr = PerformanceTestResults.calculateIQR(sorted), median > 0 else {
+            return false
+        }
+
+        // Calculate coefficient of variation (IQR/median as percentage)
+        let coefficientOfVariation = (iqr / median) * 100
+
+        // Calculate P95/P50 ratio for additional reliability check
+        let p50Index = Int(Double(sorted.count - 1) * 0.50)
+        let p95Index = Int(Double(sorted.count - 1) * 0.95)
+        let p50 = sorted[p50Index]
+        let p95 = sorted[p95Index]
+        let ratio = p50 > 0 ? p95 / p50 : 999
+
+        // Only stop early if we achieve "Good" or better consistency
+        // Good: coeffVariation < 20% AND ratio < 2.0x
+        // Excellent: coeffVariation < 10% AND ratio < 1.5x
+        return coefficientOfVariation < 20.0 && ratio < 2.0
+    }
+
+}
+
+/// Filter outliers using IQR method (Q1 - 1.5*IQR to Q3 + 1.5*IQR)
+extension PerformanceTestResults {
+    public static func filterOutliers(_ values: [Double]) -> [Double] {
+        guard values.count >= 4 else { return values }  // Need at least 4 points for IQR
+
+        let sorted = values.sorted()
+        guard let iqr = calculateIQR(sorted) else { return values }
+
+        let q1 = calculatePercentile(sorted, percentile: 0.25)
+        let q3 = calculatePercentile(sorted, percentile: 0.75)
+
+        let lowerBound = q1 - 1.5 * iqr
+        let upperBound = q3 + 1.5 * iqr
+
+        let filtered = sorted.filter { $0 >= lowerBound && $0 <= upperBound }
+
+        // Only return filtered if we didn't remove too many points (keep at least 60%)
+        return filtered.count >= Int(Double(values.count) * 0.6) ? filtered : values
+    }
 }
 
 private class NavigationDelegate: NSObject, WKNavigationDelegate {
@@ -321,14 +577,6 @@ public struct PerformanceTestResults {
         return loadTimes.reduce(0, +) / Double(loadTimes.count)
     }
 
-    public var minTime: TimeInterval? {
-        return loadTimes.min()
-    }
-
-    public var maxTime: TimeInterval? {
-        return loadTimes.max()
-    }
-
     public var standardDeviation: TimeInterval? {
         guard !loadTimes.isEmpty else { return nil }
         let avg = averageTime ?? 0
@@ -344,6 +592,10 @@ public struct PerformanceTestResults {
         return percentile(50)
     }
 
+    public var p25Time: TimeInterval? {
+        return percentile(25)
+    }
+
     public var p75Time: TimeInterval? {
         return percentile(75)
     }
@@ -356,9 +608,7 @@ public struct PerformanceTestResults {
         guard !loadTimes.isEmpty else { return nil }
         guard percentile >= 0 && percentile <= 100 else { return nil }
 
-        // Exclude first iteration (warm-up) for DNS resolution, connection establishment
-        let relevantTimes = loadTimes.count > 1 ? Array(loadTimes.dropFirst(1)) : loadTimes
-        let sortedTimes = relevantTimes.sorted()
+        let sortedTimes = loadTimes.sorted()
         let count = Double(sortedTimes.count)
 
         guard count > 0 else { return nil }
@@ -379,6 +629,76 @@ public struct PerformanceTestResults {
         let upperValue = sortedTimes[upperIndex]
 
         return lowerValue + weight * (upperValue - lowerValue)
+    }
+
+    /// Interquartile Range - robust measure of spread
+    /// IQR = Q3 - Q1 (75th percentile - 25th percentile)
+    public var iqr: TimeInterval? {
+        guard let q1 = p25Time, let q3 = p75Time else { return nil }
+        return q3 - q1
+    }
+
+    /// Calculate IQR for any array of values (static helper)
+    public static func calculateIQR(_ values: [Double]) -> Double? {
+        guard values.count >= 3 else { return nil }  // Need at least 3 values for Q1, median, Q3
+
+        let sorted = values.sorted()
+        let count = Double(sorted.count)
+
+        // Calculate Q1 (25th percentile)
+        let q1Index = (count - 1) * 0.25
+        let q1LowerIndex = Int(floor(q1Index))
+        let q1UpperIndex = Int(ceil(q1Index))
+        let q1 = q1LowerIndex == q1UpperIndex
+            ? sorted[q1LowerIndex]
+            : sorted[q1LowerIndex] + (q1Index - Double(q1LowerIndex)) * (sorted[q1UpperIndex] - sorted[q1LowerIndex])
+
+        // Calculate Q3 (75th percentile)
+        let q3Index = (count - 1) * 0.75
+        let q3LowerIndex = Int(floor(q3Index))
+        let q3UpperIndex = Int(ceil(q3Index))
+        let q3 = q3LowerIndex == q3UpperIndex
+            ? sorted[q3LowerIndex]
+            : sorted[q3LowerIndex] + (q3Index - Double(q3LowerIndex)) * (sorted[q3UpperIndex] - sorted[q3LowerIndex])
+
+        return q3 - q1
+    }
+
+    /// Calculate median for any array of values (static helper)
+    public static func calculateMedian(_ values: [Double]) -> Double {
+        guard !values.isEmpty else { return 0 }
+
+        let sorted = values.sorted()
+        let count = sorted.count
+
+        if count % 2 == 0 {
+            return (sorted[count/2 - 1] + sorted[count/2]) / 2.0
+        } else {
+            return sorted[count/2]
+        }
+    }
+
+    /// Calculate percentile for any array of values (static helper)
+    public static func calculatePercentile(_ values: [Double], percentile: Double) -> Double {
+        guard !values.isEmpty else { return 0 }
+        guard percentile >= 0 && percentile <= 1.0 else { return 0 }
+
+        let sorted = values.sorted()
+        let count = Double(sorted.count)
+
+        if percentile == 0 { return sorted.first ?? 0 }
+        if percentile == 1.0 { return sorted.last ?? 0 }
+
+        let index = percentile * (count - 1)
+        let lowerIndex = Int(floor(index))
+        let upperIndex = Int(ceil(index))
+
+        if lowerIndex == upperIndex {
+            return sorted[lowerIndex]
+        }
+
+        let weight = index - Double(lowerIndex)
+        return sorted[lowerIndex] + weight * (sorted[upperIndex] - sorted[lowerIndex])
     }
 
     // MARK: - Enhanced Reliability Analysis
@@ -450,12 +770,6 @@ public struct PerformanceTestResults {
     public var coefficientOfVariation: Double? {
         guard let avg = averageTime, let stdDev = standardDeviation, avg > 0 else { return nil }
         return (stdDev / avg) * 100
-    }
-
-    public var recommendedIterations: Int {
-        guard let coeffVariation = coefficientOfVariation else { return 20 }
-
-        if coeffVariation > 30 { return 50 } else if coeffVariation > 15 { return 30 } else { return 20 }
     }
 
     public var performanceScore: Int {

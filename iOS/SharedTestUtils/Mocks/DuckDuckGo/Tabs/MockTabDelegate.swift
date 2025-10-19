@@ -21,6 +21,7 @@ import Foundation
 import struct UIKit.UIKeyModifierFlags
 import WebKit
 import BrowserServicesKit
+import BrowserServicesKitTestsUtils
 import PrivacyDashboard
 import Core
 import Persistence

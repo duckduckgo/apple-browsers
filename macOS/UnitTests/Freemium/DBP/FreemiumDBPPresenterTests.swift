@@ -38,7 +38,7 @@ final class FreemiumDBPPresenterTests: XCTestCase {
         let sut = DefaultFreemiumDBPPresenter(freemiumDBPStateManager: mockFreemiumDBPStateManager)
         XCTAssertFalse(mockFreemiumDBPStateManager.didActivate)
         // When
-        sut.showFreemiumDBPAndSetActivated(windowControllerManager: mockWindowControllerManager)
+        sut.showFreemiumDBPAndSetActivated(windowControllersManager: mockWindowControllerManager)
         // Then
         XCTAssertEqual(mockWindowControllerManager.showTabContent, Tab.Content.dataBrokerProtection)
         XCTAssertTrue(mockFreemiumDBPStateManager.didActivate)
@@ -47,6 +47,7 @@ final class FreemiumDBPPresenterTests: XCTestCase {
 
 private final class MockWindowControllerManager: WindowControllersManagerProtocol {
     var stateChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
+    var tabsChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
 
     var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
 

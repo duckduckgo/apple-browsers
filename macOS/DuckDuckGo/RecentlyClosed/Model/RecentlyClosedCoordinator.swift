@@ -33,14 +33,14 @@ protocol RecentlyClosedCoordinating: AnyObject {
 @MainActor
 final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
 
-    static let shared = RecentlyClosedCoordinator(windowControllerManager: Application.appDelegate.windowControllersManager,
+    static let shared = RecentlyClosedCoordinator(windowControllersManager: Application.appDelegate.windowControllersManager,
                                                   pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider)
 
-    var windowControllerManager: WindowControllersManagerProtocol
+    var windowControllersManager: WindowControllersManagerProtocol
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
 
-    init(windowControllerManager: WindowControllersManagerProtocol, pinnedTabsManagerProvider: PinnedTabsManagerProviding) {
-        self.windowControllerManager = windowControllerManager
+    init(windowControllersManager: WindowControllersManagerProtocol, pinnedTabsManagerProvider: PinnedTabsManagerProviding) {
+        self.windowControllersManager = windowControllersManager
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
 
         guard AppVersion.runType.requiresEnvironment else { return }
@@ -62,12 +62,12 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
     private func subscribeToWindowControllersManager() {
         subscribeToCurrentPinnedTabCollections()
 
-        mainVCDidRegisterCancellable = windowControllerManager.didRegisterWindowController
+        mainVCDidRegisterCancellable = windowControllersManager.didRegisterWindowController
             .sink(receiveValue: { [weak self] mainWindowController in
                 self?.subscribeToTabCollection(of: mainWindowController)
                 self?.subscribeToCurrentPinnedTabCollections()
             })
-        mainVCDidUnregisterCancellable = windowControllerManager.didUnregisterWindowController
+        mainVCDidUnregisterCancellable = windowControllersManager.didUnregisterWindowController
             .sink(receiveValue: { [weak self] mainWindowController in
                 self?.cacheWindowContent(mainWindowController: mainWindowController)
                 self?.subscribeToCurrentPinnedTabCollections()

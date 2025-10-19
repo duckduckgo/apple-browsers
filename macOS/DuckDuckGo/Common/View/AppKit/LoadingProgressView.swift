@@ -260,6 +260,28 @@ final class LoadingProgressView: NSView, CAAnimationDelegate {
         layer!.backgroundColor = NSColor.progressBarGradientDark.cgColor
     }
 
+    // MARK: Accessibility
+
+    @objc override func isAccessibilityElement() -> Bool {
+        true
+    }
+
+    @objc override func isAccessibilityEnabled() -> Bool {
+        true
+    }
+
+    @objc override func accessibilityIdentifier() -> String {
+        return "LoadingProgressIndicator"
+    }
+
+    @objc override func accessibilityRole() -> NSAccessibility.Role {
+        .progressIndicator
+    }
+
+    @objc func accessibilityValue() -> NSNumber? {
+        NSNumber(value: currentProgress())
+    }
+
 }
 
 extension LoadingProgressView {

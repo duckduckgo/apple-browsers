@@ -288,3 +288,34 @@ public struct CaptchaService: CaptchaServiceProtocol {
         return result
     }
 }
+
+extension CaptchaServiceError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .cantGenerateCaptchaServiceURL:
+            return "Unable to generate captcha service URL"
+        case .nilTransactionIdWhenSubmittingCaptcha:
+            return "Missing captcha transaction identifier"
+        case .criticalFailureWhenSubmittingCaptcha:
+            return "Critical failure submitting captcha information"
+        case .invalidRequestWhenSubmittingCaptcha:
+            return "Invalid captcha submission request"
+        case .timedOutWhenSubmittingCaptcha:
+            return "Captcha submission timed out"
+        case .errorWhenSubmittingCaptcha:
+            return "Error submitting captcha information"
+        case .errorWhenFetchingCaptchaResult:
+            return "Error fetching captcha result"
+        case .nilDataWhenFetchingCaptchaResult:
+            return "Missing data when fetching captcha result"
+        case .timedOutWhenFetchingCaptchaResult:
+            return "Captcha result fetch timed out"
+        case .failureWhenFetchingCaptchaResult:
+            return "Captcha result fetch failed"
+        case .invalidRequestWhenFetchingCaptchaResult:
+            return "Invalid captcha result request"
+        case .cancelled:
+            return "Captcha operation cancelled"
+        }
+    }
+}

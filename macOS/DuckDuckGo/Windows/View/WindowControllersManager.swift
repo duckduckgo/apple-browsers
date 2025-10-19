@@ -28,6 +28,7 @@ import AIChat
 protocol WindowControllersManagerProtocol: AnyObject {
 
     var stateChanged: AnyPublisher<Void, Never> { get }
+    var tabsChanged: AnyPublisher<Void, Never> { get }
 
     var mainWindowControllers: [MainWindowController] { get }
     var selectedTab: Tab? { get }
@@ -118,7 +119,7 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
         guard let sourceWindow else { return nil }
 
         // go up from the clicked window (popover or Bookmarks Bar Menu) to find the root target Main Window
-        for window in sequence(first: sourceWindow, next: \.parent) {
+        for window in sequence(first: sourceWindow, next: { $0.parent ?? $0.sheetParent }) {
             if let windowController = window.windowController as? MainWindowController {
                 return windowController
             }

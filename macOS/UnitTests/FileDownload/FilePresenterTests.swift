@@ -60,7 +60,7 @@ final class FilePresenterTests: XCTestCase {
     }
 
     override var allowedNonNilVariables: Set<String> {
-        ["fm"]
+        ["fm", "runningApp"]
     }
 
     override func tearDown() async throws {

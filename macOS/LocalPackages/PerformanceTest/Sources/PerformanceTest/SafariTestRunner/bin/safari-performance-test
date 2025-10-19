@@ -1,0 +1,143 @@
+#!/usr/bin/env node
+
+/**
+ * CLI entry point for Safari Performance Test
+ *
+ * @copyright 2024 DuckDuckGo
+ * @license Apache-2.0
+ */
+
+const Configuration = require('../src/core/Configuration');
+const PerformanceTestRunner = require('../src/core/PerformanceTestRunner');
+
+// Exit codes
+const EXIT_CODES = {
+    SUCCESS: 0,
+    INVALID_ARGS: 1,
+    INVALID_URL: 2,
+    SCRIPT_NOT_FOUND: 3,
+    DRIVER_ERROR: 4,
+    RUNTIME_ERROR: 5
+};
+
+/**
+ * Show help message
+ */
+function showHelp() {
+    console.log(`Safari Performance Test Runner
+
+Usage: safari-performance-test <URL> [iterations] [maxIterations] [output-folder] [options]
+
+Arguments:
+  URL             The URL to test (required)
+  iterations      Minimum number of test iterations (default: 10)
+  maxIterations   Maximum number of test iterations (default: 30)
+  output-folder   Output folder for results (default: console output only)
+
+Options:
+  --verbose, -v Enable verbose logging
+  --help, -h    Show this help message
+
+Examples:
+  safari-performance-test https://example.com
+  safari-performance-test https://example.com 10
+  safari-performance-test https://example.com 10 30
+  safari-performance-test https://example.com 10 30 ./results
+  safari-performance-test https://example.com 10 30 ./results --verbose
+
+Exit Codes:
+  0 - Success
+  1 - Invalid arguments
+  2 - Invalid URL
+  3 - Performance metrics script not found
+  4 - Safari WebDriver initialization error
+  5 - Runtime error`);
+}
+
+/**
+ * Parse command line arguments
+ */
+function parseArguments(args) {
+    // Check for help flag
+    if (args.includes('--help') || args.includes('-h')) {
+        showHelp();
+        process.exit(EXIT_CODES.SUCCESS);
+    }
+
+    // Require at least URL
+    if (args.length < 1) {
+        console.error('Error: URL is required\n');
+        showHelp();
+        process.exit(EXIT_CODES.INVALID_ARGS);
+    }
+
+    return {
+        url: args[0],
+        iterations: args[1],
+        maxIterations: args[2],
+        outputFolder: args[3],
+        verbose: args.includes('--verbose') || args.includes('-v')
+    };
+}
+
+/**
+ * Map error to exit code
+ */
+function getExitCodeForError(error) {
+    const message = error.message.toLowerCase();
+
+    if (message.includes('invalid url')) {
+        return EXIT_CODES.INVALID_URL;
+    }
+    if (message.includes('script not found') || message.includes('metrics script')) {
+        return EXIT_CODES.SCRIPT_NOT_FOUND;
+    }
+    if (message.includes('webdriver') || message.includes('safari')) {
+        return EXIT_CODES.DRIVER_ERROR;
+    }
+
+    return EXIT_CODES.RUNTIME_ERROR;
+}
+
+/**
+ * Main function
+ */
+async function main() {
+    const args = process.argv.slice(2);
+
+    try {
+        // Parse arguments
+        const options = parseArguments(args);
+
+        // Create configuration
+        const configuration = new Configuration(options);
+
+        // Create and run test runner
+        const runner = new PerformanceTestRunner(configuration);
+        const result = await runner.run();
+
+        if (!result.success) {
+            console.error(`\nTest failed: ${result.error}`);
+            process.exit(getExitCodeForError(new Error(result.error)));
+        }
+
+        process.exit(EXIT_CODES.SUCCESS);
+
+    } catch (error) {
+        console.error(`\nError: ${error.message}`);
+
+        if (error.stack && (args.includes('--verbose') || args.includes('-v'))) {
+            console.error('\nStack trace:');
+            console.error(error.stack);
+        }
+
+        process.exit(getExitCodeForError(error));
+    }
+}
+
+// Run the CLI
+if (require.main === module) {
+    main();
+}
+
+module.exports = { main, parseArguments };

@@ -32,7 +32,7 @@ protocol AutoconsentDailyStatsManaging {
 final class AutoconsentDailyStats: AutoconsentDailyStatsManaging {
 
     private struct Constants {
-        static let maxDaysToKeep = 7
+        static let maxDaysToKeep = 10
         static let statsKey = "autoconsent_daily_stats"
     }
 
@@ -107,18 +107,31 @@ final class AutoconsentDailyStats: AutoconsentDailyStatsManaging {
         queue.async {
             let today = self.startOfDay(for: self.currentDateProvider())
 
-            if self.dailyStats[today] == nil {
-                self.dailyStats[today] = 0
-            }
-
-            // Get stats for last 7 days
+            // Get stats for last 10 days
             var params: [String: String] = [:]
+            var day1Count = 0
+            var day2Count = 0
+            var day5Count = 0
+            var day10Count = 0
             for daysAgo in 0..<Constants.maxDaysToKeep {
                 if let date = Calendar.current.date(byAdding: .day, value: -(daysAgo + 1), to: today) {
-                    let count = self.dailyStats[date] ?? -1
-                    params["d\(daysAgo)"] = String(count)
+                    let count = self.dailyStats[date] ?? 0
+                    if daysAgo == 0 {
+                        day1Count += count
+                    }
+                    if daysAgo < 2 {
+                        day2Count += count
+                    }
+                    if daysAgo < 5 {
+                        day5Count += count
+                    }
+                    day10Count += count
                 }
             }
+            params["d1"] = String(day1Count)
+            params["d2"] = String(day2Count)
+            params["d5"] = String(day5Count)
+            params["d10"] = String(day10Count)
 
             // Send pixel
             self.firePixel(AutoconsentPixel.popupManagedCount(params: params), .daily)

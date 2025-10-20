@@ -154,7 +154,7 @@ class OnboardingManagerTests: XCTestCase {
         navigationDelegate.fireNavigationDidEnd()
 
         // Then
-        XCTAssertFalse(navigationDelegate.focusOnAddressBarCalled)
+        XCTAssertTrue(navigationDelegate.focusOnAddressBarCalled)
     }
 
     func testGoToAddressBar_NavigatesToSettings() {

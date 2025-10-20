@@ -39,7 +39,8 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             favicon: [AIChatPageContextData.PageContextFavicon(href: "https://example.com/favicon.ico", rel: "icon")],
             url: "https://example.com",
             content: "hello",
-            truncated: false
+            truncated: false,
+            fullContentLength: 5
         )
         pageContextHandler.setData(testPayload)
 
@@ -56,7 +57,8 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             favicon: [AIChatPageContextData.PageContextFavicon(href: "https://example.com/favicon.ico", rel: "icon")],
             url: "https://example.com",
             content: "hello",
-            truncated: false
+            truncated: false,
+            fullContentLength: 5
         )
         pageContextHandler.setData(testPayload)
 
@@ -73,7 +75,8 @@ final class AIChatPageContextHandlerTests: XCTestCase {
             favicon: [AIChatPageContextData.PageContextFavicon(href: "https://example.com/favicon.ico", rel: "icon")],
             url: "https://example.com",
             content: "hello",
-            truncated: false
+            truncated: false,
+            fullContentLength: 5
         )
         pageContextHandler.setData(testPayload)
 

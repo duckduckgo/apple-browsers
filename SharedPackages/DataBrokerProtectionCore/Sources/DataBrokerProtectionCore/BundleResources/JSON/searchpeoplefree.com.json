@@ -1,7 +1,7 @@
 {
   "name": "Search People FREE",
   "url": "searchpeoplefree.com",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "parent": "peoplefinders.com",
   "addedDatetime": 1703052000000,
   "optOutUrl": "https://www.searchpeoplefree.com/opt-out",
@@ -14,6 +14,16 @@
           "actionType": "navigate",
           "id": "a85625a6-4607-4fea-9fa4-38294a7de727",
           "url": "https://searchpeoplefree.com/find/${firstName}-${lastName}/${state}/${city}"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "div.body"
+            }
+          ],
+          "id": "7334a63e-1d47-45e9-a1f3-c1780b29cd1f"
         },
         {
           "actionType": "extract",

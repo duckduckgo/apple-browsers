@@ -92,11 +92,18 @@ struct Launching: LaunchingHandling {
         let daxDialogs = configuration.onboardingConfiguration.daxDialogs
 
         // Service to handle Win-back offer
+#if DEBUG || REVIEW
+        let winBackOfferDebugStore = WinBackOfferDebugStore(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        let dateProvider: () -> Date = { winBackOfferDebugStore.simulatedTodayDate }
+#else
+        let dateProvider: () -> Date = Date.init
+#endif
+        
         let winBackOfferVisibilityManager = WinBackOfferVisibilityManager(
             subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
             winbackOfferStore: WinbackOfferStore(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore),
             winbackOfferFeatureFlagProvider: WinBackOfferFeatureFlagger(featureFlagger: featureFlagger),
-            dateProvider: Date.init
+            dateProvider: dateProvider
         )
         let winBackOfferService = WinBackOfferService(
             visibilityManager: winBackOfferVisibilityManager,

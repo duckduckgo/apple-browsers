@@ -48,6 +48,11 @@ public final class OptOutSubmissionWideEventData: WideEventData {
 }
 
 extension OptOutSubmissionWideEventData {
+
+    public enum StatusReason: String {
+        case submissionWindowExpired = "submission_window_expired"
+    }
+
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 

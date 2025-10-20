@@ -30,9 +30,9 @@ tags:
             id: "searchEntry"
         - tapOn: 
             id: "searchEntry"
-        - inputText: ${ 'https://example.com/' + output.counter }
+        - inputText: ${ 'https://privacy-test-pages.site/' + output.counter }
         - pressKey: Enter
-        - assertVisible: "Example Domain"
+        - assertVisible: ${ 'Cannot GET /' + output.counter }
         - tapOn: "Tab Switcher"
         - tapOn: "New Tab"
         - evalScript: ${output.counter += 1}

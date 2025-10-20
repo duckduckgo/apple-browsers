@@ -136,8 +136,12 @@ extension XCUIApplication {
     func enforceSingleWindow() {
         let window = windows.firstMatch
         while window.exists {
-            window.click()
-            typeKey("w", modifierFlags: [.command, .option, .shift])
+            let closeButton = window.buttons["_XCUI:CloseWindow"]
+            if closeButton.isHittable {
+                closeButton.click()
+            } else {
+                typeKey("w", modifierFlags: [.command, .option, .shift])
+            }
             _=window.waitForNonExistence(timeout: UITests.Timeouts.elementExistence)
         }
         typeKey("n", modifierFlags: .command)

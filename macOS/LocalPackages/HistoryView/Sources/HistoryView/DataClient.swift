@@ -27,8 +27,6 @@ public protocol DataProviding: AnyObject {
     var ranges: [DataModel.HistoryRangeWithCount] { get }
     func refreshData() async
     func visitsBatch(for query: DataModel.HistoryQueryKind, source: DataModel.HistoryQuerySource, limit: Int, offset: Int) async -> DataModel.HistoryItemsBatch
-    func deleteVisits(matching query: DataModel.HistoryQueryKind) async
-    func burnVisits(matching query: DataModel.HistoryQueryKind) async
 }
 
 public enum HistoryViewEvent: Equatable {
@@ -104,13 +102,14 @@ public final class DataClient: HistoryViewUserScriptClient {
 
     @MainActor
     private func getRanges(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        DataModel.GetRangesResponse(ranges: dataProvider.ranges)
+        let response = DataModel.GetRangesResponse(ranges: dataProvider.ranges)
+        return response
     }
 
     @MainActor
     private func deleteDomain(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let request: DataModel.DeleteDomainRequest = DecodableHelper.decode(from: params) else { return nil }
-        let action = await actionsHandler.showDeleteDialog(for: .domainFilter(request.domain), in: original.webView?.window)
+        let action = await actionsHandler.showDeleteDialog(for: .domainFilter([request.domain]), in: original.webView?.window)
         return DataModel.DeleteRangeResponse(action: action)
     }
 

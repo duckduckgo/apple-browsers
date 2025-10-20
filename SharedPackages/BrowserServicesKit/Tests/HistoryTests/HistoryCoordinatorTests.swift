@@ -316,6 +316,7 @@ class HistoryCoordinatorTests: XCTestCase {
         return bookmarksDatabase
     }
 
+    @MainActor
     func testWhenRemoveUrlEntryCalledWithExistingUrl_ThenEntryIsRemovedAndNoError() {
         let (historyStoringMock, historyCoordinator) = HistoryCoordinator.aHistoryCoordinator
 
@@ -338,6 +339,7 @@ class HistoryCoordinatorTests: XCTestCase {
         XCTAssertEqual(historyStoringMock.removeEntriesArray.first?.url, url)
     }
 
+    @MainActor
     func testWhenRemoveUrlEntryCalledWithNonExistingUrl_ThenEntryRemovalFailsWithNotAvailableError() {
         let (_, historyCoordinator) = HistoryCoordinator.aHistoryCoordinator
 

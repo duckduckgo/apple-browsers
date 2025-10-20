@@ -28,8 +28,10 @@ final class WebCacheManagerMock: WebCacheManager {
     }
 
     var clearCalled = false
+    var lastBaseDomains: Set<String>?
     override func clear(baseDomains: Set<String>? = nil) async {
         clearCalled = true
+        lastBaseDomains = baseDomains
     }
 
 }

@@ -18,10 +18,14 @@
 
 import BrowserServicesKit
 import Combine
+import Common
+import History
+import HistoryView
 import Onboarding
 import PrivacyDashboard
 import struct SwiftUI.AnyView
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 @available(macOS 12.0, *)
@@ -340,7 +344,17 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         tab.navigateFromOnboarding(to: url)
         wait(for: [expectation], timeout: 3.0)
 
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
+        let windowControllersManager = WindowControllersManagerMock()
+        let fireCoordinator = FireCoordinator(tld: TLD(),
+                                              featureFlagger: Application.appDelegate.featureFlagger,
+                                              historyCoordinating: HistoryCoordinatingMock(),
+                                              visualizeFireAnimationDecider: nil,
+                                              onboardingContextualDialogsManager: nil,
+                                              fireproofDomains: MockFireproofDomains(),
+                                              faviconManagement: FaviconManagerMock(),
+                                              windowControllersManager: windowControllersManager,
+                                              pixelFiring: nil,
+                                              historyProvider: MockHistoryViewDataProvider())
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
@@ -355,7 +369,10 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
             themeManager: MockThemeManager()
         )
         mainWindowController.window = window
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
+        windowControllersManager.lastKeyMainWindowController = mainWindowController
+        defer {
+            windowControllersManager.lastKeyMainWindowController = nil
+        }
 
         // WHEN
         window.isVisible = true

@@ -17,20 +17,13 @@
 //
 
 import XCTest
-@testable import DuckDuckGo_Privacy_Browser
-
-extension VisitIdentifier: @retroactive Equatable {
-    public static func == (_ lhs: VisitIdentifier, _ rhs: VisitIdentifier) -> Bool {
-        /// Second precision is enough for comparing `VisitIdentifier`s, because visits themselves are looked up with day precision.
-        lhs.uuid == rhs.uuid && lhs.url == rhs.url && Int64(lhs.date.timeIntervalSince1970) == Int64(rhs.date.timeIntervalSince1970)
-    }
-}
+@testable import HistoryView
 
 final class VisitIdentifierTests: XCTestCase {
 
     func testThatDescriptionInitializerCreatesValidObject() throws {
         let date = Date()
-        let url = try XCTUnwrap("https://example.com".url)
+        let url = try XCTUnwrap(URL(string: "https://example.com"))
         let identifier = VisitIdentifier("abcd|\(url.absoluteString)|\(String(date.timeIntervalSince1970))")
         XCTAssertEqual(identifier, VisitIdentifier(uuid: "abcd", url: url, date: date))
     }

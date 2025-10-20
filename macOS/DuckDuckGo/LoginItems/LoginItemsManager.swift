@@ -101,7 +101,7 @@ final class LoginItemsManager: LoginItemsManaging {
         let event = GeneralPixel.loginItemUpdateError(loginItemBundleID: item.agentBundleID,
                                                       action: action.rawValue,
                                                       buildType: AppVersion.shared.buildType,
-                                                      osVersion: AppVersion.shared.osVersion)
+                                                      osVersion: AppVersion.shared.osVersionMajorMinorPatch)
         PixelKit.fire(DebugEvent(event, error: error), frequency: .legacyDailyAndCount)
         Logger.networkProtection.error("Could not enable \(item.debugDescription, privacy: .public): \(error.debugDescription, privacy: .public)")
     }

@@ -38,17 +38,17 @@ struct SuggestionLoadingDecider {
     func shouldLoadSuggestions(for input: String) -> Bool {
         // We want to always load suggestions, except for when the user has typed a URL that looks "complete".
         // We define this as a URL with a path equal to a single slash (root URL).
-        // Always load suggestions when:
-        // * the original input doesn't end with a slash,
-        // * the original input can't be transformed to a valid URL.
-        guard input.last == "/", let url = URL.makeURL(fromSuggestionPhrase: input, useUnifiedLogic: featureFlagger.isFeatureOn(.unifiedURLPredictor)) else {
+        // Skip suggestions when all of the following are true:
+        // * input can be converted to a URL
+        // * input starts with http[s]
+        // * converted URL is root (no path)
+        // * the user typed the trailing "/"
+        guard let url = URL.makeURL(fromSuggestionPhrase: input, useUnifiedLogic: featureFlagger.isFeatureOn(.unifiedURLPredictor)) else {
             return true
         }
-        // If input is a valid URL, skip loading suggestions only if the http[s] scheme was typed and:
-        // * it's a root URL (no path, query, fragment and basic auth credentials),
-        // * path is not "/".
-        if URL.NavigationalScheme.hypertextSchemes.contains(where: { input.hasPrefix($0.rawValue) }) {
-            return url.isRoot && url.path != "/"
+
+        if URL.NavigationalScheme.hypertextSchemes.contains(where: { input.hasPrefix($0.rawValue) }), url.isRoot, input.last == "/" {
+            return false
         }
         return true
     }

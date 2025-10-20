@@ -1183,6 +1183,8 @@
 		378205F8283BC6A600D1D4AA /* StartupPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378205F7283BC6A600D1D4AA /* StartupPreferencesTests.swift */; };
 		378205FB283C277800D1D4AA /* MainMenuTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378205FA283C277800D1D4AA /* MainMenuTests.swift */; };
 		3783F92329432E1800BCA897 /* WebViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3783F92229432E1800BCA897 /* WebViewTests.swift */; };
+		3785F6EC2EA6520400AF66E9 /* SuggestionLoadingDeciderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3785F6EA2EA651FE00AF66E9 /* SuggestionLoadingDeciderTests.swift */; };
+		3785F6EE2EA6520400AF66E9 /* SuggestionLoadingDeciderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3785F6EA2EA651FE00AF66E9 /* SuggestionLoadingDeciderTests.swift */; };
 		378F44E429B4BDE900899924 /* SwiftUIExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 378F44E329B4BDE900899924 /* SwiftUIExtensions */; };
 		378F44E629B4BDEE00899924 /* SwiftUIExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 378F44E529B4BDEE00899924 /* SwiftUIExtensions */; };
 		378F44EB29B4C73E00899924 /* ViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378F44EA29B4C73E00899924 /* ViewExtension.swift */; };
@@ -4527,6 +4529,7 @@
 		378205F7283BC6A600D1D4AA /* StartupPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupPreferencesTests.swift; sourceTree = "<group>"; };
 		378205FA283C277800D1D4AA /* MainMenuTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenuTests.swift; sourceTree = "<group>"; };
 		3783F92229432E1800BCA897 /* WebViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewTests.swift; sourceTree = "<group>"; };
+		3785F6EA2EA651FE00AF66E9 /* SuggestionLoadingDeciderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionLoadingDeciderTests.swift; sourceTree = "<group>"; };
 		378B5887295CF2A4002C0CC0 /* Version.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		378B5888295CF2A4002C0CC0 /* Common.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Common.xcconfig; sourceTree = "<group>"; };
 		378B588B295CF3B9002C0CC0 /* AppTargetsBase.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = AppTargetsBase.xcconfig; sourceTree = "<group>"; };
@@ -9772,6 +9775,7 @@
 		AA63745024C9BB9A00AB2AC4 /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				3785F6EA2EA651FE00AF66E9 /* SuggestionLoadingDeciderTests.swift */,
 				AA63745324C9BF9A00AB2AC4 /* SuggestionContainerTests.swift */,
 				AA0F3DB6261A566C0077F2D9 /* SuggestionLoadingMock.swift */,
 			);
@@ -14301,6 +14305,7 @@
 				84AECC512DFBFADC00438ACC /* AutoClearHandlerTests.swift in Sources */,
 				3706FDE5293F661700E42796 /* URLEventHandlerTests.swift in Sources */,
 				BB9851932E3102ED00FED56A /* NetworkProtectionNavBarButtonModelTests.swift in Sources */,
+				3785F6EE2EA6520400AF66E9 /* SuggestionLoadingDeciderTests.swift in Sources */,
 				3706FDE6293F661700E42796 /* BookmarkOutlineViewDataSourceTests.swift in Sources */,
 				BBC063E92C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift in Sources */,
 				3706FDE8293F661700E42796 /* TemporaryFileHandlerTests.swift in Sources */,
@@ -16468,6 +16473,7 @@
 				378205FB283C277800D1D4AA /* MainMenuTests.swift in Sources */,
 				4B43469528655D1400177407 /* FirefoxDataImporterTests.swift in Sources */,
 				4B723E0926B0003E00E14D75 /* CSVLoginExporterTests.swift in Sources */,
+				3785F6EC2EA6520400AF66E9 /* SuggestionLoadingDeciderTests.swift in Sources */,
 				B6DA06E12913AEDC00225DE2 /* TestNavigationDelegate.swift in Sources */,
 				7BAB80CC2E2A461F00F59FF4 /* UpdateCheckStateTests.swift in Sources */,
 				56D145E829E6BB6300E3488A /* CapturingDataImportProvider.swift in Sources */,

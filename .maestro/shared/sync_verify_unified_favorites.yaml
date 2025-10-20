@@ -26,4 +26,3 @@ appId: com.duckduckgo.mobile.ios
 - assertVisible: NFL.com | Official Site of the National Football League
 - assertVisible: DuckDuckGo · GitHub
 - assertVisible: Stack Overflow - Where Developers Learn, Share, & Build Careers
-- tapOn: Done

@@ -34,7 +34,8 @@ class FireDialogUITests: UITestCase {
         try super.setUpWithError()
         continueAfterFailure = false
         // Enable feature flags for new Fire dialog, History view, and History view Sites section
-        app = XCUIApplication.setUp(featureFlags: ["historyView": true, "fireDialog": true, "historyViewSitesSection": true])
+        // TODO: Enable Sites Section when C-S-S implementation is merged in
+        app = XCUIApplication.setUp(featureFlags: ["historyView": true, "fireDialog": true, /*"historyViewSitesSection": true*/])
         app.enforceSingleWindow()
 
         // Reset fireproof sites
@@ -3060,6 +3061,7 @@ class FireDialogUITests: UITestCase {
     // MARK: - History View Sites Section Deletion Tests
 
     func test_historyView_deleteSingleSite_fromSitesSection() throws {
+        throw XCTSkip("Enable when C-S-S Sites is merged")
         let storageURL1 = URL(string: "https://privacy-test-pages.site/features/local-storage.html")!
         let storageURL2 = URL(string: "https://example.com")!
 
@@ -3143,6 +3145,7 @@ class FireDialogUITests: UITestCase {
     }
 
     func test_historyView_deleteMultipleSites_fromSitesSection() throws {
+        throw XCTSkip("Enable when C-S-S Sites is merged")
         let storageURL1 = URL(string: "https://privacy-test-pages.site/features/local-storage.html")!
         let storageURL2 = URL(string: "https://example.com")!
         let storageURL3 = URL(string: "https://duckduckgo.com")!
@@ -3242,6 +3245,7 @@ class FireDialogUITests: UITestCase {
     }
 
     func test_historyView_deleteSingleSite_verifiesOtherSiteDataPreserved() throws {
+        throw XCTSkip("Enable when C-S-S Sites is merged")
         let storageURL1 = URL(string: "https://privacy-test-pages.site/features/local-storage.html")!
         let storageURL2 = URL.testsServer.appendingPathComponent("test.html")
 

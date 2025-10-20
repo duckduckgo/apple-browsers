@@ -1676,6 +1676,10 @@ public struct UserText {
     static let winBackCampaignSubscriptionSettingsMenuCTA = NSLocalizedString("win-back.campaign.subscription.settings.menu.cta", value: "See Offer", comment: "CTA of the Subscription settings menu item during the win-back campaign")
     static let winBackCampaignSubscriptionSettingsMenuExistingSubscriptionButton = NSLocalizedString("win-back.campaign.subscription.settings.menu.existing.subscription.button", value: "I Have a Subscription", comment: "Button for using existing subscription during the win-back campaign")
 
+    // VPN promotion
+    public static let actionVPN = NSLocalizedString("action.title.vpn", value: "VPN", comment: "Menu item for the VPN in the new tab menu")
+    public static let freeTrialBadgeLabel = NSLocalizedString("subscription.free-trial-badge.label", value: "TRY FOR FREE", comment: "Label for a badge indicating the user eligible for a free trial")
+
     // Autocomplete
     public static let autocompleteHistoryWarningTitle = NSLocalizedString("autocomplete.history.warning.title", value: "Same privacy.\nBetter search suggestions!", comment: "Title for message show in suggestions")
     public static let autocompleteHistoryWarningDescription = NSLocalizedString("autocomplete.history.warning.message", value: "Search suggestions now include your recently visited sites. Turn off in Settings, or clear anytime with the 🔥 Fire Button.", comment: "The message text shown in suggestions")

@@ -171,7 +171,7 @@ public extension URL {
                 case .navigate(let url):
                     return url
                 case .search(let query):
-                    return defaultStatisticsDependentURLFactory.makeSearchURL(query: query, forceSearchQuery: forceSearchQuery, queryContext: queryContext)
+                    return defaultStatisticsDependentURLFactory.makeSearchURL(query: query, forceSearchQuery: true, queryContext: queryContext)
                 }
             } catch let error as Classifier.Error {
                 Logger.general.error("Failed to classify \"\(query)\" as URL or search phrase: \(error)")

@@ -74,32 +74,6 @@ extension FireProtocol {
     }
 
     @MainActor
-    func burnEntity(_ entity: Fire.BurningEntity, completion: (() -> Void)? = nil) {
-        burnEntity(entity,
-                   includingHistory: true,
-                   includeCookiesAndSiteData: true,
-                   includeChatHistory: false,
-                   completion: completion)
-    }
-
-    @MainActor
-    func burnVisits(_ visits: [Visit],
-                    except fireproofDomains: DomainFireproofStatusProviding,
-                    isToday: Bool,
-                    clearChatHistory: Bool,
-                    urlToOpenIfWindowsAreClosed url: URL? = nil,
-                    completion: (@MainActor () -> Void)? = nil) {
-        burnVisits(visits,
-                   except: fireproofDomains,
-                   isToday: isToday,
-                   closeWindows: true,
-                   clearSiteData: true,
-                   clearChatHistory: clearChatHistory,
-                   urlToOpenIfWindowsAreClosed: url,
-                   completion: completion)
-    }
-
-    @MainActor
     func burnAll(isBurnOnExit: Bool = false,
                  opening url: URL = .newtab,
                  includeCookiesAndSiteData: Bool = true,
@@ -112,6 +86,15 @@ extension FireProtocol {
                 continuation.resume()
             }
         }
+    }
+
+    @MainActor
+    func burnEntity(_ entity: Fire.BurningEntity, completion: (() -> Void)? = nil) {
+        burnEntity(entity,
+                   includingHistory: true,
+                   includeCookiesAndSiteData: true,
+                   includeChatHistory: false,
+                   completion: completion)
     }
 
     @MainActor
@@ -149,6 +132,18 @@ extension FireProtocol {
             }
         }
     }
+
+    @MainActor
+    func burnVisits(_ visits: [Visit],
+                    except fireproofDomains: DomainFireproofStatusProviding,
+                    isToday: Bool,
+                    closeWindows: Bool,
+                    clearSiteData: Bool,
+                    clearChatHistory: Bool,
+                    completion: (@MainActor () -> Void)?) {
+        burnVisits(visits, except: fireproofDomains, isToday: isToday, closeWindows: closeWindows, clearSiteData: clearSiteData, clearChatHistory: clearChatHistory, urlToOpenIfWindowsAreClosed: .newtab, completion: completion)
+    }
+
 }
 
 final class Fire: FireProtocol {

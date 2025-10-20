@@ -1132,7 +1132,12 @@ extension MainViewController {
                 }
                 switch result {
                 case .burn:
-                    self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: sender.historyTimeWindow == .today, clearChatHistory: false)
+                    await self.fireCoordinator.fireViewModel.fire.burnVisits(visits,
+                                                                             except: fireproofDomains,
+                                                                             isToday: sender.historyTimeWindow == .today,
+                                                                             closeWindows: sender.historyTimeWindow == .today,
+                                                                             clearSiteData: true /* burn */,
+                                                                             clearChatHistory: true /* burn */)
                 case .delete:
                     historyCoordinator.burnVisits(visits) {}
                 default:

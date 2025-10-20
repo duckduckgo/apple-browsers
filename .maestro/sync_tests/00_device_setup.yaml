@@ -6,8 +6,18 @@ name: 00_setup
 
 ---
 
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
 - pressKey: HOME
-- tapOn: Settings
+
+- swipe:
+    direction: DOWN
+
+- inputText: Settings
+- pressKey: ENTER
+
 - tapOn: General
 - tapOn: Keyboard
 

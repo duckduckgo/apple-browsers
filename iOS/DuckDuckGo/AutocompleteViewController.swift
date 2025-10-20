@@ -208,7 +208,10 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
             // * input starts with http[s]
             // * converted URL is root (no path)
             // * the user typed the trailing "/"
-            guard let self, let url = URL(trimmedAddressBarString: phrase, useUnifiedLogic: isUsingUnifiedPrediction) else {
+            guard let self,
+                  let url = URL(trimmedAddressBarString: phrase, useUnifiedLogic: isUsingUnifiedPrediction),
+                  url.isValid(usingUnifiedLogic: self.isUsingUnifiedPrediction)
+            else {
                 return true
             }
 

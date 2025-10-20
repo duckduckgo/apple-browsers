@@ -20,19 +20,15 @@ import Foundation
 
 enum RecordFoundDateResolver {
 
-    static let defaultDate = Date(timeIntervalSince1970: 0)
-
     /// This resolves the found date for an extracted profile record based on history events
     ///
     /// - When no clear event exists, returns the earliest .matchesFound.
-    /// - When a clear exists, returns the first .matchesFound that happens afterwards; if none exists, returns the fallback
-    /// value (defaults to unix epoch zero)
+    /// - When a clear exists, returns the first .matchesFound that happens afterwards; if none exists, returns nil
     static func resolve(brokerQueryProfileData: BrokerProfileQueryData? = nil,
                         repository: DataBrokerProtectionRepository,
                         brokerId: Int64,
                         profileQueryId: Int64,
-                        extractedProfileId: Int64,
-                        fallback: Date = Self.defaultDate) -> Date {
+                        extractedProfileId: Int64) -> Date? {
         let optOutJob: OptOutJobData?
         if let brokerQueryProfileData {
             optOutJob = brokerQueryProfileData.optOutJobDataMatching(extractedProfileId)
@@ -54,7 +50,7 @@ enum RecordFoundDateResolver {
             return historyDate
         }
 
-        return fallback
+        return nil
     }
 
     /// We want to know how long an _active_ opt-out submission attempt has been running since the record was found
@@ -62,8 +58,7 @@ enum RecordFoundDateResolver {
     /// - When the record has been removed at least once (either optOutConfirmed or manuallyRemovedByUser is triggered),
     /// the associated opt-out attempt is considered done. The subsequent match found starts a new attempt, so we want
     /// the timestamp of that next found date.
-    /// - If the record is removed but there's no following match found event, we default to the fallback so it acts as
-    /// a signal that the data point is an outlier.
+    /// - If the record is removed but there's no following match found event, we return nil to signal an issue
     private static func resolvedFoundDate(from events: [HistoryEvent]?) -> Date? {
         guard let events, !events.isEmpty else {
             return nil

@@ -51,6 +51,7 @@ extension OptOutSubmissionWideEventData {
 
     public enum StatusReason: String {
         case submissionWindowExpired = "submission_window_expired"
+        case recordFoundDateMissing = "record_found_date_missing"
     }
 
     public func pixelParameters() -> [String: String] {

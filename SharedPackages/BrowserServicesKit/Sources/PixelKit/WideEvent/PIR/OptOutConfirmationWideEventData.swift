@@ -51,6 +51,7 @@ extension OptOutConfirmationWideEventData {
 
     public enum StatusReason: String {
         case confirmationWindowExpired = "confirmation_window_expired"
+        case recordFoundDateMissing = "record_found_date_missing"
     }
 
     public func pixelParameters() -> [String: String] {

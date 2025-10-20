@@ -119,6 +119,34 @@ final class WideEventRecorderTests: XCTestCase {
         XCTAssertEqual(updatedData?.measuredInterval?.end, completionDate)
         XCTAssertEqual(wideEventMock.completions.count, 1)
     }
+
+    func testMarkCompletedWithInvalidIntervalCompletesFlowWithReason() throws {
+        let recorder = try XCTUnwrap(
+            WideEventRecorder<WideEventDataMeasuringMock>.makeIfPossible(
+                wideEvent: wideEventMock,
+                identifier: identifier,
+                sampleRate: 1.0,
+                intervalStart: nil,
+                makeData: { global, interval in
+                    WideEventDataMeasuringMock(globalData: global, measuredInterval: interval)
+                }
+            )
+        )
+
+        let completionExpectation = expectation(description: "flow completed")
+        wideEventMock.onComplete = { data, status in
+            guard let data = data as? WideEventDataMeasuringMock else { return }
+            XCTAssertEqual(status, .success(reason: "invalid-reason"))
+            XCTAssertNil(data.measuredInterval?.end)
+            completionExpectation.fulfill()
+        }
+
+        recorder.markCompleted(at: Date(), invalidIntervalReason: "invalid-interval")
+
+        wait(for: [completionExpectation], timeout: 1.0)
+
+        XCTAssertEqual(wideEventMock.updates.count, 0)
+    }
 }
 
 private final class WideEventDataMeasuringMock: WideEventDataMeasuringInterval {

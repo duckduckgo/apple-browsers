@@ -70,7 +70,7 @@ final class OptOutSubmissionWideEventRecorder: OptOutWideEventRecording {
                                 identifier: OptOutWideEventIdentifier,
                                 dataBrokerURL: String,
                                 dataBrokerVersion: String?,
-                                recordFoundDateProvider: () -> Date) -> OptOutSubmissionWideEventRecorder? {
+                                recordFoundDateProvider: () -> Date?) -> OptOutSubmissionWideEventRecorder? {
         guard let recorder = WideEventRecorder<OptOutSubmissionWideEventData>.startIfPossible(
             wideEvent: wideEvent,
             identifier: identifier.toGlobalId,
@@ -90,6 +90,6 @@ final class OptOutSubmissionWideEventRecorder: OptOutWideEventRecording {
     }
 
     func markCompleted(at date: Date) {
-        recorder.markCompleted(at: date)
+        recorder.markCompleted(at: date, invalidIntervalReason: OptOutSubmissionWideEventData.StatusReason.recordFoundDateMissing.rawValue)
     }
 }

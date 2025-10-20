@@ -167,6 +167,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210659895188821?focus=true
     case embeddedSERPSettings
+
+    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1210997282929955?focus=true
+    case unifiedURLPredictor
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

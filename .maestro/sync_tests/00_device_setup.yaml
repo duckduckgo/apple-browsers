@@ -26,14 +26,10 @@ name: 00_setup
 
 - tapOn: Enable Dictation
 
-- runFlow:
-    when:
-      visible: Enable Dictation
-    commands:
-        - tapOn: Cancel
+- tapOn: 
+    text: Cancel
+    optional: true
 
-- runFlow:
-    when:
-      visible: Turn Off Dictation
-    commands:
-        - tapOn: Turn Off Dictation
+- tapOn: 
+    text: Turn Off Dictation
+    optional: true

@@ -19,6 +19,7 @@
 import Foundation
 import BrowserServicesKit
 import PixelKit
+import os.log
 
 final class OptOutConfirmationWideEventRecorder: OptOutWideEventRecording {
     static let sampleRate: Float = 1.0
@@ -47,6 +48,7 @@ final class OptOutConfirmationWideEventRecorder: OptOutWideEventRecording {
             }
         ) else { return nil }
 
+        Logger.dataBrokerProtection.debug("PIR confirmation flow start")
         return OptOutConfirmationWideEventRecorder(recorder: recorder)
     }
 
@@ -59,6 +61,7 @@ final class OptOutConfirmationWideEventRecorder: OptOutWideEventRecording {
             return nil
         }
 
+        Logger.dataBrokerProtection.debug("PIR confirmation flow resume")
         return OptOutConfirmationWideEventRecorder(recorder: recorder)
     }
 

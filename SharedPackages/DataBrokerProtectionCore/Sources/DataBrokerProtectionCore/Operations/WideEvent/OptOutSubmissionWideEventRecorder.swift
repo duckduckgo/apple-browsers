@@ -19,6 +19,7 @@
 import Foundation
 import BrowserServicesKit
 import PixelKit
+import os.log
 
 final class OptOutSubmissionWideEventRecorder: OptOutWideEventRecording {
     static let sampleRate: Float = 1.0
@@ -47,6 +48,7 @@ final class OptOutSubmissionWideEventRecorder: OptOutWideEventRecording {
             }
         ) else { return nil }
 
+        Logger.dataBrokerProtection.debug("PIR submission flow start")
         return OptOutSubmissionWideEventRecorder(recorder: recorder)
     }
 
@@ -59,6 +61,7 @@ final class OptOutSubmissionWideEventRecorder: OptOutWideEventRecording {
             return nil
         }
 
+        Logger.dataBrokerProtection.debug("PIR submission flow resume")
         return OptOutSubmissionWideEventRecorder(recorder: recorder)
     }
 

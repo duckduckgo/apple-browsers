@@ -19,6 +19,7 @@
 import Foundation
 import BrowserServicesKit
 import PixelKit
+import os.log
 
 public final class DBPWideEventSweeper {
 
@@ -45,6 +46,7 @@ public final class DBPWideEventSweeper {
     }
 
     public func sweep() {
+        Logger.dataBrokerProtection.debug("PIR wide event sweep requested")
         queue.async { [weak self] in
             guard let self else { return }
             Task {
@@ -54,8 +56,10 @@ public final class DBPWideEventSweeper {
     }
 
     public func performSweep() async {
+        Logger.dataBrokerProtection.debug("PIR wide event sweep started")
         await sweepPendingSubmissions()
         await sweepPendingConfirmations()
+        Logger.dataBrokerProtection.debug("PIR wide event sweep finished")
     }
 
     // MARK: - Submission

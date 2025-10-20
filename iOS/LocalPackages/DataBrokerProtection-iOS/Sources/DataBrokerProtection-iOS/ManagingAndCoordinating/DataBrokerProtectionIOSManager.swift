@@ -203,6 +203,7 @@ public final class DataBrokerProtectionIOSManager {
         self.queueManager.delegate = self
 
         registerBackgroundTaskHandler()
+        Logger.dataBrokerProtection.debug("PIR wide event sweep requested (iOS setup)")
         sweepWideEvents()
     }
 }
@@ -217,6 +218,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
 
     public func appDidBecomeActive() {
         tryToFireWeeklyPixels()
+        Logger.dataBrokerProtection.debug("PIR wide event sweep requested (app active)")
         sweepWideEvents()
 
         Task {

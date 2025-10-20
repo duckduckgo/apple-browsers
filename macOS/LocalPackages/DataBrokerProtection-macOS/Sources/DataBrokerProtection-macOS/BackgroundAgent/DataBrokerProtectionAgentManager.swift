@@ -243,6 +243,7 @@ public final class DataBrokerProtectionAgentManager {
         self.queueManager.delegate = self
         self.ipcServer.serverDelegate = self
         self.ipcServer.activate()
+        Logger.dataBrokerProtection.debug("PIR wide event sweep requested (macOS setup)")
         self.sweepWideEvents()
     }
 
@@ -258,6 +259,7 @@ public final class DataBrokerProtectionAgentManager {
             didStartActivityScheduler = true
 
             fireMonitoringPixels()
+            Logger.dataBrokerProtection.debug("PIR wide event sweep requested (agent launch)")
             sweepWideEvents()
             await checkForEmailConfirmationData()
 

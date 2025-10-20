@@ -136,7 +136,7 @@ final class WideEventRecorderTests: XCTestCase {
         let completionExpectation = expectation(description: "flow completed")
         wideEventMock.onComplete = { data, status in
             guard let data = data as? WideEventDataMeasuringMock else { return }
-            XCTAssertEqual(status, .success(reason: "invalid-reason"))
+            XCTAssertEqual(status, .success(reason: "invalid-interval"))
             XCTAssertNil(data.measuredInterval?.end)
             completionExpectation.fulfill()
         }

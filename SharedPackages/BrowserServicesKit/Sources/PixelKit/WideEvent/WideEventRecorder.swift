@@ -93,7 +93,7 @@ public final class WideEventRecorder<Data: WideEventDataMeasuringInterval> {
 
     public func markCompleted(at date: Date, invalidIntervalReason: String? = nil) {
         queue.async {
-            if self.wideEventData.measuredInterval == nil {
+            if self.wideEventData.measuredInterval == nil || self.wideEventData.measuredInterval?.start == nil {
                 self.completeInternal(status: .success(reason: invalidIntervalReason))
             } else {
                 self.wideEventData.measuredInterval?.end = date

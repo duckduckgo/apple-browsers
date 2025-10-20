@@ -1384,7 +1384,8 @@ final class NavigationBarViewController: NSViewController {
 
     @objc private func showFireproofingFeedback(_ sender: Notification) {
         guard view.window?.isKeyWindow == true,
-              let domain = sender.userInfo?[FireproofDomains.Constants.newFireproofDomainKey] as? String else { return }
+              let domain = sender.userInfo?[FireproofDomains.Constants.newFireproofDomainKey] as? String,
+              AppVersion.runType == .normal else { return }
 
         DispatchQueue.main.async {
             let viewController = PopoverMessageViewController(message: UserText.domainIsFireproof(domain: domain))

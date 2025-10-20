@@ -492,30 +492,34 @@ final class Fire: FireProtocol {
         // Open a new window in case there is none
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            /// When we are burning on exit we do not need to open a new window.
+            // `reopenWindowIfNeeded` should not be called when there were at least one “Regular” window
+            // as we should‘ve kept it open by replacing its Tabs with a New Tab.
+            // Generally we should get here only when Delete All History is called on a Fire Window,
+            // so we should probably respect User‘s choice on whether to open a Fire Window by default.
+            let burnerMode = visualizeFireAnimationDecider.isOpenFireWindowByDefaultEnabled ? BurnerMode(isBurner: true) : .regular
             if let customURL {
-                // We‘re always reopening a “Regular” window since this logics is only called from a Regular window
-                let tab = Tab(content: .contentFromURL(customURL, source: .ui), shouldLoadInBackground: true, burnerMode: .regular)
+                let tab = Tab(content: .contentFromURL(customURL, source: .ui), shouldLoadInBackground: true, burnerMode: burnerMode)
                 let tabCollection = TabCollection(tabs: [tab], isPopup: false)
 
-                let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: pinnedTabsManagerProvider, burnerMode: .regular, windowControllersManager: windowControllersManager)
-                windowControllersManager.openNewWindow(with: tabCollectionViewModel, showWindow: true)
+                let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: pinnedTabsManagerProvider, burnerMode: burnerMode, windowControllersManager: windowControllersManager)
+                windowControllersManager.openNewWindow(with: tabCollectionViewModel, burnerMode: burnerMode, showWindow: true)
             } else {
-                windowControllersManager.openNewWindow()
+                windowControllersManager.openNewWindow(burnerMode: burnerMode)
             }
         }
     }
 
     @MainActor
     func insertNewTabIfNeeded(into windowController: MainWindowController, with customURL: URL? = nil) -> Int? {
-        // If closing all Tabs/Windows: Insert a new tab to prevent window closing:
-        guard windowController.mainViewController.tabCollectionViewModel.pinnedTabs.isEmpty,
-              windowControllersManager.lastKeyMainWindowController === windowController,
+        // If closing all Tabs/Windows: Insert a new (Regular) tab to prevent window closing:
+        guard !visualizeFireAnimationDecider.isOpenFireWindowByDefaultEnabled,
+              !windowController.mainViewController.isBurner,
+              windowController.mainViewController.tabCollectionViewModel.pinnedTabs.isEmpty,
+              windowControllersManager.lastKeyMainWindowController(where: { !$0.mainViewController.isBurner }) === windowController,
               // don‘t keep an open window for inactive app
               self.isAppActiveProvider() else { return nil }
 
         let newTabContent: Tab.TabContent = customURL.map { .contentFromURL($0, source: .ui) } ?? .newtab
-        // We‘re always reopening a “Regular” window since this logics is only called from a Regular window
         let newTab = Tab(content: newTabContent, shouldLoadInBackground: false, burnerMode: .regular)
         windowController.mainViewController.tabCollectionViewModel.append(tab: newTab, selected: false)
 

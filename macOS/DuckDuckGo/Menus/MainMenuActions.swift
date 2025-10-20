@@ -155,7 +155,9 @@ extension AppDelegate {
 
     @objc func clearAllHistory(_ sender: NSMenuItem) {
         Task { @MainActor in
-            let window: NSWindow? = windowControllersManager.lastKeyMainWindowController?.window ?? WindowsManager.openNewWindow(with: Tab(content: .newtab))
+            let window: NSWindow? = windowControllersManager.lastKeyMainWindowController(where: { !$0.mainViewController.isBurner })?.window
+                ?? WindowsManager.openNewWindow(with: Tab(content: .newtab))
+
             guard let window else {
                 assertionFailure("No reference to main window controller")
                 return
@@ -544,14 +546,6 @@ extension AppDelegate {
                 NSAlert.exportBookmarksFailed()
                     .beginSheetModal(for: window, completionHandler: nil)
             }
-        }
-    }
-
-    @objc func fireButtonAction(_ sender: NSButton) {
-        DispatchQueue.main.async {
-            self.fireCoordinator.fireButtonAction()
-            let pixelReporter = OnboardingPixelReporter()
-            pixelReporter.measureFireButtonPressed()
         }
     }
 
@@ -1097,6 +1091,14 @@ extension MainViewController {
         makeKeyIfNeeded()
 
         Application.appDelegate.windowControllersManager.open(historyEntry, with: NSApp.currentEvent)
+    }
+
+    @objc func fireButtonAction(_ sender: NSButton) {
+        DispatchQueue.main.async {
+            self.fireCoordinator.fireButtonAction()
+            let pixelReporter = OnboardingPixelReporter()
+            pixelReporter.measureFireButtonPressed()
+        }
     }
 
     /// History → [Date] → Clear This History…

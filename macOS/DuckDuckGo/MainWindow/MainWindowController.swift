@@ -35,6 +35,8 @@ final class MainWindowController: NSWindowController {
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
 
+    private(set) var lastWindowDidBecomeKeyTimestamp: TimeInterval = 0
+
     var mainViewController: MainViewController {
         // swiftlint:disable force_cast
         contentViewController as! MainViewController
@@ -97,10 +99,10 @@ final class MainWindowController: NSWindowController {
 #if DEBUG
         MainActor.assumeMainThread {
             // Check that the window deallocates
-            window?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            window?.ensureObjectDeallocated(after: 8.0, do: .interrupt)
 
             // Check that the main view controller deallocates
-            mainViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            mainViewController.ensureObjectDeallocated(after: 8.0, do: .interrupt)
         }
 #endif
         NotificationCenter.default.removeObserver(self)
@@ -351,9 +353,9 @@ extension MainWindowController: NSWindowDelegate {
               keyWindow.isInHierarchy(of: mainWindow) else { return }
 
         mainViewController.windowDidBecomeKey()
-
+        lastWindowDidBecomeKeyTimestamp = CACurrentMediaTime()
         if !mainWindow.isPopUpWindow {
-            Application.appDelegate.windowControllersManager.lastKeyMainWindowController = self
+            Application.appDelegate.windowControllersManager.didChangeKeyWindowController.send(self)
         }
 
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {

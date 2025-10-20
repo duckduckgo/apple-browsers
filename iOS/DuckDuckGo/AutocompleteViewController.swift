@@ -200,16 +200,22 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private func requestSuggestions(query: String) {
         model.selection = nil
 
-        loader = SuggestionLoader(urlFactory: { [weak self] phrase in
-            guard let self,
-                  let url = URL(trimmedAddressBarString: phrase, useUnifiedLogic: self.isUsingUnifiedPrediction),
-                  let scheme = url.scheme,
-                  scheme.description.hasPrefix("http"),
-                  url.isValid(usingUnifiedLogic: self.isUsingUnifiedPrediction) else {
-                return nil
+        loader = SuggestionLoader(shouldLoadSuggestionsForUserInput: { [weak self] phrase in
+            // We want to always load suggestions, except for when the user has typed a URL that looks "complete".
+            // We define this as a URL with a path equal to a single slash (root URL).
+            // Skip suggestions when all of the following are true:
+            // * input can be converted to a URL
+            // * input starts with http[s]
+            // * converted URL is root (no path)
+            // * the user typed the trailing "/"
+            guard let self, let url = URL(trimmedAddressBarString: phrase, useUnifiedLogic: isUsingUnifiedPrediction) else {
+                return true
             }
 
-            return url
+            if let scheme = url.scheme, scheme.description.hasPrefix("http"), url.isRoot, phrase.last == "/" {
+                return false
+            }
+            return true
         }, isUrlIgnored: { _ in false })
 
         loader?.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, error in

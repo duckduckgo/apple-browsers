@@ -75,7 +75,7 @@ public enum Classifier {
             self.allowPrivateSuffix = allowPrivateSuffix
             self.allowedSchemes = allowedSchemes
         }
-        
+
 #if os(macOS)
         /// The default policy used when not specified. macOS specific.
         public static let `default`: Self = .init(
@@ -94,7 +94,7 @@ public enum Classifier {
         )
 #endif
     }
-    
+
     public enum Decision: Equatable, Sendable, Decodable {
         case navigate(url: URL)
         case search(query: String)

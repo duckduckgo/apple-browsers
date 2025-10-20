@@ -416,7 +416,8 @@ class RemoteMessagingStoreTests: XCTestCase {
                     dismissedMessageIds: [],
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
-                    isSyncEnabled: false
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: self.defaults),
                 surveyActionMapper: MockRemoteMessagingSurveyActionMapper(),

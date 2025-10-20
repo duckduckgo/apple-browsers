@@ -118,7 +118,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
 
         // Sites = unique domains count (items in synthetic 'sites' section)
         if isSitesSectionEnabled {
-            assertionFailure("Enable History View Sites Section Deletion UI Tests and remove the assertion")
+            assert(AppVersion.runType != .normal, "Enable History View Sites Section Deletion UI Tests and remove the assertion")
             let sitesCount = groupingsByRange[.allSites]?.items.count ?? uniqueETLDPlus1Domains().count
             filteredRanges.append(.init(id: .allSites, count: sitesCount))
         }

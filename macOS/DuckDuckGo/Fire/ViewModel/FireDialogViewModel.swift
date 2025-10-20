@@ -41,6 +41,13 @@ final class FireDialogViewModel: ObservableObject {
             }
         }
 
+        var shouldShowChatHistoryToggle: Bool {
+            switch self {
+            case .allData: return true
+            case .currentTab, .currentWindow: return false
+            }
+        }
+
     }
 
     enum Mode: Equatable {
@@ -63,6 +70,17 @@ final class FireDialogViewModel: ObservableObject {
                  .historyView(query: .rangeFilter(.today)),
                  .historyView(query: .rangeFilter(.all)),
                  .historyView(query: .rangeFilter(.allSites)):
+                return true
+            case .historyView:
+                return false
+            }
+        }
+
+        var shouldShowChatHistoryToggle: Bool {
+            switch self {
+            case .fireButton,
+                    .mainMenuAll,
+                    .historyView(query: .rangeFilter(.all)):
                 return true
             case .historyView:
                 return false
@@ -107,6 +125,7 @@ final class FireDialogViewModel: ObservableObject {
     static var lastIncludeTabsAndWindowsState: Bool = true
     static var lastIncludeHistoryState: Bool = true
     static var lastIncludeCookiesAndSiteDataState: Bool = true
+    static var lastIncludeChatHistoryState: Bool = false
 
     /// Reset persisted UI defaults - used for tests
     static func resetPersistedDefaults() {
@@ -114,17 +133,20 @@ final class FireDialogViewModel: ObservableObject {
         lastIncludeTabsAndWindowsState = true
         lastIncludeHistoryState = true
         lastIncludeCookiesAndSiteDataState = true
+        lastIncludeChatHistoryState = false
     }
 
     init(fireViewModel: FireViewModel,
          tabCollectionViewModel: TabCollectionViewModel,
          historyCoordinating: HistoryCoordinating,
+         aiChatHistoryCleaner: AIChatHistoryCleaning,
          fireproofDomains: FireproofDomains,
          faviconManagement: FaviconManagement,
          clearingOption: ClearingOption? = nil,
          includeTabsAndWindows: Bool? = nil,
          includeHistory: Bool? = nil,
          includeCookiesAndSiteData: Bool? = nil,
+         includeChatHistory: Bool? = nil,
          mode: Mode = .fireButton,
          scopeCookieDomains: Set<String>? = nil,
          scopeVisits: [Visit]? = nil,
@@ -135,10 +157,12 @@ final class FireDialogViewModel: ObservableObject {
         self.fireproofDomains = fireproofDomains
         self.faviconManagement = faviconManagement
         self.historyCoordinating = historyCoordinating
+        self.aiChatHistoryCleaner = aiChatHistoryCleaner
         self.clearingOption = clearingOption ?? Self.lastSelectedClearingOption
         self.includeTabsAndWindows = includeTabsAndWindows ?? Self.lastIncludeTabsAndWindowsState
         self.includeHistory = includeHistory ?? Self.lastIncludeHistoryState
         self.includeCookiesAndSiteData = includeCookiesAndSiteData ?? Self.lastIncludeCookiesAndSiteDataState
+        self.includeChatHistorySetting = includeChatHistory ?? Self.lastIncludeChatHistoryState
 
         self.tld = tld
         self.mode = mode
@@ -153,11 +177,19 @@ final class FireDialogViewModel: ObservableObject {
 
     private(set) var shouldShowPinnedTabsInfo: Bool = false
 
+    var shouldShowChatHistoryToggle: Bool {
+        let isPresentedOnAIChatTab = tabCollectionViewModel?.selectedTab?.url?.isDuckAIURL ?? false
+        return aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption
+            && mode.shouldShowChatHistoryToggle
+            && (clearingOption.shouldShowChatHistoryToggle || isPresentedOnAIChatTab)
+    }
+
     let fireViewModel: FireViewModel
     private(set) weak var tabCollectionViewModel: TabCollectionViewModel?
     private let fireproofDomains: FireproofDomains
     private let faviconManagement: FaviconManagement
     private let historyCoordinating: HistoryCoordinating
+    private let aiChatHistoryCleaner: AIChatHistoryCleaning
     let tld: TLD
     let mode: Mode
     private let scopeVisits: [Visit]?
@@ -187,6 +219,18 @@ final class FireDialogViewModel: ObservableObject {
     @Published var includeCookiesAndSiteData: Bool {
         didSet {
             Self.lastIncludeCookiesAndSiteDataState = includeCookiesAndSiteData
+        }
+    }
+    /// When true, all Duck.ai chat history is cleared.
+    /// Use this property (not `includeChatHistorySetting`) to perform the data clearing.
+    var includeChatHistory: Bool {
+        shouldShowChatHistoryToggle && includeChatHistorySetting
+    }
+    /// Persisted user setting to clear chat history.
+    /// Do not use this property directly to perform the data clearing; use `includeChatHistory` instead.
+    @Published var includeChatHistorySetting: Bool {
+        didSet {
+            Self.lastIncludeChatHistoryState = includeChatHistorySetting
         }
     }
 

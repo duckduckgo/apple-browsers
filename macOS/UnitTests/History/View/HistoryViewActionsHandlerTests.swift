@@ -127,10 +127,11 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
     func testWhenDeleteDialogIsAcceptedWithBurningThenShowDeleteDialogForQueryPerformsBurningAndReturnsDeleteAction() async {
         let data = dataProvider.configureWithGeneratedTestData(domainsCount: 5, visitsPerDomain: 20)
         dataProvider.visitsMatchingQuery = { _ in data.visits }
-        dialogPresenter.deleteDialogResponse = .burn
+        dialogPresenter.deleteDialogResponse = .burn(includeChats: false)
         let dialogResponse = await actionsHandler.showDeleteDialog(for: .rangeFilter(.all))
         XCTAssertEqual(dataProvider.deleteVisitsMatchingQueryCalls, [])
         XCTAssertEqual(dataProvider.burnVisitsMatchingQueryCalls, [.rangeFilter(.all)])
+        XCTAssertEqual(dataProvider.clearChatHistoryCallCount, 0)
         XCTAssertEqual(dialogPresenter.showDeleteDialogCalls.count, 1)
         XCTAssertEqual(dialogResponse, .delete)
 
@@ -141,13 +142,23 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenDeleteDialogIsAcceptedWithChatHistoryBurningThenShowDeleteDialogForQueryClearsChatHistory() async {
+        let data = dataProvider.configureWithGeneratedTestData(domainsCount: 5, visitsPerDomain: 20)
+        dataProvider.visitsMatchingQuery = { _ in data.visits }
+        dialogPresenter.deleteDialogResponse = .burn(includeChats: true)
+        _ = await actionsHandler.showDeleteDialog(for: .rangeFilter(.all))
+        XCTAssertEqual(dataProvider.clearChatHistoryCallCount, 1)
+    }
+
+    @MainActor
     func testWhenDeleteDialogIsAcceptedWithoutBurningThenShowDeleteDialogForQueryPerformsDeletionAndReturnsDeleteAction() async {
         let data = dataProvider.configureWithGeneratedTestData(domainsCount: 5, visitsPerDomain: 20)
         dataProvider.visitsMatchingQuery = { _ in data.visits }
-        dialogPresenter.deleteDialogResponse = .delete
+        dialogPresenter.deleteDialogResponse = .delete(includeChats: false)
         let dialogResponse = await actionsHandler.showDeleteDialog(for: .rangeFilter(.all))
         XCTAssertEqual(dataProvider.deleteVisitsMatchingQueryCalls, [.rangeFilter(.all)])
         XCTAssertEqual(dataProvider.burnVisitsMatchingQueryCalls, [])
+        XCTAssertEqual(dataProvider.clearChatHistoryCallCount, 0)
         XCTAssertEqual(dialogPresenter.showDeleteDialogCalls.count, 1)
         XCTAssertEqual(dialogResponse, .delete)
 
@@ -155,6 +166,15 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
             .init(.delete, .daily),
             .init(.multipleItemsDeleted(.all, burn: false), .dailyAndStandard)
         ])
+    }
+
+    @MainActor
+    func testWhenDeleteDialogIsAcceptedWithChatHistoryDeletionThenShowDeleteDialogForQueryClearsChatHistory() async {
+        let data = dataProvider.configureWithGeneratedTestData(domainsCount: 5, visitsPerDomain: 20)
+        dataProvider.visitsMatchingQuery = { _ in data.visits }
+        dialogPresenter.deleteDialogResponse = .delete(includeChats: true)
+        _ = await actionsHandler.showDeleteDialog(for: .rangeFilter(.all))
+        XCTAssertEqual(dataProvider.clearChatHistoryCallCount, 1)
     }
 
     @MainActor
@@ -171,7 +191,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
                 return []
             }
         }
-        dialogPresenter.deleteDialogResponse = .delete
+        dialogPresenter.deleteDialogResponse = .delete(includeChats: false)
         _ = await actionsHandler.showDeleteDialog(for: .searchTerm("hello"))
         XCTAssertEqual(dialogPresenter.showDeleteDialogCalls.count, 1)
         let call = try XCTUnwrap(dialogPresenter.showDeleteDialogCalls.first)
@@ -188,7 +208,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
     func testThatShowDeleteDialogForNonRangeQueryMatchingAllVisitsAdjustsQueryToAllRange() async throws {
         let data = dataProvider.configureWithGeneratedTestData(domainsCount: 5, visitsPerDomain: 20)
         dataProvider.visitsMatchingQuery = { _ in data.visits }
-        dialogPresenter.deleteDialogResponse = .delete
+        dialogPresenter.deleteDialogResponse = .delete(includeChats: false)
         _ = await actionsHandler.showDeleteDialog(for: .searchTerm("hello"))
         XCTAssertEqual(dialogPresenter.showDeleteDialogCalls.count, 1)
         let call = try XCTUnwrap(dialogPresenter.showDeleteDialogCalls.first)
@@ -228,6 +248,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         XCTAssertEqual(dialogPresenter.showDeleteDialogCalls.count, 0)
         XCTAssertEqual(dataProvider.deleteVisitsMatchingQueryCalls, [.visits([identifier])])
         XCTAssertEqual(dataProvider.burnVisitsMatchingQueryCalls, [])
+        XCTAssertEqual(dataProvider.clearChatHistoryCallCount, 0)
         XCTAssertEqual(dialogResponse, .delete)
 
         XCTAssertEqual(firePixelCalls, [
@@ -249,6 +270,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         XCTAssertEqual(dialogPresenter.showDeleteDialogCalls.count, 1)
         XCTAssertEqual(dataProvider.deleteVisitsMatchingQueryCalls, [])
         XCTAssertEqual(dataProvider.burnVisitsMatchingQueryCalls, [])
+        XCTAssertEqual(dataProvider.clearChatHistoryCallCount, 0)
         XCTAssertEqual(dialogResponse, .noAction)
 
         XCTAssertEqual(firePixelCalls, [])
@@ -262,11 +284,12 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
             .init(uuid: "efgh", url: try XCTUnwrap("https://domain.com".url), date: Date())
         ]
         dataProvider.visitsMatchingQuery = { _ in data.visits }
-        dialogPresenter.deleteDialogResponse = .burn
+        dialogPresenter.deleteDialogResponse = .burn(includeChats: false)
         let dialogResponse = await actionsHandler.showDeleteDialog(for: identifiers.map(\.description))
         XCTAssertEqual(dialogPresenter.showDeleteDialogCalls.count, 1)
         XCTAssertEqual(dataProvider.deleteVisitsMatchingQueryCalls, [])
         XCTAssertEqual(dataProvider.burnVisitsMatchingQueryCalls, [.visits(identifiers)])
+        XCTAssertEqual(dataProvider.clearChatHistoryCallCount, 0)
         XCTAssertEqual(dialogResponse, .delete)
 
         XCTAssertEqual(firePixelCalls, [
@@ -283,11 +306,12 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
             .init(uuid: "efgh", url: try XCTUnwrap("https://domain.com".url), date: Date())
         ]
         dataProvider.visitsMatchingQuery = { _ in data.visits }
-        dialogPresenter.deleteDialogResponse = .delete
+        dialogPresenter.deleteDialogResponse = .delete(includeChats: false)
         let dialogResponse = await actionsHandler.showDeleteDialog(for: identifiers.map(\.description))
         XCTAssertEqual(dialogPresenter.showDeleteDialogCalls.count, 1)
         XCTAssertEqual(dataProvider.deleteVisitsMatchingQueryCalls, [.visits(identifiers)])
         XCTAssertEqual(dataProvider.burnVisitsMatchingQueryCalls, [])
+        XCTAssertEqual(dataProvider.clearChatHistoryCallCount, 0)
         XCTAssertEqual(dialogResponse, .delete)
 
         XCTAssertEqual(firePixelCalls, [
@@ -694,7 +718,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
             }
             return data.visits
         }
-        dialogPresenter.deleteDialogResponse = .delete
+        dialogPresenter.deleteDialogResponse = .delete(includeChats: false)
 
         // When
         let response = await actionsHandler.showDeleteDialog(for: domainsToDelete.map { "site:\($0)" })
@@ -790,7 +814,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
             }
             return data.visits
         }
-        dialogPresenter.deleteDialogResponse = .delete
+        dialogPresenter.deleteDialogResponse = .delete(includeChats: false)
 
         let expectation = expectation(description: "Delete action completed")
         contextMenuPresenter.onShowContextMenu = { menu in

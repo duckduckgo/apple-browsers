@@ -23,6 +23,8 @@ import DesignResourcesKitIcons
 import History
 import SwiftUI
 import SwiftUIExtensions
+import BrowserServicesKit
+import Combine
 
 // Result returned by FireDialogView when using onConfirm callback
 struct FireDialogResult {
@@ -30,6 +32,7 @@ struct FireDialogResult {
     let includeHistory: Bool
     let includeTabsAndWindows: Bool
     let includeCookiesAndSiteData: Bool
+    let includeChatHistory: Bool
     /// Optional selection of cookie domains (eTLD+1). When provided, cookie/site data clearing is limited to this set.
     var selectedCookieDomains: Set<String>?
     /// Optional explicit visits selection for history flows
@@ -50,6 +53,8 @@ struct FireDialogView: ModalView {
         static let viewSize = CGSize(width: 440, height: 592)
         static let footerReservedHeight: CGFloat = 52
     }
+
+    @State private var viewHeight: CGFloat = Constants.viewSize.height
 
     private var tabsSubtitle: String {
         // Get base message based on scope
@@ -130,6 +135,7 @@ struct FireDialogView: ModalView {
         (viewModel.mode.shouldShowCloseTabsToggle && viewModel.includeTabsAndWindows)
         || (viewModel.includeHistory && isIncludeHistoryEnabled)
         || (viewModel.includeCookiesAndSiteData && isIncludeCookiesAndSiteDataEnabled)
+        || viewModel.includeChatHistory
     }
 
     var body: some View {
@@ -178,7 +184,11 @@ struct FireDialogView: ModalView {
                 .padding(.bottom, 10) // presenter sheet crops the padding 🤷‍♂️
                 .background(Color(designSystemColor: .fireDialogBackground))
         }
-        .frame(maxWidth: Constants.viewSize.width, maxHeight: .infinity)
+        .readSize { size in
+            // Set exact content height to avoid content shifting and animation jumping when sheet resizes
+            viewHeight = size.height
+        }
+        .frame(width: Constants.viewSize.width, height: viewHeight, alignment: .top)
         .background(Color(designSystemColor: .fireDialogBackground))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(viewModel.mode.dialogTitle)
@@ -277,6 +287,20 @@ struct FireDialogView: ModalView {
             )
             .disabled(!isIncludeCookiesAndSiteDataEnabled)
             .accessibilityHidden(isShowingSitesOverlay)
+
+            if viewModel.shouldShowChatHistoryToggle {
+                sectionDivider()
+
+            // Row 4: Chat History
+                sectionRow(
+                    icon: DesignSystemImages.Glyphs.Size16.aiChat,
+                    title: UserText.fireDialogChatHistoryTitle,
+                    subtitle: UserText.fireDialogChatHistorySubtitle,
+                    isOn: $viewModel.includeChatHistorySetting,
+                    toggleId: "FireDialogView.chatsToggle"
+                )
+                .accessibilityHidden(isShowingSitesOverlay)
+            }
             sectionDivider(padding: 0)
 
             // Fireproof section
@@ -295,6 +319,7 @@ struct FireDialogView: ModalView {
         )
         .padding(.top, 4)
         .padding(.bottom, 8)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func presentManageFireproof() {
@@ -544,6 +569,7 @@ struct FireDialogView: ModalView {
                     includeHistory: viewModel.includeHistory,
                     includeTabsAndWindows: viewModel.includeTabsAndWindows,
                     includeCookiesAndSiteData: viewModel.includeCookiesAndSiteData,
+                    includeChatHistory: viewModel.includeChatHistory,
                     selectedCookieDomains: viewModel.selectedCookieDomainsForScope,
                     selectedVisits: viewModel.historyVisits
                 )
@@ -660,6 +686,13 @@ private class MockFireproofDomains: FireproofDomains {
         }
     }
 }
+private class MockAIChatHistoryCleaner: AIChatHistoryCleaning {
+    var shouldDisplayCleanAIChatHistoryOption: Bool = true
+    var shouldDisplayCleanAIChatHistoryOptionPublisher: AnyPublisher<Bool, Never> {
+        Just(shouldDisplayCleanAIChatHistoryOption).eraseToAnyPublisher()
+    }
+    func cleanAIChatHistory() {}
+}
 @available(macOS 14.0, *)
 #Preview("Fire Dialog", traits: FireDialogView.Constants.viewSize.fixedLayout) {
     let tld = TLD()
@@ -667,6 +700,7 @@ private class MockFireproofDomains: FireproofDomains {
         fireViewModel: FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider),
         tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
         historyCoordinating: Application.appDelegate.historyCoordinator,
+        aiChatHistoryCleaner: MockAIChatHistoryCleaner(),
         fireproofDomains: Application.appDelegate.fireproofDomains,
         faviconManagement: Application.appDelegate.faviconManager,
         tld: tld
@@ -707,6 +741,7 @@ private class MockFireproofDomains: FireproofDomains {
         fireViewModel: FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireSettingsDecider),
         tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
         historyCoordinating: history,
+        aiChatHistoryCleaner: MockAIChatHistoryCleaner(),
         fireproofDomains: fireproofDomains,
         faviconManagement: faviconMock,
         clearingOption: .allData,

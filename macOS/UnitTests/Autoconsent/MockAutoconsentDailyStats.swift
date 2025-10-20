@@ -1,7 +1,7 @@
 //
-//  DuckDuckGoUserAgent.swift
+//  MockAutoconsentDailyStats.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,14 +17,10 @@
 //
 
 import Foundation
-import Common
+@testable import DuckDuckGo_Privacy_Browser
 
-enum UserAgent {
+class MockAutoconsentDailyStat: AutoconsentDailyStatsManaging  {
+    func incrementPopupCount() {}
 
-    static func duckDuckGoUserAgent(appVersion: String = AppVersion.shared.versionNumber,
-                                    appID: String = AppVersion.shared.identifier,
-                                    systemVersion: String = AppVersion.shared.osVersionMajorMinor) -> String {
-        return "ddg_mac/\(appVersion) (\(appID); macOS \(systemVersion))"
-    }
-
+    func sendDailyPixelIfNeeded() {}
 }

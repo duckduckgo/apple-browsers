@@ -349,6 +349,7 @@ final class FireTests: XCTestCase {
         fire.burnVisits([],
                         except: Application.appDelegate.fireproofDomains,
                         isToday: true,
+                        clearChatHistory: false,
                         completion: {
             finishedBurningExpectation.fulfill()
         })
@@ -397,6 +398,7 @@ final class FireTests: XCTestCase {
                         ],
                         except: Application.appDelegate.fireproofDomains,
                         isToday: false,
+                        clearChatHistory: false,
                         completion: {
             finishedBurningExpectation.fulfill()
         })
@@ -411,6 +413,60 @@ final class FireTests: XCTestCase {
         XCTAssert(recentlyClosedCoordinator.burnCacheCalled)
         XCTAssertFalse(visitedLinkStore.removeAllCalled)
         XCTAssertEqual(visitedLinkStore.removeVisitedLinkCalledWithURLs, [.duckDuckGo, .duckDuckGoEmail])
+    }
+
+    @MainActor
+    func testWhenBurnAllIsCalled_ChatHistoryIsCleared() async {
+        let chatHistoryCleaner = MockAIChatHistoryCleaner()
+        let fire = Fire(tld: Application.appDelegate.tld,
+                        aIChatHistoryCleaner: chatHistoryCleaner)
+
+        let burningExpectation = expectation(description: "Burning")
+
+        fire.burnAll {
+            XCTAssertTrue(chatHistoryCleaner.didCleanAIChatHistory)
+            burningExpectation.fulfill()
+        }
+
+        await fulfillment(of: [burningExpectation], timeout: 5)
+    }
+
+    @MainActor
+    func testWhenBurnVisitsIsCalled_IncludingChatHistory_ChatHistoryIsCleared() async {
+        let chatHistoryCleaner = MockAIChatHistoryCleaner()
+        let fire = Fire(tld: Application.appDelegate.tld,
+                        aIChatHistoryCleaner: chatHistoryCleaner)
+
+        let burningExpectation = expectation(description: "Burning")
+
+        fire.burnVisits([],
+                        except: Application.appDelegate.fireproofDomains,
+                        isToday: false,
+                        clearChatHistory: true) {
+            XCTAssertTrue(chatHistoryCleaner.didCleanAIChatHistory)
+            burningExpectation.fulfill()
+        }
+
+        await fulfillment(of: [burningExpectation], timeout: 5)
+    }
+
+    @MainActor
+    func testWhenBurnVisitsIsCalled_NotIncludingChatHistory_ChatHistoryIsNotCleared() async {
+        let chatHistoryCleaner = MockAIChatHistoryCleaner()
+        let fire = Fire(tld: Application.appDelegate.tld,
+                        aIChatHistoryCleaner: chatHistoryCleaner)
+
+        let burningExpectation = expectation(description: "Burning")
+
+        fire.burnVisits([],
+                        except: Application.appDelegate.fireproofDomains,
+                        isToday: false,
+                        clearChatHistory: false) {
+            XCTAssertFalse(chatHistoryCleaner.didCleanAIChatHistory)
+            burningExpectation.fulfill()
+        }
+
+        await fulfillment(of: [burningExpectation], timeout: 5)
     }
 
     @MainActor

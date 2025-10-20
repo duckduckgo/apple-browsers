@@ -12,7 +12,7 @@ on:
         type: boolean
         default: true
       single_test_class:
-        description: "Run only a specific UITestCase (optional, e.g. 'AutocompleteTests')"
+        description: "Run one or more UITestCases (optional, space-separated, e.g. 'AutocompleteTests' or 'AutocompleteTests BookmarksTests')"
         type: string
         required: false
   schedule:
@@ -87,12 +87,12 @@ jobs:
       - name: List tests
         id: list-tests
         run: |
-          # Check if a single test class was specified
+          # Check if one or more test classes were specified
           single_test_class="${{ inputs.single_test_class }}"
 
           if [[ -n "$single_test_class" ]]; then
-            echo "Running single test class: $single_test_class"
-            test=$(jq -nc --arg class "$single_test_class" '[$class]')
+            echo "Running specified test class(es): $single_test_class"
+            test=$(echo $single_test_class | jq -cR 'split(" ")')
           else
             # Find all test files in the UITests directory
             # This assumes that all test files are named *Tests.swift and are put directly in the UITests directory

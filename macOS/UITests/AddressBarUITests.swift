@@ -320,18 +320,18 @@ class AddressBarUITests: UITestCase {
     func testAddressBar_WhitespaceInput_TrimsCorrectly() throws {
         // Type URL with leading/trailing whitespace
         app.activateAddressBar()
-        addressBarTextField.typeText("  example.com  ")
+        addressBarTextField.typeText("  privacy-test-pages.site  ")
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
         // Should navigate to example.com (whitespace trimmed).
         let exampleContent = webView.staticTexts
-            .containing(\.value, containing: "Example Domain")
+            .containing(\.value, containing: "Privacy Test Pages")
             .firstMatch
         XCTAssertTrue(exampleContent.waitForExistence(timeout: UITests.Timeouts.localTestServer))
 
         let currentValue = app.addressBarValueActivatingIfNeeded() ?? ""
 
-        XCTAssertEqual(currentValue, "https://example.com/")
+        XCTAssertEqual(currentValue, "http://privacy-test-pages.site/")
     }
 
     func testAddressBar_SpecialCharacters_HandledCorrectly() throws {

@@ -17,6 +17,7 @@
 //
 
 import BrowserServicesKit
+import Common
 import History
 import HistoryView
 
@@ -27,11 +28,14 @@ extension HistoryViewActionsManager {
         bookmarksHandler: HistoryViewBookmarksHandling,
         featureFlagger: FeatureFlagger,
         fireproofStatusProvider: DomainFireproofStatusProviding,
+        tld: TLD,
         fire: @escaping () async -> FireProtocol
     ) {
         let dataProvider = HistoryViewDataProvider(
             historyDataSource: historyCoordinator,
-            historyBurner: FireHistoryBurner(fireproofDomains: fireproofStatusProvider, fire: fire), featureFlagger: featureFlagger
+            historyBurner: FireHistoryBurner(fireproofDomains: fireproofStatusProvider, fire: fire),
+            featureFlagger: featureFlagger,
+            tld: tld
         )
         self.init(scriptClients: [
             DataClient(

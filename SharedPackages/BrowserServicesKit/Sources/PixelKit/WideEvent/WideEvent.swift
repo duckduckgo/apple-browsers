@@ -218,8 +218,11 @@ public final class WideEvent: WideEventManaging {
 
         parameters[WideEventParameter.Feature.status] = status.description
 
-        if case let .unknown(reason) = status {
+        switch status {
+        case .success(let reason?), .unknown(let reason):
             parameters[WideEventParameter.Feature.statusReason] = reason
+        case .failure, .cancelled, .success(nil):
+            break
         }
 
         return parameters

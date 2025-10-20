@@ -34,7 +34,7 @@ class FireDialogUITests: UITestCase {
         try super.setUpWithError()
         continueAfterFailure = false
         // Enable feature flags for new Fire dialog, History view, and History view Sites section
-        // TODO: Enable Sites Section when C-S-S implementation is merged in
+        // TO DO: Enable Sites Section when C-S-S implementation is merged in
         app = XCUIApplication.setUp(featureFlags: ["historyView": true, "fireDialog": true, /*"historyViewSitesSection": true*/])
         app.enforceSingleWindow()
 

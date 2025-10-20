@@ -172,6 +172,7 @@ extension XCUIElement {
         }
         XCTAssertTrue(self.exists, "Control should exist before toggling")
         if isOn == enabled { return }
+        Logger.log("Checkbox value is \(self.value.map { type(of: $0) } ??? ""): `\(self.value ??? "<nil>")`: isOn: \(isOn), switching to \(enabled)")
 
         if !isHittable {
             ensureHittable(self)

@@ -518,7 +518,7 @@ extension XCUIApplication {
     /// Sets the Tabs behavior: whether to switch to a new tab when opened (true) or keep in background (false)
     func setSwitchToNewTabWhenOpened(enabled: Bool) {
         let checkbox = preferencesWindow.checkBoxes[AccessibilityIdentifiers.switchToNewTabWhenOpenedCheckbox]
-        checkbox.toggleCheckboxIfNeeded(to: enabled, ensureHittable: self.ensureHittable)
+        checkbox.toggleCheckboxIfNeeded(to: enabled, validate: true, ensureHittable: self.ensureHittable)
     }
 
     /// Sets the "Automatically open the Downloads panel when downloads complete" preference

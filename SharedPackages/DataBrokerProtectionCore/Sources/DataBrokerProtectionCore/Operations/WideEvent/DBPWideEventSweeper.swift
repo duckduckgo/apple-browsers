@@ -62,51 +62,48 @@ public final class DBPWideEventSweeper {
         Logger.dataBrokerProtection.debug("PIR wide event sweep finished")
     }
 
-    // MARK: - Submission
+    private func sweepPendingFlows<Data: WideEventDataMeasuringInterval>(
+        _ type: Data.Type,
+        window: TimeInterval,
+        completionReason: String
+    ) async {
+        let pending: [Data] = wideEvent.getAllFlowData(type)
 
-    private func sweepPendingSubmissions() async {
-        let pendingSubmissions: [OptOutSubmissionWideEventData] = wideEvent.getAllFlowData(OptOutSubmissionWideEventData.self)
+        guard !pending.isEmpty else { return }
 
-        guard !pendingSubmissions.isEmpty else { return }
-
-        for data in pendingSubmissions {
-            guard let interval = data.submissionInterval,
+        for data in pending {
+            guard let interval = data.measuredInterval,
                   let start = interval.start,
                   interval.end == nil else {
                 continue
             }
 
-            let deadline = start.addingTimeInterval(submissionWindow)
+            let deadline = start.addingTimeInterval(window)
             guard currentDateForTesting() >= deadline else {
                 continue
             }
 
-            let reason = OptOutSubmissionWideEventData.StatusReason.submissionWindowExpired.rawValue
-            _ = try? await wideEvent.completeFlow(data, status: .unknown(reason: reason))
+            _ = try? await wideEvent.completeFlow(data, status: .unknown(reason: completionReason))
         }
+    }
+
+    // MARK: - Submission
+
+    private func sweepPendingSubmissions() async {
+        await sweepPendingFlows(
+            OptOutSubmissionWideEventData.self,
+            window: submissionWindow,
+            completionReason: OptOutSubmissionWideEventData.StatusReason.submissionWindowExpired.rawValue
+        )
     }
 
     // MARK: - Confirmation
 
     private func sweepPendingConfirmations() async {
-        let pendingConfirmations: [OptOutConfirmationWideEventData] = wideEvent.getAllFlowData(OptOutConfirmationWideEventData.self)
-
-        guard !pendingConfirmations.isEmpty else { return }
-
-        for data in pendingConfirmations {
-            guard let interval = data.confirmationInterval,
-                  let start = interval.start,
-                  interval.end == nil else {
-                continue
-            }
-
-            let deadline = start.addingTimeInterval(confirmationWindow)
-            guard currentDateForTesting() >= deadline else {
-                continue
-            }
-
-            let reason = OptOutConfirmationWideEventData.StatusReason.confirmationWindowExpired.rawValue
-            _ = try? await wideEvent.completeFlow(data, status: .unknown(reason: reason))
-        }
+        await sweepPendingFlows(
+            OptOutConfirmationWideEventData.self,
+            window: confirmationWindow,
+            completionReason: OptOutConfirmationWideEventData.StatusReason.confirmationWindowExpired.rawValue
+        )
     }
 }

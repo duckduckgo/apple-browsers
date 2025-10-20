@@ -204,7 +204,7 @@ public class Pixel {
         static let phone = "phone"
     }
 
-    public enum TargetType: String {
+    public enum BuildTarget: String {
         case app
         case vpn
     }

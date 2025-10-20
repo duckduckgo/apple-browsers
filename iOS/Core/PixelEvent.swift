@@ -725,8 +725,8 @@ extension Pixel {
         case dbLocalAuthenticationError
         
         case configurationFetchInfo
-        case couldNotLoadConfiguration(configuration: Configuration, target: Pixel.TargetType)
-        case couldNotParseConfiguration(configuration: Configuration, target: Pixel.TargetType)
+        case couldNotLoadConfiguration(configuration: Configuration, target: Pixel.BuildTarget)
+        case couldNotParseConfiguration(configuration: Configuration, target: Pixel.BuildTarget)
 
         case trackerDataReloadFailed
         case fileStoreWriteFailed

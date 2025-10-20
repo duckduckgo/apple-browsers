@@ -59,22 +59,10 @@ tags:
 - assertVisible: "Bookmarks"
 - tapOn: "Bookmarks"
 - assertVisible: "Privacy Test Pages - Home"
-- assertVisible: "Favorites"
-- tapOn: "Favorites"
-- assertVisible: "Privacy Test Pages - Home"
-
-# Remove favorites from bookmarks screen
-- assertVisible: "Manage"
-- tapOn: "Manage"
-- tapOn:
-    text: " "
-    index: 0
-    rightOf: "Privacy Test Pages - Home"
-- assertVisible: "No favorites added yet"
 
 # Remove bookmark from bookmarks screen
-- assertVisible: "Bookmarks"
-- tapOn: "Bookmarks"
+- assertVisible: "Edit"
+- tapOn: "Edit"
 - assertVisible: "Privacy Test Pages - Home"
 - assertVisible: "Remove Privacy Test Pages - Home"
 - tapOn: "Remove Privacy Test Pages - Home"

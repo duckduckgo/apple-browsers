@@ -2156,118 +2156,6 @@ class FireDialogUITests: UITestCase {
         verifyCountersCleared()
     }
 
-    func test_historyView_deleteAllHistory_viaSitesSection_deleteAllButton() throws {
-        let storageURL = URL(string: "https://privacy-test-pages.site/features/local-storage.html")!
-
-        // Visit sites and set storage
-        app.openURL(storageURL)
-        setStorageAndCookies()
-        verifyCountersSet()
-
-        let site1Title = UITests.randomPageTitle(length: lengthForRandomPageTitle)
-        app.activateAddressBar()
-        app.openSite(pageTitle: site1Title)
-
-        // Open History view
-        app.openHistory()
-        let historyWebView = app.webViews["History"]
-        XCTAssertTrue(historyWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence), "History view should open")
-
-        // Click Sites section button to activate it
-        let sitesButton = historyWebView.buttons["Show history for sites"]
-        XCTAssertTrue(sitesButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Sites button should exist")
-        sitesButton.click()
-
-        // Click "Delete All" button in Sites section
-        let deleteAllButton = historyWebView.buttons["Delete history for sites"]
-        XCTAssertTrue(deleteAllButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Delete All button should exist in Sites section")
-        deleteAllButton.click()
-
-        // Verify Fire dialog opens
-        XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
-
-        // Verify no scope pill appears
-        XCTAssertFalse(app.fireDialogSegmentedControl.exists, "Scope pill should not appear for Delete All")
-
-        // Configure toggles: history + cookies
-        fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
-        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
-        fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
-
-        // Burn
-        fireDialogBurnButton.click()
-        waitForFireAnimationToComplete()
-
-        // Verify History view still open and now empty
-        XCTAssertTrue(historyWebView.exists, "History view should still be open")
-
-        let emptyHistoryText = historyWebView.staticTexts["No browsing history yet."]
-        XCTAssertTrue(emptyHistoryText.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Empty history message should appear after deleting all history")
-
-        // Verify storage was cleared
-        app.activateAddressBar()
-        app.openURL(storageURL)
-        verifyCountersCleared()
-    }
-
-    func test_historyView_deleteAllHistory_viaSitesSection_hoverAndDelete() throws {
-        let storageURL = URL(string: "https://privacy-test-pages.site/features/local-storage.html")!
-
-        // Visit sites and set storage
-        app.openURL(storageURL)
-        setStorageAndCookies()
-        verifyCountersSet()
-
-        let site1Title = UITests.randomPageTitle(length: lengthForRandomPageTitle)
-        app.activateAddressBar()
-        app.openSite(pageTitle: site1Title)
-
-        // Open History view
-        app.openHistory()
-        let historyWebView = app.webViews["History"]
-        XCTAssertTrue(historyWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence), "History view should open")
-
-        // Click Sites section button to activate it
-        let sitesButton = historyWebView.buttons["Show history for sites"]
-        XCTAssertTrue(sitesButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Sites button should exist")
-        sitesButton.click()
-
-        // Hover Sites button to reveal "Delete all history" button
-        sitesButton.hover()
-
-        // Click "Delete all history" button
-        let deleteAllHistoryButton = historyWebView.buttons["Delete history for sites"]
-        XCTAssertTrue(deleteAllHistoryButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Delete all history button should appear on hover")
-        deleteAllHistoryButton.click()
-
-        // Verify Fire dialog opens
-        XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
-
-        // Verify no scope pill appears
-        XCTAssertFalse(app.fireDialogSegmentedControl.exists, "Scope pill should not appear for Delete All")
-
-        // Configure toggles: only cookies
-        fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
-        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
-        fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
-
-        // Burn
-        fireDialogBurnButton.click()
-        waitForFireAnimationToComplete()
-
-        // Verify History view still open
-        XCTAssertTrue(historyWebView.exists, "History view should still be open")
-
-        // Verify history was preserved (history toggle was off)
-        XCTAssertTrue(historyWebView.links[site1Title].exists, "Site 1 should still be in history")
-        XCTAssertTrue(historyWebView.links.element(matching: .keyPath(\.title, contains: "Local Storage")).exists, "Storage site should still be in history")
-
-        // Verify storage was cleared (cookies toggle was on)
-        app.activateAddressBar()
-        app.openURL(storageURL)
-        verifyCountersCleared()
-    }
-
     // MARK: - History View Date-based Deletion Tests
 
     func test_historyView_deleteToday_historyAndCookies() throws {
@@ -3306,6 +3194,120 @@ class FireDialogUITests: UITestCase {
         app.activateAddressBar()
         app.openURL(storageURL1)
         verifyInitialCountersSet()
+    }
+
+    func test_historyView_deleteAllHistory_viaSitesSection_deleteAllButton() throws {
+        throw XCTSkip("Enable when C-S-S Sites is merged")
+        let storageURL = URL(string: "https://privacy-test-pages.site/features/local-storage.html")!
+
+        // Visit sites and set storage
+        app.openURL(storageURL)
+        setStorageAndCookies()
+        verifyCountersSet()
+
+        let site1Title = UITests.randomPageTitle(length: lengthForRandomPageTitle)
+        app.activateAddressBar()
+        app.openSite(pageTitle: site1Title)
+
+        // Open History view
+        app.openHistory()
+        let historyWebView = app.webViews["History"]
+        XCTAssertTrue(historyWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence), "History view should open")
+
+        // Click Sites section button to activate it
+        let sitesButton = historyWebView.buttons["Show history for sites"]
+        XCTAssertTrue(sitesButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Sites button should exist")
+        sitesButton.click()
+
+        // Click "Delete All" button in Sites section
+        let deleteAllButton = historyWebView.buttons["Delete history for sites"]
+        XCTAssertTrue(deleteAllButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Delete All button should exist in Sites section")
+        deleteAllButton.click()
+
+        // Verify Fire dialog opens
+        XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
+
+        // Verify no scope pill appears
+        XCTAssertFalse(app.fireDialogSegmentedControl.exists, "Scope pill should not appear for Delete All")
+
+        // Configure toggles: history + cookies
+        fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
+        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
+        fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
+
+        // Burn
+        fireDialogBurnButton.click()
+        waitForFireAnimationToComplete()
+
+        // Verify History view still open and now empty
+        XCTAssertTrue(historyWebView.exists, "History view should still be open")
+
+        let emptyHistoryText = historyWebView.staticTexts["No browsing history yet."]
+        XCTAssertTrue(emptyHistoryText.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Empty history message should appear after deleting all history")
+
+        // Verify storage was cleared
+        app.activateAddressBar()
+        app.openURL(storageURL)
+        verifyCountersCleared()
+    }
+
+    func test_historyView_deleteAllHistory_viaSitesSection_hoverAndDelete() throws {
+        throw XCTSkip("Enable when C-S-S Sites is merged")
+        let storageURL = URL(string: "https://privacy-test-pages.site/features/local-storage.html")!
+
+        // Visit sites and set storage
+        app.openURL(storageURL)
+        setStorageAndCookies()
+        verifyCountersSet()
+
+        let site1Title = UITests.randomPageTitle(length: lengthForRandomPageTitle)
+        app.activateAddressBar()
+        app.openSite(pageTitle: site1Title)
+
+        // Open History view
+        app.openHistory()
+        let historyWebView = app.webViews["History"]
+        XCTAssertTrue(historyWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence), "History view should open")
+
+        // Click Sites section button to activate it
+        let sitesButton = historyWebView.buttons["Show history for sites"]
+        XCTAssertTrue(sitesButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Sites button should exist")
+        sitesButton.click()
+
+        // Hover Sites button to reveal "Delete all history" button
+        sitesButton.hover()
+
+        // Click "Delete all history" button
+        let deleteAllHistoryButton = historyWebView.buttons["Delete history for sites"]
+        XCTAssertTrue(deleteAllHistoryButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Delete all history button should appear on hover")
+        deleteAllHistoryButton.click()
+
+        // Verify Fire dialog opens
+        XCTAssertTrue(fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Fire dialog should open")
+
+        // Verify no scope pill appears
+        XCTAssertFalse(app.fireDialogSegmentedControl.exists, "Scope pill should not appear for Delete All")
+
+        // Configure toggles: only cookies
+        fireDialogTabsToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
+        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: { _ in })
+        fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: { _ in })
+
+        // Burn
+        fireDialogBurnButton.click()
+        waitForFireAnimationToComplete()
+
+        // Verify History view still open
+        XCTAssertTrue(historyWebView.exists, "History view should still be open")
+
+        // Verify history was preserved (history toggle was off)
+        XCTAssertTrue(historyWebView.links[site1Title].exists, "Site 1 should still be in history")
+        XCTAssertTrue(historyWebView.links.element(matching: .keyPath(\.title, contains: "Local Storage")).exists, "Storage site should still be in history")
+
+        // Verify storage was cleared (cookies toggle was on)
+        app.activateAddressBar()
+        app.openURL(storageURL)
+        verifyCountersCleared()
     }
 
     // MARK: - Helper Methods

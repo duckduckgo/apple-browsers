@@ -138,7 +138,7 @@ struct BookmarksDatabaseSetup {
         }
         
         // Create app group access marker for future validation (first launch only)
-        AppGroupContainerValidator.createMarkerFileAfterFirstSuccessfulAccess(keyValueStore: UserDefaults.app)
+        AppGroupContainerValidator.createMarkerFileAfterFirstSuccessfulAccess()
 
         if migrationHappened {
             do {

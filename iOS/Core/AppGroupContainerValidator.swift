@@ -47,7 +47,7 @@ public final class AppGroupContainerValidator {
     
     /// Creates a marker file after the first successful bookmarks database initialization.
     /// Only creates the marker once to avoid false positives on subsequent launches.
-    public static func createMarkerFileAfterFirstSuccessfulAccess(keyValueStore: KeyValueStoring) {
+    public static func createMarkerFileAfterFirstSuccessfulAccess(keyValueStore: KeyValueStoring = UserDefaults.standard) {
         // Only create marker file once - use our own key to avoid issues with existing users
         guard keyValueStore.object(forKey: Constants.appGroupMarkerCreatedKey) == nil else {
             return // Marker already created before

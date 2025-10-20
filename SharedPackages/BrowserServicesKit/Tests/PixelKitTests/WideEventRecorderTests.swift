@@ -38,40 +38,47 @@ final class WideEventRecorderTests: XCTestCase {
     func testStartIfPossibleCreatesRecorderWithInterval() {
         let startDate = Date(timeIntervalSince1970: 100)
 
-        let recorder = WideEventRecorder<TestMeasuringData>.startIfPossible(
+        let recorder = WideEventRecorder<WideEventDataMeasuringMock>.startIfPossible(
             wideEvent: wideEventMock,
             identifier: identifier,
             sampleRate: 0.25,
             intervalStartProvider: { startDate },
             makeData: { global, interval in
-                TestMeasuringData(globalData: global, measuredInterval: interval)
+                WideEventDataMeasuringMock(globalData: global, measuredInterval: interval)
             }
         )
 
         XCTAssertNotNil(recorder)
-        let startedData = wideEventMock.started.first as? TestMeasuringData
+        let startedData = wideEventMock.started.first as? WideEventDataMeasuringMock
         XCTAssertEqual(startedData?.globalData.id, "wide-event-id")
         XCTAssertEqual(startedData?.globalData.sampleRate, 0.25)
-        XCTAssertEqual(startedData?.measuredInterval?.start, startDate)
+        XCTAssertEqual(startedData?.measuredInterval?.start, Date(timeIntervalSince1970: 100))
         XCTAssertNil(startedData?.measuredInterval?.end)
     }
 
     func testResumeIfPossibleReturnsExistingRecorder() {
+        let notResumed = WideEventRecorder<WideEventDataMeasuringMock>.resumeIfPossible(
+            wideEvent: wideEventMock,
+            identifier: identifier
+        )
+
+        XCTAssertNil(notResumed)
+
         let startDate = Date(timeIntervalSince1970: 200)
 
         XCTAssertNotNil(
-            WideEventRecorder<TestMeasuringData>.makeIfPossible(
+            WideEventRecorder<WideEventDataMeasuringMock>.makeIfPossible(
                 wideEvent: wideEventMock,
                 identifier: identifier,
                 sampleRate: 0.5,
                 intervalStart: startDate,
                 makeData: { global, interval in
-                    TestMeasuringData(globalData: global, measuredInterval: interval)
+                    WideEventDataMeasuringMock(globalData: global, measuredInterval: interval)
                 }
             )
         )
 
-        let resumed = WideEventRecorder<TestMeasuringData>.resumeIfPossible(
+        let resumed = WideEventRecorder<WideEventDataMeasuringMock>.resumeIfPossible(
             wideEvent: wideEventMock,
             identifier: identifier
         )
@@ -85,20 +92,20 @@ final class WideEventRecorderTests: XCTestCase {
         let completionDate = Date(timeIntervalSince1970: 500)
 
         let recorder = try XCTUnwrap(
-            WideEventRecorder<TestMeasuringData>.makeIfPossible(
+            WideEventRecorder<WideEventDataMeasuringMock>.makeIfPossible(
                 wideEvent: wideEventMock,
                 identifier: identifier,
                 sampleRate: 1.0,
                 intervalStart: startDate,
                 makeData: { global, interval in
-                    TestMeasuringData(globalData: global, measuredInterval: interval)
+                    WideEventDataMeasuringMock(globalData: global, measuredInterval: interval)
                 }
             )
         )
 
         let completionExpectation = expectation(description: "flow completed")
         wideEventMock.onComplete = { data, status in
-            guard let data = data as? TestMeasuringData else { return }
+            guard let data = data as? WideEventDataMeasuringMock else { return }
             XCTAssertEqual(status, .success)
             XCTAssertEqual(data.measuredInterval?.end, completionDate)
             completionExpectation.fulfill()
@@ -108,13 +115,13 @@ final class WideEventRecorderTests: XCTestCase {
 
         wait(for: [completionExpectation], timeout: 1.0)
 
-        let updatedData = wideEventMock.updates.last as? TestMeasuringData
+        let updatedData = wideEventMock.updates.last as? WideEventDataMeasuringMock
         XCTAssertEqual(updatedData?.measuredInterval?.end, completionDate)
         XCTAssertEqual(wideEventMock.completions.count, 1)
     }
 }
 
-private final class TestMeasuringData: WideEventDataMeasuringInterval {
+private final class WideEventDataMeasuringMock: WideEventDataMeasuringInterval {
     static let pixelName = "test-wide-event"
 
     var globalData: WideEventGlobalData

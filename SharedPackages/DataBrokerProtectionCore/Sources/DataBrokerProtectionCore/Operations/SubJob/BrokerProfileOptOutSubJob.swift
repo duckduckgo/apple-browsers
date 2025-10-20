@@ -151,15 +151,15 @@ struct BrokerProfileOptOutSubJob {
         }
 
         OptOutSubmissionWideEventRecorder.startIfPossible(wideEvent: wideEvent,
+                                                          identifier: wideEventId,
+                                                          dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+                                                          dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+                                                          recordFoundDateProvider: recordFoundDateProvider)
+        OptOutConfirmationWideEventRecorder.startIfPossible(wideEvent: wideEvent,
                                                             identifier: wideEventId,
                                                             dataBrokerURL: brokerProfileQueryData.dataBroker.url,
                                                             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
                                                             recordFoundDateProvider: recordFoundDateProvider)
-        OptOutConfirmationWideEventRecorder.startIfPossible(wideEvent: wideEvent,
-                                                              identifier: wideEventId,
-                                                              dataBrokerURL: brokerProfileQueryData.dataBroker.url,
-                                                              dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-                                                              recordFoundDateProvider: recordFoundDateProvider)
     }
 
     internal func validateOptOutPreconditions(for extractedProfile: ExtractedProfile,

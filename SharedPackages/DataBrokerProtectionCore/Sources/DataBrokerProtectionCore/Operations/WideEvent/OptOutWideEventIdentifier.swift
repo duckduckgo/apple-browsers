@@ -30,6 +30,8 @@ struct OptOutWideEventIdentifier {
 
     /// Ideally we use the profile identifier on the broker (which falls back to the profile URL),
     /// but we need another fallback in case it's nil, so that we won't under count wide events
+    ///
+    /// These only need to be locally unique as they aren't sent with the wide events.
     var toGlobalId: String {
         profileIdentifier?.sha256 ?? "\(brokerId)-\(profileQueryId)-\(extractedProfileId)"
     }

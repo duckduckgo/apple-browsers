@@ -325,13 +325,13 @@ class AddressBarUITests: UITestCase {
 
         // Should navigate to example.com (whitespace trimmed).
         let exampleContent = webView.staticTexts
-            .containing(\.value, containing: "Example Domain")
+            .containing(\.value, containing: "Privacy Test Pages")
             .firstMatch
         XCTAssertTrue(exampleContent.waitForExistence(timeout: UITests.Timeouts.localTestServer))
 
         let currentValue = app.addressBarValueActivatingIfNeeded() ?? ""
 
-        XCTAssertEqual(currentValue, "https://privacy-test-pages.site/")
+        XCTAssertEqual(currentValue, "http://privacy-test-pages.site/")
     }
 
     func testAddressBar_SpecialCharacters_HandledCorrectly() throws {

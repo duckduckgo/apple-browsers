@@ -79,6 +79,7 @@ class BookmarksViewControllerCellFactory {
         cell.titleLabel.textColor = theme.tableCellTextColor
         cell.favoriteImageView.image = DesignSystemImages.Color.Size16.favorite
         cell.faviconImageView.tintColor = UIColor(designSystemColor: .icons)
+        cell.faviconImageView.round(corners: .allCorners, radius: 6)
         cell.editingAccessoryType = .disclosureIndicator
         return cell
     }

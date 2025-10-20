@@ -23,8 +23,9 @@ import PixelKit
 public final class DBPWideEventSweeper {
 
     public enum Constants {
-        public static let defaultSubmissionWindow: TimeInterval = .days(7)
-        public static let defaultConfirmationWindow: TimeInterval = .days(14)
+        public static let buffer: TimeInterval = .days(7)
+        public static let defaultSubmissionWindow: TimeInterval = .days(7) + buffer
+        public static let defaultConfirmationWindow: TimeInterval = .days(14) + buffer
     }
 
     private let wideEvent: WideEventManaging

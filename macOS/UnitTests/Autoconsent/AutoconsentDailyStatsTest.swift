@@ -32,6 +32,8 @@ class AutoconsentDailyStatsTest {
     let calendar = Calendar.current
     var currentDate = Date()
     let featureFlagger: MockFeatureFlagger
+    var firedPixel: AutoconsentPixel?
+    var firedFrequency: PixelKit.Frequency?
 
     init() throws {
         mockStore = try MockKeyValueFileStore()
@@ -49,7 +51,10 @@ class AutoconsentDailyStatsTest {
             featureFlagger: featureFlagger,
             currentDateProvider: { self.currentDate },
             queue: DispatchQueue.main,
-            firePixel: firePixel
+            firePixel: { pixel, frequency in
+                self.firedPixel = pixel
+                self.firedFrequency = frequency
+            }
         )
     }
 
@@ -126,21 +131,10 @@ class AutoconsentDailyStatsTest {
     @Test("Check Send Daily Pixel")
     func testSendDailyPixelAndCleanOldStats() throws {
         // Given
-        var firedPixel: AutoconsentPixel?
-        var firedFrequency: PixelKit.Frequency?
-        let stats = makeStat { pixel, frequency in
-            firedPixel = pixel
-            firedFrequency = frequency
-        }
-        currentDate = today
+        let stats = makeStat()
 
-        // Create stats for days -1 through -7 (yesterday through 7 days ago)
-        var initialStats: [Date: Int] = [:]
-        for daysAgo in 1...7 {
-            guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: today) else { continue }
-            let dateStart = startOfDay(for: date)
-            initialStats[dateStart] = daysAgo  // Value matches days ago
-        }
+        // Create stats for days
+        let initialStats = addStatsForDays(12)
 
         let initialData = try JSONEncoder().encode(Stats(counts: initialStats))
         mockStore.underlyingDict["autoconsent_daily_stats"] = initialData
@@ -153,11 +147,10 @@ class AutoconsentDailyStatsTest {
         #expect(firedFrequency == .daily)
         switch firedPixel {
         case .popupManagedCount(let firedParams):
-            // Check that params contain d0 through d6 with correct values
-            // d0 is yesterday's count (1), d1 is 2 days ago (2), etc.
-            for i in 0...6 {
-                #expect(firedParams["d\(i)"] == "\(i + 1)", "Wrong count for d\(i)")
-            }
+            #expect(firedParams["d1"] == "1", "Wrong count for d1")
+            #expect(firedParams["d2"] == "3", "Wrong count for d2")
+            #expect(firedParams["d5"] == "15", "Wrong count for d5")
+            #expect(firedParams["d10"] == "55", "Wrong count for d10")
         case let other:
             #expect(true == false, "Wrong pixel type: expected popupManagedCount but got \(String(describing: other))")
         }
@@ -169,13 +162,9 @@ class AutoconsentDailyStatsTest {
         let stats = makeStat()
         currentDate = today
 
-        var initialStats: [Date: Int] = [:]
-        // Add stats for last 10 days (more than our 7 day limit)
-        for i in 0...10 {
-            guard let date = calendar.date(byAdding: .day, value: -(i + 1), to: startOfToday) else { continue }
-            let dateStart = startOfDay(for: date)
-            initialStats[dateStart] = i + 1
-        }
+        // Add stats for last 3 days more than our day limit
+        let initialStats = addStatsForDays(12)
+        print(initialStats)
         let initialData = try JSONEncoder().encode(Stats(counts: initialStats))
         mockStore.underlyingDict["autoconsent_daily_stats"] = initialData
 
@@ -186,13 +175,23 @@ class AutoconsentDailyStatsTest {
         // Check old stats were cleaned up
         let finalData = mockStore.underlyingDict["autoconsent_daily_stats"] as! Data
         let finalStats = try JSONDecoder().decode(Stats.self, from: finalData)
-        #expect(finalStats.counts.count == 8, "Should only keep last 8 days of stats")
+        #expect(finalStats.counts.count == AutoconsentDailyStats.Constants.maxDaysToKeep + 1, "Should only keep last \(AutoconsentDailyStats.Constants.maxDaysToKeep) days of stats")
 
         // Verify we kept the most recent stats
-        for i in 0...7 {
+        for i in 0..<AutoconsentDailyStats.Constants.maxDaysToKeep {
             guard let date = calendar.date(byAdding: .day, value: -i, to: startOfToday) else { continue }
             let dateStart = startOfDay(for: date)
             #expect(finalStats.counts[dateStart] == i, "Missing or incorrect value for day -\(i + 1)")
         }
+    }
+
+    private func addStatsForDays(_ days: Int) -> [Date: Int] {
+        var stats: [Date: Int] = [:]
+        for daysAgo in 0...days {
+            guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: today) else { continue }
+            let dateStart = startOfDay(for: date)
+            stats[dateStart] = daysAgo  // Value matches days ago
+        }
+        return stats
     }
 }

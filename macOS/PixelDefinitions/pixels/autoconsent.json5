@@ -114,38 +114,23 @@
             "appVersion",
             "pixelSource",
             {
-                "key": "d0",
+                "key": "d1",
                 "description": "Number of pop-ups managed the day before",
                 "type": "number"
             },
             {
-                "key": "d1",
-                "description": "Number of pop-ups managed 2 days before",
-                "type": "number"
-            },
-            {
                 "key": "d2",
-                "description": "Number of pop-ups managed 3 days before",
-                "type": "number"
-            },
-            {
-                "key": "d3",
-                "description": "Number of pop-ups managed 4 days before",
-                "type": "number"
-            },
-            {
-                "key": "d4",
-                "description": "Number of pop-ups managed 5 days before",
+                "description": "Number of pop-ups managed in the past 2 days",
                 "type": "number"
             },
             {
                 "key": "d5",
-                "description": "Number of pop-ups managed 6 days before",
+                "description": "Number of pop-ups managed in the past 5 days",
                 "type": "number"
             },
             {
-                "key": "d6",
-                "description": "Number of pop-ups managed 7 days before",
+                "key": "d10",
+                "description": "Number of pop-ups managed in the past 10 days",
                 "type": "number"
             }
         ]

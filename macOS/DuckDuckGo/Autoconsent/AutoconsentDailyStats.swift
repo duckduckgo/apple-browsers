@@ -31,7 +31,7 @@ protocol AutoconsentDailyStatsManaging {
 
 final class AutoconsentDailyStats: AutoconsentDailyStatsManaging {
 
-    private struct Constants {
+   struct Constants {
         static let maxDaysToKeep = 10
         static let statsKey = "autoconsent_daily_stats"
     }

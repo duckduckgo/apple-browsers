@@ -216,7 +216,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionRestoreWidePixelMeasurement,
              .authV2WideEventEnabled,
              .embeddedSERPSettings,
-             .syncCreditCards:
+             .syncCreditCards,
+             .unifiedURLPredictor:
             true
         default:
             false

@@ -18,7 +18,8 @@
 
 import XCTest
 import Persistence
-@testable import DuckDuckGo_Privacy_Browser
+import PersistenceTestingUtils
+@testable import Subscription
 
 final class FreeTrialBadgePersistorTests: XCTestCase {
 
@@ -92,30 +93,5 @@ final class FreeTrialBadgePersistorTests: XCTestCase {
         // Should have the same count
         XCTAssertEqual(newPersistor.viewCount, 2)
         XCTAssertFalse(newPersistor.hasReachedViewLimit)
-    }
-}
-
-// Mock for testing
-private final class MockKeyValueStore: KeyValueStoring {
-    private var storage: [String: Any] = [:]
-
-    func object(forKey key: String) -> Any? {
-        return storage[key]
-    }
-
-    func set(_ value: Any?, forKey key: String) {
-        if let value = value {
-            storage[key] = value
-        } else {
-            storage.removeValue(forKey: key)
-        }
-    }
-
-    func removeObject(forKey key: String) {
-        storage.removeValue(forKey: key)
-    }
-
-    func synchronize() -> Bool {
-        return true
     }
 }

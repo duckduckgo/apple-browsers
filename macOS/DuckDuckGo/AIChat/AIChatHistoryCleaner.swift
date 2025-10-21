@@ -46,9 +46,7 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
     private let pixelKit: PixelKit?
 
     private var webView: WKWebView?
-    private var aiChatDataClearingUserScript: AIChatDataClearingUserScript?
     private var contentScopeUserScript: ContentScopeUserScript?
-    private var continuation: CheckedContinuation<Result<Void, Error>, Never>?
 
     private var historyCleaner: HistoryCleaning
 

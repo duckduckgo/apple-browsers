@@ -3721,8 +3721,6 @@
 		CC6E89802E5F0DE100F6BED0 /* SessionRestorePromptCoordinatorMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC6E897F2E5F0DD600F6BED0 /* SessionRestorePromptCoordinatorMock.swift */; };
 		CC6E89812E5F0DE100F6BED0 /* SessionRestorePromptCoordinatorMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC6E897F2E5F0DD600F6BED0 /* SessionRestorePromptCoordinatorMock.swift */; };
 		CC7582C32EA15D010062BFCE /* StateRestorationPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC7582C22EA15CFB0062BFCE /* StateRestorationPromptTests.swift */; };
-		CC8499A52E955C8700409E18 /* AIChatDataClearingUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8499A42E955C8700409E18 /* AIChatDataClearingUserScript.swift */; };
-		CC8499A62E955C8700409E18 /* AIChatDataClearingUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8499A42E955C8700409E18 /* AIChatDataClearingUserScript.swift */; };
 		CC8777092E1FF39B00113863 /* FirefoxHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */; };
 		CC87770A2E1FF39B00113863 /* FirefoxHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */; };
 		CC87770C2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */; };
@@ -6004,7 +6002,6 @@
 		CC6E897B2E5F08EA00F6BED0 /* SessionRestorePromptCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromptCoordinatorTests.swift; sourceTree = "<group>"; };
 		CC6E897F2E5F0DD600F6BED0 /* SessionRestorePromptCoordinatorMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromptCoordinatorMock.swift; sourceTree = "<group>"; };
 		CC7582C22EA15CFB0062BFCE /* StateRestorationPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateRestorationPromptTests.swift; sourceTree = "<group>"; };
-		CC8499A42E955C8700409E18 /* AIChatDataClearingUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatDataClearingUserScript.swift; sourceTree = "<group>"; };
 		CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxHistoryReader.swift; sourceTree = "<group>"; };
 		CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxHistoryReaderTests.swift; sourceTree = "<group>"; };
 		CC9B678B2E607AD1003353C3 /* SessionRestorePromptPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromptPixel.swift; sourceTree = "<group>"; };
@@ -6913,7 +6910,6 @@
 				31CF5DF52D9C39A000021AF9 /* AIChatMessageHandler.swift */,
 				31FBF22D2CDD068000626C17 /* AIChatUserScriptHandling.swift */,
 				31CF74552CDC1776004ACCE5 /* AIChatUserScript.swift */,
-				CC8499A42E955C8700409E18 /* AIChatDataClearingUserScript.swift */,
 			);
 			path = UserScript;
 			sourceTree = "<group>";
@@ -13653,7 +13649,6 @@
 				7BD504BB2E5FC740008A0646 /* NativeMessagingCoordinator.swift in Sources */,
 				7BD504BC2E5FC740008A0646 /* NativeMessagingConnection.swift in Sources */,
 				7BD504BE2E5FC740008A0646 /* BitwardenNativeMessagingHandler.swift in Sources */,
-				CC8499A52E955C8700409E18 /* AIChatDataClearingUserScript.swift in Sources */,
 				7BD504BF2E5FC740008A0646 /* NativeMessagingHandlerFactory.swift in Sources */,
 				567A23D82C8871290010F66C /* OnboardingFireButtonDialogViewModel.swift in Sources */,
 				37FD78122A29EBD100B36DB1 /* SyncErrorHandler.swift in Sources */,
@@ -16017,7 +16012,6 @@
 				5677A9372C9812E800DA7B0A /* TrackerMessageProvider.swift in Sources */,
 				BBA00F6B2E7D98740070A00E /* AppStoreOpener.swift in Sources */,
 				319FCFF52CC83007004F9288 /* AIChatDebugMenu.swift in Sources */,
-				CC8499A62E955C8700409E18 /* AIChatDataClearingUserScript.swift in Sources */,
 				EE098E772C8EDE2C009EBA7F /* AutofillCredentialsImportManager.swift in Sources */,
 				3199AF6F2C80734A003AEBDC /* DuckPlayerOnboardingDecider.swift in Sources */,
 				AA3F895324C18AD500628DDE /* SuggestionViewModel.swift in Sources */,

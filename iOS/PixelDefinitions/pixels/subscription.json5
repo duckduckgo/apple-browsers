@@ -315,11 +315,7 @@
                 "key": "status",
                 "type": "string",
                 "description": "Feature identifier for this wide pixel",
-                "enum": [
-                    "pill",
-                    "no_pill",
-                    "subscribed"
-                ]
+                "enum": ["pill", "no_pill", "subscribed"]
             }
         ]
     }

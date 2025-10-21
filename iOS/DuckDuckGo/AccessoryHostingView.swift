@@ -1,5 +1,5 @@
 //
-//  StatusIndicatorHostingView.swift
+//  AccessoryHostingView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.

@@ -229,6 +229,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     override func viewDidAppear() {
+        // Running tests or moving Tab Bar from Title to main view on burn (animateBurningIfNeededAndClose)?
+        guard view.window != nil else { return }
+
         enableScrollButtons()
         subscribeToChildWindows()
         setupAccessibility()

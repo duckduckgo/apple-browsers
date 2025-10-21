@@ -137,7 +137,7 @@ final class SuggestionJsonScenarioTests: XCTestCase {
         let sortedDataSource = SortingDataSourceWrapper(wrapping: dataSource)
 
         // Create a suggestion loader
-        let suggestionLoader = SuggestionLoader(urlFactory: { _ in return nil }, isUrlIgnored: testScenario.input.isURLIgnored)
+        let suggestionLoader = SuggestionLoader(shouldLoadSuggestionsForUserInput: { _ in return true }, isUrlIgnored: testScenario.input.isURLIgnored)
         var actualResults: SuggestionResult?
         var loadingError: Error?
 

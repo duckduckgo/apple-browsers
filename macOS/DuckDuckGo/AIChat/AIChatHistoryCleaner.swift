@@ -23,6 +23,7 @@ import PixelKit
 import WebKit
 import UserScript
 import os.log
+import AIChat
 
 protocol AIChatHistoryCleaning {
     /// Whether the option to clear Duck.ai chat history should be displayed to the user.
@@ -45,10 +46,11 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
     private let pixelKit: PixelKit?
 
     private var webView: WKWebView?
-    private var coordinator: Coordinator?
     private var aiChatDataClearingUserScript: AIChatDataClearingUserScript?
     private var contentScopeUserScript: ContentScopeUserScript?
     private var continuation: CheckedContinuation<Result<Void, Error>, Never>?
+
+    private var historyCleaner: HistoryCleaning
 
     @Published
     private var aiChatWasUsedBefore: Bool
@@ -73,6 +75,8 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
         self.pixelKit = pixelKit
         aiChatWasUsedBefore = featureDiscovery.wasUsedBefore(.aiChat)
 
+        self.historyCleaner = HistoryCleaner(featureFlagger: featureFlagger, privacyConfig: privacyConfig)
+        self.historyCleaner.delegate = self
         subscribeToChanges()
     }
 
@@ -85,12 +89,8 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
     /// Launches a headless web view to clear Duck.ai chat history with a C-S-S feature.
     @MainActor
     func cleanAIChatHistory() async {
-        guard featureFlagger.isFeatureOn(.aiChatDataClearing), webView == nil else { return }
-
-        _ = await withCheckedContinuation { continuation in
-            self.continuation = continuation
-            self.launchHistoryCleaningWebView()
-        }
+        guard featureFlagger.isFeatureOn(.aiChatDataClearing) else { return }
+        await historyCleaner.cleanAIChatHistory()
     }
 
     private func subscribeToChanges() {
@@ -109,119 +109,21 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
             .removeDuplicates()
             .assign(to: &$shouldDisplayCleanAIChatHistoryOption)
     }
-
-    // MARK: - Headless WebView
-    @MainActor
-    private func launchHistoryCleaningWebView() {
-        do {
-            let aiChatDataClearing = AIChatDataClearingUserScript()
-
-            let features = ContentScopeFeatureToggles(emailProtection: false,
-                                                      emailProtectionIncontextSignup: false,
-                                                      credentialsAutofill: false,
-                                                      identitiesAutofill: false,
-                                                      creditCardsAutofill: false,
-                                                      credentialsSaving: false,
-                                                      passwordGeneration: false,
-                                                      inlineIconCredentials: false,
-                                                      thirdPartyCredentialsProvider: false,
-                                                      unknownUsernameCategorization: false,
-                                                      partialFormSaves: false,
-                                                      passwordVariantCategorization: false,
-                                                      inputFocusApi: false,
-                                                      autocompleteAttributeSupport: false)
-            let contentScopeProperties = ContentScopeProperties(gpcEnabled: false,
-                                                                sessionKey: UUID().uuidString,
-                                                                messageSecret: UUID().uuidString,
-                                                                isInternalUser: featureFlagger.internalUserDecider.isInternalUser,
-                                                                featureToggles: features)
-            let contentScope = try ContentScopeUserScript(privacyConfig,
-                                                          properties: contentScopeProperties,
-                                                          allowedNonisolatedFeatures: [aiChatDataClearing.featureName],
-                                                          privacyConfigurationJSONGenerator: nil)
-            contentScope.registerSubfeature(delegate: aiChatDataClearing)
-
-            let userContentController = WKUserContentController()
-            userContentController.addUserScript(contentScope.makeWKUserScriptSync())
-            userContentController.addHandler(contentScope)
-
-            let configuration = WKWebViewConfiguration()
-            configuration.userContentController = userContentController
-            configuration.websiteDataStore = .default()
-
-            let webView = WKWebView(frame: .zero, configuration: configuration)
-            let coordinator = Coordinator(cleaner: self)
-            webView.navigationDelegate = coordinator
-
-            aiChatDataClearing.webView = webView
-            self.webView = webView
-            self.coordinator = coordinator
-            self.contentScopeUserScript = contentScope
-            self.aiChatDataClearingUserScript = aiChatDataClearing
-
-            if #available(macOS 12.0, *) {
-                webView.loadSimulatedRequest(URLRequest(url: URL.duckDuckGo), responseHTML: "")
-            } else {
-                webView.loadHTMLString("", baseURL: URL.duckDuckGo)
-            }
-        } catch {
-            if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded()
-            }
-            finish(result: .failure(error))
-        }
-    }
-
-    @MainActor
-    private func finish(result: Result<Void, Error>) {
-        switch result {
-        case .success:
-            pixelKit?.fire(AIChatPixel.aiChatDeleteHistorySuccessful, frequency: .dailyAndCount)
-        case .failure(let error):
-            Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
-            pixelKit?.fire(AIChatPixel.aiChatDeleteHistoryFailed, frequency: .dailyAndCount)
-        }
-        tearDownClearingWebView()
-        continuation?.resume(returning: result)
-        continuation = nil
-    }
-
-    @MainActor
-    private func startClearing() {
-        Task { @MainActor [weak self] in
-            guard let self, let script = aiChatDataClearingUserScript else { return }
-            let result = await script.clearAIChatDataAsync(timeout: 5)
-            self.finish(result: result)
-        }
-    }
-
-    @MainActor
-    private func tearDownClearingWebView() {
-        webView?.stopLoading()
-        webView?.navigationDelegate = nil
-        webView = nil
-        coordinator = nil
-        aiChatDataClearingUserScript = nil
-        contentScopeUserScript = nil
-    }
 }
 
-// MARK: - Navigation Delegate Wrapper
-extension AIChatHistoryCleaner {
-    private final class Coordinator: NSObject, WKNavigationDelegate {
-        weak var cleaner: AIChatHistoryCleaner?
-        init(cleaner: AIChatHistoryCleaner) { self.cleaner = cleaner }
-
-        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            cleaner?.startClearing()
-        }
-
-        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-            cleaner?.finish(result: .failure(error))
-        }
-
-        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-            cleaner?.finish(result: .failure(error))
-        }
+extension AIChatHistoryCleaner: HistoryCleanerDelegate {
+    func historyCleanerDidFinish(_ cleaner: any AIChat.HistoryCleaning) {
+        pixelKit?.fire(AIChatPixel.aiChatDeleteHistorySuccessful, frequency: .dailyAndCount)
     }
+
+    func historyCleaner(_ cleaner: any AIChat.HistoryCleaning, didFailWithError error: any Error) {
+        Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
+        pixelKit?.fire(AIChatPixel.aiChatDeleteHistoryFailed, frequency: .dailyAndCount)
+
+    }
+
+    func historyCleaner(_ cleaner: any AIChat.HistoryCleaning, didFailWithUserScriptError error: UserScriptError) {
+        error.fireLoadJSFailedPixelIfNeeded()
+    }
+
 }

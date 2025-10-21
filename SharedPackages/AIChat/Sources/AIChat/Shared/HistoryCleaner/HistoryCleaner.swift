@@ -26,6 +26,7 @@ public protocol HistoryCleaning {
     var delegate: HistoryCleanerDelegate? { get set }
 }
 
+//TODO: Use the async continuation instead of delegate
 public protocol HistoryCleanerDelegate: AnyObject {
     /// Tells the delegate that the history cleaning completed successfully.
     ///

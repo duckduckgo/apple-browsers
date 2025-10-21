@@ -46,6 +46,7 @@ import Configuration
 import PixelKit
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
+import UserScript
 
 class MainViewController: UIViewController {
 
@@ -223,6 +224,13 @@ class MainViewController: UIViewController {
         let settings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
 
         return OmnibarAccessoryHandler(settings: settings)
+    }()
+
+    private lazy var historyCleaner: HistoryCleaning = {
+        let cleaner = HistoryCleaner(featureFlagger: featureFlagger,
+                                     privacyConfig: ContentBlocking.shared.privacyConfigurationManager)
+        cleaner.delegate = self
+        return cleaner
     }()
 
     let isAuthV2Enabled: Bool
@@ -3437,6 +3445,7 @@ extension MainViewController: AutoClearWorker {
 
         self.forgetTextZoom()
         await historyManager.removeAllHistory()
+        await historyCleaner.cleanAIChatHistory()
 
         self.clearInProgress = false
         
@@ -3773,5 +3782,25 @@ extension MainViewController: MainViewEditingStateTransitioning {
         omniBar.barView.layer.sublayerTransform = CATransform3DIdentity
         additionalSafeAreaInsets.top = 0
         omniBar.barView.revealButtons()
+    }
+}
+
+// MARK: - HistoryCleanerDelegate
+
+extension MainViewController: HistoryCleanerDelegate {
+    
+    @MainActor
+    func historyCleanerDidFinish(_ cleaner: HistoryCleaning) {
+        Logger.aiChat.debug("AI Chat history cleared successfully")
+    }
+    
+    @MainActor
+    func historyCleaner(_ cleaner: HistoryCleaning, didFailWithError error: Error) {
+        Logger.aiChat.error("Failed to clear AI Chat history: \(error.localizedDescription)")
+    }
+    
+    @MainActor
+    func historyCleaner(_ cleaner: HistoryCleaning, didFailWithUserScriptError error: UserScriptError) {
+        Logger.aiChat.error("Failed to clear AI Chat history with UserScript error: \(error.localizedDescription)")
     }
 }

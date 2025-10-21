@@ -92,7 +92,7 @@ struct Launching: LaunchingHandling {
         let daxDialogs = configuration.onboardingConfiguration.daxDialogs
 
         // Service to handle Win-back offer
-#if DEBUG || REVIEW
+#if DEBUG || ALPHA
         let winBackOfferDebugStore = WinBackOfferDebugStore(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         let dateProvider: () -> Date = { winBackOfferDebugStore.simulatedTodayDate }
 #else

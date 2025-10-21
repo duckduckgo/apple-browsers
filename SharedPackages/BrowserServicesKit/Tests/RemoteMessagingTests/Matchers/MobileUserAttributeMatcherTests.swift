@@ -121,7 +121,8 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             dismissedMessageIds: dismissedMessageIds,
             shownMessageIds: [],
             enabledFeatureFlags: [],
-            isSyncEnabled: isSyncEnabled
+            isSyncEnabled: isSyncEnabled,
+            shouldShowWinBackOfferUrgencyMessage: false
         )
     }
 }

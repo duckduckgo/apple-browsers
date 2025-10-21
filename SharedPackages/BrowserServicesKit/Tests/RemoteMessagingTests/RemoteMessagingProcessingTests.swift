@@ -86,7 +86,8 @@ class RemoteMessagingProcessingTests: XCTestCase {
                     dismissedMessageIds: [],
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
-                    isSyncEnabled: false
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),

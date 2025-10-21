@@ -121,7 +121,8 @@
             {
                 "key": "tries",
                 "description": "The number of tries it took to complete the stage",
-                "type": "string",
+                "type": "string"
+            },
             {
                 "key": "action_id",
                 "description": "Predefined identifier of the broker action executed in this stage",

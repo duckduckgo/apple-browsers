@@ -292,6 +292,11 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             }
 
         case .localForceRefresh:
+            if let task = refreshOngoingTask {
+                Logger.OAuthClient.log("Awaiting result from existing token refresh operation")
+                return try await task.value
+            }
+
             let refreshID = UUID().uuidString
             refreshEventMapping?.fire(.tokenRefreshStarted(refreshID: refreshID))
 
@@ -300,11 +305,6 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 let error = OAuthClientError.missingTokenContainer
                 refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
                 throw error
-            }
-
-            if let task = refreshOngoingTask {
-                Logger.OAuthClient.log("Awaiting result from existing token refresh operation")
-                return try await task.value
             }
 
             let task = Task {

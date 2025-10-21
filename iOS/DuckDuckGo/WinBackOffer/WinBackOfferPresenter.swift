@@ -21,7 +21,13 @@ import UIKit
 import SwiftUI
 import Core
 
+/// Presenter for the Win-back offer prompt.
+/// 
+/// Responsible for presenting the launch prompt.
 protocol WinBackOfferPresenting: AnyObject {
+    /// Presents the launch prompt if it should be shown.
+    /// 
+    /// Eligibility is decided by WinBackOfferVisibilityManager, via the coordinator.
     @MainActor
     func tryPresentWinBackOfferPrompt(from viewController: UIViewController)
 }

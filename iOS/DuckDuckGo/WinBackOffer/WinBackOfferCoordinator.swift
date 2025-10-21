@@ -22,11 +22,27 @@ import BrowserServicesKit
 import Core
 import Subscription
 
+/// Coordinator for the Win-back offer.
+/// 
+/// Responsible for coordinating the Win-back offer.
 protocol WinBackOfferCoordinating: AnyObject {
+    /// The URL handler for the coordinator.
+    /// 
+    /// Used to open the purchase flow.
     var urlHandler: URLHandling? { get set }
+    /// Checks if the launch prompt should be shown.
+    /// 
+    /// Eligibility is decided by WinBackOfferVisibilityManager.
     func shouldPresentLaunchPrompt() -> Bool
+    /// Marks the launch prompt as presented.
+    /// 
+    /// Used to prevent the launch prompt from being shown again.
     func markLaunchPromptPresented()
+    /// Handles the CTA action.
+    /// 
+    /// Opens the purchase flow.
     func handleCTAAction()
+    /// Handles the dismiss action.
     func handleDismissAction()
 }
 

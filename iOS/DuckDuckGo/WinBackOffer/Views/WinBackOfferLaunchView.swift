@@ -23,6 +23,7 @@ import DesignResourcesKitIcons
 import DuckUI
 import MetricBuilder
 
+/// View for the Win-back offer launch prompt.
 struct WinBackOfferLaunchView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass

@@ -44,6 +44,7 @@ final class WinBackOfferDebugViewModel: ObservableObject {
         updateState()
     }
 
+    /// Simulate churn by storing the current date as the churn date.
     func simulateChurn() {
         let effectiveDate = debugStore.simulatedTodayDate
         winbackOfferStore.storeChurnDate(effectiveDate)
@@ -53,6 +54,7 @@ final class WinBackOfferDebugViewModel: ObservableObject {
         updateState()
     }
 
+    /// Reset the Win-back offer by clearing the debug store and churn state.
     func resetWinBackOffer() {
         debugStore.reset()
         simulatedToday = debugStore.simulatedTodayDate
@@ -63,6 +65,7 @@ final class WinBackOfferDebugViewModel: ObservableObject {
         updateState()
     }
 
+    /// Jump to the first day of the Win-back offer (3 days after churn).
     func jumpToFirstDay() {
         if let existingChurnDate = winbackOfferStore.getChurnDate(),
            existingChurnDate.timeIntervalSince1970 > 0 {
@@ -82,6 +85,7 @@ final class WinBackOfferDebugViewModel: ObservableObject {
         updateState()
     }
 
+    /// Jump to the last day of the Win-back offer (5 days after churn).
     func jumpToLastDay() {
         if let existingChurnDate = winbackOfferStore.getChurnDate(),
            existingChurnDate.timeIntervalSince1970 > 0 {
@@ -102,6 +106,7 @@ final class WinBackOfferDebugViewModel: ObservableObject {
         updateState()
     }
 
+    /// Override today's date by storing the given date in the debug store.
     func overrideTodaysDate(_ date: Date) {
         debugStore.simulatedTodayDate = date
         updateState()
@@ -133,6 +138,17 @@ final class WinBackOfferDebugViewModel: ObservableObject {
 
 // MARK: - View
 
+/// Debug view for the Win-back offer.
+/// 
+/// Provides a UI to test the Win-back offer.
+/// Supported actions:
+/// - Simulate churn
+/// - Override today's date
+/// - Reset Win-back offer
+/// - Jump to first day
+/// - Jump to last day
+/// - Current state
+///
 struct WinBackOfferDebugView: View {
     @StateObject private var viewModel: WinBackOfferDebugViewModel
     @State private var showingDatePicker: Bool = false

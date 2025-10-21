@@ -22,6 +22,9 @@ import BrowserServicesKit
 import Subscription
 import Core
 
+/// Service to handle Win-back offer
+/// 
+/// Mainly responsible for setting up the coordinator and presenter.
 final class WinBackOfferService {
     let presenter: WinBackOfferPresenting
     let visibilityManager: WinBackOfferVisibilityManaging
@@ -47,6 +50,7 @@ final class WinBackOfferService {
         )
     }
     
+    /// Set the URL handler for the coordinator for opening the purchase flow.
     func setURLHandler(_ handler: URLHandling) {
         coordinator.urlHandler = handler
     }

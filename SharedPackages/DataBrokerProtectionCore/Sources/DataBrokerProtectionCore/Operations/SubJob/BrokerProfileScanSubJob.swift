@@ -66,6 +66,7 @@ struct BrokerProfileScanSubJob {
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
             handler: dependencies.pixelHandler,
             isImmediateOperation: isManual,
+            parentURL: brokerProfileQueryData.dataBroker.parent,
             vpnConnectionState: vpnConnectionState,
             vpnBypassStatus: vpnBypassStatus
         )

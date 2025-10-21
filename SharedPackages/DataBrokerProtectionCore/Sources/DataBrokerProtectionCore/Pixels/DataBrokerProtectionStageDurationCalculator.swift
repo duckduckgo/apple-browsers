@@ -87,6 +87,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     let dataBrokerURL: String
     let dataBrokerVersion: String
     let startTime: Date
+    let parentURL: String?
     var lastStateTime: Date
     private(set) var actionID: String?
     private(set) var stage: Stage = .other
@@ -102,6 +103,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
          dataBrokerVersion: String,
          handler: EventMapping<DataBrokerProtectionSharedPixels>,
          isImmediateOperation: Bool = false,
+         parentURL: String? = nil,
          vpnConnectionState: String,
          vpnBypassStatus: String) {
         self.attemptId = attemptId
@@ -111,6 +113,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.dataBrokerVersion = dataBrokerVersion
         self.handler = handler
         self.isImmediateOperation = isImmediateOperation
+        self.parentURL = parentURL
         self.vpnConnectionState = vpnConnectionState
         self.vpnBypassStatus = vpnBypassStatus
     }
@@ -335,11 +338,27 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 #endif
 
     func fireScanSuccess(matchesFound: Int) {
-        handler.fire(.scanSuccess(dataBroker: dataBrokerURL, matchesFound: matchesFound, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
+        handler.fire(.scanSuccess(dataBroker: dataBrokerURL,
+                                  matchesFound: matchesFound,
+                                  duration: durationSinceStartTime(),
+                                  tries: 1,
+                                  isImmediateOperation: isImmediateOperation,
+                                  vpnConnectionState: vpnConnectionState,
+                                  vpnBypassStatus: vpnBypassStatus,
+                                  parent: parentURL))
     }
 
     func fireScanNoResults() {
-        handler.fire(.scanNoResults(dataBroker: dataBrokerURL, dataBrokerVersion: dataBrokerVersion, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
+        handler.fire(.scanNoResults(dataBroker: dataBrokerURL,
+                                    dataBrokerVersion: dataBrokerVersion,
+                                    duration: durationSinceStartTime(),
+                                    tries: 1,
+                                    isImmediateOperation: isImmediateOperation,
+                                    vpnConnectionState: vpnConnectionState,
+                                    vpnBypassStatus: vpnBypassStatus,
+                                    parent: parentURL,
+                                    actionID: actionID,
+                                    actionType: stage.rawValue))
     }
 
     func fireScanError(error: Error) {

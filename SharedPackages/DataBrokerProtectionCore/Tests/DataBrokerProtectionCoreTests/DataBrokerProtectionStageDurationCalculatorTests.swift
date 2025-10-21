@@ -129,9 +129,9 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
                                                               dataBrokerVersion: "1.1.1",
                                                               handler: handler,
+                                                              parentURL: "parent.com",
                                                               vpnConnectionState: "disconnected",
-                                                              vpnBypassStatus: "no",
-                                                              parentURL: "parent.com")
+                                                              vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 500))
 

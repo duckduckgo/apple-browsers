@@ -14,6 +14,9 @@ name: 05_sync_data_check
 - runFlow: 
     file: ../shared/setup.yaml
 
+- runFlow: 
+    file: support/disable_dictation.yaml
+
 #  Copy Recovery Code
 - tapOn: Browsing menu
 - tapOn: Settings

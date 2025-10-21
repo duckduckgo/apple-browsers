@@ -1,14 +1,3 @@
-appId: com.duckduckgo.mobile.ios
-tags:
-    - iphone
-    - sync
-name: 00_setup
-
----
-
-# Set up 
-- runFlow: 
-    file: ../shared/setup.yaml
 
 - pressKey: HOME
 

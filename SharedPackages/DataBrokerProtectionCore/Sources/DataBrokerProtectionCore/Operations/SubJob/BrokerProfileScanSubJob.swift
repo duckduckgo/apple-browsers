@@ -288,8 +288,13 @@ struct BrokerProfileScanSubJob {
                                                     attemptId: attemptUUID,
                                                     duration: calculateDurationSinceLastStage,
                                                     parent: brokerProfileQueryData.dataBroker.parent ?? ""))
-                    pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceStart,
-                                                     brokerType: brokerProfileQueryData.dataBroker.type, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
+                    pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker,
+                                                     attemptId: attemptUUID,
+                                                     duration: calculateDurationSinceStart,
+                                                     parent: brokerProfileQueryData.dataBroker.parent ?? "",
+                                                     brokerType: brokerProfileQueryData.dataBroker.type,
+                                                     vpnConnectionState: vpnConnectionState,
+                                                     vpnBypassStatus: vpnBypassStatus))
 
                     let recordFoundDate = RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
                                                                           repository: dependencies.database,

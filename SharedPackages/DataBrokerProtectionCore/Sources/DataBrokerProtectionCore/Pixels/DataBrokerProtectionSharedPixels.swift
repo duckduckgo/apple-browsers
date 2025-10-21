@@ -114,7 +114,7 @@ public enum DataBrokerProtectionSharedPixels {
 
     // Process Pixels
     case optOutSubmitSuccess(dataBroker: String, attemptId: UUID, duration: Double, tries: Int, parent: String, emailPattern: String?, vpnConnectionState: String, vpnBypassStatus: String)
-    case optOutSuccess(dataBroker: String, attemptId: UUID, duration: Double, brokerType: DataBrokerHierarchy, vpnConnectionState: String, vpnBypassStatus: String)
+    case optOutSuccess(dataBroker: String, attemptId: UUID, duration: Double, parent: String, brokerType: DataBrokerHierarchy, vpnConnectionState: String, vpnBypassStatus: String)
     case optOutFailure(dataBroker: String, dataBrokerVersion: String, attemptId: UUID, duration: Double, stage: String, tries: Int, emailPattern: String?, actionID: String?, vpnConnectionState: String, vpnBypassStatus: String)
 
     // Scan/Search pixels
@@ -359,8 +359,14 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 params[Consts.pattern] = pattern
             }
             return params
-        case .optOutSuccess(let dataBroker, let attemptId, let duration, let type, let vpnConnectionState, let vpnBypassStatus):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration), Consts.isParent: String(type.rawValue), Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
+        case .optOutSuccess(let dataBroker, let attemptId, let duration, let parent, let type, let vpnConnectionState, let vpnBypassStatus):
+            return [Consts.dataBrokerParamKey: dataBroker,
+                    Consts.attemptIdParamKey: attemptId.uuidString,
+                    Consts.durationParamKey: String(duration),
+                    Consts.parentKey: parent,
+                    Consts.isParent: String(type.rawValue),
+                    Consts.vpnConnectionStateParamKey: vpnConnectionState,
+                    Consts.vpnBypassStatusParamKey: vpnBypassStatus]
         case .optOutFailure(let dataBroker, let dataBrokerVersion, let attemptId, let duration, let stage, let tries, let pattern, let actionID, let vpnConnectionState, let vpnBypassStatus):
             var params = [Consts.dataBrokerParamKey: dataBroker, Consts.dataBrokerVersionKey: dataBrokerVersion, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration), Consts.stageKey: stage, Consts.triesKey: String(tries), Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
             if let pattern = pattern {

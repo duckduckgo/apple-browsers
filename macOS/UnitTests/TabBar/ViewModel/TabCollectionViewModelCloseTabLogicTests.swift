@@ -110,7 +110,7 @@ final class TabCollectionViewModelCloseTabLogicTests: XCTestCase {
             tabCollectionViewModel.append(tab: normalTab, selected: false)
 
             /// We move the parent to the last position
-            tabCollectionViewModel.moveTab(at: 0, to: 2)
+            tabCollectionViewModel.moveTab(at: .unpinned(0), to: .unpinned(2))
 
             tabCollectionViewModel.remove(at: .unpinned(2))
 
@@ -188,7 +188,7 @@ final class TabCollectionViewModelCloseTabLogicTests: XCTestCase {
 
             let lastTab = Tab()
             tabCollectionViewModel.append(tab: lastTab, selected: true)
-            tabCollectionViewModel.moveTab(at: 100, to: 50)
+            tabCollectionViewModel.moveTab(at: .unpinned(100), to: .unpinned(50))
 
             tabCollectionViewModel.remove(at: .unpinned(50))
 

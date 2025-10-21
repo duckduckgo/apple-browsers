@@ -22,12 +22,8 @@ import BrowserServicesKit
 import os.log
 
 public protocol HistoryCleaning {
-
-    /// Deletes all Duck.ai chat history.
     @MainActor func cleanAIChatHistory() async
-
     var delegate: HistoryCleanerDelegate? { get set }
-
 }
 
 public protocol HistoryCleanerDelegate: AnyObject {
@@ -127,7 +123,7 @@ public final class HistoryCleaner: HistoryCleaning {
             self.contentScopeUserScript = contentScope
             self.aiChatDataClearingUserScript = aiChatDataClearing
 
-            if #available(macOS 12.0, *) {
+            if #available(iOS 15.0, macOS 12.0, *) {
                 webView.loadSimulatedRequest(URLRequest(url: URL.duckDuckGo), responseHTML: "")
             } else {
                 webView.loadHTMLString("", baseURL: URL.duckDuckGo)

@@ -604,6 +604,7 @@
 		8505836E219F424500ED4EDB /* RoundedRectangleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F143C32B1E4A9A4800CFDE3A /* RoundedRectangleView.swift */; };
 		8505836F219F424500ED4EDB /* UIViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DE78591E5CD2A70058895A /* UIViewExtension.swift */; };
 		85058370219F424500ED4EDB /* SearchBarExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F143C3451E4AA32D00CFDE3A /* SearchBarExtension.swift */; };
+		8508931F2EA7AF04005F84FD /* MobileCustomization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8508931E2EA7AEFE005F84FD /* MobileCustomization.swift */; };
 		850ABD012AC3961100A733DF /* MainViewController+Segues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 850ABD002AC3961100A733DF /* MainViewController+Segues.swift */; };
 		850ABD032AC4D46C00A733DF /* SuggestionTray.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 850ABD022AC4D46C00A733DF /* SuggestionTray.storyboard */; };
 		850F93DB2B594AB800823EEA /* ZippedPassKitPreviewHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 850F93DA2B594AB800823EEA /* ZippedPassKitPreviewHelper.swift */; };
@@ -2535,6 +2536,7 @@
 		850559CF23CF647C0055C0D5 /* Fireproofing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Fireproofing.swift; sourceTree = "<group>"; };
 		850559D123CF710C0055C0D5 /* WebCacheManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebCacheManagerTests.swift; sourceTree = "<group>"; };
 		85058365219AE9EA00ED4EDB /* HomePageConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePageConfiguration.swift; sourceTree = "<group>"; };
+		8508931E2EA7AEFE005F84FD /* MobileCustomization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileCustomization.swift; sourceTree = "<group>"; };
 		850ABD002AC3961100A733DF /* MainViewController+Segues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+Segues.swift"; sourceTree = "<group>"; };
 		850ABD022AC4D46C00A733DF /* SuggestionTray.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = SuggestionTray.storyboard; sourceTree = "<group>"; };
 		850F93DA2B594AB800823EEA /* ZippedPassKitPreviewHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZippedPassKitPreviewHelper.swift; sourceTree = "<group>"; };
@@ -5900,6 +5902,7 @@
 				9830A05725ED0C5D00DB64DE /* BrowsingMenu */,
 				CB258D1129A4F1BB00DEBA24 /* Configuration */,
 				B652DF02287C01EE00C12A9C /* ContentBlocking */,
+				8508931D2EA7AEE7005F84FD /* Customization */,
 				37CF915E2BB4735F00BADCAE /* Crashes */,
 				C1C23C242D4C0C4F00B6BDF6 /* DataImport */,
 				C1ED4DAA2E44AFD1003298A5 /* DaxEasterEggLogos */,
@@ -5989,6 +5992,14 @@
 				84D678092D830E9F0030BC82 /* SuggestionJsonScenarioTests.swift */,
 			);
 			path = Autocomplete;
+			sourceTree = "<group>";
+		};
+		8508931D2EA7AEE7005F84FD /* Customization */ = {
+			isa = PBXGroup;
+			children = (
+				8508931E2EA7AEFE005F84FD /* MobileCustomization.swift */,
+			);
+			path = Customization;
 			sourceTree = "<group>";
 		};
 		8512EA5224ED30D20073EE19 /* Widgets */ = {
@@ -10114,6 +10125,7 @@
 				B6BA95C328891E33004ABA20 /* BrowsingMenuAnimator.swift in Sources */,
 				D68DF81C2B58302E0023DBEA /* SubscriptionRestoreView.swift in Sources */,
 				D664C7CE2B289AA200CBFA76 /* SubscriptionPagesUseSubscriptionFeature.swift in Sources */,
+				8508931F2EA7AF04005F84FD /* MobileCustomization.swift in Sources */,
 				EE9D68DC2AE16AE100B55EF4 /* NotificationsAuthorizationController.swift in Sources */,
 				CBF2598E2D47B1A500AC63E4 /* KeyboardConfiguration.swift in Sources */,
 				AA3D854923DA1DFB00788410 /* AppIcon.swift in Sources */,

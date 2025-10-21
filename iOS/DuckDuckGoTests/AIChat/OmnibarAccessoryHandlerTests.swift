@@ -21,7 +21,7 @@ import XCTest
 import AIChat
 @testable import DuckDuckGo
 
-/// Only chat is supported for now.  This will all get refactored out in a future project for  browser customisation.
+/// Only chat is supported for now.  This will all get refactored out in a future project for  browser customization.
 class OmnibarAccessoryHandlerTests: XCTestCase {
 
     static let DDGSearchURL = URL(string: "https://duckduckgo.com?q=hello")!

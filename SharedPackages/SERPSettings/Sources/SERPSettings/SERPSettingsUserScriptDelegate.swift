@@ -16,9 +16,68 @@
 //  limitations under the License.
 //
 
+/// Delegate protocol for handling SERP settings navigation requests.
+///
+/// Implementers of this protocol respond to user navigation actions initiated
+/// from the SERP settings page, presenting the appropriate native settings screens.
+///
+/// ## Typical Implementation
+///
+/// The delegate is usually implemented by a view controller or coordinator
+/// that can present settings screens and manage navigation:
+///
+/// ```swift
+/// extension MyViewController: SERPSettingsUserScriptDelegate {
+///     func serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
+///         closeCurrentTab()
+///         settingsCoordinator.showPrivacySettings()
+///     }
+///     
+///     func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
+///         settingsCoordinator.showAISettings()
+///     }
+/// }
+/// ```
 public protocol SERPSettingsUserScriptDelegate: AnyObject {
 
+    /// Requests closing the current tab and opening privacy search settings.
+    ///
+    /// Called when the user clicks a "return to privacy settings" link on the SERP.
+    /// The implementer should:
+    /// 1. Close the current browser tab/window
+    /// 2. Navigate to the privacy search settings screen
+    ///
+    /// ## Use Case
+    ///
+    /// User navigates from Privacy Settings → SERP Settings → (clicks return link)
+    ///
+    /// - Parameter userScript: The user script instance making the request
     func serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(_ userScript: SERPSettingsUserScript)
+    
+    /// Requests closing the current tab and opening AI features settings.
+    ///
+    /// Called when the user clicks a "return to AI settings" link on the SERP.
+    /// The implementer should:
+    /// 1. Close the current browser tab/window
+    /// 2. Navigate to the AI features settings screen
+    ///
+    /// ## Use Case
+    ///
+    /// User navigates from AI Settings → SERP Settings → (clicks return link)
+    ///
+    /// - Parameter userScript: The user script instance making the request
     func serpSettingsUserScriptDidRequestToCloseTabAndOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript)
+    
+    /// Requests opening AI features settings (without closing the tab).
+    ///
+    /// Called when the user clicks a direct link to AI features settings on the SERP.
+    /// The implementer should navigate to the AI features settings screen without
+    /// closing the current tab.
+    ///
+    /// ## Use Case
+    ///
+    /// User clicks "Configure Duck.ai" link directly from SERP
+    ///
+    /// - Parameter userScript: The user script instance making the request
     func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript)
 }

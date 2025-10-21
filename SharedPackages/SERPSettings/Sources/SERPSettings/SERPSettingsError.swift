@@ -18,10 +18,33 @@
 
 import Foundation
 
-/// Errors that can occur during SERP settings storage and retrieval
+/// Errors that can occur during SERP (Search Engine Results Page) settings operations.
+///
+/// These errors are reported through the EventMapping system to track failures
+/// in settings storage and retrieval operations.
 public enum SERPSettingsError: Error {
+    
+    /// Failed to serialize settings dictionary to JSON data.
+    ///
+    /// This error occurs when `JSONSerialization.data()` fails, typically due to
+    /// non-JSON-serializable values in the settings dictionary.
     case serializationFailed
+    
+    /// Failed to deserialize JSON data back to settings dictionary.
+    ///
+    /// This error occurs when stored data cannot be converted back to a valid JSON object.
+    /// Currently unused but reserved for future error reporting.
     case deserializationFailed
+    
+    /// Failed to read settings from the key-value store.
+    ///
+    /// This error occurs when the underlying storage mechanism fails during a read operation,
+    /// such as keychain access failures or file system errors.
     case keyValueStoreReadError
+    
+    /// Failed to write settings to the key-value store.
+    ///
+    /// This error occurs when the underlying storage mechanism fails during a write operation,
+    /// such as insufficient permissions, disk full, or keychain access failures.
     case keyValueStoreWriteError
 }

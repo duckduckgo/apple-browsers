@@ -23,21 +23,60 @@ import WebKit
 
 // MARK: - UserScript Messages
 
+/// Messages that can be exchanged between SERP and native application.
+///
+/// This enum defines the complete messaging protocol for SERP settings
+/// synchronization, including both SERP-to-native and native-to-SERP messages.
 public enum SERPSettingsUserScriptMessages: String, CaseIterable {
 
-    /// Message that originates from the SERP to navigate to certain settings (Privachy Search, AI Features, etc)
+    /// Request from SERP to open native settings screens.
+    ///
+    /// **Direction**: SERP → Native
+    ///
+    /// The SERP sends this message when the user clicks a link to navigate
+    /// to native settings (e.g., Privacy Search, AI Features).
+    ///
+    /// **Parameters**: Dictionary with `"return"` or `"screen"` keys
     case openNativeSettings
 
-    /// Message that originates from the SERP when some of his settings are changed
+    /// Notification from SERP that settings have changed.
+    ///
+    /// **Direction**: SERP → Native
+    ///
+    /// The SERP sends the complete current settings state whenever any
+    /// setting changes. Native stores this as the new source of truth.
+    ///
+    /// **Parameters**: Dictionary of all non-default setting key-value pairs
     case updateNativeSettings
 
-    /// Message that originates from the SERP when it gets visited to know the state of SERP settings but Duck.ai
+    /// Request from SERP for current native settings.
+    ///
+    /// **Direction**: SERP → Native
+    ///
+    /// The SERP requests stored settings when the page loads, allowing
+    /// it to initialize with previously saved user preferences.
+    ///
+    /// **Response**: JSONBlob containing stored settings, or null.
     case getNativeSettings
 
-    /// Message that originates from the native side when the Duck.ai settings is turned on or off
+    /// Notification from native that Duck.ai setting changed.
+    ///
+    /// **Direction**: Native → SERP
+    ///
+    /// The native app pushes this message when the AI features toggle
+    /// changes outside of SERP (e.g., in app settings).
+    ///
+    /// **Parameters**: Boolean value of `isAIChatEnabled`
     case nativeDuckAiSettingChanged
 
-    /// Message that originates from the SERP when it gets visited to know the state of Duck.ai
+    /// Request from SERP for current Duck.ai enabled state.
+    ///
+    /// **Direction**: SERP → Native
+    ///
+    /// The SERP queries the current state of AI features to determine
+    /// which UI elements should be displayed.
+    ///
+    /// **Response**: Boolean value of `isAIChatEnabled`
     case isNativeDuckAiEnabled
 }
 
@@ -45,17 +84,41 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
 
     // MARK: - Properties
 
+    /// Message broker for UserScript communication.
+    ///
+    /// The broker handles message delivery between JavaScript and native code.
     public weak var broker: UserScriptMessageBroker?
+    
+    /// Delegate for handling navigation and settings screen requests.
+    ///
+    /// The delegate is responsible for presenting native settings screens
+    /// when requested by the SERP.
     public weak var delegate: SERPSettingsUserScriptDelegate?
+    
+    /// WebView associated with this user script instance.
+    ///
+    /// Required for pushing messages from native to SERP
+    /// (e.g., AI settings changes).
     weak var webView: WKWebView?
 
+    /// Security policy for message origin validation.
+    ///
+    /// Ensures messages are only accepted from trusted SERP domains.
     public var messageOriginPolicy: MessageOriginPolicy
 
+    /// Identifier for this user script feature.
+    ///
+    /// Used by the UserScript framework for feature identification
+    /// and message routing.
     public let featureName: String = "serpSettings"
 
+    /// Settings provider for storage and retrieval operations.
+    ///
+    /// Handles the actual persistence, platform-specific AI state queries,
+    /// and feature flag checks.
     private let serpSettingsProviding: SERPSettingsProviding
 
-    private let testing = true
+    // MARK: - Initialization
 
     public init(serpSettingsProviding: SERPSettingsProviding) {
         self.serpSettingsProviding = serpSettingsProviding
@@ -64,10 +127,20 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
 
     // MARK: - Subfeature
 
+    /// Registers this user script with a message broker.
+    ///
+    /// - Parameter broker: The broker to use for message handling
     public func with(broker: UserScriptMessageBroker) {
         self.broker = broker
     }
 
+    /// Returns the message handler for a given method name.
+    ///
+    /// Maps message names to their corresponding handler methods.
+    /// Returns `nil` for unsupported or native-only messages.
+    ///
+    /// - Parameter methodName: Name of the message to handle
+    /// - Returns: Handler function if supported, `nil` otherwise
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
         guard let message = SERPSettingsUserScriptMessages(rawValue: methodName) else {
             return nil
@@ -82,76 +155,138 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
             return getNativeSettings
         case .isNativeDuckAiEnabled:
             return isNativeDuckAiEnabled
-        case .nativeDuckAiSettingChanged: // Never called by SERP - returning nil.
+        case .nativeDuckAiSettingChanged:
+            // This message is sent FROM native TO SERP, never handled as incoming
             return nil
         }
     }
 
-    // MARK: - SERP to Native communication
+    // MARK: - SERP to Native Communication
 
+    /// Handles request for stored SERP settings.
+    ///
+    /// Called when the SERP page loads and needs to initialize with stored settings.
+    ///
+    ///
+    /// - Parameters:
+    ///   - params: Unused parameters from the message
+    ///   - message: The message context
+    /// - Returns: JSONBlob containing stored settings, or `nil` if feature is disabled
     @MainActor
     private func getNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
-        /// The communication between SERP and Native will be behind a feature flag
+        // Feature flag check - allows disabling the feature remotely
         guard serpSettingsProviding.isSERPSettingsFeatureOn() else {
             return nil
-        }
-
-        if testing {
-            /// Fake settings to test
-            let settings: [String: Any] = [
-                "theme": "dark",
-                "notificationsEnabled": true,
-                "volume": 0.8,
-                "favorites": ["A", "B", "C"],
-                "lastLogin": 1_697_000_000
-            ]
-
-            serpSettingsProviding.storeSERPSettings(settings: settings)
-        }
-
-        if let blob = serpSettingsProviding.getSERPSettings() as? JSONBlob {
-            let jsonString = String(data: blob.data, encoding: .utf8)
-            print(jsonString)
         }
 
         return serpSettingsProviding.getSERPSettings()
     }
 
+    /// Handles settings update from SERP.
+    ///
+    /// Called whenever the user changes a setting on the SERP. The SERP sends
+    /// the complete state of all non-default settings.
+    ///
+    /// ## Storage Strategy
+    ///
+    /// The incoming settings dictionary contains **only** non-default values.
+    /// This allows the SERP to update defaults without requiring native migration.
+    /// Missing keys indicate the user has not changed that setting from the default.
+    ///
+    /// - Parameters:
+    ///   - params: Dictionary of setting key-value pairs
+    ///   - message: The message context
+    /// - Returns: Always returns `nil` (no response needed)
     @MainActor
     private func updateNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
-        /// The communication between SERP and Native will be behind a feature flag
+        // Feature flag check
         guard serpSettingsProviding.isSERPSettingsFeatureOn() else {
             return nil
         }
 
+        // Validate parameters are a dictionary
         guard let settings = params as? [String: Any] else { return nil }
 
+        // Store settings (replaces previous state entirely)
         serpSettingsProviding.storeSERPSettings(settings: settings)
 
         return nil
     }
 
+    /// Handles request to open native settings screens.
+    ///
+    /// Called when the user clicks a link on the SERP to navigate to native settings.
+    /// Delegates to the app to present the appropriate settings screen.
+    ///
+    /// ## Supported Screens
+    ///
+    /// - **Privacy Search**: Settings for private search features
+    /// - **AI Features**: Settings for Duck.ai and AI-powered features
+    ///
+    /// ## Parameter Format
+    ///
+    /// The parameters dictionary can contain:
+    /// - `"return": "privateSearch"` - Navigate to privacy settings
+    /// - `"return": "aiFeatures"` - Navigate to AI settings after closing tab
+    /// - `"screen": "aiFeatures"` - Navigate directly to AI settings
+    ///
+    /// - Parameters:
+    ///   - params: Dictionary specifying which screen to open
+    ///   - message: The message context
+    /// - Returns: Always returns `nil` (no response needed)
     @MainActor
     private func openNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
         guard let parameters = params as? [String: String] else { return nil }
 
+        // Check "return" parameter for navigation after closing tab
         if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.privateSearch {
             delegate?.serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(self)
         } else if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.aiFeatures {
             delegate?.serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(self)
-        } else if parameters[SERPSettingsConstants.screenParameterKey] == SERPSettingsConstants.aiFeatures {
+        }
+        // Check "screen" parameter for direct navigation
+        else if parameters[SERPSettingsConstants.screenParameterKey] == SERPSettingsConstants.aiFeatures {
             delegate?.serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(self)
         }
+
         return nil
     }
 
+    /// Returns the current state of Duck.ai features.
+    ///
+    /// Called by the SERP to determine if AI-powered features should be displayed.
+    /// The value reflects the user's preference in native settings.
+    ///
+    /// - Parameters:
+    ///   - params: Unused parameters
+    ///   - message: The message context
+    /// - Returns: Boolean indicating if AI chat is enabled
     @MainActor
     private func isNativeDuckAiEnabled(params: Any, message: UserScriptMessage) -> Encodable? {
         return serpSettingsProviding.isAIChatEnabled
     }
 
-    // MARK: - Native to SERP communication
+    // MARK: - Native to SERP Communication
 
+    /// Notifies the SERP that the Duck.ai setting has changed.
+    ///
+    /// This method pushes a message to the SERP when the AI features toggle
+    /// is changed in native settings. This allows the SERP to update its UI
+    /// in real-time without requiring a page reload.
+    ///
+    /// ## Usage
+    ///
+    /// This method should be called by the app when:
+    /// - User toggles AI features in Settings
+    /// - AI features are enabled/disabled programmatically
+    /// - Feature flag state changes
+    ///
+    /// ## Implementation Note
+    ///
+    /// Currently this method is private. To be useful, it should either be:
+    /// - Made public for external triggering
+    /// - Called via a notification observer pattern
+    /// - Exposed through the SERPSettingsProviding protocol
     private func nativeDuckAiSettingChanged() {
         guard let webView else {
             return

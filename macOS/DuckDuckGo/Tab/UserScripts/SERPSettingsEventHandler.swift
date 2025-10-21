@@ -22,23 +22,51 @@ import Common
 import PixelKit
 import SERPSettings
 
+/// macOS-specific event handler for SERP settings errors.
+///
+/// This class maps `SERPSettingsError` events to macOS pixel events for
+/// analytics tracking. All errors are reported as debug pixels with
+/// daily aggregation and individual occurrence counting.
+///
+/// ## Error Reporting Strategy
+///
+/// All pixels use the `.dailyAndCount` frequency:
+/// - **Daily**: Prevents spam from repeated errors
+/// - **Count**: Tracks how often each error occurs for debugging
+///
+/// ## Usage
+///
+/// ```swift
+/// let handler = SERPSettingsEventHandler()
+/// let provider = SERPSettingsProvider(eventMapper: handler)
+/// ```
+///
+/// The handler is automatically invoked by `SERPSettingsProviding` when
+/// storage operations fail.
 final class SERPSettingsEventHandler: EventMapping<SERPSettingsError> {
 
+    /// Creates a new SERP settings event handler with default pixel mapping.
+    ///
+    /// This initializer configures the event-to-pixel mappings for all
+    /// supported error types.
     init() {
         super.init { event, error, _, _ in
             switch event {
             case .serializationFailed:
+                // Fires when converting settings dictionary to JSON fails
                 if let error {
                     PixelKit.fire(DebugEvent(GeneralPixel.serpSettingsSerializationFailed(error: error)), frequency: .dailyAndCount)
                 }
             case .deserializationFailed:
-                // Currently not used, but included for completeness
+                // Reserved for future use - currently not fired by any code path
                 break
             case .keyValueStoreReadError:
+                // Fires when reading from persistent storage fails
                 if let error {
                     PixelKit.fire(DebugEvent(GeneralPixel.serpSettingsKeyValueStoreReadError(error: error)), frequency: .dailyAndCount)
                 }
             case .keyValueStoreWriteError:
+                // Fires when writing to persistent storage fails
                 if let error {
                     PixelKit.fire(DebugEvent(GeneralPixel.serpSettingsKeyValueStoreWriteError(error: error)), frequency: .dailyAndCount)
                 }
@@ -46,6 +74,9 @@ final class SERPSettingsEventHandler: EventMapping<SERPSettingsError> {
         }
     }
 
+    /// Prevents accidental initialization with custom mapping.
+    ///
+    /// This override ensures the default pixel mapping defined in `init()` is always used.
     @available(*, unavailable, message: "Use init() instead")
     override init(mapping: @escaping EventMapping<SERPSettingsError>.Mapping) {
         fatalError("Use init()")

@@ -585,9 +585,11 @@ extension TabViewController {
 
     private func buildVPNEntry() -> BrowsingMenuEntry {
         let vpnPromoHelper = VPNSubscriptionPromotionHelper()
+
         let vpnAccessoryView: UIView?
         switch vpnPromoHelper.subscriptionPromoStatus {
         case .pill:
+            vpnPromoHelper.subscriptionPromoWasShown()
             vpnAccessoryView = AccessoryHostingView(BadgeView(text: UserText.freeTrialBadgeLabel))
         case .noPill:
             vpnAccessoryView = nil

@@ -36,6 +36,7 @@ class BookmarkDetailsCell: UITableViewCell {
         super.awakeFromNib()
         backgroundColor = UIColor(designSystemColor: .surface)
         separatorView.backgroundColor = UIColor(designSystemColor: .lines)
+        faviconImageView.round(corners: .allCorners, radius: 12)
     }
 
     var title: String? {

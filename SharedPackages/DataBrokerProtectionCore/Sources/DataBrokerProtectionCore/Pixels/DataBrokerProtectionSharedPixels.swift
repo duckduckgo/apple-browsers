@@ -124,7 +124,7 @@ public enum DataBrokerProtectionSharedPixels {
     case scanSuccess(dataBroker: String, matchesFound: Int, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String)
     case scanNoResults(dataBroker: String, dataBrokerVersion: String, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, actionID: String, actionType: String)
     case scanError(dataBroker: String, dataBrokerVersion: String, duration: Double, category: String, details: String, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, actionId: String, actionType: String)
-    case scanStage(dataBroker: String, dataBrokerVersion: String, tries: Int, actionId: String, actionType: String)
+    case scanStage(dataBroker: String, dataBrokerVersion: String, tries: Int, parent: String, actionId: String, actionType: String)
 
     // Stage Pixels
     case optOutEmailGenerate(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, actionId: String)
@@ -404,10 +404,11 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.parentKey: parent,
                     Consts.actionIDKey: actionId,
                     Consts.actionTypeKey: actionType]
-        case .scanStage(let dataBroker, let dataBrokerVersion, let tries, let actionId, let actionType):
+        case .scanStage(let dataBroker, let dataBrokerVersion, let tries, let parent, let actionId, let actionType):
             return [Consts.dataBrokerParamKey: dataBroker,
                     Consts.dataBrokerVersionKey: dataBrokerVersion,
                     Consts.triesKey: String(tries),
+                    Consts.parentKey: parent,
                     Consts.actionIDKey: actionId,
                     Consts.actionTypeKey: actionType]
         case .weeklyReportBackgroundTaskSession(let started, let orphaned, let completed, let terminated, let durationMinMs, let durationMaxMs, let durationMedianMs):

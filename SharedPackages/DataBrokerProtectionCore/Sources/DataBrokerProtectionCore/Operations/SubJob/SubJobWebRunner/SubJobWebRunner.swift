@@ -372,6 +372,7 @@ public extension SubJobWebRunning {
         pixelHandler.fire(.scanStage(dataBroker: context.dataBroker.url,
                                      dataBrokerVersion: context.dataBroker.version,
                                      tries: stageCalculator.tries,
+                                     parent: context.dataBroker.parent ?? "",
                                      actionId: action.id,
                                      actionType: action.actionType.rawValue))
     }

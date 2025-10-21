@@ -618,12 +618,16 @@ final class TabCollectionViewModel: NSObject {
         assert(self !== otherViewModel)
         guard changesEnabled else { return }
 
-        let movedTab = tabCollection.tabs[safe: fromIndex]
-        let parentTab = movedTab?.parentTab
+        guard let movedTab = tabCollection.tabs[safe: fromIndex] else {
+            return
+        }
 
-        guard tabCollection.moveTab(at: fromIndex, to: otherViewModel.tabCollection, at: toIndex) else { return }
+        let parentTab = movedTab.parentTab
+        guard tabCollection.moveTab(at: fromIndex, to: otherViewModel.tabCollection, at: toIndex) else {
+            return
+        }
 
-        didRemoveTab(tab: movedTab!, at: .unpinned(fromIndex), withParent: parentTab)
+        didRemoveTab(tab: movedTab, at: .unpinned(fromIndex), withParent: parentTab)
 
         otherViewModel.selectUnpinnedTab(at: toIndex)
         otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: .unpinned(toIndex), selected: true)
@@ -637,12 +641,16 @@ final class TabCollectionViewModel: NSObject {
             return
         }
 
-        let movedTab = sourceCollection.tabs[safe: fromIndex.item]
-        let parentTab = movedTab?.parentTab
+        guard let movedTab = sourceCollection.tabs[safe: fromIndex.item] else {
+            return
+        }
 
-        guard sourceCollection.moveTab(at: fromIndex.item, to: targetCollection, at: toIndex.item) else { return }
+        let parentTab = movedTab.parentTab
+        guard sourceCollection.moveTab(at: fromIndex.item, to: targetCollection, at: toIndex.item) else {
+            return
+        }
 
-        didRemoveTab(tab: movedTab!, at: fromIndex, withParent: parentTab)
+        didRemoveTab(tab: movedTab, at: fromIndex, withParent: parentTab)
 
         otherViewModel.select(at: toIndex)
         otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: true)

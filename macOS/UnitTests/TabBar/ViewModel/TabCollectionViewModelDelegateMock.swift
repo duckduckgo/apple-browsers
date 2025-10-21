@@ -33,6 +33,12 @@ final class TabCollectionViewModelDelegateMock: TabCollectionViewModelDelegate {
         didInsertCalled = true
     }
 
+    var didInsertAtTabIndexCalled = false
+
+    func tabCollectionViewModelDidInsert(_ tabCollectionViewModel: TabCollectionViewModel, at index: TabIndex, selected: Bool) {
+        didInsertAtTabIndexCalled = true
+    }
+
     var didRemoveCalled = false
 
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel,
@@ -47,6 +53,12 @@ final class TabCollectionViewModelDelegateMock: TabCollectionViewModelDelegate {
         didMoveCalled = true
     }
 
+    var didMoveAtTabIndesCalled = false
+
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: TabIndex, to newIndex: TabIndex) {
+        didMoveAtTabIndesCalled = true
+    }
+
     var didSelectCalled = false
 
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didSelectAt selectionIndex: Int?) {
@@ -58,5 +70,4 @@ final class TabCollectionViewModelDelegateMock: TabCollectionViewModelDelegate {
     func tabCollectionViewModelDidMultipleChanges(_ tabCollectionViewModel: TabCollectionViewModel) {
         didMultipleChangesCalled = true
     }
-
 }

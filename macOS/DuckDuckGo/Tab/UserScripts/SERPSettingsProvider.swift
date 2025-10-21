@@ -120,6 +120,6 @@ final class SERPSettingsProvider: SERPSettingsProviding {
     ///
     /// - Returns: `true` (feature is always enabled)
     func isSERPSettingsFeatureOn() -> Bool {
-        return true // TODO: To be feature flagged
+        return featureFlagger.isFeatureOn(.serpSettings)
     }
 }

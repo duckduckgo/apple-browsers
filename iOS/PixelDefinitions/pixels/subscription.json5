@@ -314,7 +314,7 @@
             {
                 "key": "status",
                 "type": "string",
-                "description": "Feature identifier for this wide pixel",
+                "description": "Status of the accessory view shown with the menu item",
                 "enum": ["pill", "no_pill", "subscribed"]
             }
         ]

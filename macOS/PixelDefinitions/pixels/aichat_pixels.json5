@@ -40,5 +40,40 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_history_autoclear_enabled": {
+        "description": "Fired when user enables the setting to auto-clear Duck.ai chat history in Data Clearing preferences",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_history_autoclear_disabled": {
+        "description": "Fired when user disables the setting to auto-clear Duck.ai chat history in Data Clearing preferences",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_history_delete_requested": {
+        "description": "Fired when user requests to delete Duck.ai chat history from the fire button or history delete dialog",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_history_delete_successful": {
+        "description": "Fired when Duck.ai chat history is deleted successfully",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_history_delete_failed": {
+        "description": "Fired when Duck.ai chat history fails to be deleted",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

@@ -76,6 +76,9 @@ enum AIChatPixel: PixelKitEvent {
     /// Before removing it, verify that it's not needed for measuring settings interaction.
     case aiChatSettingsDisplayed
 
+    /// Event Trigger: Data Clearing setting to auto-clear Duck.ai chat history is toggled.
+    case aiChatAutoClearHistorySettingToggled(enabled: Bool)
+
     /// Event Trigger: User clicks in the Omnibar duck.ai button
     case aiChatAddressBarButtonClicked(action: AIChatAddressBarAction)
 
@@ -113,6 +116,17 @@ enum AIChatPixel: PixelKitEvent {
 
     /// Event Trigger: User removes page context from the prompt using a button in the input field
     case aiChatPageContextRemoved(automaticEnabled: Bool)
+
+    // MARK: - Deleting chat history
+
+    /// Event Trigger: User requests to delete Duck.ai chat history from the fire button or history delete dialog
+    case aiChatDeleteHistoryRequested
+
+    /// Event Trigger: Duck.ai chat history is deleted successfully
+    case aiChatDeleteHistorySuccessful
+
+    /// Event Trigger: Duck.ai chat history fails to be deleted
+    case aiChatDeleteHistoryFailed
 
     // MARK: -
 
@@ -168,6 +182,18 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_page_context_added"
         case .aiChatPageContextRemoved:
             return "aichat_page_context_removed"
+        case let .aiChatAutoClearHistorySettingToggled(enabled):
+            if enabled {
+                return "m_mac_aichat_history_autoclear_enabled"
+            } else {
+                return "m_mac_aichat_history_autoclear_disabled"
+            }
+        case .aiChatDeleteHistoryRequested:
+            return "m_mac_aichat_history_delete_requested"
+        case .aiChatDeleteHistorySuccessful:
+            return "m_mac_aichat_history_delete_successful"
+        case .aiChatDeleteHistoryFailed:
+            return "m_mac_aichat_history_delete_failed"
         }
     }
 
@@ -191,7 +217,11 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSidebarSettingChanged,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
-                .aiChatTranslationSourceLinkClicked:
+                .aiChatTranslationSourceLinkClicked,
+                .aiChatAutoClearHistorySettingToggled,
+                .aiChatDeleteHistoryRequested,
+                .aiChatDeleteHistorySuccessful,
+                .aiChatDeleteHistoryFailed:
             return nil
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]

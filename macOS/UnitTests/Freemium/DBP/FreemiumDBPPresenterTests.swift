@@ -22,7 +22,7 @@ import Combine
 
 final class FreemiumDBPPresenterTests: XCTestCase {
 
-    private var mockWindowControllerManager: MockWindowControllerManager!
+    private var mockWindowControllerManager: WindowControllersManagerMock!
     private var mockFreemiumDBPStateManager: MockFreemiumDBPUserStateManager!
 
     override func tearDown() {
@@ -33,53 +33,15 @@ final class FreemiumDBPPresenterTests: XCTestCase {
     @MainActor
     func testWhenCallShowFreemiumDBPThenShowPIRTabIsCalledAndActivatedStateIsSet() async throws {
         // Given
-        mockWindowControllerManager = MockWindowControllerManager()
+        mockWindowControllerManager = WindowControllersManagerMock()
         mockFreemiumDBPStateManager = MockFreemiumDBPUserStateManager()
         let sut = DefaultFreemiumDBPPresenter(freemiumDBPStateManager: mockFreemiumDBPStateManager)
         XCTAssertFalse(mockFreemiumDBPStateManager.didActivate)
         // When
-        sut.showFreemiumDBPAndSetActivated(windowControllerManager: mockWindowControllerManager)
+        sut.showFreemiumDBPAndSetActivated(windowControllersManager: mockWindowControllerManager)
         // Then
-        XCTAssertEqual(mockWindowControllerManager.showTabContent, Tab.Content.dataBrokerProtection)
+        XCTAssertEqual(mockWindowControllerManager.showTabCalls.count, 1)
+        XCTAssertEqual(mockWindowControllerManager.showTabCalls.first, Tab.Content.dataBrokerProtection)
         XCTAssertTrue(mockFreemiumDBPStateManager.didActivate)
     }
-}
-
-private final class MockWindowControllerManager: WindowControllersManagerProtocol {
-    var stateChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
-    var tabsChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
-
-    var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
-
-    var lastKeyMainWindowController: DuckDuckGo_Privacy_Browser.MainWindowController?
-
-    var showTabContent: Tab.Content = .none
-
-    var pinnedTabsManagerProvider: DuckDuckGo_Privacy_Browser.PinnedTabsManagerProviding = PinnedTabsManagerProvidingMock()
-
-    var didRegisterWindowController: PassthroughSubject<(MainWindowController), Never> = PassthroughSubject<(MainWindowController), Never>()
-
-    var didUnregisterWindowController: PassthroughSubject<(MainWindowController), Never> = PassthroughSubject<(MainWindowController), Never>()
-
-    func register(_ windowController: MainWindowController) {}
-
-    func unregister(_ windowController: MainWindowController) {}
-
-    func showTab(with content: Tab.TabContent) {
-        showTabContent = content
-    }
-
-    func open(_ url: URL, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {}
-
-    func show(url: URL?, tabId: String?, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, newTab: Bool, selected: Bool?) {}
-
-    func openTab(_ tab: DuckDuckGo_Privacy_Browser.Tab, afterParentTab parentTab: DuckDuckGo_Privacy_Browser.Tab, selected: Bool) {}
-
-    func showBookmarksTab() {}
-
-    func openNewWindow(with tabCollectionViewModel: DuckDuckGo_Privacy_Browser.TabCollectionViewModel?, burnerMode: DuckDuckGo_Privacy_Browser.BurnerMode, droppingPoint: NSPoint?, contentSize: NSSize?, showWindow: Bool, popUp: Bool, lazyLoadTabs: Bool, isMiniaturized: Bool, isMaximized: Bool, isFullscreen: Bool) -> NSWindow? {
-        nil
-    }
-
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool) {}
 }

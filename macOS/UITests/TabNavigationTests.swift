@@ -21,7 +21,7 @@ import XCTest
 
 class TabNavigationTests: UITestCase {
 
-    private static var isSwitchToNewTabEnabled: Bool?
+    static var isSwitchToNewTabEnabled: Bool?
 
     override class func setUp() {
         super.setUp()
@@ -36,7 +36,7 @@ class TabNavigationTests: UITestCase {
     // MARK: - Link Navigation Tests
 
     func testCommandClickOpensBackgroundTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         openTestPage("Page #1") {
             "<a href='\(UITests.simpleServedPage(titled: "Opened Tab"))'>Open in new tab</a>"
@@ -54,7 +54,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testMiddleClickOpensBackgroundTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         openTestPage("Page #2") {
             "<a href='\(UITests.simpleServedPage(titled: "Opened Tab"))'>Open in new tab</a>"
@@ -70,7 +70,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testCommandShiftClickOpensActiveTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         openTestPage("Page #3") {
             "<a href='\(UITests.simpleServedPage(titled: "Opened Tab"))'>Open in new tab</a>"
@@ -89,7 +89,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testMiddleShiftClickOpensActiveTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         openTestPage("Page #4") {
             "<a href='\(UITests.simpleServedPage(titled: "Opened Tab"))'>Open in new tab</a>"
@@ -107,7 +107,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testCommandOptionClickOpensBackgroundWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         openTestPage("Page #5") {
             "<a href='\(UITests.simpleServedPage(titled: "New Window Page"))'>Open in new window</a>"
@@ -136,7 +136,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testMiddleOptionClickOpensBackgroundWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         openTestPage("Page #6") {
             "<a href='\(UITests.simpleServedPage(titled: "New Window Page"))'>Open in new window</a>"
@@ -165,7 +165,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testCommandOptionShiftClickOpensActiveWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         openTestPage("Page #7") {
             "<a href='\(UITests.simpleServedPage(titled: "New Window Page"))'>Open in new window</a>"
@@ -186,7 +186,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testMiddleOptionShiftClickOpensActiveWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         openTestPage("Page #8") {
             "<a href='\(UITests.simpleServedPage(titled: "New Window Page"))'>Open in new window</a>"
@@ -225,7 +225,7 @@ class TabNavigationTests: UITestCase {
     // MARK: - Settings and Special Cases Tests
 
     func testSettingsImpactOnTabBehavior() {
-        setSwitchToNewTab(enabled: true)
+        app.setSwitchToNewTab(enabled: true)
 
         // Test inverted behavior
         openTestPage("Page #10") {
@@ -266,7 +266,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testPopupWindowsNavigation() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Open a popup window
         let popupHTML = """
@@ -283,12 +283,12 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let mainWindow = app.windows.containing(NSPredicate(format: "title == 'Page #12'")).firstMatch
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #12")).firstMatch
         let popupLink = mainWindow.webViews["Page #12"].links["Open popup"]
         popupLink.click()
 
         // Try to navigate in popup
-        let popupWindow = app.windows.containing(NSPredicate(format: "title == 'Popup Page'")).firstMatch
+        let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open in new tab"]
         XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         link.click()
@@ -309,7 +309,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testPopupCommandClickOpensBackgroundTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Open a popup window
         let popupHTML = """
@@ -326,12 +326,12 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let mainWindow = app.windows.containing(NSPredicate(format: "title == 'Page #12'")).firstMatch
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #12")).firstMatch
         let popupLink = mainWindow.webViews["Page #12"].links["Open popup"]
         popupLink.click()
 
         // Command click in popup - should open in background tab in main window
-        let popupWindow = app.windows.containing(NSPredicate(format: "title == 'Popup Page'")).firstMatch
+        let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open Page #13"]
         XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCUIElement.perform(withKeyModifiers: [.command]) {
@@ -354,7 +354,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testPopupCommandShiftClickOpensForegroundTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Open a popup window
         let popupHTML = """
@@ -371,12 +371,12 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let mainWindow = app.windows.containing(NSPredicate(format: "title == 'Page #12'")).firstMatch
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #12")).firstMatch
         let popupLink = mainWindow.webViews["Page #12"].links["Open popup"]
         popupLink.click()
 
         // Command shift click in popup - should open in foreground tab in main window
-        let popupWindow = app.windows.containing(NSPredicate(format: "title == 'Popup Page'")).firstMatch
+        let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open Page #14"]
         XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCUIElement.perform(withKeyModifiers: [.command, .shift]) {
@@ -399,7 +399,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testPopupCommandOptionClickOpensBackgroundWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Open a popup window
         let popupHTML = """
@@ -416,12 +416,12 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let mainWindow = app.windows.containing(NSPredicate(format: "title == 'Page #12'")).firstMatch
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #12")).firstMatch
         let popupLink = mainWindow.webViews["Page #12"].links["Open popup"]
         popupLink.click()
 
         // Command option click in popup - should open in background window
-        let popupWindow = app.windows.containing(NSPredicate(format: "title == 'Popup Page'")).firstMatch
+        let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open Page #15"]
         XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCUIElement.perform(withKeyModifiers: [.command, .option]) {
@@ -450,7 +450,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testPopupCommandOptionShiftClickOpensForegroundWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Open a popup window
         let popupHTML = """
@@ -467,12 +467,12 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let mainWindow = app.windows.containing(NSPredicate(format: "title == 'Page #12'")).firstMatch
+        let mainWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #12")).firstMatch
         let popupLink = mainWindow.webViews["Page #12"].links["Open popup"]
         popupLink.click()
 
         // Command option shift click in popup - should open in foreground window
-        let popupWindow = app.windows.containing(NSPredicate(format: "title == 'Popup Page'")).firstMatch
+        let popupWindow = app.windows.containing(.keyPath(\.title, equalTo: "Popup Page")).firstMatch
         let link = popupWindow.webViews["Popup Page"].links["Open Page #16"]
         XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCUIElement.perform(withKeyModifiers: [.command, .option, .shift]) {
@@ -492,14 +492,14 @@ class TabNavigationTests: UITestCase {
         XCTAssertTrue(popupWindow.webViews["Popup Page"].exists, "Popup window webView should still exist")
 
         // Verify new window is frontmost (foreground window operation)
-        let foregroundWindow = app.windows.containing(NSPredicate(format: "title == 'Page #16'")).firstMatch
+        let foregroundWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #16")).firstMatch
         XCTAssertEqual(app.windows.firstMatch.title, foregroundWindow.title, "New window should be frontmost when opened in foreground")
     }
 
     // MARK: - Fire Window Popup Navigation Tests
 
     func testFireWindowPopupCommandClickOpensBackgroundTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         app.closeWindow()
         // Open Fire window
@@ -520,7 +520,7 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let fireWindow = app.windows.containing(NSPredicate(format: "title == 'Fire Page #12'")).firstMatch
+        let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
         let popupLink = fireWindow.webViews["Fire Page #12"].links["Open popup"]
         popupLink.click()
 
@@ -550,7 +550,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testFireWindowPopupBackgroundAndForegroundTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         app.closeWindow()
         // Open Fire window
@@ -573,7 +573,7 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let fireWindow = app.windows.containing(NSPredicate(format: "title == 'Fire Page #12'")).firstMatch
+        let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
         let popupLink = fireWindow.webViews["Fire Page #12"].links["Open popup"]
         popupLink.click()
 
@@ -628,7 +628,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testFireWindowPopupForegroundWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         app.closeWindow()
         // Open Fire window
@@ -649,7 +649,7 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let fireWindow = app.windows.containing(NSPredicate(format: "title == 'Fire Page #12'")).firstMatch
+        let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
         let popupLink = fireWindow.webViews["Fire Page #12"].links["Open popup"]
         popupLink.click()
 
@@ -675,12 +675,12 @@ class TabNavigationTests: UITestCase {
         XCTAssertTrue(popupWindow.webViews["Popup Page"].exists, "Popup window webView should still exist")
 
         // Verify new Fire window is frontmost (foreground Fire window operation)
-        let newFireWindow = app.windows.containing(NSPredicate(format: "title == 'Page #16'")).firstMatch
+        let newFireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #16")).firstMatch
         XCTAssertEqual(app.windows.firstMatch.title, newFireWindow.title, "New Fire window should be frontmost when opened in foreground")
     }
 
     func testFireWindowPopupAfterOriginalFireWindowClosed() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         app.closeWindow()
         // Open Fire window
@@ -701,7 +701,7 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let fireWindow = app.windows.containing(NSPredicate(format: "title == 'Fire Page #12'")).firstMatch
+        let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
         let popupLink = fireWindow.webViews["Fire Page #12"].links["Open popup"]
         popupLink.click()
 
@@ -721,7 +721,7 @@ class TabNavigationTests: UITestCase {
 
         // Should open new Fire window
         XCTAssertEqual(app.windows.count, 2) // Popup + new Fire window
-        let newFireWindow = app.windows.containing(NSPredicate(format: "title == 'Page #17'")).firstMatch
+        let newFireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Page #17")).firstMatch
         XCTAssertTrue(newFireWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertTrue(newFireWindow.tabs["Page #17"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertTrue(newFireWindow.webViews["Page #17"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -738,7 +738,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testFireWindowPopupBookmarkCommandClick() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add a bookmark for Page #18
@@ -765,7 +765,7 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let fireWindow = app.windows.containing(NSPredicate(format: "title == 'Fire Page #12'")).firstMatch
+        let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
         let popupLink = fireWindow.webViews["Fire Page #12"].links["Open popup"]
         popupLink.click()
 
@@ -797,7 +797,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testFireWindowPopupBookmarkCommandShiftClick() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add a bookmark for Page #19
@@ -824,7 +824,7 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let fireWindow = app.windows.containing(NSPredicate(format: "title == 'Fire Page #12'")).firstMatch
+        let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
         let popupLink = fireWindow.webViews["Fire Page #12"].links["Open popup"]
         popupLink.click()
 
@@ -856,7 +856,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testFireWindowPopupNavigation() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         app.closeWindow()
         // Open Fire window
@@ -877,7 +877,7 @@ class TabNavigationTests: UITestCase {
             <a href='javascript:window.open(popupUrl, "popup", "width=400,height=300")'>Open popup</a>
             """
         }
-        let fireWindow = app.windows.containing(NSPredicate(format: "title == 'Fire Page #12'")).firstMatch
+        let fireWindow = app.windows.containing(.keyPath(\.title, equalTo: "Fire Page #12")).firstMatch
         let popupLink = fireWindow.webViews["Fire Page #12"].links["Open popup"]
         popupLink.click()
 
@@ -907,7 +907,7 @@ class TabNavigationTests: UITestCase {
     // MARK: - Bookmark Navigation Tests
 
     func testBookmarkCommandClickOpensBackgroundTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add a bookmark for Page #13
@@ -938,7 +938,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testBookmarkCommandShiftClickOpensActiveTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add a bookmark for Page #13
@@ -968,7 +968,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testBookmarkCommandOptionClickOpensBackgroundWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add a bookmark for Page #13
@@ -1005,7 +1005,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testBookmarkCommandOptionShiftClickOpensActiveWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add a bookmark for Page #13
@@ -1036,7 +1036,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testBookmarkMiddleClickOpensBackgroundTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add a bookmark for Page #13
@@ -1065,7 +1065,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testBookmarkMiddleShiftClickOpensActiveTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add a bookmark for Page #13
@@ -1095,7 +1095,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testBookmarkMiddleOptionClickOpensBackgroundWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add a bookmark for Page #13
@@ -1132,7 +1132,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testBookmarkMiddleOptionShiftClickOpensActiveWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add a bookmark for Page #13
@@ -1165,7 +1165,7 @@ class TabNavigationTests: UITestCase {
     // MARK: - History Navigation Tests
 
     func testHistoryCommandClickOpensBackgroundTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Visit a page to add to history
         openTestPage("Page #14")
@@ -1193,7 +1193,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testHistoryCommandShiftClickOpensActiveTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Visit a page to add to history
         openTestPage("Page #14")
@@ -1220,7 +1220,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testHistoryMiddleClickOpensBackgroundTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Visit a page to add to history
         openTestPage("Page #14")
@@ -1246,7 +1246,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testHistoryMiddleShiftClickOpensActiveTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Visit a page to add to history
         openTestPage("Page #14")
@@ -1273,7 +1273,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testHistoryCommandOptionClickOpensBackgroundWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Visit a page to add to history
         openTestPage("Page #14")
@@ -1307,7 +1307,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testHistoryCommandOptionShiftClickOpensActiveWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Visit a page to add to history
         openTestPage("Page #14")
@@ -1335,7 +1335,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testHistoryMiddleOptionClickOpensBackgroundWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Visit a page to add to history
         openTestPage("Page #14")
@@ -1370,7 +1370,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testHistoryMiddleOptionShiftClickOpensActiveWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Visit a page to add to history
         openTestPage("Page #14")
@@ -1400,7 +1400,7 @@ class TabNavigationTests: UITestCase {
     // MARK: - Favorites Navigation Tests
 
     func testFavoritesRegularClickOpensSameTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add to favorites
@@ -1426,7 +1426,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testFavoritesCommandClickOpensBackgroundTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add to favorites
@@ -1456,7 +1456,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testFavoritesCommandShiftClickOpensActiveTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add to favorites
@@ -1485,7 +1485,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testFavoritesCommandOptionClickOpensBackgroundWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add to favorites
@@ -1521,7 +1521,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testFavoritesCommandOptionShiftClickOpensActiveWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add to favorites
@@ -1551,7 +1551,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testFavoritesMiddleClickOpensBackgroundTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add to favorites
@@ -1580,7 +1580,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testFavoritesMiddleShiftClickOpensActiveTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add to favorites
@@ -1610,7 +1610,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testFavoritesMiddleOptionClickOpensBackgroundWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add to favorites
@@ -1647,7 +1647,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testFavoritesMiddleOptionShiftClickOpensActiveWindow() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add to favorites
@@ -1680,7 +1680,7 @@ class TabNavigationTests: UITestCase {
     // MARK: - Other Navigation Tests
 
     func testBookmarksBarNavigation() throws {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
         app.resetBookmarks()
 
         // Add to bookmarks bar
@@ -1755,7 +1755,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testBackForwardCommandClickOpensBackgroundTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Create navigation history
         openTestPage("Page #17")
@@ -1785,7 +1785,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testBackForwardCommandShiftClickOpensActiveTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Create navigation history
         openTestPage("Page #17")
@@ -1814,7 +1814,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testBackForwardMiddleClickOpensBackgroundTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Create navigation history
         openTestPage("Page #17")
@@ -1842,7 +1842,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testBackForwardMiddleShiftClickOpensActiveTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Create navigation history
         openTestPage("Page #17")
@@ -1871,7 +1871,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testForwardNavigationCommandClickOpensBackgroundTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Create navigation history and go back
         openTestPage("Page #17")
@@ -1902,7 +1902,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testForwardNavigationCommandShiftClickOpensActiveTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Create navigation history and go back
         openTestPage("Page #17")
@@ -1932,7 +1932,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testForwardNavigationMiddleClickOpensBackgroundTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Create navigation history and go back
         openTestPage("Page #17")
@@ -1961,7 +1961,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testForwardNavigationMiddleShiftClickOpensActiveTab() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         // Create navigation history and go back
         openTestPage("Page #17")
@@ -1991,7 +1991,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testAddressBarSuggestionsNavigation() throws {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         openTestPage("Bookmarked Page #20")
         app.mainMenuAddBookmarkMenuItem.click()
@@ -2036,7 +2036,7 @@ class TabNavigationTests: UITestCase {
     }
 
     func testContextMenuNavigation() {
-        setSwitchToNewTab(enabled: false)
+        app.setSwitchToNewTab(enabled: false)
 
         openTestPage("Page #21") {
             "<a href='\(UITests.simpleServedPage(titled: "Page #22"))'>Open in new tab</a>"
@@ -2061,7 +2061,7 @@ class TabNavigationTests: UITestCase {
 
     func testContextMenuNavigationWithForegroundTabSetting() {
         // First enable "switch to new tab immediately" setting
-        setSwitchToNewTab(enabled: true)
+        app.setSwitchToNewTab(enabled: true)
 
         // Open test page with link
         openTestPage("Page #23") {
@@ -2101,17 +2101,20 @@ class TabNavigationTests: UITestCase {
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
     }
-
-    private func setSwitchToNewTab(enabled: Bool) {
+}
+private extension XCUIApplication {
+    func setSwitchToNewTab(enabled: Bool) {
         defer {
-            app.enforceSingleWindow()
+            enforceSingleWindow()
         }
-        guard Self.isSwitchToNewTabEnabled != enabled else { return }
+        guard TabNavigationTests.isSwitchToNewTabEnabled != enabled else {
+            Logger.log("Checkbox value from last run should be already set to \(enabled), skipping")
+            return
+        }
 
-        app.openPreferencesWindow()
-        app.preferencesGoToGeneralPane()
-        app.setSwitchToNewTabWhenOpened(enabled: enabled)
-        Self.isSwitchToNewTabEnabled = enabled
+        openPreferencesWindow()
+        preferencesGoToGeneralPane()
+        setSwitchToNewTabWhenOpened(enabled: enabled)
+        TabNavigationTests.isSwitchToNewTabEnabled = enabled
     }
-
 }

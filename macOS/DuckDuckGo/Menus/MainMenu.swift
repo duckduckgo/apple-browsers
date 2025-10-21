@@ -746,10 +746,8 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Performance Tests") {
                 NSMenuItem(title: "Test Network Quality", action: #selector(MainViewController.testNetworkQuality))
                     .withAccessibilityIdentifier("MainMenu.testNetworkQuality")
-                NSMenuItem(title: "Test Current Site Performance", action: #selector(MainViewController.testCurrentSitePerformance))
+                NSMenuItem(title: "Test Site Performance (DDG vs Safari)", action: #selector(MainViewController.testCurrentSitePerformance))
                     .withAccessibilityIdentifier("MainMenu.testCurrentSitePerformance")
-                NSMenuItem(title: "Test Current Site Performance (Safari)", action: #selector(MainViewController.testCurrentSitePerformanceWithSafari))
-                    .withAccessibilityIdentifier("MainMenu.testCurrentSitePerformanceSafari")
             }
             NSMenuItem(title: "Content Scopes Experiment") {
                 NSMenuItem(title: "Show Active Experiments", action: #selector(AppDelegate.showContentScopeExperiments))
@@ -759,6 +757,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Reset Default Grammar Checks", action: #selector(AppDelegate.resetDefaultGrammarChecks))
                 NSMenuItem(title: "Reset Autofill Data", action: #selector(AppDelegate.resetSecureVaultData)).withAccessibilityIdentifier("MainMenu.resetSecureVaultData")
                 NSMenuItem(title: "Reset Bookmarks", action: #selector(AppDelegate.resetBookmarks)).withAccessibilityIdentifier("MainMenu.resetBookmarks")
+                NSMenuItem(title: "Reset Fireproof Sites", action: #selector(AppDelegate.resetFireproofSites))
                 NSMenuItem(title: "Reset Pinned Tabs", action: #selector(AppDelegate.resetPinnedTabs))
                 NSMenuItem(title: "Reset New Tab Page Customizations", action: #selector(AppDelegate.resetNewTabPageCustomization))
                 NSMenuItem(title: "Reset YouTube Overlay Interactions", action: #selector(AppDelegate.resetDuckPlayerOverlayInteractions))

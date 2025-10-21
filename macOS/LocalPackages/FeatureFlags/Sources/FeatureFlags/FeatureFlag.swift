@@ -48,6 +48,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/1201048563534612/1208850443048685/f
     case historyView
 
+    /// Subfeature: display the Sites section inside History View
+    case historyViewSitesSection
+
     /// Enable WebKit page load timing performance reporting
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/XXXXXXXXX?focus=true
     case webKitPerformanceReporting
@@ -225,10 +228,13 @@ public enum FeatureFlag: String, CaseIterable {
     case syncIdentities
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211185922947392?focus=true
-    case clearAIChatHistory
+    case aiChatDataClearing
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211469820985204?focus=true
     case dataImportNewSafariFilePicker
+
+    /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1211625735257812?focus=true
+    case cpmCountPixel
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -249,7 +255,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .authV2WideEventEnabled,
                 .syncCreditCards,
                 .syncIdentities,
-                .clearAIChatHistory,
                 .dataImportNewSafariFilePicker:
             true
         default:
@@ -272,6 +277,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .networkProtectionAppStoreSysexMessage,
                 .syncSeamlessAccountSwitching,
                 .historyView,
+                .historyViewSitesSection,
                 .webExtensions,
                 .autoUpdateInDEBUG,
                 .updatesWontAutomaticallyRestartApp,
@@ -332,7 +338,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .winBackOffer,
                 .syncCreditCards,
                 .syncIdentities,
-                .clearAIChatHistory,
+                .aiChatDataClearing,
                 .dataImportNewSafariFilePicker:
             return true
         case .debugMenu,
@@ -343,6 +349,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
                 .scheduledSetDefaultBrowserAndAddToDockPrompts,
+                .cpmCountPixel,
                 .fireDialogIndividualSitesLink:
             return false
         }
@@ -372,6 +379,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage))
         case .historyView:
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
+        case .historyViewSitesSection:
+            return .remoteDevelopment(.subfeature(HTMLHistoryPageSubfeature.sitesSection))
         case .autoUpdateInDEBUG:
             return .disabled
         case .updatesWontAutomaticallyRestartApp:
@@ -475,7 +484,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .subscriptionPurchaseWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
         case .fireDialog:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.fireDialog))
+            return .internalOnly()
         case .fireDialogIndividualSitesLink:
             return .enabled
         case .refactorOfSyncPreferences:
@@ -500,10 +509,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         case .winBackOffer:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
-        case .clearAIChatHistory:
-            return .internalOnly()
         case .dataImportNewSafariFilePicker:
             return .remoteReleasable(.subfeature(DataImportSubfeature.newSafariFilePicker))
+        case .aiChatDataClearing:
+            return .remoteReleasable(.feature(.duckAiDataClearing))
+        case .cpmCountPixel:
+            return .internalOnly()
         }
     }
 }

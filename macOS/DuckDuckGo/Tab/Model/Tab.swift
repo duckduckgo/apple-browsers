@@ -1098,6 +1098,8 @@ protocol NewWindowPolicyDecisionMaker {
     func clearNavigationHistory(keepingCurrent: Bool) {
         webView.backForwardList.removeAllItems(includingCurrent: !keepingCurrent)
         invalidateInteractionStateData()
+
+        self.history?.clearNavigationHistory(keepingCurrent: keepingCurrent)
     }
 
     private var webViewCancellables = Set<AnyCancellable>()
@@ -1332,10 +1334,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
     func willStart(_ navigation: Navigation) {
 #if DEBUG
         // prevent real navigation actions when running Unit Tests
-        if AppVersion.runType == .unitTests
-            && !(navigation.url.isDuckURLScheme
-                 || ([.http, .https].contains(navigation.url.navigationalScheme)
-                     && self.webView.configuration.urlSchemeHandler(forURLScheme: navigation.url.scheme!) != nil)) {
+        if AppVersion.runType == .unitTests,
+           [.http, .https].contains(navigation.url.navigationalScheme),
+           self.webView.configuration.urlSchemeHandler(forURLScheme: navigation.url.scheme!) == nil {
             fatalError("The Unit Test is causing a real navigation action")
         }
 #endif

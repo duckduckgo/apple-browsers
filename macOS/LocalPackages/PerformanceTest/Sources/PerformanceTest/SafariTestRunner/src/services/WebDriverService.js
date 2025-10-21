@@ -32,13 +32,26 @@ class WebDriverService {
             this.logger.debug('Initializing Safari WebDriver');
 
             const options = new safari.Options();
+
+            // Try to disable automation banner (may not work in all Safari versions)
+            options.set('safari:automaticInspection', false);
+            options.set('safari:automaticProfiling', false);
+
             this.driver = await new Builder()
                 .forBrowser('safari')
                 .setSafariOptions(options)
                 .build();
 
+            // Set window size to match testing environment
+            await this.driver.manage().window().setRect({
+                width: 1024,
+                height: 870,
+                x: 0,
+                y: 0
+            });
+
             this.isInitialized = true;
-            this.logger.debug('Safari WebDriver initialized successfully');
+            this.logger.debug('Safari WebDriver initialized successfully (window: 1024x870)');
 
             // Get browser capabilities
             const capabilities = await this.getCapabilities();
@@ -47,7 +60,15 @@ class WebDriverService {
             return this.driver;
         } catch (error) {
             this.logger.error('Failed to initialize Safari WebDriver', error);
-            throw new Error(`WebDriver initialization failed: ${error.message}`);
+
+            // Provide helpful error message with automation setup instructions
+            throw new Error(
+                `Safari WebDriver initialization failed: ${error.message}\n\n` +
+                'If Safari is not connecting, ensure Remote Automation is enabled:\n' +
+                '1. Open Safari → Settings → Advanced\n' +
+                '2. Enable "Show Develop menu in menu bar"\n' +
+                '3. In the Develop menu, select "Allow Remote Automation"'
+            );
         }
     }
 

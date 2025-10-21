@@ -34,11 +34,6 @@ final class CapturingDataProvider: DataProviding {
         return await visitsBatch(query, source, limit, offset)
     }
 
-    func countVisibleVisits(for range: DataModel.HistoryRange) async -> Int {
-        countVisibleVisitsCalls.append(range)
-        return await countVisibleVisits(range)
-    }
-
     func deleteVisits(matching query: DataModel.HistoryQueryKind) async {
         deleteVisitsCalls.append(query)
     }
@@ -51,9 +46,6 @@ final class CapturingDataProvider: DataProviding {
     var _ranges: [DataModel.HistoryRangeWithCount] = []
     var rangesCallCount: Int = 0
     var refreshDataCallCount: Int = 0
-
-    var countVisibleVisitsCalls: [DataModel.HistoryRange] = []
-    var countVisibleVisits: (DataModel.HistoryRange) async -> Int = { _ in return 0 }
 
     var deleteVisitsCalls: [DataModel.HistoryQueryKind] = []
     var burnVisitsCalls: [DataModel.HistoryQueryKind] = []

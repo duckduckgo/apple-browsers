@@ -64,7 +64,61 @@ final class MockSafariTestExecutor: SafariTestExecuting {
             }
         }
 
+        // Create a mock JSON results file
+        let mockJSON = createMockJSONResults()
+        let fileURL = URL(fileURLWithPath: mockResultsPath)
+        try mockJSON.write(to: fileURL, atomically: true, encoding: .utf8)
+
         return mockResultsPath
+    }
+
+    private func createMockJSONResults() -> String {
+        let json = """
+        {
+          "testConfiguration": {
+            "url": "\(url.absoluteString)",
+            "iterations": \(iterations),
+            "browser": "Safari",
+            "browserVersion": "18.0",
+            "platform": "darwin",
+            "startTime": "2024-01-01T00:00:00.000Z",
+            "timeout": 30000,
+            "maxRetries": 3
+          },
+          "iterations": [
+            {
+              "iteration": 1,
+              "success": true,
+              "url": "\(url.absoluteString)",
+              "timestamp": "2024-01-01T00:00:01.000Z",
+              "duration": 1500,
+              "metrics": {
+                "loadComplete": 1500.5,
+                "domComplete": 1300.2,
+                "domContentLoaded": 1100.8,
+                "domInteractive": 900.4,
+                "fcp": 800.1,
+                "ttfb": 200.3,
+                "responseTime": 150.2,
+                "serverTime": 100.1,
+                "transferSize": 524288,
+                "encodedBodySize": 262144,
+                "decodedBodySize": 524288,
+                "resourceCount": 25,
+                "totalResourcesSize": 1048576,
+                "protocol": "h2",
+                "redirectCount": 0,
+                "navigationType": "navigate"
+              }
+            }
+          ],
+          "metadata": {
+            "interrupted": false,
+            "endTime": "2024-01-01T00:00:02.000Z"
+          }
+        }
+        """
+        return json
     }
 
     func cleanup() {

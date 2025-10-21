@@ -193,6 +193,9 @@ public enum FeatureFlag: String {
 
     ///  https://app.asana.com/1/137249556945/project/72649045549333/task/1207055705580443?focus=true
     case syncCreditCards
+
+    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1210997282929955?focus=true
+    case unifiedURLPredictor
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -213,7 +216,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionRestoreWidePixelMeasurement,
              .authV2WideEventEnabled,
              .embeddedSERPSettings,
-             .syncCreditCards:
+             .syncCreditCards,
+             .unifiedURLPredictor:
             true
         default:
             false
@@ -271,7 +275,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .embeddedSERPSettings,
              .authV2WideEventEnabled,
              .winBackOffer,
-             .syncCreditCards:
+             .syncCreditCards,
+             .unifiedURLPredictor:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -473,6 +478,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
         case .syncCreditCards:
             return .remoteReleasable(.subfeature(SyncSubfeature.syncCreditCards))
+        case .unifiedURLPredictor:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.unifiedURLPredictor))
         }
     }
 }

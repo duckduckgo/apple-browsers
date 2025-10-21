@@ -20,6 +20,7 @@ import Combine
 import AIChat
 @testable import DuckDuckGo_Privacy_Browser
 
+typealias MockWindowControllerManager = WindowControllersManagerMock
 final class WindowControllersManagerMock: WindowControllersManagerProtocol, AIChatTabManaging {
     var stateChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
     var tabsChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
@@ -50,8 +51,6 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
         allTabCollectionViewModels[selectedWindowIndex].selectedTab
     }
 
-    var lastKeyMainWindowController: MainWindowController?
-
     struct ShowArgs: Equatable {
         let url: URL?, source: Tab.TabContent.URLSource, newTab: Bool, selected: Bool?
     }
@@ -77,9 +76,10 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
         let isFullscreen: Bool
     }
     var openWindowCalls: [OpenWindowCall] = []
+    var onOpenNewWindow: ((OpenWindowCall) -> Void)?
     @discardableResult
     func openNewWindow(with tabCollectionViewModel: DuckDuckGo_Privacy_Browser.TabCollectionViewModel?, burnerMode: DuckDuckGo_Privacy_Browser.BurnerMode, droppingPoint: NSPoint?, contentSize: NSSize?, showWindow: Bool, popUp: Bool, lazyLoadTabs: Bool, isMiniaturized: Bool, isMaximized: Bool, isFullscreen: Bool) -> NSWindow? {
-        openWindowCalls.append(OpenWindowCall(
+        let call = OpenWindowCall(
             contents: tabCollectionViewModel?.tabs.map(\.content),
             burnerMode: burnerMode,
             droppingPoint: droppingPoint,
@@ -90,7 +90,9 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
             isMiniaturized: isMiniaturized,
             isMaximized: isMaximized,
             isFullscreen: isFullscreen
-        ))
+        )
+        openWindowCalls.append(call)
+        onOpenNewWindow?(call)
         return nil
     }
 

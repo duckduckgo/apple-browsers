@@ -1,7 +1,7 @@
 {
   "name": "FastPeopleSearch",
   "url": "fastpeoplesearch.com",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "parent": "peoplefinders.com",
   "addedDatetime": 1675317600000,
   "optOutUrl": "https://www.fastpeoplesearch.com/removal",
@@ -14,6 +14,51 @@
           "actionType": "navigate",
           "id": "040e0a0a-095a-490e-8c55-ee7b66732030",
           "url": "https://www.fastpeoplesearch.com/name/${firstName}-${lastName}_${city}-${state}"
+        },
+        {
+          "actionType": "expectation",
+          "_comment": "wait for cloudflare check to pass - we are using a negative xpath selector because CF challenge page has class 'page-manage-challenge' on the html element",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//html[not(contains(@class, 'page-manage-challenge'))]"
+            }
+          ],
+          "id": "98a2a63e-1d47-45e9-a1f3-c1780b29cd1f"
+        },
+        {
+          "actionType": "condition",
+          "_comment": "captcha is not always present at this stage",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#bot-check",
+              "failSilently": true
+            }
+          ],
+          "actions": [
+            {
+              "actionType": "getCaptchaInfo",
+              "selector": ".g-recaptcha",
+              "id": "9991b50e-2459-4933-b57b-043426699aaf"
+            },
+            {
+              "actionType": "solveCaptcha",
+              "selector": ".g-recaptcha",
+              "id": "99912c72-9ae2-447e-96aa-ed4238102535"
+            },
+            {
+              "actionType": "click",
+              "elements": [
+                {
+                  "type": "button",
+                  "selector": ".btn-success"
+                }
+              ],
+              "id": "9991ae1a-12d0-48a8-852e-c2cc5b0a8fe3"
+            }
+          ],
+          "id": "99915607-e720-4e68-b464-5eb2f75ba5a0"
         },
         {
           "actionType": "extract",
@@ -29,9 +74,7 @@
               "findElements": true
             },
             "age": {
-              "selector": ".//div[@class='card-block']",
-              "afterText": "Age:",
-              "beforeText": "Full Name:"
+              "selector": "//h3[normalize-space(.)='Age:']/following-sibling::text()[1]"
             },
             "addressFullList": {
               "selector": ".//h3[contains(strong, 'Past Addresses')]/following-sibling::div/div/a",

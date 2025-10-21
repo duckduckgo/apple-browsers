@@ -82,6 +82,8 @@ public extension SubJobWebRunning {
     func runNextAction(_ action: Action) async {
         let stepType = actionsHandler?.stepType
 
+        stageCalculator.setLastAction(action)
+
         switch action {
         case is GetCaptchaInfoAction:
             stageCalculator.setStage(.captchaParse)

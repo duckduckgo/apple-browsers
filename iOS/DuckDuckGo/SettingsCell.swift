@@ -60,6 +60,7 @@ struct SettingsCellView: View, Identifiable {
     var isButton: Bool
     var isGreyedOut: Bool
     var isNew: Bool = false
+    var shouldShowWinBackOffer: Bool = false
 
     /// Initializes a `SettingsCellView` with the specified label and accessory.
     ///
@@ -75,7 +76,7 @@ struct SettingsCellView: View, Identifiable {
     ///   - webLinkIndicator: Adds a link indicator on the right
     ///   - isButton: Disables the tap actions on the cell if true
     ///   - isNew: Displays "New" badges next to the item for feature discovery
-    init(label: String, subtitle: String? = nil, image: Image? = nil, action: @escaping () -> Void = {}, accessory: Accessory = .none, enabled: Bool = true, statusIndicator: StatusIndicatorView? = nil, disclosureIndicator: Bool = false, webLinkIndicator: Bool = false, isButton: Bool = false, isGreyedOut: Bool = false, isNew: Bool = false) {
+    init(label: String, subtitle: String? = nil, image: Image? = nil, action: @escaping () -> Void = {}, accessory: Accessory = .none, enabled: Bool = true, statusIndicator: StatusIndicatorView? = nil, disclosureIndicator: Bool = false, webLinkIndicator: Bool = false, isButton: Bool = false, isGreyedOut: Bool = false, isNew: Bool = false, shouldShowWinBackOffer: Bool = false) {
         self.label = label
         self.subtitle = subtitle
         self.image = image
@@ -88,6 +89,7 @@ struct SettingsCellView: View, Identifiable {
         self.isButton = isButton
         self.isGreyedOut = isGreyedOut
         self.isNew = isNew
+        self.shouldShowWinBackOffer = shouldShowWinBackOffer
     }
 
     /// Initializes a `SettingsCellView` for custom content.
@@ -107,6 +109,7 @@ struct SettingsCellView: View, Identifiable {
         self.webLinkIndicator = false
         self.isButton = false
         self.isGreyedOut = false
+        self.shouldShowWinBackOffer = false
     }
 
     var body: some View {
@@ -159,10 +162,13 @@ struct SettingsCellView: View, Identifiable {
                             }
                         }
                         VStack(alignment: .leading) {
-                            // Title
-                            Text(label)
-                                .daxBodyRegular()
-                                .foregroundColor(Color(designSystemColor: isGreyedOut == true ? .textSecondary : .textPrimary))
+                            HStack {
+                                // Title
+                                Text(label)
+                                    .daxBodyRegular()
+                                    .foregroundColor(Color(designSystemColor: isGreyedOut == true ? .textSecondary : .textPrimary))
+                                badgeView()
+                            }
                             // Subtitle
                             if let subtitleText = subtitle {
                                 Text(subtitleText)
@@ -172,9 +178,6 @@ struct SettingsCellView: View, Identifiable {
                         }.fixedSize(horizontal: false, vertical: true)
                             .layoutPriority(0.7)
                     }.scaledToFit()
-                    if isNew {
-                        BadgeView(text: UserText.settingsItemNewBadge)
-                    }
                 }
 
                 Spacer(minLength: 8)
@@ -192,6 +195,17 @@ struct SettingsCellView: View, Identifiable {
                 }
             }.padding(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 0))
         }.contentShape(Rectangle())
+    }
+    
+    @ViewBuilder
+    private func badgeView() -> some View {
+        if shouldShowWinBackOffer {
+            BadgeView(text: UserText.winBackCampaignMenuBadgeText)
+        } else if isNew {
+            BadgeView(text: UserText.settingsItemNewBadge)
+        } else {
+            EmptyView()
+        }
     }
 
     @ViewBuilder
@@ -293,6 +307,7 @@ struct SettingsCustomCell<Content: View>: View {
     var action: () -> Void
     var disclosureIndicator: Bool
     var isButton: Bool
+    var shouldShowWinBackOffer: Bool
 
     /// Initializes a `SettingsCustomCell`.
     /// - Parameters:
@@ -301,11 +316,13 @@ struct SettingsCustomCell<Content: View>: View {
     ///   - disclosureIndicator: A Boolean value that determines if the cell shows a disclosure
     ///    indicator.
     ///   - isButton: Disables the tap actions on the cell if true
-    init(@ViewBuilder content: () -> Content, action: @escaping () -> Void = {}, disclosureIndicator: Bool = false, isButton: Bool = false) {
+    ///   - shouldShowWinBackOffer: Displays win-back offer badge next to the content
+    init(@ViewBuilder content: () -> Content, action: @escaping () -> Void = {}, disclosureIndicator: Bool = false, isButton: Bool = false, shouldShowWinBackOffer: Bool = false) {
         self.content = content()
         self.action = action
         self.disclosureIndicator = disclosureIndicator
         self.isButton = isButton
+        self.shouldShowWinBackOffer = shouldShowWinBackOffer
     }
 
     var body: some View {
@@ -333,6 +350,9 @@ struct SettingsCustomCell<Content: View>: View {
     private var cellContent: some View {
         HStack {
             content
+            if shouldShowWinBackOffer {
+                BadgeView(text: UserText.winBackCampaignMenuBadgeText)
+            }
             Spacer()
             if disclosureIndicator {
                 SettingsCellComponents.chevron

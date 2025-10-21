@@ -231,6 +231,11 @@ struct SyncEnabledMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
+struct WinBackOfferUrgencyMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
 struct UnknownMatchingAttribute: MatchingAttribute, Equatable {
     var fallback: Bool?
 

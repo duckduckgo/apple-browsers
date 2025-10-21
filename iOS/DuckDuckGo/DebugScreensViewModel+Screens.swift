@@ -127,6 +127,9 @@ extension DebugScreensViewModel {
             .view(title: "Notifications Playground", { _ in
                 LocalNotificationsPlaygroundView()
             }),
+            .view(title: "Win-back Offer", { d in
+                WinBackOfferDebugView(keyValueStore: d.keyValueStore)
+            }),
 
             // MARK: Controllers
             .controller(title: "Image Cache", { d in

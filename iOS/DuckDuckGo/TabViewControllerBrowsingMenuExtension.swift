@@ -611,9 +611,9 @@ extension TabViewController {
     }
 
     private func onOpenVPNAction(with vpnPromoHelper: VPNSubscriptionPromotionHelper) {
+        vpnPromoHelper.fireTapPixel()
         switch vpnPromoHelper.subscriptionPromoStatus {
         case .pill, .noPill:
-            vpnPromoHelper.fireTapPixel()
             let urlComponents = vpnPromoHelper.subscriptionURLComponents()
             NotificationCenter.default.post(
                 name: .settingsDeepLinkNotification,

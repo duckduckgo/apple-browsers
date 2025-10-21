@@ -401,6 +401,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                 isImmediateOperation: isImmediateOperation,
                 vpnConnectionState: vpnConnectionState,
                 vpnBypassStatus: vpnBypassStatus,
+                parent: parentURL ?? "",
                 actionId: actionID ?? "unknown",
                 actionType: actionType ?? "unknown"
             )

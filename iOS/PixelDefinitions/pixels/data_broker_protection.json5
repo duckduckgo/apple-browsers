@@ -663,6 +663,11 @@
                 "enum": ["on", "off", "unsupported"]
             },
             {
+                "key": "parent",
+                "description": "The parent data broker of the one this action was operating on",
+                "type": "string"
+            },
+            {
                 "key": "action_id",
                 "description": "Identifier of the action that was executing when the error occurred",
                 "type": "string"

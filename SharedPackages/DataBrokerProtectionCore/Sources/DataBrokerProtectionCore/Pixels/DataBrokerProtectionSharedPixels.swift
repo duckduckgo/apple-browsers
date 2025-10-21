@@ -115,7 +115,7 @@ public enum DataBrokerProtectionSharedPixels {
     // Process Pixels
     case optOutSubmitSuccess(dataBroker: String, attemptId: UUID, duration: Double, tries: Int, parent: String, emailPattern: String?, vpnConnectionState: String, vpnBypassStatus: String)
     case optOutSuccess(dataBroker: String, attemptId: UUID, duration: Double, parent: String, brokerType: DataBrokerHierarchy, vpnConnectionState: String, vpnBypassStatus: String)
-    case optOutFailure(dataBroker: String, dataBrokerVersion: String, attemptId: UUID, duration: Double, stage: String, tries: Int, emailPattern: String?, actionID: String?, vpnConnectionState: String, vpnBypassStatus: String)
+    case optOutFailure(dataBroker: String, dataBrokerVersion: String, attemptId: UUID, duration: Double, parent: String, stage: String, tries: Int, emailPattern: String?, actionId: String, actionType: String, vpnConnectionState: String, vpnBypassStatus: String)
 
     // Scan/Search pixels
 #if os(iOS)
@@ -367,16 +367,21 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.isParent: String(type.rawValue),
                     Consts.vpnConnectionStateParamKey: vpnConnectionState,
                     Consts.vpnBypassStatusParamKey: vpnBypassStatus]
-        case .optOutFailure(let dataBroker, let dataBrokerVersion, let attemptId, let duration, let stage, let tries, let pattern, let actionID, let vpnConnectionState, let vpnBypassStatus):
-            var params = [Consts.dataBrokerParamKey: dataBroker, Consts.dataBrokerVersionKey: dataBrokerVersion, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration), Consts.stageKey: stage, Consts.triesKey: String(tries), Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
+        case .optOutFailure(let dataBroker, let dataBrokerVersion, let attemptId, let duration, let parent, let stage, let tries, let pattern, let actionId, let actionType, let vpnConnectionState, let vpnBypassStatus):
+            var params = [Consts.dataBrokerParamKey: dataBroker,
+                          Consts.dataBrokerVersionKey: dataBrokerVersion,
+                          Consts.attemptIdParamKey: attemptId.uuidString,
+                          Consts.durationParamKey: String(duration),
+                          Consts.parentKey: parent,
+                          Consts.actionIDKey: actionId,
+                          Consts.actionTypeKey: actionType,
+                          Consts.stageKey: stage,
+                          Consts.triesKey: String(tries),
+                          Consts.vpnConnectionStateParamKey: vpnConnectionState,
+                          Consts.vpnBypassStatusParamKey: vpnBypassStatus]
             if let pattern = pattern {
                 params[Consts.pattern] = pattern
             }
-
-            if let actionID = actionID {
-                params[Consts.actionIDKey] = actionID
-            }
-
             return params
 #if os(iOS)
         case .scanStarted(let dataBroker):

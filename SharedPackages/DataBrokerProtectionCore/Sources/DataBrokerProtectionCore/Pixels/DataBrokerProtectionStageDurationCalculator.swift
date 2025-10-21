@@ -308,10 +308,12 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                     dataBrokerVersion: dataBrokerVersion,
                                     attemptId: attemptId,
                                     duration: durationSinceStartTime(),
+                                    parent: parentURL ?? "",
                                     stage: stage.rawValue,
                                     tries: tries,
                                     emailPattern: emailPattern,
-                                    actionID: actionID,
+                                    actionId: actionID ?? "unknown",
+                                    actionType: actionType ?? "unknown",
                                     vpnConnectionState: vpnConnectionState,
                                     vpnBypassStatus: vpnBypassStatus))
     }

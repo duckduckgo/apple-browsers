@@ -646,7 +646,7 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     func fireScanSuccess(matchesFound: Int) {
     }
 
-    func fireScanFailed() {
+    func fireScanNoResults() {
     }
 
     func fireScanError(error: Error) {

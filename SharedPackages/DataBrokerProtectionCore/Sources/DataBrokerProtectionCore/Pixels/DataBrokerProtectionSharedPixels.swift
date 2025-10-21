@@ -123,7 +123,7 @@ public enum DataBrokerProtectionSharedPixels {
 #endif
     case scanSuccess(dataBroker: String, matchesFound: Int, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String)
     case scanNoResults(dataBroker: String, dataBrokerVersion: String, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, parent: String, actionID: String, actionType: String)
-    case scanError(dataBroker: String, dataBrokerVersion: String, duration: Double, category: String, details: String, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String)
+    case scanError(dataBroker: String, dataBrokerVersion: String, duration: Double, category: String, details: String, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, actionId: String, actionType: String)
     case scanStage(dataBroker: String, dataBrokerVersion: String, tries: Int, actionId: String, actionType: String)
 
     // Stage Pixels
@@ -380,7 +380,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.isImmediateOperation: isImmediateOperation.description,
                     Consts.vpnConnectionStateParamKey: vpnConnectionState,
                     Consts.vpnBypassStatusParamKey: vpnBypassStatus,
-                    Consts.parentKey: parent.isEmpty ? "" : parent]
+                    Consts.parentKey: parent ?? ""]
         case .scanNoResults(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let actionID, let actionType):
             return [Consts.dataBrokerParamKey: dataBroker,
                     Consts.dataBrokerVersionKey: dataBrokerVersion,
@@ -392,8 +392,17 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.parentKey: parent.isEmpty ? "" : parent,
                     Consts.actionIDKey: actionID,
                     Consts.actionTypeKey: actionType]
-        case .scanError(let dataBroker, let dataBrokerVersion, let duration, let category, let details, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.dataBrokerVersionKey: dataBrokerVersion, Consts.durationParamKey: String(duration), Consts.errorCategoryKey: category, Consts.errorDetailsKey: details, Consts.isImmediateOperation: isImmediateOperation.description, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
+        case .scanError(let dataBroker, let dataBrokerVersion, let duration, let category, let details, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let actionId, let actionType):
+            return [Consts.dataBrokerParamKey: dataBroker,
+                    Consts.dataBrokerVersionKey: dataBrokerVersion,
+                    Consts.durationParamKey: String(duration),
+                    Consts.errorCategoryKey: category,
+                    Consts.errorDetailsKey: details,
+                    Consts.isImmediateOperation: isImmediateOperation.description,
+                    Consts.vpnConnectionStateParamKey: vpnConnectionState,
+                    Consts.vpnBypassStatusParamKey: vpnBypassStatus,
+                    Consts.actionIDKey: actionId,
+                    Consts.actionTypeKey: actionType]
         case .scanStage(let dataBroker, let dataBrokerVersion, let tries, let actionId, let actionType):
             return [Consts.dataBrokerParamKey: dataBroker,
                     Consts.dataBrokerVersionKey: dataBrokerVersion,

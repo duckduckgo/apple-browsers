@@ -1356,7 +1356,9 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
     public var fireScanErrorCalled = false
     public var setStageCalled = false
     public var setEmailPatternCalled = false
-    public var setLastActionIdCalled = false
+    public var setLastActionCalled = false
+    public var lastActionID: String?
+    public var lastActionType: String?
     public var resetTriesCalled = false
     public var incrementTriesCalled = false
 
@@ -1453,8 +1455,10 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
         setEmailPatternCalled = true
     }
 
-    public func setLastActionId(_ actionID: String) {
-        setLastActionIdCalled = true
+    public func setLastAction(_ action: Action) {
+        setLastActionCalled = true
+        lastActionID = action.id
+        lastActionType = action.actionType.rawValue
     }
 
     public func resetTries() {
@@ -1491,7 +1495,9 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
         fireScanErrorCalled = false
         setStageCalled = false
         setEmailPatternCalled = false
-        setLastActionIdCalled = false
+        setLastActionCalled = false
+        lastActionID = nil
+        lastActionType = nil
         resetTriesCalled = false
         incrementTriesCalled = false
     }

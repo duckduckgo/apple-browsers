@@ -284,7 +284,10 @@ struct BrokerProfileScanSubJob {
                     let now = Date()
                     let calculateDurationSinceLastStage = now.timeIntervalSince(attempt.lastStageDate) * 1000
                     let calculateDurationSinceStart = now.timeIntervalSince(attempt.startDate) * 1000
-                    pixelHandler.fire(.optOutFinish(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceLastStage))
+                    pixelHandler.fire(.optOutFinish(dataBroker: attempt.dataBroker,
+                                                    attemptId: attemptUUID,
+                                                    duration: calculateDurationSinceLastStage,
+                                                    parent: brokerProfileQueryData.dataBroker.parent ?? ""))
                     pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceStart,
                                                      brokerType: brokerProfileQueryData.dataBroker.type, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
 

@@ -38,9 +38,9 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         XCTAssertTrue(MockDataBrokerProtectionPixelsHandler.lastPixelsFired.count == 1)
 
-        if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last{
+        if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
             switch failurePixel {
-            case .scanNoResults(let broker, let brokerVersion, _, _, _, _, _):
+            case .scanNoResults(let broker, let brokerVersion, _, _, _, _, _, _, _, _):
                 XCTAssertEqual(broker, "broker.com")
                 XCTAssertEqual(brokerVersion, "1.1.1")
             default: XCTFail("The scan no results pixel should be fired")

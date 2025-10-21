@@ -140,7 +140,9 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireOptOutStart() {
         setStage(.start)
-        handler.fire(.optOutStart(dataBroker: dataBrokerURL, attemptId: attemptId))
+        handler.fire(.optOutStart(dataBroker: dataBrokerURL,
+                                  attemptId: attemptId,
+                                  parent: parentURL ?? ""))
         wideEventRecorder?.recordStage(.start,
                                        duration: nil,
                                        tries: tries,
@@ -154,6 +156,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                           duration: duration,
                                           dataBrokerVersion: dataBrokerVersion,
                                           tries: tries,
+                                          parent: parentURL ?? "",
                                           actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.emailGenerate,
                                        duration: duration,
@@ -168,6 +171,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
                                          tries: tries,
+                                         parent: parentURL ?? "",
                                          actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.captchaParse,
                                        duration: duration,
@@ -182,6 +186,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                         duration: duration,
                                         dataBrokerVersion: dataBrokerVersion,
                                         tries: tries,
+                                        parent: parentURL ?? "",
                                         actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.captchaSend,
                                        duration: duration,
@@ -196,6 +201,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
                                          tries: tries,
+                                         parent: parentURL ?? "",
                                          actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.captchaSolve,
                                        duration: duration,
@@ -211,6 +217,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                    duration: duration,
                                    dataBrokerVersion: dataBrokerVersion,
                                    tries: tries,
+                                   parent: parentURL ?? "",
                                    actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.submit,
                                        duration: duration,
@@ -225,6 +232,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
                                          tries: tries,
+                                         parent: parentURL ?? "",
                                          actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.emailReceive,
                                        duration: duration,
@@ -239,6 +247,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
                                          tries: tries,
+                                         parent: parentURL ?? "",
                                          actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.emailConfirm,
                                        duration: duration,
@@ -254,6 +263,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                      duration: duration,
                                      dataBrokerVersion: dataBrokerVersion,
                                      tries: tries,
+                                     parent: parentURL ?? "",
                                      actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.validate,
                                        duration: duration,
@@ -268,6 +278,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                      duration: duration,
                                      dataBrokerVersion: dataBrokerVersion,
                                      tries: tries,
+                                     parent: parentURL ?? "",
                                      actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.fillForm,
                                        duration: duration,
@@ -311,6 +322,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                            duration: duration,
                                            dataBrokerVersion: dataBrokerVersion,
                                            tries: tries,
+                                           parent: parentURL ?? "",
                                            actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.conditionFound,
                                        duration: duration,
@@ -325,6 +337,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                               duration: duration,
                                               dataBrokerVersion: dataBrokerVersion,
                                               tries: tries,
+                                              parent: parentURL ?? "",
                                               actionId: actionID ?? ""))
         wideEventRecorder?.recordStage(.conditionNotFound,
                                        duration: duration,

@@ -18,6 +18,11 @@
                 "type": "string"
             },
             {
+                "key": "parent",
+                "description": "The parent data broker of the one this action was operating on",
+                "type": "string"
+            },
+            {
                 "key": "broker_version",
                 "description": "The version of the broker JSON file",
                 "type": "string"
@@ -85,6 +90,11 @@
             {
                 "key": "data_broker",
                 "description": "The URL of the data broker that this action was operating on",
+                "type": "string"
+            },
+            {
+                "key": "parent",
+                "description": "The parent data broker of the one this action was operating on",
                 "type": "string"
             },
             {

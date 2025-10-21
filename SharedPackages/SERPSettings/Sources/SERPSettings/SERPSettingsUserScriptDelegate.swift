@@ -44,7 +44,7 @@ public protocol SERPSettingsUserScriptDelegate: AnyObject {
     ///
     /// Called when the user clicks a "return to privacy settings" link on the SERP.
     /// The implementer should:
-    /// 1. Close the current browser tab/window
+    /// 1. Close the current browser tab/window (if needed)
     /// 2. Navigate to the privacy search settings screen
     ///
     /// ## Use Case
@@ -52,27 +52,12 @@ public protocol SERPSettingsUserScriptDelegate: AnyObject {
     /// User navigates from Privacy Settings → SERP Settings → (clicks return link)
     ///
     /// - Parameter userScript: The user script instance making the request
-    func serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(_ userScript: SERPSettingsUserScript)
-    
-    /// Requests closing the current tab and opening AI features settings.
-    ///
-    /// Called when the user clicks a "return to AI settings" link on the SERP.
-    /// The implementer should:
-    /// 1. Close the current browser tab/window
-    /// 2. Navigate to the AI features settings screen
-    ///
-    /// ## Use Case
-    ///
-    /// User navigates from AI Settings → SERP Settings → (clicks return link)
-    ///
-    /// - Parameter userScript: The user script instance making the request
-    func serpSettingsUserScriptDidRequestToCloseTabAndOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript)
-    
-    /// Requests opening AI features settings (without closing the tab).
+    func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript)
+
+    /// Requests opening AI features settings
     ///
     /// Called when the user clicks a direct link to AI features settings on the SERP.
-    /// The implementer should navigate to the AI features settings screen without
-    /// closing the current tab.
+    /// The implementer should navigate to the AI features settings screen, closes the tab if needed.
     ///
     /// ## Use Case
     ///

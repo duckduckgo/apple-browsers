@@ -204,7 +204,7 @@ public extension SERPSettingsProviding {
 ///
 /// This struct wraps raw JSON data and implements Encodable to allow
 /// the data to be returned through the UserScript messaging system.
-private struct JSONBlob: Encodable {
+struct JSONBlob: Encodable {
     let data: Data
     
     func encode(to encoder: Encoder) throws {

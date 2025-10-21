@@ -283,7 +283,7 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
 
         // Check "return" parameter for navigation after closing tab
         if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.privateSearch {
-            delegate?.serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(self)
+            delegate?.serpSettingsUserScriptDidRequestToOpenPrivacySettings(self)
         } else if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.aiFeatures {
             delegate?.serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(self)
         }

@@ -1242,7 +1242,7 @@ extension Tab: PageObserverUserScriptDelegate {
 }
 
 extension Tab: SERPSettingsUserScriptDelegate {
-    func serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
+    func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
         delegate?.closeTab(self)
     }
 

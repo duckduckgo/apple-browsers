@@ -28,6 +28,7 @@ import PrivacyDashboard
 import PixelExperimentKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import UIComponents
 
 extension TabViewController {
 
@@ -173,6 +174,10 @@ extension TabViewController {
                                                  action: { [weak self] in
             self?.onOpenDownloadsAction()
         }))
+
+        if featureFlagger.isFeatureOn(.vpnMenuItem) {
+            entries.append(buildVPNEntry())
+        }
 
         entries.append(BrowsingMenuEntry.regular(name: UserText.actionSettings,
                                                  image: DesignSystemImages.Glyphs.Size16.settings,
@@ -576,6 +581,47 @@ extension TabViewController {
                                   onAction: { [weak self] in
             self?.togglePrivacyProtection(domain: domain)
         })
+    }
+
+    private func buildVPNEntry() -> BrowsingMenuEntry {
+        let vpnPromoHelper = VPNSubscriptionPromotionHelper()
+        let vpnAccessoryView: UIView?
+        switch vpnPromoHelper.subscriptionPromoStatus {
+        case .pill:
+            vpnAccessoryView = AccessoryHostingView(BadgeView(text: UserText.freeTrialBadgeLabel))
+        case .noPill:
+            vpnAccessoryView = nil
+        case .subscribed:
+            let vpnStatus: StatusIndicator
+            if case .connected = AppDependencyProvider.shared.connectionObserver.recentValue {
+                vpnStatus = .on
+            } else {
+                vpnStatus = .off
+            }
+            vpnAccessoryView = AccessoryHostingView(StatusIndicatorView(status: vpnStatus))
+        }
+
+        return BrowsingMenuEntry.regular(name: UserText.actionVPN,
+                                         image: DesignSystemImages.Glyphs.Size16.vpnOn,
+                                         accessoryView: vpnAccessoryView) { [weak self] in
+            self?.onOpenVPNAction(with: vpnPromoHelper)
+        }
+    }
+
+    private func onOpenVPNAction(with vpnPromoHelper: VPNSubscriptionPromotionHelper) {
+        switch vpnPromoHelper.subscriptionPromoStatus {
+        case .pill, .noPill:
+            vpnPromoHelper.fireTapPixel()
+            let urlComponents = vpnPromoHelper.subscriptionURLComponents()
+            NotificationCenter.default.post(
+                name: .settingsDeepLinkNotification,
+                object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
+                userInfo: nil
+            )
+            return
+        case .subscribed:
+            delegate?.tabDidRequestSettingsToVPN(self)
+        }
     }
 
 }

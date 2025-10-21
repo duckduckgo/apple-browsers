@@ -21,7 +21,7 @@ import UIKit
 
 enum BrowsingMenuEntry {
     
-    case regular(name: String, accessibilityLabel: String? = nil, image: UIImage, showNotificationDot: Bool = false, action: () -> Void)
+    case regular(name: String, accessibilityLabel: String? = nil, image: UIImage, showNotificationDot: Bool = false, accessoryView: UIView? = nil, action: () -> Void)
     case separator
 }
 
@@ -236,14 +236,22 @@ final class BrowsingMenuViewController: UIViewController {
 
     private func recalculatePreferredWidthConstraint() {
         let longestEntry = menuEntries.reduce("") { (result, entry) -> String in
-            guard case BrowsingMenuEntry.regular(let name, _, _, _, _) = entry else { return result }
+            guard case BrowsingMenuEntry.regular(let name, _, _, _, _, _) = entry else { return result }
             if result.length() < name.length() {
                 return name
             }
             return result
         }
+        let accessoryViewWidth = menuEntries.reduce(0) { (result, entry) -> CGFloat in
+            guard case BrowsingMenuEntry.regular(_, _, _, _, .some(let accessoryView), _) = entry else { return result }
+            let accessoryViewWidth = accessoryView.intrinsicContentSize.width
+            if result < accessoryViewWidth {
+                return accessoryViewWidth
+            }
+            return result
+        }
 
-        preferredWidth.constant = BrowsingMenuEntryViewCell.preferredWidth(for: longestEntry)
+        preferredWidth.constant = BrowsingMenuEntryViewCell.preferredWidth(for: longestEntry) + accessoryViewWidth
     }
 
     private func recalculateHeightConstraints() {
@@ -259,7 +267,7 @@ extension BrowsingMenuViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         switch menuEntries[indexPath.row] {
-        case .regular(_, _, _, _, let action):
+        case .regular(_, _, _, _, _, let action):
             dismiss(animated: true) {
                 action()
             }
@@ -281,13 +289,14 @@ extension BrowsingMenuViewController: UITableViewDataSource {
         let theme = ThemeManager.shared.currentTheme
         
         switch menuEntries[indexPath.row] {
-        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, _):
+        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let accessoryView, _):
             guard let cell = tableView.dequeueReusableCell(withIdentifier: "BrowsingMenuEntryViewCell",
                                                            for: indexPath) as? BrowsingMenuEntryViewCell else {
                 fatalError("Cell should be dequeued")
             }
             
             cell.configure(image: image, label: name, accessibilityLabel: accessibilityLabel, showNotificationDot: showNotificationDot)
+            cell.accessoryView = accessoryView
             return cell
         case .separator:
             guard let cell = tableView.dequeueReusableCell(withIdentifier: "BrowsingMenuSeparatorViewCell",

@@ -255,8 +255,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         applyThemeStyle()
 
-        pinnedTabsCollectionView?.dataSource = self
-        pinnedTabsCollectionView?.delegate = self
     }
 
     override func viewWillAppear() {
@@ -441,16 +439,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func setupPinnedTabsView() {
         if featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) {
             layoutPinnedTabsCollectionView()
+            subscribeToPinnedTabsCollection()
+
             pinnedTabsWindowDraggingView.isHidden = true
 
-            tabCollectionViewModel.pinnedTabsCollection?.$tabs
-                .removeDuplicates()
-                .asVoid()
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] in
-                    self?.pinnedTabsCollectionView?.reloadData()
-                }
-                .store(in: &cancellables)
+            pinnedTabsCollectionView?.dataSource = self
+            pinnedTabsCollectionView?.delegate = self
 
         } else {
             layoutPinnedTabsView()
@@ -488,6 +482,17 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             pinnedTabsCollectionView.bottomAnchor.constraint(equalTo: pinnedTabsContainerView.bottomAnchor),
             pinnedTabsCollectionView.trailingAnchor.constraint(equalTo: pinnedTabsContainerView.trailingAnchor)
         ])
+    }
+
+    private func subscribeToPinnedTabsCollection() {
+        tabCollectionViewModel.pinnedTabsCollection?.$tabs
+            .removeDuplicates()
+            .asVoid()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.pinnedTabsCollectionView?.reloadData()
+            }
+            .store(in: &cancellables)
     }
 
     private func subscribeToPinnedTabsViewModelInputs() {

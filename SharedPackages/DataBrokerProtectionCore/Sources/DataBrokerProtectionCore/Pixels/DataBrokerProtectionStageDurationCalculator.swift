@@ -293,6 +293,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                           attemptId: attemptId,
                                           duration: totalDuration,
                                           tries: tries,
+                                          parent: parentURL ?? "",
                                           emailPattern: emailPattern,
                                           vpnConnectionState: vpnConnectionState,
                                           vpnBypassStatus: vpnBypassStatus))

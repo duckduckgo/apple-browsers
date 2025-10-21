@@ -20,6 +20,9 @@ import Common
 import UserScript
 import Foundation
 import WebKit
+#if os(macOS)
+import Combine
+#endif
 
 // MARK: - UserScript Messages
 
@@ -88,13 +91,13 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     ///
     /// The broker handles message delivery between JavaScript and native code.
     public weak var broker: UserScriptMessageBroker?
-    
+
     /// Delegate for handling navigation and settings screen requests.
     ///
     /// The delegate is responsible for presenting native settings screens
     /// when requested by the SERP.
     public weak var delegate: SERPSettingsUserScriptDelegate?
-    
+
     /// WebView associated with this user script instance.
     ///
     /// Required for pushing messages from native to SERP
@@ -118,11 +121,51 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     /// and feature flag checks.
     private let serpSettingsProviding: SERPSettingsProviding
 
+#if os(macOS)
+    /// Combine cancellable for AI features publisher subscription.
+    ///
+    /// Stores the subscription to the AI preferences storage publisher,
+    /// ensuring the subscription remains active for the lifetime of this user script.
+    private var aiFeaturesCancellable: AnyCancellable?
+#endif
+
     // MARK: - Initialization
 
     public init(serpSettingsProviding: SERPSettingsProviding) {
         self.serpSettingsProviding = serpSettingsProviding
         self.messageOriginPolicy = .only(rules: serpSettingsProviding.buildMessageOriginRules())
+        super.init()
+
+        setupAISettingsObserver()
+    }
+
+    // MARK: - AI Settings Observer Setup
+
+    /// Sets up observation of AI settings changes.
+    ///
+    /// This method configures platform-specific subscriptions to be notified
+    /// when the AI features setting changes in native preferences.
+    ///
+    /// - **macOS**: Uses Combine publisher from `AIChatPreferencesStorage`
+    /// - **iOS**: Uses NotificationCenter with `.aiChatSettingsChanged` notification
+    private func setupAISettingsObserver() {
+        #if os(macOS)
+        // Subscribe to AI features changes via Combine publisher
+        aiFeaturesCancellable = serpSettingsProviding.aiChatPreferencesStorage.isAIFeaturesEnabledPublisher
+            .dropFirst() // Skip the initial value to avoid unnecessary message on startup
+            .sink { [weak self] _ in
+                self?.nativeDuckAiSettingChanged()
+            }
+        #elseif os(iOS)
+        // Subscribe to AI features changes via NotificationCenter
+        NotificationCenter.default.addObserver(
+            forName: .aiChatSettingsChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.nativeDuckAiSettingChanged()
+        }
+        #endif
     }
 
     // MARK: - Subfeature
@@ -274,20 +317,14 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     /// is changed in native settings. This allows the SERP to update its UI
     /// in real-time without requiring a page reload.
     ///
-    /// ## Usage
+    /// ## Automatic Invocation
     ///
-    /// This method should be called by the app when:
-    /// - User toggles AI features in Settings
-    /// - AI features are enabled/disabled programmatically
-    /// - Feature flag state changes
+    /// This method is automatically called when the AI features setting changes:
+    /// - **macOS**: Triggered by Combine publisher subscription to `isAIFeaturesEnabledPublisher`
+    /// - **iOS**: Triggered by NotificationCenter observer for `.aiChatSettingsChanged`
     ///
-    /// ## Implementation Note
-    ///
-    /// Currently this method is private. To be useful, it should either be:
-    /// - Made public for external triggering
-    /// - Called via a notification observer pattern
-    /// - Exposed through the SERPSettingsProviding protocol
-    private func nativeDuckAiSettingChanged() {
+    /// The subscription is set up in `setupAISettingsObserver()` during initialization.
+    func nativeDuckAiSettingChanged() {
         guard let webView else {
             return
         }
@@ -297,4 +334,24 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
                      for: self,
                      into: webView)
     }
+
+    // MARK: - Cleanup
+
+    deinit {
+        #if os(iOS)
+        NotificationCenter.default.removeObserver(self)
+        #endif
+    }
 }
+
+// MARK: - Notification Names
+
+#if os(iOS)
+public extension Notification.Name {
+    /// Notification posted when AI Chat settings change on iOS.
+    ///
+    /// This notification should be posted by the iOS app whenever the AI features
+    /// setting is toggled in preferences, allowing SERP to be notified of the change.
+    static let aiChatSettingsChanged = Notification.Name("com.duckduckgo.aichat.settings.changed")
+}
+#endif

@@ -31,7 +31,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
         handler.clear()
     }
 
-    func testWhenErrorIs404_thenWefireScanNoResultsPixel() {
+    func testWhenErrorIs404_thenWeFireScanNoResultsPixel() {
         let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com", dataBrokerVersion: "1.1.1", handler: handler, vpnConnectionState: "disconnected", vpnBypassStatus: "no")
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 404))

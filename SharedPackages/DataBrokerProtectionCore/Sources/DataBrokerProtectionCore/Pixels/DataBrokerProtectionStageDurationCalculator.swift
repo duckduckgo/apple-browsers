@@ -69,7 +69,7 @@ public protocol StageDurationCalculator {
     func fireScanError(error: Error)
     func setStage(_ stage: Stage)
     func setEmailPattern(_ emailPattern: String?)
-    func setLastActionId(_ actionID: String)
+    func setLastAction(_ action: Action)
     func resetTries()
     func incrementTries()
 }
@@ -89,6 +89,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     let startTime: Date
     var lastStateTime: Date
     private(set) var actionID: String?
+    private(set) var actionType: String?
     private(set) var stage: Stage = .other
     private(set) var emailPattern: String?
     private(set) var tries = 1
@@ -380,7 +381,9 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                 details: error.localizedDescription,
                 isImmediateOperation: isImmediateOperation,
                 vpnConnectionState: vpnConnectionState,
-                vpnBypassStatus: vpnBypassStatus
+                vpnBypassStatus: vpnBypassStatus,
+                actionId: actionID ?? "unknown",
+                actionType: actionType ?? "unknown"
             )
         )
     }
@@ -397,8 +400,9 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.emailPattern = emailPattern
     }
 
-    func setLastActionId(_ actionID: String) {
-        self.actionID = actionID
+    func setLastAction(_ action: Action) {
+        self.actionID = action.id
+        self.actionType = action.actionType.rawValue
     }
 
     func resetTries() {

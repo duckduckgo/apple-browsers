@@ -380,7 +380,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.isImmediateOperation: isImmediateOperation.description,
                     Consts.vpnConnectionStateParamKey: vpnConnectionState,
                     Consts.vpnBypassStatusParamKey: vpnBypassStatus,
-                    Consts.parentKey: parent ?? ""]
+                    Consts.parentKey: parent]
         case .scanNoResults(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let parent, let actionID, let actionType):
             return [Consts.dataBrokerParamKey: dataBroker,
                     Consts.dataBrokerVersionKey: dataBrokerVersion,

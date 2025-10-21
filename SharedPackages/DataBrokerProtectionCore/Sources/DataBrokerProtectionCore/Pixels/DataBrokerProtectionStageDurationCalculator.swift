@@ -346,7 +346,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                   isImmediateOperation: isImmediateOperation,
                                   vpnConnectionState: vpnConnectionState,
                                   vpnBypassStatus: vpnBypassStatus,
-                                  parent: parentURL))
+                                  parent: parentURL ?? ""))
     }
 
     func fireScanNoResults() {
@@ -357,9 +357,9 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                     isImmediateOperation: isImmediateOperation,
                                     vpnConnectionState: vpnConnectionState,
                                     vpnBypassStatus: vpnBypassStatus,
-                                    parent: parentURL,
-                                    actionID: actionID,
-                                    actionType: stage.rawValue))
+                                    parent: parentURL ?? "",
+                                    actionID: actionID ?? "unknown",
+                                    actionType: actionType ?? "unknown"))
     }
 
     func fireScanError(error: Error) {

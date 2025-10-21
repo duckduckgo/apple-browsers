@@ -232,7 +232,7 @@ final class FirefoxLoginReader {
             // Use AES-256-CBC decryption with the 32-byte key
             let decryptedData = try Cryptography.decryptAESCBC(data: ciphertext, key: aesKey, iv: initializationVector)
             return try String(data: decryptedData, encoding: .utf8) ?? { throw LoginReaderFileLineError() }()
-        } else if oid == ASN1Parser.OID.tripleDesCBC || oid == nil, let tripleDesKey = keys.tripleDesKey {
+        } else if let tripleDesKey = keys.tripleDesKey {
             // Use 3DES-CBC decryption with the 24-byte key (or fallback if no OID found)
             let decryptedData = try Cryptography.decrypt3DES(data: ciphertext, key: tripleDesKey, iv: initializationVector)
             return try String(data: decryptedData, encoding: .utf8) ?? { throw LoginReaderFileLineError() }()

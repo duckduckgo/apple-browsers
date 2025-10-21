@@ -646,7 +646,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         guard collectionView.selectionIndexPaths.first?.item != tabCollectionViewModel.selectionIndex?.item else {
             collectionView.updateItemsLeftToSelectedItems()
-            pinnedTabsCollectionView?.setLastItemSeparatorVisible(tabCollectionViewModel.selectionIndex != .unpinned(0))
+            pinnedTabsCollectionView?.setLastItemSeparatorVisible(tabMode == .overflow || tabCollectionViewModel.selectionIndex != .unpinned(0))
             return
         }
 
@@ -660,11 +660,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         let newSelectionIndexPath = IndexPath(item: selectionIndex.item)
         if tabMode == .divided {
             collectionView.animator().selectItems(at: [newSelectionIndexPath], scrollPosition: .centeredHorizontally)
+            pinnedTabsCollectionView?.setLastItemSeparatorVisible(selectionIndex != .unpinned(0))
         } else {
             collectionView.selectItems(at: [newSelectionIndexPath], scrollPosition: .centeredHorizontally)
             collectionView.scrollToSelected()
+            pinnedTabsCollectionView?.setLastItemSeparatorVisible(true)
         }
-        pinnedTabsCollectionView?.setLastItemSeparatorVisible(selectionIndex != .unpinned(0))
     }
 
     private func bringSelectedTabCollectionToFront() {

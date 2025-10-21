@@ -485,7 +485,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .vpnMenuItem:
-            return .disabled
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnMenuItem))
         }
     }
 }

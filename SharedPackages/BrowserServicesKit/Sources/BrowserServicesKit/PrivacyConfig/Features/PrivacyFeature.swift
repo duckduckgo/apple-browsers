@@ -357,6 +357,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionRestoreWidePixelMeasurement
     case authV2WideEventEnabled
     case winBackOffer
+    case vpnMenuItem
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

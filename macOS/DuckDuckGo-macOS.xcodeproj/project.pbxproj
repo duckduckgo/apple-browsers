@@ -3844,6 +3844,8 @@
 		EE7F74912BB5D76600CD9456 /* BookmarksBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7F74902BB5D76600CD9456 /* BookmarksBarTests.swift */; };
 		EE8C11D62E9E8347002FFD72 /* FileImportScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8C11D52E9E8336002FFD72 /* FileImportScreenView.swift */; };
 		EE8C11D72E9E8347002FFD72 /* FileImportScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8C11D52E9E8336002FFD72 /* FileImportScreenView.swift */; };
+		EE8C11D92E9FE76F002FFD72 /* NewImportErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8C11D82E9FE768002FFD72 /* NewImportErrorView.swift */; };
+		EE8C11DA2E9FE76F002FFD72 /* NewImportErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE8C11D82E9FE768002FFD72 /* NewImportErrorView.swift */; };
 		EE9D81C32BC57A3700338BE3 /* StateRestorationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9D81C22BC57A3700338BE3 /* StateRestorationTests.swift */; };
 		EEA3EEB12B24EBD000E8333A /* NetworkProtectionVPNCountryLabelsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEA3EEB02B24EBD000E8333A /* NetworkProtectionVPNCountryLabelsModel.swift */; };
 		EEA3EEB32B24EC0600E8333A /* VPNLocationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEA3EEB22B24EC0600E8333A /* VPNLocationViewModel.swift */; };
@@ -6092,6 +6094,7 @@
 		EE7E0FD62E3BA8FA00E51C8B /* SyncDialogController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDialogController.swift; sourceTree = "<group>"; };
 		EE7F74902BB5D76600CD9456 /* BookmarksBarTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksBarTests.swift; sourceTree = "<group>"; };
 		EE8C11D52E9E8336002FFD72 /* FileImportScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileImportScreenView.swift; sourceTree = "<group>"; };
+		EE8C11D82E9FE768002FFD72 /* NewImportErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewImportErrorView.swift; sourceTree = "<group>"; };
 		EE9D81C22BC57A3700338BE3 /* StateRestorationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StateRestorationTests.swift; sourceTree = "<group>"; };
 		EEA3EEB02B24EBD000E8333A /* NetworkProtectionVPNCountryLabelsModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkProtectionVPNCountryLabelsModel.swift; sourceTree = "<group>"; };
 		EEA3EEB22B24EC0600E8333A /* VPNLocationViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VPNLocationViewModel.swift; sourceTree = "<group>"; };
@@ -11572,6 +11575,7 @@
 		EE8C11D42E9E8324002FFD72 /* New */ = {
 			isa = PBXGroup;
 			children = (
+				EE8C11D82E9FE768002FFD72 /* NewImportErrorView.swift */,
 				EE8C11D52E9E8336002FFD72 /* FileImportScreenView.swift */,
 			);
 			path = New;
@@ -13298,6 +13302,7 @@
 				3706FA9F293F65D500E42796 /* FeedbackPresenter.swift in Sources */,
 				BB32C5972DCCF7AA00775E80 /* PinnedTabRampView.swift in Sources */,
 				9FFBEE7D2DDF02F30058B11A /* DefaultBrowserAndDockPromptStatusUpdateNotifier.swift in Sources */,
+				EE8C11DA2E9FE76F002FFD72 /* NewImportErrorView.swift in Sources */,
 				CD2AB5C42C8222F70019EB49 /* MaliciousSiteProtectionState.swift in Sources */,
 				37A6A8F22AFCC988008580A3 /* FaviconsFetcherOnboarding.swift in Sources */,
 				7BD504982E5FA37B008A0646 /* WebExtensionManager.swift in Sources */,
@@ -15946,6 +15951,7 @@
 				EE137E8E2E40F5C70065B5E0 /* DeviceSyncCoordinator.swift in Sources */,
 				B68458C525C7EA0C00DC17B6 /* TabCollection+NSSecureCoding.swift in Sources */,
 				BB32C59D2DCD417600775E80 /* ColorsProviding.swift in Sources */,
+				EE8C11D92E9FE76F002FFD72 /* NewImportErrorView.swift in Sources */,
 				C13909EF2B85FD4E001626ED /* AutofillActionExecutor.swift in Sources */,
 				BB7D35702DB80E0D0002CDB6 /* TabStyleProviding.swift in Sources */,
 				4BB88B5B25B7BA50006F6B06 /* Instruments.swift in Sources */,

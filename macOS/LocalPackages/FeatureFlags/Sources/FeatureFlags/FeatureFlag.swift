@@ -255,7 +255,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .authV2WideEventEnabled,
                 .syncCreditCards,
                 .syncIdentities,
-                .dataImportNewSafariFilePicker:
+                .dataImportNewSafariFilePicker,
+                .fireDialog,
+                .fireDialogIndividualSitesLink:
             true
         default:
             false
@@ -380,7 +382,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .historyView:
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
         case .historyViewSitesSection:
-            return .remoteDevelopment(.subfeature(HTMLHistoryPageSubfeature.sitesSection))
+            return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.sitesSection))
         case .autoUpdateInDEBUG:
             return .disabled
         case .updatesWontAutomaticallyRestartApp:
@@ -484,9 +486,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .subscriptionPurchaseWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
         case .fireDialog:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.fireDialog))
         case .fireDialogIndividualSitesLink:
-            return .enabled
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.fireDialogIndividualSitesLink))
         case .refactorOfSyncPreferences:
             return .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences))
         case .newSyncEntryPoints:

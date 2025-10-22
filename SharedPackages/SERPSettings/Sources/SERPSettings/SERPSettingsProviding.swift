@@ -47,7 +47,7 @@ import Common
 /// - Message origin rules for security validation
 /// - Optional event mapper for error analytics
 public protocol SERPSettingsProviding {
-    
+
     /// Builds message origin rules for validating SERP communication.
     ///
     /// These rules define which hostnames are permitted to send settings messages
@@ -55,7 +55,7 @@ public protocol SERPSettingsProviding {
     ///
     /// - Returns: An array of hostname matching rules, typically including duckduckgo.com
     func buildMessageOriginRules() -> [HostnameMatchingRule]
-    
+
     /// Determines if SERP settings synchronization is enabled.
     ///
     /// This allows runtime control over the feature, typically through a feature flag
@@ -63,7 +63,7 @@ public protocol SERPSettingsProviding {
     ///
     /// - Returns: `true` if settings should be synchronized, `false` otherwise
     func isSERPSettingsFeatureOn() -> Bool
-    
+
     /// Retrieves stored SERP settings.
     ///
     /// Settings are returned as an opaque encodable blob that can be sent back to the SERP.
@@ -71,7 +71,7 @@ public protocol SERPSettingsProviding {
     ///
     /// - Returns: Encoded settings if available, or `nil` if no settings exist or an error occurs
     func getSERPSettings() -> Encodable?
-    
+
     /// Stores SERP settings received from the web page.
     ///
     /// The SERP sends a complete snapshot of all non-default settings. This method
@@ -92,13 +92,13 @@ public protocol SERPSettingsProviding {
     /// The store must support throwing operations and should provide persistent storage
     /// that survives app restarts. Typical implementations use UserDefaults or Keychain.
     var keyValueStore: ThrowingKeyValueStoring { get }
-    
+
     /// Serial dispatch queue for thread-safe storage access.
     ///
     /// All read and write operations to the settings storage are serialized through
     /// this queue to prevent race conditions and ensure data consistency.
     var settingsQueue: DispatchQueue { get }
-    
+
     /// Optional event mapper for reporting storage errors.
     ///
     /// When provided, storage errors are reported through this mapper for analytics
@@ -206,7 +206,7 @@ public extension SERPSettingsProviding {
 /// the data to be returned through the UserScript messaging system.
 struct JSONBlob: Encodable {
     let data: Data
-    
+
     func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         try container.encode(data)

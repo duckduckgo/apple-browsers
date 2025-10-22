@@ -23,7 +23,7 @@ import Foundation
 /// These constants define the contract between the SERP web page and native
 /// application for settings synchronization and navigation requests.
 public enum SERPSettingsConstants {
-    
+
     /// Parameter key for return navigation requests.
     ///
     /// Used in `openNativeSettings` messages to specify where the user should
@@ -31,7 +31,7 @@ public enum SERPSettingsConstants {
     ///
     /// Example: `["return": "privateSearch"]`
     public static let returnParameterKey = "return"
-    
+
     /// Parameter key for direct screen navigation requests.
     ///
     /// Used in `openNativeSettings` messages to specify which settings screen
@@ -39,19 +39,19 @@ public enum SERPSettingsConstants {
     ///
     /// Example: `["screen": "aiFeatures"]`
     public static let screenParameterKey = "screen"
-    
+
     /// Parameter value indicating private search settings navigation.
     ///
     /// When used with `returnParameterKey`, signals the app should navigate
     /// to the privacy search settings screen.
     public static let privateSearch = "privateSearch"
-    
+
     /// Parameter value indicating AI features settings navigation.
     ///
     /// When used with `returnParameterKey` or `screenParameterKey`, signals
     /// the app should navigate to the AI features settings screen.
     public static let aiFeatures = "aiFeatures"
-    
+
     /// Key-value store key for SERP settings persistence.
     ///
     /// This key identifies the JSON blob containing all SERP settings in

@@ -47,7 +47,7 @@ final class SERPSettingsProvider: SERPSettingsProviding {
     ///
     /// Currently unused but reserved for future feature flag integration.
     private let featureFlagger: FeatureFlagger
-    
+
     /// Internal storage for the event mapper.
     ///
     /// Stored separately to allow the computed property to provide optional access.
@@ -58,12 +58,12 @@ final class SERPSettingsProvider: SERPSettingsProviding {
     /// Defaults to the app's global key-value store, which uses UserDefaults
     /// for macOS application settings.
     var keyValueStore: ThrowingKeyValueStoring
-    
+
     /// AI chat preferences storage for querying AI feature state.
     ///
     /// Used to determine the value of `isAIChatEnabled`.
     var aiChatPreferencesStorage: AIChatPreferencesStorage
-    
+
     /// Serial dispatch queue for thread-safe storage access.
     ///
     /// All read and write operations to the key-value store are serialized

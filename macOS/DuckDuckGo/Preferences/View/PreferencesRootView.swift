@@ -177,6 +177,9 @@ enum Preferences {
                         PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseClick)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
+                    case .openWinBackOfferLandingPage:
+                        guard let url = WinBackOfferURL.subscriptionURL(for: .winBackSettings) else { return }
+                        Application.appDelegate.windowControllersManager.showTab(with: .subscription(url))
                     }
                 }
             }
@@ -272,6 +275,9 @@ enum Preferences {
                         PixelKit.fire(SubscriptionPixel.subscriptionManagementPlanBilling)
                     case .didClickRemoveSubscription:
                         PixelKit.fire(SubscriptionPixel.subscriptionManagementRemoval)
+                    case .openWinBackOfferLandingPage:
+                        guard let url = WinBackOfferURL.subscriptionURL(for: .winBackSettings) else { return }
+                        Application.appDelegate.windowControllersManager.showTab(with: .subscription(url))
                     }
                 }
             }
@@ -437,6 +443,9 @@ enum Preferences {
                         PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseClick)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
+                    case .openWinBackOfferLandingPage:
+                        guard let url = WinBackOfferURL.subscriptionURL(for: .winBackSettings) else { return }
+                        showTab(.subscription(url))
                     }
                 }
             }
@@ -567,6 +576,9 @@ enum Preferences {
                         PixelKit.fire(SubscriptionPixel.subscriptionManagementPlanBilling)
                     case .didClickRemoveSubscription:
                         PixelKit.fire(SubscriptionPixel.subscriptionManagementRemoval)
+                    case .openWinBackOfferLandingPage:
+                        guard let url = WinBackOfferURL.subscriptionURL(for: .winBackSettings) else { return }
+                        showTab(.subscription(url))
                     }
                 }
             }

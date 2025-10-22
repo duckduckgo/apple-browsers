@@ -129,12 +129,12 @@ open class TabBarCollectionView: NSCollectionView {
         collectionViewLayout?.invalidateLayout()
     }
 
-    func setLastItemSeparatorVisible(_ isVisible: Bool) {
+    func setLastItemSeparatorHidden(_ isHidden: Bool) {
         let numberOfItems = numberOfItems(inSection: 0)
         guard numberOfItems > 0, let item = item(at: numberOfItems-1) as? TabBarViewItem else {
             return
         }
-        item.isLeftToSelected = !isVisible
+        item.isLeftToSelected = isHidden
     }
 
     func updateItemsLeftToSelectedItems(_ selectionIndexPaths: Set<IndexPath>? = nil) {

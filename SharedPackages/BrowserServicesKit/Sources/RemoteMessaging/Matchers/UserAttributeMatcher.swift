@@ -36,6 +36,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
 
     private let isWidgetInstalled: Bool
     private let isSyncEnabled: Bool
+    private let shouldShowWinBackOfferUrgencyMessage: Bool
 
     private let commonUserAttributeMatcher: CommonUserAttributeMatcher
 
@@ -60,10 +61,12 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
                 dismissedMessageIds: [String],
                 shownMessageIds: [String],
                 enabledFeatureFlags: [String],
-                isSyncEnabled: Bool
+                isSyncEnabled: Bool,
+                shouldShowWinBackOfferUrgencyMessage: Bool
     ) {
         self.isWidgetInstalled = isWidgetInstalled
         self.isSyncEnabled = isSyncEnabled
+        self.shouldShowWinBackOfferUrgencyMessage = shouldShowWinBackOfferUrgencyMessage
 
         commonUserAttributeMatcher = .init(
             statisticsStore: statisticsStore,
@@ -95,6 +98,8 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
             return matchingAttribute.evaluate(for: isWidgetInstalled)
         case let matchingAttribute as SyncEnabledMatchingAttribute:
             return matchingAttribute.evaluate(for: isSyncEnabled)
+        case let matchingAttribute as WinBackOfferUrgencyMatchingAttribute:
+            return matchingAttribute.evaluate(for: shouldShowWinBackOfferUrgencyMessage)
         default:
             return commonUserAttributeMatcher.evaluate(matchingAttribute: matchingAttribute)
         }

@@ -59,7 +59,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     dismissedMessageIds: [],
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
-                    isSyncEnabled: false
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -159,7 +160,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     dismissedMessageIds: [],
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
-                    isSyncEnabled: false
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -269,7 +271,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     dismissedMessageIds: [],
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
-                    isSyncEnabled: false
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -322,7 +325,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     dismissedMessageIds: [],
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
-                    isSyncEnabled: false
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -371,7 +375,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     dismissedMessageIds: [],
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
-                    isSyncEnabled: false
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -418,7 +423,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     dismissedMessageIds: [],
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
-                    isSyncEnabled: false
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -465,7 +471,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     dismissedMessageIds: [],
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
-                    isSyncEnabled: false
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -512,7 +519,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     dismissedMessageIds: [],
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
-                    isSyncEnabled: false
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),

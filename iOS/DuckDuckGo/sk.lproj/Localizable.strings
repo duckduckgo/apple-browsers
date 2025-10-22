@@ -2317,9 +2317,6 @@
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Potvrdiť";
 
-/* Description text for the new address bar picker modal */
-"new.address.bar.picker.description" = "Funkcie AI sú vždy voliteľné.";
-
 /* Footer text for the new address bar picker */
 "new.address.bar.picker.footer" = "Uprav v nastaveniach > Funkcie AI";
 
@@ -2332,8 +2329,8 @@
 /* Option for search only in the new address bar picker */
 "new.address.bar.picker.search.only" = "Len vyhľadávanie";
 
-/* Subtitle for the new address bar picker modal */
-"new.address.bar.picker.subtitle" = "Prepnúť medzi vyhľadávaním a AI chatom";
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline" = "Chceš jednoduchší prístup k AI chatu?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Možnosť panela s adresou";
@@ -2622,6 +2619,9 @@
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Spravovať kreditné karty…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "Bol dosiahnutý maximálny počet kreditných kariet. Ak chceš obnoviť synchronizáciu, odstráň nejaké.";
 
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Pri synchronizácii sa vyskytla chyba. Skúste vypnúť synchronizáciu v tomto zariadení a potom sa znovu pripojte pomocou iného zariadenia alebo kódu na obnovenie.";
@@ -3843,6 +3843,54 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Správa od %@:";
+
+/* CTA of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.cta" = "Pozrieť ponuku";
+
+/* Dismiss of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.dismiss" = "Teraz nie";
+
+/* Message of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.text" = "Zostaň chránený s našou VPN, súkromnou AI a ďalšími funkciami. Vyber si dnes predplatné opäť a ušetri 25 %.";
+
+/* Title of message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.title" = "Posledný deň na zľavu 25 %!";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "UŠETRI 25 %";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "Pozrieť ponuku";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Teraz nie";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "Zostaň chránený s našou VPN, súkromnou AI a ďalšími funkciami. Vyber si dnes predplatné opäť a ušetri 25 %.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Iba na obmedzený čas";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "Chceme ťa späť!\nZískaj 25 % zľavu.";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "Pozrieť ponuku";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "Mám predplatné";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "Časovo obmedzená ponuka!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "Zostaň chránený s našou VPN, súkromnou AI a ďalšími funkciami. Vyber si dnes predplatné opäť a ušetri 25 %.\nČasovo obmedzená ponuka.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "Vyber si predplatné opäť a ušetri 25 %";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Vyber si predplatné opäť a ušetri 25 %";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Hľadáte verziu pre Mac?";

@@ -1352,11 +1352,13 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
     public var fireOptOutConditionNotFoundCalled = false
     public var fireScanStartedCalled = false
     public var fireScanSuccessCalled = false
-    public var fireScanFailedCalled = false
+    public var fireScanNoResultsCalled = false
     public var fireScanErrorCalled = false
     public var setStageCalled = false
     public var setEmailPatternCalled = false
-    public var setLastActionIdCalled = false
+    public var setLastActionCalled = false
+    public var lastActionID: String?
+    public var lastActionType: String?
     public var resetTriesCalled = false
     public var incrementTriesCalled = false
 
@@ -1436,8 +1438,8 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
         fireScanSuccessCalled = true
     }
 
-    public func fireScanFailed() {
-        fireScanFailedCalled = true
+    public func fireScanNoResults() {
+        fireScanNoResultsCalled = true
     }
 
     public func fireScanError(error: any Error) {
@@ -1453,8 +1455,10 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
         setEmailPatternCalled = true
     }
 
-    public func setLastActionId(_ actionID: String) {
-        setLastActionIdCalled = true
+    public func setLastAction(_ action: Action) {
+        setLastActionCalled = true
+        lastActionID = action.id
+        lastActionType = action.actionType.rawValue
     }
 
     public func resetTries() {
@@ -1487,11 +1491,13 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
         fireOptOutConditionNotFoundCalled = false
         fireScanStartedCalled = false
         fireScanSuccessCalled = false
-        fireScanFailedCalled = false
+        fireScanNoResultsCalled = false
         fireScanErrorCalled = false
         setStageCalled = false
         setEmailPatternCalled = false
-        setLastActionIdCalled = false
+        setLastActionCalled = false
+        lastActionID = nil
+        lastActionType = nil
         resetTriesCalled = false
         incrementTriesCalled = false
     }

@@ -39,7 +39,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         duckPlayerStorage: DuckPlayerStorage,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         themeManager: ThemeManaging = ThemeManager.shared,
-        syncService: DDGSyncing
+        syncService: DDGSyncing,
+        winBackOfferService: WinBackOfferService
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appSettings = appSettings
@@ -48,6 +49,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.featureFlagger = featureFlagger
         self.themeManager = themeManager
         self.syncService = syncService
+        self.winBackOfferService = winBackOfferService
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -57,7 +59,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let featureFlagger: FeatureFlagger
     let themeManager: ThemeManaging
     let syncService: DDGSyncing
-
+    let winBackOfferService: WinBackOfferService
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
         var bookmarksCount = 0
@@ -94,6 +96,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         var isSyncEnabled: Bool {
             syncService.authState != .inactive
         }
+
+        let shouldShowWinBackOfferUrgencyMessage = winBackOfferService.shouldShowUrgencyMessage
 
         let surveyActionMapper: DefaultRemoteMessagingSurveyURLBuilder
 
@@ -155,7 +159,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        dismissedMessageIds: dismissedMessageIds,
                                                        shownMessageIds: shownMessageIds,
                                                        enabledFeatureFlags: enabledFeatureFlags,
-                                                       isSyncEnabled: isSyncEnabled),
+                                                       isSyncEnabled: isSyncEnabled,
+                                                       shouldShowWinBackOfferUrgencyMessage: shouldShowWinBackOfferUrgencyMessage),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds

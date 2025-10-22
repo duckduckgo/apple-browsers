@@ -20,6 +20,7 @@
 import SwiftUI
 import UIComponents
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 import Lottie
 import AIChat
@@ -60,7 +61,7 @@ private struct ContentView: View {
             VStack {
                 topSpacer
                 headerView
-                    .frame(width: 300)
+                    .frame(width: 280)
                     .padding(.top, topPadding)
                 Spacer()
                 AnimationView()
@@ -89,6 +90,11 @@ private struct ContentView: View {
 
     var headerView: some View {
         VStack(spacing: 0) {
+            Image(uiImage: DesignSystemImages.Color.Size32.duckDuckGo)
+                .resizable()
+                .frame(width: 32, height: 32)
+                .padding(.bottom, 16)
+            
             HStack(spacing: 8) {
                 BadgeView(text: UserText.settingsItemNewBadge)
                 Text(UserText.newAddressBarPickerTitle)
@@ -98,15 +104,9 @@ private struct ContentView: View {
             }
             .padding(.bottom, 8)
 
-            Text(UserText.newAddressBarPickerSubtitle)
+            Text(UserText.newAddressBarPickerHeadline)
                 .daxTitle1()
                 .foregroundColor(.primary)
-                .multilineTextAlignment(.center)
-                .padding(.bottom, 16)
-
-            Text(UserText.newAddressBarPickerDescription)
-                .daxCaption()
-                .foregroundColor(Color(designSystemColor: .textSecondary))
                 .multilineTextAlignment(.center)
                 .padding(.bottom, 16)
         }

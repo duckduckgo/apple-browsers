@@ -1975,6 +1975,12 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
         PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression)
     }
 
+    func optionsButtonMenuRequestedWinBackOfferPurchasePage(_ menu: NSMenu) {
+        guard let url = SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: SubscriptionFunnelOrigin.winBackMenu.rawValue, featurePage: SubscriptionURL.FeaturePage.winback),
+              let url = url.url else { return }
+        showTab(.subscription(url))
+    }
+
     func optionsButtonMenuRequestedSubscriptionPreferences(_ menu: NSMenu) {
         Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .subscriptionSettings)
     }

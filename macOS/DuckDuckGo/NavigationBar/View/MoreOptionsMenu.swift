@@ -50,6 +50,7 @@ protocol OptionsButtonMenuDelegate: AnyObject {
     func optionsButtonMenuRequestedAccessibilityPreferences(_ menu: NSMenu)
     func optionsButtonMenuRequestedDataBrokerProtection(_ menu: NSMenu)
     func optionsButtonMenuRequestedSubscriptionPurchasePage(_ menu: NSMenu)
+    func optionsButtonMenuRequestedWinBackOfferPurchasePage(_ menu: NSMenu)
     func optionsButtonMenuRequestedSubscriptionPreferences(_ menu: NSMenu)
     func optionsButtonMenuRequestedIdentityTheftRestoration(_ menu: NSMenu)
     func optionsButtonMenuRequestedPaidAIChat(_ menu: NSMenu)
@@ -428,6 +429,11 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         actionDelegate?.optionsButtonMenuRequestedSubscriptionPurchasePage(self)
     }
 
+    @objc func openWinBackOfferPurchasePage(_ sender: NSMenuItem) {
+        #warning("TODO: Pixel")
+        actionDelegate?.optionsButtonMenuRequestedWinBackOfferPurchasePage(self)
+    }
+
     @objc func openSubscriptionSettings(_ sender: NSMenuItem) {
         actionDelegate?.optionsButtonMenuRequestedSubscriptionPreferences(self)
     }
@@ -621,7 +627,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                 subscriptionItem = NSMenuItem.createMenuItemWithBadge(
                     title: UserText.subscriptionOptionsMenuItem,
                     badgeText: UserText.winBackCampaignMenuBadgeText,
-                    action: #selector(openSubscriptionPurchasePage(_:)),
+                    action: #selector(openWinBackOfferPurchasePage(_:)),
                     target: self,
                     image: moreOptionsMenuIconsProvider.subscriptionIcon,
                     menu: self

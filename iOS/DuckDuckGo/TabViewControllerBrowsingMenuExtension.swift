@@ -175,7 +175,7 @@ extension TabViewController {
             self?.onOpenDownloadsAction()
         }))
 
-        if featureFlagger.isFeatureOn(.vpnMenuItem) {
+        if state == .newTab, featureFlagger.isFeatureOn(.vpnMenuItem), AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase {
             entries.append(buildVPNEntry())
         }
 

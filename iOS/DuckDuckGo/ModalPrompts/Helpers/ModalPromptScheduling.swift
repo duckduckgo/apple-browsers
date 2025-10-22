@@ -1,5 +1,5 @@
 //
-//  WinBackOfferModalPromptProvider.swift
+//  ModalPromptScheduling.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -19,13 +19,12 @@
 
 import Foundation
 
-// Will be implemented in https://app.asana.com/1/137249556945/task/1211703465383406
-final class WinBackOfferModalPromptProvider: ModalPromptProvider {
+protocol ModalPromptScheduling {
+    func schedule(after delay: TimeInterval, execute: @escaping @MainActor () -> Void)
+}
 
-    func provideModalPrompt() -> ModalPromptConfiguration? {
-        return nil
+final class MainActorScheduler: ModalPromptScheduling {
+    func schedule(after delay: TimeInterval, execute: @escaping @MainActor () -> Void) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: execute)
     }
-    
-    func didPresentModal() {}
-    
 }

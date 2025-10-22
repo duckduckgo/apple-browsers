@@ -27,3 +27,30 @@ final class MockPromptCooldownStore: PromptCooldownStore {
 final class MockPromptCooldownIntervalProvider: PromptCooldownIntervalProviding {
     var cooldownInterval: Int = 24
 }
+
+final class MockPromptCooldownManager: PromptCooldownManaging {
+    var cooldownInfoToReturn: PromptCooldownInfo = .notInCoolDown
+
+    private(set) var didCallRecordLastPromptPresentation = false
+
+    var cooldownInfo: PromptCooldownInfo {
+        cooldownInfoToReturn
+    }
+
+    func recordLastPromptPresentation() {
+        didCallRecordLastPromptPresentation = true
+    }
+}
+
+extension PromptCooldownInfo {
+    static let inCoolDown: PromptCooldownInfo = .init(
+        isInCooldownPeriod: true,
+        lastPresentationDate: Date(),
+        nextPresentationDate: Date(timeIntervalSinceNow: 100)
+    )
+    static let notInCoolDown: PromptCooldownInfo = .init(
+        isInCooldownPeriod: false,
+        lastPresentationDate: nil,
+        nextPresentationDate: Date()
+    )
+}

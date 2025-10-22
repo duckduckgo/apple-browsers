@@ -1,5 +1,5 @@
 //
-//  WinBackOfferModalPromptProvider.swift
+//  Logger+ModalPrompt.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -17,15 +17,8 @@
 //  limitations under the License.
 //
 
-import Foundation
+import os.log
 
-// Will be implemented in https://app.asana.com/1/137249556945/task/1211703465383406
-final class WinBackOfferModalPromptProvider: ModalPromptProvider {
-
-    func provideModalPrompt() -> ModalPromptConfiguration? {
-        return nil
-    }
-    
-    func didPresentModal() {}
-    
+extension Logger {
+    static let modalPrompt = Logger(subsystem: "ModalPrompt", category: "")
 }

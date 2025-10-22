@@ -59,12 +59,4 @@ protocol ModalPromptProvider {
     /// Called after the modal has been successfully presented.
     /// Use this to update any feature-specific tracking or state.
     func didPresentModal()
-
-    /// Called after the modal has been successfully dismissed.
-    /// Use this to execute any additional behaviour once the modal has been dismissed.
-    func didDismissModal()
-}
-
-extension ModalPromptProvider {
-    func didDismissModal() {}
 }

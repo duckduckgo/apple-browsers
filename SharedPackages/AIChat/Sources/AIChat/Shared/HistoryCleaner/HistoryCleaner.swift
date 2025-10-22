@@ -141,10 +141,8 @@ public final class HistoryCleaner: HistoryCleaning {
     private func finish(result: Result<Void, Error>) {
         switch result {
         case .success:
-            Logger.aiChat.debug("ALL GOOD")
             delegate?.historyCleanerDidFinish(self)
         case .failure(let error):
-            Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
             delegate?.historyCleaner(self, didFailWithError: error)
         }
         tearDownClearingWebView()

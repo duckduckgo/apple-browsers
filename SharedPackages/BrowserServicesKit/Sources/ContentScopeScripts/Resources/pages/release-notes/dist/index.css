@@ -313,14 +313,15 @@ body:not([data-platform-name]) .Button_button:active {
   cursor: not-allowed;
   background-color: var(--color-white-at-6);
 }
+[data-platform-name=windows] .Button_button.Button_accent,
 [data-platform-name=windows] .Button_button.Button_accentBrand {
   background-color: var(--ddg-color-primary);
   color: var(--color-white);
 }
-[data-platform-name=windows] .Button_button.Button_accentBrand:hover {
+:is([data-platform-name=windows] .Button_button.Button_accent, [data-platform-name=windows] .Button_button.Button_accentBrand):hover {
   background-color: var(--color-blue-60);
 }
-[data-platform-name=windows] .Button_button.Button_accentBrand:active {
+:is([data-platform-name=windows] .Button_button.Button_accent, [data-platform-name=windows] .Button_button.Button_accentBrand):active {
   background-color: var(--color-blue-70);
 }
 [data-theme=dark] :is([data-platform-name=windows] .Button_button) {
@@ -343,17 +344,18 @@ body:not([data-platform-name]) .Button_button:active {
 [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard:disabled:hover {
   background-color: var(--color-white-at-12);
 }
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accent,
 [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand {
   color: var(--color-black-at-84);
   background-color: var(--color-blue-20);
 }
-[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand:hover {
+:is([data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accent, [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand):hover {
   background-color: var(--color-blue-30);
 }
-[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand:active {
+:is([data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accent, [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand):active {
   background-color: var(--color-blue-40);
 }
-[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand:disabled {
+:is([data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accent, [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand):disabled {
   background-color: var(--color-white-at-36);
   color: var(--color-black-at-84);
 }

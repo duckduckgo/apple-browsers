@@ -1,5 +1,6 @@
 //
-//  DateProvider.swift
+//  CurrentDateProviding.swift
+//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,11 +19,11 @@
 
 import Foundation
 
-public protocol DateProviding {
+public protocol CurrentDateProviding {
     var currentDate: Date { get }
 }
 
-extension Date: DateProviding {
+extension Date: CurrentDateProviding {
     public var currentDate: Date {
         return self
     }

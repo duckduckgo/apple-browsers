@@ -64,9 +64,7 @@ struct SettingsAppearanceView: View {
 
             if viewModel.state.mobileCustomization.isEnabled {
                 Section(header: Text(verbatim: "Customization coming soon")) {
-                    if viewModel.state.mobileCustomization.toolbar.isEnabled {
-                        Text(verbatim: "Toolbar customization will be here")
-                    }
+                    EmptyView()
                 }
             }
 

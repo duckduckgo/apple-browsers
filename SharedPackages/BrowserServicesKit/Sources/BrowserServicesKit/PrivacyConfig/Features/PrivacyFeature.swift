@@ -87,7 +87,6 @@ public enum PrivacyFeature: String {
     case behaviorMetrics
     case dataImport
     case duckAiDataClearing
-    case mobileCustomisation
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -171,14 +170,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1210997282929955?focus=true
     case unifiedURLPredictor
-}
 
-public enum MobileCustomisationSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature {
-        .mobileCustomisation
-    }
-
-    case toolbar
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210869716452614?focus=true
+    case customization
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

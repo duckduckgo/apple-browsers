@@ -22,29 +22,15 @@ import BrowserServicesKit
 // This may change to a class, but is just to get the feature flag in and testable for now.
 struct MobileCustomization {
 
-    struct Toolbar {
-
-    }
-
-    struct CustomizationFeature<Facet> {
-
-        let facet: Facet
-
-        var isEnabled = true
-
-    }
-
     let isEnabled: Bool
-    var toolbar: CustomizationFeature<Toolbar>
-    
+
 }
 
 // Using FeatureFlagger
 extension MobileCustomization {
 
     static func load(featureFlagger: FeatureFlagger) -> MobileCustomization {
-        return MobileCustomization(isEnabled: featureFlagger.isFeatureOn(.mobileCustomisation),
-                                   toolbar: CustomizationFeature(facet: Toolbar(), isEnabled: featureFlagger.isFeatureOn(.mobileCustomisationToolbar)))
+        return MobileCustomization(isEnabled: featureFlagger.isFeatureOn(.mobileCustomisation))
     }
 
 }
@@ -54,8 +40,7 @@ extension MobileCustomization {
 
     static var defaults: MobileCustomization {
         MobileCustomization(
-            isEnabled: false,
-            toolbar: CustomizationFeature(facet: Toolbar(), isEnabled: false)
+            isEnabled: false
         )
     }
 

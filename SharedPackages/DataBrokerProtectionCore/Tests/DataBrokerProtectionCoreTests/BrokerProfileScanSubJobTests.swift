@@ -99,9 +99,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                 profileQuery: profile,
                                                 scanJobData: .mock)
 
-        XCTAssertThrowsError(
-            try sut.validateScanPreconditions(brokerProfileQueryData: brokerData)
-        ) { error in
+        XCTAssertThrowsError(try sut.validateScanPreconditions(brokerProfileQueryData: brokerData)) { error in
             XCTAssertEqual(error as? BrokerProfileSubJobError, .idsMissingForBrokerOrProfileQuery)
         }
     }
@@ -124,9 +122,9 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let notificationCenter = NotificationCenter()
 
         sut.reportScanCompletion(database: mockDatabase,
-                                notificationCenter: notificationCenter,
-                                brokerProfileQueryData: brokerData,
-                                identifiers: identifiers)
+                                 notificationCenter: notificationCenter,
+                                 brokerProfileQueryData: brokerData,
+                                 identifiers: identifiers)
 
         XCTAssertTrue(mockDatabase.wasUpdateLastRunDateForScanCalled)
     }
@@ -138,11 +136,9 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         var notificationReceived = false
         var receivedObject: Any?
         
-        let observer = notificationCenter.addObserver(
-            forName: DataBrokerProtectionNotifications.didFinishScan,
-            object: nil,
-            queue: nil
-        ) { notification in
+        let observer = notificationCenter.addObserver(forName: DataBrokerProtectionNotifications.didFinishScan,
+                                                      object: nil,
+                                                      queue: nil) { notification in
             notificationReceived = true
             receivedObject = notification.object
         }
@@ -152,9 +148,9 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         }
 
         sut.reportScanCompletion(database: mockDatabase,
-                                notificationCenter: notificationCenter,
-                                brokerProfileQueryData: brokerData,
-                                identifiers: identifiers)
+                                 notificationCenter: notificationCenter,
+                                 brokerProfileQueryData: brokerData,
+                                 identifiers: identifiers)
 
         XCTAssertTrue(notificationReceived, "Notification should have been posted")
         XCTAssertEqual(receivedObject as? String, brokerData.dataBroker.name)
@@ -167,11 +163,10 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         mockDatabase.updateLastRunDateError = MockDatabase.MockError.saveFailed
 
         sut.reportScanCompletion(database: mockDatabase,
-                                notificationCenter: notificationCenter,
-                                brokerProfileQueryData: brokerData,
-                                identifiers: identifiers)
+                                 notificationCenter: notificationCenter,
+                                 brokerProfileQueryData: brokerData,
+                                 identifiers: identifiers)
 
-        // Should not crash and still post notification
         XCTAssertTrue(mockDatabase.wasUpdateLastRunDateForScanCalled)
     }
 
@@ -232,9 +227,9 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      vpnBypassStatus: "status")
 
         try sut.markScanStarted(brokerId: identifiers.brokerId,
-                               profileQueryId: identifiers.profileQueryId,
-                               stageCalculator: calculator,
-                               database: mockDatabase)
+                                profileQueryId: identifiers.profileQueryId,
+                                stageCalculator: calculator,
+                                database: mockDatabase)
 
         XCTAssertTrue(mockDatabase.scanEvents.contains { $0.type == .scanStarted })
     }
@@ -248,12 +243,10 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      vpnBypassStatus: "status")
         mockDatabase.addHistoryEventError = MockDatabase.MockError.saveFailed
 
-        XCTAssertThrowsError(
-            try sut.markScanStarted(brokerId: identifiers.brokerId,
-                                   profileQueryId: identifiers.profileQueryId,
-                                   stageCalculator: calculator,
-                                   database: mockDatabase)
-        ) { error in
+        XCTAssertThrowsError(try sut.markScanStarted(brokerId: identifiers.brokerId,
+                                                     profileQueryId: identifiers.profileQueryId,
+                                                     stageCalculator: calculator,
+                                                     database: mockDatabase)) { error in
             XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
         }
     }
@@ -271,17 +264,15 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
 
-        let runner = sut.makeScanRunner(
-            brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
-            stageCalculator: calculator,
-            shouldRunNextStep: { true },
-            runnerFactory: { profile, calc, should in
-                capturedBrokerData = profile
-                capturedCalculator = calc
-                capturedShouldRun = should
-                return MockScanSubJobWebRunner()
-            }
-        )
+        let runner = sut.makeScanRunner(brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
+                                        stageCalculator: calculator,
+                                        shouldRunNextStep: { true },
+                                        runnerFactory: { profile, calc, should in
+            capturedBrokerData = profile
+            capturedCalculator = calc
+            capturedShouldRun = should
+            return MockScanSubJobWebRunner()
+        })
 
         XCTAssertNotNil(runner)
         XCTAssertEqual(capturedBrokerData?.dataBroker.name, "Test broker")
@@ -349,15 +340,15 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         var scheduleOptOutsCalled = false
 
         try sut.handleScanMatches(matches: matches,
-                                 brokerId: identifiers.brokerId,
-                                 profileQueryId: identifiers.profileQueryId,
-                                 brokerProfileQueryData: brokerData,
-                                 database: mockDatabase,
-                                 eventPixels: eventPixels,
-                                 stageCalculator: calculator,
-                                 scheduleOptOuts: { _, _, _, _, _, _, _ in
-                                     scheduleOptOutsCalled = true
-                                 })
+                                  brokerId: identifiers.brokerId,
+                                  profileQueryId: identifiers.profileQueryId,
+                                  brokerProfileQueryData: brokerData,
+                                  database: mockDatabase,
+                                  eventPixels: eventPixels,
+                                  stageCalculator: calculator,
+                                  scheduleOptOuts: { _, _, _, _, _, _, _ in
+            scheduleOptOutsCalled = true
+        })
 
         XCTAssertTrue(scheduleOptOutsCalled)
         XCTAssertTrue(mockDatabase.scanEvents.contains { $0.type == .matchesFound(count: 1) })
@@ -400,16 +391,14 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let matches = [ExtractedProfile.mockWithoutRemovedDate]
         mockDatabase.addHistoryEventError = MockDatabase.MockError.saveFailed
 
-        XCTAssertThrowsError(
-            try sut.handleScanMatches(matches: matches,
-                                     brokerId: identifiers.brokerId,
-                                     profileQueryId: identifiers.profileQueryId,
-                                     brokerProfileQueryData: brokerData,
-                                     database: mockDatabase,
-                                     eventPixels: eventPixels,
-                                     stageCalculator: calculator,
-                                     scheduleOptOuts: { _, _, _, _, _, _, _ in })
-        ) { error in
+        XCTAssertThrowsError(try sut.handleScanMatches(matches: matches,
+                                                       brokerId: identifiers.brokerId,
+                                                       profileQueryId: identifiers.profileQueryId,
+                                                       brokerProfileQueryData: brokerData,
+                                                       database: mockDatabase,
+                                                       eventPixels: eventPixels,
+                                                       stageCalculator: calculator,
+                                                       scheduleOptOuts: { _, _, _, _, _, _, _ in })) { error in
             XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
         }
     }
@@ -426,12 +415,12 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         var storeNoMatchesCalled = false
 
         try sut.handleScanWithNoMatches(brokerId: identifiers.brokerId,
-                                       profileQueryId: identifiers.profileQueryId,
-                                       database: mockDatabase,
-                                       stageCalculator: calculator,
-                                       storeNoMatchesEvent: { _, _, _, _ in
-                                           storeNoMatchesCalled = true
-                                       })
+                                        profileQueryId: identifiers.profileQueryId,
+                                        database: mockDatabase,
+                                        stageCalculator: calculator,
+                                        storeNoMatchesEvent: { _, _, _, _ in
+            storeNoMatchesCalled = true
+        })
 
         XCTAssertTrue(storeNoMatchesCalled)
     }
@@ -444,15 +433,13 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
 
-        XCTAssertThrowsError(
-            try sut.handleScanWithNoMatches(brokerId: identifiers.brokerId,
-                                           profileQueryId: identifiers.profileQueryId,
-                                           database: mockDatabase,
-                                           stageCalculator: calculator,
-                                           storeNoMatchesEvent: { _, _, _, _ in
-                                               throw MockDatabase.MockError.saveFailed
-                                           })
-        ) { error in
+        XCTAssertThrowsError(try sut.handleScanWithNoMatches(brokerId: identifiers.brokerId,
+                                                             profileQueryId: identifiers.profileQueryId,
+                                                             database: mockDatabase,
+                                                             stageCalculator: calculator,
+                                                             storeNoMatchesEvent: { _, _, _, _ in
+            throw MockDatabase.MockError.saveFailed
+        })) { error in
             XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
         }
     }
@@ -515,15 +502,15 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         var markRemovedCalled = false
 
         try sut.handleRemovedProfiles(removedProfiles: removedProfiles,
-                                     brokerId: identifiers.brokerId,
-                                     profileQueryId: identifiers.profileQueryId,
-                                     brokerProfileQueryData: brokerData,
-                                     database: mockDatabase,
-                                     pixelHandler: mockPixelHandler,
-                                     eventsHandler: mockEventsHandler,
-                                     markRemovedAndNotify: { _, _, _, _, _, _, _ in
-                                         markRemovedCalled = true
-                                     })
+                                      brokerId: identifiers.brokerId,
+                                      profileQueryId: identifiers.profileQueryId,
+                                      brokerProfileQueryData: brokerData,
+                                      database: mockDatabase,
+                                      pixelHandler: mockPixelHandler,
+                                      eventsHandler: mockEventsHandler,
+                                      markRemovedAndNotify: { _, _, _, _, _, _, _ in
+            markRemovedCalled = true
+        })
 
         XCTAssertTrue(markRemovedCalled)
     }
@@ -533,18 +520,16 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let brokerData = makeFixtureBrokerProfileQueryData()
         let removedProfiles = [ExtractedProfile.mockWithoutRemovedDate]
 
-        XCTAssertThrowsError(
-            try sut.handleRemovedProfiles(removedProfiles: removedProfiles,
-                                         brokerId: identifiers.brokerId,
-                                         profileQueryId: identifiers.profileQueryId,
-                                         brokerProfileQueryData: brokerData,
-                                         database: mockDatabase,
-                                         pixelHandler: mockPixelHandler,
-                                         eventsHandler: mockEventsHandler,
-                                         markRemovedAndNotify: { _, _, _, _, _, _, _ in
-                                             throw MockDatabase.MockError.saveFailed
-                                         })
-        ) { error in
+        XCTAssertThrowsError(try sut.handleRemovedProfiles(removedProfiles: removedProfiles,
+                                                           brokerId: identifiers.brokerId,
+                                                           profileQueryId: identifiers.profileQueryId,
+                                                           brokerProfileQueryData: brokerData,
+                                                           database: mockDatabase,
+                                                           pixelHandler: mockPixelHandler,
+                                                           eventsHandler: mockEventsHandler,
+                                                           markRemovedAndNotify: { _, _, _, _, _, _, _ in
+            throw MockDatabase.MockError.saveFailed
+        })) { error in
             XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
         }
     }
@@ -557,12 +542,12 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         var updateOperationDatesCalled = false
 
         try sut.updateDatesAfterNoRemovals(brokerId: identifiers.brokerId,
-                                          profileQueryId: identifiers.profileQueryId,
-                                          brokerProfileQueryData: brokerData,
-                                          database: mockDatabase,
-                                          updateOperationDates: { _, _, _, _, _, _ in
-                                              updateOperationDatesCalled = true
-                                          })
+                                           profileQueryId: identifiers.profileQueryId,
+                                           brokerProfileQueryData: brokerData,
+                                           database: mockDatabase,
+                                           updateOperationDates: { _, _, _, _, _, _ in
+            updateOperationDatesCalled = true
+        })
 
         XCTAssertTrue(updateOperationDatesCalled)
     }
@@ -573,12 +558,12 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         var capturedOrigin: OperationPreferredDateUpdaterOrigin?
 
         try sut.updateDatesAfterNoRemovals(brokerId: identifiers.brokerId,
-                                          profileQueryId: identifiers.profileQueryId,
-                                          brokerProfileQueryData: brokerData,
-                                          database: mockDatabase,
-                                          updateOperationDates: { origin, _, _, _, _, _ in
-                                              capturedOrigin = origin
-                                          })
+                                           profileQueryId: identifiers.profileQueryId,
+                                           brokerProfileQueryData: brokerData,
+                                           database: mockDatabase,
+                                           updateOperationDates: { origin, _, _, _, _, _ in
+            capturedOrigin = origin
+        })
 
         XCTAssertEqual(capturedOrigin, .scan)
     }
@@ -586,15 +571,15 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
     func testUpdateDatesAfterNoRemovals_passesNilExtractedProfileId() throws {
         let identifiers = makeFixtureIdentifiers()
         let brokerData = makeFixtureBrokerProfileQueryData()
-        var capturedExtractedProfileId: Int64? = Int64(999) // Start with non-nil to prove it gets set to nil
+        var capturedExtractedProfileId: Int64? = Int64(999) // Start with non-nil sentinel
 
         try sut.updateDatesAfterNoRemovals(brokerId: identifiers.brokerId,
-                                          profileQueryId: identifiers.profileQueryId,
-                                          brokerProfileQueryData: brokerData,
-                                          database: mockDatabase,
-                                          updateOperationDates: { _, _, _, extractedProfileId, _, _ in
-                                              capturedExtractedProfileId = extractedProfileId
-                                          })
+                                           profileQueryId: identifiers.profileQueryId,
+                                           brokerProfileQueryData: brokerData,
+                                           database: mockDatabase,
+                                           updateOperationDates: { _, _, _, extractedProfileId, _, _ in
+            capturedExtractedProfileId = extractedProfileId
+        })
 
         XCTAssertNil(capturedExtractedProfileId, "extractedProfileId should be nil")
     }
@@ -603,15 +588,13 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let identifiers = makeFixtureIdentifiers()
         let brokerData = makeFixtureBrokerProfileQueryData()
 
-        XCTAssertThrowsError(
-            try sut.updateDatesAfterNoRemovals(brokerId: identifiers.brokerId,
-                                              profileQueryId: identifiers.profileQueryId,
-                                              brokerProfileQueryData: brokerData,
-                                              database: mockDatabase,
-                                              updateOperationDates: { _, _, _, _, _, _ in
-                                                  throw MockDatabase.MockError.saveFailed
-                                              })
-        ) { error in
+        XCTAssertThrowsError(try sut.updateDatesAfterNoRemovals(brokerId: identifiers.brokerId,
+                                                                profileQueryId: identifiers.profileQueryId,
+                                                                brokerProfileQueryData: brokerData,
+                                                                database: mockDatabase,
+                                                                updateOperationDates: { _, _, _, _, _, _ in
+            throw MockDatabase.MockError.saveFailed
+        })) { error in
             XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
         }
     }
@@ -637,8 +620,8 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                   database: mockDatabase,
                                                   schedulingConfig: .default,
                                                   handleError: { _, _, _, _, _, _, _ in
-                                                      handleErrorCalled = true
-                                                  })
+            handleErrorCalled = true
+        })
 
         XCTAssertTrue(handleErrorCalled)
         XCTAssertEqual(returnedError as? DataBrokerProtectionError, testError)
@@ -663,8 +646,8 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                   database: mockDatabase,
                                   schedulingConfig: .default,
                                   handleError: { origin, _, _, _, _, _, _ in
-                                      capturedOrigin = origin
-                                  })
+            capturedOrigin = origin
+        })
 
         XCTAssertEqual(capturedOrigin, .scan)
     }
@@ -688,8 +671,8 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                   database: mockDatabase,
                                   schedulingConfig: .default,
                                   handleError: { _, _, _, extractedProfileId, _, _, _ in
-                                      capturedExtractedProfileId = extractedProfileId
-                                  })
+            capturedExtractedProfileId = extractedProfileId
+        })
 
         XCTAssertNil(capturedExtractedProfileId, "extractedProfileId should be nil")
     }
@@ -742,37 +725,30 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
     func testUpdateOperationDataDates_whenUpdatePreferredRunDateForScanThrows_rethrows() throws {
         let identifiers = makeFixtureIdentifiers()
         let extractedProfileId: Int64 = 1
-        
-        // Create history event that will trigger a scan date update
+
         let historyEvent = HistoryEvent(extractedProfileId: extractedProfileId,
-                                       brokerId: identifiers.brokerId,
-                                       profileQueryId: identifiers.profileQueryId,
-                                       type: .matchesFound(count: 1))
-        
-        // Create broker data with a current date that will be different from calculated date
+                                        brokerId: identifiers.brokerId,
+                                        profileQueryId: identifiers.profileQueryId,
+                                        type: .matchesFound(count: 1))
+
         let pastDate = Date().addingTimeInterval(-86400 * 30) // 30 days ago
-        let brokerData = BrokerProfileQueryData(
-            dataBroker: .mock,
-            profileQuery: .mock,
-            scanJobData: .init(brokerId: identifiers.brokerId,
-                              profileQueryId: identifiers.profileQueryId,
-                              preferredRunDate: pastDate,
-                              historyEvents: [historyEvent])
-        )
-        
-        // Create a mock that will throw when updatePreferredRunDate is called
+        let brokerData = BrokerProfileQueryData(dataBroker: .mock,
+                                                profileQuery: .mock,
+                                                scanJobData: .init(brokerId: identifiers.brokerId,
+                                                                   profileQueryId: identifiers.profileQueryId,
+                                                                   preferredRunDate: pastDate,
+                                                                   historyEvents: [historyEvent]))
+
         let throwingDatabase = MockDatabase()
         throwingDatabase.brokerProfileQueryDataToReturn = [brokerData]
         throwingDatabase.updatePreferredRunDateError = MockDatabase.MockError.saveFailed
 
-        XCTAssertThrowsError(
-            try sut.updateOperationDataDates(origin: .scan,
-                                            brokerId: identifiers.brokerId,
-                                            profileQueryId: identifiers.profileQueryId,
-                                            extractedProfileId: extractedProfileId,
-                                            schedulingConfig: .default,
-                                            database: throwingDatabase)
-        ) { error in
+        XCTAssertThrowsError(try sut.updateOperationDataDates(origin: .scan,
+                                                              brokerId: identifiers.brokerId,
+                                                              profileQueryId: identifiers.profileQueryId,
+                                                              extractedProfileId: extractedProfileId,
+                                                              schedulingConfig: .default,
+                                                              database: throwingDatabase)) { error in
             XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
         }
     }
@@ -781,10 +757,10 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let identifiers = makeFixtureIdentifiers()
         let extractedProfileId: Int64 = 1
         let historyEvent = HistoryEvent(extractedProfileId: extractedProfileId,
-                                       brokerId: identifiers.brokerId,
-                                       profileQueryId: identifiers.profileQueryId,
-                                       type: .optOutRequested)
-        
+                                        brokerId: identifiers.brokerId,
+                                        profileQueryId: identifiers.profileQueryId,
+                                        type: .optOutRequested)
+
         let optOutJobData = OptOutJobData(brokerId: identifiers.brokerId,
                                           profileQueryId: identifiers.profileQueryId,
                                           createdDate: Date(),
@@ -794,24 +770,22 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                           extractedProfile: ExtractedProfile(id: extractedProfileId))
         
         let brokerData = BrokerProfileQueryData(dataBroker: .mock,
-                                               profileQuery: .mock,
-                                               scanJobData: .init(brokerId: identifiers.brokerId,
-                                                                 profileQueryId: identifiers.profileQueryId,
-                                                                 historyEvents: [historyEvent]),
-                                               optOutJobData: [optOutJobData])
-        
+                                                profileQuery: .mock,
+                                                scanJobData: .init(brokerId: identifiers.brokerId,
+                                                                   profileQueryId: identifiers.profileQueryId,
+                                                                   historyEvents: [historyEvent]),
+                                                optOutJobData: [optOutJobData])
+
         let throwingDatabase = MockDatabase()
         throwingDatabase.brokerProfileQueryDataToReturn = [brokerData]
         throwingDatabase.updatePreferredRunDateError = MockDatabase.MockError.saveFailed
 
-        XCTAssertThrowsError(
-            try sut.updateOperationDataDates(origin: .scan,
-                                            brokerId: identifiers.brokerId,
-                                            profileQueryId: identifiers.profileQueryId,
-                                            extractedProfileId: extractedProfileId,
-                                            schedulingConfig: .default,
-                                            database: throwingDatabase)
-        ) { error in
+        XCTAssertThrowsError(try sut.updateOperationDataDates(origin: .scan,
+                                                              brokerId: identifiers.brokerId,
+                                                              profileQueryId: identifiers.profileQueryId,
+                                                              extractedProfileId: extractedProfileId,
+                                                              schedulingConfig: .default,
+                                                              database: throwingDatabase)) { error in
             XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
         }
     }
@@ -820,10 +794,10 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let identifiers = makeFixtureIdentifiers()
         let extractedProfileId: Int64 = 1
         let historyEvent = HistoryEvent(extractedProfileId: extractedProfileId,
-                                       brokerId: identifiers.brokerId,
-                                       profileQueryId: identifiers.profileQueryId,
-                                       type: .optOutRequested)
-        
+                                        brokerId: identifiers.brokerId,
+                                        profileQueryId: identifiers.profileQueryId,
+                                        type: .optOutRequested)
+
         let optOutJobData = OptOutJobData(brokerId: identifiers.brokerId,
                                           profileQueryId: identifiers.profileQueryId,
                                           createdDate: Date(),
@@ -834,24 +808,22 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                           extractedProfile: ExtractedProfile(id: extractedProfileId))
         
         let brokerData = BrokerProfileQueryData(dataBroker: .mock,
-                                               profileQuery: .mock,
-                                               scanJobData: .init(brokerId: identifiers.brokerId,
-                                                                 profileQueryId: identifiers.profileQueryId,
-                                                                 historyEvents: [historyEvent]),
-                                               optOutJobData: [optOutJobData])
-        
+                                                profileQuery: .mock,
+                                                scanJobData: .init(brokerId: identifiers.brokerId,
+                                                                   profileQueryId: identifiers.profileQueryId,
+                                                                   historyEvents: [historyEvent]),
+                                                optOutJobData: [optOutJobData])
+
         let throwingDatabase = MockDatabase()
         throwingDatabase.brokerProfileQueryDataToReturn = [brokerData]
         throwingDatabase.updateSubmittedSuccessfullyDateError = MockDatabase.MockError.saveFailed
 
-        XCTAssertThrowsError(
-            try sut.updateOperationDataDates(origin: .scan,
-                                            brokerId: identifiers.brokerId,
-                                            profileQueryId: identifiers.profileQueryId,
-                                            extractedProfileId: extractedProfileId,
-                                            schedulingConfig: .default,
-                                            database: throwingDatabase)
-        ) { error in
+        XCTAssertThrowsError(try sut.updateOperationDataDates(origin: .scan,
+                                                              brokerId: identifiers.brokerId,
+                                                              profileQueryId: identifiers.profileQueryId,
+                                                              extractedProfileId: extractedProfileId,
+                                                              schedulingConfig: .default,
+                                                              database: throwingDatabase)) { error in
             XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
         }
     }

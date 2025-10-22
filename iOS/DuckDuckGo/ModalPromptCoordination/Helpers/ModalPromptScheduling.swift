@@ -19,11 +19,12 @@
 
 import Foundation
 
+// Used to present modal prompt with a small delay. Used to easily write test by replacing it with an ImmediateScheduler.
 protocol ModalPromptScheduling {
     func schedule(after delay: TimeInterval, execute: @escaping @MainActor () -> Void)
 }
 
-final class MainActorScheduler: ModalPromptScheduling {
+final class ModalPromptScheduler: ModalPromptScheduling {
     func schedule(after delay: TimeInterval, execute: @escaping @MainActor () -> Void) {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: execute)
     }

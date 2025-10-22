@@ -164,7 +164,7 @@ final class PromptCooldownManagerTests {
         #expect(cooldownStoreMock.lastPresentationTimestamp == nil)
 
         // WHEN
-        sut.recordLastPromptPresentation()
+        sut.recordLastPromptPresentationTimestamp()
 
         // THEN
         #expect(cooldownStoreMock.lastPresentationTimestamp == currentDate.timeIntervalSince1970)
@@ -178,7 +178,7 @@ final class PromptCooldownManagerTests {
         cooldownIntervalProviderMock.cooldownInterval = 24
 
         // WHEN
-        sut.recordLastPromptPresentation()
+        sut.recordLastPromptPresentationTimestamp()
 
         // THEN
         #expect(cooldownStoreMock.lastPresentationTimestamp != oldDate.timeIntervalSince1970)
@@ -193,7 +193,7 @@ final class PromptCooldownManagerTests {
         #expect(!sut.isInCooldownPeriod)
 
         // WHEN
-        sut.recordLastPromptPresentation()
+        sut.recordLastPromptPresentationTimestamp()
 
         // THEN
         #expect(sut.isInCooldownPeriod)

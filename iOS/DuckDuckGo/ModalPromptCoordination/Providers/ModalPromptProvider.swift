@@ -25,7 +25,7 @@ struct ModalPromptConfiguration {
     let viewController: UIViewController
     /// Modal presentation styles available when presenting view controllers.
     let presentationStyle: UIModalPresentationStyle
-    /// Transition styles available when presenting view controllers. The default value of this property is `.≈`.
+    /// Transition styles available when presenting view controllers. The default value of this property is `.coverVertical`.
     let transitionStyle: UIModalTransitionStyle
     /// A Boolean value indicating whether the view controller enforces a modal behavior.
     /// The default value of this property is `false`. When you set it to true, UIKit ignores events outside the view controller’s bounds and prevents the interactive dismissal of the view controller while it is onscreen.
@@ -59,4 +59,10 @@ protocol ModalPromptProvider {
     /// Called after the modal has been successfully presented.
     /// Use this to update any feature-specific tracking or state.
     func didPresentModal()
+}
+
+extension ModalPromptProvider {
+
+    func didPresentModal() {}
+
 }

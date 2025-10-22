@@ -17,15 +17,9 @@
 //  limitations under the License.
 //
 
-import DesignResourcesKitIcons
-import DuckUI
-import SwiftUI
 import UIKit
-import RemoteMessaging
 import Persistence
-import AIChat
-import BrowserServicesKit
-import SetDefaultBrowserUI
+import protocol BrowserServicesKit.PrivacyConfigurationManaging
 
 // MARK: - Modal Prompt Presenter
 

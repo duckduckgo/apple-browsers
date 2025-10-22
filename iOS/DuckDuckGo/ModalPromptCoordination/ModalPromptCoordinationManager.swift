@@ -46,7 +46,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     init(
         providers: [any ModalPromptProvider],
         cooldownManager: PromptCooldownManaging,
-        modalPromptScheduling: ModalPromptScheduling = MainActorScheduler()
+        modalPromptScheduling: ModalPromptScheduling = ModalPromptScheduler()
     ) {
         self.providers = providers
         self.cooldownManager = cooldownManager
@@ -101,7 +101,7 @@ private extension ModalPromptCoordinationManager {
     }
 
     func saveModalPromptLastPresentationDate() {
-        cooldownManager.recordLastPromptPresentation()
+        cooldownManager.recordLastPromptPresentationTimestamp()
     }
 
 }

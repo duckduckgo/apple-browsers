@@ -40,7 +40,7 @@ protocol PromptCooldownManaging {
 
     /// Records that a prompt was presented.
     /// This starts the cooldown period. No prompts should be shown until the cooldown interval has elapsed.
-    func recordLastPromptPresentation()
+    func recordLastPromptPresentationTimestamp()
 }
 
 extension PromptCooldownManaging {
@@ -101,7 +101,7 @@ final class PromptCooldownManager: PromptCooldownManaging {
         return timeSinceLastPresentation < cooldownInterval
     }
 
-    func recordLastPromptPresentation() {
+    func recordLastPromptPresentationTimestamp() {
         presentationStore.lastPresentationTimestamp = dateProvider().timeIntervalSince1970
     }
 }

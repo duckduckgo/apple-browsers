@@ -1237,6 +1237,7 @@
 		9F387DFD2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DFB2EA8BFA0006861F8 /* MockModalPromptCoordinationManager.swift */; };
 		9F387DFE2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DFB2EA8BFA0006861F8 /* MockModalPromptCoordinationManager.swift */; };
 		9F387DFF2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DFB2EA8BFA0006861F8 /* MockModalPromptCoordinationManager.swift */; };
+		9F387E032EA98146006861F8 /* ModalPromptCoordinationFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387E022EA98140006861F8 /* ModalPromptCoordinationFactory.swift */; };
 		9F38A28C2D09BDE500EB100E /* SpecialErrorPageThreatProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F38A28B2D09BDE500EB100E /* SpecialErrorPageThreatProvider.swift */; };
 		9F3C7FE02D7990740061FA72 /* DefaultBrowserInfoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3C7FDF2D7990710061FA72 /* DefaultBrowserInfoStore.swift */; };
 		9F454D1A2E051CC800B8CC5A /* DefaultBrowserPromptFeatureFlagAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F454D192E051CBE00B8CC5A /* DefaultBrowserPromptFeatureFlagAdapter.swift */; };
@@ -3465,6 +3466,7 @@
 		9F387DF42EA8BED0006861F8 /* ModalPromptCoordinationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationServiceTests.swift; sourceTree = "<group>"; };
 		9F387DF62EA8BF46006861F8 /* MockLaunchSourceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockLaunchSourceManager.swift; sourceTree = "<group>"; };
 		9F387DFB2EA8BFA0006861F8 /* MockModalPromptCoordinationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockModalPromptCoordinationManager.swift; sourceTree = "<group>"; };
+		9F387E022EA98140006861F8 /* ModalPromptCoordinationFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationFactory.swift; sourceTree = "<group>"; };
 		9F38A28B2D09BDE500EB100E /* SpecialErrorPageThreatProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialErrorPageThreatProvider.swift; sourceTree = "<group>"; };
 		9F3C7FDF2D7990710061FA72 /* DefaultBrowserInfoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserInfoStore.swift; sourceTree = "<group>"; };
 		9F454D162E050B8B00B8CC5A /* MetricBuilder */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = MetricBuilder; sourceTree = "<group>"; };
@@ -6710,10 +6712,11 @@
 		9F0B19AA2EA5DF78001FA867 /* ModalPromptCoordination */ = {
 			isa = PBXGroup;
 			children = (
+				9F387E002EA9812F006861F8 /* Factory */,
+				9F387E012EA9812F006861F8 /* Logging */,
 				9FA09DAD2EA84F4C00E26F3F /* Helpers */,
 				9FA09DA52EA71F2900E26F3F /* Cooldown */,
 				9F0B19B22EA5E4FA001FA867 /* Providers */,
-				9FA09D9E2EA5EE3D00E26F3F /* Logger+ModalPrompt.swift */,
 				9F0B19B62EA5E740001FA867 /* ModalPromptCoordinationManager.swift */,
 			);
 			path = ModalPromptCoordination;
@@ -6852,6 +6855,22 @@
 				9F387DF22EA8AB43006861F8 /* ModalPromptCoordinationManagerIntegrationTests.swift */,
 			);
 			path = ModalPromptCoordination;
+			sourceTree = "<group>";
+		};
+		9F387E002EA9812F006861F8 /* Factory */ = {
+			isa = PBXGroup;
+			children = (
+				9F387E022EA98140006861F8 /* ModalPromptCoordinationFactory.swift */,
+			);
+			path = Factory;
+			sourceTree = "<group>";
+		};
+		9F387E012EA9812F006861F8 /* Logging */ = {
+			isa = PBXGroup;
+			children = (
+				9FA09D9E2EA5EE3D00E26F3F /* Logger+ModalPrompt.swift */,
+			);
+			path = Logging;
 			sourceTree = "<group>";
 		};
 		9F3DF78E2D7EAC8F00857D06 /* CheckDefaultBrowser */ = {
@@ -10502,6 +10521,7 @@
 				9F0949A72D389F1E0079291B /* MaliciousSiteProtectionAPI.swift in Sources */,
 				C17BDC692E16CDCB0082485E /* AutofillLoginImportState.swift in Sources */,
 				31B524572715BB23002225AB /* WebJSAlert.swift in Sources */,
+				9F387E032EA98146006861F8 /* ModalPromptCoordinationFactory.swift in Sources */,
 				D652E24E2DDE8B3B00BCD978 /* DuckPlayerPixelFiring.swift in Sources */,
 				9F454D1A2E051CC800B8CC5A /* DefaultBrowserPromptFeatureFlagAdapter.swift in Sources */,
 				C1641EB32BC2F53C0012607A /* ImportPasswordsViaSyncViewModel.swift in Sources */,

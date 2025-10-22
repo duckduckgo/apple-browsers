@@ -31,14 +31,14 @@ final class MockPromptCooldownIntervalProvider: PromptCooldownIntervalProviding 
 final class MockPromptCooldownManager: PromptCooldownManaging {
     var cooldownInfoToReturn: PromptCooldownInfo = .notInCoolDown
 
-    private(set) var didCallRecordLastPromptPresentation = false
+    private(set) var didCallRecordLastPromptPresentationTimestamp = false
 
     var cooldownInfo: PromptCooldownInfo {
         cooldownInfoToReturn
     }
 
-    func recordLastPromptPresentation() {
-        didCallRecordLastPromptPresentation = true
+    func recordLastPromptPresentationTimestamp() {
+        didCallRecordLastPromptPresentationTimestamp = true
     }
 }
 

@@ -57,7 +57,7 @@ final class ModalPromptCoordinationManagerTests {
         // THEN
         #expect(!presenterMock.didCallPresent)
         #expect(!provider.didCallProvideModalPrompt)
-        #expect(!cooldownManagerMock.didCallRecordLastPromptPresentation)
+        #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
         #expect(!provider.didCallDidPresentModal)
     }
 
@@ -84,7 +84,7 @@ final class ModalPromptCoordinationManagerTests {
         // Execute scheduled presentation
         schedulerMock.executeScheduledBlock()
         #expect(presenterMock.didCallPresent)
-        #expect(cooldownManagerMock.didCallRecordLastPromptPresentation)
+        #expect(cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
         #expect(provider.didCallDidPresentModal)
     }
 
@@ -200,7 +200,7 @@ final class ModalPromptCoordinationManagerTests {
         #expect(thirdProvider.didCallProvideModalPrompt)
         #expect(!schedulerMock.didCallSchedule)
         #expect(!presenterMock.didCallPresent)
-        #expect(!cooldownManagerMock.didCallRecordLastPromptPresentation)
+        #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
     }
 
     // MARK: - Presentation Tests
@@ -417,14 +417,14 @@ final class ModalPromptCoordinationManagerTests {
             cooldownManager: cooldownManagerMock,
             modalPromptScheduling: schedulerMock
         )
-        #expect(!cooldownManagerMock.didCallRecordLastPromptPresentation)
+        #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
 
         // WHEN
         sut.presentModalPromptIfNeeded(from: presenterMock)
         schedulerMock.executeScheduledBlock()
 
         // THEN
-        #expect(cooldownManagerMock.didCallRecordLastPromptPresentation)
+        #expect(cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
     }
 
     @Test("Check Cooldown Is Not Recorded When No Modal Is Presented")
@@ -443,7 +443,7 @@ final class ModalPromptCoordinationManagerTests {
         schedulerMock.executeScheduledBlock()
 
         // THEN
-        #expect(!cooldownManagerMock.didCallRecordLastPromptPresentation)
+        #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
     }
 
     @Test("Check Cooldown Is Not Recorded When Already In Cooldown Period")
@@ -462,6 +462,6 @@ final class ModalPromptCoordinationManagerTests {
         schedulerMock.executeScheduledBlock()
 
         // THEN
-        #expect(!cooldownManagerMock.didCallRecordLastPromptPresentation)
+        #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
     }
 }

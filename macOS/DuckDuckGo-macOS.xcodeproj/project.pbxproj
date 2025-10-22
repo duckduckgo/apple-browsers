@@ -2231,16 +2231,6 @@
 		7BD504A02E5FA439008A0646 /* WKWebExtensionWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DF78E112CE61DB000AB898E /* WKWebExtensionWindow.swift */; };
 		7BD504A12E5FA45A008A0646 /* WebExtensionInternalSiteNavigationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3A2B622D2D225B00F06679 /* WebExtensionInternalSiteNavigationDelegate.swift */; };
 		7BD504A32E5FA47B008A0646 /* WebExtensionEventsListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6860592D391077006FC53E /* WebExtensionEventsListener.swift */; };
-		7BD504B62E5FC740008A0646 /* NativeMessagingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504B22E5FC740008A0646 /* NativeMessagingCoordinator.swift */; };
-		7BD504B72E5FC740008A0646 /* NativeMessagingConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504B12E5FC740008A0646 /* NativeMessagingConnection.swift */; };
-		7BD504B92E5FC740008A0646 /* BitwardenNativeMessagingHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504B02E5FC740008A0646 /* BitwardenNativeMessagingHandler.swift */; };
-		7BD504BA2E5FC740008A0646 /* NativeMessagingHandlerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504B32E5FC740008A0646 /* NativeMessagingHandlerFactory.swift */; };
-		7BD504BB2E5FC740008A0646 /* NativeMessagingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504B22E5FC740008A0646 /* NativeMessagingCoordinator.swift */; };
-		7BD504BC2E5FC740008A0646 /* NativeMessagingConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504B12E5FC740008A0646 /* NativeMessagingConnection.swift */; };
-		7BD504BE2E5FC740008A0646 /* BitwardenNativeMessagingHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504B02E5FC740008A0646 /* BitwardenNativeMessagingHandler.swift */; };
-		7BD504BF2E5FC740008A0646 /* NativeMessagingHandlerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504B32E5FC740008A0646 /* NativeMessagingHandlerFactory.swift */; };
-		7BD504C12E5FC791008A0646 /* NativeMessagingHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504C02E5FC791008A0646 /* NativeMessagingHandling.swift */; };
-		7BD504C22E5FC791008A0646 /* NativeMessagingHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504C02E5FC791008A0646 /* NativeMessagingHandling.swift */; };
 		7BD504CA2E606097008A0646 /* WebExtensionLoadResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504C92E606097008A0646 /* WebExtensionLoadResult.swift */; };
 		7BD504CB2E606097008A0646 /* WebExtensionLoadResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504C92E606097008A0646 /* WebExtensionLoadResult.swift */; };
 		7BD504CD2E606996008A0646 /* WebExtensionIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD504CC2E606996008A0646 /* WebExtensionIdentifier.swift */; };
@@ -5117,11 +5107,6 @@
 		7BD0693E2D77047000A7FF32 /* DuckDuckGoVPNAppStoreDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoVPNAppStoreDebug.entitlements; sourceTree = "<group>"; };
 		7BD1688D2AD4A4C400D24876 /* NetworkExtensionController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkExtensionController.swift; sourceTree = "<group>"; };
 		7BD3AF5C2A8E7AF1006F9F56 /* KeychainType+ClientDefault.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "KeychainType+ClientDefault.swift"; sourceTree = "<group>"; };
-		7BD504B02E5FC740008A0646 /* BitwardenNativeMessagingHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitwardenNativeMessagingHandler.swift; sourceTree = "<group>"; };
-		7BD504B12E5FC740008A0646 /* NativeMessagingConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingConnection.swift; sourceTree = "<group>"; };
-		7BD504B22E5FC740008A0646 /* NativeMessagingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingCoordinator.swift; sourceTree = "<group>"; };
-		7BD504B32E5FC740008A0646 /* NativeMessagingHandlerFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHandlerFactory.swift; sourceTree = "<group>"; };
-		7BD504C02E5FC791008A0646 /* NativeMessagingHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHandling.swift; sourceTree = "<group>"; };
 		7BD504C92E606097008A0646 /* WebExtensionLoadResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionLoadResult.swift; sourceTree = "<group>"; };
 		7BD504CC2E606996008A0646 /* WebExtensionIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionIdentifier.swift; sourceTree = "<group>"; };
 		7BD55C992E8F05110094A2B8 /* SiteLoadingPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiteLoadingPixel.swift; sourceTree = "<group>"; };
@@ -6589,7 +6574,6 @@
 		1D2DB9A22CE26B7A00F73E96 /* WebExtensions */ = {
 			isa = PBXGroup;
 			children = (
-				7BD504B52E5FC740008A0646 /* NativeMessaging */,
 				1D6860512D36BD38006FC53E /* View */,
 				1D5C1AF02CFF58170073ED65 /* Logger+WebExtensions.swift */,
 				1D6860592D391077006FC53E /* WebExtensionEventsListener.swift */,
@@ -8776,18 +8760,6 @@
 				7BAC0C302DF84292008D26EC /* SupportedOSCheckerTests.swift */,
 			);
 			path = OSVersion;
-			sourceTree = "<group>";
-		};
-		7BD504B52E5FC740008A0646 /* NativeMessaging */ = {
-			isa = PBXGroup;
-			children = (
-				7BD504B02E5FC740008A0646 /* BitwardenNativeMessagingHandler.swift */,
-				7BD504B12E5FC740008A0646 /* NativeMessagingConnection.swift */,
-				7BD504B22E5FC740008A0646 /* NativeMessagingCoordinator.swift */,
-				7BD504B32E5FC740008A0646 /* NativeMessagingHandlerFactory.swift */,
-				7BD504C02E5FC791008A0646 /* NativeMessagingHandling.swift */,
-			);
-			path = NativeMessaging;
 			sourceTree = "<group>";
 		};
 		7BDA36E72B7E037200AD5388 /* VPNProxyExtension */ = {
@@ -13646,15 +13618,10 @@
 				4B975C062E431FD40019F757 /* VPNPopoverPresenter.swift in Sources */,
 				4B975C072E431FD40019F757 /* VPNUpsellUserDefaultsPersistor.swift in Sources */,
 				4B975C082E431FD40019F757 /* VPNUpsellPopoverViewModel.swift in Sources */,
-				7BD504C22E5FC791008A0646 /* NativeMessagingHandling.swift in Sources */,
 				379858142D730EFB008773F6 /* DefaultHistoryViewDialogPresenter.swift in Sources */,
 				F17E7DDF2C7C83E500907A84 /* Logger+FileDownload.swift in Sources */,
 				9F56CFAA2B82DC4300BB7F11 /* AddEditBookmarkFolderView.swift in Sources */,
-				7BD504BB2E5FC740008A0646 /* NativeMessagingCoordinator.swift in Sources */,
-				7BD504BC2E5FC740008A0646 /* NativeMessagingConnection.swift in Sources */,
-				7BD504BE2E5FC740008A0646 /* BitwardenNativeMessagingHandler.swift in Sources */,
 				CC8499A52E955C8700409E18 /* AIChatDataClearingUserScript.swift in Sources */,
-				7BD504BF2E5FC740008A0646 /* NativeMessagingHandlerFactory.swift in Sources */,
 				567A23D82C8871290010F66C /* OnboardingFireButtonDialogViewModel.swift in Sources */,
 				37FD78122A29EBD100B36DB1 /* SyncErrorHandler.swift in Sources */,
 				1D4B03D62CA4432000224E99 /* BookmarkUrlExtension.swift in Sources */,
@@ -15310,7 +15277,6 @@
 				C172E7372C93968E00521D9A /* SyncPromoPixelKitEvent.swift in Sources */,
 				B684121C2B6A1D880092F66A /* ErrorPageHTMLTemplate.swift in Sources */,
 				B65C7DFB2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift in Sources */,
-				7BD504C12E5FC791008A0646 /* NativeMessagingHandling.swift in Sources */,
 				CC9B678D2E607AD9003353C3 /* SessionRestorePromptPixel.swift in Sources */,
 				B68458CD25C7EB9000DC17B6 /* WKWebViewConfigurationExtensions.swift in Sources */,
 				1D01A3D82B88DF8B00FE8150 /* PreferencesSyncView.swift in Sources */,
@@ -15320,10 +15286,6 @@
 				BB7BAABF2DDBADB2004A5A58 /* NavigationToolbarIconsProviding.swift in Sources */,
 				379026D12C650CCD00A089E8 /* UserBackgroundImagesManager.swift in Sources */,
 				AAC30A26268DFEE200D2D9CD /* CrashReporter.swift in Sources */,
-				7BD504B62E5FC740008A0646 /* NativeMessagingCoordinator.swift in Sources */,
-				7BD504B72E5FC740008A0646 /* NativeMessagingConnection.swift in Sources */,
-				7BD504B92E5FC740008A0646 /* BitwardenNativeMessagingHandler.swift in Sources */,
-				7BD504BA2E5FC740008A0646 /* NativeMessagingHandlerFactory.swift in Sources */,
 				BBC6E3D92E736A54005C08EB /* LatestReleaseChecker.swift in Sources */,
 				B65E5DAF2B74DE6D00480415 /* TrackerNetwork.swift in Sources */,
 				37657FC82DB95140003D749E /* TabCrashIndicatorModel.swift in Sources */,

@@ -25,8 +25,6 @@ import WebKit
 
 protocol WebExtensionManaging {
 
-    typealias WebExtensionIdentifier = String
-
     @available(macOS 15.4, *)
     var hasInstalledExtensions: Bool { get }
 
@@ -91,10 +89,13 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
 
     @MainActor
     init(installationStore: WebExtensionPathsStoring = WebExtensionPathsStore(),
-         webExtensionLoader: WebExtensionLoading = WebExtensionLoader()) {
+         webExtensionLoader: WebExtensionLoading = WebExtensionLoader(),
+         autofillPreferences: AutofillPreferences = AutofillPreferences()
+    ) {
 
         self.installationStore = installationStore
         self.loader = webExtensionLoader
+        self.autofillPreferences = autofillPreferences
 
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = UserAgent.brandedDefaultSuffix
@@ -127,11 +128,11 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     // Events listening
     var eventsListener: WebExtensionEventsListening = WebExtensionEventsListener()
 
-    // Handles native messaging
-    let nativeMessagingCoordinator = NativeMessagingCoordinator()
-
     // Handles internal sites of web extenions
     let internalSiteHandler = WebExtensionInternalSiteHandler()
+
+    // Used just for migration of internal users from Bitwarden web extension back to the internal password manager
+    let autofillPreferences: AutofillPreferences
 
     // MARK: - Adding and removing extensions
     var webExtensionPaths: [String] {
@@ -151,12 +152,6 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
 
         do {
             let loadResult = try await loader.loadWebExtension(path: path, into: controller)
-
-            // Create and register handler if extension is known
-            nativeMessagingCoordinator.createHandlerIfNeeded(for: loadResult.extensionIdentifier, context: loadResult.context)
-            if let extensionIdentifier = loadResult.extensionIdentifier?.rawValue {
-                Logger.webExtensions.info("[WebExtensionManager] Created native messaging handler for extension: \(extensionIdentifier, privacy: .public)")
-            }
         } catch {
             // This is temporary.  The actual handling of this error should be done outside of this manager.
             assertionFailure("Failed to load web extension \(path): \(error)")
@@ -180,13 +175,6 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     func uninstallExtension(path: String) throws {
         installationStore.remove(path)
 
-        // Find the context to unregister from coordinator before unloading
-        let identifierHash = identifierHash(forPath: path)
-        if let context = controller.extensionContexts.first(where: { $0.uniqueIdentifier == identifierHash }) {
-            nativeMessagingCoordinator.unregisterHandler(for: context)
-            Logger.webExtensions.info("[WebExtensionManager] Unregistered native messaging handler for extension")
-        }
-
         do {
             try loader.unloadExtension(at: path, from: controller)
         } catch {
@@ -194,6 +182,21 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         }
 
         continuation?.yield()
+    }
+
+    // Migrating internal users from Bitwarden web extension to the native password manager
+    private func uninstallBitwardenExtensionIfNeeded() {
+        guard autofillPreferences.selectedPasswordManager == "bitwardenExtension" else {
+            return
+        }
+
+        autofillPreferences.passwordManager = .duckduckgo
+
+        let bitwardenExtensionPath = WebExtensionIdentifier.bitwarden.defaultPath
+
+        if webExtensionPaths.contains(bitwardenExtensionPath) {
+            try? uninstallExtension(path: bitwardenExtensionPath)
+        }
     }
 
     func extensionName(from path: String) -> String? {
@@ -217,16 +220,15 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     func loadInstalledExtensions() async {
         eventsListener.controller = controller
 
+        uninstallBitwardenExtensionIfNeeded()
+
         let results = await loader.loadWebExtensions(from: installationStore.paths, into: controller)
         continuation?.yield()
 
         for result in results {
             switch result {
-            case .success(let loadResult):
-                nativeMessagingCoordinator.createHandlerIfNeeded(for: loadResult.extensionIdentifier, context: loadResult.context)
-                if let extensionIdentifier = loadResult.extensionIdentifier?.rawValue {
-                    Logger.webExtensions.info("[WebExtensionManager] Created native messaging handler for extension: \(extensionIdentifier, privacy: .public)")
-                }
+            case .success:
+                continue
             case .failure(let failure):
                 // If this is blocking from starting up the app, disable this
                 // assertion then go to Debug Menu > Web Extensions > Uninstall all extensions
@@ -435,18 +437,17 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
         popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
     }
 /*
+    // Implement to support native messaging API
+
     func webExtensionController(_ controller: WKWebExtensionController, sendMessage message: Any, toApplicationWithIdentifier applicationIdentifier: String?, for extensionContext: WKWebExtensionContext) async throws -> Any? {
 
-        try await nativeMessagingCoordinator.webExtensionController(controller,
-                                                          sendMessage: message,
-                                                          to: applicationIdentifier,
-                                                          for: extensionContext)
     }
 
     func webExtensionController(_ controller: WKWebExtensionController, connectUsing port: WKWebExtension.MessagePort, for extensionContext: WKWebExtensionContext) async throws {
 
-        try nativeMessagingCoordinator.webExtensionController(controller, connectUsingMessagePort: port, for: extensionContext)
-    }*/
+    }
+
+*/
 }
 
 @available(macOS 15.4, *)

@@ -33,7 +33,6 @@ protocol AutofillPreferencesPersistor {
 enum PasswordManager: String, CaseIterable {
     case duckduckgo
     case bitwarden
-    case bitwardenExtension
 }
 
 enum PasswordManagementSource: String {
@@ -164,7 +163,7 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
 #endif
 
     @UserDefaultsWrapper(key: .selectedPasswordManager, defaultValue: PasswordManager.duckduckgo.rawValue)
-    private var selectedPasswordManager: String
+    private(set) var selectedPasswordManager: String
 
     @UserDefaultsWrapper(key: .autofillDebugScriptEnabled, defaultValue: false)
     private var debugScriptEnabledWrapped: Bool

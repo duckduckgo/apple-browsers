@@ -82,7 +82,7 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
     func cleanAIChatHistory() async {
         guard featureFlagger.isFeatureOn(.aiChatDataClearing) else { return }
         let result = await historyCleaner.cleanAIChatHistory()
-        
+
         switch result {
         case .success:
             pixelKit?.fire(AIChatPixel.aiChatDeleteHistorySuccessful, frequency: .dailyAndCount)

@@ -2317,9 +2317,6 @@
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Vahvista";
 
-/* Description text for the new address bar picker modal */
-"new.address.bar.picker.description" = "Tekoälyominaisuudet ovat aina valinnaisia.";
-
 /* Footer text for the new address bar picker */
 "new.address.bar.picker.footer" = "Säädä kohdassa Asetukset > Tekoälyominaisuudet";
 
@@ -2332,8 +2329,8 @@
 /* Option for search only in the new address bar picker */
 "new.address.bar.picker.search.only" = "Vain haku";
 
-/* Subtitle for the new address bar picker modal */
-"new.address.bar.picker.subtitle" = "Vaihda haun ja tekoälykeskustelun välillä";
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline" = "Haluatko helpomman pääsyn tekoäly-chatiin?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Osoiterivi-vaihtoehto";
@@ -2622,6 +2619,9 @@
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Hallitse luottokortteja…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "Luottokorttikiintiösi on täynnä. Poista joitakin niistä, jotta voit jatkaa synkronointia.";
 
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Synkronoinnin aikana havaittiin virhe. Yritä poistaa synkronointi käytöstä tällä laitteella. Muodosta sitten yhteys uudelleen toisella laitteella tai palautuskoodilla.";
@@ -3843,6 +3843,54 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Viesti käyttäjältä %@:";
+
+/* CTA of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.cta" = "Katso tarjous";
+
+/* Dismiss of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.dismiss" = "Ei nyt";
+
+/* Message of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.text" = "Pysy suojattuna VPN:n, yksityisen tekoälyn ja muiden ominaisuuksien avulla. Tilaa jo tänään uudelleen ja säästä 25 %.";
+
+/* Title of message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.title" = "Viimeinen päivä aikaa säästää 25 %!";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "SÄÄSTÄ 25 %";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "Katso tarjous";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Ei nyt";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "Pysy suojattuna VPN:n, yksityisen tekoälyn ja muiden ominaisuuksien avulla. Tilaa jo tänään uudelleen ja säästä 25 %.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Vain rajoitetun ajan";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "Haluamme sinut takaisin!\nSaat 25 % alennusta.";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "Katso tarjous";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "Minulla on tilaus";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "Rajoitetun ajan tarjous!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "Pysy suojattuna VPN:n, yksityisen tekoälyn ja muiden ominaisuuksien avulla. Tilaa jo tänään uudelleen ja säästä 25 %.Rajoitetun ajan tarjous.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "Tilaa uudelleen ja säästä 25 %";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Tilaa uudelleen ja säästä 25 %";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Etsitkö Mac-versiota?";

@@ -65,7 +65,7 @@ public protocol StageDurationCalculator {
     func fireScanStarted()
 #endif
     func fireScanSuccess(matchesFound: Int)
-    func fireScanFailed()
+    func fireScanNoResults()
     func fireScanError(error: Error)
     func setStage(_ stage: Stage)
     func setEmailPattern(_ emailPattern: String?)
@@ -339,8 +339,8 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         handler.fire(.scanSuccess(dataBroker: dataBrokerURL, matchesFound: matchesFound, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
     }
 
-    func fireScanFailed() {
-        handler.fire(.scanFailed(dataBroker: dataBrokerURL, dataBrokerVersion: dataBrokerVersion, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
+    func fireScanNoResults() {
+        handler.fire(.scanNoResults(dataBroker: dataBrokerURL, dataBrokerVersion: dataBrokerVersion, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
     }
 
     func fireScanError(error: Error) {
@@ -351,7 +351,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
             case .httpError(let httpCode):
                 if httpCode < 500 {
                     if httpCode == 404 {
-                        fireScanFailed()
+                        fireScanNoResults()
                         return
                     } else {
                         errorCategory = .clientError(httpCode: httpCode)

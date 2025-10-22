@@ -13,5 +13,4 @@ if [[ ! -f "$LINTER" ]]; then
   exit 1
 fi
 
-find "$SRCROOT" ! -name 'Package.swift' -prune -o -name "*.swift" | xargs "$LINTER"
-
+find "$SRCROOT" -type d -name ".build" -prune -o -name "Package.swift" -prune -o -name "*.swift" -print | xargs "$LINTER"

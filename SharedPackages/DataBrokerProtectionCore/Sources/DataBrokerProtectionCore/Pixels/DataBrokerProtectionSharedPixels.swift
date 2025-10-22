@@ -121,7 +121,7 @@ public enum DataBrokerProtectionSharedPixels {
     case scanStarted(dataBroker: String)
 #endif
     case scanSuccess(dataBroker: String, matchesFound: Int, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String)
-    case scanFailed(dataBroker: String, dataBrokerVersion: String, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String)
+    case scanNoResults(dataBroker: String, dataBrokerVersion: String, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String)
     case scanError(dataBroker: String, dataBrokerVersion: String, duration: Double, category: String, details: String, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String, actionId: String, actionType: String)
     case scanStage(dataBroker: String, dataBrokerVersion: String, tries: Int, actionId: String, actionType: String)
 
@@ -225,7 +225,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .scanStarted: return "dbp_scan_started"
 #endif
         case .scanSuccess: return "dbp_search_stage_main_status_success"
-        case .scanFailed: return "dbp_search_stage_main_status_failure"
+        case .scanNoResults: return "dbp_search_stage_main_status_no_results"
         case .scanError: return "dbp_search_stage_main_status_error"
         case .scanStage: return "dbp_scan_stage"
 
@@ -373,7 +373,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
 #endif
         case .scanSuccess(let dataBroker, let matchesFound, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus):
             return [Consts.dataBrokerParamKey: dataBroker, Consts.matchesFoundKey: String(matchesFound), Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.isImmediateOperation: isImmediateOperation.description, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
-        case .scanFailed(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus):
+        case .scanNoResults(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus):
             return [Consts.dataBrokerParamKey: dataBroker, Consts.dataBrokerVersionKey: dataBrokerVersion, Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.isImmediateOperation: isImmediateOperation.description, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
         case .scanError(let dataBroker, let dataBrokerVersion, let duration, let category, let details, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus, let actionId, let actionType):
             return [Consts.dataBrokerParamKey: dataBroker,
@@ -583,7 +583,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .optOutConditionFound,
                     .optOutConditionNotFound,
                     .scanSuccess,
-                    .scanFailed,
+                    .scanNoResults,
                     .scanError,
                     .scanStage,
                     .dailyActiveUser,

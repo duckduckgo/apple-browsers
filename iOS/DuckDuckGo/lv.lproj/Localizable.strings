@@ -2317,9 +2317,6 @@
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Apstiprināt";
 
-/* Description text for the new address bar picker modal */
-"new.address.bar.picker.description" = "MI funkcijas vienmēr var izvēlēties nelietot.";
-
 /* Footer text for the new address bar picker */
 "new.address.bar.picker.footer" = "Pielāgo iestatījumos > MI funkcijas";
 
@@ -2332,8 +2329,8 @@
 /* Option for search only in the new address bar picker */
 "new.address.bar.picker.search.only" = "Meklēt tikai";
 
-/* Subtitle for the new address bar picker modal */
-"new.address.bar.picker.subtitle" = "Pārslēgties starp meklēšanu un MI tērzēšanu";
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline" = "Vēlies vieglāk piekļūt MI tērzēšanai?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Adreses joslas opcija";
@@ -2622,6 +2619,9 @@
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Pārvaldīt kredītkartes…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "Tu esi sasniedzis maksimālo kredītkaršu skaitu. Lūdzu, izdzēs dažas, lai atsāktu sinhronizāciju.";
 
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Sinhronizācijā radās kļūda. Mēģini atspējot sinhronizāciju šajā ierīcē un pēc tam atkārtoti izveido savienojumu, izmantojot citu ierīci vai atgūšanas kodu.";
@@ -3843,6 +3843,54 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Ziņojums no %@:";
+
+/* CTA of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.cta" = "Apskatīt piedāvājumu";
+
+/* Dismiss of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.dismiss" = "Ne tagad";
+
+/* Message of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.text" = "Paliec aizsargāts ar mūsu VPN, privāto MI un citiem risinājumiem. Abonē vēlreiz jau šodien un ietaupi 25%.";
+
+/* Title of message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.title" = "Pēdējā diena, lai ietaupītu 25%!";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "IETAUPI 25%";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "Apskatīt piedāvājumu";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Ne tagad";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "Paliec aizsargāts ar mūsu VPN, privāto MI un citiem risinājumiem. Atjauno abonementu šodien un ietaupi 25%.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Tikai ierobežotu laiku";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "Mēs vēlamies tevi atpakaļ!\nSaņem 25% atlaidi.";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "Apskatīt piedāvājumu";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "Man ir abonements";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "Ierobežota laika piedāvājums!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "Paliec aizsargāts ar mūsu VPN, privāto MI un citiem risinājumiem. Abonē vēlreiz jau šodien un ietaupi 25%.\nIerobežota laika piedāvājums.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "Atjauno abonementu un ietaupi 25%";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Atjauno abonementu un ietaupi 25%";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Vai meklē Mac versiju?";

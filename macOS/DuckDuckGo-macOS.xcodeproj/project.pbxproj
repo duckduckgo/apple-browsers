@@ -3516,6 +3516,8 @@
 		BBDE001D2D6DE6A800109F88 /* DefaultBrowserAndDockPromptPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDE001B2D6DE6A000109F88 /* DefaultBrowserAndDockPromptPopover.swift */; };
 		BBDE001F2D6DE6F500109F88 /* DefaultBrowserAndDockPromptContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDE001E2D6DE6EE00109F88 /* DefaultBrowserAndDockPromptContent.swift */; };
 		BBDE00202D6DE6F500109F88 /* DefaultBrowserAndDockPromptContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDE001E2D6DE6EE00109F88 /* DefaultBrowserAndDockPromptContent.swift */; };
+		BBDF565D2EA8E22100AA2DFF /* WinBackOfferPromptPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDF565C2EA8E22100AA2DFF /* WinBackOfferPromptPresenterTests.swift */; };
+		BBDF565E2EA8E22100AA2DFF /* WinBackOfferPromptPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDF565C2EA8E22100AA2DFF /* WinBackOfferPromptPresenterTests.swift */; };
 		BBDFAD2A2E98F41D00418F3E /* WinBackOfferDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDFAD292E98F41D00418F3E /* WinBackOfferDebugMenu.swift */; };
 		BBDFAD2B2E98F41D00418F3E /* WinBackOfferDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDFAD292E98F41D00418F3E /* WinBackOfferDebugMenu.swift */; };
 		BBE013EA2C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE013E92C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift */; };
@@ -5918,6 +5920,7 @@
 		BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireButtonIconStyleProviding.swift; sourceTree = "<group>"; };
 		BBDE001B2D6DE6A000109F88 /* DefaultBrowserAndDockPromptPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPopover.swift; sourceTree = "<group>"; };
 		BBDE001E2D6DE6EE00109F88 /* DefaultBrowserAndDockPromptContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptContent.swift; sourceTree = "<group>"; };
+		BBDF565C2EA8E22100AA2DFF /* WinBackOfferPromptPresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferPromptPresenterTests.swift; sourceTree = "<group>"; };
 		BBDFAD292E98F41D00418F3E /* WinBackOfferDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferDebugMenu.swift; sourceTree = "<group>"; };
 		BBE013E92C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksEmptyStateContent.swift; sourceTree = "<group>"; };
 		BBE5FD892E393ADE008674A2 /* VPNMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNMocks.swift; sourceTree = "<group>"; };
@@ -8409,6 +8412,7 @@
 				7B1522AD2DE9CBE300887371 /* VPNAppEventsHandlerTests.swift */,
 				7B4C5CF42BE51D640007A164 /* VPNUninstallerTests.swift */,
 				BB32A87C2E3CF75700E0C2AF /* VPNUpsellPopoverViewModelTests.swift */,
+				BBDF565C2EA8E22100AA2DFF /* WinBackOfferPromptPresenterTests.swift */,
 			);
 			path = NetworkProtection;
 			sourceTree = "<group>";
@@ -14570,6 +14574,7 @@
 				C17CA7B32B9B5317008EC3C1 /* MockAutofillPopoverPresenter.swift in Sources */,
 				847642EE2E570E5C00AA33EE /* WindowControllersManagerMock.swift in Sources */,
 				3706FE3F293F661700E42796 /* FileStoreMock.swift in Sources */,
+				BBDF565D2EA8E22100AA2DFF /* WinBackOfferPromptPresenterTests.swift in Sources */,
 				37AA01802E2164A700844427 /* AIChatUserScriptHandlerTests.swift in Sources */,
 				B6619F042B17123200CD9186 /* DataImportViewModelTests.swift in Sources */,
 				1D8C2FE62B70F4C4005E4BBD /* TabSnapshotExtensionTests.swift in Sources */,
@@ -16728,6 +16733,7 @@
 				844DAACC2E1E824500879517 /* XCTestCaseExtension.swift in Sources */,
 				4B9DB05C2A983B55000927DB /* WaitlistViewModelTests.swift in Sources */,
 				CC0943012E16B6F000E67336 /* FavoritesImportProcessorTests.swift in Sources */,
+				BBDF565E2EA8E22100AA2DFF /* WinBackOfferPromptPresenterTests.swift in Sources */,
 				1EEB2D7A2C986A40000D908B /* SubscriptionPagesUseSubscriptionFeatureForStripeTests.swift in Sources */,
 				37A0BA282D747BC900130447 /* CapturingHistoryViewDataProvider.swift in Sources */,
 				3135647E2D9EBB9900BF4B5D /* AIChatAddressBarPromptExtractorTests.swift in Sources */,

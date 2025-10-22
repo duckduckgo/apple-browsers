@@ -31,6 +31,20 @@ enum SubscriptionFunnelOrigin: String {
 
     /// User entered the funnel via the VPN upsell.
     case vpnUpsell = "funnel_toolbar_macos"
+
+    // MARK: - Win-Back Offer Origins
+
+    /// User entered via win-back offer launch prompt
+    case winBackLaunch = "funnel_applaunch_macos_winback"
+
+    /// User entered via win-back offer in App More Menu
+    case winBackMenu = "funnel_appmenu_macos_winback"
+
+    /// User entered via win-back offer in App Settings
+    case winBackSettings = "funnel_appsettings_macos_winback"
+
+    /// User entered via win-back offer in New Tab Page
+    case winBackNewTabPage = "funnel_newtab_macos_winback"
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the macOS app.

@@ -269,7 +269,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     lazy var winBackOfferPromptPresenter: WinBackOfferPromptPresenting = {
-        return WinBackOfferPromptPresenter(visibilityManager: winBackOfferVisibilityManager)
+        return WinBackOfferPromptPresenter(visibilityManager: winBackOfferVisibilityManager,
+                                          subscriptionManager: subscriptionAuthV1toV2Bridge)
     }()
 
     lazy var winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator = {

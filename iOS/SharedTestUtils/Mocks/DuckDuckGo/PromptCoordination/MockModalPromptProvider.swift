@@ -47,4 +47,9 @@ final class MockModalPromptProvider: ModalPromptProvider {
     func didPresentModal() {
         didCallDidPresentModal = true
     }
+
+    func reset() {
+        didCallProvideModalPrompt = false
+        didCallDidPresentModal = false
+    }
 }

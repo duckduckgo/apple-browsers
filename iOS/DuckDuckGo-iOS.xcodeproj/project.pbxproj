@@ -1227,6 +1227,7 @@
 		9F387DEE2EA895DD006861F8 /* MockModalPromptPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DEC2EA895DC006861F8 /* MockModalPromptPresenter.swift */; };
 		9F387DEF2EA895DD006861F8 /* MockModalPromptPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DEC2EA895DC006861F8 /* MockModalPromptPresenter.swift */; };
 		9F387DF02EA895DD006861F8 /* MockModalPromptPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DEC2EA895DC006861F8 /* MockModalPromptPresenter.swift */; };
+		9F387DF32EA8AB43006861F8 /* ModalPromptCoordinationManagerIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DF22EA8AB43006861F8 /* ModalPromptCoordinationManagerIntegrationTests.swift */; };
 		9F38A28C2D09BDE500EB100E /* SpecialErrorPageThreatProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F38A28B2D09BDE500EB100E /* SpecialErrorPageThreatProvider.swift */; };
 		9F3C7FE02D7990740061FA72 /* DefaultBrowserInfoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3C7FDF2D7990710061FA72 /* DefaultBrowserInfoStore.swift */; };
 		9F454D1A2E051CC800B8CC5A /* DefaultBrowserPromptFeatureFlagAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F454D192E051CBE00B8CC5A /* DefaultBrowserPromptFeatureFlagAdapter.swift */; };
@@ -3450,6 +3451,7 @@
 		9F387DE52EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationManagerTests.swift; sourceTree = "<group>"; };
 		9F387DE72EA895B6006861F8 /* MockModalPromptProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockModalPromptProvider.swift; sourceTree = "<group>"; };
 		9F387DEC2EA895DC006861F8 /* MockModalPromptPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockModalPromptPresenter.swift; sourceTree = "<group>"; };
+		9F387DF22EA8AB43006861F8 /* ModalPromptCoordinationManagerIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationManagerIntegrationTests.swift; sourceTree = "<group>"; };
 		9F38A28B2D09BDE500EB100E /* SpecialErrorPageThreatProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialErrorPageThreatProvider.swift; sourceTree = "<group>"; };
 		9F3C7FDF2D7990710061FA72 /* DefaultBrowserInfoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserInfoStore.swift; sourceTree = "<group>"; };
 		9F454D162E050B8B00B8CC5A /* MetricBuilder */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = MetricBuilder; sourceTree = "<group>"; };
@@ -3496,6 +3498,7 @@
 		9FA09DA32EA71F2900E26F3F /* PromptCooldownStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownStore.swift; sourceTree = "<group>"; };
 		9FA09DA42EA71F2900E26F3F /* PromptCooldownManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownManager.swift; sourceTree = "<group>"; };
 		9FA09DAB2EA7400200E26F3F /* PromptCooldownStorePixelReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownStorePixelReporter.swift; sourceTree = "<group>"; };
+		9FA09DAE2EA84F5200E26F3F /* ModalPromptScheduling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptScheduling.swift; sourceTree = "<group>"; };
 		9FA5E44A2BF1AF3400BDEF02 /* SubscriptionContainerViewFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionContainerViewFactory.swift; sourceTree = "<group>"; };
 		9FAD6C022E41D99700C19EEA /* DefaultBrowserPromptUIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUIProvider.swift; sourceTree = "<group>"; };
 		9FB027112C2526DD009EA190 /* OnboardingView+IntroDialogContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingView+IntroDialogContent.swift"; sourceTree = "<group>"; };
@@ -6394,6 +6397,7 @@
 				562BE5642E1C26F80064F305 /* AiChat */,
 				563A3CFC2D37B8E3001966FD /* Configuration */,
 				1E1D8B5F29950FB300C96994 /* Autoconsent */,
+				9F387DF12EA8AA8B006861F8 /* ModalPromptCoordination */,
 				36F2CA612E6098EF00C7039D /* InactivityNotificationSchedulerServiceIntegrationTests.swift */,
 				85F21DBD21121147002631A6 /* AtbServerTests.swift */,
 				85519124247468580010FDD0 /* TrackerRadarIntegrationTests.swift */,
@@ -6823,6 +6827,14 @@
 				9F387DEC2EA895DC006861F8 /* MockModalPromptPresenter.swift */,
 			);
 			path = PromptCoordination;
+			sourceTree = "<group>";
+		};
+		9F387DF12EA8AA8B006861F8 /* ModalPromptCoordination */ = {
+			isa = PBXGroup;
+			children = (
+				9F387DF22EA8AB43006861F8 /* ModalPromptCoordinationManagerIntegrationTests.swift */,
+			);
+			path = ModalPromptCoordination;
 			sourceTree = "<group>";
 		};
 		9F3DF78E2D7EAC8F00857D06 /* CheckDefaultBrowser */ = {
@@ -11517,6 +11529,7 @@
 				98E5633B2DE8B04D00E6E75F /* XCTestCaseExtension.swift in Sources */,
 				9F387DDF2EA881D1006861F8 /* PromptCooldownMocks.swift in Sources */,
 				98E5633C2DE8B04D00E6E75F /* UserDefaultsExtension.swift in Sources */,
+				9F387DF32EA8AB43006861F8 /* ModalPromptCoordinationManagerIntegrationTests.swift in Sources */,
 				98E5633D2DE8B04D00E6E75F /* CombineTestUtilities.swift in Sources */,
 				98E5633E2DE8B04D00E6E75F /* InitHelpers.swift in Sources */,
 				BBF1BDF92EA6337000358243 /* MockWinBackOfferVisibilityManager.swift in Sources */,

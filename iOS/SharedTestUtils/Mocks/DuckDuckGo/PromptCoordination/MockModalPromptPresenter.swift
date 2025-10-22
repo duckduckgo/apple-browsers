@@ -36,6 +36,13 @@ final class MockModalPromptPresenter: ModalPromptPresenter {
         capturedCompletion = completion
         completion?()
     }
+
+    func reset() {
+        didCallPresent = false
+        capturedViewController = nil
+        capturedAnimated = nil
+        capturedCompletion = nil
+    }
 }
 
 final class MockModalPromptScheduler: ModalPromptScheduling {

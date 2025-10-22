@@ -488,11 +488,32 @@ final class AddressBarViewController: NSViewController {
 
     // MARK: - Layout
 
+    /// Workaround for macOS 26.0 NSTextFieldSimpleLabel rendering bug
+    /// Aggressively hides internal label views that incorrectly remain visible
+    @available(macOS 26.0, *)
+    private func forceHideInternalTextFieldLabels(in textField: NSTextField) {
+        for subview in textField.subviews {
+            let className = String(describing: type(of: subview))
+            if className.contains("NSTextFieldSimpleLabel") {
+                subview.isHidden = true
+                subview.alphaValue = 0
+                subview.removeFromSuperview()
+            }
+        }
+    }
+
     private func updateView() {
         let isPassiveTextFieldHidden = isFirstResponder || mode.isEditing
         addressBarTextField.isHidden = isPassiveTextFieldHidden ? false : true
         passiveTextField.isHidden = isPassiveTextFieldHidden ? true : false
         passiveTextField.textColor = theme.colorsProvider.textPrimaryColor
+
+        // Workaround for macOS 26.0 NSTextFieldSimpleLabel rendering bug
+        if #available(macOS 26.0, *) {
+            if addressBarTextField.isHidden {
+                forceHideInternalTextFieldLabels(in: addressBarTextField)
+            }
+        }
 
         updateShadowViewPresence(isFirstResponder)
         inactiveBackgroundView.backgroundColor = theme.colorsProvider.inactiveAddressBarBackgroundColor

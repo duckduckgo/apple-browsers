@@ -190,9 +190,8 @@ extension HistoryCleaner {
     }
 }
 
-/// REVISE
 @MainActor
-public extension WKUserContentController {
+extension WKUserContentController {
 
     func addHandler(_ userScript: UserScript) {
         for messageName in userScript.messageNames {

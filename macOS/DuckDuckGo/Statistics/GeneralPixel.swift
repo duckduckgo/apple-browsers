@@ -330,12 +330,6 @@ enum GeneralPixel: PixelKitEvent {
      */
     case developerToolsOpened
 
-    // MARK: - SERP Settings
-
-    case serpSettingsSerializationFailed(error: Error)
-    case serpSettingsKeyValueStoreReadError(error: Error)
-    case serpSettingsKeyValueStoreWriteError(error: Error)
-
     // MARK: - Debug
 
     case keyValueFileStoreInitError
@@ -965,14 +959,6 @@ enum GeneralPixel: PixelKitEvent {
         case .pictureInPictureVideoPlayback: return "m_mac_pip_video_playback"
 
         case .developerToolsOpened: return "m_mac_dev_tools_opened"
-
-            // SERP Settings
-        case .serpSettingsSerializationFailed:
-            return "m_mac_serp_settings_serialization_failed"
-        case .serpSettingsKeyValueStoreReadError:
-            return "m_mac_serp_settings_keyvaluestore_read_error"
-        case .serpSettingsKeyValueStoreWriteError:
-            return "m_mac_serp_settings_keyvaluestore_write_error"
 
             // DEBUG
         case .keyValueFileStoreInitError:

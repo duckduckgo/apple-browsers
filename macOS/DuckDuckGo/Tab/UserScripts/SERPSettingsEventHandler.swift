@@ -50,26 +50,14 @@ final class SERPSettingsEventHandler: EventMapping<SERPSettingsError> {
     /// This initializer configures the event-to-pixel mappings for all
     /// supported error types.
     init() {
-        super.init { event, error, _, _ in
+        super.init { event, _, _, _ in
             switch event {
-            case .serializationFailed:
-                // Fires when converting settings dictionary to JSON fails
-                if let error {
-                    PixelKit.fire(DebugEvent(GeneralPixel.serpSettingsSerializationFailed(error: error)), frequency: .dailyAndCount)
-                }
-            case .deserializationFailed:
-                // Reserved for future use - currently not fired by any code path
-                break
-            case .keyValueStoreReadError:
-                // Fires when reading from persistent storage fails
-                if let error {
-                    PixelKit.fire(DebugEvent(GeneralPixel.serpSettingsKeyValueStoreReadError(error: error)), frequency: .dailyAndCount)
-                }
-            case .keyValueStoreWriteError:
-                // Fires when writing to persistent storage fails
-                if let error {
-                    PixelKit.fire(DebugEvent(GeneralPixel.serpSettingsKeyValueStoreWriteError(error: error)), frequency: .dailyAndCount)
-                }
+            case .serializationFailed: ()
+                // Fires when converting settings dictionary to JSON fails. Pixel will be added in an upcoming PR
+            case .keyValueStoreReadError: ()
+                // Fires when reading from persistent storage fails. Pixel will be added in an upcoming PR
+            case .keyValueStoreWriteError: ()
+                // Fires when writing to persistent storage fails. Pixel will be added in an upcoming PR
             }
         }
     }

@@ -106,7 +106,7 @@ public class SyncErrorHandler: EventMapping<SyncError> {
     let dateProvider: CurrentDateProviding
     public weak var alertPresenter: SyncAlertsPresenting?
 
-    public init(dateProvider: CurrentDateProviding = Date()) {
+    public init(dateProvider: CurrentDateProviding = DefaultCurrentDateProvider()) {
         self.dateProvider = dateProvider
         super.init { event, error, _, _ in
             switch event {

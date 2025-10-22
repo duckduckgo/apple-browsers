@@ -67,6 +67,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     @IBOutlet weak var scrollViewHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var pinnedTabsContainerHeightConstraint: NSLayoutConstraint!
 
+    private var pinnedTabsCollectionCancellable: AnyCancellable?
     private var fireButtonMouseOverCancellable: AnyCancellable?
 
     private var addNewTabButtonFooter: TabBarFooter? {
@@ -322,6 +323,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                     return
                 }
 
+                if featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) {
+                    subscribeToPinnedTabsCollection()
+                }
+
                 updatePinnedTabsViewModel()
             }.store(in: &cancellables)
     }
@@ -484,14 +489,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func subscribeToPinnedTabsCollection() {
-        tabCollectionViewModel.pinnedTabsCollection?.$tabs
+        pinnedTabsCollectionCancellable = tabCollectionViewModel.pinnedTabsCollection?.$tabs
             .removeDuplicates()
             .asVoid()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.pinnedTabsCollectionView?.reloadData()
             }
-            .store(in: &cancellables)
     }
 
     private func subscribeToPinnedTabsViewModelInputs() {

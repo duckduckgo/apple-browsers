@@ -1,0 +1,17 @@
+// See https://app.asana.com/1/137249556945/project/72649045549333/task/1211135165528282
+{
+    "m_debug_prompt-coordination_failed-to-save_last-presentation-date": {
+        "description": "Fires when we fail to save to the persistence store the timestamp when last prompt was shown.",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "errorCode", "errorDomain"]
+    },
+    "m_debug_prompt-coordination_failed-to-retrieve_last-presentation-date": {
+        "description": "Fires when we fail to retrieve from the persistence store the timestamp when the last prompt was shown.",
+        "owners": ["alessandroboron"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "errorCode", "errorDomain"]
+    }
+}

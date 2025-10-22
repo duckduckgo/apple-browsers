@@ -10,7 +10,7 @@
             {
                 "key": "isInternalUser",
                 "description": "Whether the user is internal",
-                "type": "string"
+                "type": "string",
                 "enum": ["true", "false"]
             }
         ]
@@ -521,7 +521,7 @@
             {
                 "key": "vpn_bypass",
                 "description": "VPN bypass status when the submission succeeded",
-                "type": "string"
+                "type": "string",
                 "enum": ["on", "off", "unsupported"]
             }
         ]
@@ -557,7 +557,7 @@
             {
                 "key": "is_parent",
                 "description": "Whether the data broker is a parent (1) or child (0)",
-                "type": "string"
+                "type": "string",
                 "enum": ["0", "1"]
             },
             {
@@ -568,7 +568,7 @@
             {
                 "key": "vpn_bypass",
                 "description": "VPN bypass status when the attempt succeeded",
-                "type": "string"
+                "type": "string",
                 "enum": ["on", "off", "unsupported"]
             }
         ]
@@ -629,7 +629,7 @@
             {
                 "key": "action_type",
                 "description": "Type of action that failed",
-                "type": "string"
+                "type": "string",
                 "enum": [
                     "extract",
                     "navigate",
@@ -650,7 +650,7 @@
             {
                 "key": "vpn_bypass",
                 "description": "VPN bypass status when the failure happened",
-                "type": "string"
+                "type": "string",
                 "enum": ["on", "off", "unsupported"]
             }
         ]
@@ -741,7 +741,7 @@
             {
                 "key": "isInternalUser",
                 "description": "Whether the user is internal",
-                "type": "string"
+                "type": "string",
                 "enum": ["true", "false"]
             },
             {
@@ -827,13 +827,13 @@
             {
                 "key": "status",
                 "description": "Backend item status",
-                "type": "string"
+                "type": "string",
                 "enum": ["unknown", "error"]
             },
             {
                 "key": "error_code",
                 "description": "Backend item error code",
-                "type": "string"
+                "type": "string",
                 "enum": ["server_error", "extraction_error", "request_error"]
             }
         ]
@@ -1034,7 +1034,7 @@
             {
                 "key": "isInternalUser",
                 "description": "Whether the user is internal",
-                "type": "string"
+                "type": "string",
                 "enum": ["true", "false"]
             },
             {
@@ -1245,7 +1245,7 @@
             {
                 "key": "is_manual_scan",
                 "description": "Whether the scan was initiated manually by the user",
-                "type": "string"
+                "type": "string",
                 "enum": ["true", "false"]
             },
             {
@@ -1256,7 +1256,7 @@
             {
                 "key": "vpn_bypass",
                 "description": "VPN bypass status when the error occurred",
-                "type": "string"
+                "type": "string",
                 "enum": ["on", "off", "unsupported"]
             },
             {
@@ -1272,7 +1272,7 @@
             {
                 "key": "action_type",
                 "description": "Type of action that produced the error",
-                "type": "string"
+                "type": "string",
                 "enum": [
                     "extract",
                     "navigate",
@@ -1318,7 +1318,7 @@
             {
                 "key": "stepType",
                 "description": "Identifies the failing step type (scan or optOut)",
-                "type": "string"
+                "type": "string",
                 "enum": ["scan", "optOut", "unknown"]
             },
             {

@@ -254,7 +254,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         subscribeToThemeChanges()
 
         applyThemeStyle()
-
     }
 
     override func viewWillAppear() {

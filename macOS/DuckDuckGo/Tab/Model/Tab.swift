@@ -1246,10 +1246,6 @@ extension Tab: SERPSettingsUserScriptDelegate {
         delegate?.closeTab(self)
     }
 
-    func serpSettingsUserScriptDidRequestToCloseTabAndOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
-        // TODO: To be implemented
-    }
-
     func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
         delegate?.closeTab(self)
     }

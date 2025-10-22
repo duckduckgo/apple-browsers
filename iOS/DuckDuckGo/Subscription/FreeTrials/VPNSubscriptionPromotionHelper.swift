@@ -24,7 +24,7 @@ import Subscription
 
 /// Protocol defining the interface for the VPN Subscription promotion helper.
 ///
-/// Conforming types provide logic for determining when the Subscription promotion should be shown on the VPN new tab menu item,
+/// Conforming types provide logic for determining how the Subscription should be promoted on the VPN menu item,
 /// as well as utilities for persistence and pixel firing related to the promotion.
 protocol VPNSubscriptionPromotionHelping {
 
@@ -41,28 +41,36 @@ protocol VPNSubscriptionPromotionHelping {
     func fireTapPixel()
 }
 
-enum VPNSubscriptionPromotionStatus: String {
-    case pill
-    case noPill = "no_pill"
+enum VPNSubscriptionPromotionStatus {
+    case promo
+    case noPromo
     case subscribed
+
+    var pixelParameter: String {
+        switch self {
+        case .promo:
+            return "pill"
+        case .noPromo:
+            return "no_pill"
+        case .subscribed:
+            return "subscribed"
+        }
+    }
 }
 
 /// A helper struct that implements the VPNSubscriptionPromotionHelping protocol.
 ///
-/// This struct provides the logic for determining when to show the Subscription promotion on the VPN new tab menu item,
+/// This struct provides the logic for determining how the Subscription should be promoted on the VPN menu item,
 /// as well as handling persistence and pixel firing.
 struct VPNSubscriptionPromotionHelper: VPNSubscriptionPromotionHelping {
 
     /// The feature flagging service used to determine if the promotion should be shown.
     private let featureFlagger: FeatureFlagger
 
-    /// The subscription manager used to check if the user can purchase a subscription.
+    /// The subscription manager used to check if the user has a subscription.
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
 
-    /// The helper used to check free trials are enabled.
-    private let freeTrialsHelper: SubscriptionFreeTrialsHelping
-
-    /// The persistor used to track and check how many times the free trial badge has been shown.
+    /// The persistor used to track and check how many times the promotion has been shown.
     private let freeTrialBadgePersistor: FreeTrialBadgePersisting
 
     /// The pixel firing service used to track user interactions with the promotion.
@@ -76,39 +84,34 @@ struct VPNSubscriptionPromotionHelper: VPNSubscriptionPromotionHelping {
     ///   - pixelFiring: The pixel firing service. Defaults to Pixel.self.
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-         freeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
          freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard, keyPrefix: "vpn-menu-item"),
          pixelFiring: PixelFiring.Type = Pixel.self) {
         self.featureFlagger = featureFlagger
         self.subscriptionManager = subscriptionManager
-        self.freeTrialsHelper = freeTrialsHelper
         self.freeTrialBadgePersistor = freeTrialBadgePersistor
         self.pixelFiring = pixelFiring
     }
 
     /// Status of the subscription promotion
     ///
-    /// This property checks the subscription status and if the user should see the Free Trial promo badge and returns the status.
+    /// This property checks the subscription status and if the user should see the promotion and returns the status.
     var subscriptionPromoStatus: VPNSubscriptionPromotionStatus {
         if subscriptionManager.isSubscriptionPresent() {
             return .subscribed
-        } else if shouldDisplay {
-            return .pill
+        } else if shouldDisplayPromo {
+            return .promo
         } else {
-            return .noPill
+            return .noPromo
         }
     }
 
-    /// Indicates whether the Free Trial badge should be displayed to the user on the VPN menu item in the new tab page menu.
+    /// Indicates whether the subscription promotion should be displayed to the user.
     ///
     /// This property checks:
     /// - If the feature flag is enabled
-    /// - If the user is eligible for a free trial
-    /// - Whether the user has reached their limit for the free trial badge
-    private var shouldDisplay: Bool {
-        featureFlagger.isFeatureOn(.vpnMenuItem)
-            && freeTrialsHelper.areFreeTrialsEnabled
-            && !freeTrialBadgePersistor.hasReachedViewLimit
+    /// - Whether the user has reached their limit for the promotion
+    private var shouldDisplayPromo: Bool {
+        featureFlagger.isFeatureOn(.vpnMenuItem) && !freeTrialBadgePersistor.hasReachedViewLimit
     }
 
     /// Provides the URL components for subscribing as part of the promotion.
@@ -118,7 +121,7 @@ struct VPNSubscriptionPromotionHelper: VPNSubscriptionPromotionHelping {
         SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.newTabMenu.rawValue)
     }
 
-    /// Records when the promo has been shown to the user.
+    /// Records when the promotion has been shown to the user.
     func subscriptionPromoWasShown() {
         guard featureFlagger.isFeatureOn(.vpnMenuItem) else { return }
         freeTrialBadgePersistor.incrementViewCount()
@@ -126,6 +129,6 @@ struct VPNSubscriptionPromotionHelper: VPNSubscriptionPromotionHelping {
 
     /// Fires a pixel when the network protection promotion is tapped by the user.
     func fireTapPixel() {
-        pixelFiring.fire(.browsingMenuVPN, withAdditionalParameters: ["status": subscriptionPromoStatus.rawValue])
+        pixelFiring.fire(.browsingMenuVPN, withAdditionalParameters: ["status": subscriptionPromoStatus.pixelParameter])
     }
 }

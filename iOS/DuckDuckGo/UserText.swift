@@ -534,6 +534,7 @@ public struct UserText {
 
     public static let actionAutofillLogins = NSLocalizedString("action.title.autofill.logins", value: "Passwords", comment: "Autofill Logins menu item opening the login list")
     public static let actionTabNew = NSLocalizedString("action.title.tab.new", value: "New Tab", comment: "New tab menu item opening a new tab")
+    static let actionVPN = NSLocalizedString("action.title.vpn", value: "VPN", comment: "VPN menu item")
 
     // MARK: - Control Center Widget Education
 
@@ -1675,10 +1676,6 @@ public struct UserText {
     static let winBackCampaignSubscriptionSettingsMenuSubtitle = NSLocalizedString("win-back.campaign.subscription.settings.menu.subtitle", value: "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%.\nLimited time offer.", comment: "Subtitle of the Subscription settings menu item during the win-back campaign")
     static let winBackCampaignSubscriptionSettingsMenuCTA = NSLocalizedString("win-back.campaign.subscription.settings.menu.cta", value: "See Offer", comment: "CTA of the Subscription settings menu item during the win-back campaign")
     static let winBackCampaignSubscriptionSettingsMenuExistingSubscriptionButton = NSLocalizedString("win-back.campaign.subscription.settings.menu.existing.subscription.button", value: "I Have a Subscription", comment: "Button for using existing subscription during the win-back campaign")
-
-    // VPN promotion
-    public static let actionVPN = NSLocalizedString("action.title.vpn", value: "VPN", comment: "Menu item for the VPN in the new tab menu")
-    public static let freeTrialBadgeLabel = NSLocalizedString("subscription.free-trial-badge.label", value: "TRY FOR FREE", comment: "Label for a badge indicating the user eligible for a free trial")
 
     // Autocomplete
     public static let autocompleteHistoryWarningTitle = NSLocalizedString("autocomplete.history.warning.title", value: "Same privacy.\nBetter search suggestions!", comment: "Title for message show in suggestions")

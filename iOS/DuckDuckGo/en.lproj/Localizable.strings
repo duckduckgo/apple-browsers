@@ -127,7 +127,7 @@
 /* New tab menu item opening a new tab */
 "action.title.tab.new" = "New Tab";
 
-/* Menu item for the VPN in the new tab menu */
+/* VPN menu item */
 "action.title.vpn" = "VPN";
 
 /* Settings label for bottom position for the address bar */
@@ -3201,9 +3201,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Title for the existing subscription dialog */
 "subscription.found.title" = "Subscription Found";
-
-/* Label for a badge indicating the user eligible for a free trial */
-"subscription.free-trial-badge.label" = "TRY FOR FREE";
 
 /* Help and support Section header */
 "subscription.help" = "Help and support";

@@ -21,7 +21,7 @@ import UIKit
 
 enum BrowsingMenuEntry {
     
-    case regular(name: String, accessibilityLabel: String? = nil, image: UIImage, showNotificationDot: Bool = false, accessoryView: UIView? = nil, action: () -> Void)
+    case regular(name: String, accessibilityLabel: String? = nil, image: UIImage, showNotificationDot: Bool = false, customDotColor: UIColor? = nil, action: () -> Void)
     case separator
 }
 
@@ -242,16 +242,8 @@ final class BrowsingMenuViewController: UIViewController {
             }
             return result
         }
-        let accessoryViewWidth = menuEntries.reduce(0) { (result, entry) -> CGFloat in
-            guard case BrowsingMenuEntry.regular(_, _, _, _, .some(let accessoryView), _) = entry else { return result }
-            let accessoryViewWidth = accessoryView.intrinsicContentSize.width
-            if result < accessoryViewWidth {
-                return accessoryViewWidth
-            }
-            return result
-        }
 
-        preferredWidth.constant = BrowsingMenuEntryViewCell.preferredWidth(for: longestEntry) + accessoryViewWidth
+        preferredWidth.constant = BrowsingMenuEntryViewCell.preferredWidth(for: longestEntry)
     }
 
     private func recalculateHeightConstraints() {
@@ -289,14 +281,13 @@ extension BrowsingMenuViewController: UITableViewDataSource {
         let theme = ThemeManager.shared.currentTheme
         
         switch menuEntries[indexPath.row] {
-        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let accessoryView, _):
+        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, _):
             guard let cell = tableView.dequeueReusableCell(withIdentifier: "BrowsingMenuEntryViewCell",
                                                            for: indexPath) as? BrowsingMenuEntryViewCell else {
                 fatalError("Cell should be dequeued")
             }
             
-            cell.configure(image: image, label: name, accessibilityLabel: accessibilityLabel, showNotificationDot: showNotificationDot)
-            cell.accessoryView = accessoryView
+            cell.configure(image: image, label: name, accessibilityLabel: accessibilityLabel, showNotificationDot: showNotificationDot, customDotColor: customDotColor)
             return cell
         case .separator:
             guard let cell = tableView.dequeueReusableCell(withIdentifier: "BrowsingMenuSeparatorViewCell",

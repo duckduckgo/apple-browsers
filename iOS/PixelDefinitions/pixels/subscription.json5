@@ -314,7 +314,7 @@
             {
                 "key": "status",
                 "type": "string",
-                "description": "Status of the accessory view shown with the menu item",
+                "description": "Status associated with the VPN menu item",
                 "enum": ["pill", "no_pill", "subscribed"]
             }
         ]

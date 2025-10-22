@@ -585,27 +585,32 @@ extension TabViewController {
 
     private func buildVPNEntry() -> BrowsingMenuEntry {
         let vpnPromoHelper = VPNSubscriptionPromotionHelper()
+        var image: UIImage = DesignSystemImages.Glyphs.Size16.vpnOff
+        var showNotificationDot: Bool = true
+        var customDotColor: UIColor?
+        var accessibilityLabel: String?
 
-        let vpnAccessoryView: UIView?
         switch vpnPromoHelper.subscriptionPromoStatus {
-        case .pill:
+        case .promo:
             vpnPromoHelper.subscriptionPromoWasShown()
-            vpnAccessoryView = AccessoryHostingView(BadgeView(text: UserText.freeTrialBadgeLabel))
-        case .noPill:
-            vpnAccessoryView = nil
+        case .noPromo:
+            showNotificationDot = false
         case .subscribed:
-            let vpnStatus: StatusIndicator
             if case .connected = AppDependencyProvider.shared.connectionObserver.recentValue {
-                vpnStatus = .on
+                image = DesignSystemImages.Glyphs.Size16.vpnOn
+                accessibilityLabel = "\(UserText.actionVPN), \(UserText.settingsOn)"
+                customDotColor = UIColor(designSystemColor: .alertGreen)
             } else {
-                vpnStatus = .off
+                accessibilityLabel = "\(UserText.actionVPN), \(UserText.settingsOff)"
+                customDotColor = UIColor(designSystemColor: .textSecondary).withAlphaComponent(0.33)
             }
-            vpnAccessoryView = AccessoryHostingView(StatusIndicatorView(status: vpnStatus))
         }
 
         return BrowsingMenuEntry.regular(name: UserText.actionVPN,
-                                         image: DesignSystemImages.Glyphs.Size16.vpnOn,
-                                         accessoryView: vpnAccessoryView) { [weak self] in
+                                         accessibilityLabel: accessibilityLabel,
+                                         image: image,
+                                         showNotificationDot: showNotificationDot,
+                                         customDotColor: customDotColor) { [weak self] in
             self?.onOpenVPNAction(with: vpnPromoHelper)
         }
     }
@@ -613,7 +618,7 @@ extension TabViewController {
     private func onOpenVPNAction(with vpnPromoHelper: VPNSubscriptionPromotionHelper) {
         vpnPromoHelper.fireTapPixel()
         switch vpnPromoHelper.subscriptionPromoStatus {
-        case .pill, .noPill:
+        case .promo, .noPromo:
             let urlComponents = vpnPromoHelper.subscriptionURLComponents()
             NotificationCenter.default.post(
                 name: .settingsDeepLinkNotification,

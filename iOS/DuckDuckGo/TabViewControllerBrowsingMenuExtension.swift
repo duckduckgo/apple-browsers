@@ -28,6 +28,7 @@ import PrivacyDashboard
 import PixelExperimentKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import UIComponents
 
 extension TabViewController {
 
@@ -173,6 +174,10 @@ extension TabViewController {
                                                  action: { [weak self] in
             self?.onOpenDownloadsAction()
         }))
+
+        if state == .newTab, featureFlagger.isFeatureOn(.vpnMenuItem), AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase {
+            entries.append(buildVPNEntry())
+        }
 
         entries.append(BrowsingMenuEntry.regular(name: UserText.actionSettings,
                                                  image: DesignSystemImages.Glyphs.Size16.settings,
@@ -576,6 +581,54 @@ extension TabViewController {
                                   onAction: { [weak self] in
             self?.togglePrivacyProtection(domain: domain)
         })
+    }
+
+    private func buildVPNEntry() -> BrowsingMenuEntry {
+        let vpnPromoHelper = VPNSubscriptionPromotionHelper()
+        var image: UIImage = DesignSystemImages.Glyphs.Size16.vpnOff
+        var showNotificationDot: Bool = true
+        var customDotColor: UIColor?
+        var accessibilityLabel: String?
+
+        switch vpnPromoHelper.subscriptionPromoStatus {
+        case .promo:
+            vpnPromoHelper.subscriptionPromoWasShown()
+        case .noPromo:
+            showNotificationDot = false
+        case .subscribed:
+            if case .connected = AppDependencyProvider.shared.connectionObserver.recentValue {
+                image = DesignSystemImages.Glyphs.Size16.vpnOn
+                accessibilityLabel = "\(UserText.actionVPN), \(UserText.settingsOn)"
+                customDotColor = UIColor(designSystemColor: .alertGreen)
+            } else {
+                accessibilityLabel = "\(UserText.actionVPN), \(UserText.settingsOff)"
+                customDotColor = UIColor(designSystemColor: .textSecondary).withAlphaComponent(0.33)
+            }
+        }
+
+        return BrowsingMenuEntry.regular(name: UserText.actionVPN,
+                                         accessibilityLabel: accessibilityLabel,
+                                         image: image,
+                                         showNotificationDot: showNotificationDot,
+                                         customDotColor: customDotColor) { [weak self] in
+            self?.onOpenVPNAction(with: vpnPromoHelper)
+        }
+    }
+
+    private func onOpenVPNAction(with vpnPromoHelper: VPNSubscriptionPromotionHelper) {
+        vpnPromoHelper.fireTapPixel()
+        switch vpnPromoHelper.subscriptionPromoStatus {
+        case .promo, .noPromo:
+            let urlComponents = vpnPromoHelper.subscriptionURLComponents()
+            NotificationCenter.default.post(
+                name: .settingsDeepLinkNotification,
+                object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
+                userInfo: nil
+            )
+            return
+        case .subscribed:
+            delegate?.tabDidRequestSettingsToVPN(self)
+        }
     }
 
 }

@@ -62,6 +62,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         let button = UIButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size24.folderAdd, for: .normal)
         button.addTarget(self, action: #selector(onAddFolderPressed), for: .touchUpInside)
+        button.accessibilityLabel = UserText.addFolderScreenTitle
         return button
     }()
 

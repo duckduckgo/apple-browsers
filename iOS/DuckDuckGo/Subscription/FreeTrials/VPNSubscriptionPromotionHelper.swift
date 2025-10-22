@@ -81,6 +81,7 @@ struct VPNSubscriptionPromotionHelper: VPNSubscriptionPromotionHelping {
     /// - Parameters:
     ///   - featureFlagger: The feature flagging service. Defaults to the shared instance.
     ///   - subscriptionManager: The subscription manager. Defaults to the shared instance.
+    ///   - freeTrialBadgePersistor: The persistor for tracking promotion views. Defaults to an instance using UserDefaults and a custom key prefix.
     ///   - pixelFiring: The pixel firing service. Defaults to Pixel.self.
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
@@ -127,7 +128,7 @@ struct VPNSubscriptionPromotionHelper: VPNSubscriptionPromotionHelping {
         freeTrialBadgePersistor.incrementViewCount()
     }
 
-    /// Fires a pixel when the network protection promotion is tapped by the user.
+    /// Fires a pixel when the promotion is tapped by the user.
     func fireTapPixel() {
         pixelFiring.fire(.browsingMenuVPN, withAdditionalParameters: ["status": subscriptionPromoStatus.pixelParameter])
     }

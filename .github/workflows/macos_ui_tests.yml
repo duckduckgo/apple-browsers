@@ -96,7 +96,7 @@ jobs:
           else
             # Find all test files in the UITests directory
             # This assumes that all test files are named *Tests.swift and are put directly in the UITests directory
-            test_names="$(find UITests -type f -maxdepth 1 -name *Tests.swift | xargs basename | sed 's/\.swift//')"
+            test_names="$(find UITests -type f -name *Tests.swift | xargs basename | sed 's/\.swift//')"
             test=$(echo $test_names | jq -cR 'split(" ")')
           fi
 

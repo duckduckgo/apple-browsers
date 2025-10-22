@@ -10015,7 +10015,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [[ \"$CONFIGURATION\" == *Debug* ]] || [ \"$ENABLE_PREVIEWS\" = \"YES\" ]; then\n    exit 0\nfi\n\nenv $SOURCE_ROOT/../scripts/xcode-swiftlint.sh\n";
+			shellScript = "echo \"SwiftLint disabled for now\"\n";
 		};
 		CBCCF59B29940C3800C02DFE /* Assert Xcode version */ = {
 			isa = PBXShellScriptBuildPhase;

@@ -10,7 +10,7 @@
             {
                 "key": "isInternalUser",
                 "description": "Whether the user is internal",
-                "type": "string",
+                "type": "string"
                 "enum": ["true", "false"]
             }
         ]
@@ -71,7 +71,7 @@
             {
                 "key": "duration",
                 "description": "Stage duration in milliseconds",
-                "type": "string",
+                "type": "string"
             },
             {
                 "key": "tries",
@@ -116,7 +116,7 @@
             {
                 "key": "duration",
                 "description": "Stage duration in milliseconds",
-                "type": "string",
+                "type": "string"
             },
             {
                 "key": "tries",
@@ -161,12 +161,13 @@
             {
                 "key": "duration",
                 "description": "Stage duration in milliseconds",
-                "type": "string",
+                "type": "string"
             },
             {
                 "key": "tries",
                 "description": "The number of tries it took to complete the stage",
-                "type": "string",
+                "type": "string"
+            },
             {
                 "key": "action_id",
                 "description": "Predefined identifier of the broker action executed in this stage",
@@ -205,12 +206,13 @@
             {
                 "key": "duration",
                 "description": "Stage duration in milliseconds",
-                "type": "string",
+                "type": "string"
             },
             {
                 "key": "tries",
                 "description": "The number of tries it took to complete the stage",
-                "type": "string",
+                "type": "string"
+            },
             {
                 "key": "action_id",
                 "description": "Predefined identifier of the broker action executed in this stage",
@@ -249,12 +251,13 @@
             {
                 "key": "duration",
                 "description": "Stage duration in milliseconds",
-                "type": "string",
+                "type": "string"
             },
             {
                 "key": "tries",
                 "description": "The number of tries it took to complete the stage",
-                "type": "string",
+                "type": "string"
+            },
             {
                 "key": "action_id",
                 "description": "Predefined identifier of the broker action executed in this stage",
@@ -293,12 +296,13 @@
             {
                 "key": "duration",
                 "description": "Stage duration in milliseconds",
-                "type": "string",
+                "type": "string"
             },
             {
                 "key": "tries",
                 "description": "The number of tries it took to complete the stage",
-                "type": "string",
+                "type": "string"
+            },
             {
                 "key": "action_id",
                 "description": "Predefined identifier of the broker action executed in this stage",
@@ -337,12 +341,13 @@
             {
                 "key": "duration",
                 "description": "Stage duration in milliseconds",
-                "type": "string",
+                "type": "string"
             },
             {
                 "key": "tries",
                 "description": "The number of tries it took to complete the stage",
-                "type": "string",
+                "type": "string"
+            },
             {
                 "key": "action_id",
                 "description": "Predefined identifier of the broker action executed in this stage",
@@ -381,12 +386,13 @@
             {
                 "key": "duration",
                 "description": "Stage duration in milliseconds",
-                "type": "string",
+                "type": "string"
             },
             {
                 "key": "tries",
                 "description": "The number of tries it took to complete the stage",
-                "type": "string",
+                "type": "string"
+            },
             {
                 "key": "action_id",
                 "description": "Predefined identifier of the broker action executed in this stage",
@@ -425,12 +431,13 @@
             {
                 "key": "duration",
                 "description": "Stage duration in milliseconds",
-                "type": "string",
+                "type": "string"
             },
             {
                 "key": "tries",
                 "description": "The number of tries it took to complete the stage",
-                "type": "string",
+                "type": "string"
+            },
             {
                 "key": "action_id",
                 "description": "Predefined identifier of the broker action executed in this stage",
@@ -464,7 +471,7 @@
             {
                 "key": "duration",
                 "description": "Duration of the final stage in milliseconds",
-                "type": "string",
+                "type": "string"
             }
         ]
     },
@@ -494,12 +501,13 @@
             {
                 "key": "duration",
                 "description": "Total duration of the opt-out attempt in milliseconds",
-                "type": "string",
+                "type": "string"
             },
             {
                 "key": "tries",
                 "description": "The number of tries it took to submit successfully",
-                "type": "string",
+                "type": "string"
+            },
             {
                 "key": "pattern",
                 "description": "Email pattern used during submission, when available",
@@ -513,7 +521,7 @@
             {
                 "key": "vpn_bypass",
                 "description": "VPN bypass status when the submission succeeded",
-                "type": "string",
+                "type": "string"
                 "enum": ["on", "off", "unsupported"]
             }
         ]
@@ -544,12 +552,12 @@
             {
                 "key": "duration",
                 "description": "Total duration of the opt-out attempt in milliseconds",
-                "type": "string",
+                "type": "string"
             },
             {
                 "key": "is_parent",
                 "description": "Whether the data broker is a parent (1) or child (0)",
-                "type": "string",
+                "type": "string"
                 "enum": ["0", "1"]
             },
             {
@@ -560,7 +568,7 @@
             {
                 "key": "vpn_bypass",
                 "description": "VPN bypass status when the attempt succeeded",
-                "type": "string",
+                "type": "string"
                 "enum": ["on", "off", "unsupported"]
             }
         ]
@@ -596,7 +604,7 @@
             {
                 "key": "duration",
                 "description": "Total duration of the opt-out attempt in milliseconds",
-                "type": "string",
+                "type": "string"
             },
             {
                 "key": "stage",
@@ -606,7 +614,8 @@
             {
                 "key": "tries",
                 "description": "The number of tries recorded when the failure happened",
-                "type": "string",
+                "type": "string"
+            },
             {
                 "key": "pattern",
                 "description": "Email pattern used during the attempt, when available",
@@ -620,7 +629,7 @@
             {
                 "key": "action_type",
                 "description": "Type of action that failed",
-                "type": "string",
+                "type": "string"
                 "enum": [
                     "extract",
                     "navigate",
@@ -641,7 +650,7 @@
             {
                 "key": "vpn_bypass",
                 "description": "VPN bypass status when the failure happened",
-                "type": "string",
+                "type": "string"
                 "enum": ["on", "off", "unsupported"]
             }
         ]
@@ -732,7 +741,7 @@
             {
                 "key": "isInternalUser",
                 "description": "Whether the user is internal",
-                "type": "string",
+                "type": "string"
                 "enum": ["true", "false"]
             },
             {
@@ -818,13 +827,13 @@
             {
                 "key": "status",
                 "description": "Backend item status",
-                "type": "string",
+                "type": "string"
                 "enum": ["unknown", "error"]
             },
             {
                 "key": "error_code",
                 "description": "Backend item error code",
-                "type": "string",
+                "type": "string"
                 "enum": ["server_error", "extraction_error", "request_error"]
             }
         ]
@@ -1025,7 +1034,7 @@
             {
                 "key": "isInternalUser",
                 "description": "Whether the user is internal",
-                "type": "string",
+                "type": "string"
                 "enum": ["true", "false"]
             },
             {
@@ -1099,28 +1108,28 @@
             "widePixelUnderlyingErrorCode",
             {
                 "key": "feature.name",
-                "type": "string",
+                "type": "string"
                 "description": "Feature identifier for this wide pixel",
                 "enum": ["pir-opt-out-submission"]
             },
             {
                 "key": "feature.data.ext.data_broker",
-                "type": "string",
+                "type": "string"
                 "description": "The URL of the data broker associated with this opt-out submission"
             },
             {
                 "key": "feature.data.ext.data_broker_version",
-                "type": "string",
+                "type": "string"
                 "description": "Version of the broker JSON file"
             },
             {
                 "key": "feature.data.ext.submission_latency_ms",
-                "type": "string",
+                "type": "string"
                 "description": "Duration in milliseconds between the record being found and submission completing"
             },
             {
                 "keyPattern": "feature\\.data\\.ext\\.stages\\.[0-9]+\\.name",
-                "type": "string",
+                "type": "string"
                 "description": "Stage identifier for the submission flow",
                 "enum": [
                     "start",
@@ -1142,18 +1151,18 @@
             },
             {
                 "keyPattern": "feature\\.data\\.ext\\.stages\\.[0-9]+\\.duration_ms",
-                "type": "string",
+                "type": "string"
                 "description": "Duration in milliseconds for a submission stage"
             },
             {
                 "keyPattern": "feature\\.data\\.ext\\.stages\\.[0-9]+\\.tries",
-                "type": "string",
+                "type": "string"
                 "description": "Number of attempts associated with a submission stage",
                 "pattern": "^[0-9]+$"
             },
             {
                 "keyPattern": "feature\\.data\\.ext\\.stages\\.[0-9]+\\.action_id",
-                "type": "string",
+                "type": "string"
                 "description": "Action identifier associated with a submission stage"
             }
         ]
@@ -1177,23 +1186,23 @@
             "widePixelUnderlyingErrorCode",
             {
                 "key": "feature.name",
-                "type": "string",
+                "type": "string"
                 "description": "Feature identifier for this wide pixel",
                 "enum": ["pir-opt-out-confirmation"]
             },
             {
                 "key": "feature.data.ext.data_broker",
-                "type": "string",
+                "type": "string"
                 "description": "The URL of the data broker associated with this confirmation flow"
             },
             {
                 "key": "feature.data.ext.data_broker_version",
-                "type": "string",
+                "type": "string"
                 "description": "Version of the broker JSON file"
             },
             {
                 "key": "feature.data.ext.confirmation_latency_ms",
-                "type": "string",
+                "type": "string"
                 "description": "Duration in milliseconds between the record being found and the opt-out confirmation"
             }
         ]
@@ -1219,13 +1228,13 @@
             {
                 "key": "duration",
                 "description": "Total duration of the scan in milliseconds",
-                "type": "string",
+                "type": "string"
                 "pattern": "^[0-9]+(\\.[0-9]+)?$"
             },
             {
                 "key": "error_category",
                 "description": "High-level error classification",
-                "type": "string",
+                "type": "string"
                 "pattern": "^(network-error|validation-error|unclassified|client-error-[0-9]+|server-error-[0-9]+|database-error-.+)$"
             },
             {
@@ -1236,7 +1245,7 @@
             {
                 "key": "is_manual_scan",
                 "description": "Whether the scan was initiated manually by the user",
-                "type": "string",
+                "type": "string"
                 "enum": ["true", "false"]
             },
             {
@@ -1247,7 +1256,7 @@
             {
                 "key": "vpn_bypass",
                 "description": "VPN bypass status when the error occurred",
-                "type": "string",
+                "type": "string"
                 "enum": ["on", "off", "unsupported"]
             },
             {
@@ -1263,7 +1272,7 @@
             {
                 "key": "action_type",
                 "description": "Type of action that produced the error",
-                "type": "string",
+                "type": "string"
                 "enum": [
                     "extract",
                     "navigate",
@@ -1309,7 +1318,7 @@
             {
                 "key": "stepType",
                 "description": "Identifies the failing step type (scan or optOut)",
-                "type": "string",
+                "type": "string"
                 "enum": ["scan", "optOut", "unknown"]
             },
             {

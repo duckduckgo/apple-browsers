@@ -5,6 +5,9 @@
       location = "group:SharedPackages"
       name = "SharedPackages">
       <FileRef
+         location = "group:SERPSettings">
+      </FileRef>
+      <FileRef
          location = "group:AttributedMetric">
       </FileRef>
       <FileRef
@@ -33,9 +36,6 @@
       </FileRef>
       <FileRef
          location = "group:SystemFrameworksExtensions">
-      </FileRef>
-      <FileRef
-         location = "container:SharedPackages/SERPSettings">
       </FileRef>
    </Group>
    <FileRef

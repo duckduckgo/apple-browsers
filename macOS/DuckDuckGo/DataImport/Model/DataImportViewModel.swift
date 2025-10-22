@@ -720,7 +720,7 @@ extension DataImportViewModel {
             // and no failures recorded - otherwise will skip to Feedback
             && !summary.contains(where: { !$0.result.isSuccess }):
             // no other data types to skip:
-            return .cancel
+            return nil
         case .archiveImport:
             return nil
         case .fileImport:

@@ -170,6 +170,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1210997282929955?focus=true
     case unifiedURLPredictor
+
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210869716452614?focus=true
+    case customization
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -357,6 +360,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionRestoreWidePixelMeasurement
     case authV2WideEventEnabled
     case winBackOffer
+    case vpnMenuItem
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

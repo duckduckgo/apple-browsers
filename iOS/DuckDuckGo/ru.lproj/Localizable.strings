@@ -2317,9 +2317,6 @@
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Подтвердить";
 
-/* Description text for the new address bar picker modal */
-"new.address.bar.picker.description" = "От функций на базе ИИ всегда можно отказаться.";
-
 /* Footer text for the new address bar picker */
 "new.address.bar.picker.footer" = "Посетите раздел «Настройки > Функции ИИ».";
 
@@ -2332,8 +2329,8 @@
 /* Option for search only in the new address bar picker */
 "new.address.bar.picker.search.only" = "Только поиск";
 
-/* Subtitle for the new address bar picker modal */
-"new.address.bar.picker.subtitle" = "Переключатель между поиском и чатом с ИИ";
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline" = "Нужен удобный доступ \nк чату с ИИ?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Опция адресной строки";
@@ -2622,6 +2619,9 @@
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Настроить платежные карты…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "Достигнуто максимальное число карт. Чтобы возобновить синхронизацию, удалите некоторые из них.";
 
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Произошла ошибка синхронизации. Попробуйте отключить синхронизацию на этом устройстве, а затем выполнить повторную привязку с помощью другого устройства или кода восстановления.";
@@ -3843,6 +3843,54 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Сообщение от %@:";
+
+/* CTA of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.cta" = "Посмотреть";
+
+/* Dismiss of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.dismiss" = "Не сейчас";
+
+/* Message of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.text" = "Всегда под защитой: VPN, приватный ИИ и не только. Скидка 25% при возобновлении подписки.";
+
+/* Title of message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.title" = "Скидка 25%: последний день акции!";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "СКИДКА 25%";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "Акция";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Не сейчас";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "Вы всегда под защитой: VPN, приватный ИИ и многое другое. Скидка 25% при возобновлении подписки.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Временная акция";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "Ждем вашего возвращения.\nДержите скидку 25%!";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "Акция";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "У меня уже есть подписка";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "Временная акция!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "Всегда под защитой: VPN, приватный ИИ и не только. Скидка 25% при возобновлении подписки.Срок действия предложения ограничен.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "-25% за возобновление подписки";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "-25% за возобновление подписки";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Ищете версию для Mac?";

@@ -3094,6 +3094,10 @@ extension MainViewController: TabDelegate {
         segueToSettingsAutofillWith(account: nil, card: nil, showCardManagement: true, source: source)
     }
 
+    func tabDidRequestSettingsToVPN(_ tab: TabViewController) {
+        segueToVPN()
+    }
+
     func tabContentProcessDidTerminate(tab: TabViewController) {
         findInPageView.done()
         tabManager.invalidateCache(forController: tab)

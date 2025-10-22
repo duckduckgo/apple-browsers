@@ -283,7 +283,7 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
         historyMessageManager.shownToUser()
     }
 
-    func onSuggestionSelected(_ suggestion: Suggestion) {
+    func onSuggestionSelected(_ suggestion: Suggestion, ddgSuggestionIndex: Int?) {
         switch suggestion {
         case .bookmark(_, _, let isFavorite, _):
             Pixel.fire(pixel: isFavorite ? .autocompleteClickFavorite : .autocompleteClickBookmark)
@@ -292,10 +292,16 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
             Pixel.fire(pixel: url.isDuckDuckGoSearch ? .autocompleteClickSearchHistory : .autocompleteClickSiteHistory)
 
         case .phrase:
-            Pixel.fire(pixel: .autocompleteClickPhrase)
+            let parameters = ddgSuggestionIndex.map { index in
+                ["search_suggestion_index": String(index)]
+            } ?? [:]
+            Pixel.fire(pixel: .autocompleteClickPhrase, withAdditionalParameters: parameters)
 
         case .website:
-            Pixel.fire(pixel: .autocompleteClickWebsite)
+            let parameters = ddgSuggestionIndex.map { index in
+                ["search_suggestion_index": String(index)]
+            } ?? [:]
+            Pixel.fire(pixel: .autocompleteClickWebsite, withAdditionalParameters: parameters)
 
         case .openTab:
             Pixel.fire(pixel: .autocompleteClickOpenTab)

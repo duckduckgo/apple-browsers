@@ -687,7 +687,7 @@
     },
     "m_mac_dbp_optout_stage_condition-found": {
         "description": "Fired at the condition-found stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "thisisdinosaur"],
+        "owners": ["quanganhdo", "samsymons"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [

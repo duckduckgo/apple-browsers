@@ -30,7 +30,7 @@ struct MobileCustomization {
 extension MobileCustomization {
 
     static func load(featureFlagger: FeatureFlagger) -> MobileCustomization {
-        return MobileCustomization(isEnabled: featureFlagger.isFeatureOn(.mobileCustomisation))
+        return MobileCustomization(isEnabled: featureFlagger.isFeatureOn(.mobileCustomization))
     }
 
 }

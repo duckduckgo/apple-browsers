@@ -76,13 +76,23 @@ public enum Classifier {
             self.allowedSchemes = allowedSchemes
         }
 
-        /// The default policy used when not specified
+#if os(macOS)
+        /// The default policy used when not specified. macOS specific.
         public static let `default`: Self = .init(
             allowIntranetMultiLabel: true,
             allowIntranetSingleLabel: false,
             allowPrivateSuffix: true,
             allowedSchemes: ["http", "https", "file", "about", "blob", "data", "duck", "mailto", "networkprotection", "webkit-extension", "x-safari-https"]
         )
+#else
+        /// The default policy used when not specified.
+        public static let `default`: Self = .init(
+            allowIntranetMultiLabel: false,
+            allowIntranetSingleLabel: false,
+            allowPrivateSuffix: true,
+            allowedSchemes: ["http", "https", "file", "about", "blob", "data", "duck", "mailto", "networkprotection", "webkit-extension", "x-safari-https"]
+        )
+#endif
     }
 
     public enum Decision: Equatable, Sendable, Decodable {

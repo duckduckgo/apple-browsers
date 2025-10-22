@@ -2317,9 +2317,6 @@
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Potwierdź";
 
-/* Description text for the new address bar picker modal */
-"new.address.bar.picker.description" = "Funkcje AI są zawsze opcjonalne.";
-
 /* Footer text for the new address bar picker */
 "new.address.bar.picker.footer" = "Dostosuj opcje w obszarze Ustawienia > Funkcje AI";
 
@@ -2332,8 +2329,8 @@
 /* Option for search only in the new address bar picker */
 "new.address.bar.picker.search.only" = "Tylko wyszukiwanie";
 
-/* Subtitle for the new address bar picker modal */
-"new.address.bar.picker.subtitle" = "Przełączanie między wyszukiwaniem a czatem AI";
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline" = "Chcesz łatwiejszego dostępu do AI Chat?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Opcja paska adresu";
@@ -2622,6 +2619,9 @@
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Zarządzaj kartami kredytowymi…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "Osiągnięto maksymalną liczbę kart kredytowych. Usuń część z nich, aby wznowić synchronizację.";
 
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Podczas synchronizacji wystąpił błąd. Spróbuj wyłączyć synchronizację na tym urządzeniu, a następnie ponownie nawiąż połączenie za pomocą innego urządzenia lub kodu odzyskiwania.";
@@ -3843,6 +3843,54 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Wiadomość od %@:";
+
+/* CTA of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.cta" = "Zobacz ofertę";
+
+/* Dismiss of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.dismiss" = "Nie teraz";
+
+/* Message of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.text" = "Zachowaj bezpieczeństwo dzięki naszej sieci VPN, prywatnej AI i innym usługom. Odnów subskrypcję już dziś i zaoszczędź 25%.";
+
+/* Title of message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.title" = "Ostatni dzień, aby zaoszczędzić 25%!";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "ZAOSZCZĘDŹ 25%";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "Zobacz ofertę";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Nie teraz";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "Zachowaj bezpieczeństwo dzięki naszej sieci VPN, prywatnej AI i innym usługom. Odnów subskrypcję już dziś i zaoszczędź 25%.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Oferta ważna tylko przez ograniczony czas";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "Wróć do nas!\nOtrzymasz 25% zniżki.";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "Zobacz ofertę";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "Mam subskrypcję";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "Oferta ograniczona czasowo!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "Zachowaj bezpieczeństwo dzięki naszej sieci VPN, prywatnej AI i innym usługom. Odnów subskrypcję już dziś i zaoszczędź 25%.\nOferta ograniczona czasowo.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "Odnów subskrypcję i zaoszczędź 25%";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Odnów subskrypcję i zaoszczędź 25%";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Szukasz wersji na komputer Mac?";

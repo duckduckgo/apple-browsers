@@ -65,11 +65,11 @@ public protocol StageDurationCalculator {
     func fireScanStarted()
 #endif
     func fireScanSuccess(matchesFound: Int)
-    func fireScanFailed()
+    func fireScanNoResults()
     func fireScanError(error: Error)
     func setStage(_ stage: Stage)
     func setEmailPattern(_ emailPattern: String?)
-    func setLastActionId(_ actionID: String)
+    func setLastAction(_ action: Action)
     func resetTries()
     func incrementTries()
 }
@@ -89,6 +89,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     let startTime: Date
     var lastStateTime: Date
     private(set) var actionID: String?
+    private(set) var actionType: String?
     private(set) var stage: Stage = .other
     private(set) var emailPattern: String?
     private(set) var tries = 1
@@ -338,8 +339,8 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         handler.fire(.scanSuccess(dataBroker: dataBrokerURL, matchesFound: matchesFound, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
     }
 
-    func fireScanFailed() {
-        handler.fire(.scanFailed(dataBroker: dataBrokerURL, dataBrokerVersion: dataBrokerVersion, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
+    func fireScanNoResults() {
+        handler.fire(.scanNoResults(dataBroker: dataBrokerURL, dataBrokerVersion: dataBrokerVersion, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
     }
 
     func fireScanError(error: Error) {
@@ -350,7 +351,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
             case .httpError(let httpCode):
                 if httpCode < 500 {
                     if httpCode == 404 {
-                        fireScanFailed()
+                        fireScanNoResults()
                         return
                     } else {
                         errorCategory = .clientError(httpCode: httpCode)
@@ -380,7 +381,9 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                 details: error.localizedDescription,
                 isImmediateOperation: isImmediateOperation,
                 vpnConnectionState: vpnConnectionState,
-                vpnBypassStatus: vpnBypassStatus
+                vpnBypassStatus: vpnBypassStatus,
+                actionId: actionID ?? "unknown",
+                actionType: actionType ?? "unknown"
             )
         )
     }
@@ -397,8 +400,9 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.emailPattern = emailPattern
     }
 
-    func setLastActionId(_ actionID: String) {
-        self.actionID = actionID
+    func setLastAction(_ action: Action) {
+        self.actionID = action.id
+        self.actionType = action.actionType.rawValue
     }
 
     func resetTries() {

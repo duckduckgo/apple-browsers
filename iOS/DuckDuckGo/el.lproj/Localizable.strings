@@ -2317,9 +2317,6 @@
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Επιβεβαίωση";
 
-/* Description text for the new address bar picker modal */
-"new.address.bar.picker.description" = "Οι λειτουργίες τεχνητής νοημοσύνης είναι πάντα προαιρετικές.";
-
 /* Footer text for the new address bar picker */
 "new.address.bar.picker.footer" = "Προσαρμόστε στις Ρυθμίσεις > Λειτουργίες τεχνητής νοημοσύνης";
 
@@ -2332,8 +2329,8 @@
 /* Option for search only in the new address bar picker */
 "new.address.bar.picker.search.only" = "Αναζήτηση μόνο";
 
-/* Subtitle for the new address bar picker modal */
-"new.address.bar.picker.subtitle" = "Εναλλαγή μεταξύ αναζήτησης και συνομιλίας τεχνητής νοημοσύνης";
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline" = "Θέλετε πιο εύκολη πρόσβαση στο AI Chat;";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Επιλογή γραμμής διευθύνσεων";
@@ -2622,6 +2619,9 @@
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Διαχείριση πιστωτικών καρτών…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "Έχετε φτάσει στον μέγιστο αριθμό πιστωτικών καρτών. Διαγράψτε ορισμένες για να συνεχίσετε τον συγχρονισμό.";
 
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Ο συγχρονισμός αντιμετώπισε σφάλμα. Δοκιμάστε να απενεργοποιήσετε τον συγχρονισμό στη συσκευή αυτή και έπειτα συνδεθείτε ξανά χρησιμοποιώντας άλλη συσκευή ή τον κωδικό ανάκτησής σας.";
@@ -3843,6 +3843,54 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Μήνυμα από %@:";
+
+/* CTA of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.cta" = "Δείτε την προσφορά";
+
+/* Dismiss of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.dismiss" = "Όχι τώρα";
+
+/* Message of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.text" = "Μείνετε προστατευμένοι με το VPN, την ιδιωτική τεχνητή νοημοσύνη και πολλά άλλα. Εγγραφείτε ξανά σήμερα και εξοικονομήστε 25%.";
+
+/* Title of message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.title" = "Τελευταία ημέρα για να εξοικονομήσετε 25%!";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "ΕΞΟΙΚΟΝΟΜΗΣΤΕ 25%";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "Δείτε την προσφορά";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Όχι τώρα";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "Μείνετε προστατευμένοι με το VPN, την ιδιωτική τεχνητή νοημοσύνη και πολλά άλλα. Εγγραφείτε ξανά σήμερα και εξοικονομήστε 25%.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Μόνο για περιορισμένο χρονικό διάστημα";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "Σας θέλουμε πίσω!\nΛάβετε έκπτωση 25%.";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "Δείτε την προσφορά";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "Έχω συνδρομή";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "Προσφορά περιορισμένου χρόνου!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "Μείνετε προστατευμένοι με το VPN, την ιδιωτική τεχνητή νοημοσύνη και πολλά άλλα. Εγγραφείτε ξανά σήμερα και εξοικονομήστε 25%.Προσφορά περιορισμένου χρόνου.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "Εγγραφείτε ξανά και εξοικονομήστε 25%";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Εγγραφείτε ξανά και εξοικονομήστε 25%";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Αναζητάτε την έκδοση των Mac;";

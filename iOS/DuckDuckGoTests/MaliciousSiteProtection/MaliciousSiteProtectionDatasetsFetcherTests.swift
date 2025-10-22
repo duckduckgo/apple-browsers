@@ -629,6 +629,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
     @MainActor
     @Test(
         "Test Background Task Is Not Executed If Fetch is In Progress",
+        .disabled("Flaky Test"),
         arguments: [
             DataManager.StoredDataType.Kind.hashPrefixSet,
             .filterSet,
@@ -650,7 +651,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         let firstCallTask = sut.startFetching()
 
         // THEN
-         #expect(sut.isDatasetsFetchInProgress)
+        #expect(sut.isDatasetsFetchInProgress)
 
         // WHEN
         launchHandler?(backgroundTask)

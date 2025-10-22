@@ -159,9 +159,7 @@ extension ReleaseNotesValues {
             let keyValueStore = Application.appDelegate.keyValueStore
             if let data = try? keyValueStore.object(forKey: SparkleUpdateController.Constants.pendingUpdateInfoKey) as? Data,
                let cached = try? JSONDecoder().decode(SparkleUpdateController.PendingUpdateInfo.self, from: data) {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "MMMM dd yyyy"
-                let releaseTitle = formatter.string(from: cached.date)
+                let releaseTitle = Update.releaseDateFormatter().string(from: cached.date)
 
                 let cachedVersion = "\(cached.version) (\(cached.build))"
                 let status = {

@@ -151,6 +151,12 @@ extension SubscriptionURL {
     }
 }
 
+extension SubscriptionURL {
+    public enum FeaturePage {
+        public static let winback = "winback"
+    }
+}
+
 fileprivate extension URL {
 
     enum EnvironmentParameter {

@@ -1,7 +1,7 @@
 {
   "name": "NeighborWho",
   "url": "neighborwho.com",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "parent": "beenverified.com",
   "optOutUrl": "https://www.neighborwho.com/svc/optout/search/optouts",
   "mirrorSites": [
@@ -20,41 +20,73 @@
       "actions": [
         {
           "actionType": "navigate",
-          "url": "https://www.neighborwho.com/app/search/person?age=${age}&city=${city}&fname=${firstName}&ln=${lastName}&mn=${middleName}&optout=true&state=${state}",
-          "id": "ef170d93-fb8e-4c49-b0fa-f6cba6d1669a"
+          "url": "https://www.neighborwho.com/svc/optout/search/optouts",
+          "id": "777df3ca-c08b-4261-9d19-6b6463865677"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#optout-form"
+            }
+          ],
+          "id": "777d175a-9c31-46c8-8a37-eab78c3c37e5"
+        },
+        {
+          "actionType": "fillForm",
+          "selector": "#optout-form",
+          "dataSource": "userProfile",
+          "elements": [
+            {
+              "type": "firstName",
+              "selector": "//input[@name='fname']"
+            },
+            {
+              "type": "lastName",
+              "selector": "//input[@name='ln']"
+            }
+          ],
+          "id": "777a01d9-630f-42e4-a8b8-4c87ddab91e3"
+        },
+        {
+          "actionType": "click",
+          "elements": [
+            {
+              "type": "button",
+              "selector": "//button[@type='submit']"
+            }
+          ],
+          "id": "777eb5ef-b469-41a6-af92-da9056c00781"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#result-filter"
+            }
+          ],
+          "id": "777eb5ef-b469-41a6-af92-da9056c00fff"
         },
         {
           "actionType": "extract",
-          "selector": ".person-search-result-card",
-          "noResultsSelector": ".no-results",
+          "selector": ".MuiGrid-root.MuiGrid-container.MuiGrid-spacing-xs-2 > div:nth-child(2) > .MuiPaper-root.MuiPaper-elevation.MuiPaper-rounded.MuiPaper-elevation1.MuiCard-root",
+          "noResultsSelector": "img[alt='Search Logo']",
           "profile": {
             "name": {
-              "selector": ".person-name",
+              "selector": "h2",
               "beforeText": ", "
             },
-            "alternativeNamesList": {
-              "selector": ".person-aliases",
-              "separator": ","
-            },
             "age": {
-              "selector": ".person-name",
+              "selector": "h2",
               "afterText": ", "
             },
             "addressCityState": {
-              "selector": ".person-city"
-            },
-            "addressCityStateList": {
-              "selector": ".person-locations"
-            },
-            "relativesList": {
-              "selector": ".person-relatives",
-              "separator": ","
-            },
-            "profileUrl": {
-              "identifierType": "hash"
+              "selector": ".MuiGrid-item:nth-child(3) .MuiTypography-body1"
             }
           },
-          "id": "5849f552-2ca4-4236-812d-e396fc2eb759"
+          "id": "7775ef9d-aebf-4176-80e6-2959fc9f5c8a"
         }
       ]
     },

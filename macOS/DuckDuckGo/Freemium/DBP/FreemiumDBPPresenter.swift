@@ -22,7 +22,7 @@ import Freemium
 /// Conforming types provide functionality to show Freemium DBP
 protocol FreemiumDBPPresenter {
     @MainActor
-    func showFreemiumDBPAndSetActivated(windowControllerManager: WindowControllersManagerProtocol?)
+    func showFreemiumDBPAndSetActivated(windowControllersManager: WindowControllersManagerProtocol?)
 }
 
 /// Default implementation of `FreemiumDBPPresenter`
@@ -36,10 +36,10 @@ final class DefaultFreemiumDBPPresenter: FreemiumDBPPresenter {
 
     @MainActor
     /// Displays Freemium DBP
-    func showFreemiumDBPAndSetActivated(windowControllerManager: WindowControllersManagerProtocol? = nil) {
+    func showFreemiumDBPAndSetActivated(windowControllersManager: WindowControllersManagerProtocol? = nil) {
 
-        let windowControllerManager = windowControllerManager ?? Application.appDelegate.windowControllersManager
+        let windowControllersManager = windowControllersManager ?? Application.appDelegate.windowControllersManager
         freemiumDBPStateManager.didActivate = true
-        windowControllerManager.showTab(with: .dataBrokerProtection)
+        windowControllersManager.showTab(with: .dataBrokerProtection)
     }
 }

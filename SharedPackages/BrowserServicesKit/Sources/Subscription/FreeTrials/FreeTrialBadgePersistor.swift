@@ -19,13 +19,13 @@
 import Foundation
 import Persistence
 
-protocol FreeTrialBadgePersisting {
+public protocol FreeTrialBadgePersisting {
     var viewCount: Int { get }
     var hasReachedViewLimit: Bool { get }
     func incrementViewCount()
 }
 
-struct FreeTrialBadgePersistor: FreeTrialBadgePersisting {
+public struct FreeTrialBadgePersistor: FreeTrialBadgePersisting {
 
     private enum Key: String {
         case freeTrialBadgeViewCount = "free-trial-badge.view-count"
@@ -34,23 +34,32 @@ struct FreeTrialBadgePersistor: FreeTrialBadgePersisting {
     private static let maxViewCount = 4
 
     private let keyValueStore: KeyValueStoring
+    private let keyPrefix: String?
 
-    init(keyValueStore: KeyValueStoring) {
+    var freeTrialBadgeViewCountKey: String {
+        guard let keyPrefix else {
+            return Key.freeTrialBadgeViewCount.rawValue
+        }
+        return "\(keyPrefix).\(Key.freeTrialBadgeViewCount.rawValue)"
+    }
+
+    public init(keyValueStore: KeyValueStoring, keyPrefix: String? = nil) {
         self.keyValueStore = keyValueStore
+        self.keyPrefix = keyPrefix
     }
 
-    var viewCount: Int {
-        keyValueStore.object(forKey: Key.freeTrialBadgeViewCount.rawValue) as? Int ?? 0
+    public var viewCount: Int {
+        return keyValueStore.object(forKey: freeTrialBadgeViewCountKey) as? Int ?? 0
     }
 
-    var hasReachedViewLimit: Bool {
+    public var hasReachedViewLimit: Bool {
         viewCount >= Self.maxViewCount
     }
 
-    func incrementViewCount() {
+    public func incrementViewCount() {
         let currentCount = viewCount
         if currentCount < Self.maxViewCount {
-            keyValueStore.set(currentCount + 1, forKey: Key.freeTrialBadgeViewCount.rawValue)
+            keyValueStore.set(currentCount + 1, forKey: freeTrialBadgeViewCountKey)
         }
     }
 }

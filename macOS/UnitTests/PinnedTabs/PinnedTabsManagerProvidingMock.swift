@@ -30,12 +30,50 @@ class PinnedTabsManagerProvidingMock: PinnedTabsManagerProviding {
         settingChangedSubject.eraseToAnyPublisher()
     }
 
-    var newPinnedTabsManager = PinnedTabsManager()
+    private var _newPinnedTabsManager: PinnedTabsManager?
+    var newPinnedTabsManager: PinnedTabsManager {
+        get {
+            if let _newPinnedTabsManager {
+                return _newPinnedTabsManager
+            }
+            assert(_newPinnedTabsManager == nil && _pinnedTabsManager == nil, """
+            It seems you‘re setting incorrect Pinned Tabs Manager not actually used in the test.
+            You should either set both `newPinnedTabsManager` and `pinnedTabsManager` - if they‘re both actually used,
+            or leave both unset - to use the default (empty) values for them.
+            """)
+            _newPinnedTabsManager = PinnedTabsManager()
+            _pinnedTabsManager = PinnedTabsManager()
+            return _newPinnedTabsManager!
+        }
+        set {
+            assert(_newPinnedTabsManager == nil, "newPinnedTabManager is already set")
+            _newPinnedTabsManager = newValue
+        }
+    }
     func getNewPinnedTabsManager(shouldMigrate: Bool, tabCollectionViewModel: TabCollectionViewModel, forceActive: Bool? = nil) -> PinnedTabsManager {
         return newPinnedTabsManager
     }
 
-    var pinnedTabsManager = PinnedTabsManager()
+    private var _pinnedTabsManager: PinnedTabsManager?
+    var pinnedTabsManager: PinnedTabsManager {
+        get {
+            if let _pinnedTabsManager {
+                return _pinnedTabsManager
+            }
+            assert(_newPinnedTabsManager == nil && _pinnedTabsManager == nil, """
+            It seems you‘re setting incorrect Pinned Tabs Manager not actually used in the test.
+            You should either set both `newPinnedTabsManager` and `pinnedTabsManager` - if they‘re both actually used,
+            or leave both unset - to use the default (empty) values for them.
+            """)
+            _newPinnedTabsManager = PinnedTabsManager()
+            _pinnedTabsManager = PinnedTabsManager()
+            return _pinnedTabsManager!
+        }
+        set {
+            assert(_pinnedTabsManager == nil, "pinnedTabManager is already set")
+            _pinnedTabsManager = newValue
+        }
+    }
     func pinnedTabsManager(for tab: Tab) -> PinnedTabsManager? {
         return pinnedTabsManager
     }

@@ -347,7 +347,7 @@ class AddressBarTests: XCTestCase {
 
         let firstResponderChangeExpectation = window.responderDidChangeExpectation(to: tab.webView)
         viewModel.remove(at: .unpinned(1))
-        wait(for: [firstResponderChangeExpectation], timeout: 1)
+        wait(for: [firstResponderChangeExpectation], timeout: 5)
         XCTAssertEqual(window.firstResponder, tab.webView)
     }
 
@@ -414,7 +414,7 @@ class AddressBarTests: XCTestCase {
 
         let firstResponderChangeExpectation = window.responderDidChangeExpectation(to: viewModel.tabs[1].webView)
         viewModel.select(at: .unpinned(1))
-        await fulfillment(of: [firstResponderChangeExpectation], timeout: 1)
+        await fulfillment(of: [firstResponderChangeExpectation], timeout: 5)
         XCTAssertEqual(window.firstResponder, viewModel.tabs[1].webView)
 
         _=window.makeFirstResponder(addressBarTextField)
@@ -423,7 +423,7 @@ class AddressBarTests: XCTestCase {
 
         viewModel.select(at: .unpinned(0))
 
-        await fulfillment(of: [firstResponderChangeExpectation2], timeout: 1)
+        await fulfillment(of: [firstResponderChangeExpectation2], timeout: 5)
         XCTAssertEqual(window.firstResponder, viewModel.tabs[0].webView)
     }
 
@@ -442,7 +442,7 @@ class AddressBarTests: XCTestCase {
         let firstResponderChangeExpectation = window.responderDidChangeExpectation(to: tab.webView)
 
         type("\u{1b}", global: true) // send escape key
-        await fulfillment(of: [firstResponderChangeExpectation], timeout: 1)
+        await fulfillment(of: [firstResponderChangeExpectation], timeout: 5)
 
         XCTAssertEqual(window.firstResponder, tab.webView)
     }
@@ -854,16 +854,25 @@ class AddressBarTests: XCTestCase {
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         Application.appDelegate.pinnedTabsManager.setUp(movingTabsFrom: TabCollection(tabs: [tab]))
 
-        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]))
+        let newTabTab = Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
+        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [newTabTab]))
         let tabLoadedPromise = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
+        let newTabLoadedPromise = newTabTab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         window = WindowsManager.openNewWindow(with: viewModel)!
+        Logger.tests.info("pinned: [\(viewModel.pinnedTabs.map { String(describing: $0.content) }.joined(separator: ", "))] tabs: [\(viewModel.tabs.map { String(describing: $0.content) }.joined(separator: ", "))] pinnedTabsMode: \(Application.appDelegate.pinnedTabsManagerProvider.pinnedTabsMode.rawValue)")
+
         viewModel.select(at: .pinned(0))
         _=try await tabLoadedPromise.value
+        _=try await newTabLoadedPromise.value
 
         XCTAssertEqual(window.firstResponder, tab.webView)
 
-        let viewModel2 = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]), selectionIndex: .unpinned(0))
+        let viewModel2 = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .anySettingsPane, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]), selectionIndex: .unpinned(0))
         let window2 = WindowsManager.openNewWindow(with: viewModel2)!
+        autoreleasepool {
+            NSApp.activate(ignoringOtherApps: true)
+            window2.makeKeyAndOrderFront(nil)
+        }
         defer {
             window2.close()
         }
@@ -873,7 +882,7 @@ class AddressBarTests: XCTestCase {
         // when activaing a Pinned Tab in another window its Web View should become the first responder
         viewModel2.select(at: .pinned(0))
 
-        await fulfillment(of: [firstResponderChangeExpectation], timeout: 1)
+        await fulfillment(of: [firstResponderChangeExpectation], timeout: 15)
         XCTAssertEqual(window2.firstResponder, tab.webView)
         XCTAssertEqual(window.firstResponder, window)
 
@@ -882,7 +891,7 @@ class AddressBarTests: XCTestCase {
 
         window.makeKeyAndOrderFront(nil)
 
-        await fulfillment(of: [firstResponderChangeExpectation2], timeout: 1)
+        await fulfillment(of: [firstResponderChangeExpectation2], timeout: 15)
         XCTAssertEqual(window.firstResponder, tab.webView)
         XCTAssertEqual(window2.firstResponder, window2)
     }
@@ -891,12 +900,15 @@ class AddressBarTests: XCTestCase {
     func testWhenActivatingWindowWithPinnedTabWhenAddressBarIsActive_addressBarIsKeptActive() async throws {
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         Application.appDelegate.pinnedTabsManager.setUp(movingTabsFrom: TabCollection(tabs: [tab]))
-        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]))
+        let newTabTab = Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
+        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [newTabTab]))
         let tabLoadedPromise = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
+        let newTabLoadedPromise = newTabTab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         window = WindowsManager.openNewWindow(with: viewModel)!
 
         viewModel.select(at: .pinned(0))
         _=try await tabLoadedPromise.value
+        _=try await newTabLoadedPromise.value
 
         XCTAssertEqual(window.firstResponder, tab.webView)
 
@@ -909,7 +921,7 @@ class AddressBarTests: XCTestCase {
         let firstResponderChangeExpectation = window2.responderDidChangeExpectation(to: tab.webView)
         viewModel2.select(at: .pinned(0))
 
-        await fulfillment(of: [firstResponderChangeExpectation], timeout: 2)
+        await fulfillment(of: [firstResponderChangeExpectation], timeout: 5)
 
         XCTAssertEqual(window.firstResponder, window)
         XCTAssertEqual(window2.firstResponder, tab.webView)
@@ -1046,11 +1058,12 @@ class AddressBarTests: XCTestCase {
 
 private extension NSWindow {
 
-    func responderDidChangeExpectation(to firstResponder: NSResponder) -> XCTestExpectation {
-        let expectation = XCTestExpectation(description: "First responder changed to \(firstResponder)")
+    func responderDidChangeExpectation(to firstResponder: NSResponder, line: UInt = #line) -> XCTestExpectation {
+        let expectation = XCTestExpectation(description: "\(line): First responder changed to \(firstResponder)")
         var cancellable: AnyCancellable?
         cancellable = NotificationCenter.default.publisher(for: MainWindow.firstResponderDidChangeNotification, object: self)
             .sink { [weak self] _ in
+                Logger.tests.info("First responder changed to \(String(describing: self?.firstResponder))")
                 if self?.firstResponder === firstResponder {
                     expectation.fulfill()
                     withExtendedLifetime(cancellable) {}

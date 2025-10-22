@@ -137,7 +137,7 @@ final class SuggestionJsonScenarioTests: XCTestCase {
         let sortedDataSource = SortingDataSourceWrapper(wrapping: dataSource)
 
         // Create a suggestion loader
-        let suggestionLoader = SuggestionLoader(urlFactory: { _ in return nil }, isUrlIgnored: testScenario.input.isURLIgnored)
+        let suggestionLoader = SuggestionLoader(shouldLoadSuggestionsForUserInput: { _ in return true }, isUrlIgnored: testScenario.input.isURLIgnored)
         var actualResults: SuggestionResult?
         var loadingError: Error?
 
@@ -415,20 +415,28 @@ extension SuggestionJsonScenarioTests {
             return nil
         }
         
-        func burnAll(completion: @escaping () -> Void) {
-            completion()
+        func burnAll(completion: @escaping @MainActor () -> Void) {
+            MainActor.assumeMainThread {
+                completion()
+            }
         }
         
-        func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping (Set<URL>) -> Void) {
-            completion([])
+        func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Set<URL>) -> Void) {
+            MainActor.assumeMainThread {
+                completion([])
+            }
         }
         
-        func burnVisits(_ visits: [History.Visit], completion: @escaping () -> Void) {
-            completion()
+        func burnVisits(_ visits: [History.Visit], completion: @escaping @MainActor () -> Void) {
+            MainActor.assumeMainThread {
+                completion()
+            }
         }
         
-        func removeUrlEntry(_ url: URL, completion: (((any Error)?) -> Void)?) {
-            completion?(nil)
+        func removeUrlEntry(_ url: URL, completion: (@MainActor ((any Error)?) -> Void)?) {
+            MainActor.assumeMainThread {
+                completion?(nil)
+            }
         }
     }
     

@@ -517,8 +517,8 @@ extension TabBarViewItem/*: NSAccessibilityRadioButton*/ {
         NSNumber(value: isSelected)
     }
 
-    @objc func isAccessibilitySelected() -> NSNumber? {
-        NSNumber(value: isSelected)
+    @objc func isAccessibilitySelected() -> Bool {
+        isSelected
     }
 
     @objc func setAccessibilityValue(_ value: Any?) {

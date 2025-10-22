@@ -63,6 +63,17 @@ final class MockKeyboardPresenter: KeyboardPresenting {
 
 }
 
+final class MockNewAddressBarPickerPresenter: NewAddressBarPickerPresenting {
+
+    var addressBarPickerPresented = false
+    var lastBackgroundDate: Date?
+
+    func presentNewAddressBarPickerIfNeeded() {
+        addressBarPickerPresented = true
+    }
+
+}
+
 @MainActor
 final class LaunchActionHandlerTests {
 

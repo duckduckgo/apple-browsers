@@ -255,7 +255,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .authV2WideEventEnabled,
                 .syncCreditCards,
                 .syncIdentities,
-                .dataImportNewSafariFilePicker:
+                .dataImportNewSafariFilePicker,
+                .fireDialog,
+                .fireDialogIndividualSitesLink:
             true
         default:
             false

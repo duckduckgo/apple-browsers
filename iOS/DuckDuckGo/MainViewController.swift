@@ -226,12 +226,6 @@ class MainViewController: UIViewController {
         return OmnibarAccessoryHandler(settings: settings)
     }()
 
-    private lazy var historyCleaner: HistoryCleaning = {
-        let cleaner = HistoryCleaner(featureFlagger: featureFlagger,
-                                     privacyConfig: ContentBlocking.shared.privacyConfigurationManager)
-        return cleaner
-    }()
-
     let isAuthV2Enabled: Bool
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
@@ -3448,14 +3442,6 @@ extension MainViewController: AutoClearWorker {
 
         self.forgetTextZoom()
         await historyManager.removeAllHistory()
-        let result = await historyCleaner.cleanAIChatHistory()
-        
-        switch result {
-        case .success:
-            Logger.aiChat.debug("AI Chat history cleared successfully")
-        case .failure(let error):
-            Logger.aiChat.error("Failed to clear AI Chat history: \(error.localizedDescription)")
-        }
 
         self.clearInProgress = false
         

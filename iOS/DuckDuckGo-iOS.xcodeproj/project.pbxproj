@@ -1274,7 +1274,7 @@
 		9F8E0F382CCFAA8A001EA7C5 /* AddToDockPromoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8E0F372CCFAA8A001EA7C5 /* AddToDockPromoView.swift */; };
 		9F8E0F3D2CCFD072001EA7C5 /* AddToDockPromoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8E0F3C2CCFD071001EA7C5 /* AddToDockPromoViewModel.swift */; };
 		9F8FE9492BAE50E50071E372 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 9F8FE9482BAE50E50071E372 /* Lottie */; };
-		9F989C142E9CB9ED00EC2701 /* ModalPromptsCoordinationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F989C132E9CB9ED00EC2701 /* ModalPromptsCoordinationService.swift */; };
+		9F989C142E9CB9ED00EC2701 /* ModalPromptCoordinationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F989C132E9CB9ED00EC2701 /* ModalPromptCoordinationService.swift */; };
 		9F9A922E2C86A56B001D036D /* OnboardingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9A922D2C86A56B001D036D /* OnboardingManager.swift */; };
 		9F9A92312C86AAE9001D036D /* OnboardingDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9A92302C86AAE9001D036D /* OnboardingDebugView.swift */; };
 		9F9A92342C86B42B001D036D /* AppIconPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9A92332C86B42B001D036D /* AppIconPicker.swift */; };
@@ -3501,7 +3501,7 @@
 		9F8E0F372CCFAA8A001EA7C5 /* AddToDockPromoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddToDockPromoView.swift; sourceTree = "<group>"; };
 		9F8E0F3C2CCFD071001EA7C5 /* AddToDockPromoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddToDockPromoViewModel.swift; sourceTree = "<group>"; };
 		9F9845142E8D35C4004D5C9B /* SystemFrameworksExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SystemFrameworksExtensions; path = ../SharedPackages/SystemFrameworksExtensions; sourceTree = SOURCE_ROOT; };
-		9F989C132E9CB9ED00EC2701 /* ModalPromptsCoordinationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptsCoordinationService.swift; sourceTree = "<group>"; };
+		9F989C132E9CB9ED00EC2701 /* ModalPromptCoordinationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationService.swift; sourceTree = "<group>"; };
 		9F9A922D2C86A56B001D036D /* OnboardingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingManager.swift; sourceTree = "<group>"; };
 		9F9A92302C86AAE9001D036D /* OnboardingDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingDebugView.swift; sourceTree = "<group>"; };
 		9F9A92332C86B42B001D036D /* AppIconPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconPicker.swift; sourceTree = "<group>"; };
@@ -5113,7 +5113,7 @@
 				362E3ECB2E7185BA00E4C762 /* Application */,
 				362E3ECA2E7185B400E4C762 /* NewTabPage */,
 				362E3EC92E7185AD00E4C762 /* OmniBar */,
-				9F387DDB2EA881B7006861F8 /* PromptCoordination */,
+				9F387DDB2EA881B7006861F8 /* ModalPromptCoordination */,
 				362E3EC82E7185A900E4C762 /* Tabs */,
 				362E3EC62E71859800E4C762 /* Tutorials */,
 				9876DF2A2DEEE21700E30713 /* MockThemeManager.swift */,
@@ -6015,7 +6015,7 @@
 				F1C5ECFA1E37B15B00C599A4 /* Main */,
 				7BBE25A22D71EE72003131FA /* MainViewController+Automation.swift */,
 				9F254AA92CF47CD30063B308 /* MaliciousSiteProtection */,
-				9F0B19AA2EA5DF78001FA867 /* ModalPrompts */,
+				9F0B19AA2EA5DF78001FA867 /* ModalPromptCoordination */,
 				EECD94B22A28B8580085C66E /* NetworkProtection */,
 				F13B4BF31F18C73A00814661 /* NewTabPage */,
 				85AE668C20971FCA0014CF04 /* Notifications */,
@@ -6707,7 +6707,7 @@
 			path = UserPreferences;
 			sourceTree = "<group>";
 		};
-		9F0B19AA2EA5DF78001FA867 /* ModalPrompts */ = {
+		9F0B19AA2EA5DF78001FA867 /* ModalPromptCoordination */ = {
 			isa = PBXGroup;
 			children = (
 				9FA09DAD2EA84F4C00E26F3F /* Helpers */,
@@ -6716,7 +6716,7 @@
 				9FA09D9E2EA5EE3D00E26F3F /* Logger+ModalPrompt.swift */,
 				9F0B19B62EA5E740001FA867 /* ModalPromptCoordinationManager.swift */,
 			);
-			path = ModalPrompts;
+			path = ModalPromptCoordination;
 			sourceTree = "<group>";
 		};
 		9F0B19B22EA5E4FA001FA867 /* Providers */ = {
@@ -6835,7 +6835,7 @@
 			path = Model;
 			sourceTree = "<group>";
 		};
-		9F387DDB2EA881B7006861F8 /* PromptCoordination */ = {
+		9F387DDB2EA881B7006861F8 /* ModalPromptCoordination */ = {
 			isa = PBXGroup;
 			children = (
 				9F387DFB2EA8BFA0006861F8 /* MockModalPromptCoordinationManager.swift */,
@@ -6843,7 +6843,7 @@
 				9F387DE72EA895B6006861F8 /* MockModalPromptProvider.swift */,
 				9F387DEC2EA895DC006861F8 /* MockModalPromptPresenter.swift */,
 			);
-			path = PromptCoordination;
+			path = ModalPromptCoordination;
 			sourceTree = "<group>";
 		};
 		9F387DF12EA8AA8B006861F8 /* ModalPromptCoordination */ = {
@@ -6916,13 +6916,13 @@
 			path = Cooldown;
 			sourceTree = "<group>";
 		};
-		9F7634BD2EA8633300804550 /* ModalPrompts */ = {
+		9F7634BD2EA8633300804550 /* ModalPromptCoordination */ = {
 			isa = PBXGroup;
 			children = (
 				9F7634BC2EA8633300804550 /* Cooldown */,
 				9F387DE52EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift */,
 			);
-			path = ModalPrompts;
+			path = ModalPromptCoordination;
 			sourceTree = "<group>";
 		};
 		9F7ED8122D52EEBA00CCF4F5 /* Sub Sections */ = {
@@ -8026,7 +8026,7 @@
 				9FB859882E2DD2BB00BA68E4 /* SystemSettingsPiPTutorialService.swift */,
 				9D41D8DE2DC5213500BA0B63 /* DBPService.swift */,
 				4B2DF8A32E64BBF400FBF11E /* WideEventService.swift */,
-				9F989C132E9CB9ED00EC2701 /* ModalPromptsCoordinationService.swift */,
+				9F989C132E9CB9ED00EC2701 /* ModalPromptCoordinationService.swift */,
 			);
 			path = AppServices;
 			sourceTree = "<group>";
@@ -8488,7 +8488,7 @@
 				56CA25EC2DB7ABAC00BE4226 /* Localization */,
 				851DFD88212C5ED600D95F20 /* Main */,
 				9F5BEA7B2D4382430045E484 /* MaliciousSiteProtection */,
-				9F7634BD2EA8633300804550 /* ModalPrompts */,
+				9F7634BD2EA8633300804550 /* ModalPromptCoordination */,
 				EE56DE3A2A6038F500375C41 /* NetworkProtection */,
 				6F03CAFF2C32ED22004179A8 /* NewTabPage */,
 				F1D477C71F2139210031ED49 /* OmniBar */,
@@ -10911,7 +10911,7 @@
 				9F387DE42EA8922B006861F8 /* WinBackOfferModalPromptProvider.swift in Sources */,
 				85DFEDEF24C7EA3B00973FE7 /* SmallOmniBarState.swift in Sources */,
 				31D2D2A22D40F7E900549D12 /* AIChatDeepLinkHandler.swift in Sources */,
-				9F989C142E9CB9ED00EC2701 /* ModalPromptsCoordinationService.swift in Sources */,
+				9F989C142E9CB9ED00EC2701 /* ModalPromptCoordinationService.swift in Sources */,
 				1E908BF129827C480008C8F3 /* AutoconsentUserScript.swift in Sources */,
 				1D200C972BA3157A00108701 /* SettingsNextStepsView.swift in Sources */,
 				4B0295192537BC6700E00CEF /* ConfigurationDebugViewController.swift in Sources */,

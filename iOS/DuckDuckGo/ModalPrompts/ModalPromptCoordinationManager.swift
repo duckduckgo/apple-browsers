@@ -19,6 +19,11 @@
 
 import UIKit
 
+@MainActor
+protocol ModalPromptCoordinationManaging {
+    func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter)
+}
+
 /// Manages the coordination and presentation of modal prompts based on priority and cooldown rules.
 ///
 /// This manager is responsible for:
@@ -28,7 +33,7 @@ import UIKit
 ///
 /// The manager does NOT handle app-lifecycle level concerns like launch source checking. Those are handled by the `ModalPromptsCoordinationService`.
 @MainActor
-final class ModalPromptCoordinationManager {
+final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     private let providers: [any ModalPromptProvider]
     private let cooldownManager: PromptCooldownManaging
     private let scheduler: ModalPromptScheduling

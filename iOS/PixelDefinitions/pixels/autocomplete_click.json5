@@ -15,7 +15,7 @@
         ]
     },
     "m_autocomplete_click_website": {
-        "description": "ired when user clicks on a website in the autocomplete suggestion list.  The name of the website is not sent.",
+        "description": "Fired when user clicks on a website in the autocomplete suggestion list.  The name of the website is not sent.",
         "owners": ["brindy"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],

@@ -901,6 +901,7 @@ final class TabBarViewItem: NSCollectionViewItem {
     func clear() {
         clearSubscriptions()
         usedPermissions = Permissions()
+        isLeftToSelected = false
         cell.faviconImageView.image = nil
         cell.titleTextField.stringValue = ""
     }

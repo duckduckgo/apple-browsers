@@ -10008,7 +10008,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "env $SOURCE_ROOT/../scripts/xcode-swiftlint.sh\n";
+			shellScript = "if [ \\\"$CONFIGURATION\\\" = \\\"Release\\\" ] || [ \\\"$ENABLE_PREVIEWS\\\" = \\\"YES\\\" ]; then exit 0; fi\n\nenv $SOURCE_ROOT/../scripts/xcode-swiftlint.sh\n";
 		};
 		CBCCF59B29940C3800C02DFE /* Assert Xcode version */ = {
 			isa = PBXShellScriptBuildPhase;

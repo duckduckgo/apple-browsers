@@ -114,4 +114,3 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
             .assign(to: &$shouldDisplayCleanAIChatHistoryOption)
     }
 }
-

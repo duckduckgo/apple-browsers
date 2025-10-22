@@ -240,7 +240,7 @@ struct BrokerProfileScanSubJob {
                                              profileQueryId: Int64,
                                              database: DataBrokerProtectionRepository,
                                              stageCalculator: DataBrokerProtectionStageDurationCalculator) throws {
-        stageCalculator.fireScanFailed()
+        stageCalculator.fireScanNoResults()
         let event = HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .noMatchFound)
         try database.add(event)
     }

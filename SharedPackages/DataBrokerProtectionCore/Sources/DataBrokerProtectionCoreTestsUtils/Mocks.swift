@@ -1352,7 +1352,7 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
     public var fireOptOutConditionNotFoundCalled = false
     public var fireScanStartedCalled = false
     public var fireScanSuccessCalled = false
-    public var fireScanFailedCalled = false
+    public var fireScanNoResultsCalled = false
     public var fireScanErrorCalled = false
     public var setStageCalled = false
     public var setEmailPatternCalled = false
@@ -1438,8 +1438,8 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
         fireScanSuccessCalled = true
     }
 
-    public func fireScanFailed() {
-        fireScanFailedCalled = true
+    public func fireScanNoResults() {
+        fireScanNoResultsCalled = true
     }
 
     public func fireScanError(error: any Error) {
@@ -1491,7 +1491,7 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
         fireOptOutConditionNotFoundCalled = false
         fireScanStartedCalled = false
         fireScanSuccessCalled = false
-        fireScanFailedCalled = false
+        fireScanNoResultsCalled = false
         fireScanErrorCalled = false
         setStageCalled = false
         setEmailPatternCalled = false

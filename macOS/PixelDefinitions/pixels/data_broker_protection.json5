@@ -1108,28 +1108,28 @@
             "widePixelUnderlyingErrorCode",
             {
                 "key": "feature.name",
-                "type": "string"
+                "type": "string",
                 "description": "Feature identifier for this wide pixel",
                 "enum": ["pir-opt-out-submission"]
             },
             {
                 "key": "feature.data.ext.data_broker",
-                "type": "string"
+                "type": "string",
                 "description": "The URL of the data broker associated with this opt-out submission"
             },
             {
                 "key": "feature.data.ext.data_broker_version",
-                "type": "string"
+                "type": "string",
                 "description": "Version of the broker JSON file"
             },
             {
                 "key": "feature.data.ext.submission_latency_ms",
-                "type": "string"
+                "type": "string",
                 "description": "Duration in milliseconds between the record being found and submission completing"
             },
             {
                 "keyPattern": "feature\\.data\\.ext\\.stages\\.[0-9]+\\.name",
-                "type": "string"
+                "type": "string",
                 "description": "Stage identifier for the submission flow",
                 "enum": [
                     "start",
@@ -1151,18 +1151,18 @@
             },
             {
                 "keyPattern": "feature\\.data\\.ext\\.stages\\.[0-9]+\\.duration_ms",
-                "type": "string"
+                "type": "string",
                 "description": "Duration in milliseconds for a submission stage"
             },
             {
                 "keyPattern": "feature\\.data\\.ext\\.stages\\.[0-9]+\\.tries",
-                "type": "string"
+                "type": "string",
                 "description": "Number of attempts associated with a submission stage",
                 "pattern": "^[0-9]+$"
             },
             {
                 "keyPattern": "feature\\.data\\.ext\\.stages\\.[0-9]+\\.action_id",
-                "type": "string"
+                "type": "string",
                 "description": "Action identifier associated with a submission stage"
             }
         ]
@@ -1186,23 +1186,23 @@
             "widePixelUnderlyingErrorCode",
             {
                 "key": "feature.name",
-                "type": "string"
+                "type": "string",
                 "description": "Feature identifier for this wide pixel",
                 "enum": ["pir-opt-out-confirmation"]
             },
             {
                 "key": "feature.data.ext.data_broker",
-                "type": "string"
+                "type": "string",
                 "description": "The URL of the data broker associated with this confirmation flow"
             },
             {
                 "key": "feature.data.ext.data_broker_version",
-                "type": "string"
+                "type": "string",
                 "description": "Version of the broker JSON file"
             },
             {
                 "key": "feature.data.ext.confirmation_latency_ms",
-                "type": "string"
+                "type": "string",
                 "description": "Duration in milliseconds between the record being found and the opt-out confirmation"
             }
         ]
@@ -1228,13 +1228,13 @@
             {
                 "key": "duration",
                 "description": "Total duration of the scan in milliseconds",
-                "type": "string"
+                "type": "string",
                 "pattern": "^[0-9]+(\\.[0-9]+)?$"
             },
             {
                 "key": "error_category",
                 "description": "High-level error classification",
-                "type": "string"
+                "type": "string",
                 "pattern": "^(network-error|validation-error|unclassified|client-error-[0-9]+|server-error-[0-9]+|database-error-.+)$"
             },
             {

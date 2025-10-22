@@ -68,7 +68,6 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
         aiChatWasUsedBefore = featureDiscovery.wasUsedBefore(.aiChat)
 
         self.historyCleaner = HistoryCleaner(featureFlagger: featureFlagger, privacyConfig: privacyConfig)
-        self.historyCleaner.delegate = self
         subscribeToChanges()
     }
 
@@ -82,7 +81,20 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
     @MainActor
     func cleanAIChatHistory() async {
         guard featureFlagger.isFeatureOn(.aiChatDataClearing) else { return }
-        await historyCleaner.cleanAIChatHistory()
+        let result = await historyCleaner.cleanAIChatHistory()
+        
+        switch result {
+        case .success:
+            pixelKit?.fire(AIChatPixel.aiChatDeleteHistorySuccessful, frequency: .dailyAndCount)
+        case .failure(let error):
+            Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
+
+            if let userScriptError = error as? UserScriptError {
+                userScriptError.fireLoadJSFailedPixelIfNeeded()
+            } else {
+                pixelKit?.fire(AIChatPixel.aiChatDeleteHistoryFailed, frequency: .dailyAndCount)
+            }
+        }
     }
 
     private func subscribeToChanges() {
@@ -103,18 +115,3 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
     }
 }
 
-extension AIChatHistoryCleaner: HistoryCleanerDelegate {
-    func historyCleanerDidFinish(_ cleaner: any AIChat.HistoryCleaning) {
-        pixelKit?.fire(AIChatPixel.aiChatDeleteHistorySuccessful, frequency: .dailyAndCount)
-    }
-
-    func historyCleaner(_ cleaner: any AIChat.HistoryCleaning, didFailWithError error: any Error) {
-        Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
-        pixelKit?.fire(AIChatPixel.aiChatDeleteHistoryFailed, frequency: .dailyAndCount)
-    }
-
-    func historyCleaner(_ cleaner: any AIChat.HistoryCleaning, didFailWithUserScriptError error: UserScriptError) {
-        error.fireLoadJSFailedPixelIfNeeded()
-    }
-
-}

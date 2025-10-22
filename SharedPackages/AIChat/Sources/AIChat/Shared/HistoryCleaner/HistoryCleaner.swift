@@ -22,30 +22,7 @@ import BrowserServicesKit
 import os.log
 
 public protocol HistoryCleaning {
-    @MainActor func cleanAIChatHistory() async
-    var delegate: HistoryCleanerDelegate? { get set }
-}
-
-//TODO: Use the async continuation instead of delegate
-public protocol HistoryCleanerDelegate: AnyObject {
-    /// Tells the delegate that the history cleaning completed successfully.
-    ///
-    /// - Parameter cleaner: The `HistoryCleaner` instance that completed the operation.
-    @MainActor func historyCleanerDidFinish(_ cleaner: HistoryCleaning)
-
-    /// Tells the delegate that the history cleaning failed with a generic error.
-    ///
-    /// - Parameters:
-    ///   - cleaner: The `HistoryCleaner` instance that encountered the error.
-    ///   - error: The error that occurred during the cleaning process.
-    @MainActor func historyCleaner(_ cleaner: HistoryCleaning, didFailWithError error: Error)
-
-    /// Tells the delegate that the history cleaning failed specifically due to a UserScript error.
-    ///
-    /// - Parameters:
-    ///   - cleaner: The `HistoryCleaner` instance that encountered the error.
-    ///   - error: The UserScript error that occurred during initialization.
-    @MainActor func historyCleaner(_ cleaner: HistoryCleaning, didFailWithUserScriptError error: UserScriptError)
+    @MainActor func cleanAIChatHistory() async -> Result<Void, Error>
 }
 
 public final class HistoryCleaner: HistoryCleaning {
@@ -56,7 +33,6 @@ public final class HistoryCleaner: HistoryCleaning {
     private let privacyConfig: PrivacyConfigurationManaging
     private var contentScopeUserScript: ContentScopeUserScript?
     private var aiChatDataClearingUserScript: AIChatDataClearingUserScript?
-    public weak var delegate: HistoryCleanerDelegate?
 
     public init(featureFlagger: FeatureFlagger,
                 privacyConfig: PrivacyConfigurationManaging) {
@@ -66,10 +42,10 @@ public final class HistoryCleaner: HistoryCleaning {
 
     /// Launches a headless web view to clear Duck.ai chat history with a C-S-S feature.
     @MainActor
-    public func cleanAIChatHistory() async {
-        guard webView == nil else { return }
+    public func cleanAIChatHistory() async -> Result<Void, Error> {
+        guard webView == nil else { return .success(()) }
 
-        _ = await withCheckedContinuation { continuation in
+        return await withCheckedContinuation { continuation in
             self.continuation = continuation
             self.launchHistoryCleaningWebView()
         }
@@ -130,21 +106,12 @@ public final class HistoryCleaner: HistoryCleaning {
                 webView.loadHTMLString("", baseURL: URL.duckDuckGo)
             }
         } catch {
-            if let userScriptError = error as? UserScriptError {
-                delegate?.historyCleaner(self, didFailWithUserScriptError: userScriptError)
-            }
             finish(result: .failure(error))
         }
     }
 
     @MainActor
     private func finish(result: Result<Void, Error>) {
-        switch result {
-        case .success:
-            delegate?.historyCleanerDidFinish(self)
-        case .failure(let error):
-            delegate?.historyCleaner(self, didFailWithError: error)
-        }
         tearDownClearingWebView()
         continuation?.resume(returning: result)
         continuation = nil

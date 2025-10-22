@@ -229,7 +229,6 @@ class MainViewController: UIViewController {
     private lazy var historyCleaner: HistoryCleaning = {
         let cleaner = HistoryCleaner(featureFlagger: featureFlagger,
                                      privacyConfig: ContentBlocking.shared.privacyConfigurationManager)
-        cleaner.delegate = self
         return cleaner
     }()
 
@@ -3449,7 +3448,14 @@ extension MainViewController: AutoClearWorker {
 
         self.forgetTextZoom()
         await historyManager.removeAllHistory()
-        await historyCleaner.cleanAIChatHistory()
+        let result = await historyCleaner.cleanAIChatHistory()
+        
+        switch result {
+        case .success:
+            Logger.aiChat.debug("AI Chat history cleared successfully")
+        case .failure(let error):
+            Logger.aiChat.error("Failed to clear AI Chat history: \(error.localizedDescription)")
+        }
 
         self.clearInProgress = false
         
@@ -3789,22 +3795,3 @@ extension MainViewController: MainViewEditingStateTransitioning {
     }
 }
 
-// MARK: - HistoryCleanerDelegate
-
-extension MainViewController: HistoryCleanerDelegate {
-    
-    @MainActor
-    func historyCleanerDidFinish(_ cleaner: HistoryCleaning) {
-        Logger.aiChat.debug("AI Chat history cleared successfully")
-    }
-    
-    @MainActor
-    func historyCleaner(_ cleaner: HistoryCleaning, didFailWithError error: Error) {
-        Logger.aiChat.error("Failed to clear AI Chat history: \(error.localizedDescription)")
-    }
-    
-    @MainActor
-    func historyCleaner(_ cleaner: HistoryCleaning, didFailWithUserScriptError error: UserScriptError) {
-        Logger.aiChat.error("Failed to clear AI Chat history with UserScript error: \(error.localizedDescription)")
-    }
-}

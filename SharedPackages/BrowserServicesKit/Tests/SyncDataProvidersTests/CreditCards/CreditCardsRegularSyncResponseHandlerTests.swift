@@ -120,4 +120,44 @@ final class CreditCardsRegularSyncResponseHandlerTests: CreditCardsProviderTests
         XCTAssertTrue(syncableCreditCards.map(\.metadata.lastModified).allSatisfy { $0 == nil })
         crypter.throwsException(exceptionString: nil)
     }
+
+    func testThatDeduplicatedLocalCardRemainsDecryptableDuringRegularSync() async throws {
+        try reinitializeVaultUsingBitFlipCryptoProvider()
+
+        try secureVault.inDatabaseTransaction { database in
+            try self.secureVault.storeSyncableCreditCard("local-uuid",
+                                                         title: "Local Card",
+                                                         cardholderName: "Jane Doe",
+                                                         cardNumber: "4111111111111111",
+                                                         cardSecurityCode: "123",
+                                                         expirationMonth: 12,
+                                                         expirationYear: 2030,
+                                                         in: database)
+        }
+
+        let received: [Syncable] = [
+            .creditCard("Remote Older",
+                        uuid: "remote-uuid",
+                        cardholderName: "Jane Doe",
+                        cardNumber: "4111111111111111",
+                        cardSecurityCode: "321",
+                        expirationMonth: "1",
+                        expirationYear: "2025")
+        ]
+
+        try await handleSyncResponse(received: received)
+
+        let syncableCreditCards = try fetchAllSyncableCreditCards()
+        XCTAssertEqual(syncableCreditCards.count, 1, "Should deduplicate into a single card")
+        XCTAssertEqual(syncableCreditCards.first?.metadata.uuid, "remote-uuid")
+        XCTAssertNotNil(syncableCreditCards.first?.metadata.lastModified)
+
+        let creditCards = try secureVault.creditCards()
+        XCTAssertEqual(creditCards.count, 1)
+        let card = creditCards[0]
+        XCTAssertEqual(card.title, "Local Card")
+        XCTAssertEqual(card.expirationYear, 2030)
+
+        XCTAssertEqual(card.cardNumber, "4111111111111111")
+    }
 }

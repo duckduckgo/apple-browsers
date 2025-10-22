@@ -119,6 +119,39 @@ internal class CreditCardsProviderTestsBase: XCTestCase {
     func handleInitialSyncResponse(received: [Syncable], clientTimestamp: Date = Date(), serverTimestamp: String = "1234") async throws {
         try await provider.handleInitialSyncResponse(received: received, clientTimestamp: clientTimestamp, serverTimestamp: serverTimestamp, crypter: crypter)
     }
+
+    // Some tests need to ensure we do not accidentally double-encrypt card data. The default
+    // NoOp crypto used elsewhere returns plaintext and hides those regressions, so we rebuild
+    // the vault with a bit-flipping crypto to surface any misuse of already encrypted blobs.
+    func reinitializeVaultUsingBitFlipCryptoProvider() throws {
+        try reinitializeVault(using: TestBitFlipCryptoProvider.init)
+    }
+
+    private func reinitializeVault(using makeCryptoProvider: @escaping () -> SecureStorageCryptoProvider) throws {
+        let customFactory = AutofillVaultFactory(
+            makeCryptoProvider: makeCryptoProvider,
+            makeKeyStoreProvider: { _ in
+                let provider = MockKeystoreProvider()
+                provider._l1Key = "l1".data(using: .utf8)
+                provider._encryptedL2Key = "encrypted".data(using: .utf8)
+                provider._generatedPassword = "password".data(using: .utf8)
+                return provider
+            },
+            makeDatabaseProvider: { [unowned self] _, _ in
+                self.databaseProvider
+            }
+        )
+
+        secureVaultFactory = customFactory
+        try makeSecureVault()
+        provider = try CreditCardsProvider(
+            secureVaultFactory: secureVaultFactory,
+            secureVaultErrorReporter: MockSecureVaultErrorReporter(),
+            metadataStore: LocalSyncMetadataStore(database: metadataDatabase),
+            syncDidUpdateData: {},
+            syncDidFinish: { _ in }
+        )
+    }
 }
 
 extension AutofillSecureVault {
@@ -171,4 +204,31 @@ extension AutofillSecureVault {
             try inDatabaseTransaction { try storeSyncableCreditCard(syncableCreditCard, in: $0, encryptedUsing: Data()) }
         }
     }
+}
+
+// Implements an "encryption" that simply bit-flips every byte so encrypting twice is observable.
+final class TestBitFlipCryptoProvider: SecureStorageCryptoProvider {
+
+    var hashingSalt: Data?
+
+    var passwordSalt: Data { Data() }
+    var keychainServiceName: String { "service" }
+    var keychainAccountName: String { "account" }
+
+    func generateSecretKey() throws -> Data { Data("secret".utf8) }
+    func generatePassword() throws -> Data { Data("password".utf8) }
+    func deriveKeyFromPassword(_ password: Data) throws -> Data { password }
+    func generateNonce() throws -> Data { Data() }
+
+    func encrypt(_ data: Data, withKey key: Data) throws -> Data {
+        Data(data.map { ~$0 })
+    }
+
+    func decrypt(_ data: Data, withKey key: Data) throws -> Data {
+        Data(data.map { ~$0 })
+    }
+
+    func generateSalt() throws -> Data { Data() }
+    func hashData(_ data: Data) throws -> String? { "" }
+    func hashData(_ data: Data, salt: Data?) throws -> String? { "" }
 }

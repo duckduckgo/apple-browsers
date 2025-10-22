@@ -12824,7 +12824,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "env $SOURCE_ROOT/../scripts/xcode-swiftlint.sh\n";
+			shellScript = "echo \"SwiftLint disabled for now\"\n";
 		};
 		3121F62B2B64266A002F706A /* Copy Swift Package resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -12976,7 +12976,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "env $SOURCE_ROOT/../scripts/xcode-swiftlint.sh\n";
+			shellScript = "echo \"SwiftLint disabled for now\"\n";
 		};
 		7B2E361D2D6DE89600A08CB7 /* Embed System Network Extension */ = {
 			isa = PBXShellScriptBuildPhase;

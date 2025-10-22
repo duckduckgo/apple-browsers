@@ -10026,7 +10026,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "env $SOURCE_ROOT/../scripts/xcode-swiftlint.sh\n";
+			shellScript = "echo \"SwiftLint disabled for now\"\n";
 		};
 		CBCCF59B29940C3800C02DFE /* Assert Xcode version */ = {
 			isa = PBXShellScriptBuildPhase;

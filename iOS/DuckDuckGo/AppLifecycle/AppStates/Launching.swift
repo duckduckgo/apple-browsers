@@ -140,6 +140,23 @@ struct Launching: LaunchingHandling {
         // Has to be intialised after configuration.start in case values need to be migrated
         aiChatSettings = AIChatSettings()
 
+        // Initialise modal prompts coordination
+        let newAddressBarPickerModalPromptProvider = NewAddressBarPickerModalPromptProvider()
+        let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: defaultBrowserPromptService.presenter)
+        let winBackOfferModalPromptProvider = WinBackOfferModalPromptProvider()
+
+        let modalPromptCoordinationService = ModalPromptCoordinationService(
+            launchSourceManager: launchSourceManager,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+            tutorialSettings: DefaultTutorialSettings(),
+            privacyConfigManager: privacyConfigurationManager,
+            providers: .init(
+                newAddressBarPicker: newAddressBarPickerModalPromptProvider,
+                defaultBrowser: defaultBrowserModalPromptProvider,
+                winBackOffer: winBackOfferModalPromptProvider
+            )
+        )
+
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
@@ -165,7 +182,8 @@ struct Launching: LaunchingHandling {
                                               daxDialogsManager: daxDialogs,
                                               dbpIOSPublicInterface: dbpService.dbpIOSPublicInterface,
                                               launchSourceManager: launchSourceManager,
-                                              winBackOfferService: winBackOfferService)
+                                              winBackOfferService: winBackOfferService,
+                                              modalPromptCoordinationService: modalPromptCoordinationService)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components

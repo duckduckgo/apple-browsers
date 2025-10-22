@@ -292,15 +292,11 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
             Pixel.fire(pixel: url.isDuckDuckGoSearch ? .autocompleteClickSearchHistory : .autocompleteClickSiteHistory)
 
         case .phrase:
-            let parameters = ddgSuggestionIndex.map { index in
-                ["search_suggestion_index": String(index)]
-            } ?? [:]
+            let parameters = createPixelIndexParam(for: ddgSuggestionIndex)
             Pixel.fire(pixel: .autocompleteClickPhrase, withAdditionalParameters: parameters)
 
         case .website:
-            let parameters = ddgSuggestionIndex.map { index in
-                ["search_suggestion_index": String(index)]
-            } ?? [:]
+            let parameters = createPixelIndexParam(for: ddgSuggestionIndex)
             Pixel.fire(pixel: .autocompleteClickWebsite, withAdditionalParameters: parameters)
 
         case .openTab:
@@ -341,6 +337,12 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
         default:
             assertionFailure("Only history items can be deleted")
         }
+    }
+
+    private func createPixelIndexParam(for index: Int?) -> [String: String] {
+        let parameters = ddgSuggestionIndex.map { index in
+            ["search_suggestion_index": String(index)]
+        } ?? [:]
     }
 }
 

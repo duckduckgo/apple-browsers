@@ -46,7 +46,6 @@ import Configuration
 import PixelKit
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
-import UserScript
 
 class MainViewController: UIViewController {
 
@@ -3780,4 +3779,3 @@ extension MainViewController: MainViewEditingStateTransitioning {
         omniBar.barView.revealButtons()
     }
 }
-

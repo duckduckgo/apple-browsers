@@ -294,9 +294,6 @@ extension OmnibarDependencyProvider {
     }
     
     var isRefreshButtonEnabled: Bool {
-        guard featureFlagger.isFeatureOn(.refreshButtonPosition) else {
-            return true
-        }
         return appSettings.currentRefreshButtonPosition.isEnabledForAddressBar
     }
 }

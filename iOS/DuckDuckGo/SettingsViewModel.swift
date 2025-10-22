@@ -138,10 +138,6 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
     }
     
-    var isRefreshButtonPositionEnabled: Bool {
-        featureFlagger.isFeatureOn(.refreshButtonPosition)
-    }
-    
     var firstSectionTitle: String {
         featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) ? UserText.aiChatSettingsBrowserShortcutsSectionTitle : ""
     }

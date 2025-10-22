@@ -42,30 +42,11 @@ struct SettingsAppearanceView: View {
                                        selectedOption: viewModel.themeStyleBinding)
             }
 
-            Section(header: Text(UserText.addressBar)) {
-                if viewModel.state.addressBar.enabled {
-                    // Address Bar Position
-                    SettingsPickerCellView(label: UserText.settingsAddressBar,
-                                           options: AddressBarPosition.allCases,
-                                           selectedOption: viewModel.addressBarPositionBinding)
-                }
-
-                if viewModel.isRefreshButtonPositionEnabled {
-                    // Refresh Button Position
-                    SettingsPickerCellView(label: UserText.settingsRefreshButtonPositionTitle,
-                                           options: RefreshButtonPosition.allCases,
-                                           selectedOption: viewModel.refreshButtonPositionBinding)
-                }
-                
-                // Show Full Site Address
-                SettingsCellView(label: UserText.settingsFullURL,
-                                 accessory: .toggle(isOn: viewModel.addressBarShowsFullURL))
-            }
 
             if viewModel.state.mobileCustomization.isEnabled {
-                Section(header: Text(verbatim: "Customization coming soon")) {
-                    EmptyView()
-                }
+                customizableSettings()
+            } else {
+                legacySettings()
             }
 
         }
@@ -76,4 +57,71 @@ struct SettingsAppearanceView: View {
             Pixel.fire(pixel: .settingsAppearanceOpen)
         }
     }
+
+    @ViewBuilder
+    func customizableSettings() -> some View {
+        Section(header: Text(UserText.addressBar)) {
+            addressBarPositionSetting()
+
+            showFullSiteAddressSetting()
+
+            showReloadButtonSetting()
+        }
+
+        Section(header: Text(verbatim: "Customizable Buttons")) {
+            addressBarButtonSetting()
+
+            toolbarButtonSetting()
+        }
+    }
+
+    @ViewBuilder
+    func addressBarButtonSetting() -> some View {
+        // TODO
+        Text(verbatim: #function)
+
+    }
+
+    @ViewBuilder
+    func toolbarButtonSetting() -> some View {
+        // TODO
+        Text(verbatim: #function)
+
+    }
+
+    @ViewBuilder
+    func showReloadButtonSetting() -> some View {
+        // TODO
+        Text(verbatim: #function)
+    }
+
+    @ViewBuilder
+    func legacySettings() -> some View {
+        Section(header: Text(UserText.addressBar)) {
+            addressBarPositionSetting()
+
+            // Refresh Button Position
+            SettingsPickerCellView(label: UserText.settingsRefreshButtonPositionTitle,
+                                   options: RefreshButtonPosition.allCases,
+                                   selectedOption: viewModel.refreshButtonPositionBinding)
+
+            showFullSiteAddressSetting()
+        }
+    }
+
+    @ViewBuilder
+    func showFullSiteAddressSetting() -> some View {
+        SettingsCellView(label: UserText.settingsFullURL,
+                         accessory: .toggle(isOn: viewModel.addressBarShowsFullURL))
+    }
+
+    @ViewBuilder
+    func addressBarPositionSetting() -> some View {
+        if viewModel.state.addressBar.enabled {
+            SettingsPickerCellView(label: UserText.settingsAddressBar,
+                                   options: AddressBarPosition.allCases,
+                                   selectedOption: viewModel.addressBarPositionBinding)
+        }
+    }
+
 }

@@ -10,10 +10,9 @@ name: 05_sync_data_check
 #            The test is split in two different flow to accomodate 
 #            for Maestro CI max execution time. 
 
-# Set up 
 - runFlow: 
     file: ../shared/setup.yaml
-
+    
 #  Copy Recovery Code
 - tapOn: Browsing menu
 - tapOn: Settings

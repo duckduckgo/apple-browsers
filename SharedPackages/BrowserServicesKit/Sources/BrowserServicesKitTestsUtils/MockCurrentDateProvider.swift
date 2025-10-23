@@ -1,5 +1,5 @@
 //
-//  DateProvider.swift
+//  MockCurrentDateProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,13 +17,12 @@
 //
 
 import Foundation
+import Common
 
-public protocol DateProviding {
-    var currentDate: Date { get }
-}
+public class MockCurrentDateProvider: CurrentDateProviding {
+    public var currentDate: Date
 
-extension Date: DateProviding {
-    public var currentDate: Date {
-        return self
+    public init(currentDate: Date = Date()) {
+        self.currentDate = currentDate
     }
 }

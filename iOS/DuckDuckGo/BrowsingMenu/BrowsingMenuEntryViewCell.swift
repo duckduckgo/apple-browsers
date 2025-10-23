@@ -26,7 +26,7 @@ class BrowsingMenuEntryViewCell: UITableViewCell {
     @IBOutlet weak var entryLabel: UILabel!
     @IBOutlet weak var notificationDot: UIView!
     
-    func configure(image: UIImage, label: String, accessibilityLabel: String?, showNotificationDot: Bool = false) {
+    func configure(image: UIImage, label: String, accessibilityLabel: String?, showNotificationDot: Bool = false, customDotColor: UIColor? = nil) {
         entryImage.image = image
         entryLabel.setAttributedTextString(label)
         entryLabel.accessibilityLabel = accessibilityLabel
@@ -41,6 +41,9 @@ class BrowsingMenuEntryViewCell: UITableViewCell {
         
         notificationDot.isHidden = !showNotificationDot
         notificationDot.layer.cornerRadius = 4
+        if let customDotColor {
+            notificationDot.backgroundColor = customDotColor
+        }
     }
     
     static func preferredWidth(for text: String) -> CGFloat {

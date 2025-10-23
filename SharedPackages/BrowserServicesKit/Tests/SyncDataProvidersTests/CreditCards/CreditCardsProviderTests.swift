@@ -267,7 +267,7 @@ final class CreditCardsProviderTests: CreditCardsProviderTestsBase {
         let sent = try await provider.fetchChangedObjects(encryptedUsing: crypter)
         let received: [Syncable] = [.creditCard(uuid: "1", cardholderName: "Updated", cardNumber: "4111111111111111")]
 
-        try await provider.handleSyncResponse(sent: sent, received: received, clientTimestamp: Date(), serverTimestamp: "1234", crypter: crypter)
+        try await provider.handleSyncResponse(sent: sent, received: received, clientTimestamp: Date().advanced(by: 1).withMillisecondPrecision, serverTimestamp: "1234", crypter: crypter)
 
         let syncableCreditCards = try fetchAllSyncableCreditCards()
         XCTAssertEqual(syncableCreditCards.count, 1)

@@ -25,8 +25,20 @@ import BrowserServicesKit
 protocol FirefoxEncryptionKeyReading {
 
     func getEncryptionKey(key3DatabaseURL: URL, primaryPassword: String) -> DataImportResult<Data>
-    func getEncryptionKey(key4DatabaseURL: URL, primaryPassword: String) -> DataImportResult<Data>
+    func getEncryptionKey(key4DatabaseURL: URL, primaryPassword: String) -> DataImportResult<FirefoxEncryptionKeys>
 
+}
+
+/// Holds encryption keys extracted from Firefox database
+/// Firefox now stores both 3DES and AES-256 keys in the nssPrivate table
+struct FirefoxEncryptionKeys {
+    let tripleDesKey: Data?  // 24-byte key for legacy 3DES-CBC encryption
+    let aesKey: Data?        // 32-byte key for new AES-256-CBC encryption
+
+    /// Returns the primary key (prefers 3DES for backwards compatibility)
+    var primaryKey: Data {
+        return tripleDesKey ?? aesKey ?? Data()
+    }
 }
 
 final class FirefoxEncryptionKeyReader: FirefoxEncryptionKeyReading {
@@ -106,12 +118,12 @@ final class FirefoxEncryptionKeyReader: FirefoxEncryptionKeyReading {
         return key
     }
 
-    func getEncryptionKey(key4DatabaseURL: URL, primaryPassword: String) -> DataImportResult<Data> {
+    func getEncryptionKey(key4DatabaseURL: URL, primaryPassword: String) -> DataImportResult<FirefoxEncryptionKeys> {
         var operationType: FirefoxLoginReader.ImportError.OperationType = .key4readerStage1
         do {
             return try key4DatabaseURL.withTemporaryFile { temporaryDatabaseURL in
-                let data = try getKey(key4DatabaseURL: temporaryDatabaseURL, primaryPassword: primaryPassword, operationType: &operationType)
-                return .success(data)
+                let keys = try getKey(key4DatabaseURL: temporaryDatabaseURL, primaryPassword: primaryPassword, operationType: &operationType)
+                return .success(keys)
             }
         } catch let error as FirefoxLoginReader.ImportError {
             return .failure(error)
@@ -120,7 +132,7 @@ final class FirefoxEncryptionKeyReader: FirefoxEncryptionKeyReading {
         }
     }
 
-    private func getKey(key4DatabaseURL databaseURL: URL, primaryPassword: String, operationType: inout FirefoxLoginReader.ImportError.OperationType) throws -> Data {
+    private func getKey(key4DatabaseURL databaseURL: URL, primaryPassword: String, operationType: inout FirefoxLoginReader.ImportError.OperationType) throws -> FirefoxEncryptionKeys {
         let queue = try DatabaseQueue(path: databaseURL.path)
 
         return try queue.read { database in
@@ -143,22 +155,10 @@ final class FirefoxEncryptionKeyReader: FirefoxEncryptionKeyReading {
 
             // Method 2: Try standard AES encryption with proper password validation (common format)
             operationType = .key4readerStage3
-            if let complexAESData = try extractKeyUsingAES(from: decodedASNData,
+            return try extractKeyUsingAES(from: decodedASNData,
                                                            globalSalt: metadataRow.globalSalt,
                                                            primaryPassword: primaryPassword,
-                                                           database: database) {
-                return complexAESData
-            }
-
-            // Method 3: Fallback for single-iteration PBKDF2 profiles (edge case)
-            // These profiles have minimal encryption (1 iteration) and bypass password validation
-            // This handles Firefox profiles that were likely never properly encrypted
-            operationType = .key4readerStage4
-
-            return try extractKeyFromNssPrivateUsingAES(from: decodedASNData,
-                                                        globalSalt: metadataRow.globalSalt,
-                                                        primaryPassword: primaryPassword,
-                                                        database: database)
+                                                           database: database)
         }
     }
 
@@ -362,7 +362,7 @@ final class FirefoxEncryptionKeyReader: FirefoxEncryptionKeyReading {
 
     // MARK: - ASN Key Extraction
 
-    private func extractKeyUsing3DES(from node: ASN1Parser.Node, globalSalt: Data, primaryPassword: String, database: GRDB.Database) throws -> Data? {
+    private func extractKeyUsing3DES(from node: ASN1Parser.Node, globalSalt: Data, primaryPassword: String, database: GRDB.Database) throws -> FirefoxEncryptionKeys? {
         // First, check if this database uses the 3DES format by trying to extract the expected ASN.1 structure
         // If extraction fails, this method doesn't apply to this database format (return nil to try next method)
         guard let decryptedCiphertext: Data = {
@@ -386,28 +386,14 @@ final class FirefoxEncryptionKeyReader: FirefoxEncryptionKeyReading {
         // Validate password check - throw error if password validation fails
         guard passwordCheckString == Constants.passwordCheckStr else { throw FirefoxLoginReader.ImportError(type: .requiresPrimaryPassword, underlyingError: nil) }
 
-        guard let nssPrivateRow = try NssPrivateRow.fetchOne(database, sql: "SELECT a11, a102 FROM nssPrivate;") else { throw KeyReaderFileLineError() }
-
-        assert(nssPrivateRow.a102 == Data([248, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]))
-
-        let decodedA11 = try ASN1Parser.parse(data: nssPrivateRow.a11)
-
-        // Check if the nssPrivate data uses 3DES format
-        guard let entrySalt = try? extractKey3EntrySalt(from: decodedA11) else {
-            return nil // nssPrivate data doesn't use 3DES format - try next method
-        }
-        let ciphertext = try extractCiphertext(from: decodedA11)
-
-        let data = try tripleDesDecrypt(ciphertext: ciphertext, globalSalt: globalSalt, entrySalt: entrySalt, primaryPassword: primaryPassword)
-        return data
+        // Extract both 3DES and AES keys from nssPrivate table
+        // Modern Firefox versions store both keys - row 1 has 3DES (24-byte), row 2 has AES-256 (32-byte)
+        return try extractAllKeysFromNssPrivate(globalSalt: globalSalt, primaryPassword: primaryPassword, database: database)
     }
 
-    private func extractKeyUsingAES(from node: ASN1Parser.Node, globalSalt: Data, primaryPassword: String, database: GRDB.Database) throws -> Data? {
+    private func extractKeyUsingAES(from node: ASN1Parser.Node, globalSalt: Data, primaryPassword: String, database: GRDB.Database) throws -> FirefoxEncryptionKeys {
         // Check if this database uses AES format by trying to extract initialization vector
-        guard let iv = try? extractInitializationVector(from: node) else {
-            // ASN.1 structure doesn't match AES format - try next method
-            return nil
-        }
+        let iv = try extractInitializationVector(from: node)
         let decryptedItem2 = try aesDecrypt(tlv: node, iv: iv, globalSalt: globalSalt, primaryPassword: primaryPassword)
 
         let passwordCheckString = String(data: decryptedItem2, encoding: .utf8)
@@ -415,27 +401,65 @@ final class FirefoxEncryptionKeyReader: FirefoxEncryptionKeyReading {
         // The password check is technically "password-check\x02\x02", it's converted to UTF-8 and checked here for simplicity
         guard passwordCheckString == Constants.passwordCheckStr else { throw FirefoxLoginReader.ImportError(type: .requiresPrimaryPassword, underlyingError: nil) }
 
-        // Password validation passed - extract the actual key using shared logic
-        return try extractKeyFromNssPrivateUsingAES(from: node, globalSalt: globalSalt, primaryPassword: primaryPassword, database: database)
+        // Password validation passed - extract both keys from nssPrivate table
+        return try extractAllKeysFromNssPrivate(globalSalt: globalSalt, primaryPassword: primaryPassword, database: database)
     }
 
     // MARK: - Shared Key Extraction Logic
 
     /*
-    Extracts the final encryption key from the nssPrivate table using AES decryption.
-    This is shared between standard AES method and single-iteration PBKDF2 fallback.
-    Both methods end up needing to decrypt the actual key from the nssPrivate table,
-    but differ in their password validation requirements.
+    Extracts both 3DES and AES-256 encryption keys from the nssPrivate table.
+    Recent Firefox versions store two rows:
+    - First row: 24-byte key for legacy 3DES-CBC encryption (OID 1.2.840.113549.3.7)
+    - Second row: 32-byte key for new AES-256-CBC encryption (OID 2.16.840.1.101.3.4.1.42)
+    
+    Older Firefox versions only have the first row with the 3DES key.
      */
-    private func extractKeyFromNssPrivateUsingAES(from node: ASN1Parser.Node, globalSalt: Data, primaryPassword: String, database: GRDB.Database) throws -> Data {
-        guard let nssPrivateRow = try NssPrivateRow.fetchOne(database, sql: "SELECT a11, a102 FROM nssPrivate;") else { throw KeyReaderFileLineError() }
+    private func extractAllKeysFromNssPrivate(globalSalt: Data, primaryPassword: String, database: GRDB.Database) throws -> FirefoxEncryptionKeys {
+        // Fetch all rows from nssPrivate table
+        let allRows = try NssPrivateRow.fetchAll(database, sql: "SELECT a11, a102 FROM nssPrivate ORDER BY ROWID;")
 
-        assert(nssPrivateRow.a102 == Data([248, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]))
+        guard !allRows.isEmpty else {
+            throw KeyReaderFileLineError()
+        }
 
-        let decodedA11 = try ASN1Parser.parse(data: nssPrivateRow.a11)
-        let finalIV = try extractInitializationVector(from: decodedA11)
+        var tripleDesKey: Data?
+        var aesKey: Data?
 
-        return try aesDecrypt(tlv: decodedA11, iv: finalIV, globalSalt: globalSalt, primaryPassword: primaryPassword)
+        // Process each row - try to decrypt and determine key type by length
+        for nssPrivateRow in allRows {
+            // Verify the a102 value is the expected identifier
+            guard nssPrivateRow.a102 == Data([248, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]) else {
+                continue
+            }
+
+            let decodedA11 = try ASN1Parser.parse(data: nssPrivateRow.a11)
+
+            // Try to decrypt with 3DES first (for legacy format)
+            if tripleDesKey == nil, let entrySalt = try? extractKey3EntrySalt(from: decodedA11), let ciphertext = try? extractCiphertext(from: decodedA11) {
+                if let decrypted = try? tripleDesDecrypt(ciphertext: ciphertext, globalSalt: globalSalt, entrySalt: entrySalt, primaryPassword: primaryPassword) {
+                    if decrypted.count == Constants.key3length {
+                        tripleDesKey = decrypted
+                        continue
+                    }
+                }
+            }
+
+            // Try to decrypt with AES
+            if let finalIV = try? extractInitializationVector(from: decodedA11) {
+                if let decrypted = try? aesDecrypt(tlv: decodedA11, iv: finalIV, globalSalt: globalSalt, primaryPassword: primaryPassword) {
+                    // Determine key type by length
+                    if decrypted.count == Constants.key3length && tripleDesKey == nil {
+                        tripleDesKey = decrypted
+                    } else if decrypted.count == 32 && aesKey == nil {
+                        // 32-byte key is AES-256
+                        aesKey = decrypted
+                    }
+                }
+            }
+        }
+
+        return FirefoxEncryptionKeys(tripleDesKey: tripleDesKey, aesKey: aesKey)
     }
 
     fileprivate struct NssPrivateRow: FetchableRecord {

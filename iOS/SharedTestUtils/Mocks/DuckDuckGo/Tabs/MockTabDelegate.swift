@@ -88,6 +88,9 @@ final class MockTabDelegate: TabDelegate {
     func tabDidRequestSettingsToCreditCardManagement(_ tab: TabViewController,
                                                      source: AutofillSettingsSource) {}
 
+
+    func tabDidRequestSettingsToVPN(_ tab: DuckDuckGo.TabViewController) {}
+
     func tabDidRequestFindInPage(tab: DuckDuckGo.TabViewController) {}
 
     func closeFindInPage(tab: DuckDuckGo.TabViewController) {}

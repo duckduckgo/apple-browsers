@@ -65,11 +65,11 @@ public protocol StageDurationCalculator {
     func fireScanStarted()
 #endif
     func fireScanSuccess(matchesFound: Int)
-    func fireScanFailed()
+    func fireScanNoResults()
     func fireScanError(error: Error)
     func setStage(_ stage: Stage)
     func setEmailPattern(_ emailPattern: String?)
-    func setLastActionId(_ actionID: String)
+    func setLastAction(_ action: Action)
     func resetTries()
     func incrementTries()
 }
@@ -87,8 +87,10 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     let dataBrokerURL: String
     let dataBrokerVersion: String
     let startTime: Date
+    let parentURL: String?
     var lastStateTime: Date
     private(set) var actionID: String?
+    private(set) var actionType: String?
     private(set) var stage: Stage = .other
     private(set) var emailPattern: String?
     private(set) var tries = 1
@@ -101,6 +103,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
          dataBrokerVersion: String,
          handler: EventMapping<DataBrokerProtectionSharedPixels>,
          isImmediateOperation: Bool = false,
+         parentURL: String? = nil,
          vpnConnectionState: String,
          vpnBypassStatus: String) {
         self.attemptId = attemptId
@@ -110,6 +113,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.dataBrokerVersion = dataBrokerVersion
         self.handler = handler
         self.isImmediateOperation = isImmediateOperation
+        self.parentURL = parentURL
         self.vpnConnectionState = vpnConnectionState
         self.vpnBypassStatus = vpnBypassStatus
     }
@@ -131,7 +135,9 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireOptOutStart() {
         setStage(.start)
-        handler.fire(.optOutStart(dataBroker: dataBrokerURL, attemptId: attemptId))
+        handler.fire(.optOutStart(dataBroker: dataBrokerURL,
+                                  attemptId: attemptId,
+                                  parent: parentURL ?? ""))
     }
 
     func fireOptOutEmailGenerate() {
@@ -141,6 +147,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                           duration: duration,
                                           dataBrokerVersion: dataBrokerVersion,
                                           tries: tries,
+                                          parent: parentURL ?? "",
                                           actionId: actionID ?? ""))
     }
 
@@ -151,6 +158,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
                                          tries: tries,
+                                         parent: parentURL ?? "",
                                          actionId: actionID ?? ""))
     }
 
@@ -161,6 +169,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                         duration: duration,
                                         dataBrokerVersion: dataBrokerVersion,
                                         tries: tries,
+                                        parent: parentURL ?? "",
                                         actionId: actionID ?? ""))
     }
 
@@ -171,6 +180,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
                                          tries: tries,
+                                         parent: parentURL ?? "",
                                          actionId: actionID ?? ""))
     }
 
@@ -182,6 +192,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                    duration: duration,
                                    dataBrokerVersion: dataBrokerVersion,
                                    tries: tries,
+                                   parent: parentURL ?? "",
                                    actionId: actionID ?? ""))
     }
 
@@ -192,6 +203,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
                                          tries: tries,
+                                         parent: parentURL ?? "",
                                          actionId: actionID ?? ""))
     }
 
@@ -202,6 +214,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
                                          tries: tries,
+                                         parent: parentURL ?? "",
                                          actionId: actionID ?? ""))
     }
 
@@ -213,6 +226,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                      duration: duration,
                                      dataBrokerVersion: dataBrokerVersion,
                                      tries: tries,
+                                     parent: parentURL ?? "",
                                      actionId: actionID ?? ""))
     }
 
@@ -223,6 +237,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                      duration: duration,
                                      dataBrokerVersion: dataBrokerVersion,
                                      tries: tries,
+                                     parent: parentURL ?? "",
                                      actionId: actionID ?? ""))
     }
 
@@ -233,6 +248,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                           attemptId: attemptId,
                                           duration: totalDuration,
                                           tries: tries,
+                                          parent: parentURL ?? "",
                                           emailPattern: emailPattern,
                                           vpnConnectionState: vpnConnectionState,
                                           vpnBypassStatus: vpnBypassStatus))
@@ -243,10 +259,12 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                     dataBrokerVersion: dataBrokerVersion,
                                     attemptId: attemptId,
                                     duration: durationSinceStartTime(),
+                                    parent: parentURL ?? "",
                                     stage: stage.rawValue,
                                     tries: tries,
                                     emailPattern: emailPattern,
-                                    actionID: actionID,
+                                    actionId: actionID ?? "unknown",
+                                    actionType: actionType ?? "unknown",
                                     vpnConnectionState: vpnConnectionState,
                                     vpnBypassStatus: vpnBypassStatus))
     }
@@ -258,6 +276,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                            duration: duration,
                                            dataBrokerVersion: dataBrokerVersion,
                                            tries: tries,
+                                           parent: parentURL ?? "",
                                            actionId: actionID ?? ""))
     }
 
@@ -268,6 +287,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                               duration: duration,
                                               dataBrokerVersion: dataBrokerVersion,
                                               tries: tries,
+                                              parent: parentURL ?? "",
                                               actionId: actionID ?? ""))
     }
 
@@ -278,11 +298,27 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 #endif
 
     func fireScanSuccess(matchesFound: Int) {
-        handler.fire(.scanSuccess(dataBroker: dataBrokerURL, matchesFound: matchesFound, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
+        handler.fire(.scanSuccess(dataBroker: dataBrokerURL,
+                                  matchesFound: matchesFound,
+                                  duration: durationSinceStartTime(),
+                                  tries: 1,
+                                  isImmediateOperation: isImmediateOperation,
+                                  vpnConnectionState: vpnConnectionState,
+                                  vpnBypassStatus: vpnBypassStatus,
+                                  parent: parentURL ?? ""))
     }
 
-    func fireScanFailed() {
-        handler.fire(.scanFailed(dataBroker: dataBrokerURL, dataBrokerVersion: dataBrokerVersion, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
+    func fireScanNoResults() {
+        handler.fire(.scanNoResults(dataBroker: dataBrokerURL,
+                                    dataBrokerVersion: dataBrokerVersion,
+                                    duration: durationSinceStartTime(),
+                                    tries: 1,
+                                    isImmediateOperation: isImmediateOperation,
+                                    vpnConnectionState: vpnConnectionState,
+                                    vpnBypassStatus: vpnBypassStatus,
+                                    parent: parentURL ?? "",
+                                    actionID: actionID ?? "unknown",
+                                    actionType: actionType ?? "unknown"))
     }
 
     func fireScanError(error: Error) {
@@ -293,7 +329,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
             case .httpError(let httpCode):
                 if httpCode < 500 {
                     if httpCode == 404 {
-                        fireScanFailed()
+                        fireScanNoResults()
                         return
                     } else {
                         errorCategory = .clientError(httpCode: httpCode)
@@ -323,7 +359,10 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                 details: error.localizedDescription,
                 isImmediateOperation: isImmediateOperation,
                 vpnConnectionState: vpnConnectionState,
-                vpnBypassStatus: vpnBypassStatus
+                vpnBypassStatus: vpnBypassStatus,
+                parent: parentURL ?? "",
+                actionId: actionID ?? "unknown",
+                actionType: actionType ?? "unknown"
             )
         )
     }
@@ -340,8 +379,9 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.emailPattern = emailPattern
     }
 
-    func setLastActionId(_ actionID: String) {
-        self.actionID = actionID
+    func setLastAction(_ action: Action) {
+        self.actionID = action.id
+        self.actionType = action.actionType.rawValue
     }
 
     func resetTries() {

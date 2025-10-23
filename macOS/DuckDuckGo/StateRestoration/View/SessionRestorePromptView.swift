@@ -60,6 +60,7 @@ struct SessionRestorePromptView: View {
                         .frame(height: 28)
                 }
                 .buttonStyle(StandardButtonStyle())
+                .accessibilityIdentifier("session.restore.prompt.reject")
 
                 Button {
                     model.restoreSession()
@@ -71,6 +72,7 @@ struct SessionRestorePromptView: View {
                         .frame(height: 28)
                 }
                 .buttonStyle(DefaultActionButtonStyle(enabled: true))
+                .accessibilityIdentifier("session.restore.prompt.accept")
             }
         }
         .multilineTextAlignment(.center)

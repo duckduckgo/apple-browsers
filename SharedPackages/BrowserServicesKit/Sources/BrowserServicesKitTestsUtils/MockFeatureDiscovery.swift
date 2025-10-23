@@ -24,6 +24,7 @@ public class MockFeatureDiscovery: FeatureDiscovery {
 
     private var wasUsedBeforeValues: [WasUsedBeforeFeature: Bool] = [:]
     private var setWasUsedBeforeCalls: [WasUsedBeforeFeature] = []
+    private var daysSinceLastUsedValues: [WasUsedBeforeFeature: Int] = [:]
 
     public func setReturnValue(_ value: Bool, for feature: WasUsedBeforeFeature) {
         wasUsedBeforeValues[feature] = value
@@ -48,6 +49,14 @@ public class MockFeatureDiscovery: FeatureDiscovery {
 
     public func wasUsedBefore(_ feature: WasUsedBeforeFeature) -> Bool {
         return wasUsedBeforeValues[feature] ?? false
+    }
+
+    public func setDaysSinceLastUsedValue(_ value: Int, for feature: WasUsedBeforeFeature) {
+        daysSinceLastUsedValues[feature] = value
+    }
+
+    public func daysSinceLastUsed(_ feature: BrowserServicesKit.WasUsedBeforeFeature) -> Int? {
+        return daysSinceLastUsedValues[feature]
     }
 
     public func addToParams(_ params: [String: String], forFeature feature: WasUsedBeforeFeature) -> [String: String] {

@@ -1,33 +1,28 @@
-Hos DuckDuckGo mener vi at den beste metoden for å beskytte personopplysninger mot hackere, svindlere og selskaper som krenker personvernet, er å hindre at den blir samlet inn i det hele tatt. Det er derfor millioner av mennesker velger DuckDuckGo fremfor Chrome og andre nettlesere  til å søke og surfe på nettet. Den innebygde søkemotoren vår er som Google, men sporer aldri søkene dine. Og surfebeskyttelsene våre, som blokkering av annonsesporing og informasjonskapsler, hindrer andre selskaper i å samle inn dataene dine. Dessuten er nettleseren vår gratis. Vi tjener penger på søkeannonser som respekterer personvern, ikke ved å utnytte dataene dine. Ta tilbake kontroll over din personlige informasjon med nettleseren som er utviklet for databeskyttelse, ikke datainnsamling. 
+Hos DuckDuckGo mener vi at den beste måten å beskytte personopplysningene dine mot hackere, svindlere og personvernkrenkende selskaper på, er å hindre at de samles inn i det hele tatt. Det er derfor millioner av mennesker velger DuckDuckGo fremfor Chrome og andre nettlesere for å søke og surfe på nettet. Vår innebygde søkemotor er som Google, men sporer aldri søkene dine. Surfebeskyttelsene våre, som blokkering av annonsesporing og informasjonskapsler, hindrer andre selskaper i å samle inn opplysningene dine. Mens våre valgfrie integrerte AI-funksjoner, Search Assist og Duck.ai, er private og aldri bruker dataene dine til å trene AI. Og dessuten er nettleseren vår gratis – vi tjener penger på søkeannonser som respekterer personvernet, ikke ved å utnytte dataene dine. Ta tilbake kontrollen over personopplysningene dine med en nettleser som er utviklet for databeskyttelse, ikke datainnsamling. 
 
-HØYDEPUNKTER
-Beskytt søkene dine som standard: DuckDuckGo Search er innebygd, så du lett kan søke på nettet uten å bli sporet. 
+HØYDEPUNKTER 
+Beskytt søkene dine som standard: DuckDuckGo Search er innebygd, så du lett kan søke på nettet uten å bli sporet.  
+Beskytt nettleserhistorikken din: Vår Tracker Loading Protection blokkerer de fleste tredjepartssporere før de blir lastet, noe som i stor grad overgår hva de fleste populære nettlesere tilbyr som standard.  
+Chat privat med AI: I Duck.ai kan du ha private samtaler med tredjeparts AI-modeller, anonymisert av oss og aldri brukt til å trene AI.
+Sikre e-posten din (valgfritt): Bruk Email Protection til å blokkere de fleste e-postsporere og skjule den eksisterende e-postadressen din med @duck.com-adresser.   
+Se YouTube-videoer uten målrettede annonser: Duck Player beskytter deg mot målrettede annonser og informasjonskapsler med et distraksjonsfritt grensesnitt som bruker YouTubes strengeste personverninnstillinger for innebygd video. 
+Fremtving kryptering automatisk: Beskytt dataene dine mot nettverks- og wifi-snokere ved å tvinge mange nettsteder til å bruke en HTTPS-tilkobling.  
+Unngå fingerprinting: Gjør det vanskeligere for selskaper å opprette en unik identifikator for deg ved å blokkere forsøk på å kombinere informasjon om nettleseren og enheten din.  
+Synkroniser og sikkerhetskopier på en sikker måte (valgfritt): Synkroniser krypterte bokmerker og passord mellom enhetene dine. 
+Tøm fane- og nettleserdata på et blunk med Fire Button. 
+Bli kvitt popup-vinduer for informasjonskapsler og angi preferansene dine automatisk til å minimere informasjonskapsler og maksimere personvernet. 
+Og mange flere beskyttelser som ikke er tilgjengelige på de fleste nettlesere. 
 
-Beskytt nettleserhistorikken din: Vår tredjeparts Tracker Loading Protection blokkerer de fleste sporere før de blir lastet, noe som i stor grad overgår hva de fleste populære nettlesere tilbyr som standard. 
+DuckDuckGo-abonnement
+Abonnenter får: 
+• Vår VPN: Sikre tilkoblingen din på opptil fem enheter. 
+• Tilgang til avanserte AI-modeller i Duck.ai: Chat privat med AI-modeller laget for komplekse oppgaver.
+• Personal Information Removal: Finn og fjern personopplysninger fra nettsteder som lagrer og selger dem.
+• Identity Theft Restoration: Hvis identiteten din blir stjålet, hjelper vi deg med å gjenopprette den.
 
-Sikre e-posten din (valgfritt): Bruk Email Protection til å blokkere de fleste e-postsporere og skjule den eksisterende e-postadressen din med @duck.com-adresser.  
-
-Se YouTube-videoer uten målrettede annonser: Duck Player beskytter deg mot målrettede annonser og informasjonskapsler med et forstyrrelsesfritt grensesnitt som bruker YouTubes strengeste personverninnstillinger for innebygd video.
-
-Fremtving kryptering automatisk: Beskytt dataene dine mot nettverks- og wifi-snokere ved å tvinge mange nettsteder til å bruke en HTTPS-tilkobling. 
-
-Unngå fingerprinting: Gjør det vanskeligere for selskaper å opprette en unik identifikator for deg ved å blokkere forsøk på å kombinere informasjon om nettleseren og enheten din. 
-
-Synkroniser og sikkerhetskopier på en sikker måte (valgfritt): Synkroniser krypterte bokmerker og passord mellom alle enhetene dine.
-
-Tøm fane- og nettleserdata på et blunk med Fire Button.
-
-Bli kvitt popup-vinduer for informasjonskapsler og angi preferansene dine automatisk til å minimere informasjonskapsler og maksimere personvernet.
-
-Og mange flere beskyttelser som ikke er tilgjengelige på de fleste nettlesere, selv i privat surfemodus, inkludert beskyttelse mot lenkesporing, Global Privacy Control (GPC) m.m.
-
-Du behøver ikke å vente med å ta kontroll over din personlige informasjon! Bli en av de millionene av mennesker som bruker DuckDuckGo til å beskytte sine søk og sin surfing og e-post hver dag. 
-
-Les mer om våre gratis sporingsbeskyttelser på https://help.duckduckgo.com/privacy/web-tracking-protections
-
-Personvernerklæring: https://duckduckgo.com/privacy/ 
-
-Vilkår for bruk: https://duckduckgo.com/terms
-
-Merknad om tredjeparts sporingsbeskyttelse og søkeannonser: Selv om det er noen begrensninger etter klikk på søkeannonser, ser du på annonser anonymt i DuckDuckGo-søk. Les mer her https://help.duckduckgo.com/privacy/web-tracking-protections
-
+Priser og vilkår for DuckDuckGo-abonnement   
+Apple-kontoen din blir automatisk belastet inntil du sier opp abonnementet. Dette kan du gjøre i appinnstillingene. Det er valgfritt om du vil oppgi en e-postadresse for å aktivere abonnementet ditt på andre enheter, og vi bruker den e-postadressen kun til å verifisere abonnementet. Se vilkår for bruk og personvernerklæring på https://duckduckgo.com/pro/privacy-terms 
+Les mer om våre gratis sporingsbeskyttelser på https://help.duckduckgo.com/privacy/web-tracking-protections 
+Personvernerklæring: https://duckduckgo.com/privacy/  
+Vilkår for bruk: https://duckduckgo.com/terms 
+Merknad om beskyttelse mot sporing fra tredjeparter og søkeannonser: Selv om det finnes noen begrensninger etter klikk på søkeannonser, ser du på annonser anonymt i DuckDuckGo-søk. Les mer her https://help.duckduckgo.com/privacy/web-tracking-protections

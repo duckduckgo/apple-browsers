@@ -21,6 +21,7 @@ import Core
 import UIKit
 
 import BrowserServicesKit
+import Subscription
 
 /// Represents the transient state where the app is being prepared for user interaction after being launched by the system.
 /// - Usage:
@@ -87,6 +88,28 @@ struct Launching: LaunchingHandling {
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         reportingService.syncService = syncService
         autofillService.syncService = syncService
+
+        let daxDialogs = configuration.onboardingConfiguration.daxDialogs
+
+        // Service to handle Win-back offer
+#if DEBUG || ALPHA
+        let winBackOfferDebugStore = WinBackOfferDebugStore(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+        let dateProvider: () -> Date = { winBackOfferDebugStore.simulatedTodayDate }
+#else
+        let dateProvider: () -> Date = Date.init
+#endif
+        
+        let winBackOfferVisibilityManager = WinBackOfferVisibilityManager(
+            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            winbackOfferStore: WinbackOfferStore(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore),
+            winbackOfferFeatureFlagProvider: WinBackOfferFeatureFlagger(featureFlagger: featureFlagger),
+            dateProvider: dateProvider
+        )
+        let winBackOfferService = WinBackOfferService(
+            visibilityManager: winBackOfferVisibilityManager,
+            isOnboardingCompletedProvider: { !daxDialogs.isEnabled }
+        )
+
         let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                                             database: configuration.persistentStoresConfiguration.database,
                                                             appSettings: appSettings,
@@ -94,7 +117,8 @@ struct Launching: LaunchingHandling {
                                                             configurationStore: AppDependencyProvider.shared.configurationStore,
                                                             privacyConfigurationManager: privacyConfigurationManager,
                                                             configurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
-                                                            syncService: syncService.sync)
+                                                            syncService: syncService.sync,
+                                                            winBackOfferService: winBackOfferService)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
@@ -103,8 +127,6 @@ struct Launching: LaunchingHandling {
             featureFlagger: featureFlagger,
             subscriptionBridge: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
         )
-
-        let daxDialogs = configuration.onboardingConfiguration.daxDialogs
 
         // Service to display the Default Browser prompt.
         let defaultBrowserPromptService = DefaultBrowserPromptService(
@@ -142,7 +164,8 @@ struct Launching: LaunchingHandling {
                                               systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
                                               daxDialogsManager: daxDialogs,
                                               dbpIOSPublicInterface: dbpService.dbpIOSPublicInterface,
-                                              launchSourceManager: launchSourceManager)
+                                              launchSourceManager: launchSourceManager,
+                                              winBackOfferService: winBackOfferService)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
@@ -166,7 +189,8 @@ struct Launching: LaunchingHandling {
             notificationServiceManager: notificationServiceManager,
             privacyConfigurationManager: privacyConfigurationManager
         )
-
+        
+        winBackOfferService.setURLHandler(mainCoordinator)
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
@@ -190,6 +214,7 @@ struct Launching: LaunchingHandling {
                                statisticsService: statisticsService,
                                keyValueFileStoreService: appKeyValueFileStoreService,
                                defaultBrowserPromptService: defaultBrowserPromptService,
+                               winBackOfferService: winBackOfferService,
                                systemSettingsPiPTutorialService: systemSettingsPiPTutorialService,
                                inactivityNotificationSchedulerService: inactivityNotificationSchedulerService,
                                wideEventService: wideEventService,

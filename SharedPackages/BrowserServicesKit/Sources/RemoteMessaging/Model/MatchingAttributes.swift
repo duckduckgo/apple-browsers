@@ -231,6 +231,18 @@ struct SyncEnabledMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
+struct WinBackOfferUrgencyMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+struct DaysSinceDuckAIUsedMatchingAttribute: NumericRangeMatching {
+    var min: Int = MatchingAttributeDefaults.intDefaultValue
+    var max: Int = MatchingAttributeDefaults.intDefaultMaxValue
+    var value: Int = MatchingAttributeDefaults.intDefaultValue
+    var fallback: Bool?
+}
+
 struct UnknownMatchingAttribute: MatchingAttribute, Equatable {
     var fallback: Bool?
 

@@ -212,8 +212,13 @@ final class AppStateRestorationManager: NSObject {
     }
 
     private func detectUnexpectedAppTermination() {
-#if DEBUG || REVIEW
-        guard AppVersion.runType != .uiTests else {
+#if DEBUG
+        guard AppVersion.runType != .normal else {
+            return
+        }
+#endif
+#if REVIEW
+        guard AppVersion.runType != .uiTests || ProcessInfo.processInfo.arguments.contains("CRASH_RESTORE_TEST") else {
             return
         }
 #endif

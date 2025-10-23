@@ -1,5 +1,6 @@
 //
-//  DateProvider.swift
+//  MockWinBackOfferVisibilityManager.swift
+//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,13 +18,22 @@
 //
 
 import Foundation
+import Subscription
 
-public protocol DateProviding {
-    var currentDate: Date { get }
-}
+final class MockWinBackOfferVisibilityManager: WinBackOfferVisibilityManaging {
+    var isOfferAvailable = false
+    var shouldShowUrgencyMessage = false
+    var shouldShowLaunchMessage = false
+    var didDismissUrgencyMessage = false
 
-extension Date: DateProviding {
-    public var currentDate: Date {
-        return self
+    var lastReceivedLaunchMessagePresented = false
+    var lastReceivedOfferRedeemed = false
+
+    func setLaunchMessagePresented(_ newValue: Bool) {
+        lastReceivedLaunchMessagePresented = newValue
+    }
+
+    func setOfferRedeemed(_ newValue: Bool) {
+        lastReceivedOfferRedeemed = newValue
     }
 }

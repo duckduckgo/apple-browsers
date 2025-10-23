@@ -1,5 +1,5 @@
 //
-//  ScanWideEventData.swift
+//  OptOutSubmissionWideEventData.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,16 +17,11 @@
 //
 
 import Foundation
+import PixelKit
 
-public final class ScanWideEventData: WideEventData {
-    public static let pixelName = "pir_scan_attempt"
-    private static let featureName = "pir-scan-attempt"
-
-    public enum AttemptType: String, Codable {
-        case newScan = "new-data"
-        case maintenanceScan = "regular-check"
-        case confirmOptOutScan = "removal-verification"
-    }
+public final class OptOutSubmissionWideEventData: WideEventData {
+    public static let pixelName = "pir_opt_out_submission"
+    private static let featureName = "pir-opt-out-submission"
 
     public var globalData: WideEventGlobalData
     public var contextData: WideEventContextData
@@ -34,9 +29,7 @@ public final class ScanWideEventData: WideEventData {
 
     public var dataBrokerURL: String
     public var dataBrokerVersion: String?
-    public var attemptType: AttemptType
-    public var attemptNumber: Int
-    public var scanInterval: WideEvent.MeasuredInterval?
+    public var submissionInterval: WideEvent.MeasuredInterval?
 
     public var errorData: WideEventErrorData?
 
@@ -45,46 +38,44 @@ public final class ScanWideEventData: WideEventData {
                 appData: WideEventAppData = WideEventAppData(),
                 dataBrokerURL: String,
                 dataBrokerVersion: String?,
-                attemptType: AttemptType,
-                attemptNumber: Int,
-                scanInterval: WideEvent.MeasuredInterval) {
+                submissionInterval: WideEvent.MeasuredInterval? = nil) {
         self.globalData = globalData
         self.contextData = contextData
         self.appData = appData
         self.dataBrokerURL = dataBrokerURL
         self.dataBrokerVersion = dataBrokerVersion
-        self.attemptType = attemptType
-        self.attemptNumber = attemptNumber
-        self.scanInterval = scanInterval
+        self.submissionInterval = submissionInterval
     }
 }
 
-extension ScanWideEventData {
+extension OptOutSubmissionWideEventData {
+
+    public enum StatusReason: String {
+        case submissionWindowExpired = "submission_window_expired"
+        case recordFoundDateMissing = "record_found_date_missing"
+    }
+
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
         parameters[WideEventParameter.Feature.name] = Self.featureName
-        parameters[WideEventParameter.PIR.ScanFeature.dataBrokerURL] = dataBrokerURL
+        parameters[DBPWideEventParameter.OptOutSubmissionFeature.dataBrokerURL] = dataBrokerURL
 
         if let dataBrokerVersion {
-            parameters[WideEventParameter.PIR.ScanFeature.dataBrokerVersion] = dataBrokerVersion
+            parameters[DBPWideEventParameter.OptOutSubmissionFeature.dataBrokerVersion] = dataBrokerVersion
         }
 
-        parameters[WideEventParameter.PIR.ScanFeature.attemptType] = attemptType.rawValue
-        parameters[WideEventParameter.PIR.ScanFeature.attemptNumber] = String(attemptNumber)
-
-        if let duration = scanInterval?.durationMilliseconds {
-            parameters[WideEventParameter.PIR.ScanFeature.scanLatency] = String(duration)
+        if let duration = submissionInterval?.durationMilliseconds {
+            parameters[DBPWideEventParameter.OptOutSubmissionFeature.submissionLatency] = String(duration)
         }
 
         return parameters
     }
-
 }
 
-extension ScanWideEventData: WideEventDataMeasuringInterval {
+extension OptOutSubmissionWideEventData: WideEventDataMeasuringInterval {
     public var measuredInterval: WideEvent.MeasuredInterval? {
-        get { scanInterval }
-        set { scanInterval = newValue }
+        get { submissionInterval }
+        set { submissionInterval = newValue }
     }
 }

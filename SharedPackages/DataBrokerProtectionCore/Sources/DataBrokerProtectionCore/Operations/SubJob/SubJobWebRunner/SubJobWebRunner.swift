@@ -82,6 +82,8 @@ public extension SubJobWebRunning {
     func runNextAction(_ action: Action) async {
         let stepType = actionsHandler?.stepType
 
+        stageCalculator.setLastAction(action)
+
         switch action {
         case is GetCaptchaInfoAction:
             stageCalculator.setStage(.captchaParse)
@@ -370,6 +372,7 @@ public extension SubJobWebRunning {
         pixelHandler.fire(.scanStage(dataBroker: context.dataBroker.url,
                                      dataBrokerVersion: context.dataBroker.version,
                                      tries: stageCalculator.tries,
+                                     parent: context.dataBroker.parent ?? "",
                                      actionId: action.id,
                                      actionType: action.actionType.rawValue))
     }

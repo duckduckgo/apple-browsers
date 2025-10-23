@@ -211,6 +211,7 @@ struct BrokerProfileOptOutSubJob {
             dataBrokerURL: brokerProfileQueryData.dataBroker.url,
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
             handler: pixelHandler,
+            parentURL: brokerProfileQueryData.dataBroker.parent,
             vpnConnectionState: vpnConnectionState,
             vpnBypassStatus: vpnBypassStatus
         )

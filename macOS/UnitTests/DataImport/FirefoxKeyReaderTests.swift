@@ -79,8 +79,8 @@ class FirefoxKeyReaderTests: XCTestCase {
         let reader = FirefoxEncryptionKeyReader()
         let result = reader.getEncryptionKey(key4DatabaseURL: databaseURL, primaryPassword: "")
 
-        if case let .success(data) = result {
-            XCTAssertEqual(data.count, 24)
+        if case let .success(keys) = result {
+            XCTAssertEqual(keys.tripleDesKey?.count, 24)
         } else {
             XCTFail("Failed to read decryption key")
         }
@@ -91,8 +91,8 @@ class FirefoxKeyReaderTests: XCTestCase {
         let reader = FirefoxEncryptionKeyReader()
         let result = reader.getEncryptionKey(key4DatabaseURL: databaseURL, primaryPassword: "")
 
-        if case let .success(data) = result {
-            XCTAssertEqual(data.count, 24)
+        if case let .success(keys) = result {
+            XCTAssertEqual(keys.tripleDesKey?.count, 24)
         } else {
             XCTFail("Failed to read decryption key")
         }
@@ -103,8 +103,8 @@ class FirefoxKeyReaderTests: XCTestCase {
         let reader = FirefoxEncryptionKeyReader()
         let result = reader.getEncryptionKey(key4DatabaseURL: databaseURL, primaryPassword: "testpassword")
 
-        if case let .success(data) = result {
-            XCTAssertEqual(data.count, 24)
+        if case let .success(keys) = result {
+            XCTAssertEqual(keys.tripleDesKey?.count, 24)
         } else {
             XCTFail("Failed to read decryption key")
         }

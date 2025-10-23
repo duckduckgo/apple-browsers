@@ -177,6 +177,6 @@ extension NSCollectionView {
 
 extension NSCollectionView {
     func isIndexPathValid(_ indexPath: IndexPath) -> Bool {
-        return indexPath.section < numberOfSections && indexPath.item < numberOfItems(inSection: indexPath.section)
+        return (0..<numberOfSections).contains(indexPath.section) && (0..<numberOfItems(inSection: indexPath.section)).contains(indexPath.item)
     }
 }

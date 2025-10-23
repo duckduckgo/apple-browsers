@@ -176,7 +176,7 @@ public protocol EmailConfirmationDataDelegate: AnyObject {
     func checkForEmailConfirmationData() async
 }
 
-public protocol WideEventsDelegate: AnyObject {
+public protocol DBPWideEventsDelegate: AnyObject {
     func sweepWideEvents()
 }
 
@@ -521,7 +521,7 @@ extension DataBrokerProtectionAgentManager: EmailConfirmationDataDelegate {
     }
 }
 
-extension DataBrokerProtectionAgentManager: WideEventsDelegate {
+extension DataBrokerProtectionAgentManager: DBPWideEventsDelegate {
     public func sweepWideEvents() {
         wideEventSweeper?.sweep()
     }

@@ -42,9 +42,9 @@ final class OptOutConfirmationWideEventRecorder: OptOutWideEventRecording {
             intervalStart: recordFoundDate,
             makeData: { global, interval in
                 OptOutConfirmationWideEventData(globalData: global,
-                                                 dataBrokerURL: dataBrokerURL,
-                                                 dataBrokerVersion: dataBrokerVersion,
-                                                 confirmationInterval: interval)
+                                                dataBrokerURL: dataBrokerURL,
+                                                dataBrokerVersion: dataBrokerVersion,
+                                                confirmationInterval: interval)
             }
         ) else { return nil }
 

@@ -251,17 +251,9 @@ final class TabCollectionViewModel: NSObject {
 
     // MARK: - Selection
 
-    @discardableResult func select(at index: TabIndex, resetReturnToPreviousActiveTab: Bool = true, forceChange: Bool = false) -> Bool {
-        if resetReturnToPreviousActiveTab {
-            shouldReturnToPreviousActiveTab = false
-        }
-
-        switch index {
-        case .unpinned(let i):
-            return selectUnpinnedTab(at: i, forceChange: forceChange)
-        case .pinned(let i):
-            return selectPinnedTab(at: i, forceChange: forceChange)
-        }
+    @discardableResult func select(at index: TabIndex, forceChange: Bool = false) -> Bool {
+        shouldReturnToPreviousActiveTab = false
+        return selectWithoutResettingState(at: index, forceChange: forceChange)
     }
 
     @discardableResult func select(tab: Tab, forceChange: Bool = false) -> Bool {
@@ -319,6 +311,15 @@ final class TabCollectionViewModel: NSObject {
         select(at: newSelectionIndex)
         if newSelectionIndex.isUnpinnedTab {
             delegate?.tabCollectionViewModel(self, didSelectAt: newSelectionIndex.item)
+        }
+    }
+
+    @discardableResult private func selectWithoutResettingState(at index: TabIndex, forceChange: Bool = false) -> Bool {
+        switch index {
+        case .unpinned(let i):
+            return selectUnpinnedTab(at: i, forceChange: forceChange)
+        case .pinned(let i):
+            return selectPinnedTab(at: i, forceChange: forceChange)
         }
     }
 
@@ -817,7 +818,7 @@ final class TabCollectionViewModel: NSObject {
         guard changesEnabled, index.isInSameSection(as: newIndex), let tabCollection = tabCollection(for: index) else { return }
 
         tabCollection.moveTab(at: index.item, to: newIndex.item)
-        select(at: newIndex, resetReturnToPreviousActiveTab: false)
+        selectWithoutResettingState(at: newIndex)
 
         delegate?.tabCollectionViewModel(self, didMoveTabAt: index, to: newIndex)
     }

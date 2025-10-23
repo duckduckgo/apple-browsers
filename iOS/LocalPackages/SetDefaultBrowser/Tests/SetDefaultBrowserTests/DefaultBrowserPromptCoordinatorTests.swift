@@ -104,26 +104,40 @@ final class DefaultBrowserPromptCoordinatorTests {
     }
 
     @Test(
-        "Check Prompt Is Set Seen When Prompt Is Not Nil",
+        "Check Prompt Occurrency Is Incremented for Active Modal When Prompt Is Not Nil",
         arguments: [
             DefaultBrowserPromptType.active(.firstModal),
             .active(.secondModal),
             .active(.subsequentModal),
-            .inactive
         ]
     )
-    func whenPromptIsNotNilThenPromptIsSetSeen(promptType: DefaultBrowserPromptType) {
+    func whenPromptIsNotNilAndPromptIsActiveThenIncrementOccurrency(promptType: DefaultBrowserPromptType) {
         // GIVEN
         let now = Date(timeIntervalSince1970: 1750896000) // 26 June 2025 12:00:00 AM GMT
         dateProviderMock.setNowDate(now)
         promptTypeDeciderMock.promptToReturn = promptType
-        #expect(promptStoreMock.lastModalShownDate == nil)
+        #expect(promptStoreMock.modalShownOccurrences == 0)
 
         // WHEN
         _ = sut.getPrompt()
 
         // THEN
-        #expect(promptStoreMock.lastModalShownDate == now.timeIntervalSince1970)
+        #expect(promptStoreMock.modalShownOccurrences == 1)
+    }
+
+    @Test("Check Inactive Prompt Seen Flag Is Set for Inactive Modal When Prompt Is Not Nil")
+    func whenPromptIsNotNilAndPromptIsInactiveThenSetSeen() {
+        // GIVEN
+        let now = Date(timeIntervalSince1970: 1750896000) // 26 June 2025 12:00:00 AM GMT
+        dateProviderMock.setNowDate(now)
+        promptTypeDeciderMock.promptToReturn = .inactive
+        #expect(!promptStoreMock.hasInactiveModalShown)
+
+        // WHEN
+        _ = sut.getPrompt()
+
+        // THEN
+        #expect(promptStoreMock.hasInactiveModalShown)
     }
 
     @Test(

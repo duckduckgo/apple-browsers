@@ -120,11 +120,9 @@ private extension DefaultBrowserPromptCoordinator {
 
     func setPromptSeen(prompt: DefaultBrowserPromptType) {
         let now = dateProvider()
-        // The last shown date is stored regardless of the prompt type.
         // When displaying a prompt, we calculate the number of active days to determine if an active user prompt should be shown based on the last prompt (active/inactive) the user has seen.
         // We increment the prompt counter only for active prompts, as this counter helps decide whether to show the first or second prompt.
         // For inactive prompts, we set a flag instead, since they are only displayed once.
-        promptStore.lastModalShownDate = now.timeIntervalSince1970
         if prompt == .inactive {
             promptStore.hasInactiveModalShown = true
         } else {

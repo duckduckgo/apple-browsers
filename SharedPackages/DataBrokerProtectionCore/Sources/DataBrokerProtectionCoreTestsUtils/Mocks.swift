@@ -1041,7 +1041,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
 
     public func brokerProfileQueryData(for brokerId: Int64, and profileQueryId: Int64) throws -> BrokerProfileQueryData? {
         wasBrokerProfileQueryDataCalled = true
-        
+
         if let brokerProfileQueryDataError {
             throw brokerProfileQueryDataError
         }

@@ -135,14 +135,14 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let notificationCenter = NotificationCenter()
         var notificationReceived = false
         var receivedObject: Any?
-        
+
         let observer = notificationCenter.addObserver(forName: DataBrokerProtectionNotifications.didFinishScan,
                                                       object: nil,
                                                       queue: nil) { notification in
             notificationReceived = true
             receivedObject = notification.object
         }
-        
+
         defer {
             notificationCenter.removeObserver(observer)
         }
@@ -768,7 +768,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                           historyEvents: [historyEvent],
                                           attemptCount: 0,
                                           extractedProfile: ExtractedProfile(id: extractedProfileId))
-        
+
         let brokerData = BrokerProfileQueryData(dataBroker: .mock,
                                                 profileQuery: .mock,
                                                 scanJobData: .init(brokerId: identifiers.brokerId,
@@ -806,7 +806,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                           attemptCount: 0,
                                           submittedSuccessfullyDate: nil,
                                           extractedProfile: ExtractedProfile(id: extractedProfileId))
-        
+
         let brokerData = BrokerProfileQueryData(dataBroker: .mock,
                                                 profileQuery: .mock,
                                                 scanJobData: .init(brokerId: identifiers.brokerId,

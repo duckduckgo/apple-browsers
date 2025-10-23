@@ -427,6 +427,8 @@ final class CreditCardsInitialSyncResponseHandlerTests: CreditCardsProviderTests
     }
 
     func testThatCardsWithoutExpiryAreDeduplicated() async throws {
+        try reinitializeVaultUsingBitFlipCryptoProvider()
+
         try secureVault.inDatabaseTransaction { database in
             let creditCard = SecureVaultModels.CreditCard(
                 title: "Local Card",
@@ -467,9 +469,12 @@ final class CreditCardsInitialSyncResponseHandlerTests: CreditCardsProviderTests
         XCTAssertEqual(creditCards.first?.cardSecurityCode, "123")
         XCTAssertNil(creditCards.first?.expirationMonth)
         XCTAssertNil(creditCards.first?.expirationYear)
+        XCTAssertEqual(creditCards.first?.cardNumber, "4111111111111111")
     }
 
     func testThatCardsWithoutExpiryAreNotDeduplicatedWhenFieldsDiffer() async throws {
+        try reinitializeVaultUsingBitFlipCryptoProvider()
+
         try secureVault.inDatabaseTransaction { database in
             let creditCard = SecureVaultModels.CreditCard(
                 title: "Local Card",
@@ -508,6 +513,7 @@ final class CreditCardsInitialSyncResponseHandlerTests: CreditCardsProviderTests
         XCTAssertEqual(creditCards[0].title, "Remote Card")
         XCTAssertEqual(creditCards[0].cardholderName, "Jane Smith")
         XCTAssertEqual(creditCards[0].cardSecurityCode, "456")
+        XCTAssertEqual(creditCards[0].cardNumber, "4111111111111111")
     }
 
     func testThatMultipleIncomingCardsWithSameNumberAreNotDeduplicatedAgainstEachOther() async throws {

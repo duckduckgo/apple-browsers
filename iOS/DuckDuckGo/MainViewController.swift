@@ -153,12 +153,6 @@ class MainViewController: UIViewController {
     weak var tabSwitcherController: TabSwitcherViewController?
     var tabSwitcherButton: TabSwitcherButton?
 
-    /// Do not reference directly, use `presentedMenuButton`
-    let menuButton = MenuButton()
-    var presentedMenuButton: MenuButton {
-        AppWidthObserver.shared.isLargeWidth ? viewCoordinator.omniBar.barView.menuButtonContent : menuButton
-    }
-
     let gestureBookmarksButton = GestureToolbarButton()
 
     private lazy var fireButtonAnimator: FireButtonAnimator = FireButtonAnimator(appSettings: appSettings)
@@ -1061,7 +1055,6 @@ class MainViewController: UIViewController {
 
     private func attachOmniBar() {
         viewCoordinator.omniBar.omniDelegate = self
-        viewCoordinator.omniBar.barView.menuButtonContent.delegate = self
     }
     
     fileprivate func attachHomeScreen(isNewTab: Bool = false, allowingKeyboard: Bool = false) {
@@ -1549,21 +1542,11 @@ class MainViewController: UIViewController {
         if newTabPageViewController != nil {
             viewCoordinator.omniBar.barView.menuButton.accessibilityLabel = UserText.bookmarksButtonHint
             viewCoordinator.updateToolbarWithState(.newTab)
-            presentedMenuButton.setState(.menuImage, animated: false)
-
         } else {
-            let expectedState: MenuButton.State
-            if presentedViewController is BrowsingMenuViewController {
-                expectedState = .closeImage
-            } else {
-                expectedState = .menuImage
-            }
             viewCoordinator.omniBar.barView.menuButton.accessibilityLabel = UserText.menuButtonHint
-
             if let currentTab = currentTab {
                 viewCoordinator.updateToolbarWithState(.pageLoaded(currentTab: currentTab))
             }
-            presentedMenuButton.setState(expectedState, animated: false)
         }
     }
 
@@ -2599,7 +2582,6 @@ extension MainViewController: OmniBarDelegate {
             }
         }
 
-        self.presentedMenuButton.setState(.closeImage, animated: true)
         tab.didLaunchBrowsingMenu()
 
         if newTabPageViewController != nil {
@@ -3347,19 +3329,6 @@ extension MainViewController: TabSwitcherButtonDelegate {
             ViewHighlighter.hideAll()
             self.segueToTabSwitcher()
         }
-    }
-}
-
-extension MainViewController: MenuButtonDelegate {
-    
-    func showMenu(_ button: MenuButton) {
-        onMenuPressed()
-    }
-    
-    func showBookmarks(_ button: MenuButton) {
-        Pixel.fire(pixel: .bookmarksButtonPressed,
-                   withAdditionalParameters: [PixelParameters.originatedFromMenu: "0"])
-        onBookmarksPressed()
     }
 }
 

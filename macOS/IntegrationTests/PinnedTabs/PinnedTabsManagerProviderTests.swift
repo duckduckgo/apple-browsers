@@ -20,13 +20,6 @@ import XCTest
 import Combine
 @testable import DuckDuckGo_Privacy_Browser
 
-class MockTabsPreferencesPersistor: TabsPreferencesPersistor {
-    var preferNewTabsToWindows: Bool = false
-    var switchToNewTabWhenOpened: Bool = false
-    var newTabPosition: NewTabPosition = .atEnd
-    var sharedPinnedTabs: Bool = false
-}
-
 final class PinnedTabsManagerProviderTests: XCTestCase {
 
     private var provider: PinnedTabsManagerProvider!

@@ -17,6 +17,7 @@
 //
 
 import BrowserServicesKit
+import Common
 import SharedTestUtilities
 import XCTest
 
@@ -31,7 +32,16 @@ final class OnboardingNavigatingTests: XCTestCase {
     override func setUp() {
         super.setUp()
         onboardingNavigation = Application.appDelegate.windowControllersManager
-        fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
+        fireCoordinator = FireCoordinator(tld: TLD(),
+                                          featureFlagger: Application.appDelegate.featureFlagger,
+                                          historyCoordinating: HistoryCoordinatingMock(),
+                                          visualizeFireAnimationDecider: nil,
+                                          onboardingContextualDialogsManager: nil,
+                                          fireproofDomains: MockFireproofDomains(),
+                                          faviconManagement: FaviconManagerMock(),
+                                          windowControllersManager: WindowControllersManagerMock(),
+                                          pixelFiring: nil,
+                                          historyProvider: MockHistoryViewDataProvider())
         assert(Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty)
     }
 

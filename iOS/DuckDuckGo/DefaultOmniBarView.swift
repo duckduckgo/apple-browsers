@@ -232,8 +232,6 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     let forwardButtonView = BrowserChromeButton()
     let backButtonView = BrowserChromeButton()
 
-    var menuButtonContent: MenuButton = MenuButton()
-
     var searchContainerWidth: CGFloat { searchAreaView.frame.width }
 
     private var masksTop: Bool = true

@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
-@testable import DuckDuckGo_Privacy_Browser
-import SwiftUI
 import Persistence
+import SharedTestUtilities
+import SwiftUI
+import XCTest
+
+@testable import DuckDuckGo_Privacy_Browser
 
 class OnboardingManagerTests: XCTestCase {
 

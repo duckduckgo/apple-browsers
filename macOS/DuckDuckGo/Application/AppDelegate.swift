@@ -101,6 +101,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let featureFlagger: FeatureFlagger
     let visualizeFireSettingsDecider: VisualizeFireSettingsDecider
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
+    let contentScopePreferences: ContentScopePreferences
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
@@ -117,6 +118,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
     let subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
+    let autoconsentDailyStats: AutoconsentDailyStatsManaging
 
     let appearancePreferences: AppearancePreferences
     let dataClearingPreferences: DataClearingPreferences
@@ -156,7 +158,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         featureFlagger: featureFlagger,
         windowControllersManager: windowControllersManager,
         tabsPreferences: TabsPreferences.shared,
-        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration)
+        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
+        winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -241,6 +244,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return DataBrokerProtectionSubscriptionEventHandler(featureDisabler: DataBrokerProtectionFeatureDisabler(),
                                                             authenticationManager: authManager,
                                                             pixelHandler: DataBrokerProtectionMacOSPixelsHandler())
+    }()
+
+    // MARK: - Win-back Campaign
+    lazy var winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = {
+        #if DEBUG || REVIEW
+        let winBackOfferDebugStore = WinBackOfferDebugStore()
+        let dateProvider: () -> Date = { winBackOfferDebugStore.simulatedTodayDate }
+        #else
+        let dateProvider: () -> Date = Date.init
+        #endif
+
+        return WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
+                                            winbackOfferStore: winbackOfferStore,
+                                            winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider,
+                                            dateProvider: dateProvider)
+    }()
+
+    lazy var winbackOfferStore: WinbackOfferStoring = {
+        return WinbackOfferStore(keyValueStore: keyValueStore)
+    }()
+
+    private lazy var winbackOfferFeatureFlagProvider: WinBackOfferFeatureFlagProvider = {
+        return WinBackOfferFeatureFlagger(featureFlagger: featureFlagger)
+    }()
+
+    lazy var winBackOfferPromptPresenter: WinBackOfferPromptPresenting = {
+        return WinBackOfferPromptPresenter(visibilityManager: winBackOfferVisibilityManager)
+    }()
+
+    lazy var winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator = {
+        return WinBackOfferPromotionViewCoordinator(winBackOfferVisibilityManager: winBackOfferVisibilityManager)
     }()
 
     // MARK: - Wide Event Service
@@ -427,6 +461,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.featureFlagger = featureFlagger
 
+        contentScopePreferences = ContentScopePreferences()
+
         aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
         aiChatMenuConfiguration = AIChatMenuConfiguration(
             storage: DefaultAIChatPreferencesStorage(),
@@ -504,9 +540,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
         let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
             PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
-                                                                             accessError: error,
-                                                                             source: KeychainErrorSource.shared,
-                                                                             authVersion: KeychainErrorAuthVersion.v2),
+                                                                                 accessError: error,
+                                                                                 source: KeychainErrorSource.shared,
+                                                                                 authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
 
@@ -626,6 +662,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionManager: subscriptionAuthV1toV2Bridge
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
+        self.autoconsentDailyStats = AutoconsentDailyStats(keyValueStore: keyValueStore, featureFlagger: featureFlagger)
 
         themeManager = ThemeManager(appearancePreferences: appearancePreferences, internalUserDecider: internalUserDecider)
 
@@ -649,7 +686,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let aiChatHistoryCleaner = AIChatHistoryCleaner(featureFlagger: featureFlagger,
                                                         aiChatMenuConfiguration: aiChatMenuConfiguration,
-                                                        featureDiscovery: DefaultFeatureDiscovery())
+                                                        featureDiscovery: DefaultFeatureDiscovery(),
+                                                        privacyConfig: privacyConfigurationManager)
         dataClearingPreferences = DataClearingPreferences(
             fireproofDomains: fireproofDomains,
             faviconManager: faviconManager,
@@ -662,7 +700,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         startupPreferences = StartupPreferences(persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore), appearancePreferences: appearancePreferences)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(themeManager: themeManager, appearancePreferences: appearancePreferences)
 
-        fireCoordinator = FireCoordinator(tld: tld, featureFlagger: featureFlagger)
+        fireCoordinator = FireCoordinator(tld: tld,
+                                          featureFlagger: featureFlagger,
+                                          historyCoordinating: historyCoordinator,
+                                          visualizeFireAnimationDecider: visualizeFireSettingsDecider,
+                                          onboardingContextualDialogsManager: { Application.appDelegate.onboardingContextualDialogsManager },
+                                          fireproofDomains: fireproofDomains,
+                                          faviconManagement: faviconManager,
+                                          windowControllersManager: windowControllersManager,
+                                          pixelFiring: PixelKit.shared)
 
         var appContentBlocking: AppContentBlocking?
 #if DEBUG
@@ -681,7 +727,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 historyCoordinator: historyCoordinator,
                 fireproofDomains: fireproofDomains,
                 fireCoordinator: fireCoordinator,
-                tld: tld
+                tld: tld,
+                contentScopePreferences: contentScopePreferences
             )
             privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
             appContentBlocking = contentBlocking
@@ -704,7 +751,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             historyCoordinator: historyCoordinator,
             fireproofDomains: fireproofDomains,
             fireCoordinator: fireCoordinator,
-            tld: tld
+            tld: tld,
+            contentScopePreferences: contentScopePreferences
         )
         privacyFeatures = AppPrivacyFeatures(
             contentBlocking: contentBlocking,
@@ -1052,7 +1100,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         freemiumDBPScanResultPolling = DefaultFreemiumDBPScanResultPolling(dataManager: DataBrokerProtectionManager.shared.dataManager, freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPScanResultPolling?.startPollingOrObserving()
 
-        wideEventService.sendAbandonedPixels { }
+        Task(priority: .utility) {
+            await wideEventService.sendPendingEvents()
+        }
 
         PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
     }
@@ -1076,6 +1126,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         fireDailyActiveUserPixel()
         fireDailyFireWindowConfigurationPixel()
+        autoconsentDailyStats.sendDailyPixelIfNeeded()
 
         initializeSync()
 
@@ -1218,9 +1269,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let source = "browser-dmg"
 #endif
 
-        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
-        let trimmedOSVersion = "\(osVersion.majorVersion).\(osVersion.minorVersion)"
-        let userAgent = UserAgent.duckDuckGoUserAgent(systemVersion: trimmedOSVersion)
+        let userAgent = UserAgent.duckDuckGoUserAgent()
 
         PixelKit.setUp(dryRun: dryRun,
                        appVersion: AppVersion.shared.versionNumber,
@@ -1510,7 +1559,8 @@ extension AppDelegate: UserScriptDependenciesProviding {
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             tabsPreferences: TabsPreferences.shared,
-            newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration)
+            newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
+            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
         )
     }
 }

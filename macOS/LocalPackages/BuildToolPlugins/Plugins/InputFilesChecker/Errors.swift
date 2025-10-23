@@ -107,7 +107,7 @@ struct FileNotInTargetSourcesFolderError: Error, CustomStringConvertible {
 
     var description: String {
         let targets = targets.map { "'\($0)'" }.joined(separator: ", ")
-        return "File '\(filePath)' is added to targets \(targets)" // but is not located in the expected target sources folder '\(expectedFolder)'"
+        return "File '\(filePath)' must not be shared between targets - use local packages instead. File is shared between: \(targets)"
     }
 }
 

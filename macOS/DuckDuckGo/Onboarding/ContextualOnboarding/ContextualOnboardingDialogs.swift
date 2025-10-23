@@ -17,8 +17,10 @@
 //
 
 import Common
-import SwiftUI
+import History
+import HistoryView
 import Onboarding
+import SwiftUI
 import SwiftUIExtensions
 
 struct OnboardingDialogsContants {
@@ -319,7 +321,7 @@ struct OnboardingSecondaryCTAButton: View {
 
 #Preview("Try Fire Button") {
     DaxDialogView(logoPosition: .left) {
-        OnboardingFireButtonDialogContent(viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: FireCoordinator(tld: TLD(), featureFlagger: Application.appDelegate.featureFlagger), onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}))
+        OnboardingFireButtonDialogContent(viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: nil, onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}))
     }
     .padding()
 }
@@ -329,6 +331,6 @@ struct OnboardingSecondaryCTAButton: View {
         let firstString = UserText.ContextualOnboarding.onboardingTryFireButtonMessage
         return NSMutableAttributedString(string: firstString)
     }()
-    OnboardingTrackersDoneDialog(shouldFollowUp: true, message: message, blockedTrackersCTAAction: {}, viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: FireCoordinator(tld: TLD(), featureFlagger: Application.appDelegate.featureFlagger), onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}), onManualDismiss: {})
+    OnboardingTrackersDoneDialog(shouldFollowUp: true, message: message, blockedTrackersCTAAction: {}, viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: nil, onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}), onManualDismiss: {})
         .padding()
 }

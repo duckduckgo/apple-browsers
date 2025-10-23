@@ -17,7 +17,9 @@
 //
 
 import Common
+import SharedTestUtilities
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class DefaultVisualizeFireSettingsDeciderTests: XCTestCase {

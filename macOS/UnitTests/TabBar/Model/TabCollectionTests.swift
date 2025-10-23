@@ -244,4 +244,5 @@ class HistoryTabExtensionMock: TabExtension, HistoryExtensionProtocol {
     var localHistory: [Visit] = []
     func getPublicProtocol() -> HistoryExtensionProtocol { self }
 
+    func clearNavigationHistory(keepingCurrent: Bool) {}
 }

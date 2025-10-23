@@ -104,3 +104,12 @@ enum PinnedTabsMode: String, CaseIterable {
     case shared
     case separate
 }
+
+#if DEBUG
+final class MockTabsPreferencesPersistor: TabsPreferencesPersistor {
+    var preferNewTabsToWindows: Bool = false
+    var switchToNewTabWhenOpened: Bool = false
+    var newTabPosition: NewTabPosition = .atEnd
+    var sharedPinnedTabs: Bool = false
+}
+#endif

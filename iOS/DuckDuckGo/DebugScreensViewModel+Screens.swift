@@ -196,6 +196,9 @@ extension DebugScreensViewModel {
                 autofillDebugViewController.keyValueStore = d.keyValueStore
                 return autofillDebugViewController
             }),
+            .controller(title: "Logging", { _ in
+                return LoggingDebugViewController()
+            }),
             .controller(title: "Subscription", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
                 return storyboard.instantiateViewController(identifier: "SubscriptionDebugViewController") { coder in

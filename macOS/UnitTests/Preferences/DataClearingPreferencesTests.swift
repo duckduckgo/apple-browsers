@@ -16,11 +16,13 @@
 //  limitations under the License.
 //
 
-import PixelKit
-import PixelKitTestingUtilities
-import XCTest
 import BrowserServicesKit
 import FeatureFlags
+import PixelKit
+import PixelKitTestingUtilities
+import SharedTestUtilities
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class MockFireButtonPreferencesPersistor: FireButtonPreferencesPersistor {
@@ -182,3 +184,5 @@ class DataClearingPreferencesTests: XCTestCase {
         pixelFiringMock.verifyExpectations()
     }
 }
+
+extension MockAIChatHistoryCleaner: AIChatHistoryCleaning {}

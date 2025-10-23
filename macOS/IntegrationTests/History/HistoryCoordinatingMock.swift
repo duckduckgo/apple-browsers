@@ -22,7 +22,9 @@ import Foundation
 import History
 import Suggestions
 
-public final class HistoryCoordinatingMock: HistoryCoordinating {
+@testable import DuckDuckGo_Privacy_Browser
+
+public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSource {
 
     public init() {}
 
@@ -59,23 +61,29 @@ public final class HistoryCoordinatingMock: HistoryCoordinating {
 
     public var burnAllCalled = false
     public var onBurnAll: (() -> Void)?
-    public func burnAll(completion: @escaping () -> Void) {
+    public func burnAll(completion: @escaping @MainActor () -> Void) {
         burnAllCalled = true
-        completion()
+        MainActor.assumeMainThread {
+            completion()
+        }
     }
 
     public var burnDomainsCalled = false
     public var onBurnDomains: (() -> Void)?
-    public func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping (Set<URL>) -> Void) {
+    public func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Set<URL>) -> Void) {
         burnDomainsCalled = true
-        completion([])
+        MainActor.assumeMainThread {
+            completion([])
+        }
     }
 
     public var burnVisitsCalled = false
     public var onBurnVisits: (() -> Void)?
-    public func burnVisits(_ visits: [Visit], completion: @escaping () -> Void) {
+    public func burnVisits(_ visits: [Visit], completion: @escaping @MainActor () -> Void) {
         burnVisitsCalled = true
-        completion()
+        MainActor.assumeMainThread {
+            completion()
+        }
     }
 
     public var markFailedToLoadUrlCalled = false
@@ -95,9 +103,11 @@ public final class HistoryCoordinatingMock: HistoryCoordinating {
     }
 
     public var removeUrlEntryCalled = false
-    public func removeUrlEntry(_ url: URL, completion: (((any Error)?) -> Void)?) {
+    public func removeUrlEntry(_ url: URL, completion: (@MainActor ((any Error)?) -> Void)?) {
         removeUrlEntryCalled = true
-        completion?(nil)
+        MainActor.assumeMainThread {
+            completion?(nil)
+        }
     }
 
     public var historySuggestionsStub: [HistorySuggestion] = []

@@ -1358,7 +1358,6 @@
 		BBFE75F72EA64DBD0055480B /* WinBackOfferDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFE75F62EA64DBD0055480B /* WinBackOfferDebugMenu.swift */; };
 		BBFF18B12C76448100C48D7D /* QuerySubmittedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFF18B02C76448100C48D7D /* QuerySubmittedTests.swift */; };
 		BD10B8AA2C7629740033115D /* Logger+Subscription.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD10B8A92C7629740033115D /* Logger+Subscription.swift */; };
-		BD15DB852B959CFD00821457 /* BundleExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD15DB842B959CFD00821457 /* BundleExtension.swift */; };
 		BD2F39EB2C19F955005B19E7 /* NetworkProtectionDNSSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD2F39EA2C19F955005B19E7 /* NetworkProtectionDNSSettingsView.swift */; };
 		BD408CED2DCDB17900265476 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = BD408CEC2DCDB17900265476 /* ZIPFoundation */; };
 		BD862E092B30F63E0073E2EE /* VPNMetadataCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD862E082B30F63E0073E2EE /* VPNMetadataCollector.swift */; };
@@ -3561,7 +3560,6 @@
 		BBFE75F62EA64DBD0055480B /* WinBackOfferDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferDebugMenu.swift; sourceTree = "<group>"; };
 		BBFF18B02C76448100C48D7D /* QuerySubmittedTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuerySubmittedTests.swift; sourceTree = "<group>"; };
 		BD10B8A92C7629740033115D /* Logger+Subscription.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Logger+Subscription.swift"; sourceTree = "<group>"; };
-		BD15DB842B959CFD00821457 /* BundleExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleExtension.swift; sourceTree = "<group>"; };
 		BD2F39EA2C19F955005B19E7 /* NetworkProtectionDNSSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionDNSSettingsView.swift; sourceTree = "<group>"; };
 		BD7008D32E1F1EED00CF9C3E /* DataBrokerProtection-iOS.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = "DataBrokerProtection-iOS.xctestplan"; path = "LocalPackages/DataBrokerProtection-iOS/Tests/DataBrokerProtection-iOS.xctestplan"; sourceTree = "<group>"; };
 		BD862E082B30F63E0073E2EE /* VPNMetadataCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNMetadataCollector.swift; sourceTree = "<group>"; };
@@ -8174,7 +8172,6 @@
 			children = (
 				EE7A92862AC6DE4700832A36 /* NetworkProtectionNotificationIdentifier.swift */,
 				EE9D68DD2AE2A65600B55EF4 /* UserDefaults+NetworkProtection.swift */,
-				BD15DB842B959CFD00821457 /* BundleExtension.swift */,
 			);
 			name = NetworkProtection;
 			sourceTree = "<group>";
@@ -11707,7 +11704,6 @@
 				566B73732BECE4F200FF1959 /* SyncErrorHandling.swift in Sources */,
 				F1134EB01F40AC6300B73467 /* AtbParser.swift in Sources */,
 				EE50052E29C369D300AE0773 /* FeatureFlag.swift in Sources */,
-				BD15DB852B959CFD00821457 /* BundleExtension.swift in Sources */,
 				9FE08BDA2C2A86D0001D5EBC /* URLOpener.swift in Sources */,
 				37DF000F29F9D635002B7D3E /* SyncBookmarksAdapter.swift in Sources */,
 				B652DF10287C2C1600C12A9C /* ContentBlocking.swift in Sources */,

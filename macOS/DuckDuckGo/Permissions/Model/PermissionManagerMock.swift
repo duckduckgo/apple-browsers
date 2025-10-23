@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
+#if DEBUG
+
 import Foundation
-@testable import DuckDuckGo_Privacy_Browser
 import Combine
 import Common
 
@@ -56,7 +57,7 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     }
 
     var burnPermissionsCalled = false
-    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor () -> Void) {
+    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @MainActor @escaping () -> Void) {
         savedPermissions = savedPermissions.filter { fireproofDomains.isFireproof(fireproofDomain: $0.key) }
         burnPermissionsCalled = true
         MainActor.assumeMainThread {
@@ -65,7 +66,7 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     }
 
     var burnPermissionsOfDomainsCalled = false
-    func burnPermissions(of baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor () -> Void) {
+    func burnPermissions(of baseDomains: Set<String>, tld: Common.TLD, completion: @MainActor @escaping () -> Void) {
         burnPermissionsOfDomainsCalled = true
         MainActor.assumeMainThread {
             completion()
@@ -73,7 +74,7 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     }
 
     // For testing permission requests from PermissionModel
-    var capturedRequests: [(permissions: [PermissionType], domain: String, url: URL, completion: @MainActor (Bool) -> Void)] = []
+    var capturedRequests: [(permissions: [PermissionType], domain: String, url: URL, completion: (Bool) -> Void)] = []
     var onPermissionRequested: (() -> Void)?
 
     func permissions(_ permissions: [PermissionType], requestedForDomain domain: String, url: URL, decisionHandler: @escaping (Bool) -> Void) {
@@ -81,15 +82,14 @@ final class PermissionManagerMock: PermissionManagerProtocol {
         onPermissionRequested?()
     }
 
-    var lastRequest: (permissions: [PermissionType], domain: String, url: URL, completion: @MainActor (Bool) -> Void)? {
+    var lastRequest: (permissions: [PermissionType], domain: String, url: URL, completion: (Bool) -> Void)? {
         return capturedRequests.last
     }
 
     func respondToLastRequest(with decision: Bool) {
         guard let lastRequest = capturedRequests.last else { return }
-        MainActor.assumeMainThread {
-            lastRequest.completion(decision)
-        }
+        lastRequest.completion(decision)
     }
 
 }
+#endif

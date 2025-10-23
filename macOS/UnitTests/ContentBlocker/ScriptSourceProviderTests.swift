@@ -107,4 +107,3 @@ class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
         return allActiveContentScopeExperiments
     }
 }
-extension HistoryCoordinatingMock: HistoryDataSource {}

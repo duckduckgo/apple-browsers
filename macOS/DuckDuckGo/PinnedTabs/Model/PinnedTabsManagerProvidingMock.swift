@@ -32,8 +32,8 @@ final class PinnedTabsManagerProvidingMock: PinnedTabsManagerProviding {
     private var _newPinnedTabsManager: PinnedTabsManager?
     var newPinnedTabsManager: PinnedTabsManager {
         get {
-            if let _newPinnedTabsManager {
-                return _newPinnedTabsManager
+            if let newPinnedTabsManager = _newPinnedTabsManager {
+                return newPinnedTabsManager
             }
             assert(_newPinnedTabsManager == nil && _pinnedTabsManager == nil, """
             It seems you‘re setting incorrect Pinned Tabs Manager not actually used in the test.
@@ -56,8 +56,8 @@ final class PinnedTabsManagerProvidingMock: PinnedTabsManagerProviding {
     private var _pinnedTabsManager: PinnedTabsManager?
     var pinnedTabsManager: PinnedTabsManager {
         get {
-            if let _pinnedTabsManager {
-                return _pinnedTabsManager
+            if let pinnedTabsManager = _pinnedTabsManager {
+                return pinnedTabsManager
             }
             assert(_newPinnedTabsManager == nil && _pinnedTabsManager == nil, """
             It seems you‘re setting incorrect Pinned Tabs Manager not actually used in the test.

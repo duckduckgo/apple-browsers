@@ -26,8 +26,6 @@ let package = Package(
         .macOS("11.4")
     ],
     products: [
-        // Products define the executables and libraries a package produces, and make them visible to other packages.
-        .library(name: "TestsObjCExtensions", targets: ["TestsObjCExtensions"]),
         .library(name: "NoARCObjCTestsExtensions", targets: ["NoARCObjCTestsExtensions"]),
         .library(name: "SharedTestUtilities", targets: ["SharedTestUtilities"]),
         .library(name: "SharedSandboxTestUtilities", targets: ["SharedSandboxTestUtilities"]),
@@ -39,14 +37,6 @@ let package = Package(
         .package(path: "../CommonObjCExtensions"),
     ],
     targets: [
-        .target(
-            name: "TestsObjCExtensions",
-            dependencies: [],
-            publicHeadersPath: "include",
-            cSettings: [
-                .headerSearchPath("include")
-            ]
-        ),
         .target(
             name: "NoARCObjCTestsExtensions",
             dependencies: [],
@@ -62,12 +52,12 @@ let package = Package(
         .target(
             name: "SharedTestUtilities",
             dependencies: [
-                "TestsObjCExtensions",
                 .product(name: "AppKitExtensions", package: "AppKitExtensions"),
                 .product(name: "CommonObjCExtensions", package: "CommonObjCExtensions"),
                 .product(name: "Common", package: "BrowserServicesKit"),
                 .product(name: "Navigation", package: "BrowserServicesKit"),
                 .product(name: "Suggestions", package: "BrowserServicesKit"),
+                .product(name: "SharedObjCTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "Utilities", package: "Utilities"),
             ]
         ),

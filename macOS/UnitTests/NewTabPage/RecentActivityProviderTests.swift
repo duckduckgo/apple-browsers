@@ -397,4 +397,3 @@ private extension HistoryEntry {
         )
     }
 }
-extension HistoryCoordinatingMock: SuggestionContainer.HistoryProvider {}

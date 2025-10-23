@@ -453,4 +453,3 @@ class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
 
     func markToolbarOnboardingPopoverAsShown() { }
 }
-extension HistoryCoordinatingMock: HistoryGroupingDataSource {}

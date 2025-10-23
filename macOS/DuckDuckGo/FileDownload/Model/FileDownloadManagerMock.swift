@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
+#if DEBUG
+
 import Combine
 import Foundation
 import Navigation
 import UniformTypeIdentifiers
-
-@testable import DuckDuckGo_Privacy_Browser
 
 final class FileDownloadManagerMock: FileDownloadManagerProtocol, WebKitDownloadTaskDelegate {
 
@@ -54,3 +54,4 @@ final class FileDownloadManagerMock: FileDownloadManagerProtocol, WebKitDownload
     }
 
 }
+#endif

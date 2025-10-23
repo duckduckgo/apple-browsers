@@ -20,7 +20,7 @@ import Bookmarks
 import Foundation
 
 typealias MockAppearancePreferencesPersistor = AppearancePreferencesPersistorMock
-struct AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
+final class AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
 
     var isFavoriteVisible: Bool
     var isContinueSetUpVisible: Bool

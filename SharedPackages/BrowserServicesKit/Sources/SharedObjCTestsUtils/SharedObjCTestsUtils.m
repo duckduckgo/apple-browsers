@@ -81,6 +81,7 @@
     // Add XCTest observer to log test events
     GlobalTestObserver *observer = [[GlobalTestObserver alloc] init];
     [[XCTestObservationCenter sharedTestObservationCenter] addTestObserver:observer];
+    id testRunHelper = [NSClassFromString(@"TestRunHelper") performSelector:NSSelectorFromString(@"sharedInstance")];
 }
 
 @end 

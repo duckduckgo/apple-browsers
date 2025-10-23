@@ -19,7 +19,7 @@
 import Common
 import Foundation
 import ObjectiveC
-import TestsObjCExtensions
+import SharedObjCTestsUtils
 import WebKit
 
 @available(macOS 12.0, *)
@@ -72,7 +72,7 @@ public class TestSchemeHandler: NSObject, WKURLSchemeHandler {
     public func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
         for middleware in middleware {
             if let handler = middleware(urlSchemeTask.request) {
-                handler(urlSchemeTask as! WKURLSchemeTaskPrivate)
+                handler(urlSchemeTask)
                 return
             }
         }
@@ -137,7 +137,7 @@ public struct WKURLSchemeTaskHandler {
                                                mime: nil,
                                                headerFields: ["Location": location])!
 
-            task._didPerformRedirection(response, newRequest: URLRequest(url: URL(string: location, relativeTo: task.request.url)!))
+            task.didPerformRedirection(response, newRequest: URLRequest(url: URL(string: location, relativeTo: task.request.url)!))
             task.didReceive(response)
             task.didFinish()
         }
@@ -150,20 +150,47 @@ public struct WKURLSchemeTaskHandler {
                                                mime: nil,
                                                headerFields: ["Location": url.absoluteString])!
 
-            task._didPerformRedirection(response, newRequest: URLRequest(url: url))
+            task.didPerformRedirection(response, newRequest: URLRequest(url: url))
             task.didFailWithError(error)
         }
     }
 
-    public let handler: (WKURLSchemeTaskPrivate) -> Void
-    public init(handler: @escaping (WKURLSchemeTaskPrivate) -> Void) {
+    public let handler: (WKURLSchemeTask) -> Void
+    public init(handler: @escaping (WKURLSchemeTask) -> Void) {
         self.handler = handler
     }
 
-    public func callAsFunction(_ task: WKURLSchemeTaskPrivate) {
+    public func callAsFunction(_ task: WKURLSchemeTask) {
         handler(task)
     }
 
+}
+
+extension WKURLSchemeTask {
+    typealias WillPerformRedirectionCompletionHandler = @convention(c) (NSURLRequest) -> Void
+    // - (void)_willPerformRedirection:(NSURLResponse *)response newRequest:(NSURLRequest *)request completionHandler:(void (^)(NSURLRequest *))completionHandler;
+    func willPerformRedirection(_ response: URLResponse, newRequest: URLRequest, completionHandler: WillPerformRedirectionCompletionHandler) {
+        let selector = NSSelectorFromString("_willPerformRedirection:newRequest:completionHandler:")
+        guard let method = class_getInstanceMethod(object_getClass(self), selector) else {
+            fatalError("WKURLSchemeTask._willPerformRedirection:newRequest:completionHandler: not available")
+        }
+        let imp = method_getImplementation(method)
+        typealias WillPerformRedirectionType = @convention(c) (WKURLSchemeTask, ObjectiveC.Selector, URLResponse, NSURLRequest, WillPerformRedirectionCompletionHandler) -> Void
+        let willPerformRedirection = unsafeBitCast(imp, to: WillPerformRedirectionType.self)
+        willPerformRedirection(self, selector, response, newRequest as NSURLRequest, completionHandler)
+    }
+
+    // - (void)_didPerformRedirection:(NSURLResponse *)response newRequest:(NSURLRequest *)request;
+    func didPerformRedirection(_ response: URLResponse, newRequest: URLRequest) {
+        let selector = NSSelectorFromString("_didPerformRedirection:newRequest:")
+        guard let method = class_getInstanceMethod(object_getClass(self), selector) else {
+            fatalError("WKURLSchemeTask._didPerformRedirection:newRequest: not available")
+        }
+        let imp = method_getImplementation(method)
+        typealias DidPerformRedirectionType = @convention(c) (WKURLSchemeTask, ObjectiveC.Selector, URLResponse, NSURLRequest) -> Void
+        let didPerformRedirection = unsafeBitCast(imp, to: DidPerformRedirectionType.self)
+        didPerformRedirection(self, selector, response, newRequest as NSURLRequest)
+    }
 }
 
 public class MockHTTPURLResponse: HTTPURLResponse, @unchecked Sendable {

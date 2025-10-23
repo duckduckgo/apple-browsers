@@ -16,15 +16,15 @@
 //  limitations under the License.
 //
 
+#if DEBUG
+
 import Combine
 import Common
 import Foundation
 import History
 import Suggestions
 
-@testable import DuckDuckGo_Privacy_Browser
-
-public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSource {
+public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSource, SuggestionContainer.HistoryProvider {
 
     public init() {}
 
@@ -63,6 +63,7 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
     public var onBurnAll: (() -> Void)?
     public func burnAll(completion: @escaping @MainActor () -> Void) {
         burnAllCalled = true
+        onBurnAll?()
         MainActor.assumeMainThread {
             completion()
         }
@@ -72,6 +73,7 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
     public var onBurnDomains: (() -> Void)?
     public func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Set<URL>) -> Void) {
         burnDomainsCalled = true
+        onBurnDomains?()
         MainActor.assumeMainThread {
             completion([])
         }
@@ -81,6 +83,7 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
     public var onBurnVisits: (() -> Void)?
     public func burnVisits(_ visits: [Visit], completion: @escaping @MainActor () -> Void) {
         burnVisitsCalled = true
+        onBurnVisits?()
         MainActor.assumeMainThread {
             completion()
         }
@@ -123,3 +126,4 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
         }
     }
 }
+#endif

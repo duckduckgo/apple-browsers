@@ -165,6 +165,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
 
         let shouldContinue = self.shouldRunNextStep()
         if let action = actionsHandler?.nextAction(), shouldContinue {
+            stageCalculator.setLastAction(action)
             Logger.action.debug(loggerContext(for: action), message: "Next action")
             await runNextAction(action)
         } else {

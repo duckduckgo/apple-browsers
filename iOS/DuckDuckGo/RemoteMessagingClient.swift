@@ -60,14 +60,16 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
         duckPlayerStorage: DuckPlayerStorage,
         configurationURLProvider: ConfigurationURLProviding,
-        syncService: DDGSyncing
+        syncService: DDGSyncing,
+        winBackOfferService: WinBackOfferService
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
             bookmarksDatabase: bookmarksDatabase,
             appSettings: appSettings,
             internalUserDecider: internalUserDecider,
             duckPlayerStorage: duckPlayerStorage,
-            syncService: syncService
+            syncService: syncService,
+            winBackOfferService: winBackOfferService
         )
         let configFetcher = RemoteMessagingConfigFetcher(
             configurationFetcher: ConfigurationFetcher(store: configurationStore, urlSession: .session(), configurationURLProvider: configurationURLProvider, eventMapping: nil),

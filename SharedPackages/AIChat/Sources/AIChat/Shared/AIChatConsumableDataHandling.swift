@@ -139,6 +139,7 @@ public struct AIChatPageContextData: Codable {
     let url: String
     let content: String
     let truncated: Bool
+    let fullContentLength: Int
 
     public struct PageContextFavicon: Codable {
         let href: String

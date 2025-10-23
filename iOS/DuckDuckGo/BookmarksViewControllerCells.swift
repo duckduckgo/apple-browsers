@@ -79,6 +79,7 @@ class BookmarksViewControllerCellFactory {
         cell.titleLabel.textColor = theme.tableCellTextColor
         cell.favoriteImageView.image = DesignSystemImages.Color.Size16.favorite
         cell.faviconImageView.tintColor = UIColor(designSystemColor: .icons)
+        cell.faviconImageView.round(corners: .allCorners, radius: Constant.faviconCornerRadius)
         cell.editingAccessoryType = .disclosureIndicator
         return cell
     }
@@ -98,4 +99,7 @@ class BookmarksViewControllerCellFactory {
         return cell
     }
 
+    private struct Constant {
+        static let faviconCornerRadius: CGFloat = 6
+    }
 }

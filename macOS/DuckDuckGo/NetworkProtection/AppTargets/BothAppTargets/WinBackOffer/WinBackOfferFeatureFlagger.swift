@@ -20,6 +20,9 @@ import Foundation
 import BrowserServicesKit
 import Subscription
 
+/// Feature flag provider for the Win-back offer.
+/// 
+/// Uses `FeatureFlagger` to check if the Win-back offer feature is enabled.
 final class WinBackOfferFeatureFlagger: WinBackOfferFeatureFlagProvider {
     private let featureFlagger: FeatureFlagger
 

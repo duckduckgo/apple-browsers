@@ -61,6 +61,13 @@ struct SettingsAppearanceView: View {
                 SettingsCellView(label: UserText.settingsFullURL,
                                  accessory: .toggle(isOn: viewModel.addressBarShowsFullURL))
             }
+
+            if viewModel.state.mobileCustomization.isEnabled {
+                Section(header: Text(verbatim: "Customization coming soon")) {
+                    EmptyView()
+                }
+            }
+
         }
         .applySettingsListModifiers(title: UserText.settingsAppearanceSection,
                                     displayMode: .inline,

@@ -37,7 +37,8 @@ final class RemoteMessagingService {
          configurationStore: ConfigurationStore,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          configurationURLProvider: ConfigurationURLProviding,
-         syncService: DDGSyncing
+         syncService: DDGSyncing,
+         winBackOfferService: WinBackOfferService
     ) {
         remoteMessagingClient = RemoteMessagingClient(
             bookmarksDatabase: bookmarksDatabase,
@@ -51,7 +52,8 @@ final class RemoteMessagingService {
             ),
             duckPlayerStorage: DefaultDuckPlayerStorage(),
             configurationURLProvider: configurationURLProvider,
-            syncService: syncService
+            syncService: syncService,
+            winBackOfferService: winBackOfferService
         )
         remoteMessagingClient.registerBackgroundRefreshTaskHandler()
 

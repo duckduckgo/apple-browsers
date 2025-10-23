@@ -618,22 +618,7 @@ final class TabCollectionViewModel: NSObject {
     }
 
     func moveTab(at fromIndex: Int, to otherViewModel: TabCollectionViewModel, at toIndex: Int) {
-        assert(self !== otherViewModel)
-        guard changesEnabled else { return }
-
-        guard let movedTab = tabCollection.tabs[safe: fromIndex] else {
-            return
-        }
-
-        let parentTab = movedTab.parentTab
-        guard tabCollection.moveTab(at: fromIndex, to: otherViewModel.tabCollection, at: toIndex) else {
-            return
-        }
-
-        didRemoveTab(tab: movedTab, at: .unpinned(fromIndex), withParent: parentTab)
-
-        otherViewModel.selectUnpinnedTab(at: toIndex)
-        otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: .unpinned(toIndex), selected: true)
+        moveTab(at: .unpinned(fromIndex), to: otherViewModel, at: .unpinned(toIndex))
     }
 
     func moveTab(at fromIndex: TabIndex, to otherViewModel: TabCollectionViewModel, at toIndex: TabIndex) {
@@ -655,7 +640,7 @@ final class TabCollectionViewModel: NSObject {
 
         didRemoveTab(tab: movedTab, at: fromIndex, withParent: parentTab)
 
-        otherViewModel.select(at: toIndex)
+        otherViewModel.selectWithoutResettingState(at: toIndex)
         otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: true)
     }
 

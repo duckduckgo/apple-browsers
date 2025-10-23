@@ -150,16 +150,8 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
     }
     
-    var firstSectionTitle: String {
-        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) ? UserText.aiChatSettingsBrowserShortcutsSectionTitle : ""
-    }
-    
-    var secondSectionTitle: String {
-        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) ? UserText.aiChatSettingsAllowFollowUpQuestionsSectionTitle : ""
-    }
-    
-    var shouldShowSERPSettingsFollowUpQuestions: Bool {
-        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) && serpSettings.didMigrate
+    var isRefreshButtonPositionEnabled: Bool {
+        featureFlagger.isFeatureOn(.refreshButtonPosition)
     }
 
     var embedSERPSettings: Bool {

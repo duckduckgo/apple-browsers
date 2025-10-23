@@ -146,9 +146,6 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
     
     @MainActor
     func getNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
-        guard featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) else {
-            return nil
-        }
         return SERPSettingsSnapshot(provider: serpSettingsProvider)
     }
 

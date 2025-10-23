@@ -172,9 +172,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211394727337421?focus=true
     case newDeviceSyncPrompt
-    
-    /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211245201777978?focus=true
-    case serpSettingsFollowUpQuestions
 
     /// https://app.asana.com/1/137249556945/task/1211354430557015?focus=true
     case subscriptionRestoreWidePixelMeasurement
@@ -281,7 +278,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
              .newDeviceSyncPrompt,
-             .serpSettingsFollowUpQuestions,
              .subscriptionRestoreWidePixelMeasurement,
              .embeddedSERPSettings,
              .authV2WideEventEnabled,
@@ -480,8 +476,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
         case .newDeviceSyncPrompt:
             return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
-        case .serpSettingsFollowUpQuestions:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.serpSettingsFollowUpQuestions))
         case .subscriptionRestoreWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         case .embeddedSERPSettings:

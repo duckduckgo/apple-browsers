@@ -998,29 +998,22 @@ class TabViewController: UIViewController {
         guard url.isDuckDuckGoSearch else { return false }
         
         var shouldReissue = !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
-        
-        // SerpSettingsFollowUpQuestions takes precedence over duckAISearchParameter
-        // If it's enabled, don't evaluate shouldReissue
-        if !featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) {
-            // Only check DuckAI params if the feature flag is enabled
-            if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-                let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-                shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
-            }
+
+        // Only check DuckAI params if the feature flag is enabled
+        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+            shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
         }
         return shouldReissue
     }
     
     private func reissueSearchWithRequiredParams(for url: URL) {
         var mobileSearch = url.applyingStatsParams()
-        
-        // SerpSettingsFollowUpQuestions takes precedence over duckAISearchParameter
+
         // If it's enabled, don't evaluate shouldReissue
-        if !featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) {
-            if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-                let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-                mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
-            }
+        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+            mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
         }
         
         reissueNavigationWithSearchHeaderParams(for: mobileSearch)

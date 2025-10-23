@@ -534,6 +534,7 @@ public struct UserText {
 
     public static let actionAutofillLogins = NSLocalizedString("action.title.autofill.logins", value: "Passwords", comment: "Autofill Logins menu item opening the login list")
     public static let actionTabNew = NSLocalizedString("action.title.tab.new", value: "New Tab", comment: "New tab menu item opening a new tab")
+    static let actionVPN = NSLocalizedString("action.title.vpn", value: "VPN", comment: "VPN menu item")
 
     // MARK: - Control Center Widget Education
 
@@ -1653,6 +1654,29 @@ public struct UserText {
     public static let subscriptionPIRWindows = NSLocalizedString("subscription.pir.windows", value: "Windows", comment: "Text for the 'Windows' button")
     public static let subscriptionPIRMacOS = NSLocalizedString("subscription.pir.macos", value: "Mac", comment: "Text for the 'macOS' button")
 
+    // Win-back Campaign:
+    static let winBackCampaignModalTitle = NSLocalizedString("win-back.campaign.modal.title", value: "We want you back!\nGet 25% off.", comment: "Title of the modal dialog promoting the win-back campaign")
+    static let winBackCampaignModalSubtitle = NSLocalizedString("win-back.campaign.modal.subtitle", value: "Limited time only", comment: "Subtitle of the modal dialog promoting the win-back campaign")
+    static let winBackCampaignModalMessage = NSLocalizedString("win-back.campaign.modal.message", value: "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%.", comment: "Message of the modal dialog promoting the win-back campaign")
+    static let winBackCampaignModalCTA = NSLocalizedString("win-back.campaign.modal.cta", value: "See Offer", comment: "CTA of the modal dialog promoting the win-back campaign")
+    static let winBackCampaignModalDismiss = NSLocalizedString("win-back.campaign.modal.dismiss", value: "Not Now", comment: "Dismiss of the modal dialog promoting the win-back campaign")
+
+    static let winBackCampaignLastDayMessageTitle = NSLocalizedString("win-back.campaign.last-day.message.title", value: "Last day to save 25%!", comment: "Title of message displayed on the last day of the win-back campaign")
+    static let winBackCampaignLastDayMessageText = NSLocalizedString("win-back.campaign.last-day.message.text", value: "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%.", comment: "Message of the message displayed on the last day of the win-back campaign")
+    static let winBackCampaignLastDayMessageCTA = NSLocalizedString("win-back.campaign.last-day.message.cta", value: "See Offer", comment: "CTA of the message displayed on the last day of the win-back campaign")
+    static let winBackCampaignLastDayMessageDismiss = NSLocalizedString("win-back.campaign.last-day.message.dismiss", value: "Not Now", comment: "Dismiss of the message displayed on the last day of the win-back campaign")
+
+    static let winBackCampaignMenuBadgeText = NSLocalizedString("win-back.campaign.menu.badge.text", value: "SAVE 25%", comment: "Text for the badge displayed on the Subscription menu item during the win-back campaign")
+
+    static let winBackCampaignSubscriptionSettingsMenuLoggedOutSubtitle = NSLocalizedString("win-back.campaign.subscription.settings.menu.logged-out.subtitle", value: "Limited time offer!", comment: "Subtitle of the Subscription settings menu item during the win-back campaign")
+
+    static let winBackCampaignSubscriptionSettingsPageResubscribeCTA = NSLocalizedString("win-back.campaign.subscription.settings.page.resubscribe.cta", value: "Resubscribe and Save 25%", comment: "CTA of the message displayed for logged in users to resubscribe during the win-back campaign")
+
+    static let winBackCampaignSubscriptionSettingsMenuTitle = NSLocalizedString("win-back.campaign.subscription.settings.menu.title", value: "Resubscribe and Save 25%", comment: "Title of the Subscription settings menu item during the win-back campaign")
+    static let winBackCampaignSubscriptionSettingsMenuSubtitle = NSLocalizedString("win-back.campaign.subscription.settings.menu.subtitle", value: "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%.\nLimited time offer.", comment: "Subtitle of the Subscription settings menu item during the win-back campaign")
+    static let winBackCampaignSubscriptionSettingsMenuCTA = NSLocalizedString("win-back.campaign.subscription.settings.menu.cta", value: "See Offer", comment: "CTA of the Subscription settings menu item during the win-back campaign")
+    static let winBackCampaignSubscriptionSettingsMenuExistingSubscriptionButton = NSLocalizedString("win-back.campaign.subscription.settings.menu.existing.subscription.button", value: "I Have a Subscription", comment: "Button for using existing subscription during the win-back campaign")
+
     // Autocomplete
     public static let autocompleteHistoryWarningTitle = NSLocalizedString("autocomplete.history.warning.title", value: "Same privacy.\nBetter search suggestions!", comment: "Title for message show in suggestions")
     public static let autocompleteHistoryWarningDescription = NSLocalizedString("autocomplete.history.warning.message", value: "Search suggestions now include your recently visited sites. Turn off in Settings, or clear anytime with the 🔥 Fire Button.", comment: "The message text shown in suggestions")
@@ -1813,8 +1837,7 @@ public struct UserText {
 
     // MARK: - New Address Bar Picker
     public static let newAddressBarPickerTitle = NSLocalizedString("new.address.bar.picker.title", value: "Address bar option", comment: "Title for the new address bar picker modal")
-    public static let newAddressBarPickerSubtitle = NSLocalizedString("new.address.bar.picker.subtitle", value: "Toggle between search and AI chat", comment: "Subtitle for the new address bar picker modal")
-    public static let newAddressBarPickerDescription = NSLocalizedString("new.address.bar.picker.description", value: "AI features are always optional.", comment: "Description text for the new address bar picker modal")
+    public static let newAddressBarPickerHeadline = NSLocalizedString("new.address.bar.picker.subheadline", value: "Want easier access to AI chat?", comment: "Headline for the new address bar picker modal")
     public static let newAddressBarPickerSearchOnly = NSLocalizedString("new.address.bar.picker.search.only", value: "Search Only", comment: "Option for search only in the new address bar picker")
     public static let newAddressBarPickerSearchAndAI = NSLocalizedString("new.address.bar.picker.search.and.ai", value: "Search & Duck.ai", comment: "Option for search and AI in the new address bar picker")
     public static let newAddressBarPickerConfirm = NSLocalizedString("new.address.bar.picker.confirm", value: "Confirm", comment: "Confirm button for the new address bar picker")

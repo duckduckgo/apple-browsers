@@ -22,7 +22,8 @@ let package = Package(
             name: "PerformanceTest",
             dependencies: ["NetworkQualityMonitor"],
             resources: [
-                .process("Resources")
+                .process("Resources"),
+                .copy("SafariTestRunner")
             ]),
         .testTarget(
             name: "PerformanceTestTests",

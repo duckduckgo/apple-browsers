@@ -55,8 +55,8 @@ final class StalledOperationCalculatorTests: XCTestCase {
         // Then
         XCTAssertEqual(result.total, 1)
         XCTAssertEqual(result.stalled, 0)
-        XCTAssertEqual(result.totalByBroker["test-1.0.0"], 1)
-        XCTAssertNil(result.stalledByBroker["test-1.0.0"])
+        XCTAssertEqual(result.totalByBroker["test.com-1.0.0"], 1)
+        XCTAssertNil(result.stalledByBroker["test.com-1.0.0"])
     }
 
     func testStalledOperation_CountsCorrectly() {
@@ -75,8 +75,8 @@ final class StalledOperationCalculatorTests: XCTestCase {
         // Then
         XCTAssertEqual(result.total, 1)
         XCTAssertEqual(result.stalled, 1)
-        XCTAssertEqual(result.totalByBroker["test-1.0.0"], 1)
-        XCTAssertEqual(result.stalledByBroker["test-1.0.0"], 1)
+        XCTAssertEqual(result.totalByBroker["test.com-1.0.0"], 1)
+        XCTAssertEqual(result.stalledByBroker["test.com-1.0.0"], 1)
     }
 
     func testMultipleStalledOperations_CountsAllStalled() {
@@ -188,14 +188,14 @@ final class StalledOperationCalculatorTests: XCTestCase {
         // Scan results: 3 total, 1 stalled
         XCTAssertEqual(scanResult.total, 3)
         XCTAssertEqual(scanResult.stalled, 1)
-        XCTAssertEqual(scanResult.totalByBroker["test-1.0.0"], 3)
-        XCTAssertEqual(scanResult.stalledByBroker["test-1.0.0"], 1)
+        XCTAssertEqual(scanResult.totalByBroker["test.com-1.0.0"], 3)
+        XCTAssertEqual(scanResult.stalledByBroker["test.com-1.0.0"], 1)
 
         // Opt-out results: 3 total, 1 stalled
         XCTAssertEqual(optOutResult.total, 3)
         XCTAssertEqual(optOutResult.stalled, 1)
-        XCTAssertEqual(optOutResult.totalByBroker["test-1.0.0"], 3)
-        XCTAssertEqual(optOutResult.stalledByBroker["test-1.0.0"], 1)
+        XCTAssertEqual(optOutResult.totalByBroker["test.com-1.0.0"], 3)
+        XCTAssertEqual(optOutResult.stalledByBroker["test.com-1.0.0"], 1)
     }
 
     func testEventsWithinTimeoutWindow_AreExcluded() {

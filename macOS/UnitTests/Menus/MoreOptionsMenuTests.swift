@@ -50,6 +50,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
     private var mockFeatureFlagger: MockFeatureFlagger!
+    private var mockWinBackOfferVisibilityManager: MockWinBackOfferVisibilityManager!
 
     var moreOptionsMenu: MoreOptionsMenu!
 
@@ -84,6 +85,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         mockNotificationCenter = MockNotificationCenter()
         mockPixelHandler = MockDataBrokerProtectionFreemiumPixelHandler()
         mockFreemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
+        mockWinBackOfferVisibilityManager = MockWinBackOfferVisibilityManager()
     }
 
     @MainActor
@@ -105,6 +107,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         mockPixelHandler = nil
         networkProtectionVisibilityMock = nil
         storePurchaseManager = nil
+        mockWinBackOfferVisibilityManager = nil
     }
 
     @MainActor
@@ -137,7 +140,8 @@ final class MoreOptionsMenuTests: XCTestCase {
                                           ),
                                           isFireWindowDefault: isFireWindowDefault,
                                           isUsingAuthV2: true,
-                                          freeTrialBadgePersistor: freeTrialBadgePersistor)
+                                          freeTrialBadgePersistor: freeTrialBadgePersistor,
+                                          winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager)
 
         moreOptionsMenu.actionDelegate = capturingActionDelegate
     }
@@ -598,7 +602,7 @@ final class MoreOptionsMenuTests: XCTestCase {
             .newtab,
             .settings(pane: nil),
             .bookmarks,
-            .history,
+            .anyHistoryPane,
             .onboarding,
             .dataBrokerProtection
         ]
@@ -643,7 +647,7 @@ final class MoreOptionsMenuTests: XCTestCase {
             .releaseNotes,
             .webExtensionUrl(.aboutDuckDuckGo),
             .newtab,
-            .history,
+            .anyHistoryPane,
             .bookmarks,
             .settings(pane: nil)
         ]
@@ -688,7 +692,7 @@ final class MoreOptionsMenuTests: XCTestCase {
             .releaseNotes,
             .webExtensionUrl(.aboutDuckDuckGo),
             .newtab,
-            .history,
+            .anyHistoryPane,
             .bookmarks,
             .settings(pane: nil)
         ]
@@ -838,6 +842,46 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertNotNil(subscriptionItem, "Subscription item should be present")
         XCTAssertNil(subscriptionItem?.view, "Free trial badge should be hidden when view limit has been reached")
     }
+
+    // MARK: - Win-back Offer
+
+    @MainActor
+    func testSubscriptionBadge_ShowsWhenWinBackOfferIsAvailable() {
+        // Given
+        mockWinBackOfferVisibilityManager.isOfferAvailable = true
+
+        subscriptionManager.canPurchase = true
+
+        setupMoreOptionsMenu()
+
+        // When
+        let subscriptionItem = moreOptionsMenu.items.first {
+            $0.action == #selector(MoreOptionsMenu.openSubscriptionPurchasePage(_:))
+        }
+
+        // Then
+        XCTAssertNotNil(subscriptionItem, "Subscription item should be present")
+        XCTAssertNotNil(subscriptionItem?.view, "Win-back offer badge should be shown when available")
+    }
+
+    @MainActor
+    func testSubscriptionBadge_HidesWhenWinBackOfferIsNotAvailable() {
+        // Given
+        mockWinBackOfferVisibilityManager.isOfferAvailable = false
+
+        subscriptionManager.canPurchase = true
+
+        setupMoreOptionsMenu()
+
+        // When
+        let subscriptionItem = moreOptionsMenu.items.first {
+            $0.action == #selector(MoreOptionsMenu.openSubscriptionPurchasePage(_:))
+        }
+
+        // Then
+        XCTAssertNotNil(subscriptionItem, "Subscription item should be present")
+        XCTAssertNil(subscriptionItem?.view, "Win-back offer badge should be hidden when not available")
+    }
 }
 
 // MARK: - Test Doubles
@@ -923,7 +967,7 @@ final class MockFreemiumDBPFeature: FreemiumDBPFeature {
 final class MockFreemiumDBPPresenter: FreemiumDBPPresenter {
     var didCallShowFreemium = false
 
-    func showFreemiumDBPAndSetActivated(windowControllerManager: WindowControllersManagerProtocol? = nil) {
+    func showFreemiumDBPAndSetActivated(windowControllersManager: WindowControllersManagerProtocol? = nil) {
         didCallShowFreemium = true
     }
 }

@@ -34,7 +34,13 @@ extension Preferences {
 
                     PreferencePaneSubSection {
                         ToggleMenuItem(UserText.automaticallyClearData, isOn: $model.isAutoClearEnabled)
-                        ToggleMenuItem(UserText.warnBeforeQuit,
+                        if model.shouldShowAutoClearAIChatHistorySetting {
+                            ToggleMenuItem(UserText.autoClearAIChatHistory,
+                                           isOn: $model.isAutoClearAIChatHistoryEnabled)
+                            .disabled(!model.isAutoClearEnabled)
+                            .padding(.leading, 16)
+                        }
+                        ToggleMenuItem(UserText.warnBeforeQuit(model.isAutoClearAIChatHistoryEnabled),
                                        isOn: $model.isWarnBeforeClearingEnabled)
                         .disabled(!model.isAutoClearEnabled)
                         .padding(.leading, 16)
@@ -90,9 +96,7 @@ extension Preferences {
 
                     PreferencePaneSubSection {
                         Button(UserText.manageFireproofSites) {
-                            Task { @MainActor in
-                                model.presentManageFireproofSitesDialog()
-                            }
+                            model.presentManageFireproofSitesDialog()
                         }
                     }
                 }

@@ -127,6 +127,9 @@
 /* New tab menu item opening a new tab */
 "action.title.tab.new" = "New Tab";
 
+/* VPN menu item */
+"action.title.vpn" = "VPN";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Bottom";
 
@@ -2251,9 +2254,6 @@ https://duckduckgo.com/mac";
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirm";
 
-/* Description text for the new address bar picker modal */
-"new.address.bar.picker.description" = "AI features are always optional.";
-
 /* Footer text for the new address bar picker */
 "new.address.bar.picker.footer" = "Adjust in Settings > AI Features";
 
@@ -2266,8 +2266,8 @@ https://duckduckgo.com/mac";
 /* Option for search only in the new address bar picker */
 "new.address.bar.picker.search.only" = "Search Only";
 
-/* Subtitle for the new address bar picker modal */
-"new.address.bar.picker.subtitle" = "Toggle between search and AI chat";
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline" = "Want easier access to AI chat?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Address bar option";
@@ -3726,6 +3726,54 @@ Take back control of your personal information with the browser designed for dat
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "A message from %@:";
+
+/* CTA of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.cta" = "See Offer";
+
+/* Dismiss of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.dismiss" = "Not Now";
+
+/* Message of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.text" = "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%.";
+
+/* Title of message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.title" = "Last day to save 25%!";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "SAVE 25%";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "See Offer";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Not Now";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Limited time only";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "We want you back!\nGet 25% off.";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "See Offer";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "I Have a Subscription";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "Limited time offer!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%.\nLimited time offer.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "Resubscribe and Save 25%";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Resubscribe and Save 25%";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Looking for the Mac version?";

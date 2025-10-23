@@ -21,6 +21,7 @@ import Foundation
 import struct UIKit.UIKeyModifierFlags
 import WebKit
 import BrowserServicesKit
+import BrowserServicesKitTestsUtils
 import PrivacyDashboard
 import Core
 import Persistence
@@ -86,6 +87,9 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestSettingsToCreditCardManagement(_ tab: TabViewController,
                                                      source: AutofillSettingsSource) {}
+
+
+    func tabDidRequestSettingsToVPN(_ tab: DuckDuckGo.TabViewController) {}
 
     func tabDidRequestFindInPage(tab: DuckDuckGo.TabViewController) {}
 

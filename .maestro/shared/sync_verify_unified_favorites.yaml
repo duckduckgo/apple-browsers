@@ -17,9 +17,12 @@ appId: com.duckduckgo.mobile.ios
             index: 1
 - tapOn: Settings
 - tapOn: Done
-- tapOn: Bookmarks
-- tapOn: Favorites
+
+# Validate the favorites are now visible on the new tab to prove they have been sync'd - we can't assume that's where we are just now though so navigate there first.
+- assertVisible: Tab Switcher
+- tapOn: Tab Switcher
+- assertVisible: "New Tab"
+- tapOn: "New Tab"
 - assertVisible: NFL.com | Official Site of the National Football League
 - assertVisible: DuckDuckGo · GitHub
 - assertVisible: Stack Overflow - Where Developers Learn, Share, & Build Careers
-- tapOn: Done

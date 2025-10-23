@@ -28,12 +28,12 @@ import AIChat
 protocol WindowControllersManagerProtocol: AnyObject {
 
     var stateChanged: AnyPublisher<Void, Never> { get }
+    var tabsChanged: AnyPublisher<Void, Never> { get }
 
     var mainWindowControllers: [MainWindowController] { get }
     var selectedTab: Tab? { get }
     var allTabCollectionViewModels: [TabCollectionViewModel] { get }
 
-    var lastKeyMainWindowController: MainWindowController? { get }
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding { get }
 
     var didRegisterWindowController: PassthroughSubject<(MainWindowController), Never> { get }
@@ -63,6 +63,7 @@ protocol WindowControllersManagerProtocol: AnyObject {
 }
 
 extension WindowControllersManagerProtocol {
+
     @discardableResult
     func openNewWindow(with tabCollectionViewModel: TabCollectionViewModel? = nil,
                        burnerMode: BurnerMode = .regular,
@@ -73,9 +74,26 @@ extension WindowControllersManagerProtocol {
                        lazyLoadTabs: Bool = false) -> NSWindow? {
         openNewWindow(with: tabCollectionViewModel, burnerMode: burnerMode, droppingPoint: droppingPoint, contentSize: contentSize, showWindow: showWindow, popUp: popUp, lazyLoadTabs: lazyLoadTabs, isMiniaturized: false, isMaximized: false, isFullscreen: false)
     }
+
     func show(url: URL?, source: Tab.TabContent.URLSource, newTab: Bool, selected: Bool?) {
         show(url: url, tabId: nil, source: source, newTab: newTab, selected: selected)
     }
+
+    var lastKeyMainWindowController: MainWindowController? {
+        return lastKeyMainWindowController(where: { _ in true })
+    }
+
+    func lastKeyMainWindowController(where predicate: (MainWindowController) -> Bool) -> MainWindowController? {
+        return withoutActuallyEscaping(predicate) { predicate in
+            mainWindowControllers.lazy
+                .filter { windowController in
+                    !(windowController.window?.isPopUpWindow ?? true) && predicate(windowController)
+                }.max {
+                    $0.lastWindowDidBecomeKeyTimestamp < $1.lastWindowDidBecomeKeyTimestamp
+                }
+        }
+    }
+
 }
 
 @MainActor
@@ -105,20 +123,12 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     private let internalUserDecider: InternalUserDecider
     private let featureFlagger: FeatureFlagger
 
-    weak var lastKeyMainWindowController: MainWindowController? {
-        didSet {
-            if lastKeyMainWindowController != oldValue {
-                didChangeKeyWindowController.send(lastKeyMainWindowController)
-            }
-        }
-    }
-
     /// find Main Window Controller being currently interacted with even when ⌘-clicked in background
     func mainWindowController(for sourceWindow: NSWindow?) -> MainWindowController? {
         guard let sourceWindow else { return nil }
 
         // go up from the clicked window (popover or Bookmarks Bar Menu) to find the root target Main Window
-        for window in sequence(first: sourceWindow, next: \.parent) {
+        for window in sequence(first: sourceWindow, next: { $0.parent ?? $0.sheetParent }) {
             if let windowController = window.windowController as? MainWindowController {
                 return windowController
             }

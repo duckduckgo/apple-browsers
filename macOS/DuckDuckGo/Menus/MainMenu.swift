@@ -100,6 +100,7 @@ final class MainMenu: NSMenu {
     let customConfigurationUrlMenuItem = NSMenuItem(title: "Last Update Time", action: nil)
     let configurationDateAndTimeMenuItem = NSMenuItem(title: "Configuration URL", action: nil)
     let autofillDebugScriptMenuItem = NSMenuItem(title: "Autofill Debug Script", action: #selector(MainMenu.toggleAutofillScriptDebugSettingsAction))
+    let contentScopeDebugStateMenuItem = NSMenuItem(title: "Content Scope Scripts Debug State", action: #selector(MainMenu.toggleContentScopeStateDebugSettingsAction))
     let toggleWatchdogMenuItem = NSMenuItem(title: "Toggle Hang Watchdog", action: #selector(MainViewController.toggleWatchdog))
     let toggleWatchdogCrashMenuItem = NSMenuItem(title: "Crash on timeout", action: #selector(MainViewController.toggleWatchdogCrash))
 
@@ -125,6 +126,7 @@ final class MainMenu: NSMenu {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let appVersion: AppVersion
     private let configurationURLProvider: CustomConfigurationURLProviding
+    private let contentScopePreferences: ContentScopePreferences
 
     private lazy var webExtensionsMenuItem: NSMenuItem? = {
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
@@ -148,7 +150,8 @@ final class MainMenu: NSMenu {
          privacyConfigurationManager: PrivacyConfigurationManaging,
          appVersion: AppVersion = .shared,
          isFireWindowDefault: Bool,
-         configurationURLProvider: CustomConfigurationURLProviding) {
+         configurationURLProvider: CustomConfigurationURLProviding,
+         contentScopePreferences: ContentScopePreferences = ContentScopePreferences()) {
 
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
@@ -160,6 +163,7 @@ final class MainMenu: NSMenu {
         self.aiChatMenuConfig = aiChatMenuConfig
         self.historyMenu = HistoryMenu(historyGroupingDataSource: historyCoordinator, featureFlagger: featureFlagger)
         self.configurationURLProvider = configurationURLProvider
+        self.contentScopePreferences = contentScopePreferences
         super.init(title: UserText.duckDuckGo)
 
         buildItems {
@@ -501,6 +505,7 @@ final class MainMenu: NSMenu {
         updateInternalUserItem()
         updateRemoteConfigurationInfo()
         updateAutofillDebugScriptMenuItem()
+        updateContentScopeDebugStateMenuItem()
         updateShowToolbarsOnFullScreenMenuItem()
         updateWatchdogMenuItems()
         updateWebExtensionsMenuItem()
@@ -741,7 +746,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Performance Tests") {
                 NSMenuItem(title: "Test Network Quality", action: #selector(MainViewController.testNetworkQuality))
                     .withAccessibilityIdentifier("MainMenu.testNetworkQuality")
-                NSMenuItem(title: "Test Current Site Performance", action: #selector(MainViewController.testCurrentSitePerformance))
+                NSMenuItem(title: "Test Site Performance (DDG vs Safari)", action: #selector(MainViewController.testCurrentSitePerformance))
                     .withAccessibilityIdentifier("MainMenu.testCurrentSitePerformance")
             }
             NSMenuItem(title: "Content Scopes Experiment") {
@@ -752,6 +757,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Reset Default Grammar Checks", action: #selector(AppDelegate.resetDefaultGrammarChecks))
                 NSMenuItem(title: "Reset Autofill Data", action: #selector(AppDelegate.resetSecureVaultData)).withAccessibilityIdentifier("MainMenu.resetSecureVaultData")
                 NSMenuItem(title: "Reset Bookmarks", action: #selector(AppDelegate.resetBookmarks)).withAccessibilityIdentifier("MainMenu.resetBookmarks")
+                NSMenuItem(title: "Reset Fireproof Sites", action: #selector(AppDelegate.resetFireproofSites))
                 NSMenuItem(title: "Reset Pinned Tabs", action: #selector(AppDelegate.resetPinnedTabs))
                 NSMenuItem(title: "Reset New Tab Page Customizations", action: #selector(AppDelegate.resetNewTabPageCustomization))
                 NSMenuItem(title: "Reset YouTube Overlay Interactions", action: #selector(AppDelegate.resetDuckPlayerOverlayInteractions))
@@ -885,6 +891,8 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu())
             if AppVersion.runType.requiresEnvironment {
                 NSMenuItem(title: "SAD/ATT Prompts").submenu(DefaultBrowserAndDockPromptDebugMenu())
+                WinBackOfferDebugMenu(winbackOfferStore: Application.appDelegate.winbackOfferStore,
+                                      keyValueStore: Application.appDelegate.keyValueStore)
             }
         }
 
@@ -900,6 +908,8 @@ final class MainMenu: NSMenu {
     private func setupLoggingMenu() -> NSMenu {
         let menu = NSMenu(title: "")
         menu.addItem(autofillDebugScriptMenuItem
+            .targetting(self))
+        menu.addItem(contentScopeDebugStateMenuItem
             .targetting(self))
         menu.addItem(.separator())
         let exportLogsMenuItem = NSMenuItem(title: "Export Logs…", action: #selector(MainViewController.exportLogs))
@@ -919,6 +929,10 @@ final class MainMenu: NSMenu {
 
     private func updateAutofillDebugScriptMenuItem() {
         autofillDebugScriptMenuItem.state = AutofillPreferences().debugScriptEnabled ? .on : .off
+    }
+
+    private func updateContentScopeDebugStateMenuItem() {
+        contentScopeDebugStateMenuItem.state = contentScopePreferences.isDebugStateEnabled ? .on : .off
     }
 
     @MainActor
@@ -949,6 +963,11 @@ final class MainMenu: NSMenu {
         AutofillPreferences().debugScriptEnabled = !AutofillPreferences().debugScriptEnabled
         NotificationCenter.default.post(name: .autofillScriptDebugSettingsDidChange, object: nil)
         updateAutofillDebugScriptMenuItem()
+    }
+
+    @objc private func toggleContentScopeStateDebugSettingsAction(_ sender: NSMenuItem) {
+        contentScopePreferences.isDebugStateEnabled = !contentScopePreferences.isDebugStateEnabled
+        updateContentScopeDebugStateMenuItem()
     }
 
     @MainActor

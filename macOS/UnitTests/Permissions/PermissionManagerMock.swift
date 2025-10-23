@@ -56,20 +56,24 @@ final class PermissionManagerMock: PermissionManagerProtocol {
     }
 
     var burnPermissionsCalled = false
-    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping () -> Void) {
+    func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor () -> Void) {
         savedPermissions = savedPermissions.filter { fireproofDomains.isFireproof(fireproofDomain: $0.key) }
         burnPermissionsCalled = true
-        completion()
+        MainActor.assumeMainThread {
+            completion()
+        }
     }
 
     var burnPermissionsOfDomainsCalled = false
-    func burnPermissions(of baseDomains: Set<String>, tld: Common.TLD, completion: @escaping () -> Void) {
+    func burnPermissions(of baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor () -> Void) {
         burnPermissionsOfDomainsCalled = true
-        completion()
+        MainActor.assumeMainThread {
+            completion()
+        }
     }
 
     // For testing permission requests from PermissionModel
-    var capturedRequests: [(permissions: [PermissionType], domain: String, url: URL, completion: (Bool) -> Void)] = []
+    var capturedRequests: [(permissions: [PermissionType], domain: String, url: URL, completion: @MainActor (Bool) -> Void)] = []
     var onPermissionRequested: (() -> Void)?
 
     func permissions(_ permissions: [PermissionType], requestedForDomain domain: String, url: URL, decisionHandler: @escaping (Bool) -> Void) {
@@ -77,13 +81,15 @@ final class PermissionManagerMock: PermissionManagerProtocol {
         onPermissionRequested?()
     }
 
-    var lastRequest: (permissions: [PermissionType], domain: String, url: URL, completion: (Bool) -> Void)? {
+    var lastRequest: (permissions: [PermissionType], domain: String, url: URL, completion: @MainActor (Bool) -> Void)? {
         return capturedRequests.last
     }
 
     func respondToLastRequest(with decision: Bool) {
         guard let lastRequest = capturedRequests.last else { return }
-        lastRequest.completion(decision)
+        MainActor.assumeMainThread {
+            lastRequest.completion(decision)
+        }
     }
 
 }

@@ -135,7 +135,9 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.historyViewActionsManager = HistoryViewActionsManager(
             historyCoordinator: historyCoordinator,
             bookmarksHandler: bookmarkManager,
+            featureFlagger: featureFlagger,
             fireproofStatusProvider: fireproofDomains,
+            tld: tld,
             fire: { @MainActor in fireCoordinator.fireViewModel.fire }
         )
         self.currentCohorts = generateCurrentCohorts()

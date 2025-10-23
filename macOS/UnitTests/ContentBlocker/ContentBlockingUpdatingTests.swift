@@ -18,6 +18,8 @@
 
 import BrowserServicesKit
 import Common
+import History
+import HistoryView
 import PersistenceTestingUtils
 import TrackerRadarKit
 import WebKit
@@ -44,13 +46,25 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             fireproofDomains: MockFireproofDomains(domains: []),
             faviconManager: FaviconManagerMock(),
             windowControllersManager: WindowControllersManagerMock(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner()
         )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
             appearancePreferences: appearancePreferences
         )
 
+        let windowControllersManager = WindowControllersManagerMock()
+        let fireCoordinator = FireCoordinator(tld: TLD(),
+                                              featureFlagger: MockFeatureFlagger(),
+                                              historyCoordinating: HistoryCoordinatingMock(),
+                                              visualizeFireAnimationDecider: nil,
+                                              onboardingContextualDialogsManager: nil,
+                                              fireproofDomains: MockFireproofDomains(),
+                                              faviconManagement: FaviconManagerMock(),
+                                              windowControllersManager: windowControllersManager,
+                                              pixelFiring: nil,
+                                              historyProvider: MockHistoryViewDataProvider())
         updating = UserContentUpdating(contentBlockerRulesManager: rulesManager,
                                        privacyConfigurationManager: MockPrivacyConfigurationManager(),
                                        trackerDataManager: TrackerDataManager(etag: configStore.loadEtag(for: .trackerDataSet),
@@ -65,11 +79,12 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        onboardingNavigationDelegate: CapturingOnboardingNavigation(),
                                        appearancePreferences: appearancePreferences,
                                        startupPreferences: startupPreferences,
-                                       windowControllersManager: WindowControllersManagerMock(),
+                                       windowControllersManager: windowControllersManager,
                                        bookmarkManager: MockBookmarkManager(),
                                        historyCoordinator: CapturingHistoryDataSource(),
                                        fireproofDomains: MockFireproofDomains(domains: []),
-                                       fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger))
+                                       fireCoordinator: fireCoordinator,
+                                       contentScopePreferences: ContentScopePreferences())
         /// Set it to any value to trigger `didSet` that unblocks updates stream
         updating.userScriptDependenciesProvider = nil
     }

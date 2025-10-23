@@ -1,32 +1,28 @@
-DuckDuckGon mielestä paras tapa suojata henkilökohtaisia tietoja hakkereilta, huijareilta ja tietosuojaa loukkaavilta yrityksiltä on estää niiden kerääminen kokonaan. Siksi miljoonat ihmiset valitsevat DuckDuckGon Chromen ja muiden selainten sijaan  tehdäkseen hakuja ja selatakseen verkossa. Integroitu hakukoneemme on kuin Google, mutta se ei koskaan seuraa hakujasi. Selaussuojauksemme, kuten mainosten seurannan esto ja evästeiden esto, auttavat estämään muita yrityksiä keräämästä tietojasi. Selaimemme on lisäksi ilmainen – ansaitsemme tietosuojaa kunnioittavilla hakumainoksilla, emme käyttämällä tietojasi hyväksemme. Ota henkilökohtaiset tietosi takaisin hallintaasi käyttämällä selainta, joka on suunniteltu tietojen suojaamiseen, ei tietojen keräämiseen. 
+DuckDuckGo uskoo, että paras tapa suojata henkilötietojasi hakkereilta, huijareilta ja yksityisyyttä loukkaavilta yrityksiltä on estää niiden kerääminen kokonaan. Siksi miljoonat ihmiset valitsevat DuckDuckGo:n Chromen ja muiden selainten sijaan etsiäkseen ja selatakseen verkossa. Sisäänrakennettu hakukoneemme on kuin Google, mutta se ei koskaan seuraa hakujasi. Selaussuojauksemme, kuten mainosten seurannan esto ja evästeiden esto, auttavat estämään muita yrityksiä keräämästä tietojasi. Valinnaiset integroidut tekoälyominaisuutemme, Search Assist ja Duck.ai, ovat yksityisiä eivätkä koskaan käytä tietojasi tekoälyn kouluttamiseen. Lisäksi selaimemme on ilmainen – ansaitsemme rahaa yksityisyyttä kunnioittavilla hakumainoksilla, emme hyödyntämällä tietojasi. Ota henkilötietosi takaisin hallintaasi selaimella, joka on suunniteltu tietosuojaan, ei tiedonkeruuseen. 
 
-OMINAISUUKSIEN KOHOKOHDAT
-Suojaa hakusi oletusarvoisesti: DuckDuckGo Search on jo valmiiksi integroitu, joten voit helposti tehdä hakuja verkossa ilman, että sinua seurataan. 
+OMINAISUUKSIEN KOHOKOHDAT 
+Suojaa hakusi oletusarvoisesti: DuckDuckGo Search on jo valmiiksi integroitu, joten voit helposti tehdä hakuja verkossa ilman, että sinua seurataan.  
+Suojaa selaushistoriasi: kolmannen osapuolen Tracker Loading Protection -suojauksemme estää useimmat seurantaohjelmat ennen niiden latautumista. Tämä toimii merkittävästi paremmin kuin useimpien suosittujen selainten oletusarvoinen toiminta.  
+Keskustele yksityisesti tekoälyn kanssa: Duck.ai:n avulla voit käydä yksityisiä keskusteluja kolmannen osapuolentekoälymallien kanssa. Olemme anonymisoineet keskustelut, eikä niitä koskaan käytetä tekoälyn kouluttamiseen.
+Suojaa sähköpostisi (valinnainen): Email Protection -suojauksen avulla voit estää useimmat sähköpostin seurantaohjelmat ja piilottaa sähköpostiosoitteesi käyttämällä @duck.com-osoitetta.   
+Katsele YouTube -videoita ilman kohdennettuja mainoksia: Duck Player suojaa sinua kohdennetuilta mainoksilta ja evästeiltä häiriöttömällä käyttöliittymällä, joka sisältää YouTuben tiukimmat tietosuoja-asetukset upotetun videon osalta. 
+Pakota salaus automaattisesti: Suojaa tietosi verkko- ja WiFi-urkkijoilta pakottamalla monet sivustot käyttämään HTTPS-yhteyttä.  
+Estä fingerprinting: Tee yrityksille vaikeammaksi luoda sinulle yksilöllinen tunniste estämällä niiden yritykset yhdistää tietoja selaimestasi ja laitteestasi.  
+Synkronoi ja varmuuskopioi turvallisesti (valinnainen): Synkronoi salatut kirjanmerkit ja salasanat laitteidesi välillä. 
+Tyhjennä välilehdet ja selaustietosi hetkessä Fire Button -painikkeella. 
+Poista evästeiden ponnahdusikkunat ja aseta asetuksesi automaattisesti minimoidaksesi evästeet ja maksimoidaksesi tietosuojan. 
+Ja monia muita suojauksia, joita ei ole saatavilla useimmissa selaimissa. 
 
-Suojaa selaushistoriasi: Kolmannen osapuolen Tracker Loading Protection -suojauksemme estää useimmat seurantaohjelmat ennen niiden latautumista. Tämä toimii merkittävästi paremmin kuin useimpien suosittujen selainten oletusarvoinen toiminta. 
+DuckDuckGo-tilaus
+Tilaajaedut: 
+• VPN: suojaa yhteytesi jopa viidessä laitteessa. 
+• Pääsy edistyneisiin tekoälymalleihin Duck.ai:ssa: Keskustele yksityisesti monimutkaisia tehtäviä varten kehitettyjen tekoälymallien kanssa.
+Personal Information Removal: etsi ja poista henkilötiedot sivustoilta, jotka tallentavat ja myyvät niitä.
+• Identity Theft Restoration: jos henkilöllisyytesi varastetaan, me autamme sinua palauttamaan sen.
 
-Suojaa sähköpostisi (valinnainen): Email Protection -suojauksen avulla voit estää useimmat sähköpostin seurantaohjelmat ja piilottaa sähköpostiosoitteesi käyttämällä @duck.com-osoitetta.  
-
-Katsele YouTube-videoita ilman kohdennettuja mainoksia: Duck Player suojaa sinua kohdennetuilta mainoksilta ja evästeiltä häiriöttömällä käyttöliittymällä, joka sisältää YouTuben tiukimmat tietosuoja-asetukset upotetun videon osalta.
-
-Pakota salaus automaattisesti: Suojaa tietosi verkko- ja WiFi-urkkijoilta pakottamalla monet sivustot käyttämään HTTPS-yhteyttä. 
-
-Estä fingerprinting: Tee yrityksille vaikeammaksi luoda sinulle yksilöllinen tunniste estämällä niiden yritykset yhdistää tietoja selaimestasi ja laitteestasi. 
-
-Synkronoi ja varmuuskopioi turvallisesti (valinnainen): Synkronoi salatut kirjanmerkit ja salasanat laitteidesi välillä.
-
-Tyhjennä välilehdet ja selaustietosi hetkessä Fire Button -painikkeella.
-
-Poista evästeiden ponnahdusikkunat ja aseta asetuksesi automaattisesti minimoidaksesi evästeet ja maksimoidaksesi tietosuojan.
-
-Ja monia muita suojauksia, joita ei ole saatavilla useimmissa selaimissa, edes yksityisessä selaustilassa, mukaan lukien suojaus linkkien seurannalta ja Global Privacy Control (GPC).
-
-Sinun ei tarvitse odottaa voidaksesi ottaa henkilökohtaiset tietosi hallintaasi! Liity miljoonien ihmisten joukkoon, ja valitse DuckDuckGo suojaamaan päivittäistä haku-, selaus- ja sähköpostitoimintaasi. 
-
-Lue lisää ilmaisista seurantasuojauksistamme osoitteessa https://help.duckduckgo.com/privacy/web-tracking-protections
-
+DuckDuckGo-tilauksen hinnoittelu ja ehdot   
+Maksu veloitetaan automaattisesti Apple-tililtäsi kunnes peruutat sen sovelluksen asetuksissa. Voit aktivoida tilauksesi muilla laitteilla antamalla sähköpostiosoitteen, jota käytämme vain tilauksesi vahvistamiseen. Käyttöehdot ja tietosuojakäytäntö löytyvät sivustolta https://duckduckgo.com/pro/privacy-terms 
+Lue lisää ilmaisista seurantasuojauksistamme osoitteessa https://help.duckduckgo.com/privacy/web-tracking-protections 
 Tietosuojakäytäntö: https://duckduckgo.com/privacy/ 
-
-Palveluehdot: https://duckduckgo.com/terms
-
-Huomautus kolmannen osapuolen jäljityssuojauksesta ja hakumainoksista: Vaikka hakumainosten klikkauksiin liittyy joitain rajoituksia, mainosten katselu DuckDuckGo-haussa on anonyymiä. Lue lisää osoitteesta https://help.duckduckgo.com/privacy/web-tracking-protections
+Palveluehdot: https://duckduckgo.com/terms 
+Huomautus kolmannen osapuolen jäljityssuojasta ja hakumainoksista: vaikka hakumainosten klikkausten seuraamiseen liittyy joitakin rajoituksia, DuckDuckGo-haun mainosten katselu on anonyymiä. Lisätietoa on osoitteessa https://help.duckduckgo.com/privacy/web-tracking-protections

@@ -79,7 +79,7 @@ struct UserAgentConfiguration {
     }
 
     private func scheduleUserAgentUpdateIfNeeded(for cached: CachedUserAgent) {
-        guard osVersionProvider.osVersion != cached.osVersion else { return }
+        guard osVersionProvider.osVersionMajorMinorPatch != cached.osVersion else { return }
         launchTaskManager.register(task: BlockLaunchTask(name: "Update User Agent") { taskContext in
             Task {
                 await extractAndSetDefaultUserAgent()
@@ -103,7 +103,7 @@ struct UserAgentConfiguration {
     }
 
     private func cacheUserAgent(_ userAgent: String) {
-        let userAgent = CachedUserAgent(userAgent: userAgent, osVersion: osVersionProvider.osVersion)
+        let userAgent = CachedUserAgent(userAgent: userAgent, osVersion: osVersionProvider.osVersionMajorMinorPatch)
         let encodedUserAgent = try? PropertyListEncoder().encode(userAgent)
         try? store.set(encodedUserAgent, forKey: Constants.userAgentCacheKey)
     }

@@ -127,6 +127,9 @@ extension DebugScreensViewModel {
             .view(title: "Notifications Playground", { _ in
                 LocalNotificationsPlaygroundView()
             }),
+            .view(title: "Win-back Offer", { d in
+                WinBackOfferDebugView(keyValueStore: d.keyValueStore)
+            }),
 
             // MARK: Controllers
             .controller(title: "Image Cache", { d in
@@ -195,6 +198,9 @@ extension DebugScreensViewModel {
                 }
                 autofillDebugViewController.keyValueStore = d.keyValueStore
                 return autofillDebugViewController
+            }),
+            .controller(title: "Logging", { _ in
+                return LoggingDebugViewController()
             }),
             .controller(title: "Subscription", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)

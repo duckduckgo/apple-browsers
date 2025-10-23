@@ -42,8 +42,6 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
 
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var editButton: UIBarButtonItem!
-    @IBOutlet weak var favoritesContainer: UIView!
-    @IBOutlet weak var selectorControl: UISegmentedControl!
 
     // Need to retain these as we're going to add/remove them from the view hierarchy
     @IBOutlet var doneButton: UIBarButtonItem!
@@ -64,6 +62,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         let button = UIButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size24.folderAdd, for: .normal)
         button.addTarget(self, action: #selector(onAddFolderPressed), for: .touchUpInside)
+        button.accessibilityLabel = UserText.addFolderScreenTitle
         return button
     }()
 
@@ -175,8 +174,6 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         viewModel.currentFolder?.uuid != BookmarkEntity.Constants.rootFolderID
     }
 
-    var favoritesController: FavoritesViewController?
-
     required init?(coder: NSCoder,
                    bookmarksDatabase: CoreDataDatabase,
                    bookmarksSearch: BookmarksStringSearch,
@@ -250,25 +247,12 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         tableView.delegate = self
 
         registerForNotifications()
-        configureSelector()
         configureTableView()
         configureBars()
 
         decorate()
 
-        selectorControl.removeFromSuperview()
-        if !isNested {
-            let stack = UIStackView(arrangedSubviews: [selectorControl])
-            stack.alignment = .center
-            stack.axis = .vertical
-
-            navigationController?.navigationBar.topItem?.titleView = stack
-
-            onViewSelectorChanged(selectorControl)
-        } else {
-            navigationItem.title = viewModel.currentFolder?.title
-        }
-
+        navigationItem.title = isNested ? viewModel.currentFolder?.title : UserText.sectionTitleBookmarks
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -281,20 +265,6 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         tableView.reloadData()
     }
 
-    @IBAction func onViewSelectorChanged(_ segment: UISegmentedControl) {
-        switch selectorControl.selectedSegmentIndex {
-        case 0:
-            showBookmarksView()
-
-        case 1:
-            showFavoritesView()
-
-        default: assertionFailure("Invalid selected segment index")
-        }
-
-        refreshFooterView()
-    }
-
     private func refreshAll() {
         refreshEditButton()
         refreshFooterView()
@@ -304,18 +274,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
 
     private func showBookmarksView() {
         tableView.isHidden = false
-        favoritesContainer.isHidden = true
         addFolderButton.isHidden = false
         moreButton.isHidden = false
-        refreshAll()
-    }
-
-    private func showFavoritesView() {
-        searchBar.resignFirstResponder()
-        tableView.isHidden = true
-        favoritesContainer.isHidden = false
-        addFolderButton.isHidden = true
-        moreButton.isHidden = true
         refreshAll()
     }
 
@@ -521,11 +481,6 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         }
     }
 
-    private func configureSelector() {
-        favoritesContainer.backgroundColor = tableView.backgroundColor
-        selectorControl.setTitle(UserText.sectionTitleBookmarks, forSegmentAt: 0)
-    }
-
     private func configureTableView() {
         if isNested {
             tableView.tableHeaderView = nil
@@ -584,10 +539,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         }
 
         editButton.title = UserText.actionGenericEdit
-        if !favoritesContainer.isHidden {
-            editButton.isEnabled = favoritesController?.isEditing == true || (favoritesController?.hasFavorites ?? false)
-            editButton.title = UserText.actionManageFavorites
-        } else if (dataSource.isEmpty && !isEditingBookmarks) || dataSource === searchDataSource {
+        if (dataSource.isEmpty && !isEditingBookmarks) || dataSource === searchDataSource {
             disableEditButton()
         } else if !isEditingBookmarks {
             enableEditButton()
@@ -613,8 +565,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     private func refreshFooterView() {
         if !isNested &&
             dataSource.isEmpty &&
-            dataSource !== searchDataSource &&
-            selectorControl.selectedSegmentIndex == 0 {
+            dataSource !== searchDataSource {
             showEmptyState()
         } else {
             hideEmptyState()
@@ -662,20 +613,6 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             
             return controller
         }
-    }
-    
-    @IBSegueAction func onCreateFavoritesView(_ coder: NSCoder, sender: Any?, segueIdentifier: String?) -> FavoritesViewController {
-        guard let controller = FavoritesViewController(
-            coder: coder,
-            bookmarksDatabase: bookmarksDatabase,
-            syncService: syncService,
-            syncDataProviders: syncDataProviders,
-            appSettings: appSettings
-        ) else {
-            fatalError("Failed to create controller")
-        }
-
-        return controller
     }
 
     // MARK: Import bookmarks
@@ -840,7 +777,6 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         tableView.isEditing = false
         
         tableView.setEditing(true, animated: true)
-        favoritesController?.isEditing = true
 
         self.isEditingBookmarks = true
         changeEditButtonToDone()
@@ -849,8 +785,6 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     }
 
     private func finishEditing() {
-        favoritesController?.isEditing = false
-
         guard tableView.isEditing else {
             return
         }
@@ -1029,13 +963,6 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         dismiss(animated: true, completion: nil)
     }
 
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if let viewController = segue.destination as? FavoritesViewController {
-            viewController.delegate = self
-            favoritesController = viewController
-        }
-    }
-
     private(set) lazy var faviconsFetcherOnboarding: FaviconsFetcherOnboarding =
         .init(syncService: syncService, syncBookmarksAdapter: syncDataProviders.bookmarksAdapter)
 }
@@ -1097,18 +1024,6 @@ extension BookmarksViewController: UIDocumentPickerDelegate {
         }
         importBookmarks(fromHtml: contents)
     }
-}
-
-extension BookmarksViewController: FavoritesViewControllerDelegate {
-
-    func favoritesViewController(_ controller: FavoritesViewController, didSelectFavorite favorite: BookmarkEntity) {
-        select(bookmark: favorite)
-    }
-
-    func favoritesViewController(_ controller: FavoritesViewController, didRequestEditFavorite favorite: BookmarkEntity) {
-        performSegue(withIdentifier: "AddOrEditBookmarkFolder", sender: favorite.objectID)
-    }
-
 }
 
 extension BookmarksViewController: AddOrEditBookmarkViewControllerDelegate {

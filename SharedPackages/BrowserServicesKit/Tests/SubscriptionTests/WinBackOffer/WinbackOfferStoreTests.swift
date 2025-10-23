@@ -24,13 +24,13 @@ import SecureStorage
 final class WinbackOfferStoreTests: XCTestCase {
 
     var mockKeychainService: MockKeychainService!
-    var mockKeyValueStore: MockKeyValueStore!
+    var mockKeyValueStore: MockThrowingKeyValueStore!
     var store: WinbackOfferStore!
 
     override func setUp() {
         super.setUp()
         mockKeychainService = MockKeychainService()
-        mockKeyValueStore = MockKeyValueStore()
+        mockKeyValueStore = MockThrowingKeyValueStore()
         store = WinbackOfferStore(keychainService: mockKeychainService, keyValueStore: mockKeyValueStore)
     }
 
@@ -221,7 +221,7 @@ class MockKeychainService: KeychainService {
     }
 }
 
-class MockKeyValueStore: ThrowingKeyValueStoring {
+class MockThrowingKeyValueStore: ThrowingKeyValueStoring {
     private var storage: [String: Any] = [:]
 
     func object(forKey defaultName: String) throws -> Any? {

@@ -38,11 +38,11 @@ public class SuggestionLoader: SuggestionLoading {
         case failedToProcessData
     }
 
-    private let urlFactory: (String) -> URL?
+    private let shouldLoadSuggestionsForUserInput: (String) -> Bool
     private let isUrlIgnored: (URL) -> Bool
 
-    public init(urlFactory: @escaping (String) -> URL?, isUrlIgnored: @escaping (URL) -> Bool) {
-        self.urlFactory = urlFactory
+    public init(shouldLoadSuggestionsForUserInput: @escaping (String) -> Bool, isUrlIgnored: @escaping (URL) -> Bool) {
+        self.shouldLoadSuggestionsForUserInput = shouldLoadSuggestionsForUserInput
         self.isUrlIgnored = isUrlIgnored
     }
 
@@ -63,10 +63,10 @@ public class SuggestionLoader: SuggestionLoading {
         var apiResult: APIResult?
         var apiError: Error?
 
-        let url = urlFactory(query)
+        let shouldLoadSuggestions = shouldLoadSuggestionsForUserInput(query)
 
         let group = DispatchGroup()
-        if url == nil || url!.isRoot && url!.path.last != "/" {
+        if shouldLoadSuggestions {
             group.enter()
             dataSource.suggestionLoading(self,
                                          suggestionDataFromUrl: Self.remoteSuggestionsUrl,

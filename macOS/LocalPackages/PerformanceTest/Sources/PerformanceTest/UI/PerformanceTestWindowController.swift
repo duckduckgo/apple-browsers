@@ -26,7 +26,11 @@ public class PerformanceTestWindowController: NSWindowController {
     private var viewModel: PerformanceTestViewModel?
     private var hostingController: NSHostingController<PerformanceTestWindowView>?
 
-    public convenience init(webView: WKWebView) {
+    public convenience init(
+        webView: WKWebView,
+        createNewTab: (() async -> WKWebView?)? = nil,
+        closeTab: (() async -> Void)? = nil
+    ) {
         let window = NSWindow(
             contentRect: NSRect(
                 x: 0,
@@ -43,8 +47,12 @@ public class PerformanceTestWindowController: NSWindowController {
 
         self.init(window: window)
 
-        // Create view model with the webView
-        let viewModel = PerformanceTestViewModel(webView: webView)
+        // Create view model with the webView and tab lifecycle callbacks
+        let viewModel = PerformanceTestViewModel(
+            webView: webView,
+            createNewTab: createNewTab,
+            closeTab: closeTab
+        )
         self.viewModel = viewModel
 
         // Create the SwiftUI view

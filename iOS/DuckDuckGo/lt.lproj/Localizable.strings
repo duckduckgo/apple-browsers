@@ -133,6 +133,9 @@
 /* New tab menu item opening a new tab */
 "action.title.tab.new" = "Nauja kortelė";
 
+/* VPN menu item */
+"action.title.vpn" = "VPN";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Apačia";
 
@@ -2317,9 +2320,6 @@
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Patvirtinti";
 
-/* Description text for the new address bar picker modal */
-"new.address.bar.picker.description" = "DI funkcijos visada yra pasirenkamos.";
-
 /* Footer text for the new address bar picker */
 "new.address.bar.picker.footer" = "Sureguliuok nustatymuose > DI funkcijos";
 
@@ -2332,8 +2332,8 @@
 /* Option for search only in the new address bar picker */
 "new.address.bar.picker.search.only" = "Tik paieška";
 
-/* Subtitle for the new address bar picker modal */
-"new.address.bar.picker.subtitle" = "Perjunkite paiešką ir DI pokalbius";
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline" = "Norite lengviau pasiekti DI pokalbius?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Adreso juostos parinktis";
@@ -2622,6 +2622,9 @@
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Tvarkykite kredito korteles…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "Pasiekėte maksimalų kredito kortelių skaičių. Ištrinkite kai kurias, kad tęstumėte sinchronizavimą.";
 
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Sinchronizuojant įvyko klaida. Pabandykite išjungti sinchronizavimą šiame prietaise ir vėl prisijungti naudodami kitą prietaisą arba atkūrimo kodą.";
@@ -3843,6 +3846,54 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Pranešimas iš %@:";
+
+/* CTA of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.cta" = "Peržiūrėti pasiūlymą";
+
+/* Dismiss of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.dismiss" = "Ne dabar";
+
+/* Message of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.text" = "Apsaugokite save naudodami mūsų VPN, privatų DI ir kitas funkcijas. Prenumeruokite iš naujo šiandien ir sutaupykite 25 %.";
+
+/* Title of message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.title" = "Paskutinė diena sutaupyti 25 %!";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "SUTAUPYKITE 25%";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "Peržiūrėti pasiūlymą";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Ne dabar";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "Apsisaugokite naudodami mūsų VPN, privatų DI ir kitas funkcijas. Prenumeruokite iš naujo šiandien ir sutaupykite 25 %.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Pasiūlymas galioja ribotą laiką";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "Norime, kad sugrįžtumėte!\nPasinaudokite 25% nuolaida.";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "Peržiūrėti pasiūlymą";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "Turiu prenumeratą";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "Riboto galiojimo pasiūlymas!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "Apsaugokite save naudodami mūsų VPN, privatų DI ir kitas funkcijas. Prenumeruokite iš naujo šiandien ir sutaupykite 25 %.Riboto galiojimo pasiūlymas.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "Prenumeruokite iš naujo ir sutaupykite 25 %";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Prenumeruokite iš naujo ir sutaupykite 25 %";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Ieškote „Mac“ versijos?";

@@ -29,20 +29,23 @@ class MockFireButtonPreferencesPersistor: FireButtonPreferencesPersistor {
     var warnBeforeClearingEnabled: Bool = false
     var loginDetectionEnabled: Bool = false
     var shouldOpenFireWindowByDefault: Bool = false
+    var autoClearAIChatHistoryEnabled: Bool = false
 }
 
 fileprivate extension DataClearingPreferences {
     @MainActor
     convenience init(persistor: FireButtonPreferencesPersistor,
                      featureFlagger: FeatureFlagger = MockFeatureFlagger(),
-                     pixelFiring: PixelFiring? = nil) {
+                     pixelFiring: PixelFiring? = nil,
+                     aiChatHistoryCleaner: AIChatHistoryCleaning = MockAIChatHistoryCleaner()) {
         self.init(
             persistor: persistor,
             fireproofDomains: MockFireproofDomains(domains: []),
             faviconManager: FaviconManagerMock(),
             windowControllersManager: WindowControllersManagerMock(),
             featureFlagger: featureFlagger,
-            pixelFiring: pixelFiring
+            pixelFiring: pixelFiring,
+            aiChatHistoryCleaner: aiChatHistoryCleaner
         )
     }
 }
@@ -110,6 +113,54 @@ class DataClearingPreferencesTests: XCTestCase {
         let sut = DataClearingPreferences(persistor: mockPersistor, featureFlagger: featureFlaggerMock)
 
         XCTAssertTrue(sut.shouldShowDisableFireAnimationSection)
+    }
+
+    @MainActor
+    func testWhenAIChatHistoryCleanerDisplayOptionIsTrue_thenShouldShowAutoClearAIChatHistorySettingIsTrue() {
+        let mockPersistor = MockFireButtonPreferencesPersistor()
+        let mockAIChatHistoryCleaner = MockAIChatHistoryCleaner()
+        mockAIChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption = true
+        let sut = DataClearingPreferences(persistor: mockPersistor, aiChatHistoryCleaner: mockAIChatHistoryCleaner)
+
+        XCTAssertTrue(sut.shouldShowAutoClearAIChatHistorySetting)
+    }
+
+    @MainActor
+    func testWhenAIChatHistoryCleanerDisplayOptionIsFalse_thenShouldShowAutoClearAIChatHistorySettingIsFalse() {
+        let mockPersistor = MockFireButtonPreferencesPersistor()
+        let mockAIChatHistoryCleaner = MockAIChatHistoryCleaner()
+        mockAIChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption = false
+        let sut = DataClearingPreferences(persistor: mockPersistor, aiChatHistoryCleaner: mockAIChatHistoryCleaner)
+
+        XCTAssertFalse(sut.shouldShowAutoClearAIChatHistorySetting)
+    }
+
+    @MainActor
+    func testWhenAIChatHistoryCleanerDisplayOptionBecomesTrue_thenShouldShowAutoClearAIChatHistorySettingIsEnabled() {
+        let mockPersistor = MockFireButtonPreferencesPersistor()
+        let mockAIChatHistoryCleaner = MockAIChatHistoryCleaner()
+        mockAIChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption = false
+        let sut = DataClearingPreferences(persistor: mockPersistor, aiChatHistoryCleaner: mockAIChatHistoryCleaner)
+
+        XCTAssertFalse(sut.shouldShowAutoClearAIChatHistorySetting)
+
+        mockAIChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption = true
+
+        XCTAssertTrue(sut.shouldShowAutoClearAIChatHistorySetting)
+
+    }
+
+    @MainActor
+    func testWhenIsAutoClearAIChatHistoryEnabledIsUpdated_thenPersistorUpdates() {
+        let mockPersistor = MockFireButtonPreferencesPersistor()
+        let dataClearingPreferences = DataClearingPreferences(persistor: mockPersistor)
+        dataClearingPreferences.isAutoClearAIChatHistoryEnabled = true
+
+        XCTAssertTrue(mockPersistor.autoClearAIChatHistoryEnabled)
+
+        dataClearingPreferences.isAutoClearAIChatHistoryEnabled = false
+
+        XCTAssertFalse(mockPersistor.autoClearAIChatHistoryEnabled)
     }
 
     // MARK: - Pixel firing tests

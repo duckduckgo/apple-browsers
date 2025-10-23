@@ -85,6 +85,8 @@ public enum PrivacyFeature: String {
     case daxEasterEggLogos
     case openFireWindowByDefault
     case behaviorMetrics
+    case dataImport
+    case duckAiDataClearing
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -165,6 +167,12 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210659895188821?focus=true
     case embeddedSERPSettings
+
+    /// https://app.asana.com/1/137249556945/project/715106103902962/task/1210997282929955?focus=true
+    case unifiedURLPredictor
+
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210869716452614?focus=true
+    case customization
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -255,6 +263,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Rollout feature flag for entry point improvements
     case improvements
+
+    /// Allows user to clear AI Chat history with the fire button or auto-clear
+    case clearAIChatHistory
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -267,6 +278,9 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to control shared or independent New Tab Page
     case newTabPagePerTab
+
+    /// Global switch to control managing state of NTP in frontend using tab IDs
+    case newTabPageTabIDs
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
@@ -346,6 +360,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionRestoreWidePixelMeasurement
     case authV2WideEventEnabled
     case winBackOffer
+    case vpnMenuItem
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {
@@ -372,6 +387,7 @@ public enum SyncPromotionSubfeature: String, PrivacySubfeature {
 public enum HTMLHistoryPageSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature { .htmlHistoryPage }
     case isLaunched
+    case sitesSection
 }
 
 public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {
@@ -456,4 +472,10 @@ public enum BehaviorMetricsSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .behaviorMetrics }
 
     case behaviorMetricsEnabled
+}
+
+public enum DataImportSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .dataImport }
+
+    case newSafariFilePicker
 }

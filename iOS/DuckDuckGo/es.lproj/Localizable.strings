@@ -133,6 +133,9 @@
 /* New tab menu item opening a new tab */
 "action.title.tab.new" = "Nueva pestaña";
 
+/* VPN menu item */
+"action.title.vpn" = "VPN";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Inferior";
 
@@ -2317,9 +2320,6 @@
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Confirmar";
 
-/* Description text for the new address bar picker modal */
-"new.address.bar.picker.description" = "Las funciones de IA son siempre opcionales.";
-
 /* Footer text for the new address bar picker */
 "new.address.bar.picker.footer" = "Ajusta en Configuración > Funciones de IA";
 
@@ -2332,8 +2332,8 @@
 /* Option for search only in the new address bar picker */
 "new.address.bar.picker.search.only" = "Solo buscar";
 
-/* Subtitle for the new address bar picker modal */
-"new.address.bar.picker.subtitle" = "Alterna entre la búsqueda y el chat de IA";
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline" = "¿Quieres un acceso más fácil al chat de IA?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Opción de la barra de direcciones";
@@ -2622,6 +2622,9 @@
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Administrar tarjetas de crédito…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "Has alcanzado el número máximo de tarjetas de crédito. Elimina algunas para reanudar la sincronización.";
 
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Se ha producido un error en la sincronización. Intenta desactivar la sincronización en este dispositivo y, a continuación, vuelve a conectarte con otro dispositivo o con tu código de recuperación.";
@@ -3843,6 +3846,54 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Un mensaje de %@:";
+
+/* CTA of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.cta" = "Ver oferta";
+
+/* Dismiss of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.dismiss" = "Ahora no";
+
+/* Message of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.text" = "Mantente protegido con nuestra VPN, IA privada y mucho más. Vuelve a suscribirte hoy y ahorra un 25 %.";
+
+/* Title of message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.title" = "¡Último día para ahorrar un 25 %!";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "AHORRA UN 25 %";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "Ver oferta";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Ahora no";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "Mantente protegido con nuestra VPN, IA privada y mucho más. Vuelve a suscribirte hoy y ahorra un 25 %.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Solo por tiempo limitado";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "¡Queremos que vuelvas!\nConsigue un 25 % de descuento.";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "Ver oferta";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "Tengo una suscripción";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "¡Oferta por tiempo limitado!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "Mantente protegido con nuestra VPN, IA privada y mucho más. Vuelve a suscribirte hoy y ahorra un 25 %.Oferta por tiempo limitado.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "Vuelve a suscribirte y ahorra un 25 %";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Vuelve a suscribirte y ahorra un 25 %";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "¿Buscas la versión para Mac?";

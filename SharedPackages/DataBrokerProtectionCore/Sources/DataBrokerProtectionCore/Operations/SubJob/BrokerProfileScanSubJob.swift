@@ -19,6 +19,7 @@
 import Foundation
 import Common
 import BrowserServicesKit
+import PixelKit
 import os.log
 
 struct BrokerProfileScanSubJob {
@@ -68,6 +69,18 @@ struct BrokerProfileScanSubJob {
             isImmediateOperation: isManual,
             vpnConnectionState: vpnConnectionState,
             vpnBypassStatus: vpnBypassStatus
+        )
+
+        let metadata = ScanWideEventRecorder.Metadata(
+            from: brokerProfileQueryData.scanJobData,
+            referenceDate: stageCalculator.startTime
+        )
+        let scanWideEventRecorder = ScanWideEventRecorder.startIfPossible(
+            wideEvent: dependencies.wideEvent,
+            attemptID: stageCalculator.attemptId,
+            dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+            dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+            metadata: metadata
         )
 
         do {
@@ -152,6 +165,10 @@ struct BrokerProfileScanSubJob {
         } catch {
             // 8. Process errors returned by the scan job:
             stageCalculator.fireScanError(error: error)
+
+            let wideEventCompletion = ScanWideEventData.completion(for: error)
+            scanWideEventRecorder?.complete(status: wideEventCompletion.status, endDate: Date(), error: wideEventCompletion.error)
+
             handleOperationError(origin: .scan,
                                  brokerId: brokerId,
                                  profileQueryId: profileQueryId,
@@ -161,6 +178,8 @@ struct BrokerProfileScanSubJob {
                                  schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig)
             throw error
         }
+
+        scanWideEventRecorder?.complete(status: .success, endDate: Date(), error: nil)
 
         return true
     }
@@ -408,4 +427,26 @@ struct BrokerProfileScanSubJob {
         Logger.dataBrokerProtection.error("Error on operation: \(error.localizedDescription, privacy: .public)")
     }
 
+}
+
+extension ScanWideEventData {
+    static func completion(for error: Error) -> (status: WideEventStatus, error: Error?) {
+        if let dataBrokerError = error as? DataBrokerProtectionError {
+            switch dataBrokerError {
+            case .jobTimeout, .cancelled:
+                return (.cancelled, error)
+            case .httpError(let code) where code == 404:
+                return (.success, nil)
+            default:
+                return (.failure, error)
+            }
+        }
+
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorCancelled {
+            return (.cancelled, error)
+        }
+
+        return (.failure, error)
+    }
 }

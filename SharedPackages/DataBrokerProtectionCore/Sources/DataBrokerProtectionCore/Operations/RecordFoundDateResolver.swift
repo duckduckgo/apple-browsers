@@ -66,7 +66,7 @@ enum RecordFoundDateResolver {
 
         let sortedEvents = events.sorted(by: { $0.date < $1.date })
 
-        guard let latestClearDate = sortedEvents.last(where: { $0.isClearEvent() })?.date else {
+        guard let latestClearDate = sortedEvents.last(where: { $0.isOptOutClearEvent() })?.date else {
             return sortedEvents.first(where: { $0.isMatchesFoundEvent() })?.date
         }
 

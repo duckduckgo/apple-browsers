@@ -26,7 +26,7 @@ import XCTest
 class DesktopUserAttributeMatcherTests: XCTestCase {
 
     var mockStatisticsStore: MockStatisticsStore!
-    var mockFeatureDiscovery:MockFeatureDiscovery!
+    var mockFeatureDiscovery: MockFeatureDiscovery!
     var manager: MockVariantManager!
     var emailManager: EmailManager!
     var matcher: DesktopUserAttributeMatcher!

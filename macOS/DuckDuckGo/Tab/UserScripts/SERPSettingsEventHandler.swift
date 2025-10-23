@@ -51,12 +51,15 @@ final class SERPSettingsEventHandler: EventMapping<SERPSettingsError> {
     init() {
         super.init { event, _, _, _ in
             switch event {
-            case .serializationFailed: ()
-                // Fires when converting settings dictionary to JSON fails. Pixel will be added in an upcoming PR
-            case .keyValueStoreReadError: ()
-                // Fires when reading from persistent storage fails. Pixel will be added in an upcoming PR
-            case .keyValueStoreWriteError: ()
-                // Fires when writing to persistent storage fails. Pixel will be added in an upcoming PR
+            case .serializationFailed:
+                // Fires when converting settings dictionary to JSON fails.
+                PixelKit.fire(GeneralPixel.serpSettingsSerializationFailed, frequency: .dailyAndCount)
+            case .keyValueStoreReadError:
+                // Fires when reading from persistent storage fails.
+                PixelKit.fire(GeneralPixel.serpSettingsKeyValueStoreReadError, frequency: .dailyAndCount)
+            case .keyValueStoreWriteError:
+                // Fires when writing to persistent storage fails.
+                PixelKit.fire(GeneralPixel.serpSettingsKeyValueStoreWriteError, frequency: .dailyAndCount)
             }
         }
     }

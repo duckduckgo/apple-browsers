@@ -34,16 +34,8 @@ struct FileImportScreenView: View {
                         .frame(width: 48, height: 48)
                 }
 
-                switch kind {
-                case .individual:
-                    Text(UserText.importDataTitle)
-                        .font(.title2.weight(.semibold))
-                        .padding(.bottom, 20)
-                case .archive:
-                    Text("Import from \(model.importSource.importSourceName)")
-                        .font(.title2.weight(.semibold))
-                        .padding(.bottom, 20)
-                }
+                Text(UserText.importFromFileTitle(from: model.importSource))
+                    .font(.title2.weight(.semibold))
 
                 VStack(alignment: .leading, spacing: 0) {
                     if !summaryTypes.isEmpty {

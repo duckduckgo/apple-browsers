@@ -249,7 +249,7 @@ extension DebugScreensViewModel {
     }
     
     private func resetNewAddressBarPickerData(_ dependencies: DebugScreen.Dependencies) {
-        let pickerStorage = NewAddressBarPickerStorage()
+        let pickerStorage = NewAddressBarPickerStore()
         pickerStorage.reset()
         
         ActionMessageView.present(message: "New Address Bar Picker data reset successfully")

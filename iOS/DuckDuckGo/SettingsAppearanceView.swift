@@ -87,19 +87,23 @@ struct SettingsAppearanceView: View {
     @ViewBuilder
     func addressBarButtonSetting() -> some View {
 
-        SettingsPickerCellView(label: "Address Bar button",
-                               options: MobileCustomization.addressBarButtons,
-                               selectedOption: $selectedAddressBarButton,
-                               iconProvider: buttonIconProvider)
+        SettingsPickerCellView(
+            useImprovedPicker: true,
+            label: "Address Bar button",
+            options: MobileCustomization.addressBarButtons,
+            selectedOption: $selectedAddressBarButton,
+            iconProvider: buttonIconProvider)
 
     }
 
     @ViewBuilder
     func toolbarButtonSetting() -> some View {
 
-        SettingsPickerCellView(label: "Toolbar button",
-                               options: MobileCustomization.toolbarButtons,
-                               selectedOption: $selectedToolbarButton)
+        SettingsPickerCellView(
+            useImprovedPicker: true,
+            label: "Toolbar button",
+            options: MobileCustomization.toolbarButtons,
+            selectedOption: $selectedToolbarButton)
 
     }
 

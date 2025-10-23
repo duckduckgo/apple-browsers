@@ -110,7 +110,7 @@ public class DBPIOSInterface {
         func tryToFireWeeklyPixels()
     }
 
-    protocol WideEventsDelegate: AnyObject {
+    protocol DBPWideEventsDelegate: AnyObject {
         func sweepWideEvents()
     }
 
@@ -436,7 +436,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.WeeklyPixelsDelegate {
     }
 }
 
-extension DataBrokerProtectionIOSManager: DBPIOSInterface.WideEventsDelegate {
+extension DataBrokerProtectionIOSManager: DBPIOSInterface.DBPWideEventsDelegate {
     func sweepWideEvents() {
         wideEventSweeper?.sweep()
     }

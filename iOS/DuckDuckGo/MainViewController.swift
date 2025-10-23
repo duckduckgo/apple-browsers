@@ -1949,10 +1949,6 @@ class MainViewController: UIViewController {
                 self?.refreshOmniBar()
             }
             .store(in: &refreshButtonCancellables)
-        
-        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
-            return
-        }        
     }
 
     private func subscribeToNetworkProtectionEvents() {

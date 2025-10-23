@@ -42342,6 +42342,30 @@
         }
       }
     },
+    "import.choose-source.sync-button.action" : {
+      "comment" : "Action text for syncing data with another device from the data import view",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync"
+          }
+        }
+      }
+    },
+    "import.choose-source.sync-button.title" : {
+      "comment" : "Button text for syncing from the data import view",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Using DuckDuckGo on another device?"
+          }
+        }
+      }
+    },
     "import.choose-source.title" : {
       "comment" : "Title text for the import dialog, before the user selects a source",
       "extractionState" : "extracted_with_value",

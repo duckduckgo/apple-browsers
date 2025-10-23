@@ -3839,6 +3839,8 @@
 		EE6666702B56EDE4001D898D /* VPNLocationsHostingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66666E2B56EDE4001D898D /* VPNLocationsHostingViewController.swift */; };
 		EE72DCA62EA91C9F0052661B /* ImportSourcePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE72DCA52EA91C9F0052661B /* ImportSourcePickerView.swift */; };
 		EE72DCA72EA91C9F0052661B /* ImportSourcePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE72DCA52EA91C9F0052661B /* ImportSourcePickerView.swift */; };
+		EE72DCAA2EAA7E9C0052661B /* ImportSourcePickerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE72DCA82EAA7E9C0052661B /* ImportSourcePickerViewModel.swift */; };
+		EE72DCAB2EAA7E9C0052661B /* ImportSourcePickerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE72DCA82EAA7E9C0052661B /* ImportSourcePickerViewModel.swift */; };
 		EE76B5952E5F249E00600C14 /* DismissableSyncDeviceButtonModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE76B5942E5F248E00600C14 /* DismissableSyncDeviceButtonModelTests.swift */; };
 		EE76B5962E5F249E00600C14 /* DismissableSyncDeviceButtonModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE76B5942E5F248E00600C14 /* DismissableSyncDeviceButtonModelTests.swift */; };
 		EE7E0FD72E3BA8FA00E51C8B /* SyncDialogController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E0FD62E3BA8FA00E51C8B /* SyncDialogController.swift */; };
@@ -6093,6 +6095,7 @@
 		EE66418B2B9B1981005BCD17 /* NetworkProtectionTokenStore+SubscriptionTokenKeychainStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NetworkProtectionTokenStore+SubscriptionTokenKeychainStorage.swift"; sourceTree = "<group>"; };
 		EE66666E2B56EDE4001D898D /* VPNLocationsHostingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNLocationsHostingViewController.swift; sourceTree = "<group>"; };
 		EE72DCA52EA91C9F0052661B /* ImportSourcePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSourcePickerView.swift; sourceTree = "<group>"; };
+		EE72DCA82EAA7E9C0052661B /* ImportSourcePickerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSourcePickerViewModel.swift; sourceTree = "<group>"; };
 		EE76B5942E5F248E00600C14 /* DismissableSyncDeviceButtonModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DismissableSyncDeviceButtonModelTests.swift; sourceTree = "<group>"; };
 		EE7E0FD62E3BA8FA00E51C8B /* SyncDialogController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDialogController.swift; sourceTree = "<group>"; };
 		EE7F74902BB5D76600CD9456 /* BookmarksBarTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksBarTests.swift; sourceTree = "<group>"; };
@@ -11575,9 +11578,18 @@
 			path = AppHealth;
 			sourceTree = "<group>";
 		};
+		EE72DCA92EAA7E9C0052661B /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				EE72DCA82EAA7E9C0052661B /* ImportSourcePickerViewModel.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
 		EE8C11D42E9E8324002FFD72 /* New */ = {
 			isa = PBXGroup;
 			children = (
+				EE72DCA92EAA7E9C0052661B /* Model */,
 				EE8C11D82E9FE768002FFD72 /* NewImportErrorView.swift */,
 				EE8C11D52E9E8336002FFD72 /* FileImportScreenView.swift */,
 				EE72DCA52EA91C9F0052661B /* ImportSourcePickerView.swift */,
@@ -13285,6 +13297,7 @@
 				C1935A192C88F9D6001AD72D /* SyncPromoManager.swift in Sources */,
 				3706FA8D293F65D500E42796 /* BookmarkTableCellView.swift in Sources */,
 				3706FA8E293F65D500E42796 /* BookmarkManagementSidebarViewController.swift in Sources */,
+				EE72DCAA2EAA7E9C0052661B /* ImportSourcePickerViewModel.swift in Sources */,
 				379857E62D71EBB4008773F6 /* HistoryViewOnboardingPopover.swift in Sources */,
 				7BD7B0022C19D3830039D20A /* VPNIPCResources.swift in Sources */,
 				3706FA8F293F65D500E42796 /* NSStackViewExtension.swift in Sources */,
@@ -15763,6 +15776,7 @@
 				B66260E029AC6EBD00E9E3EE /* HistoryTabExtension.swift in Sources */,
 				B6BCC54F2AFE4F7D002C5499 /* DataImportTypePicker.swift in Sources */,
 				AAEEC6A927088ADB008445F7 /* FireCoordinator.swift in Sources */,
+				EE72DCAB2EAA7E9C0052661B /* ImportSourcePickerViewModel.swift in Sources */,
 				1E15F69B2DF0D1590061395E /* AIChatSidebar.swift in Sources */,
 				B655369B268442EE00085A79 /* GeolocationProvider.swift in Sources */,
 				562802C82DAAB43B009F2F04 /* ContextualDialogsManager.swift in Sources */,

@@ -54,7 +54,7 @@ struct DataImportView: ModalView {
     @State private var progress: ProgressState?
 
 #if DEBUG || REVIEW
-    @State private var debugViewDisabled: Bool = false
+    @State private var debugViewDisabled: Bool = true
 #endif
 
     private var shouldShowDebugView: Bool {
@@ -77,7 +77,23 @@ struct DataImportView: ModalView {
         VStack(alignment: alignment, spacing: 0) {
             switch model.screen {
             case .profileAndDataTypesPicker:
-                ImportSourcePickerView(model: $model)
+                ImportSourcePickerView(
+                    availableSources: model.availableImportSources,
+                    selectedSource: model.importSource,
+                    shouldShowSyncFeature: syncFeatureVisibility.shouldShowSyncFeature,
+                    onSourceSelected: { source in
+                        model.update(with: source)
+                    },
+                    onSyncSelected: {
+                        guard case .show(let syncLauncher) = syncFeatureVisibility else {
+                            return
+                        }
+                        syncLauncher.startDeviceSyncFlow(source: .dataImportStart) {
+                            importFlowLauncher.launchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded)
+                        }
+                        dismiss.callAsFunction()
+                    }
+                )
             case .fileImport(let dataType, let summaryTypes):
                 FileImportScreenView(model: $model, kind: .individual(dataType: dataType), summaryTypes: summaryTypes, dismiss: dismiss.callAsFunction)
             case .archiveImport:

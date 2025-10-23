@@ -24,8 +24,21 @@ import BrowserServicesKit
 import AppKit
 
 struct ImportSourcePickerView: View {
-    @Binding var model: DataImportViewModel
-    @State var isPickerExpanded: Bool = false
+    @StateObject private var viewModel: ImportSourcePickerViewModel
+
+    init(availableSources: [DataImport.Source],
+         selectedSource: DataImport.Source,
+         shouldShowSyncFeature: Bool,
+         onSourceSelected: @escaping (DataImport.Source) -> Void,
+         onSyncSelected: @escaping () -> Void) {
+        _viewModel = StateObject(wrappedValue: ImportSourcePickerViewModel(
+            availableSources: availableSources,
+            selectedSource: selectedSource,
+            shouldShowSyncButton: shouldShowSyncFeature,
+            onSourceSelected: onSourceSelected,
+            onSyncSelected: onSyncSelected
+        ))
+    }
 
     var body: some View {
         VStack(spacing: 20) {
@@ -40,12 +53,10 @@ struct ImportSourcePickerView: View {
                 }
                 .padding(.top, 20)
                 .padding(.bottom, 16)
-                RadioGridPicker(options: model.availableImportSources, selection: model.importSource, expanded: isPickerExpanded) {
-                    model.update(with: $0)
-                }
-                if !isPickerExpanded {
+                RadioGridPicker(viewModel: viewModel)
+                if viewModel.shouldShowExpandButton {
                     Button {
-                        isPickerExpanded.toggle()
+                        viewModel.toggleExpansion()
                     } label: {
                         Text("Show More")
                             .font(.system(size: 11, weight: .semibold))
@@ -56,6 +67,30 @@ struct ImportSourcePickerView: View {
                     .padding(.top, 10)
                 }
             }
+            if viewModel.shouldShowSyncButton {
+                Button(action: viewModel.syncSelected) {
+                    HStack(alignment: .center) {
+                        Text(UserText.importChooseSourceSyncButtonTitle)
+                            .font(.system(size: 13))
+                            .foregroundColor(Color(designSystemColor: .textSecondary))
+                        Spacer()
+                        Text(UserText.importChooseSourceSyncButtonAction)
+                            .font(.system(size: 13))
+                            .foregroundColor(Color(designSystemColor: .textSecondary))
+                        Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight)
+                            .renderingMode(.template)
+                            .resizable()
+                            .frame(width: 10, height: 10)
+                            .foregroundColor(Color(designSystemColor: .textTertiary))
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 14)
+                    .frame(width: 380, alignment: .center)
+                    .background((Color(designSystemColor: .surface)))
+                    .cornerRadius(10)
+                }
+                .buttonStyle(.plain)
+            }
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 20)
@@ -65,38 +100,23 @@ struct ImportSourcePickerView: View {
 // MARK: - Radio Grid Picker
 
 private struct RadioGridPicker: View {
-    private enum Constants {
-        static let minVisibleOptions: Int = 4
-    }
+    @ObservedObject var viewModel: ImportSourcePickerViewModel
 
-    let options: [DataImport.Source]
-    let selection: DataImport.Source
-    let expanded: Bool
-    let onSelectedSourceChanged: (DataImport.Source) -> Void
-
-    private var visibleOptions: [DataImport.Source] {
-        expanded ? options : collapsedOptions
-    }
-
-    private var collapsedOptions: [DataImport.Source] {
-        Array(options[0..<min(options.count, Constants.minVisibleOptions)])
-    }
-
-    private let columns = [
+    let columns = [
         GridItem(.flexible(), spacing: 5),
         GridItem(.flexible(), spacing: 5)
     ]
 
     var body: some View {
         LazyVGrid(columns: columns, spacing: 5) {
-            ForEach(visibleOptions) { option in
+            ForEach(viewModel.visibleOptions) { option in
                 let icon = Image(nsImage: option.importSourceImage ?? DesignSystemImages.Color.Size24.document)
 
                 Button {
-                    onSelectedSourceChanged(option)   // fires on mouse-up inside
+                    viewModel.selectSource(option)   // fires on mouse-up inside
                 } label: {
                     RadioCard(
-                        isSelected: selection == option,
+                        isSelected: viewModel.selectedImportSource == option,
                         icon: icon,
                         title: option.importSourceName
                     )
@@ -104,7 +124,7 @@ private struct RadioGridPicker: View {
                 .buttonStyle(CardPressStyle()) // gives us configuration.isPressed
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(option.importSourceName.replacingOccurrences(of: "\n", with: " "))
-                .accessibilityAddTraits(option == selection ? [.isSelected] : [])
+                .accessibilityAddTraits(option == viewModel.selectedImportSource ? [.isSelected] : [])
                 .accessibilityHint("Activate to select")
             }
         }
@@ -135,7 +155,7 @@ private struct RadioCard: View {
     let isSelected: Bool
     let icon: Image
     let title: String
-    @Environment(\.cardIsPressed) private var isPressed   // <- from ButtonStyle
+    @Environment(\.cardIsPressed) private var isPressed   // <- from CardPressStyle
     @State private var isHovering = false
 
     var body: some View {

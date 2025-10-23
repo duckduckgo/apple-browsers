@@ -26,7 +26,6 @@ import SetDefaultBrowserTestSupport
 @MainActor
 @Suite("Set Default Browser - Prompt Coordinator")
 final class DefaultBrowserPromptCoordinatorTests {
-    private var isOnboardingCompleted: Bool = true
     private var dateProviderMock: MockDateProvider
     private var promptStoreMock: MockDefaultBrowserPromptStore
     private var userActivityManagerMock: MockDefaultBrowserPromptUserActivityManager
@@ -44,7 +43,6 @@ final class DefaultBrowserPromptCoordinatorTests {
         eventMapperMock = MockDefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>()
 
         sut = DefaultBrowserPromptCoordinator(
-            isOnboardingCompleted: { self.isOnboardingCompleted },
             promptStore: promptStoreMock,
             userActivityManager: userActivityManagerMock,
             promptTypeDecider: promptTypeDeciderMock,
@@ -52,34 +50,6 @@ final class DefaultBrowserPromptCoordinatorTests {
             eventMapper: eventMapperMock,
             dateProvider: dateProviderMock.getDate
         )
-    }
-
-    @Test("Check Prompt Is Nil When Onboarding Is Not Completed")
-    func whenOnboardingNotCompletedThenPromptIsNil() {
-        // GIVEN
-        isOnboardingCompleted = false
-        #expect(!promptTypeDeciderMock.didCallPromptType)
-
-        // WHEN
-        let result = sut.getPrompt()
-
-        // THEN
-        #expect(!promptTypeDeciderMock.didCallPromptType)
-        #expect(result == nil)
-    }
-
-    @Test("Check Prompt Is Nil When Onboarding Is Not Completed")
-    func whenPromptDeciderReturnsNilThenPromptIsNil() {
-        // GIVEN
-        promptTypeDeciderMock.promptToReturn = nil
-        #expect(!promptTypeDeciderMock.didCallPromptType)
-
-        // WHEN
-        let result = sut.getPrompt()
-
-        // THEN
-        #expect(promptTypeDeciderMock.didCallPromptType)
-        #expect(result == nil)
     }
 
     @Test(

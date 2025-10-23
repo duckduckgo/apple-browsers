@@ -133,8 +133,7 @@ struct Launching: LaunchingHandling {
             featureFlagger: featureFlagger,
             privacyConfigManager: privacyConfigurationManager,
             keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
-            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
-            isOnboardingCompletedProvider: { !daxDialogs.isEnabled }
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager
         )
 
         // Has to be intialised after configuration.start in case values need to be migrated

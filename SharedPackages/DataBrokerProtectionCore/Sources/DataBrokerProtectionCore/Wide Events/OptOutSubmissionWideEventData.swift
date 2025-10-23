@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PixelKit
 
 public final class OptOutSubmissionWideEventData: WideEventData {
     public static let pixelName = "pir_opt_out_submission"
@@ -58,14 +59,14 @@ extension OptOutSubmissionWideEventData {
         var parameters: [String: String] = [:]
 
         parameters[WideEventParameter.Feature.name] = Self.featureName
-        parameters[WideEventParameter.PIR.OptOutSubmissionFeature.dataBrokerURL] = dataBrokerURL
+        parameters[DBPWideEventParameter.OptOutSubmissionFeature.dataBrokerURL] = dataBrokerURL
 
         if let dataBrokerVersion {
-            parameters[WideEventParameter.PIR.OptOutSubmissionFeature.dataBrokerVersion] = dataBrokerVersion
+            parameters[DBPWideEventParameter.OptOutSubmissionFeature.dataBrokerVersion] = dataBrokerVersion
         }
 
         if let duration = submissionInterval?.durationMilliseconds {
-            parameters[WideEventParameter.PIR.OptOutSubmissionFeature.submissionLatency] = String(duration)
+            parameters[DBPWideEventParameter.OptOutSubmissionFeature.submissionLatency] = String(duration)
         }
 
         return parameters

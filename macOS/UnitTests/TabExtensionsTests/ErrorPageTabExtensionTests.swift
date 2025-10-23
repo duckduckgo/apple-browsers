@@ -81,7 +81,7 @@ final class ErrorPageTabExtensionTests: XCTestCase {
         errorPageExtention.navigation(navigation, didFailWith: error)
 
         // THEN
-        XCTAssertEqual(errorPageExtention.errorData, SpecialErrorData.ssl(type: .expired, domain: eTldPlus1, eTldPlus1: nil))
+        XCTAssertEqual(errorPageExtention.errorData, SpecialErrorData.ssl(type: .expired, domain: eTldPlus1, eTldPlus1: eTldPlus1))
     }
 
     @MainActor func testWhenCertificateSelfSigned_ThenExpectedErrorPageIsShown() {
@@ -96,7 +96,7 @@ final class ErrorPageTabExtensionTests: XCTestCase {
         errorPageExtention.navigation(navigation, didFailWith: error)
 
         // THEN
-        XCTAssertEqual(errorPageExtention.errorData, SpecialErrorData.ssl(type: .selfSigned, domain: eTldPlus1, eTldPlus1: nil))
+        XCTAssertEqual(errorPageExtention.errorData, SpecialErrorData.ssl(type: .selfSigned, domain: eTldPlus1, eTldPlus1: eTldPlus1))
     }
 
     @MainActor func testWhenCertificateWrongHost_ThenExpectedErrorPageIsShown() {
@@ -111,7 +111,7 @@ final class ErrorPageTabExtensionTests: XCTestCase {
         errorPageExtention.navigation(navigation, didFailWith: error)
 
         // THEN
-        XCTAssertEqual(errorPageExtention.errorData, SpecialErrorData.ssl(type: .wrongHost, domain: eTldPlus1, eTldPlus1: nil))
+        XCTAssertEqual(errorPageExtention.errorData, SpecialErrorData.ssl(type: .wrongHost, domain: eTldPlus1, eTldPlus1: eTldPlus1))
     }
 
     @MainActor func test_WhenUserScriptsPublisherPublishSSLErrorPageScript_ThenErrorPageExtensionIsSetAsUserScriptDelegate() {

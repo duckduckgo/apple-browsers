@@ -43,7 +43,7 @@ final class MockSSLErrorPageNavigationHandler: SSLSpecialErrorPageNavigationHand
 
     func makeNewRequestURLAndSpecialErrorDataIfEnabled(error: NSError) -> SSLSpecialError? {
         didCallMakeNewRequestURLAndSpecialErrorDataIfEnabled = true
-        return SSLSpecialError(type: .expired, error: SpecialErrorModel(url: URL(string: "www.example.com")!, errorData: .ssl(type: .expired, domain: "", eTldPlus1: nil)))
+        return SSLSpecialError(type: .expired, error: SpecialErrorModel(url: URL(string: "www.example.com")!, errorData: .ssl(type: .expired, domain: "", eTldPlus1: "")))
     }
 
     func errorPageVisited(errorType: SSLErrorType) {

@@ -1888,8 +1888,22 @@ class MainViewController: UIViewController {
         NotificationCenter.default.publisher(for: .urlInterceptAIChat)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
-                self?.openAIChat(payload: notification.object)
-
+                let interceptedURL = notification.userInfo?[TabURLInterceptorParameter.interceptedURL] as? URL
+                
+                var query: String?
+                var shouldAutoSend = false
+                if let url = interceptedURL,
+                   let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+                   let queryItems = components.queryItems {
+                    query = queryItems.first(where: { $0.name == "q" })?.value
+                    shouldAutoSend = queryItems.first(where: { $0.name == "prompt" })?.value == "1"
+                }
+                
+                if let query = query {
+                    self?.openAIChat(query, autoSend: shouldAutoSend)
+                } else {
+                    self?.openAIChat()
+                }
             }
             .store(in: &urlInterceptorCancellables)
     }

@@ -51,6 +51,10 @@ public class MockFeatureDiscovery: FeatureDiscovery {
         return wasUsedBeforeValues[feature] ?? false
     }
 
+    public func setDaysSinceLastUsedValue(_ value: Int, for feature: WasUsedBeforeFeature) {
+        daysSinceLastUsedValues[feature] = value
+    }
+
     public func daysSinceLastUsed(_ feature: BrowserServicesKit.WasUsedBeforeFeature) -> Int? {
         return daysSinceLastUsedValues[feature]
     }

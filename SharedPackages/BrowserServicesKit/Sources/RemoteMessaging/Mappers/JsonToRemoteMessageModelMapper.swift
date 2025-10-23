@@ -56,6 +56,7 @@ private enum AttributesKey: String, CaseIterable {
     case allFeatureFlagsEnabled
     case syncEnabled
     case shouldShowWinBackOfferUrgencyMessage
+    case daysSinceDuckAiUsed
 
     func matchingAttribute(jsonMatchingAttribute: AnyDecodable) -> MatchingAttribute {
         switch self {
@@ -96,6 +97,7 @@ private enum AttributesKey: String, CaseIterable {
         case .allFeatureFlagsEnabled: return AllFeatureFlagsEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .syncEnabled: return SyncEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .shouldShowWinBackOfferUrgencyMessage: return WinBackOfferUrgencyMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .daysSinceDuckAiUsed: return DaysSinceDuckAIUsedMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         }
     }
 }

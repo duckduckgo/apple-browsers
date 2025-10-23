@@ -71,6 +71,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         }
 
         let statisticsStore = StatisticsUserDefaults()
+        let featureDiscovery = DefaultFeatureDiscovery()
         let variantManager = DefaultVariantManager()
         let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
         let isDuckDuckGoSubscriber = subscriptionManager.isUserAuthenticated
@@ -140,6 +141,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                      variantManager: variantManager,
                                                      isInternalUser: internalUserDecider.isInternalUser),
             userAttributeMatcher: UserAttributeMatcher(statisticsStore: statisticsStore,
+                                                       featureDiscovery: featureDiscovery,
                                                        variantManager: variantManager,
                                                        bookmarksCount: bookmarksCount,
                                                        favoritesCount: favoritesCount,

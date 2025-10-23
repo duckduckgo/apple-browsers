@@ -226,6 +226,8 @@ final class CreditCardsInitialSyncResponseHandlerTests: CreditCardsProviderTests
     }
 
     func testThatDeduplicationIgnoresCardWithNewerExpirationDate() async throws {
+        try reinitializeVaultUsingBitFlipCryptoProvider()
+
         try secureVault.inDatabaseTransaction { database in
             try self.secureVault.storeSyncableCreditCard("local-uuid",
                                                          title: "New Expiry",
@@ -260,9 +262,54 @@ final class CreditCardsInitialSyncResponseHandlerTests: CreditCardsProviderTests
         XCTAssertEqual(creditCards.first?.cardSecurityCode, "123")
         XCTAssertEqual(creditCards.first?.expirationMonth, 12)
         XCTAssertEqual(creditCards.first?.expirationYear, 2026)
+        XCTAssertEqual(creditCards.first?.cardNumber, "4111111111111111")
+    }
+
+    func testThatDeduplicatedLocalCardRemainsDecryptable() async throws {
+        try reinitializeVaultUsingBitFlipCryptoProvider()
+
+        try secureVault.inDatabaseTransaction { database in
+            try self.secureVault.storeSyncableCreditCard("local-uuid",
+                                                         title: "Local Card",
+                                                         cardholderName: "Jane Doe",
+                                                         cardNumber: "4111111111111111",
+                                                         cardSecurityCode: "123",
+                                                         expirationMonth: 12,
+                                                         expirationYear: 2030,
+                                                         in: database)
+        }
+
+        let received: [Syncable] = [
+            .creditCard("Remote Older",
+                        uuid: "remote-uuid",
+                        cardholderName: "Jane Doe",
+                        cardNumber: "4111111111111111",
+                        cardSecurityCode: "321",
+                        expirationMonth: "1",
+                        expirationYear: "2025")
+        ]
+
+        try await handleInitialSyncResponse(received: received)
+
+        let syncableCreditCards = try fetchAllSyncableCreditCards()
+        XCTAssertEqual(syncableCreditCards.count, 1, "Should deduplicate into a single card")
+        XCTAssertEqual(syncableCreditCards.first?.metadata.uuid, "remote-uuid", "Incoming UUID should replace local UUID")
+        XCTAssertNotNil(syncableCreditCards.first?.metadata.lastModified, "Dedup branch should mark the record as modified for upload")
+
+        let creditCards = try secureVault.creditCards()
+        XCTAssertEqual(creditCards.count, 1)
+        let card = creditCards[0]
+        XCTAssertEqual(card.title, "Local Card")
+        XCTAssertEqual(card.cardholderName, "Jane Doe")
+        XCTAssertEqual(card.expirationMonth, 12)
+        XCTAssertEqual(card.expirationYear, 2030)
+
+        XCTAssertEqual(card.cardNumber, "4111111111111111")
     }
 
     func testThatDeduplicationReplacesCardWithSameExpirationDate() async throws {
+        try reinitializeVaultUsingBitFlipCryptoProvider()
+
         try secureVault.inDatabaseTransaction { database in
             try self.secureVault.storeSyncableCreditCard("local-uuid",
                                                          title: "Local Card",
@@ -297,9 +344,12 @@ final class CreditCardsInitialSyncResponseHandlerTests: CreditCardsProviderTests
         XCTAssertEqual(creditCards.first?.cardSecurityCode, "123")
         XCTAssertEqual(creditCards.first?.expirationMonth, 12)
         XCTAssertEqual(creditCards.first?.expirationYear, 2026)
+        XCTAssertEqual(creditCards.first?.cardNumber, "4111111111111111")
     }
 
     func testThatCardsWithMismatchedExpiryPresenceAreNotDeduplicated() async throws {
+        try reinitializeVaultUsingBitFlipCryptoProvider()
+
         try secureVault.inDatabaseTransaction { database in
             try self.secureVault.storeSyncableCreditCard("local-uuid",
                                                          title: "Card With Expiry",
@@ -332,6 +382,7 @@ final class CreditCardsInitialSyncResponseHandlerTests: CreditCardsProviderTests
         XCTAssertEqual(creditCards[0].title, "Card With Expiry", "Should keep local card data")
         XCTAssertEqual(creditCards[0].expirationMonth, 12)
         XCTAssertEqual(creditCards[0].expirationYear, 2026)
+        XCTAssertEqual(creditCards[0].cardNumber, "4111111111111111")
     }
 
     func testThatCardsWithMismatchedExpiryPresenceAreNotDeduplicatedReverseCase() async throws {
@@ -376,6 +427,8 @@ final class CreditCardsInitialSyncResponseHandlerTests: CreditCardsProviderTests
     }
 
     func testThatCardsWithoutExpiryAreDeduplicated() async throws {
+        try reinitializeVaultUsingBitFlipCryptoProvider()
+
         try secureVault.inDatabaseTransaction { database in
             let creditCard = SecureVaultModels.CreditCard(
                 title: "Local Card",
@@ -416,9 +469,12 @@ final class CreditCardsInitialSyncResponseHandlerTests: CreditCardsProviderTests
         XCTAssertEqual(creditCards.first?.cardSecurityCode, "123")
         XCTAssertNil(creditCards.first?.expirationMonth)
         XCTAssertNil(creditCards.first?.expirationYear)
+        XCTAssertEqual(creditCards.first?.cardNumber, "4111111111111111")
     }
 
     func testThatCardsWithoutExpiryAreNotDeduplicatedWhenFieldsDiffer() async throws {
+        try reinitializeVaultUsingBitFlipCryptoProvider()
+
         try secureVault.inDatabaseTransaction { database in
             let creditCard = SecureVaultModels.CreditCard(
                 title: "Local Card",
@@ -457,6 +513,7 @@ final class CreditCardsInitialSyncResponseHandlerTests: CreditCardsProviderTests
         XCTAssertEqual(creditCards[0].title, "Remote Card")
         XCTAssertEqual(creditCards[0].cardholderName, "Jane Smith")
         XCTAssertEqual(creditCards[0].cardSecurityCode, "456")
+        XCTAssertEqual(creditCards[0].cardNumber, "4111111111111111")
     }
 
     func testThatMultipleIncomingCardsWithSameNumberAreNotDeduplicatedAgainstEachOther() async throws {

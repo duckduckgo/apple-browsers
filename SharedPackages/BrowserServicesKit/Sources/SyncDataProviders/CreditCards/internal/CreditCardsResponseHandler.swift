@@ -217,6 +217,10 @@ final class CreditCardsResponseHandler {
 
         if localExpiration.hasData || incomingExpiration.hasData {
             var card = matched
+            // Decrypt card number data since it was fetched directly from database
+            if let encryptedCardNumber = card.creditCard?.cardNumberData {
+                card.creditCard?.cardNumberData = try secureVault.decrypt(encryptedCardNumber, using: encryptionKey)
+            }
             card.metadata.uuid = incomingUUID
             card.metadata.lastModified = Date().withMillisecondPrecision
             return DeduplicationResult(card: card, oldUUID: matched.metadata.uuid)

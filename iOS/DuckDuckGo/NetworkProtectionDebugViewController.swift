@@ -422,8 +422,23 @@ final class NetworkProtectionDebugViewController: UITableViewController {
                 await NetworkProtectionDebugUtilities().startSnooze(duration: .seconds(30))
             }
         case .createLogSnapshot:
-            Task {
+            if let cell = tableView.cellForRow(at: indexPath) {
+                cell.isUserInteractionEnabled = false
+                cell.textLabel?.alpha = 0.5
+
+                let spinner = UIActivityIndicatorView(style: .medium)
+                spinner.startAnimating()
+                cell.accessoryView = spinner
+            }
+
+            Task { @MainActor in
                 await createLogSnapshot()
+                if let cell = tableView.cellForRow(at: indexPath) {
+                    cell.isUserInteractionEnabled = true
+                    cell.textLabel?.alpha = 1.0
+                    cell.accessoryView = nil
+                    cell.accessoryType = .none
+                }
             }
         case .viewLogSnapshots:
             showLogSnapshotsViewer()
@@ -733,14 +748,6 @@ shouldShowVPNShortcut: \(await vpnVisibility.shouldShowVPNShortcut() ? "YES" : "
     private func createLogSnapshot() async {
         do {
             try await NetworkProtectionDebugUtilities().createLogSnapshot()
-            
-            let alert = UIAlertController(
-                title: "Log Collection Started",
-                message: "Log collection is running in the background and may take up to a minute to complete. Check 'View Log Snapshots' to see when it's ready.",
-                preferredStyle: .alert
-            )
-            alert.addAction(UIAlertAction(title: "OK", style: .default))
-            present(alert, animated: true)
         } catch {
             let alert = UIAlertController(
                 title: "Log Collection Failed",

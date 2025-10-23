@@ -340,8 +340,8 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
     }
 
     private func createPixelIndexParam(for index: Int?) -> [String: String] {
-        let parameters = ddgSuggestionIndex.map { index in
-            ["search_suggestion_index": String(index)]
+        let parameters = index.map { i in
+            ["search_suggestion_index": String(i)]
         } ?? [:]
     }
 }

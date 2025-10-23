@@ -62,31 +62,31 @@ final class UserAgentTests: XCTestCase {
 
         static let osVersion = ProcessInfo.processInfo.operatingSystemVersion
 
-        static func backwardsCompatibileVersionComponent(_ fallback: String) -> String {
+        static func backwardsCompatibleVersionComponent(_ fallback: String) -> String {
             osVersion.majorVersion < 26 ? fallback : "\(osVersion.majorVersion).\(osVersion.minorVersion)"
         }
 
         // Based on DefaultAgent values
-        static let mobile = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibileVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
-        static let tablet = "Mozilla/5.0 (iPad; CPU OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibileVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
-        static let desktop = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibileVersionComponent("12.4")) DuckDuckGo/7 Safari/605.1.15"
-        static let oldWebkitVersionMobile = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.14 (KHTML, like Gecko) Version/\(backwardsCompatibileVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/605.1.14"
-        static let newWebkitVersionMobile = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibileVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/604.1"
-        static let sameWebkitVersionMobile = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibileVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/604.1"
+        static let mobile = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
+        static let tablet = "Mozilla/5.0 (iPad; CPU OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
+        static let desktop = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) DuckDuckGo/7 Safari/605.1.15"
+        static let oldWebkitVersionMobile = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.14 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/605.1.14"
+        static let newWebkitVersionMobile = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/604.1"
+        static let sameWebkitVersionMobile = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/604.1"
 
-        static let mobileNoApplication = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibileVersionComponent("12.4")) Mobile/15E148 Safari/605.1.15"
+        static let mobileNoApplication = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 Safari/605.1.15"
 
         // Based on fallback constants in UserAgent
-        static let mobileFallback = "Mozilla/5.0 (iPhone; CPU iPhone OS 13_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibileVersionComponent("13.5")) Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
-        static let desktopFallback = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibileVersionComponent("13.5")) DuckDuckGo/7 Safari/605.1.15"
+        static let mobileFallback = "Mozilla/5.0 (iPhone; CPU iPhone OS 13_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("13.5")) Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
+        static let desktopFallback = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("13.5")) DuckDuckGo/7 Safari/605.1.15"
 
-        static let mobileFixed = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibileVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/604.1"
-        static let tabletFixed = "Mozilla/5.0 (iPad; CPU OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibileVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/604.1"
-        static let desktopFixed = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 DuckDuckGo/7 Safari/605.1.15"
+        static let mobileFixed = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/604.1"
+        static let tabletFixed = "Mozilla/5.0 (iPad; CPU OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/604.1"
+        static let desktopFixed = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("18.3")) DuckDuckGo/7 Safari/605.1.15"
 
-        static let mobileClosest = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibileVersionComponent("12.4")) Mobile/15E148 Safari/604.1"
-        static let tabletClosest = "Mozilla/5.0 (iPad; CPU OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibileVersionComponent("12.4")) Mobile/15E148 Safari/604.1"
-        static let desktopClosest = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 Safari/605.1.15"
+        static let mobileClosest = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 Safari/604.1"
+        static let tabletClosest = "Mozilla/5.0 (iPad; CPU OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 Safari/604.1"
+        static let desktopClosest = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("18.3")) Safari/605.1.15"
 
         static let mobileMappedPre26 = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.4 Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
         static let mobileMapped2600 = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
@@ -541,36 +541,41 @@ final class UserAgentTests: XCTestCase {
 
     func testWhenOnIOS26_0_0AndMappingMatchesThenItIsUsed() {
         let config = makePrivacyConfig(from: testConfigWithMapping)
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config, deviceVersion: .init(majorVersion: 26, minorVersion: 0, patchVersion: 0))
+        let version = OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 0)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config, deviceVersion: version)
 
-        XCTAssertEqual(ExpectedAgent.mobileMapped2600, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, privacyConfig: config))
+        XCTAssertEqual(ExpectedAgent.mobileMapped2600, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, deviceVersion: version, privacyConfig: config))
     }
 
     func testWhenOnIOS26_0_1AndMappingMatchesThenItIsUsed() {
         let config = makePrivacyConfig(from: testConfigWithMapping)
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config, deviceVersion: .init(majorVersion: 26, minorVersion: 0, patchVersion: 1))
+        let version = OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 1)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config, deviceVersion: version)
 
-        XCTAssertEqual(ExpectedAgent.mobileMapped2601, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, privacyConfig: config))
+        XCTAssertEqual(ExpectedAgent.mobileMapped2601, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, deviceVersion: version, privacyConfig: config))
     }
 
     func testWhenOnIOS26AndMappingDoesNotMatchThenMostGenericIsUsed() {
         let config = makePrivacyConfig(from: testConfigWithMapping)
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config, deviceVersion: .init(majorVersion: 26, minorVersion: 0, patchVersion: 1000))
+        let version = OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 1000)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config, deviceVersion: version)
 
-        XCTAssertEqual(ExpectedAgent.mobileMapped2600, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, privacyConfig: config))
+        XCTAssertEqual(ExpectedAgent.mobileMapped2600, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, deviceVersion: version, privacyConfig: config))
     }
 
     func testWhenOnIOS27AndMappingDoesNotMatchThenItIsIgnored() {
         let config = makePrivacyConfig(from: testConfigWithMapping)
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config, deviceVersion: .init(majorVersion: 27, minorVersion: 0, patchVersion: 0))
+        let version = OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config, deviceVersion: version)
 
-        XCTAssertEqual(ExpectedAgent.mobileMappedPost26, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, privacyConfig: config))
+        XCTAssertEqual(ExpectedAgent.mobileMappedPost26, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, deviceVersion: version, privacyConfig: config))
     }
 
     func testWhenNotOnIOS26ThenMappingIsNotUsed() {
         let config = makePrivacyConfig(from: testConfigWithMapping)
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config, deviceVersion: .init(majorVersion: 18, minorVersion: 7, patchVersion: 0))
+        let version = OperatingSystemVersion(majorVersion: 18, minorVersion: 7, patchVersion: 0)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config, deviceVersion: version)
 
-        XCTAssertEqual(ExpectedAgent.mobileMappedPre26, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, privacyConfig: config))
+        XCTAssertEqual(ExpectedAgent.mobileMappedPre26, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, deviceVersion: version, privacyConfig: config))
     }
 }

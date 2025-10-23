@@ -229,6 +229,7 @@ struct UserAgent {
 
     public func agent(forUrl url: URL?,
                       isDesktop: Bool,
+                      deviceVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion,
                       privacyConfig: PrivacyConfiguration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig) -> String {
 
         guard privacyConfig.isEnabled(featureKey: .customUserAgent) else { return oldLogic(forUrl: url,
@@ -241,33 +242,33 @@ struct UserAgent {
 
         if ddgFixedSites(forConfig: privacyConfig).contains(where: { domain in
             url?.isPart(ofDomain: domain) ?? false
-        }) { return ddgFixedLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig) }
+        }) { return ddgFixedLogic(forUrl: url, isDesktop: isDesktop, deviceVersion: deviceVersion, privacyConfig: privacyConfig) }
 
         if closestUserAgentVersions(forConfig: privacyConfig).contains(statistics.atbWeek ?? "") {
             if canUseClosestLogic {
-                return closestLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
+                return closestLogic(forUrl: url, isDesktop: isDesktop, deviceVersion: deviceVersion, privacyConfig: privacyConfig)
             } else {
                 return oldLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
             }
         }
 
         if ddgFixedUserAgentVersions(forConfig: privacyConfig).contains(statistics.atbWeek ?? "") {
-            return ddgFixedLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
+            return ddgFixedLogic(forUrl: url, isDesktop: isDesktop, deviceVersion: deviceVersion, privacyConfig: privacyConfig)
         }
 
         switch defaultPolicy(forConfig: privacyConfig) {
         case .ddg: return oldLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
-        case .ddgFixed: return ddgFixedLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
+        case .ddgFixed: return ddgFixedLogic(forUrl: url, isDesktop: isDesktop, deviceVersion: deviceVersion, privacyConfig: privacyConfig)
         case .closest:
             if canUseClosestLogic {
-                return closestLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
+                return closestLogic(forUrl: url, isDesktop: isDesktop, deviceVersion: deviceVersion, privacyConfig: privacyConfig)
             } else {
                 return oldLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
             }
         case .brand:
             var ua: String
             if canUseClosestLogic {
-                ua = closestLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
+                ua = closestLogic(forUrl: url, isDesktop: isDesktop, deviceVersion: deviceVersion, privacyConfig: privacyConfig)
             } else {
                 ua = oldLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
             }
@@ -297,6 +298,7 @@ struct UserAgent {
 
     private func ddgFixedLogic(forUrl url: URL?,
                                isDesktop: Bool,
+                               deviceVersion: OperatingSystemVersion,
                                privacyConfig: PrivacyConfiguration) -> String {
         let omittedSites = omitApplicationSites(forConfig: privacyConfig)
         let omitApplicationComponent = omittedSites.contains { domain in
@@ -305,7 +307,7 @@ struct UserAgent {
         let resolvedApplicationComponent = !omitApplicationComponent ? applicationComponent : nil
 
         if canUseClosestLogic {
-            var defaultSafari = closestLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
+            var defaultSafari = closestLogic(forUrl: url, isDesktop: isDesktop, deviceVersion: deviceVersion, privacyConfig: privacyConfig)
             // If the UA should have DuckDuckGo append it prior to Safari
             if let resolvedApplicationComponent {
                 if let index = defaultSafari.range(of: "Safari")?.lowerBound {
@@ -320,9 +322,14 @@ struct UserAgent {
 
     private func closestLogic(forUrl url: URL?,
                               isDesktop: Bool,
+                              deviceVersion: OperatingSystemVersion,
                               privacyConfig: PrivacyConfiguration) -> String {
         if isDesktop {
-            return "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 Safari/605.1.15"
+            if deviceVersion.majorVersion >= 26 && Self.shouldUseUpdatedSafariVersions(forConfig: privacyConfig) {
+                return "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) \(versionComponent) Safari/605.1.15"
+            } else {
+                return "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 Safari/605.1.15"
+            }
         }
         return "Mozilla/5.0 (" + deviceProfile + ") AppleWebKit/605.1.15 (KHTML, like Gecko) \(versionComponent) Mobile/15E148 Safari/604.1"
     }

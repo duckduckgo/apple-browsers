@@ -380,13 +380,14 @@ private struct ImprovedSettingsPickerCellView<T: Hashable & CustomStringConverti
                     } else {
                         Divider()
                     }
-                    
+
                 }
             } label: {
                 HStack {
                     Text(selectedOption.description)
                         .daxSubheadRegular()
                         .foregroundColor(Color(designSystemColor: .textSecondary))
+
                     Image(systemName: "chevron.up.chevron.down")
                         .font(Font.system(.footnote).weight(.bold))
                         .foregroundColor(Color(UIColor.tertiaryLabel))
@@ -401,19 +402,6 @@ private struct ImprovedSettingsPickerCellView<T: Hashable & CustomStringConverti
                                      option: String,
                                      selected: Bool,
                                      icon: Image?) -> some View {
-//        return Button(action: action) {
-//                HStack {
-//                    if selected {
-//                        Image(systemName: "checkmark")
-//                        Text(option)
-//                    } else if let icon {
-//                        Text(option)
-//                        icon
-//                    } else {
-//                        Text(option)
-//                    }
-//                }
-//            }
         return Toggle(isOn: Binding<Bool>(get: {
             selected
         }, set: { _ in

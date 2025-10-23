@@ -66,7 +66,7 @@ struct SettingsAppearanceView: View {
 
     @ViewBuilder
     func customizableSettings() -> some View {
-        Section(header: Text(UserText.addressBar)) {
+        Section {
             addressBarPositionSetting()
 
             showFullSiteAddressSetting()
@@ -74,16 +74,58 @@ struct SettingsAppearanceView: View {
             showReloadButtonSetting()
 
             addressBarButtonSetting()
+        } header: {
+            Text(UserText.addressBar)
+        } footer: {
+            Text(verbatim: "Note that the reload button and customizable button are none-functional at this time.")
         }
 
-        Section(header: Text(verbatim: "Toolbar")) {
-
+        Section {
             toolbarButtonSetting()
+        } header: {
+            Text(verbatim: "Toolbar")
+        } footer: {
+            Text(verbatim: "Note that customizable button is none-functional at this time.")
         }
     }
 
     func buttonIconProvider(_ button: MobileCustomization.Button) -> Image? {
-        return Image(uiImage: DesignSystemImages.Glyphs.Size16.favorite)
+
+        let image: UIImage? =
+        switch button {
+        case .share:
+            DesignSystemImages.Glyphs.Size16.shareApple
+        case .addRemoveBookmark:
+            DesignSystemImages.Glyphs.Size16.bookmark
+        case .addRemoveFavorite:
+            DesignSystemImages.Glyphs.Size16.favorite
+        case .zoom:
+            DesignSystemImages.Glyphs.Size16.typeSize
+        case .none:
+            nil
+        case .home:
+            DesignSystemImages.Glyphs.Size16.shareApple
+        case .newTab:
+            DesignSystemImages.Glyphs.Size16.add
+        case .bookmarks:
+            DesignSystemImages.Glyphs.Size16.bookmarks
+        case .duckAi:
+            DesignSystemImages.Glyphs.Size16.aiChat
+        case .fire:
+            DesignSystemImages.Glyphs.Size16.fire
+        case .vpn:
+            DesignSystemImages.Glyphs.Size16.vpnOn
+        case .passwords:
+            DesignSystemImages.Glyphs.Size16.keyLogin
+        case .voiceSearch:
+            DesignSystemImages.Glyphs.Size16.microphone
+        }
+
+        if let image {
+            return Image(uiImage: image)
+        }
+
+        return nil
     }
 
     @ViewBuilder
@@ -106,7 +148,8 @@ struct SettingsAppearanceView: View {
             useImprovedPicker: true,
             label: "Customizable Button",
             options: MobileCustomization.toolbarButtons,
-            selectedOption: $selectedToolbarButton)
+            selectedOption: $selectedToolbarButton,
+            iconProvider: buttonIconProvider)
 
     }
 

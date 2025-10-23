@@ -50,6 +50,8 @@ struct MobileCustomization {
                 "VPN"
             case .passwords:
                 "Passwords"
+            case .voiceSearch:
+                "Voice Search"
             }
         }
 
@@ -57,6 +59,7 @@ struct MobileCustomization {
         case share
         case addRemoveBookmark
         case addRemoveFavorite
+        case voiceSearch
         case zoom
         case none
 

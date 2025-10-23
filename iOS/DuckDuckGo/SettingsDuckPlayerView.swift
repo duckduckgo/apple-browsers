@@ -73,10 +73,11 @@ struct SettingsDuckPlayerView: View {
             // Duck Player Classic UI
             if !viewModel.duckPlayerNativeUI.wrappedValue {
                 Section {
-                    SettingsPickerCellView(label: UserText.settingsOpenVideosInDuckPlayerLabel,
-                                        options: DuckPlayerMode.allCases,
-                                        selectedOption: viewModel.duckPlayerModeBinding)
-                    .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
+                    SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
+                                           label: UserText.settingsOpenVideosInDuckPlayerLabel,
+                                           options: DuckPlayerMode.allCases,
+                                           selectedOption: viewModel.duckPlayerModeBinding)
+                        .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
 
                     if viewModel.state.duckPlayerOpenInNewTabEnabled {
                             SettingsCellView(label: UserText.settingsOpenDuckPlayerNewTabLabel,
@@ -92,10 +93,11 @@ struct SettingsDuckPlayerView: View {
                 }
 
                 Section(footer: Text(UserText.duckPlayerYoutubeFooter)) {
-                SettingsPickerCellView(label: UserText.duckPlayerYoutubeLabel,
-                                    options: NativeDuckPlayerYoutubeMode.allCases,
-                                    selectedOption: viewModel.duckPlayerNativeYoutubeModeBinding)
-                                    .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
+                SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
+                                       label: UserText.duckPlayerYoutubeLabel,
+                                       options: NativeDuckPlayerYoutubeMode.allCases,
+                                       selectedOption: viewModel.duckPlayerNativeYoutubeModeBinding)
+                    .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
                 }
 
                 Section(footer: Text(UserText.duckPlayerAutoplayFooter)) {

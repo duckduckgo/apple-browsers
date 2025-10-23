@@ -93,7 +93,11 @@ struct SettingsCellDemoDebugView: View {
                                  subtitle: "Subtitle goes here",
                                  accessory: .toggle(isOn: .constant(true)))
 
-                SettingsPickerCellView(label: "Proin tempor urna", options: SampleOption.allCases, selectedOption: $selectedOption)
+                SettingsPickerCellView(useImprovedPicker: false,
+                                       label: "Legacy picker", options: SampleOption.allCases, selectedOption: $selectedOption)
+
+                SettingsPickerCellView(useImprovedPicker: true,
+                                       label: "Improved Picker", options: SampleOption.allCases, selectedOption: $selectedOption)
 
                 SettingsCustomCell(content: customCellContent)
 

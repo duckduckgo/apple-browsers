@@ -239,6 +239,7 @@ struct SettingsCellView: View, Identifiable {
 /// Encapsulates a Picker with options derived from a generic type that conforms to CustomStringConvertible.
 struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
 
+    /// This should be gated behind a feature flag passed in from the view model unless your new UI is already behind a feature flag.
     let useImprovedPicker: Bool
     let label: String
     let options: [T?]
@@ -255,7 +256,7 @@ struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
     ///   - label: The label to display above the Picker.
     ///   - options: An array of options of generic type `T` that conforms to CustomStringConvertible.
     ///   - selectedOption: A binding to a state variable that represents the selected option.
-    init(useImprovedPicker: Bool = false, label: String, options: [T?], selectedOption: Binding<T>, iconProvider: ((T) -> Image?)? = nil) {
+    init(useImprovedPicker: Bool, label: String, options: [T?], selectedOption: Binding<T>, iconProvider: ((T) -> Image?)? = nil) {
         self.useImprovedPicker = useImprovedPicker
         self.label = label
         self.options = options

@@ -42,7 +42,8 @@ struct SettingsAppearanceView: View {
                                  isButton: true)
 
                 // Theme
-                SettingsPickerCellView(label: UserText.settingsTheme,
+                SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
+                                       label: UserText.settingsTheme,
                                        options: ThemeStyle.allCases,
                                        selectedOption: viewModel.themeStyleBinding)
             }
@@ -71,10 +72,11 @@ struct SettingsAppearanceView: View {
             showFullSiteAddressSetting()
 
             showReloadButtonSetting()
+
+            addressBarButtonSetting()
         }
 
-        Section(header: Text(verbatim: "Customizable Buttons")) {
-            addressBarButtonSetting()
+        Section(header: Text(verbatim: "Toolbar")) {
 
             toolbarButtonSetting()
         }
@@ -89,7 +91,7 @@ struct SettingsAppearanceView: View {
 
         SettingsPickerCellView(
             useImprovedPicker: true,
-            label: "Address Bar button",
+            label: "Customizable Button",
             options: MobileCustomization.addressBarButtons,
             selectedOption: $selectedAddressBarButton,
             iconProvider: buttonIconProvider)
@@ -100,8 +102,9 @@ struct SettingsAppearanceView: View {
     func toolbarButtonSetting() -> some View {
 
         SettingsPickerCellView(
+            
             useImprovedPicker: true,
-            label: "Toolbar button",
+            label: "Customizable Button",
             options: MobileCustomization.toolbarButtons,
             selectedOption: $selectedToolbarButton)
 
@@ -119,7 +122,8 @@ struct SettingsAppearanceView: View {
             addressBarPositionSetting()
 
             // Refresh Button Position
-            SettingsPickerCellView(label: UserText.settingsRefreshButtonPositionTitle,
+            SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
+                                   label: UserText.settingsRefreshButtonPositionTitle,
                                    options: RefreshButtonPosition.allCases,
                                    selectedOption: viewModel.refreshButtonPositionBinding)
 
@@ -136,7 +140,8 @@ struct SettingsAppearanceView: View {
     @ViewBuilder
     func addressBarPositionSetting() -> some View {
         if viewModel.state.addressBar.enabled {
-            SettingsPickerCellView(label: UserText.settingsAddressBar,
+            SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
+                                   label: UserText.settingsAddressBar,
                                    options: AddressBarPosition.allCases,
                                    selectedOption: viewModel.addressBarPositionBinding)
         }

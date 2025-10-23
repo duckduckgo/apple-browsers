@@ -85,6 +85,7 @@ final class AddressBarViewController: NSViewController {
     private var tabViewModel: TabViewModel?
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
+    private let featureFlagger: FeatureFlagger
 
     private var aiChatSettings: AIChatPreferencesStorage
     @IBOutlet weak var activeOuterBorderTrailingConstraint: NSLayoutConstraint!
@@ -155,7 +156,8 @@ final class AddressBarViewController: NSViewController {
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
           aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
           aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-          aiChatSidebarPresenter: AIChatSidebarPresenting) {
+          aiChatSidebarPresenter: AIChatSidebarPresenting,
+          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -178,6 +180,7 @@ final class AddressBarViewController: NSViewController {
         self.themeManager = themeManager
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
+        self.featureFlagger = featureFlagger
 
         super.init(coder: coder)
     }
@@ -509,7 +512,7 @@ final class AddressBarViewController: NSViewController {
         passiveTextField.textColor = theme.colorsProvider.textPrimaryColor
 
         // Workaround for macOS 26.0 NSTextFieldSimpleLabel rendering bug
-        if #available(macOS 26.0, *) {
+        if #available(macOS 26.0, *), featureFlagger.isFeatureOn(.blurryAddressBarTahoeFix) {
             if addressBarTextField.isHidden {
                 forceHideInternalTextFieldLabels(in: addressBarTextField)
             }

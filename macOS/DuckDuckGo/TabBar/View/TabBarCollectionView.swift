@@ -129,6 +129,10 @@ open class TabBarCollectionView: NSCollectionView {
         collectionViewLayout?.invalidateLayout()
     }
 
+    func isLastItemInSection(indexPath: IndexPath) -> Bool {
+        numberOfSections > .zero && indexPath.item == numberOfItems(inSection: indexPath.section) - 1
+    }
+
     func setLastItemSeparatorHidden(_ isHidden: Bool) {
         let numberOfItems = numberOfItems(inSection: 0)
         guard numberOfItems > 0, let item = item(at: numberOfItems-1) as? TabBarViewItem else {

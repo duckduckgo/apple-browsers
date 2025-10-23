@@ -55,6 +55,7 @@ final class MainCoordinator {
     private let featureFlagger: FeatureFlagger
     private let defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
     private let winBackOfferPresenter: WinBackOfferPresenting
+    private let modalPromptCoordinationService: ModalPromptCoordinationService
     private let launchSourceManager: LaunchSourceManaging
 
     init(syncService: SyncService,
@@ -79,12 +80,14 @@ final class MainCoordinator {
          daxDialogsManager: DaxDialogsManaging,
          dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
          launchSourceManager: LaunchSourceManaging,
-         winBackOfferService: WinBackOfferService
+         winBackOfferService: WinBackOfferService,
+         modalPromptCoordinationService: ModalPromptCoordinationService
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
         self.defaultBrowserPromptPresenter = defaultBrowserPromptPresenter
         self.winBackOfferPresenter = winBackOfferService.presenter
+        self.modalPromptCoordinationService = modalPromptCoordinationService
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
@@ -220,6 +223,10 @@ final class MainCoordinator {
                 controller.segueToDuckDuckGoSubscription()
             }
         }
+    }
+
+    func presentModalPromptIfNeeded() {
+        modalPromptCoordinationService.presentModalPromptIfNeeded(from: controller)
     }
 
     // MARK: App Lifecycle handling

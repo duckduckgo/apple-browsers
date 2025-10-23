@@ -47,23 +47,31 @@ struct ImportSourcePickerView: View {
                     Text(UserText.importChooseSourceTitle)
                         .font(.title2.weight(.semibold))
                         .padding(.top, 20)
-                    Text(" Import Bookmarks & Passwords")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color(designSystemColor: .textTertiary))
+                    HoverButtonView {
+                        // TODO:
+                    } content: {
+                        HStack(alignment: .lastTextBaseline, spacing: 1) {
+                            Text("Import Bookmarks & Passwords")
+                                .font(.system(size: 13, weight: .semibold))
+                            Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight)
+                                .renderingMode(.template)
+                                .resizable()
+                                .frame(width: 10, height: 10)
+                                .rotationEffect(.degrees(90))
+                        }
+                    }
                 }
                 .padding(.top, 20)
                 .padding(.bottom, 16)
                 RadioGridPicker(viewModel: viewModel)
                 if viewModel.shouldShowExpandButton {
-                    Button {
+                    HoverButtonView {
                         viewModel.toggleExpansion()
-                    } label: {
+                    } content: {
                         Text("Show More")
                             .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(Color(designSystemColor: .textTertiary))
                             .multilineTextAlignment(.center)
                     }
-                    .buttonStyle(.plain)
                     .padding(.top, 10)
                 }
             }
@@ -94,6 +102,24 @@ struct ImportSourcePickerView: View {
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 20)
+    }
+}
+
+private struct HoverButtonView<Content>: View where Content: View {
+    let action: () -> Void
+    @ViewBuilder let content: () -> Content
+
+    @State var isHovering: Bool = false
+
+    var body: some View {
+        Button(action: action) {
+            content()
+            .foregroundColor(isHovering ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textTertiary))
+            .onHover {
+                isHovering = $0
+            }
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -184,7 +210,7 @@ private struct RadioCard: View {
         .frame(maxWidth: .infinity, minHeight: 74, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(designSystemColor: .controlsFillPrimary))
+                .fill(isHovering ? Color(designSystemColor: .controlsFillSecondary) : Color(designSystemColor: .controlsFillPrimary))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -193,7 +219,7 @@ private struct RadioCard: View {
         .shadow(color: Color.black.opacity(isHovering ? 0.10 : 0.06), radius: 3, x: 0, y: 1)
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }
-        .scaleEffect(isPressed ? 0.997 : 1) // optional micro feedback
+        .scaleEffect(isPressed ? 0.997 : 1)
     }
 }
 

@@ -105,9 +105,6 @@
         }
       }
     },
-    " Import Bookmarks & Passwords" : {
-
-    },
     "%@ does not support storing passwords" : {
       "comment" : "Data Import disabled checkbox message about a browser (%@) not supporting storing passwords",
       "localizations" : {
@@ -40900,6 +40897,9 @@
           }
         }
       }
+    },
+    "Import Bookmarks & Passwords" : {
+
     },
     "Import from %@" : {
 

@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
+import Common
 import History
 import HistoryView
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class HistoryViewDataProviderTests: XCTestCase {
@@ -42,7 +44,8 @@ final class HistoryViewDataProviderTests: XCTestCase {
             historyBurner: burner,
             dateFormatter: dateFormatter,
             featureFlagger: featureFlagger,
-            pixelHandler: pixelHandler
+            pixelHandler: pixelHandler,
+            tld: TLD()
         )
         await provider.refreshData()
     }

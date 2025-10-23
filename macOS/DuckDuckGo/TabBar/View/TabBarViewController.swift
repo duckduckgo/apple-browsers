@@ -229,6 +229,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     override func viewDidAppear() {
+        // Running tests or moving Tab Bar from Title to main view on burn (animateBurningIfNeededAndClose)?
+        guard view.window != nil else { return }
+
         enableScrollButtons()
         subscribeToChildWindows()
         setupAccessibility()
@@ -841,6 +844,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         guard resizeAmount != 0,
               let selectedIndexPath = collectionView.selectionIndexPaths.first,
+              collectionView.isIndexPathValid(selectedIndexPath),
               let layoutAttributes = collectionView.layoutAttributesForItem(at: selectedIndexPath) else { return }
 
         let visibleRect = collectionView.visibleRect

@@ -47,8 +47,6 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
             )
             tab = Tab(content: .newtab)
             window = WindowsManager.openNewWindow(with: tab)!
-
-            windowControllersManager.lastKeyMainWindowController = window.windowController as? MainWindowController
         }
     }
 

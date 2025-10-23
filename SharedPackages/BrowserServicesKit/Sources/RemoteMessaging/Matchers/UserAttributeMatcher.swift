@@ -36,10 +36,12 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
 
     private let isWidgetInstalled: Bool
     private let isSyncEnabled: Bool
+    private let shouldShowWinBackOfferUrgencyMessage: Bool
 
     private let commonUserAttributeMatcher: CommonUserAttributeMatcher
 
     public init(statisticsStore: StatisticsStore,
+                featureDiscovery: FeatureDiscovery,
                 variantManager: VariantManager,
                 emailManager: EmailManager = EmailManager(),
                 bookmarksCount: Int,
@@ -60,13 +62,16 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
                 dismissedMessageIds: [String],
                 shownMessageIds: [String],
                 enabledFeatureFlags: [String],
-                isSyncEnabled: Bool
+                isSyncEnabled: Bool,
+                shouldShowWinBackOfferUrgencyMessage: Bool
     ) {
         self.isWidgetInstalled = isWidgetInstalled
         self.isSyncEnabled = isSyncEnabled
+        self.shouldShowWinBackOfferUrgencyMessage = shouldShowWinBackOfferUrgencyMessage
 
         commonUserAttributeMatcher = .init(
             statisticsStore: statisticsStore,
+            featureDiscovery: featureDiscovery,
             variantManager: variantManager,
             emailManager: emailManager,
             bookmarksCount: bookmarksCount,
@@ -95,6 +100,8 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
             return matchingAttribute.evaluate(for: isWidgetInstalled)
         case let matchingAttribute as SyncEnabledMatchingAttribute:
             return matchingAttribute.evaluate(for: isSyncEnabled)
+        case let matchingAttribute as WinBackOfferUrgencyMatchingAttribute:
+            return matchingAttribute.evaluate(for: shouldShowWinBackOfferUrgencyMessage)
         default:
             return commonUserAttributeMatcher.evaluate(matchingAttribute: matchingAttribute)
         }
@@ -111,6 +118,7 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
     private let commonUserAttributeMatcher: CommonUserAttributeMatcher
 
     public init(statisticsStore: StatisticsStore,
+                featureDiscovery: FeatureDiscovery,
                 variantManager: VariantManager,
                 emailManager: EmailManager = EmailManager(),
                 bookmarksCount: Int,
@@ -142,6 +150,7 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
 
         commonUserAttributeMatcher = .init(
             statisticsStore: statisticsStore,
+            featureDiscovery: featureDiscovery,
             variantManager: variantManager,
             emailManager: emailManager,
             bookmarksCount: bookmarksCount,
@@ -195,6 +204,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
     }
 
     private let statisticsStore: StatisticsStore
+    private let featureDiscovery: FeatureDiscovery
     private let variantManager: VariantManager
     private let emailManager: EmailManager
     private let appTheme: String
@@ -216,6 +226,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
     private let enabledFeatureFlags: [String]
 
     public init(statisticsStore: StatisticsStore,
+                featureDiscovery: FeatureDiscovery,
                 variantManager: VariantManager,
                 emailManager: EmailManager = EmailManager(),
                 bookmarksCount: Int,
@@ -237,6 +248,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
                 enabledFeatureFlags: [String]
     ) {
         self.statisticsStore = statisticsStore
+        self.featureDiscovery = featureDiscovery
         self.variantManager = variantManager
         self.emailManager = emailManager
         self.appTheme = appTheme
@@ -322,6 +334,12 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
             }
         case let matchingAttribute as AllFeatureFlagsEnabledMatchingAttribute:
             return matchingAttribute.evaluate(for: enabledFeatureFlags)
+        case let matchingAttribute as DaysSinceDuckAIUsedMatchingAttribute:
+            if let daysSinceDuckAiEnabled = featureDiscovery.daysSinceLastUsed(.aiChat) {
+                return matchingAttribute.evaluate(for: daysSinceDuckAiEnabled)
+            } else {
+                return .fail
+            }
         default:
             assertionFailure("Could not find matching attribute")
             return nil

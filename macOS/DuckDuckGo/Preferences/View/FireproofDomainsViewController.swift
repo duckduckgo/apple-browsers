@@ -358,8 +358,8 @@ final class FireproofDomainsViewController: NSViewController {
 
         let mainWindowController = Application.appDelegate.windowControllersManager.mainWindowController(for: sourceWindow)
         let url = mainWindowController?.mainViewController.tabCollectionViewModel.selectedTab?.url
-        if let url, url.canFireproof, let host = url.host {
-            addCurrentDomainButton.isEnabled = !fireproofDomains.isFireproof(fireproofDomain: host)
+        if let url, url.canFireproof, let host = url.host, let tldDomain = NSApp.delegateTyped.tld.eTLDplus1(host) {
+            addCurrentDomainButton.isEnabled = !fireproofDomains.isFireproof(fireproofDomain: tldDomain)
         } else {
             addCurrentDomainButton.isEnabled = false
         }

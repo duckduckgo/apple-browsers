@@ -196,8 +196,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
         var urls = Set<URL>()
         let entries: [HistoryEntry] = historyDictionary.values.filter { historyEntry in
             guard let host = historyEntry.url.host,
-                  let baseDomain = tld.eTLDplus1(host),
-                  baseDomains.contains(baseDomain) else { return false }
+                  baseDomains.contains(tld.eTLDplus1(host) ?? host) else { return false }
             urls.insert(historyEntry.url)
             return true
         }

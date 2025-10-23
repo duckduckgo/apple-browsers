@@ -85,14 +85,6 @@ final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
 
     @MainActor
     private func presentFireDialog(for query: DataModel.HistoryQueryKind, visits: [Visit], in window: NSWindow?, fromMainMenu: Bool) async -> HistoryViewDeleteDialogModel.Response {
-        let window = window ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
-        var mainWindowController: MainWindowController? {
-            guard let mainWindowController = window?.windowController as? MainWindowController else {
-                assertionFailure("Unexpected window controller: \(window?.windowController?.description ?? "<nil>")")
-                return nil
-            }
-            return mainWindowController
-        }
         assert(!fromMainMenu || query == .rangeFilter(.all))
         let response = await fireCoordinator.presentFireDialog(mode: fromMainMenu ? .mainMenuAll : .historyView(query: query), in: window, scopeVisits: visits)
         switch response {

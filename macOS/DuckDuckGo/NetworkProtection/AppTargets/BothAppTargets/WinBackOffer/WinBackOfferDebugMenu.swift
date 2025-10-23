@@ -23,7 +23,7 @@ import Persistence
 final class WinBackOfferDebugMenu: NSMenuItem {
 
     private var winbackOfferStore: any WinbackOfferStoring
-    private let debugStore = WinBackOfferDebugStore()
+    private let debugStore: WinBackOfferDebugStore
 
     private let simulatedTodayDateMenuItem = NSMenuItem(title: "")
     private let churnDateMenuItem = NSMenuItem(title: "")
@@ -45,8 +45,9 @@ final class WinBackOfferDebugMenu: NSMenuItem {
         fatalError("init(coder:) has not been implemented")
     }
 
-    init(winbackOfferStore: any WinbackOfferStoring) {
+    init(winbackOfferStore: any WinbackOfferStoring, keyValueStore: ThrowingKeyValueStoring) {
         self.winbackOfferStore = winbackOfferStore
+        self.debugStore = WinBackOfferDebugStore(keyValueStore: keyValueStore)
         super.init(title: "Win-back Offer", action: nil, keyEquivalent: "")
         self.submenu = makeSubmenu()
     }
@@ -168,12 +169,30 @@ extension WinBackOfferDebugMenu: NSMenuDelegate {
 }
 
 final class WinBackOfferDebugStore {
-    @UserDefaultsWrapper(key: .debugWinBackOfferSimulatedTodayDate, defaultValue: Date())
-    var simulatedTodayDate: Date
 
-    init() {}
+      enum Key: String {
+          case simulatedTodayDate = "debug.winback-offer.simulated-today-date"
+      }
 
-    func reset() {
-        simulatedTodayDate = Date()
-    }
-}
+      private let keyValueStore: ThrowingKeyValueStoring
+
+      init(keyValueStore: ThrowingKeyValueStoring) {
+          self.keyValueStore = keyValueStore
+      }
+
+      var simulatedTodayDate: Date {
+          get {
+              guard let timestamp = try? keyValueStore.object(forKey: Key.simulatedTodayDate.rawValue) as? TimeInterval else {
+                  return Date()
+              }
+              return Date(timeIntervalSince1970: timestamp)
+          }
+          set {
+              try? keyValueStore.set(newValue.timeIntervalSince1970, forKey: Key.simulatedTodayDate.rawValue)
+          }
+      }
+
+      func reset() {
+          try? keyValueStore.removeObject(forKey: Key.simulatedTodayDate.rawValue)
+      }
+  }

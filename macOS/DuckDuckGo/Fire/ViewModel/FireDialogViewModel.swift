@@ -319,14 +319,11 @@ final class FireDialogViewModel: ObservableObject {
             case .allData:
                 if let scopeCookieDomains { return scopeCookieDomains }
                 // Fallback: get all domains from history
-                return historyCoordinating.history?.visitedDomains(tld: tld) ?? Set<String>()
+                return historyCoordinating.history?.lazy.compactMap(\.url.host).convertedToETLDPlus1(tld: tld) ?? []
             }
         }
 
-        let visitedETLDPlus1Domains: Set<String> = {
-            let visitedDomains = visitedDomains(basedOn: clearingOption)
-            return Set(visitedDomains.compactMap { tld.eTLDplus1($0) })
-        }()
+        let visitedETLDPlus1Domains = visitedDomains(basedOn: clearingOption).convertedToETLDPlus1(tld: tld)
 
         let fireproofed = visitedETLDPlus1Domains
             .filter { domain in
@@ -400,20 +397,6 @@ final class FireDialogViewModel: ObservableObject {
                 return nil
             }
             return selectedDomain
-        })
-    }
-
-}
-
-extension BrowsingHistory {
-
-    func visitedDomains(tld: TLD) -> Set<String> {
-        return reduce(Set<String>(), { result, historyEntry in
-            if let host = historyEntry.url.host, let eTLDPlus1Domain = tld.eTLDplus1(host) {
-                return result.union([eTLDPlus1Domain])
-            } else {
-                return result
-            }
         })
     }
 

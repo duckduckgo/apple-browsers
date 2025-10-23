@@ -100,7 +100,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
             themeManager: MockThemeManager()
         )
         mainWindowController.window = window
-        windowControllersManager.lastKeyMainWindowController = mainWindowController
+        windowControllersManager.mainWindowControllers = [mainWindowController]
 
         window.isVisible = true
 
@@ -109,7 +109,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         XCTAssertTrue(onFireButtonPressedCalled)
         XCTAssertTrue(reporter.measureFireButtonTryItCalled)
 
-        windowControllersManager.lastKeyMainWindowController = nil
+        windowControllersManager.mainWindowControllers = []
     }
 
 }

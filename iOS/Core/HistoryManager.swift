@@ -74,8 +74,8 @@ public class HistoryManager: HistoryManaging {
     }
 
     public func deleteHistoryForURL(_ url: URL) async {
-        guard let domain = url.host,
-            let baseDomain = tld.eTLDplus1(domain) else { return }
+        guard let domain = url.host else { return }
+        let baseDomain = tld.eTLDplus1(domain) ?? domain
 
         await withCheckedContinuation { continuation in
             historyCoordinator.burnDomains([baseDomain], tld: tld) { _ in

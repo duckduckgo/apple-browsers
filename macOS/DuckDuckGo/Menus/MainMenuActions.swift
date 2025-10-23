@@ -155,7 +155,9 @@ extension AppDelegate {
 
     @objc func clearAllHistory(_ sender: NSMenuItem) {
         Task { @MainActor in
-            let window: NSWindow? = windowControllersManager.lastKeyMainWindowController?.window ?? WindowsManager.openNewWindow(with: Tab(content: .newtab))
+            let window: NSWindow? = windowControllersManager.lastKeyMainWindowController(where: { !$0.mainViewController.isBurner })?.window
+                ?? WindowsManager.openNewWindow(with: Tab(content: .newtab))
+
             guard let window else {
                 assertionFailure("No reference to main window controller")
                 return
@@ -551,14 +553,6 @@ extension AppDelegate {
                 NSAlert.exportBookmarksFailed()
                     .beginSheetModal(for: window, completionHandler: nil)
             }
-        }
-    }
-
-    @objc func fireButtonAction(_ sender: NSButton) {
-        DispatchQueue.main.async {
-            self.fireCoordinator.fireButtonAction()
-            let pixelReporter = OnboardingPixelReporter()
-            pixelReporter.measureFireButtonPressed()
         }
     }
 
@@ -1106,6 +1100,14 @@ extension MainViewController {
         Application.appDelegate.windowControllersManager.open(historyEntry, with: NSApp.currentEvent)
     }
 
+    @objc func fireButtonAction(_ sender: NSButton) {
+        DispatchQueue.main.async {
+            self.fireCoordinator.fireButtonAction()
+            let pixelReporter = OnboardingPixelReporter()
+            pixelReporter.measureFireButtonPressed()
+        }
+    }
+
     /// History → [Date] → Clear This History…
     /// Clear history for a chosen date range selected from the History menu
     @objc func clearTimeWindowHistory(_ sender: ClearTimeWindowHistoryMenuItem) {
@@ -1130,7 +1132,12 @@ extension MainViewController {
                 }
                 switch result {
                 case .burn:
-                    self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: sender.historyTimeWindow == .today, clearChatHistory: false)
+                    await self.fireCoordinator.fireViewModel.fire.burnVisits(visits,
+                                                                             except: fireproofDomains,
+                                                                             isToday: sender.historyTimeWindow == .today,
+                                                                             closeWindows: sender.historyTimeWindow == .today,
+                                                                             clearSiteData: true /* burn */,
+                                                                             clearChatHistory: true /* burn */)
                 case .delete:
                     historyCoordinator.burnVisits(visits) {}
                 default:

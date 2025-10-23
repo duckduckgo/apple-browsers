@@ -18,17 +18,19 @@
 
 import XCTest
 import Persistence
-@testable import DuckDuckGo_Privacy_Browser
+import PersistenceTestingUtils
+@testable import Subscription
 
 final class FreeTrialBadgePersistorTests: XCTestCase {
 
     private var mockKeyValueStore: MockKeyValueStore!
     private var persistor: FreeTrialBadgePersistor!
+    private let keyPrefix = "test-prefix"
 
     override func setUp() {
         super.setUp()
         mockKeyValueStore = MockKeyValueStore()
-        persistor = FreeTrialBadgePersistor(keyValueStore: mockKeyValueStore)
+        persistor = FreeTrialBadgePersistor(keyValueStore: mockKeyValueStore, keyPrefix: keyPrefix)
     }
 
     override func tearDown() {
@@ -86,36 +88,26 @@ final class FreeTrialBadgePersistorTests: XCTestCase {
         persistor.incrementViewCount()
         persistor.incrementViewCount()
 
-        // Create new instance with same store
-        let newPersistor = FreeTrialBadgePersistor(keyValueStore: mockKeyValueStore)
+        // Create new instance with same store and prefix
+        let newPersistor = FreeTrialBadgePersistor(keyValueStore: mockKeyValueStore, keyPrefix: keyPrefix)
 
         // Should have the same count
         XCTAssertEqual(newPersistor.viewCount, 2)
         XCTAssertFalse(newPersistor.hasReachedViewLimit)
     }
-}
 
-// Mock for testing
-private final class MockKeyValueStore: KeyValueStoring {
-    private var storage: [String: Any] = [:]
+    func testDefaultKeyValue_WhenNoProvidedKeyPrefix() {
+        // When
+        let newPersistor = FreeTrialBadgePersistor(keyValueStore: mockKeyValueStore)
 
-    func object(forKey key: String) -> Any? {
-        return storage[key]
+        // Then
+        let expectedKey = "free-trial-badge.view-count"
+        XCTAssertEqual(newPersistor.freeTrialBadgeViewCountKey, expectedKey)
     }
 
-    func set(_ value: Any?, forKey key: String) {
-        if let value = value {
-            storage[key] = value
-        } else {
-            storage.removeValue(forKey: key)
-        }
-    }
+    func testKeyUsesProvidedKeyPrefix() {
+        let expectedKey = "\(keyPrefix).free-trial-badge.view-count"
+        XCTAssertEqual(persistor.freeTrialBadgeViewCountKey, expectedKey)
 
-    func removeObject(forKey key: String) {
-        storage.removeValue(forKey: key)
-    }
-
-    func synchronize() -> Bool {
-        return true
     }
 }

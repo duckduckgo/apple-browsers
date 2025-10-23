@@ -133,6 +133,9 @@
 /* New tab menu item opening a new tab */
 "action.title.tab.new" = "Nov zavihek";
 
+/* VPN menu item */
+"action.title.vpn" = "VPN";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Spodaj";
 
@@ -2317,9 +2320,6 @@
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Potrdi";
 
-/* Description text for the new address bar picker modal */
-"new.address.bar.picker.description" = "Funkcije umetne inteligence so vedno izbirne.";
-
 /* Footer text for the new address bar picker */
 "new.address.bar.picker.footer" = "Prilagodite v nastavitvah > Funkcije UI";
 
@@ -2332,8 +2332,8 @@
 /* Option for search only in the new address bar picker */
 "new.address.bar.picker.search.only" = "Samo iskanje";
 
-/* Subtitle for the new address bar picker modal */
-"new.address.bar.picker.subtitle" = "Preklapljanje med iskanjem in klepetom UI";
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline" = "Želite lažji dostop do klepeta z umetno inteligenco?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Možnost naslovne vrstice";
@@ -2622,6 +2622,9 @@
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Upravljaj kreditne kartice…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "Dosegli ste največje število kreditnih kartic. Nekaj jih izbrišite, če želite nadaljevati sinhronizacijo.";
 
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Sinhronizacija je naletela na napako. Poskusite onemogočiti sinhronizacijo v tej napravi in nato znova vzpostavite povezavo z drugo napravo ali obnovitveno kodo.";
@@ -3843,6 +3846,54 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Sporočilo od %@:";
+
+/* CTA of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.cta" = "Poglej ponudbo";
+
+/* Dismiss of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.dismiss" = "Ne zdaj";
+
+/* Message of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.text" = "Ostanite zaščiteni z našim omrežjem VPN, zasebno umetno inteligenco in drugimi storitvami. Ponovno se naročite še danes in prihranite 25 %.";
+
+/* Title of message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.title" = "Zadnji dan za prihranek 25 %!";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "PRIHRANITE 25 %";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "Oglejte si ponudbo";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Ne zdaj";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "Ostanite zaščiteni z našim omrežjem VPN, zasebno umetno inteligenco in drugimi storitvami. Znova se naročite še danes in prihranite 25 %.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Samo za omejen čas";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "Pogrešamo vas!\nPrihranite 25 %.";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "Oglejte si ponudbo";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "Imam naročnino";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "Časovno omejena ponudba!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "Ostanite zaščiteni z našim omrežjem VPN, zasebno umetno inteligenco in drugimi storitvami. Ponovno se naročite še danes in prihranite 25 %.Časovno omejena ponudba.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "Znova se naročite in prihranite 25 %";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Znova se naročite in prihranite 25 %";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Iščete različico za računalnike Mac?";

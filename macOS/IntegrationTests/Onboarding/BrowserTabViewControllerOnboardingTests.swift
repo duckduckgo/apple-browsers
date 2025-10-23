@@ -369,9 +369,9 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
             themeManager: MockThemeManager()
         )
         mainWindowController.window = window
-        windowControllersManager.lastKeyMainWindowController = mainWindowController
+        windowControllersManager.mainWindowControllers = [mainWindowController]
         defer {
-            windowControllersManager.lastKeyMainWindowController = nil
+            windowControllersManager.mainWindowControllers = []
         }
 
         // WHEN

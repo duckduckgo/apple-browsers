@@ -46,7 +46,8 @@ extension XCTestCase {
             autoreleasepool {
                 if view.window?.className.contains("NSMenu") == true
                     || view.nextResponder?.className.contains("NSMenuBar") == true
-                    || view.window?.className.contains("TUINSWindow") == true {
+                    || view.window?.className.contains("TUINSWindow") == true
+                    || view.className == "NSRemoteView" {
 
                     objToDeinit = nil
 
@@ -63,7 +64,6 @@ extension XCTestCase {
                 }
             }
             guard let objToDeinit else { return nil }
-
             let descr = autoreleasepool {
                 objToDeinit.description
             }
@@ -143,6 +143,7 @@ extension TestRunHelper: XCTestObservation {
         if #available(macOS 13.0, *) {
             WKProcessPool._setWebProcessCountLimit(5)
         }
+        processPool.webViewsUsingProcessPool.insert(NSValue(point: .zero)) // avoid deallocation checks on this process pool
     }
 
     func testBundleDidFinish(_ testBundle: Bundle) {

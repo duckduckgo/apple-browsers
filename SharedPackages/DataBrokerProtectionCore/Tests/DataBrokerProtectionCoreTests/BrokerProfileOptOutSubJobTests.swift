@@ -284,7 +284,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
                                                                      handler: mockPixelHandler,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
-        calculator.setLastActionId("action")
+        calculator.setLastAction(ClickAction(id: "action", actionType: .click))
         let identifiers = makeFixtureIdentifiers()
         let brokerData = makeFixtureBrokerProfileQueryData()
 

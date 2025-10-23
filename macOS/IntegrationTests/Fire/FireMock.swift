@@ -77,10 +77,10 @@ final class FireMock: FireProtocol {
     func burnVisits(_ visits: [Visit],
                     except fireproofDomains: DomainFireproofStatusProviding,
                     isToday: Bool,
-                    closeWindows: Bool = true,
-                    clearSiteData: Bool = true,
-                    clearChatHistory: Bool = false,
-                    urlToOpenIfWindowsAreClosed url: URL? = .newtab,
+                    closeWindows: Bool,
+                    clearSiteData: Bool,
+                    clearChatHistory: Bool,
+                    urlToOpenIfWindowsAreClosed url: URL?,
                     completion: (@MainActor () -> Void)? = nil) {
         burnVisitsCalls.append(.init(visits: visits, isToday: isToday, closeWindows: closeWindows, clearSiteData: clearSiteData, clearChatHistory: clearChatHistory, url: url))
         completion?()

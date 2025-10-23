@@ -235,6 +235,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1211625735257812?focus=true
     case cpmCountPixel
+
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211708648644692?focus=true
+    case serpSettings
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -255,7 +258,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .authV2WideEventEnabled,
                 .syncCreditCards,
                 .syncIdentities,
-                .dataImportNewSafariFilePicker:
+                .dataImportNewSafariFilePicker,
+                .fireDialog,
+                .fireDialogIndividualSitesLink:
             true
         default:
             false
@@ -339,7 +344,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncCreditCards,
                 .syncIdentities,
                 .aiChatDataClearing,
-                .dataImportNewSafariFilePicker:
+                .dataImportNewSafariFilePicker,
+                .serpSettings:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -380,7 +386,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .historyView:
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
         case .historyViewSitesSection:
-            return .remoteDevelopment(.subfeature(HTMLHistoryPageSubfeature.sitesSection))
+            return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.sitesSection))
         case .autoUpdateInDEBUG:
             return .disabled
         case .updatesWontAutomaticallyRestartApp:
@@ -484,9 +490,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .subscriptionPurchaseWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
         case .fireDialog:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.fireDialog))
         case .fireDialogIndividualSitesLink:
-            return .enabled
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.fireDialogIndividualSitesLink))
         case .refactorOfSyncPreferences:
             return .remoteReleasable(.subfeature(SyncSubfeature.refactorOfSyncPreferences))
         case .newSyncEntryPoints:
@@ -515,6 +521,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.duckAiDataClearing))
         case .cpmCountPixel:
             return .internalOnly()
+        case .serpSettings:
+            return .disabled
         }
     }
 }

@@ -575,6 +575,81 @@
             }
         ]
     },
+    "m_mac_dbp_search_stage_main_status_error": {
+        "description": "Fired when a PIR scan encounters an error.",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "data_broker",
+                "description": "The URL of the data broker the scan was operating on",
+                "type": "string"
+            },
+            {
+                "key": "broker_version",
+                "description": "The version of the broker JSON file",
+                "type": "string"
+            },
+            {
+                "key": "duration",
+                "description": "Total duration of the scan in milliseconds",
+                "type": "string",
+                "pattern": "^[0-9]+(\\.[0-9]+)?$"
+            },
+            {
+                "key": "error_category",
+                "description": "High-level error classification",
+                "type": "string",
+                "pattern": "^(network-error|validation-error|unclassified|client-error-[0-9]+|server-error-[0-9]+|database-error-.+)$"
+            },
+            {
+                "key": "error_details",
+                "description": "Error description supplied by the failing stage",
+                "type": "string"
+            },
+            {
+                "key": "is_manual_scan",
+                "description": "Whether the scan was initiated manually by the user",
+                "type": "string",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "vpn_connection_state",
+                "description": "Reported VPN connection state when the error occurred",
+                "type": "string"
+            },
+            {
+                "key": "vpn_bypass",
+                "description": "VPN bypass status when the error occurred",
+                "type": "string",
+                "enum": ["on", "off", "unsupported"]
+            },
+            {
+                "key": "action_id",
+                "description": "Identifier of the action that was executing when the error occurred",
+                "type": "string"
+            },
+            {
+                "key": "action_type",
+                "description": "Type of action that produced the error",
+                "type": "string",
+                "enum": [
+                    "extract",
+                    "navigate",
+                    "fillForm",
+                    "click",
+                    "expectation",
+                    "emailConfirmation",
+                    "getCaptchaInfo",
+                    "solveCaptcha",
+                    "condition"
+                ]
+            }
+        ]
+    },
     "m_mac_dbp_data_broker_action-failed_error": {
         "description": "Fired when a scan or opt-out action fails while processing a data broker.",
         "owners": ["quanganhdo"],

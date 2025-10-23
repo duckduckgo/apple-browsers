@@ -91,6 +91,8 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestSettingsToCreditCardManagement(_ tab: TabViewController,
                                                      source: AutofillSettingsSource)
 
+    func tabDidRequestSettingsToVPN(_ tab: TabViewController)
+
     func tabDidRequestFindInPage(tab: TabViewController)
     func closeFindInPage(tab: TabViewController)
 

@@ -20,17 +20,19 @@
 import XCTest
 import DDGSync
 import Combine
+import Common
+import BrowserServicesKitTestsUtils
 @testable import Core
 
 final class SyncErrorHandlerSyncErrorsAlertsTests: XCTestCase {
     var handler: SyncErrorHandler!
     var alertPresenter: CapturingAlertPresenter!
-    var dateProvider: MockDateProvider!
+    var dateProvider: MockCurrentDateProvider!
 
     override func setUp() {
         super.setUp()
         UserDefaultsWrapper<Any>.clearAll()
-        dateProvider = MockDateProvider()
+        dateProvider = MockCurrentDateProvider()
         alertPresenter = CapturingAlertPresenter()
         handler = SyncErrorHandler(dateProvider: dateProvider)
         handler.alertPresenter = alertPresenter
@@ -193,8 +195,4 @@ final class SyncErrorHandlerSyncErrorsAlertsTests: XCTestCase {
         XCTAssertTrue(alertPresenter.showAlertCalled)
         XCTAssertEqual(alertPresenter.showAlertCount, 2)
     }
-}
-
-class MockDateProvider: CurrentDateProviding {
-    var currentDate: Date = Date()
 }

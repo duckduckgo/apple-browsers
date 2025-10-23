@@ -47,7 +47,6 @@ final class OnboardingNavigatingTests: XCTestCase {
     override func tearDown() {
         onboardingNavigation = nil
         fireCoordinator = nil
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = nil
         super.tearDown()
     }
 
@@ -61,7 +60,10 @@ final class OnboardingNavigatingTests: XCTestCase {
             fireViewModel: fireCoordinator.fireViewModel,
             themeManager: MockThemeManager())
         mvc.window = mockWindow
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mvc
+        Application.appDelegate.windowControllersManager.register(mvc)
+        defer {
+            Application.appDelegate.windowControllersManager.unregister(mvc)
+        }
 
         // When
         onboardingNavigation.showImportDataView()
@@ -81,7 +83,10 @@ final class OnboardingNavigatingTests: XCTestCase {
             themeManager: MockThemeManager()
         )
         mvc.window = mockWindow
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mvc
+        Application.appDelegate.windowControllersManager.register(mvc)
+        defer {
+            Application.appDelegate.windowControllersManager.unregister(mvc)
+        }
 
         // When
         onboardingNavigation.focusOnAddressBar()

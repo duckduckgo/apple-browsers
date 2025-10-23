@@ -18,6 +18,7 @@
 
 import AppKit
 import BrowserServicesKit
+import Common
 import Foundation
 import History
 import HistoryView
@@ -82,19 +83,22 @@ extension HistoryViewDataProviding {
 final class HistoryViewDataProvider: HistoryViewDataProviding {
 
     private let featureFlagger: FeatureFlagger
+    private let tld: TLD
 
     init(
         historyDataSource: HistoryDataSource,
         historyBurner: HistoryBurning,
         dateFormatter: HistoryViewDateFormatting = DefaultHistoryViewDateFormatter(),
         featureFlagger: FeatureFlagger,
-        pixelHandler: HistoryViewDataProviderPixelFiring = HistoryViewDataProviderPixelHandler()
+        pixelHandler: HistoryViewDataProviderPixelFiring = HistoryViewDataProviderPixelHandler(),
+        tld: TLD
     ) {
         self.dateFormatter = dateFormatter
         self.historyDataSource = historyDataSource
         self.historyBurner = historyBurner
-        self.pixelHandler = pixelHandler
         self.featureFlagger = featureFlagger
+        self.pixelHandler = pixelHandler
+        self.tld = tld
         historyGroupingProvider = { @MainActor in
             HistoryGroupingProvider(dataSource: historyDataSource, featureFlagger: featureFlagger)
         }
@@ -114,6 +118,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
 
         // Sites = unique domains count (items in synthetic 'sites' section)
         if isSitesSectionEnabled {
+            assert(AppVersion.runType != .normal, "Enable History View Sites Section Deletion UI Tests and remove the assertion")
             let sitesCount = groupingsByRange[.allSites]?.items.count ?? uniqueETLDPlus1Domains().count
             filteredRanges.append(.init(id: .allSites, count: sitesCount))
         }
@@ -450,12 +455,8 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
 
     private func uniqueETLDPlus1Domains() -> [String] {
         guard let history = historyDataSource.historyDictionary else { return [] }
-        let tld = Application.appDelegate.tld
-        let domains = Set(history.keys.compactMap { (url: URL) -> String? in
-            guard let host = url.host else { return nil }
-            return tld.eTLDplus1(host)
-        })
-        return Array(domains).sorted()
+        let etldPlus1Domains = history.keys.convertedToETLDPlus1(tld: tld)
+        return etldPlus1Domains.sorted()
     }
 
     private struct QueryInfo {

@@ -650,120 +650,58 @@ public class WireGuardAdapter {
         }
     }
 
-    // MARK: - Network Path Update Handling
-
-    /// Used to detect whether the adapter restart previously failed when attempt to restart it again.
-    private var adapterRestartPreviouslyFailed: Bool = false
-
     /// Helper method used by network path monitor.
     /// - Parameter path: new network path
     private func didReceivePathUpdate(path: Network.NWPath) {
-        logHandler(.verbose, "Network change detected with \(path.status) route and interface order \(path.availableInterfaces)")
+        self.logHandler(.verbose, "Network change detected with \(path.status) route and interface order \(path.availableInterfaces)")
 
         #if os(macOS)
-        handleMacOSPathUpdate(path: path)
+        if case .started(let handle, _) = self.state {
+            wireGuardInterface.bumpSockets(handle: handle)
+        }
         #elseif os(iOS)
-        handleIOSPathUpdate(path: path)
+        switch self.state {
+        case .started(let handle, let settingsGenerator):
+            if path.status.isSatisfiable {
+                let (wgConfig, resolutionResults) = settingsGenerator.endpointUapiConfiguration()
+                self.logEndpointResolutionResults(resolutionResults)
+
+                _ = self.wireGuardInterface.setConfig(handle: handle, config: wgConfig)
+                self.wireGuardInterface.disableSomeRoamingForBrokenMobileSemantics(handle: handle)
+                self.wireGuardInterface.bumpSockets(handle: handle)
+            } else {
+                self.logHandler(.verbose, "Connectivity offline, pausing backend.")
+
+                self.state = .temporaryShutdown(settingsGenerator)
+                self.wireGuardInterface.turnOff(handle: handle)
+            }
+
+        case .temporaryShutdown(let settingsGenerator):
+            guard path.status.isSatisfiable else { return }
+
+            self.logHandler(.verbose, "Connectivity online, resuming backend.")
+
+            do {
+                try self.setNetworkSettings(settingsGenerator.generateNetworkSettings())
+
+                let (wgConfig, resolutionResults) = settingsGenerator.uapiConfiguration()
+                self.logEndpointResolutionResults(resolutionResults)
+
+                self.state = .started(
+                    try self.startWireGuardBackend(wgConfig: wgConfig),
+                    settingsGenerator
+                )
+            } catch {
+                self.logHandler(.error, "Failed to restart backend: \(error.localizedDescription)")
+            }
+
+        case .stopped, .snoozing:
+            // no-op
+            break
+        }
         #else
         #error("Unsupported")
         #endif
-    }
-
-    private func handleMacOSPathUpdate(path: Network.NWPath) {
-        if case .started(let handle, _) = state {
-            wireGuardInterface.bumpSockets(handle: handle)
-        }
-    }
-
-    private func handleIOSPathUpdate(path: Network.NWPath) {
-        switch state {
-        case .started(let handle, let settingsGenerator):
-            handleStartedStatePathChange(path: path, handle: handle, settingsGenerator: settingsGenerator)
-        case .temporaryShutdown(let settingsGenerator):
-            handleTemporaryShutdownStatePathChange(path: path, settingsGenerator: settingsGenerator)
-        case .stopped, .snoozing:
-            break
-        }
-    }
-
-    private func handleStartedStatePathChange(path: Network.NWPath, handle: Int32, settingsGenerator: PacketTunnelSettingsGenerator) {
-        if path.status.isSatisfiable {
-            updateEndpointConfiguration(handle: handle, settingsGenerator: settingsGenerator)
-        } else {
-            transitionToTemporaryShutdown(handle: handle, settingsGenerator: settingsGenerator)
-        }
-    }
-
-    private func handleTemporaryShutdownStatePathChange(path: Network.NWPath, settingsGenerator: PacketTunnelSettingsGenerator) {
-        guard path.status.isSatisfiable else { return }
-
-        attemptRecoveryFromTemporaryShutdown(settingsGenerator: settingsGenerator)
-    }
-
-    // MARK: - Path Update Operations
-
-    private func updateEndpointConfiguration(handle: Int32, settingsGenerator: PacketTunnelSettingsGenerator) {
-        let (wgConfig, resolutionResults) = settingsGenerator.endpointUapiConfiguration()
-        logEndpointResolutionResults(resolutionResults)
-
-        _ = wireGuardInterface.setConfig(handle: handle, config: wgConfig)
-        wireGuardInterface.disableSomeRoamingForBrokenMobileSemantics(handle: handle)
-        wireGuardInterface.bumpSockets(handle: handle)
-    }
-
-    private func transitionToTemporaryShutdown(handle: Int32, settingsGenerator: PacketTunnelSettingsGenerator) {
-        logHandler(.verbose, "Connectivity offline, pausing backend.")
-
-        state = .temporaryShutdown(settingsGenerator)
-        wireGuardInterface.turnOff(handle: handle)
-    }
-
-    private func attemptRecoveryFromTemporaryShutdown(settingsGenerator: PacketTunnelSettingsGenerator) {
-        logHandler(.verbose, "Connectivity online, resuming backend.")
-
-        do {
-            try restoreNetworkSettings(settingsGenerator: settingsGenerator)
-        } catch {
-            handleRecoveryError(error, context: "set network settings")
-            return
-        }
-
-        do {
-            let handle = try restartBackend(settingsGenerator: settingsGenerator)
-            state = .started(handle, settingsGenerator)
-            handleRecoverySuccess()
-        } catch {
-            handleRecoveryError(error, context: "start WireGuard backend")
-        }
-    }
-
-    private func restoreNetworkSettings(settingsGenerator: PacketTunnelSettingsGenerator) throws {
-        let generatedNetworkSettings = settingsGenerator.generateNetworkSettings()
-        try setNetworkSettings(generatedNetworkSettings)
-    }
-
-    private func restartBackend(settingsGenerator: PacketTunnelSettingsGenerator) throws -> Int32 {
-        let (wgConfig, resolutionResults) = settingsGenerator.uapiConfiguration()
-        logEndpointResolutionResults(resolutionResults)
-
-        return try startWireGuardBackend(wgConfig: wgConfig)
-    }
-
-    private func handleRecoveryError(_ error: Error, context: String) {
-        if adapterRestartPreviouslyFailed {
-            eventMapper.fire(.endTemporaryShutdownStateRecoveryFailure(error))
-        } else {
-            adapterRestartPreviouslyFailed = true
-            eventMapper.fire(.endTemporaryShutdownStateAttemptFailure(error))
-        }
-        logHandler(.error, "Failed to \(context): \(error.localizedDescription)")
-    }
-
-    private func handleRecoverySuccess() {
-        if adapterRestartPreviouslyFailed {
-            eventMapper.fire(.endTemporaryShutdownStateRecoverySuccess)
-            adapterRestartPreviouslyFailed = false
-        }
     }
 }
 

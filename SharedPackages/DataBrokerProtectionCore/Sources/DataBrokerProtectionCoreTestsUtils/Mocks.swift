@@ -980,6 +980,10 @@ public final class MockDatabase: DataBrokerProtectionRepository {
 
     public var saveResult: Result<Void, Error> = .success(())
     public var addHistoryEventError: Error?
+    public var updateLastRunDateError: Error?
+    public var updatePreferredRunDateError: Error?
+    public var updateSubmittedSuccessfullyDateError: Error?
+    public var brokerProfileQueryDataError: Error?
 
     public lazy var callsList: [Bool] = [
         wasSaveProfileCalled,
@@ -1035,8 +1039,12 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasSaveOptOutOperationCalled = true
     }
 
-    public func brokerProfileQueryData(for brokerId: Int64, and profileQueryId: Int64) -> BrokerProfileQueryData? {
+    public func brokerProfileQueryData(for brokerId: Int64, and profileQueryId: Int64) throws -> BrokerProfileQueryData? {
         wasBrokerProfileQueryDataCalled = true
+
+        if let brokerProfileQueryDataError {
+            throw brokerProfileQueryDataError
+        }
 
         if !brokerProfileQueryDataToReturn.isEmpty {
             return brokerProfileQueryDataToReturn.first
@@ -1109,15 +1117,21 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         incrementAttemptCountCallCount += 1
     }
 
-    public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) {
+    public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws {
         lastPreferredRunDateOnScan = date
         lastProfileQueryIdOnScanUpdatePreferredRunDate = profileQueryId
         wasUpdatedPreferredRunDateForScanCalled = true
+        if let updatePreferredRunDateError {
+            throw updatePreferredRunDateError
+        }
     }
 
-    public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) {
+    public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
         lastPreferredRunDateOnOptOut = date
         wasUpdatedPreferredRunDateForOptOutCalled = true
+        if let updatePreferredRunDateError {
+            throw updatePreferredRunDateError
+        }
     }
 
     public func updateAttemptCount(_ count: Int64, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
@@ -1134,6 +1148,9 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public func updateSubmittedSuccessfullyDate(_ date: Date?, forBrokerId brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
         submittedSuccessfullyDate = date
         wasUpdateSubmittedSuccessfullyDateForOptOutCalled = true
+        if let updateSubmittedSuccessfullyDateError {
+            throw updateSubmittedSuccessfullyDateError
+        }
     }
 
     public func updateSevenDaysConfirmationPixelFired(_ pixelFired: Bool, forBrokerId brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
@@ -1152,15 +1169,21 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasUpdateFortyTwoDaysConfirmationPixelFired = true
     }
 
-    public func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) {
+    public func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws {
         wasUpdateLastRunDateForScanCalled = true
+        if let updateLastRunDateError {
+            throw updateLastRunDateError
+        }
     }
 
-    public func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) {
+    public func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
         wasUpdateLastRunDateForOptOutCalled = true
+        if let updateLastRunDateError {
+            throw updateLastRunDateError
+        }
     }
 
-    public func updateRemovedDate(_ date: Date?, on extractedProfileId: Int64) {
+    public func updateRemovedDate(_ date: Date?, on extractedProfileId: Int64) throws {
         extractedProfileRemovedDate = date
         wasUpdateRemoveDateCalled = true
     }
@@ -1180,7 +1203,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    public func fetchLastEvent(brokerId: Int64, profileQueryId: Int64) -> HistoryEvent? {
+    public func fetchLastEvent(brokerId: Int64, profileQueryId: Int64) throws -> HistoryEvent? {
         wasFetchLastHistoryEventCalled = true
         if let event = brokerProfileQueryDataToReturn.first?.events.last {
             return event
@@ -1200,7 +1223,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         optOutToReturn
     }
 
-    public func hasMatches() -> Bool {
+    public func hasMatches() throws -> Bool {
         false
     }
 
@@ -1208,7 +1231,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
 
     }
 
-    public func fetchExtractedProfiles(for brokerId: Int64) -> [ExtractedProfile] {
+    public func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile] {
         return extractedProfilesFromBroker
     }
 
@@ -1216,14 +1239,14 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         [attemptInformation].compactMap { $0 }
     }
 
-    public func fetchAttemptInformation(for extractedProfileId: Int64) -> AttemptInformation? {
+    public func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation? {
         return attemptInformation
     }
 
-    public func addAttempt(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) {
+    public func addAttempt(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws {
     }
 
-    public func fetchChildBrokers(for parentBroker: String) -> [DataBroker] {
+    public func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker] {
         lastParentBrokerWhereChildSitesWhereFetched = parentBroker
         return childBrokers
     }

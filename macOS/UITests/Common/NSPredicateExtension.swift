@@ -18,8 +18,24 @@
 
 import Foundation
 import XCTest
+import ObjectiveC
 
 extension NSPredicate {
+
+    private class ComputedKeyPathHelper: NSObject {
+        @objc var value: Any?
+    }
+
+    /// Helper to extract value from element using keypath, preferring KVC when available
+    private static func getValue<T>(from element: Any?, keyPath: AnyKeyPath, as type: T.Type) -> T? {
+        // First try KVC if available (faster and more reliable for XCUIElement properties)
+        if let obj = element as? NSObject,
+           let key = keyPath._kvcKeyPathString {
+            return obj.value(forKey: key) as? T
+        }
+        // Fall back to keypath subscript for computed properties
+        return element?[keyPath: keyPath] as? T
+    }
 
     // MARK: - KeyPath-based Static Constructors
 
@@ -34,7 +50,12 @@ extension NSPredicate {
     /// - Returns: NSPredicate for equality comparison with proper format specifier
     static func keyPath(_ keyPath: AnyKeyPath, equalTo value: CVarArg) -> NSPredicate {
         guard let key = keyPath._kvcKeyPathString else {
-            fatalError("Unsupported key path: \(keyPath)")
+            let helper = ComputedKeyPathHelper()
+            let keyDesc = keyPath._kvcKeyPathString ?? String(describing: keyPath)
+            return NSPredicate(description: "\(keyDesc) == \(value)") { element, _ in
+                helper.value = getValue(from: element, keyPath: keyPath, as: Any.self)
+                return NSPredicate.keyPath(\ComputedKeyPathHelper.value, equalTo: value).evaluate(with: helper)
+            }
         }
 
         let formatSpecifier: String
@@ -73,7 +94,12 @@ extension NSPredicate {
     /// - Returns: NSPredicate for range comparison with proper format specifier
     static func keyPath<Value: CVarArg & Comparable>(_ keyPath: AnyKeyPath, in range: ClosedRange<Value>) -> NSPredicate {
         guard let key = keyPath._kvcKeyPathString else {
-            fatalError("Unsupported key path: \(keyPath)")
+            let helper = ComputedKeyPathHelper()
+            let keyDesc = keyPath._kvcKeyPathString ?? String(describing: keyPath)
+            return NSPredicate(description: "\(keyDesc) BETWEEN {\(range.lowerBound), \(range.upperBound)}") { element, _ in
+                helper.value = getValue(from: element, keyPath: keyPath, as: Any.self)
+                return NSPredicate.keyPath(\ComputedKeyPathHelper.value, in: range).evaluate(with: helper)
+            }
         }
 
         let lowerBound = range.lowerBound
@@ -102,7 +128,12 @@ extension NSPredicate {
     /// Creates a predicate that checks if a KeyPath numeric property is within a half-open range
     static func keyPath<Value: CVarArg & Comparable>(_ keyPath: AnyKeyPath, in range: Range<Value>) -> NSPredicate {
         guard let key = keyPath._kvcKeyPathString else {
-            fatalError("Unsupported key path: \(keyPath)")
+            let helper = ComputedKeyPathHelper()
+            let keyDesc = keyPath._kvcKeyPathString ?? String(describing: keyPath)
+            return NSPredicate(description: "\(keyDesc) >= \(range.lowerBound) AND \(keyDesc) < \(range.upperBound)") { element, _ in
+                helper.value = getValue(from: element, keyPath: keyPath, as: Any.self)
+                return NSPredicate.keyPath(\ComputedKeyPathHelper.value, in: range).evaluate(with: helper)
+            }
         }
 
         let lowerBound = range.lowerBound
@@ -131,7 +162,12 @@ extension NSPredicate {
     /// Creates a predicate that checks if a KeyPath numeric property is greater than or equal to a value
     static func keyPath<Value: CVarArg & Comparable>(_ keyPath: AnyKeyPath, in range: PartialRangeFrom<Value>) -> NSPredicate {
         guard let key = keyPath._kvcKeyPathString else {
-            fatalError("Unsupported key path: \(keyPath)")
+            let helper = ComputedKeyPathHelper()
+            let keyDesc = keyPath._kvcKeyPathString ?? String(describing: keyPath)
+            return NSPredicate(description: "\(keyDesc) >= \(range.lowerBound)") { element, _ in
+                helper.value = getValue(from: element, keyPath: keyPath, as: Any.self)
+                return NSPredicate.keyPath(\ComputedKeyPathHelper.value, in: range).evaluate(with: helper)
+            }
         }
 
         let lowerBound = range.lowerBound
@@ -159,7 +195,12 @@ extension NSPredicate {
     /// Creates a predicate that checks if a KeyPath numeric property is greater than a value
     static func keyPath<Value: CVarArg & Comparable>(_ keyPath: AnyKeyPath, in range: PartialRangeUpTo<Value>) -> NSPredicate {
         guard let key = keyPath._kvcKeyPathString else {
-            fatalError("Unsupported key path: \(keyPath)")
+            let helper = ComputedKeyPathHelper()
+            let keyDesc = keyPath._kvcKeyPathString ?? String(describing: keyPath)
+            return NSPredicate(description: "\(keyDesc) < \(range.upperBound)") { element, _ in
+                helper.value = getValue(from: element, keyPath: keyPath, as: Any.self)
+                return NSPredicate.keyPath(\ComputedKeyPathHelper.value, in: range).evaluate(with: helper)
+            }
         }
 
         let upperBound = range.upperBound
@@ -187,7 +228,12 @@ extension NSPredicate {
     /// Creates a predicate that checks if a KeyPath numeric property is less than or equal to a value
     static func keyPath<Value: CVarArg & Comparable>(_ keyPath: AnyKeyPath, in range: PartialRangeThrough<Value>) -> NSPredicate {
         guard let key = keyPath._kvcKeyPathString else {
-            fatalError("Unsupported key path: \(keyPath)")
+            let helper = ComputedKeyPathHelper()
+            let keyDesc = keyPath._kvcKeyPathString ?? String(describing: keyPath)
+            return NSPredicate(description: "\(keyDesc) <= \(range.upperBound)") { element, _ in
+                helper.value = getValue(from: element, keyPath: keyPath, as: Any.self)
+                return NSPredicate.keyPath(\ComputedKeyPathHelper.value, in: range).evaluate(with: helper)
+            }
         }
 
         let upperBound = range.upperBound
@@ -217,7 +263,13 @@ extension NSPredicate {
     /// Creates a predicate that checks if a KeyPath property is in a collection of values
     static func keyPath<Value: CVarArg, Collection: Swift.Collection>(_ keyPath: AnyKeyPath, in values: Collection) -> NSPredicate where Collection.Element == Value {
         guard let key = keyPath._kvcKeyPathString else {
-            fatalError("Unsupported key path: \(keyPath)")
+            let helper = ComputedKeyPathHelper()
+            let keyDesc = keyPath._kvcKeyPathString ?? String(describing: keyPath)
+            let valuesArray = Array(values)
+            return NSPredicate(description: "\(keyDesc) IN \(valuesArray)") { element, _ in
+                helper.value = getValue(from: element, keyPath: keyPath, as: Any.self)
+                return NSPredicate.keyPath(\ComputedKeyPathHelper.value, in: values).evaluate(with: helper)
+            }
         }
         return NSPredicate(format: "%K IN %@", key, Array(values))
     }
@@ -232,10 +284,11 @@ extension NSPredicate {
     ///   - substring: The substring to search for
     /// - Returns: NSPredicate for contains comparison using localizedStandardContains
     static func keyPath(_ keyPath: AnyKeyPath, contains substring: String) -> NSPredicate {
-        guard let key = keyPath._kvcKeyPathString else {
-            fatalError("Unsupported key path: \(keyPath)")
+        let keyDesc = keyPath._kvcKeyPathString ?? String(describing: keyPath)
+        return NSPredicate(description: "\(keyDesc) CONTAINS[c] \"\(substring)\"") { element, _ in
+            guard let stringValue = getValue(from: element, keyPath: keyPath, as: String.self) else { return false }
+            return stringValue.localizedStandardContains(substring)
         }
-        return NSPredicate(format: "%K CONTAINS[c] %@", key, substring)
     }
 
     static func keyPath(_ keyPath: PartialKeyPath<XCUIElement>, like pattern: String) -> NSPredicate {
@@ -248,10 +301,16 @@ extension NSPredicate {
     ///   - pattern: The pattern to match (supports * and ? wildcards)
     /// - Returns: NSPredicate for LIKE pattern matching
     static func keyPath(_ keyPath: AnyKeyPath, like pattern: String) -> NSPredicate {
-        guard let key = keyPath._kvcKeyPathString else {
-            fatalError("Unsupported key path: \(keyPath)")
+        let keyDesc = keyPath._kvcKeyPathString ?? String(describing: keyPath)
+        return NSPredicate(description: "\(keyDesc) LIKE \"\(pattern)\"") { element, _ in
+            guard let stringValue = getValue(from: element, keyPath: keyPath, as: String.self) else { return false }
+            // Escape regex special chars, then replace LIKE wildcards with regex equivalents
+            let escaped = NSRegularExpression.escapedPattern(for: pattern)
+            let regexPattern = escaped
+                .replacingOccurrences(of: "\\?", with: ".")
+                .replacingOccurrences(of: "\\*", with: ".*")
+            return stringValue.range(of: "^\(regexPattern)$", options: .regularExpression) != nil
         }
-        return NSPredicate(format: "%K LIKE %@", key, pattern)
     }
 
     static func keyPath(_ keyPath: PartialKeyPath<XCUIElement>, beginsWith prefix: String) -> NSPredicate {
@@ -264,10 +323,11 @@ extension NSPredicate {
     ///   - prefix: The prefix to check for
     /// - Returns: NSPredicate for BEGINSWITH comparison
     static func keyPath(_ keyPath: AnyKeyPath, beginsWith prefix: String) -> NSPredicate {
-        guard let key = keyPath._kvcKeyPathString else {
-            fatalError("Unsupported key path: \(keyPath)")
+        let keyDesc = keyPath._kvcKeyPathString ?? String(describing: keyPath)
+        return NSPredicate(description: "\(keyDesc) BEGINSWITH \"\(prefix)\"") { element, _ in
+            guard let stringValue = getValue(from: element, keyPath: keyPath, as: String.self) else { return false }
+            return stringValue.hasPrefix(prefix)
         }
-        return NSPredicate(format: "%K BEGINSWITH %@", key, prefix)
     }
 
     static func keyPath(_ keyPath: PartialKeyPath<XCUIElement>, endsWith suffix: String) -> NSPredicate {
@@ -280,10 +340,11 @@ extension NSPredicate {
     ///   - suffix: The suffix to check for
     /// - Returns: NSPredicate for ENDSWITH comparison
     static func keyPath(_ keyPath: AnyKeyPath, endsWith suffix: String) -> NSPredicate {
-        guard let key = keyPath._kvcKeyPathString else {
-            fatalError("Unsupported key path: \(keyPath)")
+        let keyDesc = keyPath._kvcKeyPathString ?? String(describing: keyPath)
+        return NSPredicate(description: "\(keyDesc) ENDSWITH \"\(suffix)\"") { element, _ in
+            guard let stringValue = getValue(from: element, keyPath: keyPath, as: String.self) else { return false }
+            return stringValue.hasSuffix(suffix)
         }
-        return NSPredicate(format: "%K ENDSWITH %@", key, suffix)
     }
 
     static func keyPath(_ keyPath: PartialKeyPath<XCUIElement>, matchingRegex pattern: String) -> NSPredicate {
@@ -296,10 +357,11 @@ extension NSPredicate {
     ///   - pattern: The regular expression pattern to match
     /// - Returns: NSPredicate for MATCHES comparison with case-insensitive flag
     static func keyPath(_ keyPath: AnyKeyPath, matchingRegex pattern: String) -> NSPredicate {
-        guard let key = keyPath._kvcKeyPathString else {
-            fatalError("Unsupported key path: \(keyPath)")
+        let keyDesc = keyPath._kvcKeyPathString ?? String(describing: keyPath)
+        return NSPredicate(description: "\(keyDesc) MATCHES[c] \"\(pattern)\"") { element, _ in
+            guard let stringValue = getValue(from: element, keyPath: keyPath, as: String.self) else { return false }
+            return stringValue.range(of: pattern, options: [.regularExpression, .caseInsensitive]) != nil
         }
-        return NSPredicate(format: "%K MATCHES[c] %@", key, pattern)
     }
 
     // MARK: - Compound Predicate Helpers
@@ -354,6 +416,45 @@ extension NSPredicate {
     /// - Returns: NSCompoundPredicate with NOT type
     var inverted: NSPredicate {
         return NSCompoundPredicate(notPredicateWithSubpredicate: self)
+    }
+
+}
+
+extension NSPredicate {
+
+    private static let customDescriptionKey = UnsafeRawPointer(bitPattern: "customDescriptionKey".hashValue)!
+    private var customDescription: String? {
+        get {
+            objc_getAssociatedObject(self, Self.customDescriptionKey) as? String
+        }
+        set {
+            objc_setAssociatedObject(self, Self.customDescriptionKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+    }
+
+    convenience init(description: String, block: @escaping (Any?, [String: Any]?) -> Bool) {
+        self.init(block: block)
+        self.customDescription = description
+        _=Self.swizzlePredicateFormatOnce
+    }
+
+    private static let swizzlePredicateFormatOnce: Void = {
+        let originalSelector = #selector(getter: predicateFormat)
+        let swizzledSelector = #selector(getter: swizzled_predicateFormat)
+
+        guard let originalMethod = class_getInstanceMethod(NSPredicate.self, originalSelector),
+              let swizzledMethod = class_getInstanceMethod(NSPredicate.self, swizzledSelector) else {
+            return
+        }
+
+        method_exchangeImplementations(originalMethod, swizzledMethod)
+    }()
+
+    @objc private dynamic var swizzled_predicateFormat: String {
+        if let customDesc = self.customDescription {
+            return customDesc
+        }
+        return self.swizzled_predicateFormat
     }
 
 }

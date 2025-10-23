@@ -137,6 +137,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             bookmarksHandler: bookmarkManager,
             featureFlagger: featureFlagger,
             fireproofStatusProvider: fireproofDomains,
+            tld: tld,
             fire: { @MainActor in fireCoordinator.fireViewModel.fire }
         )
         self.currentCohorts = generateCurrentCohorts()

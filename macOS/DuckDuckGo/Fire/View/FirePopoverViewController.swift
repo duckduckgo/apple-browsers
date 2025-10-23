@@ -23,6 +23,7 @@ import History
 import os.log
 import PixelKit
 import DesignResourcesKitIcons
+import BrowserServicesKit
 
 protocol FirePopoverViewControllerDelegate: AnyObject {
 
@@ -84,22 +85,32 @@ final class FirePopoverViewController: NSViewController {
           fireViewModel: FireViewModel,
           tabCollectionViewModel: TabCollectionViewModel,
           historyCoordinating: HistoryCoordinating = NSApp.delegateTyped.historyCoordinator,
+          aiChatHistoryCleaner: AIChatHistoryCleaning = AIChatHistoryCleaner(featureFlagger: NSApp.delegateTyped.featureFlagger,
+                                                                             aiChatMenuConfiguration: NSApp.delegateTyped.aiChatMenuConfiguration,
+                                                                             featureDiscovery: DefaultFeatureDiscovery(),
+                                                                             privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager),
+          dataClearingPreferences: DataClearingPreferences = NSApp.delegateTyped.dataClearingPreferences,
           fireproofDomains: FireproofDomains = NSApp.delegateTyped.fireproofDomains,
           faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager,
           tld: TLD = NSApp.delegateTyped.tld,
-          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
+          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.fireViewModel = fireViewModel
         self.historyCoordinating = historyCoordinating
         self.themeManager = themeManager
+        // Clear chat history if the option is available and Duck.ai auto-clear is enabled
+        let includeChatHistory = aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption && dataClearingPreferences.isAutoClearEnabled && dataClearingPreferences.isAutoClearAIChatHistoryEnabled
         self.firePopoverViewModel = FireDialogViewModel(fireViewModel: fireViewModel,
                                                         tabCollectionViewModel: tabCollectionViewModel,
                                                         historyCoordinating: historyCoordinating,
+                                                        aiChatHistoryCleaner: aiChatHistoryCleaner,
                                                         fireproofDomains: fireproofDomains,
                                                         faviconManagement: faviconManagement,
                                                         clearingOption: .allData,
                                                         includeTabsAndWindows: true,
                                                         includeHistory: true,
                                                         includeCookiesAndSiteData: true,
+                                                        includeChatHistory: includeChatHistory,
                                                         tld: tld)
 
         super.init(coder: coder)
@@ -162,10 +173,14 @@ final class FirePopoverViewController: NSViewController {
     private func setUpStrings() {
         openFireWindowsTitleLabel.stringValue = UserText.fireDialogFireWindowTitle
         fireWindowDescriptionLabel.stringValue = UserText.fireDialogFireWindowDescription
-        closeTabsLabel.stringValue = UserText.fireDialogCloseTabs
         closeBurnerWindowButton.title = UserText.fireDialogBurnWindowButton
         clearButton.title = UserText.clear
         cancelButton.title = UserText.cancel
+        updateCloseTabsLabel()
+    }
+
+    private func updateCloseTabsLabel() {
+        closeTabsLabel.stringValue = UserText.fireDialogCloseTabs(includeChats: firePopoverViewModel.includeChatHistory)
     }
 
     @IBAction func optionsButtonAction(_ sender: NSPopUpButton) {
@@ -175,6 +190,7 @@ final class FirePopoverViewController: NSViewController {
         }
         firePopoverViewModel.clearingOption = clearingOption
         updateWarningWrapperView()
+        updateCloseTabsLabel()
     }
 
     @IBAction func openNewBurnerWindowAction(_ sender: Any) {
@@ -232,10 +248,10 @@ final class FirePopoverViewController: NSViewController {
         switch firePopoverViewModel.clearingOption {
         case .allData:
             let tabs = Application.appDelegate.windowControllersManager.allTabViewModels.count
-            infoLabel.stringValue = UserText.activeTabsInfo(tabs: tabs, sites: sites)
+            infoLabel.stringValue = UserText.activeTabsInfo(tabs: tabs, sites: sites, includeChats: firePopoverViewModel.includeChatHistory)
         case .currentWindow:
             let tabs = firePopoverViewModel.tabCollectionViewModel?.tabs.count ?? 0
-            infoLabel.stringValue = UserText.activeTabsInfo(tabs: tabs, sites: sites)
+            infoLabel.stringValue = UserText.activeTabsInfo(tabs: tabs, sites: sites, includeChats: firePopoverViewModel.includeChatHistory)
         case .currentTab:
             infoLabel.stringValue = UserText.oneTabInfo(sites: sites)
         }
@@ -304,6 +320,7 @@ final class FirePopoverViewController: NSViewController {
             includeHistory: firePopoverViewModel.includeHistory,
             includeTabsAndWindows: firePopoverViewModel.includeTabsAndWindows,
             includeCookiesAndSiteData: firePopoverViewModel.includeCookiesAndSiteData,
+            includeChatHistory: firePopoverViewModel.includeChatHistory,
             selectedCookieDomains: firePopoverViewModel.selectedCookieDomainsForScope,
             selectedVisits: nil,
             isToday: false

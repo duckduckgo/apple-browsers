@@ -39,6 +39,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                                                  includeHistory: true,
                                                                  includeTabsAndWindows: false,
                                                                  includeCookiesAndSiteData: true,
+                                                                 includeChatHistory: false,
                                                                  selectedCookieDomains: nil,
                                                                  selectedVisits: nil,
                                                                  isToday: false)
@@ -78,7 +79,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Entry: History (All)
      Dialog config:
      - scopeSelector: hidden, selected: All
-     - tabs: visible, default=true; hist: visible, default=true; data: visible, default=true
+     - tabs: visible, default=true; hist: visible, default=true; data: visible, default=true; chats: visible, default=false
      - fireproof: visible; history link: hidden
      - title: "Delete all history?"
      - selectedDomains: [a.com, b.com, cook.ie, figma.com, date.com, c.com]
@@ -102,6 +103,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: allCookieDomains(except: fireproofDomains),
             expectedFireproofed: visitedFireproofDomains,
             expectedSelected: allCookieDomains(except: fireproofDomains).indices,
@@ -110,7 +112,56 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
         dialogConfirmedOptions = .init(clearingOption: .allData,
                                        includeHistory: true,
                                        includeTabsAndWindows: true,
-                                       includeCookiesAndSiteData: true)
+                                       includeCookiesAndSiteData: true,
+                                       includeChatHistory: false)
+        let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.all)), in: window)
+        if case .burn(let opts?) = response { XCTAssertTrue(opts.includeTabsAndWindows) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
+        let call = try XCTUnwrap(fire.burnAllCalls.onlyValue)
+        XCTAssertEqual(call.isBurnOnExit, false)
+    }
+
+    /**
+     Provider config:
+     - domains: [a.com, b.com, cook.ie, figma.com, date.com, c.com]
+     - visits: today[a×2, b×1, cook.ie×1], yesterday[a×1, figma×2], 2024-05-15[date×2, b×1], today-2[c×2]
+     Entry: History (All)
+     Dialog config:
+     - scopeSelector: hidden, selected: All
+     - tabs: visible, default=true; hist: visible, default=true; data: visible, default=true; chats: visible, default=false
+     - fireproof: visible; history link: hidden
+     - title: "Delete all history?"
+     - selectedDomains: [a.com, b.com, cook.ie, figma.com, date.com, c.com]
+     - visitsCountSource: 12
+     User input:
+     - scope: All (Unsupported); tabs: true; hist: true; data: true; selectedDomains: nil (all)
+     Expectation:
+     - burnAll
+     */
+    func testHistoryAll_AllData_WithTabsAndHistoryAndChats_CallsBurnAll() async throws {
+        let expectedVisits = await mockHistoryProvider.visits(matching: .rangeFilter(.all))
+
+        dialogExpectedInput = DialogExpectedInput(
+            mode: .historyView(query: .rangeFilter(.all)),
+            showSegmentedControl: false,
+            showCloseWindowsAndTabsToggle: true,
+            showFireproofSection: true,
+            customTitle: "Delete all history?",
+            showIndividualSitesLink: false,
+            expectedClearingOption: .allData,
+            expectedIncludeTabsAndWindows: true,
+            expectedIncludeHistory: true,
+            expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
+            expectedSelectable: allCookieDomains(except: fireproofDomains),
+            expectedFireproofed: visitedFireproofDomains,
+            expectedSelected: allCookieDomains(except: fireproofDomains).indices,
+            expectedHistoryVisits: expectedVisits
+        )
+        dialogConfirmedOptions = .init(clearingOption: .allData,
+                                       includeHistory: true,
+                                       includeTabsAndWindows: true,
+                                       includeCookiesAndSiteData: true,
+                                       includeChatHistory: true)
         let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.all)), in: window)
         if case .burn(let opts?) = response { XCTAssertTrue(opts.includeTabsAndWindows) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
         let call = try XCTUnwrap(fire.burnAllCalls.onlyValue)
@@ -124,7 +175,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Entry: History (All)
      Dialog config:
      - scopeSelector: hidden, selected: All
-     - tabs: visible, default=true; hist: visible, default=true; data: visible, default=true
+     - tabs: visible, default=true; hist: visible, default=true; data: visible, default=true; chats: visible, default=false
      - fireproof: visible; history link: hidden
      - title: "Delete all history?"
      - selectedDomains: [a.com, b.com]
@@ -148,6 +199,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: nil,
             expectedFireproofed: [],
             expectedSelected: nil
@@ -157,6 +209,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: false,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: false,
+                                       includeChatHistory: false,
                                        isToday: false)
 
         let response = await coordinator.presentFireDialog(mode: .historyView(query: .rangeFilter(.all)), in: window)
@@ -177,7 +230,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Entry: History (All)
      Dialog config:
      - scopeSelector: hidden, selected: All
-     - tabs: visible, default=true; hist: visible, default=true; data: visible, default=true
+     - tabs: visible, default=true; hist: visible, default=true; data: visible, default=true; chats: visible, default=false
      - fireproof: visible; history link: hidden
      - title: "Delete all history?"
      - selectedDomains: [a.com, b.com, cook.ie, figma.com, x.com, example.com, test.com, date.com, close.me, c.com, z.com]
@@ -201,6 +254,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: allCookieDomains(except: fireproofDomains),
             expectedFireproofed: visitedFireproofDomains,
             expectedSelected: allCookieDomains(except: fireproofDomains).indices,
@@ -210,6 +264,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: true,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: nil,
                                        selectedVisits: nil,
                                        isToday: false)
@@ -237,6 +292,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: visible, default=true
      - hist: visible, default=true
      - data: visible, default=true
+     - chats: not visible, default=false
      - fireproof: visible
      - history link: hidden
      - title: "Delete All History"
@@ -268,6 +324,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: allCookieDomains(except: fireproofDomains),
             expectedFireproofed: visitedFireproofDomains,
             expectedSelected: allCookieDomains(except: fireproofDomains).indices,
@@ -277,6 +334,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: true,
                                        includeTabsAndWindows: true,
                                        includeCookiesAndSiteData: false,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: window1Domains,  // Only domains from Window 1
                                        selectedVisits: nil,
                                        isToday: false)
@@ -304,6 +362,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: visible, default=true
      - hist: visible, default=true
      - data: visible, default=true
+     - chats: not visible, default=false
      - fireproof: visible
      - history link: hidden
      - title: "Delete All History"
@@ -335,6 +394,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: allCookieDomains(except: fireproofDomains),
             expectedFireproofed: visitedFireproofDomains,
             expectedSelected: allCookieDomains(except: fireproofDomains).indices,
@@ -344,6 +404,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: true,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: false,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: window1Domains,  // Only domains from Window 1
                                        selectedVisits: nil,
                                        isToday: false)
@@ -368,7 +429,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Entry: History (All)
      Dialog config:
      - scopeSelector: hidden, selected: All
-     - tabs: visible, default=true; hist: visible, default=true; data: visible, default=true
+     - tabs: visible, default=true; hist: visible, default=true; data: visible, default=true; chats: not visible, default=false
      - fireproof: visible; history link: hidden
      - title: "Delete all history?"
      - selectedDomains: [a.com, b.com, cook.ie, figma.com, date.com, c.com]
@@ -393,6 +454,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: false,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: ["cook.ie"],
             expectedFireproofed: [],  // Section hidden for domain filter
             expectedSelected: Set([0]),
@@ -402,6 +464,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: true,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: nil,
                                        selectedVisits: cookieVisits,
                                        isToday: false)
@@ -420,7 +483,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      Entry: History (All)
      Dialog config:
      - scopeSelector: hidden, selected: All
-     - tabs: visible, default=false; hist: visible, default=true; data: visible, default=false
+     - tabs: visible, default=false; hist: visible, default=true; data: visible, default=false; chats: not visible, default=false
      - fireproof: visible; history link: hidden
      - title: "Delete all history?"
      - selectedDomains: [onlyhistory.com]
@@ -445,6 +508,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: false,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: ["test.com"],
             expectedFireproofed: [],
             expectedSelected: Set([0]),
@@ -454,6 +518,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: true,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: false,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: nil,
                                        selectedVisits: testVisits,
                                        isToday: false)
@@ -482,6 +547,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: visible, default=true
      - hist: visible, default=true
      - data: visible, default=true
+     - chats: not visible, default=false
      - fireproof: visible
      - history link: hidden
      - title: "Delete All History From Today"
@@ -511,6 +577,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: visitedDomains.subtracting(fireproofDomains).sorted(),
             expectedFireproofed: ["duckduckgo.com"],  // Only duckduckgo.com visited today
             expectedSelected: Set(visitedDomains.subtracting(fireproofDomains).sorted().indices),
@@ -520,6 +587,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: true,
                                        includeTabsAndWindows: true,
                                        includeCookiesAndSiteData: false,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: ["x.com"],
                                        selectedVisits: [],  // Empty to force burnEntity path
                                        isToday: true)
@@ -544,7 +612,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - Window 1: Tab a.com (active) history: today[a×2], yesterday[a×1]; Tab b.com history: today[b×1]
      - Window 2: Tab figma.com (active) history: yesterday[figma×2]; Tab cook.ie history: today[cook.ie×1]
      Entry: History (Today)
-     Dialog config: scopeSelector hidden (All), tabs visible default=true, hist visible default=true, data visible default=true
+     Dialog config: scopeSelector hidden (All), tabs visible default=true, hist visible default=true, data visible default=true; chats: not visible, default=false
      User input: all selected, tabs=true, hist=false, data=true
      Expectation: burnEntity(allWindows, selectedDomains=all, close=true), includingHistory=false
      */
@@ -563,6 +631,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: [],  // No history configured
             expectedFireproofed: [],  // No history configured
             expectedSelected: Set(),
@@ -573,6 +642,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: false,
                                        includeTabsAndWindows: true,
                                        includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: nil,
                                        selectedVisits: nil,
                                        isToday: true)
@@ -600,6 +670,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: visible, default=true
      - hist: visible, default=true
      - data: visible, default=true
+     - chats: not visible, default=false
      - fireproof: visible
      - history link: hidden
      - title: "Delete All History From Today"
@@ -630,6 +701,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: visitedDomains.subtracting(fireproofDomains).sorted(),
             expectedFireproofed: visitedDomains.intersection(fireproofDomains).sorted(),
             expectedSelected: selectableDomains.indices,
@@ -640,6 +712,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: true,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: nil,
                                        selectedVisits: [],  // Empty to force burnEntity path
                                        isToday: true)
@@ -698,6 +771,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: todayDomains.subtracting(fireproofDomains).sorted(),
             expectedFireproofed: ["duckduckgo.com"],
             expectedSelected: Set(todayDomains.subtracting(fireproofDomains).sorted().indices),
@@ -707,6 +781,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: true,
                                        includeTabsAndWindows: true,
                                        includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: nil,
                                        selectedVisits: closeVisits,
                                        isToday: true)
@@ -732,6 +807,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: hidden, default=nil
      - hist: visible, default=true
      - data: visible, default=false
+     - chats: not visible, default=false
      - fireproof: visible
      - history link: hidden
      - title: "Delete All History From Yesterday"
@@ -776,6 +852,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: false,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: visitedDomains.subtracting(fireproofDomains).sorted(),
             expectedFireproofed: ["github.com"],  // Only github.com visited yesterday
             expectedSelected: Set(visitedDomains.subtracting(fireproofDomains).sorted().indices),
@@ -786,6 +863,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: true,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: false,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: nil,
                                        selectedVisits: nil,
                                        isToday: false)
@@ -821,6 +899,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: hidden, default=nil
      - hist: visible, default=true
      - data: visible, default=true
+     - chats: not visible, default=false
      - fireproof: visible
      - history link: hidden
      - title: "Delete History for 2024-05-15"
@@ -851,6 +930,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: false,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: expectedDomains.sorted(),
             expectedFireproofed: [],  // No fireproofed domains on this specific date
             expectedSelected: Set(expectedDomains.sorted().indices),
@@ -861,6 +941,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: true,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: nil,
                                        selectedVisits: [],  // Empty to force burnEntity path, not burnVisits
                                        isToday: false)
@@ -887,6 +968,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: hidden, default=nil
      - hist: visible, default=true
      - data: visible, default=true
+     - chats: not visible, default=false
      - fireproof: visible
      - history link: hidden
      - title: "Delete History for 2024-05-15"
@@ -917,6 +999,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: false,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: expectedDomains.sorted(),
             expectedFireproofed: [],  // No fireproofed domains on this specific date
             expectedSelected: Set(expectedDomains.sorted().indices),
@@ -927,6 +1010,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: true,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: nil,
                                        selectedVisits: [],  // Empty to force burnEntity path
                                        isToday: false)
@@ -955,6 +1039,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: hidden, default=nil
      - hist: visible, default=true
      - data: visible, default=true
+     - chats: not visible, default=false
      - fireproof: hidden
      - history link: hidden
      - title: "Delete History for figma.com"
@@ -985,6 +1070,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: false,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: figmaDomains.sorted(),
             expectedFireproofed: [],  // Section hidden for domain filter
             expectedSelected: Set(figmaDomains.sorted().indices),
@@ -995,6 +1081,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: false,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: nil,
                                        selectedVisits: nil,
                                        isToday: false)
@@ -1019,6 +1106,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: hidden, default=nil
      - hist: visible, default=true
      - data: visible, default=true
+     - chats: not visible, default=false
      - fireproof: hidden
      - history link: hidden
      - title: "Delete History for example.com"
@@ -1049,6 +1137,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: false,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: exampleDomains.sorted(),
             expectedFireproofed: [],  // Section hidden for domain filter
             expectedSelected: Set(exampleDomains.sorted().indices),
@@ -1059,6 +1148,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: true,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: false,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: nil,
                                        selectedVisits: [],  // Empty to force burnEntity path
                                        isToday: false)
@@ -1084,6 +1174,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: hidden, default=nil
      - hist: visible, default=true
      - data: visible, default=true
+     - chats: not visible, default=false
      - fireproof: hidden
      - history link: hidden
      - title: "Delete History for a.com"
@@ -1114,6 +1205,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: false,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: aDomains.sorted(),
             expectedFireproofed: [],  // Section hidden for domain filter
             expectedSelected: Set(aDomains.sorted().indices),
@@ -1124,6 +1216,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: true,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: nil,
                                        selectedVisits: [],  // Empty to force burnEntity path
                                        isToday: false)
@@ -1149,6 +1242,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: hidden, default=nil
      - hist: visible, default=false
      - data: visible, default=true
+     - chats: not visible, default=false
      - fireproof: hidden
      - history link: hidden
      - title: "Delete History"
@@ -1178,6 +1272,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: false,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: abDomains.sorted(),
             expectedFireproofed: [],  // Section hidden for domain filter
             expectedSelected: Set(abDomains.sorted().indices),
@@ -1188,6 +1283,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: true,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: false,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: nil,
                                        selectedVisits: [],  // Empty to force burnEntity path
                                        isToday: false)
@@ -1214,6 +1310,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: hidden, default=nil
      - hist: visible, default=false
      - data: visible, default=true
+     - chats: not visible, default=false
      - fireproof: hidden
      - history link: hidden
      - title: "Delete History"
@@ -1245,6 +1342,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: false,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: visitedDomains.sorted(),
             expectedFireproofed: [],  // Section hidden for domain filter
             expectedSelected: Set(visitedDomains.sorted().indices),
@@ -1255,6 +1353,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: false,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: ["a.com", "b.com"],
                                        selectedVisits: nil,
                                        isToday: false)
@@ -1282,6 +1381,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: hidden, default=nil
      - hist: visible, default=false
      - data: visible, default=true
+     - chats: not visible, default=false
      - fireproof: visible
      - history link: visible
      - title: nil
@@ -1311,6 +1411,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: [],  // MockWindow has no tabs configured
             expectedFireproofed: [],
             expectedSelected: Set()
@@ -1319,6 +1420,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: false,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: currentTabDomains,  // Only domain from current tab
                                        selectedVisits: nil,
                                        isToday: false)
@@ -1346,6 +1448,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: hidden, default=true
      - hist: visible, default=true
      - data: visible, default=true
+     - chats: visible, default=false
      - fireproof: visible
      - history link: visible
      - title: nil
@@ -1375,6 +1478,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: allCookieDomains(except: fireproofDomains),
             expectedFireproofed: visitedFireproofDomains,
             expectedSelected: allCookieDomains(except: fireproofDomains).indices,
@@ -1385,6 +1489,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: true,
                                        includeTabsAndWindows: true,
                                        includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: nil,
                                        selectedVisits: nil,
                                        isToday: false)
@@ -1393,6 +1498,71 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
         if case .burn(let opts?) = response { XCTAssertTrue(opts.includeHistory); XCTAssertTrue(opts.includeTabsAndWindows) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
         _ = try XCTUnwrap(fire.burnAllCalls.onlyValue)
     }
+
+    /**
+     Provider config:
+     - domains: [a.com, b.com]
+     - visits: today[a×2, b×1]
+     - Window/Tab State:
+     - Window 1: Tab a.com (active) history: today[a×2], yesterday[a×1]
+     Entry: Fire Button
+     Dialog config:
+     - scopeSelector: visible, selected=Tab
+     - tabs: hidden, default=true
+     - hist: visible, default=true
+     - data: visible, default=true
+     - chats: visible, default=false
+     - fireproof: visible
+     - history link: visible
+     - title: nil
+     - selectedDomains: [a.com, b.com]
+     - visitsCountSource: 12 (a×3, b×2, cook.ie×1, figma×2, date×2, c×2)
+     User input:
+     - scope: All
+     - tabs: false (Unsupported)
+     - hist: true
+     - data: true
+     - chats: true
+     - selectedDomains: nil (all)
+     Expectation:
+     - burnAll
+     */
+    func testFireButton_AllData_TabsAndHistoryAndChats() async throws {
+        FireDialogViewModel.lastSelectedClearingOption = .allData
+        let expectedVisits = await mockHistoryProvider.visits(matching: .rangeFilter(.all))
+
+        dialogExpectedInput = DialogExpectedInput(
+            mode: .fireButton,
+            showSegmentedControl: true,
+            showCloseWindowsAndTabsToggle: true,
+            showFireproofSection: true,
+            customTitle: "Delete Browsing Data",
+            showIndividualSitesLink: false,
+            expectedClearingOption: .allData,
+            expectedIncludeTabsAndWindows: true,
+            expectedIncludeHistory: true,
+            expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
+            expectedSelectable: allCookieDomains(except: fireproofDomains),
+            expectedFireproofed: visitedFireproofDomains,
+            expectedSelected: allCookieDomains(except: fireproofDomains).indices,
+            expectedHistoryVisits: expectedVisits
+        )
+
+        dialogConfirmedOptions = .init(clearingOption: .allData,
+                                       includeHistory: true,
+                                       includeTabsAndWindows: true,
+                                       includeCookiesAndSiteData: true,
+                                       includeChatHistory: true,
+                                       selectedCookieDomains: nil,
+                                       selectedVisits: nil,
+                                       isToday: false)
+
+        let response = await coordinator.presentFireDialog(mode: .fireButton, in: window)
+        if case .burn(let opts?) = response { XCTAssertTrue(opts.includeHistory); XCTAssertTrue(opts.includeTabsAndWindows) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
+        _ = try XCTUnwrap(fire.burnAllCalls.onlyValue)
+    }
+
     /**
      Provider config:
      - domains: [cook.ie]
@@ -1405,6 +1575,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: hidden, default=nil
      - hist: visible, default=true
      - data: visible, default=true
+     - chats: visible, default=false
      - fireproof: visible
      - history link: visible
      - title: nil
@@ -1435,6 +1606,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: [],
             expectedFireproofed: [],  // No history configured
             expectedSelected: Set()
@@ -1443,6 +1615,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: false,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: ["cook.ie"],
                                        selectedVisits: nil,
                                        isToday: false)
@@ -1451,6 +1624,73 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .allWindows(_, selectedDomains, customURLToOpen, close) = call.entity {
             XCTAssertEqual(selectedDomains, ["cook.ie"])
+            XCTAssertNil(customURLToOpen)
+            XCTAssertFalse(close)
+        } else { XCTFail("Expected allWindows, got \(call.entity)") }
+        XCTAssertFalse(call.includingHistory)
+    }
+
+    /**
+     Provider config:
+     - domains: [cook.ie]
+     - visits: today[cook.ie×1]
+     - Window/Tab State:
+     - Window 1: Tab a.com (active) history: today[a×2], yesterday[a×1]
+     Entry: Fire Button
+     Dialog config:
+     - scopeSelector: visible, selected=All
+     - tabs: hidden, default=nil
+     - hist: visible, default=true
+     - data: visible, default=true
+     - chats: visible, default=false
+     - fireproof: visible
+     - history link: visible
+     - title: nil
+     - selectedDomains: [cook.ie]
+     - visitsCountSource: 12 (a×3, b×2, cook.ie×1, figma×2, date×2, c×2)
+     User input:
+     - scope: All
+     - tabs: false (Unsupported)
+     - hist: false
+     - data: true
+     - selectedDomains: []
+     Expectation:
+     - burnEntity(allWindows, selectedDomains=[cook.ie], close=false), includingHistory=false
+     */
+    func testFireButton_AllData_NoTabs_NoHistory_NoCookies_ChatsOnly() async throws {
+        // Test specifically for no history scenario - configure empty state
+        FireDialogViewModel.lastSelectedClearingOption = .allData
+        mockHistoryProvider.configure(visits: [], cookieDomains: [])
+
+        dialogExpectedInput = DialogExpectedInput(
+            mode: .fireButton,
+            showSegmentedControl: true,
+            showCloseWindowsAndTabsToggle: true,
+            showFireproofSection: true,
+            customTitle: "Delete Browsing Data",
+            showIndividualSitesLink: false,
+            expectedClearingOption: .allData,
+            expectedIncludeTabsAndWindows: true,
+            expectedIncludeHistory: true,
+            expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
+            expectedSelectable: [],
+            expectedFireproofed: [],  // No history configured
+            expectedSelected: Set()
+        )
+        dialogConfirmedOptions = .init(clearingOption: .allData,
+                                       includeHistory: false,
+                                       includeTabsAndWindows: false,
+                                       includeCookiesAndSiteData: false,
+                                       includeChatHistory: true,
+                                       selectedCookieDomains: nil,
+                                       selectedVisits: nil,
+                                       isToday: false)
+        let responseChatsOnly = await coordinator.presentFireDialog(mode: .fireButton, in: window)
+        if case .burn(let opts?) = responseChatsOnly { XCTAssertNotNil(opts) } else { XCTFail("Expected burn response, got \(String(describing: responseChatsOnly))") }
+        let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
+        if case let .allWindows(_, selectedDomains, customURLToOpen, close) = call.entity {
+            XCTAssertEqual(selectedDomains, [])
             XCTAssertNil(customURLToOpen)
             XCTAssertFalse(close)
         } else { XCTFail("Expected allWindows, got \(call.entity)") }
@@ -1469,6 +1709,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: hidden, default=nil
      - hist: visible, default=true
      - data: visible, default=true
+     - chats: visible, default=false
      - fireproof: visible
      - history link: visible
      - title: nil
@@ -1495,6 +1736,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: true,
                                        includeTabsAndWindows: true,
                                        includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: nil,
                                        selectedVisits: nil,
                                        isToday: false)
@@ -1518,6 +1760,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: hidden, default=nil
      - hist: visible, default=false
      - data: visible, default=true
+     - chats: visible, default=false
      - fireproof: visible
      - history link: visible
      - title: nil
@@ -1547,6 +1790,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: allCookieDomains(except: fireproofDomains),
             expectedFireproofed: visitedFireproofDomains,
             expectedSelected: allCookieDomains(except: fireproofDomains).indices,
@@ -1557,6 +1801,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: false,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: nil,
                                        selectedVisits: nil,
                                        isToday: false)
@@ -1590,6 +1835,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: visible, default=true
      - hist: visible, default=true
      - data: visible, default=false
+     - chats: visible, default=false
      - fireproof: visible
      - history link: hidden
      - title: "Delete All History"
@@ -1619,6 +1865,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: allCookieDomains(except: fireproofDomains),
             expectedFireproofed: visitedFireproofDomains,
             expectedSelected: allCookieDomains(except: fireproofDomains).indices,
@@ -1629,6 +1876,71 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: true,
                                        includeTabsAndWindows: true,
                                        includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
+                                       selectedCookieDomains: nil,
+                                       selectedVisits: nil,
+                                       isToday: false)
+
+        _ = await coordinator.presentFireDialog(mode: .mainMenuAll, in: window)
+        _ = try XCTUnwrap(fire.burnAllCalls.onlyValue)
+    }
+
+    /**
+     Provider config:
+     - domains: [a.com, b.com, cook.ie, figma.com, date.com, c.com]
+     - visits: today[a×2, b×1, cook.ie×1], yesterday[a×1, figma×2], 2024-05-15[date×2, b×1], today-2[c×2]
+     - Window/Tab State:
+     - Window 1: Tab a.com (active) history: today[a×2], yesterday[a×1]; Tab b.com history: today[b×1], 2024-05-15[b×1]
+     - Window 2: Tab figma.com (active) history: yesterday[figma×2]; Tab cook.ie history: today[cook.ie×1]
+     Entry: Main Menu (All)
+     Dialog config:
+     - scopeSelector: visible, selected: All
+     - tabs: visible, default=true
+     - hist: visible, default=true
+     - data: visible, default=false
+     - chats: visible, default=false
+     - fireproof: visible
+     - history link: hidden
+     - title: "Delete All History"
+     - selectedDomains: [a.com, b.com, cook.ie, figma.com, date.com, c.com]
+     - visitsCountSource: 12 (a×3, b×2, cook.ie×1, figma×2, date×2, c×2)
+     User input:
+     - scope: All (Unsupported)
+     - tabs: true
+     - hist: true
+     - data: false
+     - chats: true
+     - selectedDomains: nil (all)
+     Expectation:
+     - burnAll
+     */
+    func testMainMenuAll_AllData_WithTabsAndHistoryAndChats() async throws {
+        FireDialogViewModel.lastSelectedClearingOption = .allData
+        let expectedVisits = await mockHistoryProvider.visits(matching: .rangeFilter(.all))
+
+        dialogExpectedInput = DialogExpectedInput(
+            mode: .mainMenuAll,
+            showSegmentedControl: true,
+            showCloseWindowsAndTabsToggle: true,
+            showFireproofSection: true,
+            customTitle: "Delete all history?",
+            showIndividualSitesLink: false,
+            expectedClearingOption: .allData,
+            expectedIncludeTabsAndWindows: true,
+            expectedIncludeHistory: true,
+            expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
+            expectedSelectable: allCookieDomains(except: fireproofDomains),
+            expectedFireproofed: visitedFireproofDomains,
+            expectedSelected: allCookieDomains(except: fireproofDomains).indices,
+            expectedHistoryVisits: expectedVisits
+        )
+
+        dialogConfirmedOptions = .init(clearingOption: .allData,
+                                       includeHistory: true,
+                                       includeTabsAndWindows: true,
+                                       includeCookiesAndSiteData: true,
+                                       includeChatHistory: true,
                                        selectedCookieDomains: nil,
                                        selectedVisits: nil,
                                        isToday: false)
@@ -1649,6 +1961,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: visible, default=true
      - hist: visible, default=true
      - data: visible, default=false
+     - chats: visible, default=false
      - fireproof: visible
      - history link: hidden
      - title: "Delete All History"
@@ -1678,12 +1991,13 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: allCookieDomains(except: fireproofDomains),
             expectedFireproofed: visitedFireproofDomains,
             expectedSelected: allCookieDomains(except: fireproofDomains).indices,
             expectedHistoryVisits: expectedVisits
         )
-        dialogConfirmedOptions = .init(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, selectedCookieDomains: nil, selectedVisits: nil, isToday: false)
+        dialogConfirmedOptions = .init(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, includeChatHistory: false, selectedCookieDomains: nil, selectedVisits: nil, isToday: false)
         _ = await coordinator.presentFireDialog(mode: .mainMenuAll, in: window)
         _ = try XCTUnwrap(fire.burnAllCalls.onlyValue)
     }
@@ -1701,6 +2015,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: visible, default=true
      - hist: visible, default=true
      - data: visible, default=false
+     - chats: visible, default=false
      - fireproof: visible
      - history link: hidden
      - title: "Delete All History"
@@ -1730,12 +2045,13 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: allCookieDomains(except: fireproofDomains),
             expectedFireproofed: visitedFireproofDomains,
             expectedSelected: allCookieDomains(except: fireproofDomains).indices,
             expectedHistoryVisits: expectedVisits
         )
-        dialogConfirmedOptions = .init(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, selectedCookieDomains: nil, selectedVisits: nil, isToday: false)
+        dialogConfirmedOptions = .init(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, includeChatHistory: false, selectedCookieDomains: nil, selectedVisits: nil, isToday: false)
         _ = await coordinator.presentFireDialog(mode: .mainMenuAll, in: window)
         _ = try XCTUnwrap(fire.burnAllCalls.onlyValue)
     }
@@ -1751,6 +2067,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: visible, default=true
      - hist: visible, default=true
      - data: visible, default=false
+     - chats: visible, default=false
      - fireproof: visible
      - history link: hidden
      - title: "Delete All History"
@@ -1780,12 +2097,13 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: allCookieDomains(except: fireproofDomains),
             expectedFireproofed: visitedFireproofDomains,
             expectedSelected: allCookieDomains(except: fireproofDomains).indices,
             expectedHistoryVisits: expectedVisits
         )
-        dialogConfirmedOptions = .init(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, selectedCookieDomains: nil, selectedVisits: nil, isToday: false)
+        dialogConfirmedOptions = .init(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, includeChatHistory: false, selectedCookieDomains: nil, selectedVisits: nil, isToday: false)
         _ = await coordinator.presentFireDialog(mode: .mainMenuAll, in: window)
         _ = try XCTUnwrap(fire.burnAllCalls.onlyValue)
     }
@@ -1803,6 +2121,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - tabs: hidden, default=true
      - hist: visible, default=true
      - data: visible, default=true
+     - chats: visible, default=false
      - fireproof: visible
      - history link: hidden
      - title: "Delete All History"
@@ -1832,6 +2151,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedIncludeTabsAndWindows: true,
             expectedIncludeHistory: true,
             expectedIncludeCookiesAndSiteData: true,
+            expectedIncludeChatHistory: false,
             expectedSelectable: allCookieDomains(except: fireproofDomains),
             expectedFireproofed: visitedFireproofDomains,
             expectedSelected: allCookieDomains(except: fireproofDomains).indices,
@@ -1842,6 +2162,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        includeHistory: false,
                                        includeTabsAndWindows: false,
                                        includeCookiesAndSiteData: true,
+                                       includeChatHistory: false,
                                        selectedCookieDomains: ["a.com", "b.com"],
                                        selectedVisits: nil,
                                        isToday: false)
@@ -1971,13 +2292,14 @@ private struct DialogExpectedInput {
     var expectedIncludeTabsAndWindows: Bool
     var expectedIncludeHistory: Bool
     var expectedIncludeCookiesAndSiteData: Bool
+    var expectedIncludeChatHistory: Bool
 
     // ViewModel data validation
     var expectedSelectable: [String]?
     var expectedFireproofed: [String]?
     var expectedSelected: Set<Int>?
     var expectedHistoryVisits: [Visit]?
-    init(mode: FireDialogViewModel.Mode, showSegmentedControl: Bool, showCloseWindowsAndTabsToggle: Bool, showFireproofSection: Bool, customTitle: String?, showIndividualSitesLink: Bool, expectedClearingOption: FireDialogViewModel.ClearingOption, expectedIncludeTabsAndWindows: Bool, expectedIncludeHistory: Bool, expectedIncludeCookiesAndSiteData: Bool, expectedSelectable: [String]?, expectedFireproofed: [String]?, expectedSelected: (any Sequence<Int>)?, expectedHistoryVisits: [Visit]? = nil, file: StaticString = #file, line: UInt = #line) {
+    init(mode: FireDialogViewModel.Mode, showSegmentedControl: Bool, showCloseWindowsAndTabsToggle: Bool, showFireproofSection: Bool, customTitle: String?, showIndividualSitesLink: Bool, expectedClearingOption: FireDialogViewModel.ClearingOption, expectedIncludeTabsAndWindows: Bool, expectedIncludeHistory: Bool, expectedIncludeCookiesAndSiteData: Bool, expectedIncludeChatHistory: Bool, expectedSelectable: [String]?, expectedFireproofed: [String]?, expectedSelected: (any Sequence<Int>)?, expectedHistoryVisits: [Visit]? = nil, file: StaticString = #file, line: UInt = #line) {
         self.mode = mode
         self.showSegmentedControl = showSegmentedControl
         self.showCloseWindowsAndTabsToggle = showCloseWindowsAndTabsToggle
@@ -1988,6 +2310,7 @@ private struct DialogExpectedInput {
         self.expectedIncludeTabsAndWindows = expectedIncludeTabsAndWindows
         self.expectedIncludeHistory = expectedIncludeHistory
         self.expectedIncludeCookiesAndSiteData = expectedIncludeCookiesAndSiteData
+        self.expectedIncludeChatHistory = expectedIncludeChatHistory
         self.expectedSelectable = expectedSelectable
         self.expectedFireproofed = expectedFireproofed
         self.expectedSelected = expectedSelected?.reduce(into: Set<Int>()) { $0.insert($1) }
@@ -2003,7 +2326,7 @@ private extension Array {
     var onlyValue: Element? { count == 1 ? first : nil }
 }
 private extension FireDialogResult {
-    init(clearingOption: FireDialogViewModel.ClearingOption, includeHistory: Bool, includeTabsAndWindows: Bool, includeCookiesAndSiteData: Bool, isToday: Bool) {
-        self.init(clearingOption: clearingOption, includeHistory: includeHistory, includeTabsAndWindows: includeTabsAndWindows, includeCookiesAndSiteData: includeCookiesAndSiteData, selectedCookieDomains: nil, selectedVisits: nil, isToday: isToday)
+    init(clearingOption: FireDialogViewModel.ClearingOption, includeHistory: Bool, includeTabsAndWindows: Bool, includeCookiesAndSiteData: Bool, includeChatHistory: Bool, isToday: Bool) {
+        self.init(clearingOption: clearingOption, includeHistory: includeHistory, includeTabsAndWindows: includeTabsAndWindows, includeCookiesAndSiteData: includeCookiesAndSiteData, includeChatHistory: includeChatHistory, selectedCookieDomains: nil, selectedVisits: nil, isToday: isToday)
     }
 }

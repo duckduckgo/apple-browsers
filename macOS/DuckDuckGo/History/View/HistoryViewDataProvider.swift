@@ -18,6 +18,7 @@
 
 import AppKit
 import BrowserServicesKit
+import Common
 import Foundation
 import History
 import HistoryView
@@ -63,8 +64,8 @@ protocol HistoryViewDataProviding: HistoryView.DataProviding {
 
     func titles(for urls: [URL]) -> [URL: String]
 
-    func deleteVisits(matching query: DataModel.HistoryQueryKind) async
-    func burnVisits(matching query: DataModel.HistoryQueryKind) async
+    func deleteVisits(matching query: DataModel.HistoryQueryKind, and deleteChats: Bool) async
+    func burnVisits(matching query: DataModel.HistoryQueryKind, and burnChats: Bool) async
 
     /// Get actual visits for a given query (used for burning specific visits)
     func visits(matching query: DataModel.HistoryQueryKind) async -> [Visit]
@@ -73,22 +74,31 @@ protocol HistoryViewDataProviding: HistoryView.DataProviding {
     @MainActor func preferredURL(forSiteDomain domain: String) -> URL?
 }
 
+extension HistoryViewDataProviding {
+    func deleteVisits(matching query: DataModel.HistoryQueryKind) async {
+        await deleteVisits(matching: query, and: false)
+    }
+}
+
 final class HistoryViewDataProvider: HistoryViewDataProviding {
 
     private let featureFlagger: FeatureFlagger
+    private let tld: TLD
 
     init(
         historyDataSource: HistoryDataSource,
         historyBurner: HistoryBurning,
         dateFormatter: HistoryViewDateFormatting = DefaultHistoryViewDateFormatter(),
         featureFlagger: FeatureFlagger,
-        pixelHandler: HistoryViewDataProviderPixelFiring = HistoryViewDataProviderPixelHandler()
+        pixelHandler: HistoryViewDataProviderPixelFiring = HistoryViewDataProviderPixelHandler(),
+        tld: TLD
     ) {
         self.dateFormatter = dateFormatter
         self.historyDataSource = historyDataSource
         self.historyBurner = historyBurner
-        self.pixelHandler = pixelHandler
         self.featureFlagger = featureFlagger
+        self.pixelHandler = pixelHandler
+        self.tld = tld
         historyGroupingProvider = { @MainActor in
             HistoryGroupingProvider(dataSource: historyDataSource, featureFlagger: featureFlagger)
         }
@@ -108,6 +118,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
 
         // Sites = unique domains count (items in synthetic 'sites' section)
         if isSitesSectionEnabled {
+            assert(AppVersion.runType != .normal, "Enable History View Sites Section Deletion UI Tests and remove the assertion")
             let sitesCount = groupingsByRange[.allSites]?.items.count ?? uniqueETLDPlus1Domains().count
             filteredRanges.append(.init(id: .allSites, count: sitesCount))
         }
@@ -129,14 +140,17 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         return DataModel.HistoryItemsBatch(finished: finished, visits: visits)
     }
 
-    func deleteVisits(matching query: DataModel.HistoryQueryKind) async {
+    func deleteVisits(matching query: DataModel.HistoryQueryKind, and deleteChats: Bool) async {
         let visits = await allVisits(matching: query)
         await historyDataSource.delete(visits)
+        if deleteChats {
+            await historyBurner.burnChats()
+        }
         await refreshData()
     }
 
-    func burnVisits(matching query: DataModel.HistoryQueryKind) async {
-        guard query != .rangeFilter(.all) else {
+    func burnVisits(matching query: DataModel.HistoryQueryKind, and burnChats: Bool) async {
+        guard query != .rangeFilter(.all) || !burnChats else {
             await historyBurner.burnAll()
             await refreshData()
             return
@@ -146,7 +160,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         guard !visits.isEmpty else { return }
 
         let animated = query == .rangeFilter(.today)
-        await historyBurner.burn(visits, animated: animated)
+        await historyBurner.burn(visits, and: burnChats, animated: animated)
         await refreshData()
     }
 
@@ -441,12 +455,8 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
 
     private func uniqueETLDPlus1Domains() -> [String] {
         guard let history = historyDataSource.historyDictionary else { return [] }
-        let tld = Application.appDelegate.tld
-        let domains = Set(history.keys.compactMap { (url: URL) -> String? in
-            guard let host = url.host else { return nil }
-            return tld.eTLDplus1(host)
-        })
-        return Array(domains).sorted()
+        let etldPlus1Domains = history.keys.convertedToETLDPlus1(tld: tld)
+        return etldPlus1Domains.sorted()
     }
 
     private struct QueryInfo {

@@ -38,78 +38,75 @@ protocol FireProtocol: AnyObject {
     func fireAnimationDidStart()
     func fireAnimationDidFinish()
 
-    @MainActor func burnAll(isBurnOnExit: Bool, opening url: URL, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?)
-    @MainActor func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?)
+    @MainActor func burnAll(isBurnOnExit: Bool,
+                            opening url: URL,
+                            includeCookiesAndSiteData: Bool,
+                            includeChatHistory: Bool,
+                            completion: (@MainActor () -> Void)?)
+    @MainActor func burnEntity(_ entity: Fire.BurningEntity,
+                               includingHistory: Bool,
+                               includeCookiesAndSiteData: Bool,
+                               includeChatHistory: Bool,
+                               completion: (@MainActor () -> Void)?)
     @MainActor func burnVisits(_ visits: [Visit],
                                except fireproofDomains: DomainFireproofStatusProviding,
                                isToday: Bool,
                                closeWindows: Bool,
                                clearSiteData: Bool,
+                               clearChatHistory: Bool,
                                urlToOpenIfWindowsAreClosed url: URL?,
                                completion: (@MainActor () -> Void)?)
+    @MainActor func burnChatHistory() async
 }
+
 extension FireProtocol {
 
     @MainActor
-    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab, includeCookiesAndSiteData: Bool = true) {
-        burnAll(isBurnOnExit: isBurnOnExit, opening: url, includeCookiesAndSiteData: includeCookiesAndSiteData, completion: nil)
-    }
-    @MainActor
-    func burnAll(opening url: URL, includeCookiesAndSiteData: Bool = true) {
-        burnAll(isBurnOnExit: false, opening: url, includeCookiesAndSiteData: includeCookiesAndSiteData, completion: nil)
-    }
-    @MainActor
-    func burnAll(includeCookiesAndSiteData: Bool = true, completion: (() -> Void)? = nil) {
-        burnAll(isBurnOnExit: false, opening: .newtab, includeCookiesAndSiteData: includeCookiesAndSiteData, completion: completion)
+    func burnAll(isBurnOnExit: Bool = false,
+                 opening url: URL = .newtab,
+                 includeChatHistory: Bool = true,
+                 completion: (@MainActor () -> Void)? = nil) {
+        burnAll(isBurnOnExit: isBurnOnExit,
+                opening: url,
+                includeCookiesAndSiteData: true,
+                includeChatHistory: includeChatHistory,
+                completion: completion)
     }
 
     @MainActor
-    func burnAll(isBurnOnExit: Bool, completion: (() -> Void)? = nil) {
-        burnAll(isBurnOnExit: isBurnOnExit, opening: .newtab, includeCookiesAndSiteData: true, completion: completion)
+    func burnAll(isBurnOnExit: Bool = false,
+                 opening url: URL = .newtab,
+                 includeCookiesAndSiteData: Bool = true,
+                 includeChatHistory: Bool) async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            self.burnAll(isBurnOnExit: isBurnOnExit,
+                         opening: url,
+                         includeCookiesAndSiteData: includeCookiesAndSiteData,
+                         includeChatHistory: includeChatHistory) {
+                continuation.resume()
+            }
+        }
     }
 
     @MainActor
     func burnEntity(_ entity: Fire.BurningEntity, completion: (() -> Void)? = nil) {
-        burnEntity(entity, includingHistory: true, includeCookiesAndSiteData: true, completion: completion)
-    }
-
-    @MainActor
-    func burnVisits(_ visits: [Visit],
-                    except fireproofDomains: DomainFireproofStatusProviding,
-                    isToday: Bool,
-                    urlToOpenIfWindowsAreClosed url: URL? = nil,
-                    completion: (@MainActor () -> Void)? = nil) {
-        burnVisits(visits,
-                   except: fireproofDomains,
-                   isToday: isToday,
-                   closeWindows: true,
-                   clearSiteData: true,
-                   urlToOpenIfWindowsAreClosed: url,
+        burnEntity(entity,
+                   includingHistory: true,
+                   includeCookiesAndSiteData: true,
+                   includeChatHistory: false,
                    completion: completion)
     }
 
     @MainActor
-    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab, includeCookiesAndSiteData: Bool = true) async {
+    func burnEntity(_ entity: Fire.BurningEntity,
+                    includingHistory: Bool,
+                    includeCookiesAndSiteData: Bool = true,
+                    includeChatHistory: Bool) async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            self.burnAll(isBurnOnExit: isBurnOnExit, opening: url, includeCookiesAndSiteData: includeCookiesAndSiteData) {
-                continuation.resume()
-            }
-        }
-    }
-
-    @MainActor
-    func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool) async {
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            self.burnEntity(entity, includingHistory: includingHistory, includeCookiesAndSiteData: true) {
-                continuation.resume()
-            }
-        }
-    }
-
-    @MainActor
-    func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool, includeCookiesAndSiteData: Bool) async {
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            self.burnEntity(entity, includingHistory: includingHistory, includeCookiesAndSiteData: includeCookiesAndSiteData) {
+            self.burnEntity(entity,
+                            includingHistory: includingHistory,
+                            includeCookiesAndSiteData: includeCookiesAndSiteData,
+                            includeChatHistory: includeChatHistory) {
                 continuation.resume()
             }
         }
@@ -121,6 +118,7 @@ extension FireProtocol {
                     isToday: Bool,
                     closeWindows: Bool,
                     clearSiteData: Bool,
+                    clearChatHistory: Bool,
                     urlToOpenIfWindowsAreClosed url: URL? = .newtab) async {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             self.burnVisits(visits,
@@ -128,11 +126,24 @@ extension FireProtocol {
                             isToday: isToday,
                             closeWindows: closeWindows,
                             clearSiteData: clearSiteData,
+                            clearChatHistory: clearChatHistory,
                             urlToOpenIfWindowsAreClosed: url) {
                 continuation.resume()
             }
         }
     }
+
+    @MainActor
+    func burnVisits(_ visits: [Visit],
+                    except fireproofDomains: DomainFireproofStatusProviding,
+                    isToday: Bool,
+                    closeWindows: Bool,
+                    clearSiteData: Bool,
+                    clearChatHistory: Bool,
+                    completion: (@MainActor () -> Void)?) {
+        burnVisits(visits, except: fireproofDomains, isToday: isToday, closeWindows: closeWindows, clearSiteData: clearSiteData, clearChatHistory: clearChatHistory, urlToOpenIfWindowsAreClosed: .newtab, completion: completion)
+    }
+
 }
 
 final class Fire: FireProtocol {
@@ -159,6 +170,7 @@ final class Fire: FireProtocol {
     let getPrivacyStats: () async -> PrivacyStatsCollecting
     let visualizeFireAnimationDecider: VisualizeFireSettingsDecider
     let isAppActiveProvider: @MainActor () -> Bool
+    let aiChatHistoryCleaner: AIChatHistoryCleaning
 
     private var dispatchGroup: DispatchGroup?
 
@@ -203,6 +215,15 @@ final class Fire: FireProtocol {
             }
         }
 
+        var customURLToOpen: URL? {
+            switch self {
+            case .allWindows(_, _, customURLToOpen: let url, close: _):
+                return url
+            case .tab, .window, .none:
+                return nil
+            }
+        }
+
         func shouldPlayFireAnimation(decider: VisualizeFireSettingsDecider) -> Bool {
             switch self {
             // We don't present the fire animation if user burns from the privacy feed
@@ -239,7 +260,8 @@ final class Fire: FireProtocol {
          getPrivacyStats: (() async -> PrivacyStatsCollecting)? = nil,
          getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil,
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil,
-         isAppActiveProvider: @escaping @MainActor () -> Bool = { @MainActor in NSApp.isActive }
+         isAppActiveProvider: @escaping @MainActor () -> Bool = { @MainActor in NSApp.isActive },
+         aIChatHistoryCleaner: AIChatHistoryCleaning? = nil
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
@@ -266,10 +288,18 @@ final class Fire: FireProtocol {
         } else {
             self.stateRestorationManager = NSApp.delegateTyped.stateRestorationManager
         }
+        self.aiChatHistoryCleaner = aIChatHistoryCleaner ?? AIChatHistoryCleaner(featureFlagger: NSApp.delegateTyped.featureFlagger,
+                                                                                 aiChatMenuConfiguration: NSApp.delegateTyped.aiChatMenuConfiguration,
+                                                                                 featureDiscovery: DefaultFeatureDiscovery(),
+                                                                                 privacyConfig: NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager)
     }
 
     @MainActor
-    func burnEntity(_ entity: BurningEntity, includingHistory: Bool, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?) {
+    func burnEntity(_ entity: BurningEntity,
+                    includingHistory: Bool,
+                    includeCookiesAndSiteData: Bool,
+                    includeChatHistory: Bool,
+                    completion: (@MainActor () -> Void)?) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -320,11 +350,16 @@ final class Fire: FireProtocol {
 
             self.burnRecentlyClosed(baseDomains: domains)
 
+            if includeChatHistory {
+                group.enter()
+                await burnChatHistory()
+                group.leave()
+            }
+
             group.notify(queue: .main) {
                 self.dispatchGroup = nil
-                if entity.shouldClose {
-                    self.closeWindows(entity: entity)
-                }
+                // windows are closed by MainViewController.closeWindowIfNeeded
+                self.reopenWindowIfNeeded(customURL: entity.customURLToOpen)
 
                 self.burningData = nil
 
@@ -336,7 +371,11 @@ final class Fire: FireProtocol {
     }
 
     @MainActor
-    func burnAll(isBurnOnExit: Bool, opening url: URL, includeCookiesAndSiteData: Bool, completion: (@MainActor () -> Void)?) {
+    func burnAll(isBurnOnExit: Bool,
+                 opening url: URL,
+                 includeCookiesAndSiteData: Bool,
+                 includeChatHistory: Bool,
+                 completion: (@MainActor () -> Void)?) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -349,7 +388,7 @@ final class Fire: FireProtocol {
         // Close windows first if fire animation is disabled
         let shouldCloseWindowsFirst = !visualizeFireAnimationDecider.shouldShowFireAnimation
         if shouldCloseWindowsFirst {
-            closeWindows(entity: entity, isBurnOnExit: isBurnOnExit)
+            closeWindows(opening: url)
         }
 
         burnLastSessionState()
@@ -369,6 +408,9 @@ final class Fire: FireProtocol {
                 await self.burnWebCache()
             }
             await self.burnPrivacyStats()
+            if includeChatHistory {
+                await burnChatHistory()
+            }
             self.burnAllVisitedLinks()
             self.burnAllHistory {
                 self.burnPermissions {
@@ -386,8 +428,9 @@ final class Fire: FireProtocol {
             group.notify(queue: .main) {
                 self.dispatchGroup = nil
                 // Only close windows at the end if we didn't close them at the beginning
-                if !shouldCloseWindowsFirst {
-                    self.closeWindows(entity: entity, isBurnOnExit: isBurnOnExit)
+                // windows are closed by MainViewController.closeWindowIfNeeded
+                if !isBurnOnExit {
+                    self.reopenWindowIfNeeded(customURL: url)
                 }
 
                 self.burningData = nil
@@ -405,6 +448,7 @@ final class Fire: FireProtocol {
                     isToday: Bool,
                     closeWindows: Bool,
                     clearSiteData: Bool,
+                    clearChatHistory: Bool,
                     urlToOpenIfWindowsAreClosed url: URL?,
                     completion: (@MainActor () -> Void)?) {
 
@@ -441,8 +485,19 @@ final class Fire: FireProtocol {
                 entity = .none(selectedDomains: domains)
             }
 
-            self.burnEntity(entity, includingHistory: false, includeCookiesAndSiteData: true, completion: completion)
+            self.burnEntity(entity,
+                            includingHistory: false,
+                            includeCookiesAndSiteData: clearSiteData,
+                            includeChatHistory: clearChatHistory,
+                            completion: completion)
         }
+    }
+
+    // MARK: - Duck.ai Chat History
+
+    @MainActor
+    func burnChatHistory() async {
+        await aiChatHistoryCleaner.cleanAIChatHistory()
     }
 
     // MARK: - Fire animation
@@ -462,62 +517,59 @@ final class Fire: FireProtocol {
     // MARK: - Closing windows
 
     @MainActor
-    private func closeWindows(entity: BurningEntity, isBurnOnExit: Bool = false) {
+    private func closeWindows(opening url: URL) {
+        for windowController in windowControllersManager.mainWindowControllers {
+            guard pinnedTabsManagerProvider.pinnedTabsMode == .shared
+                    || windowController.mainViewController.tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false else { continue }
 
-        /// This function returns the dropping point of the closed window,
-        /// useful for opening a new window after burning in the exact same place.
-        func closeWindow(of tabCollectionViewModel: TabCollectionViewModel) -> NSPoint? {
-            guard let windowController = windowControllersManager.windowController(for: tabCollectionViewModel) else {
-                return nil
-            }
-            let droppingPoint = windowController.window?.frame.droppingPoint
-            windowController.close()
-            return droppingPoint
-        }
-
-        var newWindowDroppingPoint: NSPoint?
-
-        switch entity {
-        case .none:
-            return
-        case .tab(tabViewModel: _, selectedDomains: _, parentTabCollectionViewModel: let tabCollectionViewModel, _):
-            if tabCollectionViewModel.allTabsCount == 0 {
-                newWindowDroppingPoint = closeWindow(of: tabCollectionViewModel)
-            }
-        case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _, _):
-            if pinnedTabsManagerProvider.pinnedTabsMode == .shared || tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
-                newWindowDroppingPoint = closeWindow(of: tabCollectionViewModel)
-            }
-        case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _, close: _):
-            newWindowDroppingPoint = NSApp.keyWindow?.frame.droppingPoint
-            mainWindowControllers.forEach {
-                if pinnedTabsManagerProvider.pinnedTabsMode == .shared || $0.mainViewController.tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
-                    $0.close()
-                }
+            let inserted = (insertNewTabIfNeeded(into: windowController, with: url) != nil)
+            if !inserted {
+                windowController.close()
             }
         }
+    }
 
+    @MainActor
+    private func reopenWindowIfNeeded(customURL: URL?) {
         // If the app is not active, don't retake focus by opening a new window
-        let isAppActive = isAppActiveProvider()
-        guard isAppActive else { return }
+        guard isAppActiveProvider(),
+              windowControllersManager.mainWindowControllers.isEmpty else { return }
 
         // Open a new window in case there is none
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            /// When we are burning on exit we do not need to open a new window.
-            if windowControllersManager.mainWindowControllers.count == 0 && !isBurnOnExit {
-                if case let .allWindows(_, _, customURLToOpen: customURL, _) = entity, let customURL {
-                    // We‘re always reopening a “Regular” window since this logics is only called from a Regular window
-                    let tab = Tab(content: .contentFromURL(customURL, source: .ui), shouldLoadInBackground: true, burnerMode: .regular)
-                    let tabCollection = TabCollection(tabs: [tab], isPopup: false)
+            // `reopenWindowIfNeeded` should not be called when there were at least one “Regular” window
+            // as we should‘ve kept it open by replacing its Tabs with a New Tab.
+            // Generally we should get here only when Delete All History is called on a Fire Window,
+            // so we should probably respect User‘s choice on whether to open a Fire Window by default.
+            let burnerMode = visualizeFireAnimationDecider.isOpenFireWindowByDefaultEnabled ? BurnerMode(isBurner: true) : .regular
+            if let customURL {
+                let tab = Tab(content: .contentFromURL(customURL, source: .ui), shouldLoadInBackground: true, burnerMode: burnerMode)
+                let tabCollection = TabCollection(tabs: [tab], isPopup: false)
 
-                    let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: pinnedTabsManagerProvider, burnerMode: .regular, windowControllersManager: windowControllersManager)
-                    windowControllersManager.openNewWindow(with: tabCollectionViewModel, droppingPoint: newWindowDroppingPoint, showWindow: true)
-                } else {
-                    windowControllersManager.openNewWindow(droppingPoint: newWindowDroppingPoint)
-                }
+                let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: pinnedTabsManagerProvider, burnerMode: burnerMode, windowControllersManager: windowControllersManager)
+                windowControllersManager.openNewWindow(with: tabCollectionViewModel, burnerMode: burnerMode, showWindow: true)
+            } else {
+                windowControllersManager.openNewWindow(burnerMode: burnerMode)
             }
         }
+    }
+
+    @MainActor
+    func insertNewTabIfNeeded(into windowController: MainWindowController, with customURL: URL? = nil) -> Int? {
+        // If closing all Tabs/Windows: Insert a new (Regular) tab to prevent window closing:
+        guard !visualizeFireAnimationDecider.isOpenFireWindowByDefaultEnabled,
+              !windowController.mainViewController.isBurner,
+              windowController.mainViewController.tabCollectionViewModel.pinnedTabs.isEmpty,
+              windowControllersManager.lastKeyMainWindowController(where: { !$0.mainViewController.isBurner }) === windowController,
+              // don‘t keep an open window for inactive app
+              self.isAppActiveProvider() else { return nil }
+
+        let newTabContent: Tab.TabContent = customURL.map { .contentFromURL($0, source: .ui) } ?? .newtab
+        let newTab = Tab(content: newTabContent, shouldLoadInBackground: false, burnerMode: .regular)
+        windowController.mainViewController.tabCollectionViewModel.append(tab: newTab, selected: false)
+
+        return windowController.mainViewController.tabCollectionViewModel.tabs.count - 1
     }
 
     // MARK: - Web cache
@@ -729,6 +781,11 @@ final class Fire: FireProtocol {
                         tabCollectionViewModel.replaceTab(at: index, with: tab, forceChange: true)
                     }
                 } else {
+                    if tabCollectionViewModel.allTabsCount == 1,
+                       windowControllersManager.mainWindowControllers.count == 1 {
+                        // If closing last Window‘s last Tab: Insert a new tab to prevent key window closing:
+                        _=insertNewTabIfNeeded(into: windowControllersManager.mainWindowControllers[0])
+                    }
                     tabCollectionViewModel.removeSelected(forceChange: true)
                 }
             }
@@ -737,21 +794,27 @@ final class Fire: FireProtocol {
                      selectedDomains: _,
                      close: let shouldClose):
             if shouldClose {
-                tabCollectionViewModel.removeAllTabs(forceChange: true)
+                // If closing last Window: Insert a new tab to prevent key window closing:
+                var insertedTabIndex: Int?
+                if windowControllersManager.mainWindowControllers.count == 1 {
+                    insertedTabIndex = insertNewTabIfNeeded(into: windowControllersManager.mainWindowControllers[0])
+                }
+                tabCollectionViewModel.removeAllTabs(except: insertedTabIndex, forceChange: true)
                 burnPinnedTabs(in: tabCollectionViewModel)
                 selectPinnedTabIfNeeded(in: tabCollectionViewModel)
             }
 
         case .allWindows(mainWindowControllers: let mainWindowControllers,
                          selectedDomains: _,
-                         customURLToOpen: _,
+                         customURLToOpen: let customURL,
                          close: let shouldClose):
-            if shouldClose {
-                mainWindowControllers.forEach {
-                    $0.mainViewController.tabCollectionViewModel.removeAllTabs(forceChange: true)
-                    burnPinnedTabs(in: $0.mainViewController.tabCollectionViewModel)
-                    selectPinnedTabIfNeeded(in: $0.mainViewController.tabCollectionViewModel)
-                }
+            guard shouldClose else { break }
+            for windowController in mainWindowControllers {
+                // If closing all Tabs/Windows: Insert a new tab to prevent key window closing:
+                let insertedTabIndex = insertNewTabIfNeeded(into: windowController, with: customURL)
+                windowController.mainViewController.tabCollectionViewModel.removeAllTabs(except: insertedTabIndex, forceChange: true)
+                burnPinnedTabs(in: windowController.mainViewController.tabCollectionViewModel)
+                selectPinnedTabIfNeeded(in: windowController.mainViewController.tabCollectionViewModel)
             }
         }
     }
@@ -849,7 +912,7 @@ extension Set where Element == String {
     func areAllETLDPlus1(tld: TLD) -> Bool {
         for domain in self {
             guard let eTLDPlus1Host = tld.eTLDplus1(domain) else {
-                return false
+                return true // allow `localhost`-s
             }
             if domain != eTLDPlus1Host {
                 return false

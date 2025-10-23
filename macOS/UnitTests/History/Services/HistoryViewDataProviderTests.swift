@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
+import Common
 import History
 import HistoryView
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class HistoryViewDataProviderTests: XCTestCase {
@@ -42,7 +44,8 @@ final class HistoryViewDataProviderTests: XCTestCase {
             historyBurner: burner,
             dateFormatter: dateFormatter,
             featureFlagger: featureFlagger,
-            pixelHandler: pixelHandler
+            pixelHandler: pixelHandler,
+            tld: TLD()
         )
         await provider.refreshData()
     }
@@ -913,6 +916,33 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(title, "HTTPS Root")
     }
 
+    // MARK: - chat history
+
+    func testWhenDeleteVisitsIsCalledWithDeleteChatsThenBurnChatsIsCalled() async throws {
+        let deleteChats = true
+        await provider.deleteVisits(matching: .rangeFilter(.all), and: deleteChats)
+        XCTAssertEqual(burner.burnChatsCallsCount, 1)
+    }
+
+    func testWhenDeleteVisitsIsCalledWithoutDeleteChatsThenBurnChatsIsNotCalled() async throws {
+        let deleteChats = false
+        await provider.deleteVisits(matching: .rangeFilter(.all), and: deleteChats)
+        XCTAssertEqual(burner.burnChatsCallsCount, 0)
+    }
+
+    func testWhenBurnVisitsIsCalledForAllVisitsWithBurnChatsThenBurnAllIsCalled() async throws {
+        let deleteChats = true
+        await provider.burnVisits(matching: .rangeFilter(.all), and: deleteChats)
+        XCTAssertEqual(burner.burnAllCallsCount, 1)
+    }
+
+    func testWhenBurnVisitsIsCalledForAllVisitsWithoutBurnChatsThenBurnAllIsNotCalled() async throws {
+        let deleteChats = false
+        await provider.burnVisits(matching: .rangeFilter(.all), and: deleteChats)
+        XCTAssertEqual(burner.burnAllCallsCount, 0)
+        XCTAssertEqual(burner.burnChatsCallsCount, 0)
+    }
+
     // MARK: - helpers
 
     private func date(year: Int?, month: Int?, day: Int?, hour: Int? = nil, minute: Int? = nil, second: Int? = nil) throws -> Date {
@@ -950,12 +980,17 @@ final class CapturingHistoryBurner: HistoryBurning {
         burnAllCallsCount += 1
     }
 
-    func burn(_ visits: [Visit], animated: Bool) async {
+    func burn(_ visits: [Visit], and burnChats: Bool, animated: Bool) async {
         burnCalls.append(.init(visits, animated))
+    }
+
+    func burnChats() async {
+        burnChatsCallsCount += 1
     }
 
     var burnCalls: [BurnCall] = []
     var burnAllCallsCount: Int = 0
+    var burnChatsCallsCount: Int = 0
 
     struct BurnCall: Equatable {
         let visits: [Visit]

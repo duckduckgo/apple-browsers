@@ -50,6 +50,8 @@ struct SettingsState {
         var isActiveTrialOffer: Bool
         /// Whether the user is eligible for a free trial subscription offer
         var isEligibleForTrialOffer: Bool
+        /// Whether the user is eligible to re-subscribe using the win-back offer
+        var isWinBackEligible: Bool
     }
 
     struct SyncSettings {
@@ -66,6 +68,7 @@ struct SettingsState {
     var showsFullURL: Bool
     var isExperimentalAIChatEnabled: Bool
     var refreshButtonPosition: RefreshButtonPosition
+    var mobileCustomization: MobileCustomization
 
     // Privacy properties
     var sendDoNotSell: Bool
@@ -126,6 +129,7 @@ struct SettingsState {
             showsFullURL: false,
             isExperimentalAIChatEnabled: false,
             refreshButtonPosition: .addressBar,
+            mobileCustomization: MobileCustomization.defaults,
             sendDoNotSell: true,
             autoconsentEnabled: false,
             autoclearDataEnabled: false,
@@ -156,7 +160,8 @@ struct SettingsState {
                                        platform: .unknown,
                                        isShowingStripeView: false,
                                        isActiveTrialOffer: false,
-                                       isEligibleForTrialOffer: false),
+                                       isEligibleForTrialOffer: false,
+                                       isWinBackEligible: false),
             sync: SyncSettings(enabled: false, title: ""),
             syncSource: nil,
             duckPlayerEnabled: false,

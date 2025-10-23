@@ -20,7 +20,7 @@
 import Foundation
 import PrivacyDashboard
 
-// We only support chat for now.  More options will be added in a future customisation project.
+// We only support chat for now.  More options will be added in a future customization project.
 enum OmniBarAccessoryType {
     case chat
 }

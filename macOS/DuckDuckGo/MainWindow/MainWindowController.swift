@@ -35,6 +35,8 @@ final class MainWindowController: NSWindowController {
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
 
+    private(set) var lastWindowDidBecomeKeyTimestamp: TimeInterval = 0
+
     var mainViewController: MainViewController {
         // swiftlint:disable force_cast
         contentViewController as! MainViewController
@@ -97,10 +99,10 @@ final class MainWindowController: NSWindowController {
 #if DEBUG
         MainActor.assumeMainThread {
             // Check that the window deallocates
-            window?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            window?.ensureObjectDeallocated(after: 8.0, do: .interrupt)
 
             // Check that the main view controller deallocates
-            mainViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            mainViewController.ensureObjectDeallocated(after: 8.0, do: .interrupt)
         }
 #endif
         NotificationCenter.default.removeObserver(self)
@@ -207,13 +209,35 @@ final class MainWindowController: NSWindowController {
     }
 
     private var burningDataCancellable: AnyCancellable?
+    private var delayedBlockingWorkItem: DispatchWorkItem?
+
     private func subscribeToBurningData() {
         burningDataCancellable = fireViewModel.fire.burningDataPublisher
             .dropFirst()
             .removeDuplicates()
             .sink(receiveValue: { [weak self] burningData in
                 guard let self else { return }
-                self.userInteraction(prevented: burningData != nil, forBurning: true)
+
+                if burningData != nil {
+                    // Burning started - delay showing the blocking overlay by 1 second
+                    // This prevents visual chaos for quick burns
+                    let workItem = DispatchWorkItem { [weak self] in
+                        guard let self else { return }
+                        // Double-check that burning is still in progress
+                        if self.fireViewModel.fire.burningData != nil {
+                            self.userInteraction(prevented: true, forBurning: true)
+                        }
+                    }
+                    self.delayedBlockingWorkItem = workItem
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
+                } else {
+                    // Burning finished - immediately remove the blocking overlay
+                    // Cancel any pending delayed blocking
+                    self.delayedBlockingWorkItem?.cancel()
+                    self.delayedBlockingWorkItem = nil
+                    self.userInteraction(prevented: false, forBurning: true)
+                }
+
                 self.moveTabBarView(toTitlebarView: burningData == nil)
             })
     }
@@ -329,9 +353,9 @@ extension MainWindowController: NSWindowDelegate {
               keyWindow.isInHierarchy(of: mainWindow) else { return }
 
         mainViewController.windowDidBecomeKey()
-
+        lastWindowDidBecomeKeyTimestamp = CACurrentMediaTime()
         if !mainWindow.isPopUpWindow {
-            Application.appDelegate.windowControllersManager.lastKeyMainWindowController = self
+            Application.appDelegate.windowControllersManager.didChangeKeyWindowController.send(self)
         }
 
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {

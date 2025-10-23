@@ -18,19 +18,23 @@
 
 import Foundation
 import Persistence
+import BrowserServicesKit
 
 protocol HistoryViewDeleteDialogSettingsPersisting: AnyObject {
     var shouldBurnHistoryWhenDeleting: Bool { get set }
+    var shouldClearChatHistoryWhenDeleting: Bool { get set }
 }
 
 final class UserDefaultsHistoryViewDeleteDialogSettingsPersistor: HistoryViewDeleteDialogSettingsPersisting {
     enum Keys {
         static let shouldBurnHistoryWhenDeleting = "history.delete.should-burn"
+        static let shouldClearChatHistoryWhenDeleting = "history.delete.should-clear-chat"
     }
 
     private let keyValueStore: KeyValueStoring
 
-    init(_ keyValueStore: KeyValueStoring = UserDefaults.standard) {
+    init(_ keyValueStore: KeyValueStoring = UserDefaults.standard,
+         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
         self.keyValueStore = keyValueStore
     }
 
@@ -38,11 +42,16 @@ final class UserDefaultsHistoryViewDeleteDialogSettingsPersistor: HistoryViewDel
         get { return keyValueStore.object(forKey: Keys.shouldBurnHistoryWhenDeleting) as? Bool ?? true }
         set { keyValueStore.set(newValue, forKey: Keys.shouldBurnHistoryWhenDeleting) }
     }
+
+    var shouldClearChatHistoryWhenDeleting: Bool {
+        get { return keyValueStore.object(forKey: Keys.shouldClearChatHistoryWhenDeleting) as? Bool ?? true }
+        set { keyValueStore.set(newValue, forKey: Keys.shouldClearChatHistoryWhenDeleting) }
+    }
 }
 
 final class HistoryViewDeleteDialogModel: ObservableObject {
     enum Response {
-        case noAction, delete, burn
+        case noAction, delete(includeChats: Bool), burn(includeChats: Bool)
     }
 
     enum DeleteMode: Equatable {
@@ -75,6 +84,13 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
                 return UserText.deleteHistory
             }
         }
+
+        var canClearChatHistory: Bool {
+            switch self {
+            case .all: return true
+            case .today, .yesterday, .date, .sites, .older, .unspecified: return false
+            }
+        }
     }
 
     var title: String { mode.title }
@@ -95,12 +111,27 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
             settingsPersistor.shouldBurnHistoryWhenDeleting = shouldBurn
         }
     }
+
+    /// indicates whether the option to delete chat history should be shown
+    let canClearChatHistory: Bool
+
+    /// when true, chat history will also be deleted when deleting browsing history
+    @Published var shouldClearChatHistory: Bool {
+        didSet {
+            settingsPersistor.shouldClearChatHistoryWhenDeleting = shouldClearChatHistory
+        }
+    }
+
     @Published private(set) var response: Response?
 
     init(
         entriesCount: Int,
         mode: DeleteMode,
-        settingsPersistor: HistoryViewDeleteDialogSettingsPersisting = UserDefaultsHistoryViewDeleteDialogSettingsPersistor()
+        settingsPersistor: HistoryViewDeleteDialogSettingsPersisting = UserDefaultsHistoryViewDeleteDialogSettingsPersistor(),
+        aiChatHistoryCleaner: AIChatHistoryCleaner = AIChatHistoryCleaner(featureFlagger: Application.appDelegate.featureFlagger,
+                                                                          aiChatMenuConfiguration: Application.appDelegate.aiChatMenuConfiguration,
+                                                                          featureDiscovery: DefaultFeatureDiscovery(),
+                                                                          privacyConfig: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager)
     ) {
         self.message = {
             guard entriesCount > 1 else {
@@ -112,6 +143,9 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
         self.mode = mode
         self.settingsPersistor = settingsPersistor
         shouldBurn = settingsPersistor.shouldBurnHistoryWhenDeleting
+        let canClearChatHistory = mode.canClearChatHistory && aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption
+        self.canClearChatHistory = canClearChatHistory
+        shouldClearChatHistory = canClearChatHistory ? settingsPersistor.shouldClearChatHistoryWhenDeleting : false
     }
 
     func cancel() {
@@ -119,7 +153,11 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
     }
 
     func delete() {
-        response = shouldBurn ? .burn : .delete
+        if shouldBurn {
+            response = .burn(includeChats: shouldClearChatHistory)
+        } else {
+            response = .delete(includeChats: shouldClearChatHistory)
+        }
     }
 
     private let mode: DeleteMode

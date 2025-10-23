@@ -105,7 +105,7 @@ final class FireCoordinator {
         }
         var fireCoordinatorGetter: (() -> FireCoordinator)!
         let historyBurner = FireHistoryBurner(fireproofDomains: self.fireproofDomains, fire: { fireCoordinatorGetter().fireViewModel.fire })
-        self.historyProvider = historyProvider ?? HistoryViewDataProvider(historyDataSource: self.historyCoordinating, historyBurner: historyBurner, featureFlagger: featureFlagger)
+        self.historyProvider = historyProvider ?? HistoryViewDataProvider(historyDataSource: self.historyCoordinating, historyBurner: historyBurner, featureFlagger: featureFlagger, tld: tld)
         if let fireViewModel {
             self.fireViewModel = fireViewModel
         }
@@ -113,33 +113,20 @@ final class FireCoordinator {
     }
 
     func fireButtonAction() {
-        let burningWindow: NSWindow
-        let waitForOpening: Bool
-
-        if let lastKeyWindow = windowControllersManager.lastKeyMainWindowController?.window,
-           lastKeyWindow.isVisible {
-            burningWindow = lastKeyWindow
-            burningWindow.makeKeyAndOrderFront(nil)
-            waitForOpening = false
-        } else {
-            burningWindow = WindowsManager.openNewWindow(fireCoordinator: self)!
-            waitForOpening = true
-        }
-
-        guard let mainViewController = burningWindow.contentViewController as? MainViewController else {
+        // There must be a window when the Fire button is clicked
+        guard let lastKeyMainWindowController = windowControllersManager.lastKeyMainWindowController,
+              let burningWindow = lastKeyMainWindowController.window else {
             assertionFailure("Burning window or its content view controller is nil")
             return
         }
+        burningWindow.makeKeyAndOrderFront(nil)
+        let mainViewController = lastKeyMainWindowController.mainViewController
 
         // Present dialog gated by feature flag; fallback to legacy popover
-        if featureFlagger.isFeatureOn(.fireDialog) {
+        // Special popover variant for Fire window
+        if !mainViewController.isBurner, featureFlagger.isFeatureOn(.fireDialog) {
             Task { @MainActor in
                 _=await self.presentFireDialog(mode: .fireButton, in: burningWindow)
-            }
-        } else if waitForOpening {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1/3) {
-                self.showFirePopover(relativeTo: mainViewController.tabBarViewController.fireButton,
-                                     tabCollectionViewModel: mainViewController.tabCollectionViewModel)
             }
         } else {
             showFirePopover(relativeTo: mainViewController.tabBarViewController.fireButton,
@@ -188,23 +175,21 @@ extension FireCoordinator {
             // Fallback to querying provider
             scopeVisits = await historyProvider.visits(matching: scopeQuery)
         }
-        let scopeCookieDomains: Set<String> = {
-            let hosts = Set(scopeVisits.compactMap { $0.historyEntry?.url.host })
-            let result: [String] = hosts.compactMap {
-                let eTLDplus1 = tld.eTLDplus1($0)
-                return eTLDplus1
-            }
-            return Set(result)
-        }()
+        let scopeCookieDomains = scopeVisits.lazy.compactMap(\.historyEntry?.url.host).convertedToETLDPlus1(tld: tld)
 
         let vm = FireDialogViewModel(
             fireViewModel: self.fireViewModel,
             tabCollectionViewModel: tabCollectionViewModel,
             historyCoordinating: self.historyCoordinating,
+            aiChatHistoryCleaner: AIChatHistoryCleaner(featureFlagger: Application.appDelegate.featureFlagger,
+                                                       aiChatMenuConfiguration: Application.appDelegate.aiChatMenuConfiguration,
+                                                       featureDiscovery: DefaultFeatureDiscovery(),
+                                                       privacyConfig: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager),
             fireproofDomains: self.fireproofDomains,
             faviconManagement: self.faviconManagement,
             clearingOption: mode.shouldShowSegmentedControl ? nil /* last selected */ : .allData,
             includeTabsAndWindows: mode.shouldShowCloseTabsToggle ? nil /* last selected */ : false,
+            includeChatHistory: mode.shouldShowChatHistoryToggle ? nil /* last selected */ : false,
             mode: mode,
             scopeCookieDomains: scopeCookieDomains,
             scopeVisits: scopeVisits,
@@ -272,6 +257,7 @@ extension FireCoordinator {
                                                 isToday: result.isToday,
                                                 closeWindows: result.includeTabsAndWindows,
                                                 clearSiteData: result.includeCookiesAndSiteData,
+                                                clearChatHistory: result.includeChatHistory,
                                                 urlToOpenIfWindowsAreClosed: nil)
             return
         }
@@ -288,7 +274,10 @@ extension FireCoordinator {
                                                 selectedDomains: result.selectedCookieDomains ?? [],
                                                 parentTabCollectionViewModel: tabCollectionViewModel,
                                                 close: result.includeTabsAndWindows)
-            await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory, includeCookiesAndSiteData: result.includeCookiesAndSiteData)
+            await fireViewModel.fire.burnEntity(entity,
+                                                includingHistory: result.includeHistory,
+                                                includeCookiesAndSiteData: result.includeCookiesAndSiteData,
+                                                includeChatHistory: result.includeChatHistory)
 
         case .currentWindow:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .window))
@@ -299,19 +288,31 @@ extension FireCoordinator {
             let entity = Fire.BurningEntity.window(tabCollectionViewModel: tabCollectionViewModel,
                                                    selectedDomains: result.selectedCookieDomains ?? [],
                                                    close: result.includeTabsAndWindows)
-            await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory, includeCookiesAndSiteData: result.includeCookiesAndSiteData)
+            await fireViewModel.fire.burnEntity(entity,
+                                                includingHistory: result.includeHistory,
+                                                includeCookiesAndSiteData: result.includeCookiesAndSiteData,
+                                                includeChatHistory: result.includeChatHistory)
 
         case .allData:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
+            if result.includeChatHistory {
+                pixelFiring?.fire(AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount)
+            }
             // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
             if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory {
-                await fireViewModel.fire.burnAll(isBurnOnExit: false, opening: .newtab, includeCookiesAndSiteData: result.includeCookiesAndSiteData)
+                await fireViewModel.fire.burnAll(isBurnOnExit: false,
+                                                 opening: .newtab,
+                                                 includeCookiesAndSiteData: result.includeCookiesAndSiteData,
+                                                 includeChatHistory: result.includeChatHistory)
             } else {
                 let entity = Fire.BurningEntity.allWindows(mainWindowControllers: windowControllersManager.mainWindowControllers,
                                                            selectedDomains: result.selectedCookieDomains ?? [],
                                                            customURLToOpen: nil,
                                                            close: result.includeTabsAndWindows)
-                await fireViewModel.fire.burnEntity(entity, includingHistory: result.includeHistory, includeCookiesAndSiteData: result.includeCookiesAndSiteData)
+                await fireViewModel.fire.burnEntity(entity,
+                                                    includingHistory: result.includeHistory,
+                                                    includeCookiesAndSiteData: result.includeCookiesAndSiteData,
+                                                    includeChatHistory: result.includeChatHistory)
             }
         }
         if result.includeHistory,

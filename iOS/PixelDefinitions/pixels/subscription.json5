@@ -304,5 +304,19 @@
                 "type": "string"
             }
         ]
+    },
+    // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211526314174409?focus=true
+    "m_nav_vpn_menu_item_pressed": {
+        "description": "Fires when the VPN menu item in the new tab page menu is pressed",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            {
+                "key": "status",
+                "type": "string",
+                "description": "Status associated with the VPN menu item",
+                "enum": ["pill", "no_pill", "subscribed"]
+            }
+        ]
     }
 }

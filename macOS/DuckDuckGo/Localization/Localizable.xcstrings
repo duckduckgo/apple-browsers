@@ -8101,6 +8101,66 @@
         }
       }
     },
+    "automatically.clear.chats" : {
+      "comment" : "Label after the checkbox in Settings which configures clearing Duck.ai chat history automatically after quitting the app.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Chatverlauf löschen, wenn DuckDuckGo beendet wird"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete Duck.ai chat history when DuckDuckGo quits"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar el historial de chat de Duck.ai al cerrar DuckDuckGo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer l'historique du chat Duck.ai à la fermeture de DuckDuckGo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina la cronologia chat di Duck.ai quando DuckDuckGo esce"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai chatgeschiedenis verwijderen wanneer DuckDuckGo stopt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń historię czatów Duck.ai po zamknięciu DuckDuckGo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar o histórico de conversas do Duck.ai quando sair do DuckDuckGo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалять историю чатов с Duck.ai при закрытии DuckDuckGo"
+          }
+        }
+      }
+    },
     "automatically.clear.data" : {
       "comment" : "Label after the checkbox in Settings which configures clearing data automatically after quitting the app.",
       "extractionState" : "extracted_with_value",
@@ -19320,7 +19380,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verlauf und Browserdaten löschen …"
+            "value" : "Verlauf und Browser-Daten löschen …"
           }
         },
         "en" : {
@@ -19332,25 +19392,25 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar el historial y los datos de navegación…"
+            "value" : "Eliminar historial y datos de navegación…"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Supprimer l’historique et les données de navigation…"
+            "value" : "Supprimer l'historique et les données de navigation…"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Elimina cronologia e dati di navigazione…"
+            "value" : "Elimina la cronologia e i dati di navigazione…"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Geschiedenis en browsegegevens verwijderen…"
+            "value" : "Geschiedenis en browsegegevens verwijderen..."
           }
         },
         "pl" : {
@@ -19368,7 +19428,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить историю и данные о посещении сайтов…"
+            "value" : "Удалить историю и данные просмотра…"
           }
         }
       }
@@ -31298,6 +31358,66 @@
         }
       }
     },
+    "fire.active-tabs-and-chats-info" : {
+      "comment" : "Info in the Fire Button popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktive Tabs (%1$d) schließen und alle Browserverläufe und Cookies (Websites: %2$d) sowie Duck.ai-Chatverlauf löschen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close active tabs (%1$d) and clear all browsing history and cookies (sites: %2$d), and clear Duck.ai chat history."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cierra las pestañas activas (%1$d) y borra todo el historial de navegación y las cookies (sitios: %2$d), y borra el historial de chat de Duck.ai."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermez les onglets actifs (%1$d) et effacez tout l'historique de navigation et les cookies (sites : %2$d), et effacez l'historique du chat Duck.ai."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudi le schede attive (%1$d) e cancella tutta la cronologia di navigazione e i cookie (siti: %2$d) e cancella la cronologia chat di Duck.ai."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actieve tabbladen (%1$d) sluiten en alle browsegeschiedenis en cookies (sites: %2$d) wissen, en de chatgeschiedenis van Duck.ai wissen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij aktywne karty (%1$d) i wyczyść całą historię przeglądania, pliki cookie (witryny: %2$d), oraz historię czatów z Duck.ai."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fecha os separadores ativos (%1$d), limpa todo o histórico de navegação e cookies (sites: %2$d) e limpa o histórico de conversas do Duck.ai."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрывает активные вкладки (%1$d) и стирает всю историю посещений, куки-файлы (сайтов: %2$d) и историю чатов с Duck.ai."
+          }
+        }
+      }
+    },
     "fire.active-tabs-info" : {
       "comment" : "Info in the Fire Button popover",
       "extractionState" : "extracted_with_value",
@@ -31834,6 +31954,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Все окна будут закрыты."
+          }
+        }
+      }
+    },
+    "fire.dialog.chats.subtitle" : {
+      "comment" : "Subtitle shown under the Duck.ai chats row to explain that chat history will be deleted.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Chats löschen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete all chats."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar todos los chats."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimez toutes les discussions."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina tutte le chat."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle chats verwijderen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń wszystkie czaty."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina todas as conversas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все чаты будут удалены."
+          }
+        }
+      }
+    },
+    "fire.dialog.chats.title" : {
+      "comment" : "Section title. Toggle that controls whether Duck.ai chat history is deleted.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Chats"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat di Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai chats"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czaty Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чаты Duck.ai"
           }
         }
       }
@@ -32655,6 +32895,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Закрыть вкладки и удалить данные"
+          }
+        }
+      }
+    },
+    "fire.dialog.fire-window.close-tabs-chats" : {
+      "comment" : "Title of the dialog where the user can close browser tabs and clear data and Duck.ai chat history.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabs schließen und Daten und Chats löschen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close Tabs and Clear Data and Chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar pestañas y borrar datos y chats"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer les onglets, effacer les données et les conversations"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudi le schede e cancella i dati e le chat"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabbladen sluiten en gegevens en chats wissen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij karty oraz wyczyść dane i czaty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechar separadores e limpar dados e chats"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрытие вкладок и удаление данных и чатов"
           }
         }
       }
@@ -34044,7 +34344,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browserverlauf löschen?"
+            "value" : "Browsendaten löschen?"
           }
         },
         "en" : {
@@ -34062,7 +34362,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Supprimer les données de navigation ?"
+            "value" : "Supprimer les données de navigation\t?"
           }
         },
         "it" : {
@@ -34074,13 +34374,13 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browsegegevens verwijderen?"
+            "value" : "Surfgegevens verwijderen?"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usunąć dane przeglądania?"
+            "value" : "Usuń dane przeglądania?"
           }
         },
         "pt" : {
@@ -34092,7 +34392,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить данные просмотра?"
+            "value" : "Удалить данные о посещении сайтов?"
           }
         }
       }
@@ -34103,7 +34403,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browserverlauf von %@ löschen?"
+            "value" : "Browsendaten von %@ löschen?"
           }
         },
         "en" : {
@@ -34127,19 +34427,19 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminare i dati di navigazione di %@?"
+            "value" : "Eliminare i dati di navigazione da %@?"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browsegegevens van %@ verwijderen?"
+            "value" : "Browsegegevens verwijderen van %@?"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usunąć dane przeglądania z %@?"
+            "value" : "Usunąć dane przeglądania z: %@?"
           }
         },
         "pt" : {
@@ -34151,7 +34451,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить данные за %@?"
+            "value" : "Удалить данные о посещении сайтов: %@?"
           }
         }
       }
@@ -34162,7 +34462,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browserverlauf von %@ löschen?"
+            "value" : "Browserdaten von %@ löschen?"
           }
         },
         "en" : {
@@ -34186,19 +34486,19 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminare i dati di navigazione di %@?"
+            "value" : "Eliminare i dati di navigazione da %@?"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browsegegevens van %@ verwijderen?"
+            "value" : "Browsegegevens verwijderen van %@?"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usunąć dane przeglądania z %@?"
+            "value" : "Usunąć dane przeglądania z: %@?"
           }
         },
         "pt" : {
@@ -34210,7 +34510,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить данные с %@?"
+            "value" : "Удалить данные о посещении сайта %@?"
           }
         }
       }
@@ -34221,7 +34521,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browserverlauf von heute löschen?"
+            "value" : "Browsendaten von heute löschen?"
           }
         },
         "en" : {
@@ -34239,13 +34539,13 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Supprimer les données de navigation d’aujourd’hui ?"
+            "value" : "Supprimer les données de navigation d'aujourd'hui ?"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminare i dati di navigazione di oggi?"
+            "value" : "Eliminare i dati di navigazione a partire da oggi?"
           }
         },
         "nl" : {
@@ -34257,7 +34557,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usunąć dane przeglądania z dzisiaj?"
+            "value" : "Usunąć dzisiejsze dane przeglądania?"
           }
         },
         "pt" : {
@@ -34269,7 +34569,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить данные за сегодня?"
+            "value" : "Удалить данные о посещениях за сегодня?"
           }
         }
       }
@@ -34280,7 +34580,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browserverlauf von gestern löschen?"
+            "value" : "Browsendaten von gestern löschen?"
           }
         },
         "en" : {
@@ -34304,7 +34604,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminare i dati di navigazione di ieri?"
+            "value" : "Eliminare i dati di navigazione a partire da ieri?"
           }
         },
         "nl" : {
@@ -34316,7 +34616,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usunąć dane przeglądania z wczoraj?"
+            "value" : "Usunąć wczorajsze dane przeglądania?"
           }
         },
         "pt" : {
@@ -34328,7 +34628,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить данные за вчера?"
+            "value" : "Удалить данные о посещениях за вчерашний день?"
           }
         }
       }
@@ -35435,13 +35735,13 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajouter l’actuel"
+            "value" : "Ajouter le site actuel"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aggiungi corrente"
+            "value" : "Aggiungi sito attuale"
           }
         },
         "nl" : {
@@ -35465,7 +35765,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Добавить текущий"
+            "value" : "Добавить этот сайт"
           }
         }
       }
@@ -35477,7 +35777,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Feuerfeste Seite hinzufügen"
+            "value" : "Fireproof-Seite hinzufügen"
           }
         },
         "en" : {
@@ -35489,43 +35789,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Añadir sitio a prueba de fuego"
+            "value" : "Añadir sitio Fireproof"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajouter un site coupe-feu"
+            "value" : "Ajouter un site Fireproof"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aggiungi sito protetto"
+            "value" : "Aggiungi sito Fireproof"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Brandveilig site toevoegen"
+            "value" : "Fireproof-site toevoegen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dodaj chronioną witrynę"
+            "value" : "Dodaj zabezpieczoną witrynę internetową"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adicionar site protegido"
+            "value" : "Adicionar site Fireproof"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Добавить огнеупорный сайт"
+            "value" : "Fireproof: огнеупорный сайт"
           }
         }
       }
@@ -37196,6 +37496,126 @@
         }
       }
     },
+    "history.delete.dialog.chats.checkbox.caption" : {
+      "comment" : "Caption for a checkbox to optionally delete Duck.ai chats alongside removing browser history entries",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auch Duck.ai-Chats löschen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Also delete Duck.ai chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrar también los chats de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer également les discussions Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina anche le chat di Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwijder ook Duck.ai-chats"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń także czaty Duck.ai."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar também as conversas do Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Также удалить чаты с Duck.ai"
+          }
+        }
+      }
+    },
+    "history.delete.dialog.chats.checkbox.explanation" : {
+      "comment" : "Explanation of what deleting Duck.ai chats means.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dadurch werden alle Chats im Duck.ai-Chatverlauf gelöscht."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This will delete all chats in Duck.ai chat history."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esto eliminará todos los chats del historial de chats de Duck.ai."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cela supprimera toutes les discussions de l'historique du chat Duck.ai."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo eliminerà tutte le chat nella cronologia di Duck.ai."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hiermee worden alle chats uit de chatgeschiedenis van Duck.ai verwijderd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spowoduje to usunięcie wszystkich czatów w historii czatów Duck.ai."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Isto elimina todas as conversas do histórico de conversas do Duck.ai."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "История чатов с Duck.ai будет полностью удалена."
+          }
+        }
+      }
+    },
     "history.delete.dialog.message" : {
       "comment" : "Message in a dialog asking the user to confirm deleting history. NOTE: This term is only for English. For other languages, please translate the following term: 'History items (%@) will be deleted.'",
       "extractionState" : "extracted_with_value",
@@ -37395,19 +37815,19 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Borrar historial más antiguo?"
+            "value" : "¿Eliminar el historial más antiguo?"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Supprimer l'historique plus ancien ?"
+            "value" : "Supprimer l'historique plus ancien\t?"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cancellare la cronologia più vecchia?"
+            "value" : "Eliminare la cronologia precedente?"
           }
         },
         "nl" : {
@@ -37431,7 +37851,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить старую историю?"
+            "value" : "Удалить более старую историю?"
           }
         }
       }
@@ -93096,6 +93516,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Предупреждать о закрытии вкладок и удалении данных при выходе"
+          }
+        }
+      }
+    },
+    "warn.before.quit.clearChats" : {
+      "comment" : "Label after the checkbox in Settings which configures a warning before clearing data and chats on the application termination.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warne mich, dass Tabs, Daten und Chats beim Beenden gelöscht werden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Warn me that tabs, data, and chats will be deleted when quitting"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisarme de que las pestañas, los datos y los chats se eliminarán al salir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "M'avertir que les onglets, les données et les discussions seront supprimés à la fermeture"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avvisa prima di eliminare schede, dati e chat all'uscita"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waarschuw me dat tabbladen, gegevens en chats worden verwijderd bij het afsluiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ostrzegaj, że karty, dane i czaty zostaną usunięte przy wychodzeniu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisar-me que os separadores, os dados e as conversas forem eliminados na saída"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Предупреждать о закрытии вкладок, удалении данных и чатов при выходе"
+          }
+        }
+      }
+    },
+    "warn.before.quit.clearChats.dialog.header" : {
+      "comment" : "A header of warning before clearing data and chats on the application termination.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabs, Browsendaten und Chats löschen und DuckDuckGo beenden?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Clear tabs, browsing data, and chats and quit DuckDuckGo?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Borrar pestañas, datos de navegación y chats y salir de DuckDuckGo?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Effacer les onglets, les données de navigation et les discussions, puis quitter DuckDuckGo ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancellare le schede, i dati di navigazione e le chat e uscire da DuckDuckGo?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabbladen, browsegegevens en chats wissen en DuckDuckGo afsluiten?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyczyścić karty, dane przeglądania i czaty oraz wyjść z DuckDuckGo?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limpar separadores, dados de navegação, conversas e sair do DuckDuckGo?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть вкладки, очистить данные и чаты, а затем выйти из DuckDuckGo?"
           }
         }
       }

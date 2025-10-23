@@ -22,6 +22,7 @@ import BrowserServicesKit
 // This may change to a class, but is just to get the feature flag in and testable for now.
 struct MobileCustomization {
 
+    /// Is customization enabled as a feature?
     let isEnabled: Bool
 
 }

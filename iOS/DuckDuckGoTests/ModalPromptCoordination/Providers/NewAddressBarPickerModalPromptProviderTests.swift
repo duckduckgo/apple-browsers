@@ -20,6 +20,7 @@
 import UIKit
 import Testing
 import AIChat
+import PersistenceTestingUtils
 @testable import DuckDuckGo
 
 @MainActor
@@ -261,4 +262,69 @@ final class NewAddressBarPickerModalPromptProviderTests {
         #expect(store.didCallMarkAsShown)
     }
     
+}
+
+@MainActor
+@Suite("Modal Prompt Coordination - New Address Bar Picker Modal Prompt Provider Integration")
+final class NewAddressBarPickerModalPromptProviderIntegrationTests {
+    let testUserDefaults: UserDefaults
+    let validator: NewAddressBarPickerDisplayValidator
+    let pickerStorage: NewAddressBarPickerStore
+    let mockAIChatSettings: MockAIChatSettingsProvider
+
+    init() throws {
+        testUserDefaults = try #require(UserDefaults(suiteName: String(describing: Self.self)))
+        mockAIChatSettings = MockAIChatSettingsProvider()
+        mockAIChatSettings.isAIChatEnabled = true
+        mockAIChatSettings.isAIChatAddressBarUserSettingsEnabled = true
+        let mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.enabledFeatureFlags = [.showAIChatAddressBarChoiceScreen]
+        let mockAppSettings = AppSettingsMock()
+        let mockKeyValueStore = MockKeyValueStore()
+
+        testUserDefaults.set(false, forKey: "experimentalAIChatSettingsEnabled")
+        mockKeyValueStore.set(false, forKey: "aichat.storage.newAddressBarPickerShown")
+
+        let experimentalAIChatManager = ExperimentalAIChatManager(
+            featureFlagger: mockFeatureFlagger,
+            userDefaults: testUserDefaults
+        )
+        pickerStorage = NewAddressBarPickerStore(keyValueStore: mockKeyValueStore)
+
+        validator = NewAddressBarPickerDisplayValidator(
+            aiChatSettings: mockAIChatSettings,
+            featureFlagger: mockFeatureFlagger,
+            experimentalAIChatManager: experimentalAIChatManager,
+            appSettings: mockAppSettings,
+            pickerStorage: pickerStorage
+        )
+    }
+
+    deinit {
+        testUserDefaults.removePersistentDomain(forName: String(describing: Self.self))
+    }
+
+    @Test("Check Configuration Is Nil After Calling Mark As Shown", arguments: [true, false])
+    func whenProvideModalPromptCalledThenDoesNotMarkAsShownUntilDidPresentModal(isIPad: Bool) {
+        // GIVEN
+        let sut = NewAddressBarPickerModalPromptProvider(validator: validator, store: pickerStorage, aiChatSettings: mockAIChatSettings, isIPad: isIPad)
+        #expect(!pickerStorage.hasBeenShown)
+
+        // WHEN we call provide modal prompt for the first time
+        let result = sut.provideModalPrompt()
+
+        // THEN the configuration is returned successfully but the flag in the store hasn't been written yet.
+        #expect(result != nil)
+        #expect(!pickerStorage.hasBeenShown)
+
+        // Mark the modal seen
+        sut.didPresentModal()
+        #expect(pickerStorage.hasBeenShown)
+
+        // WHEN a new prompt wanted to be shown
+        let newResult = sut.provideModalPrompt()
+
+        // THEN no modal should show
+        #expect(newResult == nil)
+    }
 }

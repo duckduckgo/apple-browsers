@@ -23,6 +23,7 @@ import Persistence
 import BrowserServicesKit
 import RemoteMessaging
 import RemoteMessagingTestsUtils
+import PersistenceTestingUtils
 import AIChat
 @testable import DuckDuckGo
 
@@ -222,23 +223,5 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         mockAIChatSettings.isAIChatAddressBarUserSettingsEnabled = true
         testUserDefaults.set(false, forKey: "experimentalAIChatSettingsEnabled")
         mockKeyValueStore.set(false, forKey: "aichat.storage.newAddressBarPickerShown")
-    }
-}
-
-// MARK: - Mock Classes
-
-private class MockKeyValueStore: KeyValueStoring {
-    private var storage: [String: Any] = [:]
-
-    func object(forKey defaultName: String) -> Any? {
-        return storage[defaultName]
-    }
-
-    func set(_ value: Any?, forKey defaultName: String) {
-        storage[defaultName] = value
-    }
-
-    func removeObject(forKey defaultName: String) {
-        storage.removeValue(forKey: defaultName)
     }
 }

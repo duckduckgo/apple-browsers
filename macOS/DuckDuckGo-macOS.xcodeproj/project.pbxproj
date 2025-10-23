@@ -3837,6 +3837,8 @@
 		EE66418D2B9B1981005BCD17 /* NetworkProtectionTokenStore+SubscriptionTokenKeychainStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66418B2B9B1981005BCD17 /* NetworkProtectionTokenStore+SubscriptionTokenKeychainStorage.swift */; };
 		EE66666F2B56EDE4001D898D /* VPNLocationsHostingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66666E2B56EDE4001D898D /* VPNLocationsHostingViewController.swift */; };
 		EE6666702B56EDE4001D898D /* VPNLocationsHostingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE66666E2B56EDE4001D898D /* VPNLocationsHostingViewController.swift */; };
+		EE72DCA62EA91C9F0052661B /* ImportSourcePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE72DCA52EA91C9F0052661B /* ImportSourcePickerView.swift */; };
+		EE72DCA72EA91C9F0052661B /* ImportSourcePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE72DCA52EA91C9F0052661B /* ImportSourcePickerView.swift */; };
 		EE76B5952E5F249E00600C14 /* DismissableSyncDeviceButtonModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE76B5942E5F248E00600C14 /* DismissableSyncDeviceButtonModelTests.swift */; };
 		EE76B5962E5F249E00600C14 /* DismissableSyncDeviceButtonModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE76B5942E5F248E00600C14 /* DismissableSyncDeviceButtonModelTests.swift */; };
 		EE7E0FD72E3BA8FA00E51C8B /* SyncDialogController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E0FD62E3BA8FA00E51C8B /* SyncDialogController.swift */; };
@@ -6090,6 +6092,7 @@
 		EE5F09A72E7C2EEE00341531 /* NewFileImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewFileImportView.swift; sourceTree = "<group>"; };
 		EE66418B2B9B1981005BCD17 /* NetworkProtectionTokenStore+SubscriptionTokenKeychainStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NetworkProtectionTokenStore+SubscriptionTokenKeychainStorage.swift"; sourceTree = "<group>"; };
 		EE66666E2B56EDE4001D898D /* VPNLocationsHostingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNLocationsHostingViewController.swift; sourceTree = "<group>"; };
+		EE72DCA52EA91C9F0052661B /* ImportSourcePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSourcePickerView.swift; sourceTree = "<group>"; };
 		EE76B5942E5F248E00600C14 /* DismissableSyncDeviceButtonModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DismissableSyncDeviceButtonModelTests.swift; sourceTree = "<group>"; };
 		EE7E0FD62E3BA8FA00E51C8B /* SyncDialogController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDialogController.swift; sourceTree = "<group>"; };
 		EE7F74902BB5D76600CD9456 /* BookmarksBarTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksBarTests.swift; sourceTree = "<group>"; };
@@ -11577,6 +11580,7 @@
 			children = (
 				EE8C11D82E9FE768002FFD72 /* NewImportErrorView.swift */,
 				EE8C11D52E9E8336002FFD72 /* FileImportScreenView.swift */,
+				EE72DCA52EA91C9F0052661B /* ImportSourcePickerView.swift */,
 			);
 			path = New;
 			sourceTree = "<group>";
@@ -14258,6 +14262,7 @@
 				3706FC79293F65D500E42796 /* NSImageExtensions.swift in Sources */,
 				3706FEBD293F6EFF00E42796 /* BWCommand.swift in Sources */,
 				C172E7302C9329D300521D9A /* FlippedView.swift in Sources */,
+				EE72DCA72EA91C9F0052661B /* ImportSourcePickerView.swift in Sources */,
 				3706FC7B293F65D500E42796 /* PasswordManagementViewController.swift in Sources */,
 				CD2AB5C02C8222F20019EB49 /* MaliciousSiteProtectionManager.swift in Sources */,
 				3706FC7C293F65D500E42796 /* ImportedBookmarks.swift in Sources */,
@@ -15807,6 +15812,7 @@
 				4B1E6EEE27AB5E5100F51793 /* PasswordManagementListSection.swift in Sources */,
 				31C9ADE52AF0564500CEF57D /* WaitlistFeatureSetupHandler.swift in Sources */,
 				AA222CB92760F74E00321475 /* FaviconReferenceCache.swift in Sources */,
+				EE72DCA62EA91C9F0052661B /* ImportSourcePickerView.swift in Sources */,
 				4B9292A126670D2A00AD2C21 /* BookmarkTreeController.swift in Sources */,
 				4B29759728281F0900187C4E /* FirefoxEncryptionKeyReader.swift in Sources */,
 				37DF370A2CF38CD7005ED34B /* PrivacyStatsDatabase.swift in Sources */,

@@ -410,7 +410,6 @@ struct NewDataImportFilePickerScreenView: View {
     let mode: FilePickerMode
     let dataTypes: Set<DataImport.DataType>
     let summaryTypes: Set<DataImport.DataType>
-    let dismiss: () -> Void
 
     var body: some View {
         VStack(alignment: .center, spacing: 0) {

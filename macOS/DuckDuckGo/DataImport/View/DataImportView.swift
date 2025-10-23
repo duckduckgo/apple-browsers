@@ -76,6 +76,8 @@ struct DataImportView: ModalView {
     var body: some View {
         VStack(alignment: alignment, spacing: 0) {
             switch model.screen {
+            case .profileAndDataTypesPicker:
+                ImportSourcePickerView(model: $model)
             case .fileImport(let dataType, let summaryTypes):
                 FileImportScreenView(model: $model, kind: .individual(dataType: dataType), summaryTypes: summaryTypes, dismiss: dismiss.callAsFunction)
             case .archiveImport:

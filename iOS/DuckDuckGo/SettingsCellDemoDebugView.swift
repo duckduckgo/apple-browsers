@@ -116,7 +116,7 @@ struct SettingsCellDemoDebugView: View {
                                        label: "Legacy picker", options: SampleOption.allCases, selectedOption: $selectedOption)
 
                 SettingsPickerCellView(useImprovedPicker: true,
-                                       label: "Improved Picker", options: SampleOption.allCases, selectedOption: $selectedOption,
+                                       label: "Improved Picker", options: SampleOption.withDivider, selectedOption: $selectedOption,
                                        iconProvider: SampleOption.imageProvider)
 
                 SettingsCustomCell(content: customCellContent)

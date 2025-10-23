@@ -20,18 +20,15 @@ import Combine
 import Foundation
 
 extension UserDefaults {
-    private var showDebugVPNEventNotificationsKey: String {
-        "networkProtectionSettingShowDebugVPNEventNotifications"
-    }
 
     @objc
-    dynamic var networkProtectionSettingShowDebugVPNEventNotifications: Bool {
+    public dynamic var networkProtectionSettingShowDebugVPNEventNotifications: Bool {
         get {
-            bool(forKey: showDebugVPNEventNotificationsKey)
+            bool(forKey: #keyPath(networkProtectionSettingShowDebugVPNEventNotifications))
         }
 
         set {
-            set(newValue, forKey: showDebugVPNEventNotificationsKey)
+            set(newValue, forKey: #keyPath(networkProtectionSettingShowDebugVPNEventNotifications))
         }
     }
 
@@ -40,6 +37,7 @@ extension UserDefaults {
     }
 
     func resetNetworkProtectionSettingShowDebugVPNEventNotifications() {
-        removeObject(forKey: showDebugVPNEventNotificationsKey)
+        removeObject(forKey: #keyPath(networkProtectionSettingShowDebugVPNEventNotifications))
     }
+
 }

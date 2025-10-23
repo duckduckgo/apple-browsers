@@ -129,12 +129,16 @@ public extension SERPSettingsProviding {
     /// 3. Reports any errors through the event mapper
     /// 4. Returns data wrapped in a JSONBlob if successful
     ///
-    /// - Returns: Encoded settings blob, or `nil` if no data exists or an error occurs
+    /// - Returns: Encoded settings blob, or an empty JSON object if no data exists, or `nil` if an error occurs
     func getSERPSettings() -> Encodable? {
         settingsQueue.sync {
             do {
                 if let data = try keyValueStore.object(forKey: SERPSettingsConstants.serpSettingsStorage) as? Data {
                     return JSONBlob(data: data)
+                } else {
+                    // First-time access: return empty JSON object
+                    let emptyJSON = try JSONSerialization.data(withJSONObject: [:], options: [])
+                    return JSONBlob(data: emptyJSON)
                 }
             } catch {
                 eventMapper?.fire(.keyValueStoreReadError, error: error)

@@ -104,7 +104,7 @@ struct SettingsAppearanceView: View {
         case .none:
             nil
         case .home:
-            DesignSystemImages.Glyphs.Size16.shareApple
+            DesignSystemImages.Glyphs.Size16.home
         case .newTab:
             DesignSystemImages.Glyphs.Size16.add
         case .bookmarks:

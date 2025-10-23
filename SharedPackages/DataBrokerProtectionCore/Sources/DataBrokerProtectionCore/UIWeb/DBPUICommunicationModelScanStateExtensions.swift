@@ -81,9 +81,8 @@ public extension DBPUIScanAndOptOutMaintenanceState {
                 }
 
                 let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOutJob,
-                                                               dataBroker: dataBroker,
-                                                               parentBrokerOptOutJobData: parentBrokerOptOutJobData,
-                                                               optOutUrl: dataBroker.optOutUrl)
+                                                               dataBroker: DBPUIDataBroker(from: dataBroker),
+                                                               parentBrokerOptOutJobData: parentBrokerOptOutJobData)
 
                 if extractedProfile.removedDate == nil {
                     inProgressOptOuts.append(profileMatch)
@@ -94,11 +93,8 @@ public extension DBPUIScanAndOptOutMaintenanceState {
                 if let closestMatchesFoundEvent = scanJob.closestMatchesFoundEvent() {
                     for mirrorSite in dataBroker.mirrorSites where mirrorSite.wasExtant(on: closestMatchesFoundEvent.date) {
                         let mirrorSiteMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOutJob,
-                                                                          dataBrokerName: mirrorSite.name,
-                                                                          dataBrokerURL: mirrorSite.url,
-                                                                          dataBrokerParentURL: dataBroker.parent,
-                                                                          parentBrokerOptOutJobData: parentBrokerOptOutJobData,
-                                                                          optOutUrl: dataBroker.optOutUrl)
+                                                                          dataBroker: DBPUIDataBroker(from: mirrorSite, parentBroker: dataBroker),
+                                                                          parentBrokerOptOutJobData: parentBrokerOptOutJobData)
 
                         if let extractedProfileRemovedDate = extractedProfile.removedDate,
                            mirrorSite.wasExtant(on: extractedProfileRemovedDate) {

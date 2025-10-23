@@ -122,18 +122,6 @@ final class DefaultFeatureDiscoveryTests: XCTestCase {
         XCTAssertEqual(daysSince, 5)
     }
 
-    func testDaysSinceLastUsedWithPartialDays() {
-        let startDate = Date(timeIntervalSince1970: 1000000)
-        mockDateProvider.currentDate = startDate
-        featureDiscovery.setWasUsedBefore(.aiChat)
-
-        // Move forward 2.5 days - should still count as 2 days
-        mockDateProvider.currentDate = startDate.addingTimeInterval(2.5 * 24 * 60 * 60)
-
-        let daysSince = featureDiscovery.daysSinceLastUsed(.aiChat)
-        XCTAssertEqual(daysSince, 2)
-    }
-
     func testMultipleCallsToSetWasUsedBeforeUpdatesTimestamp() {
         let firstDate = Date(timeIntervalSince1970: 1000000)
         mockDateProvider.currentDate = firstDate

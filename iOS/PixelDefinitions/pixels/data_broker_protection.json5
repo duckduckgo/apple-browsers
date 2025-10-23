@@ -1,7 +1,7 @@
 {
     "m_ios_dbp_optout_stage_start": {
         "description": "Fired at the start stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "thisisdinosaur"],
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -26,7 +26,7 @@
     },
     "m_ios_dbp_optout_stage_email-generate": {
         "description": "Fired at the email generation stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "thisisdinosaur"],
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -71,7 +71,7 @@
     },
     "m_ios_dbp_optout_stage_captcha-parse": {
         "description": "Fired at the captcha parse stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "thisisdinosaur"],
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -116,7 +116,7 @@
     },
     "m_ios_dbp_optout_stage_captcha-send": {
         "description": "Fired at the captcha send stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "thisisdinosaur"],
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -161,7 +161,7 @@
     },
     "m_ios_dbp_optout_stage_captcha-solve": {
         "description": "Fired at the captcha solve stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "thisisdinosaur"],
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -206,7 +206,7 @@
     },
     "m_ios_dbp_optout_stage_submit": {
         "description": "Fired at the submit stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "thisisdinosaur"],
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -296,7 +296,7 @@
     },
     "m_ios_dbp_optout_stage_email-receive": {
         "description": "Fired at the email receive stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "thisisdinosaur"],
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -341,7 +341,7 @@
     },
     "m_ios_dbp_optout_stage_email-confirm": {
         "description": "Fired at the email confirmation stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "thisisdinosaur"],
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -386,7 +386,7 @@
     },
     "m_ios_dbp_optout_stage_validate": {
         "description": "Fired at the validation stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "thisisdinosaur"],
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -431,7 +431,7 @@
     },
     "m_ios_dbp_optout_stage_fill-form": {
         "description": "Fired at the fill-form stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "thisisdinosaur"],
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -476,7 +476,7 @@
     },
     "m_ios_dbp_optout_stage_finish": {
         "description": "Fired at the finish stage of an opt-out attempt.",
-        "owners": ["quanganhdo", "edulpn", "thisisdinosaur"],
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -506,7 +506,7 @@
     },
     "m_ios_dbp_optout_process_submit-success": {
         "description": "Fired when an opt-out submission succeeds.",
-        "owners": ["quanganhdo", "edulpn", "thisisdinosaur"],
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -557,7 +557,7 @@
     },
     "m_ios_dbp_optout_process_success": {
         "description": "Fired when an opt-out attempt completes successfully.",
-        "owners": ["quanganhdo", "edulpn", "thisisdinosaur"],
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -604,7 +604,7 @@
     },
     "m_ios_dbp_optout_process_failure": {
         "description": "Fired when an opt-out attempt fails.",
-        "owners": ["quanganhdo", "edulpn", "thisisdinosaur"],
+        "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [

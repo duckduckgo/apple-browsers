@@ -148,7 +148,7 @@ extension InstructionsView.InstructionsItem: Hashable, CustomStringConvertible {
 }
 
 private extension String {
-    static let base = "Base"
+    static let base = "en"
 }
 
 private extension Bundle {

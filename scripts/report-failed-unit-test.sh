@@ -103,7 +103,11 @@ create_task() {
 	local message
 	local occurrences=1
 	local task_id
-	message=$(sed -E -e 's/\\/\\\\/g' -e 's/"/\\"/g' <<< "$3")
+	# replace newlines with %0A to have them survive backslash escaping
+	message="${3//$'\n'/'%0A'}"
+	message=$(sed -E -e 's/\\/\\\\/g' -e 's/"/\\"/g' <<< "$message")
+	# restore newlines
+	message="${message//'%0A'/$'\n'}"
 
 	task_id=$(curl -X POST -s "${asana_api_url}/tasks?opt_fields=gid" \
 		-H "Authorization: Bearer ${asana_personal_access_token}" \

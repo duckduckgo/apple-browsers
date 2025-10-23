@@ -340,7 +340,7 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
     }
 
     private func createPixelIndexParam(for index: Int?) -> [String: String] {
-        let parameters = index.map { i in
+        return index.map { i in
             ["search_suggestion_index": String(i)]
         } ?? [:]
     }

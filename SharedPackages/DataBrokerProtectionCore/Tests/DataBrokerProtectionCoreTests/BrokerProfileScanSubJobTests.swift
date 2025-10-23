@@ -179,6 +179,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                  isManual: false,
                                                  database: mockDatabase,
                                                  pixelHandler: mockPixelHandler,
+                                                 parentURL: nil,
                                                  vpnConnectionState: "connected",
                                                  vpnBypassStatus: "enabled")
 
@@ -193,6 +194,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                  isManual: true,
                                                  database: mockDatabase,
                                                  pixelHandler: mockPixelHandler,
+                                                 parentURL: nil,
                                                  vpnConnectionState: "connected",
                                                  vpnBypassStatus: "enabled")
 
@@ -208,6 +210,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                  isManual: false,
                                                  database: mockDatabase,
                                                  pixelHandler: mockPixelHandler,
+                                                 parentURL: nil,
                                                  vpnConnectionState: "connected",
                                                  vpnBypassStatus: "enabled")
 
@@ -223,6 +226,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     parentURL: nil,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
 
@@ -239,6 +243,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     parentURL: nil,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
         mockDatabase.addHistoryEventError = MockDatabase.MockError.saveFailed
@@ -261,6 +266,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     parentURL: nil,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
 
@@ -334,6 +340,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     parentURL: nil,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
         let matches = [ExtractedProfile.mockWithoutRemovedDate]
@@ -362,6 +369,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     parentURL: nil,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
         let matches = [ExtractedProfile.mockWithoutRemovedDate, ExtractedProfile.mockWithoutId]
@@ -410,6 +418,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     parentURL: nil,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
         var storeNoMatchesCalled = false
@@ -430,6 +439,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
                                                                      dataBrokerVersion: "1.0",
                                                                      handler: mockPixelHandler,
+                                                                     parentURL: nil,
                                                                      vpnConnectionState: "state",
                                                                      vpnBypassStatus: "status")
 

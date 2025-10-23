@@ -168,6 +168,9 @@ public class WireGuardAdapter {
     /// Adapter state.
     private var state: State = .stopped
 
+    /// Keeps track of whether a recovery attempt from temporary shutdown has already failed.
+    private var temporaryShutdownRecoveryFailed = false
+
     private let wireGuardInterface: WireGuardInterface
 
     /// Tunnel device file descriptor.
@@ -673,6 +676,7 @@ public class WireGuardAdapter {
                 self.logHandler(.verbose, "Connectivity offline, pausing backend.")
 
                 self.state = .temporaryShutdown(settingsGenerator)
+                self.temporaryShutdownRecoveryFailed = false
                 self.wireGuardInterface.turnOff(handle: handle)
             }
 
@@ -691,8 +695,21 @@ public class WireGuardAdapter {
                     try self.startWireGuardBackend(wgConfig: wgConfig),
                     settingsGenerator
                 )
+
+                if self.temporaryShutdownRecoveryFailed {
+                    self.eventMapper.fire(.endTemporaryShutdownStateRecoverySuccess)
+                }
+
+                self.temporaryShutdownRecoveryFailed = false
             } catch {
                 self.logHandler(.error, "Failed to restart backend: \(error.localizedDescription)")
+
+                if self.temporaryShutdownRecoveryFailed {
+                    self.eventMapper.fire(.endTemporaryShutdownStateRecoveryFailure(error))
+                } else {
+                    self.eventMapper.fire(.endTemporaryShutdownStateAttemptFailure(error))
+                    self.temporaryShutdownRecoveryFailed = true
+                }
             }
 
         case .stopped, .snoozing:

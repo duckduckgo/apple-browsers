@@ -34,14 +34,18 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../DesignResourcesKit"),
-        .package(path: "../DesignResourcesKitIcons")
+        .package(path: "../DesignResourcesKitIcons"),
+        .package(path: "../BrowserServicesKit")
     ],
     targets: [
         .target(
             name: "AIChat",
             dependencies: [
                 "DesignResourcesKit",
-                "DesignResourcesKitIcons"
+                "DesignResourcesKitIcons",
+                .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "UserScript", package: "BrowserServicesKit")
             ],
             resources: [
                 .process("Resources/Assets.xcassets")

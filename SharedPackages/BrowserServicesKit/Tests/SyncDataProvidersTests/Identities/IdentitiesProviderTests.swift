@@ -282,7 +282,7 @@ final class IdentitiesProviderTests: IdentitiesProviderTestsBase {
             .identity("Updated", uuid: "1", firstName: "Updated", lastName: "Person")
         ]
 
-        try await provider.handleSyncResponse(sent: sent, received: received, clientTimestamp: Date(), serverTimestamp: "1234", crypter: crypter)
+        try await provider.handleSyncResponse(sent: sent, received: received, clientTimestamp: Date().advanced(by: 1).withMillisecondPrecision, serverTimestamp: "1234", crypter: crypter)
 
         let syncableIdentities = try fetchAllSyncableIdentities()
         XCTAssertEqual(syncableIdentities.count, 1)

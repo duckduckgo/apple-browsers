@@ -59,7 +59,6 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         delegate = nil
         reporter = nil
         featureFlagger = nil
-        windowControllersManager.lastKeyMainWindowController = nil
         windowControllersManager = nil
         fireCoordinator = nil
     }
@@ -276,9 +275,9 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             themeManager: MockThemeManager()
         )
         mainWindowController.window = window
-        windowControllersManager.lastKeyMainWindowController = mainWindowController
+        windowControllersManager.mainWindowControllers = [mainWindowController]
         defer {
-            windowControllersManager.lastKeyMainWindowController = nil
+            windowControllersManager.mainWindowControllers = []
         }
 
         // WHEN

@@ -720,6 +720,7 @@ let package = Package(
                 "Subscription",
                 "SubscriptionTestingUtilities",
                 "NetworkingTestingUtils",
+                "PersistenceTestingUtils",
             ]
         ),
         .testTarget(

@@ -446,14 +446,15 @@ final class ContextualMenuTests: XCTestCase {
             fireCoordinator: fireCoordinator
         )
         let window = MockWindow(isVisible: false)
-        (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(
+        let mainWindowController = MainWindowController(
             window: window,
             mainViewController: mainViewController,
             fireViewModel: fireCoordinator.fireViewModel,
             themeManager: MockThemeManager()
         )
+        (menu.windowControllersManager as! WindowControllersManagerMock).mainWindowControllers = [mainWindowController]
         defer {
-            (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = nil
+            (menu.windowControllersManager as! WindowControllersManagerMock).mainWindowControllers = []
         }
 
         // WHEN
@@ -497,14 +498,15 @@ final class ContextualMenuTests: XCTestCase {
             fireCoordinator: fireCoordinator
         )
         let window = MockWindow(isVisible: false)
-        (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(
+        let mainWindowController = MainWindowController(
             window: window,
             mainViewController: mainViewController,
             fireViewModel: fireCoordinator.fireViewModel,
             themeManager: MockThemeManager()
         )
+        (menu.windowControllersManager as! WindowControllersManagerMock).mainWindowControllers = [mainWindowController]
         defer {
-            (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = nil
+            (menu.windowControllersManager as! WindowControllersManagerMock).mainWindowControllers = []
         }
 
         // WHEN

@@ -249,7 +249,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Win-back Campaign
     lazy var winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = {
         #if DEBUG || REVIEW
-        let winBackOfferDebugStore = WinBackOfferDebugStore()
+        let winBackOfferDebugStore = WinBackOfferDebugStore(keyValueStore: keyValueStore)
         let dateProvider: () -> Date = { winBackOfferDebugStore.simulatedTodayDate }
         #else
         let dateProvider: () -> Date = Date.init

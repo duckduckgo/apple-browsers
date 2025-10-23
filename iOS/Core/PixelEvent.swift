@@ -154,6 +154,7 @@ extension Pixel {
         case browsingMenuAIChatNewTabPage
         case browsingMenuAIChatWebPage
         case browsingMenuRefreshPage
+        case browsingMenuVPN
 
         case addressBarShare
         case addressBarSettings
@@ -786,6 +787,7 @@ extension Pixel {
         case adAttributionLogicWrongVendorOnFailedCompilation
 
         case debugBookmarksInitialStructureQueryFailed
+        case debugBookmarksDatabaseFileMissing
         case debugBookmarksStructureLost
         case debugBookmarksStructureNotRecovered
         case debugBookmarksInvalidRoots
@@ -1542,7 +1544,8 @@ extension Pixel.Event {
         case .browsingMenuFireproof: return "mb_f"
         case .browsingMenuAutofill: return "m_nav_autofill_menu_item_pressed"
         case .browsingMenuRefreshPage: return "m_menu_refresh_page"
-            
+        case .browsingMenuVPN: return "m_nav_vpn_menu_item_pressed"
+
         case .browsingMenuShare: return "m_browsingmenu_share"
         case .browsingMenuListPrint: return "m_browsing_menu_list_print"
         case .addressBarShare: return "m_addressbar_share"
@@ -2114,6 +2117,7 @@ extension Pixel.Event {
         case .emailAutofillKeychainError: return "m_email_autofill_keychain_error"
         
         case .debugBookmarksInitialStructureQueryFailed: return "m_d_bookmarks-initial-structure-query-failed"
+        case .debugBookmarksDatabaseFileMissing: return "m_d_bookmarks_database_file_missing"
         case .debugBookmarksStructureLost: return "m_d_bookmarks_structure_lost"
         case .debugBookmarksStructureNotRecovered: return "m_d_bookmarks_structure_not_recovered"
         case .debugBookmarksInvalidRoots: return "m_d_bookmarks_invalid_roots"

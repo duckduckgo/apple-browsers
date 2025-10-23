@@ -22,6 +22,7 @@ import AppKit
 import Combine
 import Foundation
 
+typealias MockWindowControllerManager = WindowControllersManagerMock
 final class WindowControllersManagerMock: WindowControllersManagerProtocol, AIChatTabManaging {
     var stateChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
     var tabsChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
@@ -51,8 +52,6 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
     var selectedTab: Tab? {
         allTabCollectionViewModels[selectedWindowIndex].selectedTab
     }
-
-    var lastKeyMainWindowController: MainWindowController?
 
     struct ShowArgs: Equatable {
         let url: URL?, source: Tab.TabContent.URLSource, newTab: Bool, selected: Bool?

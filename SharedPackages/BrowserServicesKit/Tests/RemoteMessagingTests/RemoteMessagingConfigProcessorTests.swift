@@ -50,7 +50,8 @@ class RemoteMessagingConfigProcessorTests: XCTestCase {
                 dismissedMessageIds: [],
                 shownMessageIds: [],
                 enabledFeatureFlags: [],
-                isSyncEnabled: false
+                isSyncEnabled: false,
+                shouldShowWinBackOfferUrgencyMessage: false
             ),
             percentileStore: MockRemoteMessagePercentileStore(),
             surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -95,7 +96,8 @@ class RemoteMessagingConfigProcessorTests: XCTestCase {
                     dismissedMessageIds: [],
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
-                    isSyncEnabled: false
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),

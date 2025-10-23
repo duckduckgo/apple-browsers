@@ -312,7 +312,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - User Notifications
 
-    public let notificationsPresenter: VPNNotificationsPresenting
+    private let notificationsPresenter: VPNNotificationsPresenting
 
     // MARK: - Registration Key
 

@@ -1237,6 +1237,15 @@
 		9F387DFE2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DFB2EA8BFA0006861F8 /* MockModalPromptCoordinationManager.swift */; };
 		9F387DFF2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DFB2EA8BFA0006861F8 /* MockModalPromptCoordinationManager.swift */; };
 		9F387E032EA98146006861F8 /* ModalPromptCoordinationFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387E022EA98140006861F8 /* ModalPromptCoordinationFactory.swift */; };
+		9F387E062EA9A1D8006861F8 /* NewAddressBarPickerModalPromptProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387E042EA9A1D8006861F8 /* NewAddressBarPickerModalPromptProviderTests.swift */; };
+		9F387E082EA9A29A006861F8 /* MockNewAddressBarPickerDisplayValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387E072EA9A297006861F8 /* MockNewAddressBarPickerDisplayValidator.swift */; };
+		9F387E092EA9A29A006861F8 /* MockNewAddressBarPickerDisplayValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387E072EA9A297006861F8 /* MockNewAddressBarPickerDisplayValidator.swift */; };
+		9F387E0A2EA9A29A006861F8 /* MockNewAddressBarPickerDisplayValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387E072EA9A297006861F8 /* MockNewAddressBarPickerDisplayValidator.swift */; };
+		9F387E0B2EA9A29A006861F8 /* MockNewAddressBarPickerDisplayValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387E072EA9A297006861F8 /* MockNewAddressBarPickerDisplayValidator.swift */; };
+		9F387E0D2EA9A30B006861F8 /* MockNewAddressBarPickerStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387E0C2EA9A309006861F8 /* MockNewAddressBarPickerStorage.swift */; };
+		9F387E0E2EA9A30B006861F8 /* MockNewAddressBarPickerStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387E0C2EA9A309006861F8 /* MockNewAddressBarPickerStorage.swift */; };
+		9F387E0F2EA9A30B006861F8 /* MockNewAddressBarPickerStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387E0C2EA9A309006861F8 /* MockNewAddressBarPickerStorage.swift */; };
+		9F387E102EA9A30B006861F8 /* MockNewAddressBarPickerStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387E0C2EA9A309006861F8 /* MockNewAddressBarPickerStorage.swift */; };
 		9F38A28C2D09BDE500EB100E /* SpecialErrorPageThreatProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F38A28B2D09BDE500EB100E /* SpecialErrorPageThreatProvider.swift */; };
 		9F3C7FE02D7990740061FA72 /* DefaultBrowserInfoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3C7FDF2D7990710061FA72 /* DefaultBrowserInfoStore.swift */; };
 		9F454D1A2E051CC800B8CC5A /* DefaultBrowserPromptFeatureFlagAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F454D192E051CBE00B8CC5A /* DefaultBrowserPromptFeatureFlagAdapter.swift */; };
@@ -3468,6 +3477,9 @@
 		9F387DF62EA8BF46006861F8 /* MockLaunchSourceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockLaunchSourceManager.swift; sourceTree = "<group>"; };
 		9F387DFB2EA8BFA0006861F8 /* MockModalPromptCoordinationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockModalPromptCoordinationManager.swift; sourceTree = "<group>"; };
 		9F387E022EA98140006861F8 /* ModalPromptCoordinationFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationFactory.swift; sourceTree = "<group>"; };
+		9F387E042EA9A1D8006861F8 /* NewAddressBarPickerModalPromptProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAddressBarPickerModalPromptProviderTests.swift; sourceTree = "<group>"; };
+		9F387E072EA9A297006861F8 /* MockNewAddressBarPickerDisplayValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNewAddressBarPickerDisplayValidator.swift; sourceTree = "<group>"; };
+		9F387E0C2EA9A309006861F8 /* MockNewAddressBarPickerStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNewAddressBarPickerStorage.swift; sourceTree = "<group>"; };
 		9F38A28B2D09BDE500EB100E /* SpecialErrorPageThreatProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialErrorPageThreatProvider.swift; sourceTree = "<group>"; };
 		9F3C7FDF2D7990710061FA72 /* DefaultBrowserInfoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserInfoStore.swift; sourceTree = "<group>"; };
 		9F454D162E050B8B00B8CC5A /* MetricBuilder */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = MetricBuilder; sourceTree = "<group>"; };
@@ -5098,6 +5110,8 @@
 		362E3EBA2E7184AB00E4C762 /* AIChat */ = {
 			isa = PBXGroup;
 			children = (
+				9F387E072EA9A297006861F8 /* MockNewAddressBarPickerDisplayValidator.swift */,
+				9F387E0C2EA9A309006861F8 /* MockNewAddressBarPickerStorage.swift */,
 				98E563962DE8B32D00E6E75F /* MockAIChatSettingsProvider.swift */,
 			);
 			path = AIChat;
@@ -6888,6 +6902,14 @@
 			path = Logging;
 			sourceTree = "<group>";
 		};
+		9F387E052EA9A1D8006861F8 /* Providers */ = {
+			isa = PBXGroup;
+			children = (
+				9F387E042EA9A1D8006861F8 /* NewAddressBarPickerModalPromptProviderTests.swift */,
+			);
+			path = Providers;
+			sourceTree = "<group>";
+		};
 		9F3DF78E2D7EAC8F00857D06 /* CheckDefaultBrowser */ = {
 			isa = PBXGroup;
 			children = (
@@ -6954,6 +6976,7 @@
 			isa = PBXGroup;
 			children = (
 				9F7634BC2EA8633300804550 /* Cooldown */,
+				9F387E052EA9A1D8006861F8 /* Providers */,
 				9F387DE52EA89551006861F8 /* ModalPromptCoordinationManagerTests.swift */,
 			);
 			path = ModalPromptCoordination;
@@ -11163,6 +11186,7 @@
 				C10C39952E44E1B7001410EA /* DaxEasterEggHandlerTests.swift in Sources */,
 				9F254AD92CF605310063B308 /* MockSSLErrorPageNavigationHandler.swift in Sources */,
 				984D036124AF49B80066CFB8 /* TabPreviewsSourceTests.swift in Sources */,
+				9F387E102EA9A30B006861F8 /* MockNewAddressBarPickerStorage.swift in Sources */,
 				85D2187024BF24DB004373D2 /* FaviconRequestModifierTests.swift in Sources */,
 				CB3B4D592D64AADD006DAD63 /* MockOverlayWindowManager.swift in Sources */,
 				C1D3C56D2E895B820086A2BD /* SyncCreditCardsAdapterTests.swift in Sources */,
@@ -11327,6 +11351,7 @@
 				98E563F32DE8B32D00E6E75F /* MockVariantManager.swift in Sources */,
 				9FF967B42E0E270300E45B54 /* DefaultBrowserPromptUserTypeStoreTests.swift in Sources */,
 				C14CA6492E589F6A0060FA7B /* DaxEasterEggLogoCacheTests.swift in Sources */,
+				9F387E062EA9A1D8006861F8 /* NewAddressBarPickerModalPromptProviderTests.swift in Sources */,
 				98E563F42DE8B32D00E6E75F /* AppSettingsMock.swift in Sources */,
 				9FF967BF2E0E7F5200E45B54 /* DefaultBrowserPromptActivityKeyValueFilesStoreTests.swift in Sources */,
 				98E564A22DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift in Sources */,
@@ -11406,6 +11431,7 @@
 				6F3529FF2CDCEDFF00A59170 /* OmniBarLoadingStateBearerTests.swift in Sources */,
 				C1E2C2252D9ED1B60011C66C /* AutofillCreditCardListViewModelTests.swift in Sources */,
 				C14E2F7729DE14EA002AC515 /* AutofillInterfaceUsernameTruncatorTests.swift in Sources */,
+				9F387E092EA9A29A006861F8 /* MockNewAddressBarPickerDisplayValidator.swift in Sources */,
 				9F5BEA7E2D4382430045E484 /* MaliciousSiteProtectionDatasetsFetcherTests.swift in Sources */,
 				9F5BEA7F2D4382430045E484 /* MaliciousSiteProtectionManagerTests.swift in Sources */,
 				4B27FBB12C9252F4007E21A7 /* DefaultPersistentPixelStorageTests.swift in Sources */,
@@ -11561,6 +11587,7 @@
 				98E564202DE8B32D00E6E75F /* MockOmniBar.swift in Sources */,
 				98E564212DE8B32D00E6E75F /* MockUsageSegmentation.swift in Sources */,
 				986CD54C2DE9139400AFA98A /* HomePageMessagesConfigurationMock.swift in Sources */,
+				9F387E0E2EA9A30B006861F8 /* MockNewAddressBarPickerStorage.swift in Sources */,
 				98E564222DE8B32D00E6E75F /* MockPixelFiring.swift in Sources */,
 				98E564232DE8B32D00E6E75F /* MockURLOpener.swift in Sources */,
 				98E564242DE8B32D00E6E75F /* MockPrivacyDataReporter.swift in Sources */,
@@ -11587,6 +11614,7 @@
 				98E564312DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,
 				98E563392DE8B04D00E6E75F /* TestDataLoader.swift in Sources */,
 				98E564392DE8B6BF00E6E75F /* PrivacyConfigurationManagerMock.swift in Sources */,
+				9F387E082EA9A29A006861F8 /* MockNewAddressBarPickerDisplayValidator.swift in Sources */,
 				98E5633A2DE8B04D00E6E75F /* JsonTestDataLoader.swift in Sources */,
 				98E5633B2DE8B04D00E6E75F /* XCTestCaseExtension.swift in Sources */,
 				9F387DDF2EA881D1006861F8 /* PromptCooldownMocks.swift in Sources */,
@@ -11658,6 +11686,7 @@
 				98E563BB2DE8B32D00E6E75F /* MockStatisticsStore.swift in Sources */,
 				98E563BC2DE8B32D00E6E75F /* MockTabPreviewsSource.swift in Sources */,
 				98E563BD2DE8B32D00E6E75F /* MockDataExtensions.swift in Sources */,
+				9F387E0B2EA9A29A006861F8 /* MockNewAddressBarPickerDisplayValidator.swift in Sources */,
 				98E563BE2DE8B32D00E6E75F /* MockBundle.swift in Sources */,
 				98E563BF2DE8B32D00E6E75F /* MockTabInteractionStateSource.swift in Sources */,
 				98E563C02DE8B32D00E6E75F /* MockUserAgent.swift in Sources */,
@@ -11665,6 +11694,7 @@
 				98E563C22DE8B32D00E6E75F /* MockTextZoomCoordinator.swift in Sources */,
 				98E563C42DE8B32D00E6E75F /* MockWebsiteDataManager.swift in Sources */,
 				98E563C52DE8B32D00E6E75F /* OnboardingFirePixelMock.swift in Sources */,
+				9F387E0F2EA9A30B006861F8 /* MockNewAddressBarPickerStorage.swift in Sources */,
 				98E563C62DE8B32D00E6E75F /* MockFaviconStore.swift in Sources */,
 				98E563C72DE8B32D00E6E75F /* MockFireproofing.swift in Sources */,
 				986CD53F2DE8FA1400AFA98A /* ConfigurationMocks.swift in Sources */,
@@ -11748,6 +11778,7 @@
 				98E5645B2DE8DDDC00E6E75F /* MockUsageSegmentation.swift in Sources */,
 				98E564A62DE8EDE200E6E75F /* CapturingAlertPresenter.swift in Sources */,
 				986CD5482DE9134700AFA98A /* ContextualDaxDialogsFactoryTests.swift in Sources */,
+				9F387E0A2EA9A29A006861F8 /* MockNewAddressBarPickerDisplayValidator.swift in Sources */,
 				986CD5492DE9134700AFA98A /* NewTabPageControllerDaxDialogTests.swift in Sources */,
 				986CD54A2DE9134700AFA98A /* ContextualOnboardingNewTabDialogFactoryTests.swift in Sources */,
 				98E5645C2DE8DDDC00E6E75F /* MockTextZoomCoordinator.swift in Sources */,
@@ -11755,6 +11786,7 @@
 				98E564992DE8E8D300E6E75F /* OnboardingDaxFavouritesTests.swift in Sources */,
 				98E5645E2DE8DDDC00E6E75F /* MockTabInteractionStateSource.swift in Sources */,
 				98E5645F2DE8DDDC00E6E75F /* MockTabDelegate.swift in Sources */,
+				9F387E0D2EA9A30B006861F8 /* MockNewAddressBarPickerStorage.swift in Sources */,
 				98E564602DE8DDDC00E6E75F /* MockVariantManager.swift in Sources */,
 				98E564612DE8DDDC00E6E75F /* MockURLOpener.swift in Sources */,
 				986CD54E2DE9139400AFA98A /* HomePageMessagesConfigurationMock.swift in Sources */,

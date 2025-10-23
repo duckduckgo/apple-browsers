@@ -20,10 +20,15 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct SettingsAppearanceView: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
+
+    @State var selectedToolbarButton: MobileCustomization.Button = MobileCustomization.toolbarButtons[0]
+    @State var selectedAddressBarButton: MobileCustomization.Button = MobileCustomization.addressBarButtons[0]!
+    @State var showReloadButton: Bool = true
 
     var body: some View {
         List {
@@ -75,24 +80,33 @@ struct SettingsAppearanceView: View {
         }
     }
 
+    func buttonIconProvider(_ button: MobileCustomization.Button) -> Image? {
+        return Image(uiImage: DesignSystemImages.Glyphs.Size16.favorite)
+    }
+
     @ViewBuilder
     func addressBarButtonSetting() -> some View {
-        // TODO
-        Text(verbatim: #function)
+
+        SettingsPickerCellView(label: "Address Bar button",
+                               options: MobileCustomization.addressBarButtons,
+                               selectedOption: $selectedAddressBarButton,
+                               iconProvider: buttonIconProvider)
 
     }
 
     @ViewBuilder
     func toolbarButtonSetting() -> some View {
-        // TODO
-        Text(verbatim: #function)
+
+        SettingsPickerCellView(label: "Toolbar button",
+                               options: MobileCustomization.toolbarButtons,
+                               selectedOption: $selectedToolbarButton)
 
     }
 
     @ViewBuilder
     func showReloadButtonSetting() -> some View {
-        // TODO
-        Text(verbatim: #function)
+        SettingsCellView(label: "Show Reload Button",
+                         accessory: .toggle(isOn: $showReloadButton))
     }
 
     @ViewBuilder

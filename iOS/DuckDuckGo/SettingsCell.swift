@@ -237,10 +237,14 @@ struct SettingsCellView: View, Identifiable {
 }
 
 /// Encapsulates a Picker with options derived from a generic type that conforms to CustomStringConvertible.
-struct SettingsPickerCellView<T: CaseIterable & Hashable & CustomStringConvertible>: View {
+struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
+
     let label: String
-    let options: [T]
+    let options: [T?]
     @Binding var selectedOption: T
+
+    let iconProvider: ((T) -> Image?)?
+
     @Environment(\.isEnabled) private var isEnabled: Bool
 
     /// Initializes a SettingsPickerCellView.
@@ -250,10 +254,11 @@ struct SettingsPickerCellView<T: CaseIterable & Hashable & CustomStringConvertib
     ///   - label: The label to display above the Picker.
     ///   - options: An array of options of generic type `T` that conforms to CustomStringConvertible.
     ///   - selectedOption: A binding to a state variable that represents the selected option.
-    init(label: String, options: [T], selectedOption: Binding<T>) {
+    init(label: String, options: [T?], selectedOption: Binding<T>, iconProvider: ((T) -> Image?)? = nil) {
         self.label = label
         self.options = options
         self._selectedOption = selectedOption
+        self.iconProvider = iconProvider
     }
 
     var body: some View {
@@ -264,11 +269,16 @@ struct SettingsPickerCellView<T: CaseIterable & Hashable & CustomStringConvertib
             Spacer()
             Menu {
                 ForEach(options, id: \.self) { option in
-                    Group {
+
+                    if let option {
                         getButtonWithAction(action: { self.selectedOption = option },
                                             option: option.description,
-                                            selected: option == selectedOption)
+                                            selected: option == selectedOption,
+                                            icon: iconProvider?(option))
+                    } else {
+                        Divider()
                     }
+                    
                 }
             } label: {
                 HStack {
@@ -287,17 +297,18 @@ struct SettingsPickerCellView<T: CaseIterable & Hashable & CustomStringConvertib
 
     private func getButtonWithAction(action: @escaping () -> Void,
                                      option: String,
-                                     selected: Bool) -> some View {
-        return Group {
-            Button(action: action) {
+                                     selected: Bool,
+                                     icon: Image?) -> some View {
+        return Button(action: action) {
                 HStack {
                     if selected {
                         Image(systemName: "checkmark")
+                    } else if let icon {
+                        icon
                     }
                     Text(option)
                 }
             }
-        }
     }
 }
 

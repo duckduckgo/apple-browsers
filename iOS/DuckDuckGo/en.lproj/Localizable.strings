@@ -2746,11 +2746,11 @@ Take back control of your personal information with the browser designed for dat
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Browser Feedback";
 
-/* Settings screen cell text for clearing AI chat history */
-"settings.clear.aichat.history" = "Clear Duck.ai Chats";
-
 /* Settings screen footer text explaining that Fire Button also clears AI chat history */
 "settings.clear.aichat.history.footer" = "Fire Button will also delete Duck.ai history, including pinned chats.";
+
+/* Settings screen cell text for clearing AI chat history */
+"settings.clear.aichat.history.title" = "Clear Duck.ai Chats";
 
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automatically Clear Data";

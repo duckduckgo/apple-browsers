@@ -1713,7 +1713,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         }
 
         // Scenario: Item on the Right Hand Side Exists
-        if let rightItem = sourceCollectionView.itemNext(to: sourceIndexPath) as? TabBarViewItem {
+        if let rightItem = sourceCollectionView.nextItem(for: sourceIndexPath) as? TabBarViewItem {
             return rightItem.isSelected || rightItem.isMouseOver
         }
 

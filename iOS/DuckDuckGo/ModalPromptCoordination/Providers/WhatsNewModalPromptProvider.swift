@@ -45,18 +45,16 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
             return nil
         }
 
-        guard let displayModel = makeDisplayModel(from: message) else {
+        guard let viewController = makeViewController(message: message) else {
             Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Could not render message \(message.id, privacy: .public)")
             return nil
         }
-
-        Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Providing modal for message: \(message.id, privacy: .public)")
-
+        self.navigationController = viewController
+        
         // Store the message ID to mark it as shown later
         self.currentMessageId = message.id
 
-        let viewController = makeViewController(displayModel: displayModel)
-        self.navigationController = viewController
+        Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Providing modal for message: \(message.id, privacy: .public)")
 
         return ModalPromptConfiguration(
             viewController: viewController,
@@ -104,7 +102,26 @@ extension WhatsNewCoordinator: UIAdaptivePresentationControllerDelegate {
 
 private extension WhatsNewCoordinator {
 
-    func makeViewController(displayModel: RemoteMessagingUI.CardsListDisplayModel) -> WhatsNewViewController {
+    func makeViewController(message: RemoteMessageModel) -> WhatsNewViewController? {
+
+        func makeDisplayModel(for message: RemoteMessageModel) -> RemoteMessagingUI.CardsListDisplayModel? {
+            WhatsNewDisplayModelMapper.makeDisplayModel(
+                from: message,
+                onItemAction: { [weak self] action in
+                    await self?.handleAction(action)
+                },
+                onPrimaryAction: { [weak self] action in
+                    await self?.handleAction(action)
+                },
+                onDismiss: { [weak self] in
+                    self?.dismiss(source: .mainAction)
+                }
+            )
+        }
+
+        // Build The UI Message. Return nil if message is unexpected type
+        guard let displayModel = makeDisplayModel(for: message) else { return nil }
+
         let closeButtonDismissAction: () -> Void = { [weak self] in
             self?.dismiss(source: .closeButton)
         }
@@ -124,52 +141,8 @@ private extension WhatsNewCoordinator {
         Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Marked message as shown: \(messageId, privacy: .public)")
     }
 
-    func makeDisplayModel(from message: RemoteMessageModel) -> RemoteMessagingUI.CardsListDisplayModel? {
-        guard
-            let contentType = message.content,
-            case let .cardsList(mainTitleText, items, primaryActionText, primaryAction) = contentType
-        else {
-            return nil
-        }
-
-        let dismissAction: () -> Void = { [weak self] in
-            self?.dismiss(source: .mainAction)
-        }
-
-        let promoItems = items.map { remoteListItem in
-            RemoteMessagingUI.CardsListDisplayModel.Item(
-                icon: Image(remoteListItem.placeholderImage.rawValue),
-                title: remoteListItem.titleText,
-                description: remoteListItem.descriptionText,
-                disclosureIcon: Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronRightSmall),
-                onTapAction: remoteListItem.action.map { action in
-                    makeAction(for: action)
-                }
-            )
-        }
-
-        return RemoteMessagingUI.CardsListDisplayModel(
-            screenTitle: mainTitleText,
-            items: promoItems,
-            onAppear: nil,
-            primaryAction: (
-                title: primaryActionText,
-                action: makeAction(for: primaryAction, andDismiss: dismissAction)
-            )
-        )
-    }
-
-    func makeAction(
-        for remoteAction: RemoteAction,
-        andDismiss dismissAction: (() -> Void)? = nil
-    ) -> () -> Void {
-        return {
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                await self.remoteMessageActionHandler.handleAction(remoteAction, presenter: self)
-                dismissAction?()
-            }
-        }
+    func handleAction(_ action: RemoteAction) async {
+        await remoteMessageActionHandler.handleAction(action, presenter: self)
     }
 
     func dismiss(source: DismissSource) {

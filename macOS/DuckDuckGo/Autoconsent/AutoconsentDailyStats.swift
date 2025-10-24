@@ -86,17 +86,17 @@ final class AutoconsentDailyStats: AutoconsentDailyStatsManaging {
     func incrementPopupCount() {
         guard featureFlagger.isFeatureOn(.cpmCountPixel) else { return }
         queue.async {
-            let today = self.startOfDay(for: self.currentDateProvider())
+            let today = self.startOfToday()
             self.dailyStats[today, default: 0] += 1
         }
     }
 
     private func cleanOldStats() {
-        let today = self.startOfDay(for: self.currentDateProvider())
+        let today = self.startOfToday()
 
         var stats = self.dailyStats
         stats = stats.filter { date, _ in
-            let days = Calendar.current.dateComponents([.day], from: date, to: today).day ?? 0
+            let days = date.daysSinceNow()
             return days <= Constants.maxDaysToKeep
         }
         self.dailyStats = stats
@@ -105,7 +105,7 @@ final class AutoconsentDailyStats: AutoconsentDailyStatsManaging {
     func sendDailyPixelIfNeeded() {
         guard featureFlagger.isFeatureOn(.cpmCountPixel) else { return }
         queue.async {
-            let today = self.startOfDay(for: self.currentDateProvider())
+            let today = self.startOfToday()
 
             // Get stats for last 10 days
             var params: [String: String] = [:]
@@ -114,19 +114,18 @@ final class AutoconsentDailyStats: AutoconsentDailyStatsManaging {
             var day5Count = 0
             var day10Count = 0
             for daysAgo in 0..<Constants.maxDaysToKeep {
-                if let date = Calendar.current.date(byAdding: .day, value: -(daysAgo + 1), to: today) {
-                    let count = self.dailyStats[date] ?? 0
-                    if daysAgo == 0 {
-                        day1Count += count
-                    }
-                    if daysAgo < 2 {
-                        day2Count += count
-                    }
-                    if daysAgo < 5 {
-                        day5Count += count
-                    }
-                    day10Count += count
+                let date = today.daysAgo(daysAgo + 1)
+                let count = self.dailyStats[date] ?? 0
+                if daysAgo == 0 {
+                    day1Count += count
                 }
+                if daysAgo < 2 {
+                    day2Count += count
+                }
+                if daysAgo < 5 {
+                    day5Count += count
+                }
+                day10Count += count
             }
             params["d1"] = String(day1Count)
             params["d2"] = String(day2Count)
@@ -141,7 +140,7 @@ final class AutoconsentDailyStats: AutoconsentDailyStatsManaging {
         }
     }
 
-    private func startOfDay(for date: Date) -> Date {
-        return Calendar.current.startOfDay(for: date)
+    private func startOfToday() -> Date {
+        return Calendar.current.startOfDay(for: self.currentDateProvider())
     }
 }

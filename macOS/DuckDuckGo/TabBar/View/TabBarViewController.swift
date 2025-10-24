@@ -1702,6 +1702,29 @@ extension TabBarViewController: TabBarViewItemDelegate {
         }
     }
 
+    func tabBarViewItemShouldHideSeparator(_ tabBarViewItem: TabBarViewItem) -> Bool {
+        guard
+            let sourceCollectionView = tabBarViewItem.isPinned ? pinnedTabsCollectionView : collectionView,
+            let sourceIndexPath = sourceCollectionView.indexPath(for: tabBarViewItem) else { return false }
+
+        // Scenario: Last Pinned Item
+        if tabBarViewItem.isPinned && sourceCollectionView.isLastItemInSection(indexPath: sourceIndexPath) {
+            return shouldHideLastPinnedSeparator
+        }
+
+        // Scenario: The Item itself is Highlighted
+        if tabBarViewItem.isMouseOver || tabBarViewItem.isSelected {
+            return true
+        }
+
+        // Scenario: Item on the Right Hand Side Exists
+        if let rightItem = sourceCollectionView.nextItem(for: sourceIndexPath) as? TabBarViewItem {
+            return rightItem.isSelected || rightItem.isMouseOver
+        }
+
+        return false
+    }
+
     func tabBarViewItemCanBeDuplicated(_ tabBarViewItem: TabBarViewItem) -> Bool {
         let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
         let collectionView = isPinned ? pinnedTabsCollectionView : self.collectionView

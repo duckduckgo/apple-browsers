@@ -153,6 +153,11 @@ open class TabBarCollectionView: NSCollectionView {
         }
     }
 
+    func itemNext(to indexPath: IndexPath) -> NSCollectionViewItem? {
+        let nextIndexPath = IndexPath(item: indexPath.item + 1, section: indexPath.section)
+        return item(at: nextIndexPath)
+    }
+
     // MARK: - Accessibility
 
     open override func accessibilityChildren() -> [Any]? {

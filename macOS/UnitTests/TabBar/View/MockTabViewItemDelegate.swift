@@ -31,6 +31,7 @@ class MockTabViewItemDelegate: TabBarViewItemDelegate {
     var hasItemsToTheRight = false
     var audioState: WKWebView.AudioState?
     var isTabBarItemAlreadyBookmarked = false
+    var isNextItemHighlighted = false
 
     private(set) var tabBarViewItemWillOpenContextMenuCalled = false
     private(set) var tabBarViewItemBookmarkThisPageActionCalled = false
@@ -63,6 +64,10 @@ class MockTabViewItemDelegate: TabBarViewItemDelegate {
 
     func tabBarViewItemCloseToTheRightAction(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
 
+    }
+
+    func tabBarViewItemIsNextItemHighlighted(_: DuckDuckGo_Privacy_Browser.TabBarViewItem) -> Bool {
+        isNextItemHighlighted
     }
 
     func tabBarViewItemCanBeDuplicated(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) -> Bool {

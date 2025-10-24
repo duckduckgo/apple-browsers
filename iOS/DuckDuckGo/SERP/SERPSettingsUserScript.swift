@@ -22,6 +22,7 @@ import UserScript
 import Foundation
 import WebKit
 import BrowserServicesKit
+import SERPSettings
 
 public enum SERPSettingsUserScriptMessages: String, CaseIterable {
     case openNativeSettings
@@ -43,22 +44,18 @@ protocol SERPSettingsUserScriptDelegate: AnyObject {
 
 public struct SERPSettingsSnapshot: Codable {
     public let aiChat: Bool
-    public let allowFollowUpQuestion: Bool?
     
     public init(provider: SERPSettingsProviding) {
         self.aiChat = provider.isAIChatEnabled
-        self.allowFollowUpQuestion = provider.isAllowFollowUpQuestionsEnabled
     }
     
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(aiChat, forKey: .aiChat)
-        try container.encodeIfPresent(allowFollowUpQuestion, forKey: .allowFollowUpQuestion)
     }
     
     private enum CodingKeys: String, CodingKey {
         case aiChat = "duckai"
-        case allowFollowUpQuestion = "kbg"
     }
 }
 
@@ -82,34 +79,14 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
     private(set) var messageOriginPolicy: MessageOriginPolicy
 
     let featureName: String = "serpSettings"
-    private let serpSettingsProvider: SERPSettingsProviding
     private let featureFlagger: FeatureFlagger
 
     // MARK: - Initialization
 
-    init(serpSettingsProvider: SERPSettingsProviding,
-         featureFlagger: FeatureFlagger) {
-        self.serpSettingsProvider = serpSettingsProvider
+    init(featureFlagger: FeatureFlagger) {
         messageOriginPolicy = .only(rules: Self.buildMessageOriginRules())
         self.featureFlagger = featureFlagger
         super.init()
-
-        registerForNotifications()
-    }
-
-    func registerForNotifications() {
-        NotificationCenter.default.addObserver(forName: .serpSettingsChanged,
-                                               object: nil,
-                                               queue: .main) { [weak self] _ in
-            guard let self = self else { return }
-            self.nativeSettingsDidChange()
-        }
-        NotificationCenter.default.addObserver(forName: .aiChatSettingsChanged,
-                                               object: nil,
-                                               queue: .main) { [weak self] _ in
-            guard let self = self else { return }
-            self.nativeSettingsDidChange()
-        }
     }
 
     private static func buildMessageOriginRules() -> [HostnameMatchingRule] {
@@ -146,7 +123,7 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
     
     @MainActor
     func getNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
-        return SERPSettingsSnapshot(provider: serpSettingsProvider)
+        return nil
     }
 
     @MainActor
@@ -167,22 +144,10 @@ final class SERPSettingsUserScript: NSObject, Subfeature {
         guard let parameters = params as? [String: Any] else { return nil }
 
         guard let jsonData = try? JSONSerialization.data(withJSONObject: parameters),
-              let serpSettingsSnapshot = try? JSONDecoder().decode(SERPSettingsSnapshot.self, from: jsonData),
-              let allowFollowUpQuestionsSetting = serpSettingsSnapshot.allowFollowUpQuestion else {
+              let serpSettingsSnapshot = try? JSONDecoder().decode(SERPSettingsSnapshot.self, from: jsonData) else {
             return nil
         }
-        
-        serpSettingsProvider.migrateAllowFollowUpQuestions(enable: allowFollowUpQuestionsSetting)
+
         return nil
-    }
-    
-    private func nativeSettingsDidChange() {
-        guard let webView else {
-            return
-        }
-        broker?.push(method: SERPSettingsUserScriptMessages.nativeSettingsDidChange.rawValue,
-                     params: SERPSettingsSnapshot(provider: serpSettingsProvider),
-                     for: self,
-                     into: webView)
     }
 }

@@ -71,7 +71,7 @@ final class FireTests: XCTestCase {
                         faviconManagement: faviconManager,
                         tld: Application.appDelegate.tld,
                         visualizeFireAnimationDecider: visualizeFire,
-                        isAppActiveProvider: { true })  // App is active - should manage windows
+                        isAppActiveProvider: { true }) // App is active - should manage windows
 
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
         var window: NSWindow! = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
@@ -127,7 +127,7 @@ final class FireTests: XCTestCase {
                         faviconManagement: faviconManager,
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld,
-                        isAppActiveProvider: { true })  // App is active - should open new window
+                        isAppActiveProvider: { true }) // App is active - should open new window
 
         // Ensure no windows exist
         XCTAssertEqual(Application.appDelegate.windowControllersManager.mainWindowControllers.count, 0,
@@ -203,7 +203,8 @@ final class FireTests: XCTestCase {
                         windowControllersManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
-                        tld: Application.appDelegate.tld)
+                        tld: Application.appDelegate.tld,
+                        isAppActiveProvider: { true }) // App is active - should manage windows
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
         var window: NSWindow! = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
         Logger.tests.info("\(self.name) opened \(window.windowController ??? "<nil>")")
@@ -243,7 +244,8 @@ final class FireTests: XCTestCase {
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld,
-                        getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) })
+                        getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) },
+                        isAppActiveProvider: { false })
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
         var window: NSWindow! = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
         Logger.tests.info("\(self.name) opened \(window.windowController ??? "<nil>")")
@@ -278,7 +280,8 @@ final class FireTests: XCTestCase {
                         permissionManager: permissionManager,
                         faviconManagement: faviconManager,
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
-                        tld: Application.appDelegate.tld)
+                        tld: Application.appDelegate.tld,
+                        isAppActiveProvider: { false })
 
         _ = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
 
@@ -379,7 +382,8 @@ final class FireTests: XCTestCase {
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld,
-                        getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) })
+                        getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) },
+                        isAppActiveProvider: { true }) // App is active - should open new window
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
         var window: NSWindow! = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
         Logger.tests.info("\(self.name) opened \(window.windowController ??? "<nil>")")
@@ -429,7 +433,8 @@ final class FireTests: XCTestCase {
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld,
-                        getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) })
+                        getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) },
+                        isAppActiveProvider: { true }) // App is active - should open new window
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
         var window: NSWindow! = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
         Logger.tests.info("\(self.name) opened \(window.windowController ??? "<nil>")")

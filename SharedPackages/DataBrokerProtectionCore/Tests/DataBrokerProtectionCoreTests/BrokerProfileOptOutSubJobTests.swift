@@ -337,7 +337,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
         XCTAssertTrue(database.optOutEvents.contains { $0.type == .optOutRequested })
         XCTAssertEqual(database.attemptCount, 1)
-        if case let .optOutSubmitSuccess(_, _, _, tries, _, _, _) = mockPixelHandler.lastFiredEvent {
+        if case let .optOutSubmitSuccess(_, _, _, tries, _, _, _, _) = mockPixelHandler.lastFiredEvent {
             XCTAssertEqual(tries, 1)
         } else {
             XCTFail("Expected opt-out submit success pixel")
@@ -762,7 +762,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
         if let lastPixelFired = mockPixelHandler.lastFiredEvent {
             switch lastPixelFired {
-            case .optOutSubmitSuccess(_, _, _, let tries, _, _, _):
+            case .optOutSubmitSuccess(_, _, _, let tries, _, _, _, _):
                 XCTAssertEqual(tries, 3)
             default: XCTFail("We should be firing the opt-out submit-success pixel last")
             }
@@ -780,7 +780,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         } catch {
             if let lastPixelFired = mockPixelHandler.lastFiredEvent {
                 switch lastPixelFired {
-                case .optOutFailure(_, _, _, _, _, let tries, _, _, _, _):
+                case .optOutFailure(_, _, _, _, _, _, let tries, _, _, _, _, _):
                     XCTAssertEqual(tries, 3)
                 default: XCTFail("We should be firing the opt-out submit-success pixel last")
                 }

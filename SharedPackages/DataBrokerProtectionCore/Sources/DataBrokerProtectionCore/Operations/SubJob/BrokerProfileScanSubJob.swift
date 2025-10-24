@@ -70,11 +70,12 @@ struct BrokerProfileScanSubJob {
         }
 
         let scanContext = createScanStageContext(brokerProfileQueryData: brokerProfileQueryData,
-                                                isManual: isManual,
-                                                database: dependencies.database,
-                                                pixelHandler: dependencies.pixelHandler,
-                                                vpnConnectionState: vpnConnectionState,
-                                                vpnBypassStatus: vpnBypassStatus)
+                                                 isManual: isManual,
+                                                 database: dependencies.database,
+                                                 pixelHandler: dependencies.pixelHandler,
+                                                 parentURL: brokerProfileQueryData.dataBroker.parent,
+                                                 vpnConnectionState: vpnConnectionState,
+                                                 vpnBypassStatus: vpnBypassStatus)
         let eventPixels = scanContext.eventPixels
         let stageCalculator = scanContext.stageCalculator
 
@@ -172,6 +173,7 @@ struct BrokerProfileScanSubJob {
                                          isManual: Bool,
                                          database: DataBrokerProtectionRepository,
                                          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
+                                         parentURL: String?,
                                          vpnConnectionState: String,
                                          vpnBypassStatus: String) -> ScanStageContext {
         // 2. Set up dependencies used to report the status of the scan job:
@@ -182,6 +184,7 @@ struct BrokerProfileScanSubJob {
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
             handler: pixelHandler,
             isImmediateOperation: isManual,
+            parentURL: parentURL,
             vpnConnectionState: vpnConnectionState,
             vpnBypassStatus: vpnBypassStatus
         )
@@ -468,9 +471,17 @@ struct BrokerProfileScanSubJob {
                     let now = Date()
                     let calculateDurationSinceLastStage = now.timeIntervalSince(attempt.lastStageDate) * 1000
                     let calculateDurationSinceStart = now.timeIntervalSince(attempt.startDate) * 1000
-                    pixelHandler.fire(.optOutFinish(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceLastStage))
-                    pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceStart,
-                                                     brokerType: brokerProfileQueryData.dataBroker.type, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
+                    pixelHandler.fire(.optOutFinish(dataBroker: attempt.dataBroker,
+                                                    attemptId: attemptUUID,
+                                                    duration: calculateDurationSinceLastStage,
+                                                    parent: brokerProfileQueryData.dataBroker.parent ?? ""))
+                    pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker,
+                                                     attemptId: attemptUUID,
+                                                     duration: calculateDurationSinceStart,
+                                                     parent: brokerProfileQueryData.dataBroker.parent ?? "",
+                                                     brokerType: brokerProfileQueryData.dataBroker.type,
+                                                     vpnConnectionState: vpnConnectionState,
+                                                     vpnBypassStatus: vpnBypassStatus))
 
                     let recordFoundDate = RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
                                                                           repository: dependencies.database,

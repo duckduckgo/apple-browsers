@@ -496,8 +496,8 @@ final class AddressBarViewController: NSViewController {
     @available(macOS 26.0, *)
     private func forceHideInternalTextFieldLabels(in textField: NSTextField) {
         for subview in textField.subviews {
-            let className = String(describing: type(of: subview))
-            if className.contains("NSTextFieldSimpleLabel") {
+            /// We use contains instead of checking for NSTextFieldSimpleLabel give the name of the class could contain other characters
+            if NSStringFromClass(type(of: subview)).contains("NSTextFieldSimpleLabel") {
                 subview.isHidden = true
                 subview.alphaValue = 0
                 subview.removeFromSuperview()

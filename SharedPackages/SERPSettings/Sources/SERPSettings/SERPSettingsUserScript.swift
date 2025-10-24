@@ -102,7 +102,7 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     ///
     /// Required for pushing messages from native to SERP
     /// (e.g., AI settings changes).
-    weak var webView: WKWebView?
+    public weak var webView: WKWebView?
 
     /// Security policy for message origin validation.
     ///

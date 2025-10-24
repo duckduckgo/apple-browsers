@@ -1308,6 +1308,7 @@
 		9F8E0F382CCFAA8A001EA7C5 /* AddToDockPromoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8E0F372CCFAA8A001EA7C5 /* AddToDockPromoView.swift */; };
 		9F8E0F3D2CCFD072001EA7C5 /* AddToDockPromoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8E0F3C2CCFD071001EA7C5 /* AddToDockPromoViewModel.swift */; };
 		9F8FE9492BAE50E50071E372 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 9F8FE9482BAE50E50071E372 /* Lottie */; };
+		9F94BBAF2EAB395800185F78 /* WhatsNewModalPromptProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F94BBAE2EAB395800185F78 /* WhatsNewModalPromptProviderTests.swift */; };
 		9F989C142E9CB9ED00EC2701 /* ModalPromptCoordinationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F989C132E9CB9ED00EC2701 /* ModalPromptCoordinationService.swift */; };
 		9F989C172E9CCF8700EC2701 /* CardsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F989C162E9CCF8000EC2701 /* CardsListView.swift */; };
 		9F989C1B2E9E205B00EC2701 /* RemoteMessage.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9F989C1A2E9E205B00EC2701 /* RemoteMessage.xcassets */; };
@@ -1381,6 +1382,7 @@
 		9FE7CD5E2E14C81A006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7CD5D2E14C80B006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift */; };
 		9FE7CD632E14D90E006691AB /* DefaultBrowserPromptKeyValueFilesStorePixelHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7CD622E14D900006691AB /* DefaultBrowserPromptKeyValueFilesStorePixelHandlers.swift */; };
 		9FE7CD672E14F03B006691AB /* DefaultBrowserPromptPixelHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7CD662E14F02B006691AB /* DefaultBrowserPromptPixelHandlerTests.swift */; };
+		9FE7E7A12EAAF4BE00AEAD83 /* WhatsNewModalPromptProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7E7A02EAAF4B100AEAD83 /* WhatsNewModalPromptProvider.swift */; };
 		9FE7E7A42EAAF7DA00AEAD83 /* WhatsNewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7E7A32EAAF7DA00AEAD83 /* WhatsNewViewController.swift */; };
 		9FEA222E2C324ECD006B03BF /* ViewVisibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEA222D2C324ECD006B03BF /* ViewVisibility.swift */; };
 		9FEA22322C3270BD006B03BF /* TimerInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEA22312C3270BD006B03BF /* TimerInterface.swift */; };
@@ -3565,6 +3567,7 @@
 		9F8E0F302CCA6390001EA7C5 /* AddToDockTutorialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddToDockTutorialView.swift; sourceTree = "<group>"; };
 		9F8E0F372CCFAA8A001EA7C5 /* AddToDockPromoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddToDockPromoView.swift; sourceTree = "<group>"; };
 		9F8E0F3C2CCFD071001EA7C5 /* AddToDockPromoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddToDockPromoViewModel.swift; sourceTree = "<group>"; };
+		9F94BBAE2EAB395800185F78 /* WhatsNewModalPromptProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewModalPromptProviderTests.swift; sourceTree = "<group>"; };
 		9F9845142E8D35C4004D5C9B /* SystemFrameworksExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SystemFrameworksExtensions; path = ../SharedPackages/SystemFrameworksExtensions; sourceTree = SOURCE_ROOT; };
 		9F989C132E9CB9ED00EC2701 /* ModalPromptCoordinationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationService.swift; sourceTree = "<group>"; };
 		9F989C162E9CCF8000EC2701 /* CardsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardsListView.swift; sourceTree = "<group>"; };
@@ -3637,6 +3640,7 @@
 		9FE7CD5D2E14C80B006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserPromptUserActivityStorage.swift; sourceTree = "<group>"; };
 		9FE7CD622E14D900006691AB /* DefaultBrowserPromptKeyValueFilesStorePixelHandlers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptKeyValueFilesStorePixelHandlers.swift; sourceTree = "<group>"; };
 		9FE7CD662E14F02B006691AB /* DefaultBrowserPromptPixelHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptPixelHandlerTests.swift; sourceTree = "<group>"; };
+		9FE7E7A02EAAF4B100AEAD83 /* WhatsNewModalPromptProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewModalPromptProvider.swift; sourceTree = "<group>"; };
 		9FE7E7A32EAAF7DA00AEAD83 /* WhatsNewViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewViewController.swift; sourceTree = "<group>"; };
 		9FEA222D2C324ECD006B03BF /* ViewVisibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewVisibility.swift; sourceTree = "<group>"; };
 		9FEA22312C3270BD006B03BF /* TimerInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerInterface.swift; sourceTree = "<group>"; };
@@ -6825,6 +6829,7 @@
 				9F0B19AF2EA5E4FA001FA867 /* DefaultBrowserModalPromptProvider.swift */,
 				9F387DE12EA891DE006861F8 /* NewAddressBarPickerModalPromptProvider.swift */,
 				9F387DE32EA89228006861F8 /* WinBackOfferModalPromptProvider.swift */,
+				9FE7E7A02EAAF4B100AEAD83 /* WhatsNewModalPromptProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -6972,6 +6977,7 @@
 		9F387E052EA9A1D8006861F8 /* Providers */ = {
 			isa = PBXGroup;
 			children = (
+				9F94BBAE2EAB395800185F78 /* WhatsNewModalPromptProviderTests.swift */,
 				9F2D99E32EA9F9EE003950CC /* DefaultBrowserModalPromptProviderTests.swift */,
 				9F387E042EA9A1D8006861F8 /* NewAddressBarPickerModalPromptProviderTests.swift */,
 			);
@@ -11102,6 +11108,7 @@
 				1E53508F2C7C9A1F00818DAA /* DefaultSubscriptionManager+AccountManagerKeychainAccessDelegate.swift in Sources */,
 				9F254AB12CF48A6B0063B308 /* SpecialErrorPageNavigationHandler+SSL.swift in Sources */,
 				1DDF402D2BA09482006850D9 /* SettingsMainSettingsView.swift in Sources */,
+				9FE7E7A12EAAF4BE00AEAD83 /* WhatsNewModalPromptProvider.swift in Sources */,
 				85010502292FB1000033978F /* FireproofFaviconUpdater.swift in Sources */,
 				981CA7EA2617797500E119D5 /* MainViewController+AddFavoriteFlow.swift in Sources */,
 				CBF259BD2D4E56E900AC63E4 /* ReportingService.swift in Sources */,
@@ -11427,6 +11434,7 @@
 				1E1D8B5D2994FFE100C96994 /* AutoconsentMessageProtocolTests.swift in Sources */,
 				7B65863A2DB7F5B600D12BE3 /* SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests.swift in Sources */,
 				85C11E532090B23A00BFFEB4 /* UserDefaultsHomeRowReminderStorageTests.swift in Sources */,
+				9F94BBAF2EAB395800185F78 /* WhatsNewModalPromptProviderTests.swift in Sources */,
 				1E7851452D6F267D006AFBE1 /* AsyncHeadlessWebViewSettingsTests.swift in Sources */,
 				F1DA2F7D1EBCF23700313F51 /* ExternalUrlSchemeTests.swift in Sources */,
 				F198D78E1E39762C0088DA8A /* StringExtensionTests.swift in Sources */,

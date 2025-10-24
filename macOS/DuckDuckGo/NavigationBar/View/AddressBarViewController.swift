@@ -497,11 +497,8 @@ final class AddressBarViewController: NSViewController {
     @available(macOS 26.0, *)
     private func setInternalTextFieldLabelsAlpha(_ alpha: CGFloat, in textField: NSTextField) {
         guard featureFlagger.isFeatureOn(.blurryAddressBarTahoeFix) else { return }
-        for subview in textField.subviews {
-            /// We use contains given the name of the view has other characters plus the NSTextFieldSimpleLabel
-            if NSStringFromClass(type(of: subview)).contains("NSTextFieldSimpleLabel") {
-                subview.alphaValue = alpha
-            }
+        for subview in textField.subviews where NSStringFromClass(type(of: subview)).contains("NSTextFieldSimpleLabel") {
+            subview.alphaValue = alpha
         }
     }
 

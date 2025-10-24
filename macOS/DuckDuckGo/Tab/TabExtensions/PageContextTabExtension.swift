@@ -188,7 +188,7 @@ final class PageContextTabExtension {
             return
         }
         shouldForceContextCollection = false
-        cachedPageContext = await replaceFaviconWithDataURL(pageContext)
+        cachedPageContext = await replaceFaviconURLWithEncodedData(pageContext)
         if let sidebarViewController = aiChatSidebarProvider.getSidebarViewController(for: tabID) {
             await sidebarViewController.setPageContext(cachedPageContext)
         }
@@ -207,7 +207,7 @@ final class PageContextTabExtension {
         aiChatMenuConfiguration.shouldAutomaticallySendPageContext || shouldForceContextCollection
     }
 
-    @MainActor private func replaceFaviconWithDataURL(_ pageContext: AIChatPageContextData?) -> AIChatPageContextData? {
+    @MainActor private func replaceFaviconURLWithEncodedData(_ pageContext: AIChatPageContextData?) -> AIChatPageContextData? {
         guard let pageContext = pageContext,
               let pageURL = URL(string: pageContext.url),
               let favicon = getCurrentFavicon(for: pageURL),

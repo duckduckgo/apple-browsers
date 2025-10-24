@@ -54,18 +54,18 @@ class BrowsingHistoryTests: UITestCase {
             fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Fire dialog didn't appear in a reasonable timeframe."
         )
-        
+
         // Select "Everything" scope to clear all history
         app.fireDialogSegmentedControl.buttons["Everything"].click()
-        
+
         // Ensure history toggle is enabled
         fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
-        
+
         // Click burn button to clear history
         fireDialogBurnButton.click()
-        
+
         // Wait for fire animation to complete
         XCTAssertTrue(
             app.fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation),

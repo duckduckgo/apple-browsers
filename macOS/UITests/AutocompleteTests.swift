@@ -190,10 +190,10 @@ private extension AutocompleteTests {
             fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Fire dialog didn't appear in a reasonable timeframe."
         )
-        
+
         // Select "Everything" scope to clear all history
         app.fireDialogSegmentedControl.buttons["Everything"].click()
-        
+
         // Ensure history, cookies, and tabs toggles are enabled
         let fireDialogHistoryToggle = app.fireDialogHistoryToggle
         let fireDialogCookiesToggle = app.fireDialogCookiesToggle
@@ -201,11 +201,11 @@ private extension AutocompleteTests {
         fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
         fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
-        
+
         // Click burn button to clear history
         let fireDialogBurnButton = app.fireDialogBurnButton
         fireDialogBurnButton.click()
-        
+
         // Wait for fire animation to complete
         XCTAssertTrue(
             fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation),

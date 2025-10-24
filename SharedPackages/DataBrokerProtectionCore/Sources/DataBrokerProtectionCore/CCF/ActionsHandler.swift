@@ -117,3 +117,9 @@ public class ActionsHandler {
     }
 
 }
+
+extension ActionsHandler {
+    var isForOptOut: Bool {
+        stepType == .optOut
+    }
+}

@@ -130,6 +130,7 @@ private extension StateRestorationPromptTests {
         }
         wait(for: [fileSavedExpectation], timeout: UITests.Timeouts.elementExistence)
         checkTimer.invalidate()
+        Thread.sleep(forTimeInterval: 0.5) // Allow time for the current state to be saved
     }
 }
 

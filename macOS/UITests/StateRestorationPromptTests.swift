@@ -51,13 +51,17 @@ class StateRestorationPromptTests: UITestCase {
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
         )
+
+        waitForSessionFileToExist()
+        let lastSaved = dateOfLastSavedState()
+
         addressBarTextField.pasteURL(urlForBookmarksBar)
         XCTAssertTrue(
             app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
-        waitForSessionFileToBeSaved()
+        waitForSessionFileToBeUpdated(since: lastSaved)
 
         app.terminate()
         app.launch()
@@ -86,13 +90,17 @@ class StateRestorationPromptTests: UITestCase {
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
         )
+
+        waitForSessionFileToExist()
+        let lastSaved = dateOfLastSavedState()
+
         addressBarTextField.pasteURL(urlForBookmarksBar)
         XCTAssertTrue(
             app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
-        waitForSessionFileToBeSaved()
+        waitForSessionFileToBeUpdated(since: lastSaved)
 
         app.terminate()
         app.launch()
@@ -120,7 +128,17 @@ private extension StateRestorationPromptTests {
         return libraryURL.appendingPathComponent(sandboxPathComponent).appendingPathComponent(fileName)
     }()
 
-    func waitForSessionFileToBeSaved() {
+    func dateOfLastSavedState() -> Date? {
+        do {
+            let attributes = try FileManager.default.attributesOfItem(atPath: Self.persistenceFileLocation.path)
+            return attributes[.modificationDate] as? Date
+        } catch {
+            XCTFail("Failed to get file attributes for session persistence file: \(error)")
+            return nil
+        }
+    }
+
+    func waitForSessionFileToExist() {
         let fileSavedExpectation = expectation(description: "Session persistence file should be saved")
         let checkTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
             if FileManager.default.fileExists(atPath: Self.persistenceFileLocation.path) {
@@ -130,7 +148,21 @@ private extension StateRestorationPromptTests {
         }
         wait(for: [fileSavedExpectation], timeout: UITests.Timeouts.elementExistence)
         checkTimer.invalidate()
-        Thread.sleep(forTimeInterval: 0.5) // Allow time for the current state to be saved
+    }
+
+    func waitForSessionFileToBeUpdated(since previouslySavedState: Date?) {
+        let fileUpdatedExpectation = expectation(description: "Session persistence file should be updated")
+        let checkTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] timer in
+            guard let self, let previouslySavedState, let lastSavedState = dateOfLastSavedState() else {
+                return XCTFail("Could not fetch last modified date for persistence file.")
+            }
+            if lastSavedState > previouslySavedState {
+                fileUpdatedExpectation.fulfill()
+                timer.invalidate()
+            }
+        }
+        wait(for: [fileUpdatedExpectation], timeout: UITests.Timeouts.elementExistence)
+        checkTimer.invalidate()
     }
 }
 

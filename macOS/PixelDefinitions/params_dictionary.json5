@@ -76,12 +76,6 @@
         "description": "The type of software sending the wide pixel",
         "enum": ["app"]
     },
-    "widePixelFormFactor": {
-        "key": "global.form_factor",
-        "type": "string",
-        "description": "The form factor of the current device",
-        "enum": ["phone", "tablet"]
-    },
     "widePixelSampleRate": {
         "key": "global.sample_rate",
         "type": "number",

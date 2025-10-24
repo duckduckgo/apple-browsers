@@ -1702,7 +1702,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         }
     }
 
-    func tabBarViewItemIsNextItemHighlighted(_ tabBarViewItem: TabBarViewItem) -> Bool {
+    func tabBarViewItemShouldHideSeparator(_ tabBarViewItem: TabBarViewItem) -> Bool {
         guard
             let sourceCollectionView = tabBarViewItem.isPinned ? pinnedTabsCollectionView : collectionView,
             let sourceIndexPath = sourceCollectionView.indexPath(for: tabBarViewItem) else { return false }
@@ -1710,6 +1710,11 @@ extension TabBarViewController: TabBarViewItemDelegate {
         // Scenario: Last Pinned Item
         if tabBarViewItem.isPinned && sourceCollectionView.isLastItemInSection(indexPath: sourceIndexPath) {
             return shouldHideLastPinnedSeparator
+        }
+
+        // Scenario: The Item itself is Highlighted
+        if tabBarViewItem.isMouseOver || tabBarViewItem.isSelected {
+            return true
         }
 
         // Scenario: Item on the Right Hand Side Exists

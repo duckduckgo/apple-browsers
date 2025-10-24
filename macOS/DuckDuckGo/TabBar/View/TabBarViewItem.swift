@@ -65,7 +65,7 @@ protocol TabBarViewItemDelegate: AnyObject {
     @MainActor func tabBarViewItemCanBePinned(_: TabBarViewItem) -> Bool
     @MainActor func tabBarViewItemCanBeBookmarked(_: TabBarViewItem) -> Bool
     @MainActor func tabBarViewItemIsAlreadyBookmarked(_: TabBarViewItem) -> Bool
-    @MainActor func tabBarViewItemIsNextItemHighlighted(_: TabBarViewItem) -> Bool
+    @MainActor func tabBarViewItemShouldHideSeparator(_: TabBarViewItem) -> Bool
     @MainActor func tabBarViewAllItemsCanBeBookmarked(_: TabBarViewItem) -> Bool
 
     @MainActor func tabBarViewItemWillOpenContextMenu(_: TabBarViewItem)
@@ -1021,7 +1021,7 @@ final class TabBarViewItem: NSCollectionViewItem {
 
     private func updateSeparatorView() {
         let shouldHideForHover = theme.tabStyleProvider.isRoundedBackgroundPresentOnHover && isMouseOver
-        let rightItemIsHighlighted = delegate?.tabBarViewItemIsNextItemHighlighted(self) ?? false
+        let rightItemIsHighlighted = delegate?.tabBarViewItemShouldHideSeparator(self) ?? false
 
         let newIsHidden = shouldHideForHover || rightItemIsHighlighted || isSelected || isDragged || isLeftToSelected
         if cell.rightSeparatorView.isHidden != newIsHidden {
@@ -1557,7 +1557,7 @@ extension TabBarViewItem {
         func tabBarViewItemCanBeBookmarked(_: TabBarViewItem) -> Bool { false }
         func tabBarViewItemIsAlreadyBookmarked(_: TabBarViewItem) -> Bool { false }
         func tabBarViewAllItemsCanBeBookmarked(_: TabBarViewItem) -> Bool { false }
-        func tabBarViewItemIsNextItemHighlighted(_: TabBarViewItem) -> Bool { false }
+        func tabBarViewItemShouldHideSeparator(_: TabBarViewItem) -> Bool { false }
         func tabBarViewItemWillOpenContextMenu(_: TabBarViewItem) {}
         func tabBarViewItemCloseAction(_: TabBarViewItem) {}
         func tabBarViewItemTogglePermissionAction(_ item: TabBarViewItem) {

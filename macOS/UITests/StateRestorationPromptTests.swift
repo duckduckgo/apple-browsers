@@ -151,11 +151,13 @@ private extension StateRestorationPromptTests {
     }
 
     func waitForSessionFileToBeUpdated(since previouslySavedState: Date?) {
+        guard let previouslySavedState else {
+            XCTFail("Date for previously saved state was unexpectedly nil.")
+            return
+        }
         let fileUpdatedExpectation = expectation(description: "Session persistence file should be updated")
         let checkTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] timer in
-            guard let self, let previouslySavedState, let lastSavedState = dateOfLastSavedState() else {
-                timer.invalidate()
-                XCTFail("Could not fetch last modified date for persistence file.")
+            guard let self, let lastSavedState = dateOfLastSavedState() else {
                 return
             }
             if lastSavedState > previouslySavedState {

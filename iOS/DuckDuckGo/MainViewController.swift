@@ -1895,8 +1895,8 @@ class MainViewController: UIViewController {
                 if let url = interceptedURL,
                    let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
                    let queryItems = components.queryItems {
-                    query = queryItems.first(where: { $0.name == "q" })?.value
-                    shouldAutoSend = queryItems.first(where: { $0.name == "prompt" })?.value == "1"
+                    query = queryItems.first(where: { $0.name == AIChatURLParameters.promptQueryName })?.value
+                    shouldAutoSend = queryItems.first(where: { $0.name == AIChatURLParameters.autoSubmitPromptQueryName })?.value == "1"
                 }
                 
                 if let query = query {

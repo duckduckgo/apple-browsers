@@ -257,11 +257,15 @@ final class TabCollectionViewModel: NSObject {
     }
 
     @discardableResult func select(tab: Tab, forceChange: Bool = false) -> Bool {
-        guard let index = tabCollection.tabs.firstIndex(where: { $0 == tab }) else {
-            return false
+        if let index = tabCollection.tabs.firstIndex(where: { $0 == tab }) {
+            return selectUnpinnedTab(at: index, forceChange: forceChange)
         }
 
-        return selectUnpinnedTab(at: index, forceChange: forceChange)
+        if let index = pinnedTabsCollection?.tabs.firstIndex(where: { $0 == tab }) {
+            return selectPinnedTab(at: index, forceChange: forceChange)
+        }
+
+        return false
     }
 
     @discardableResult func selectDisplayableTabIfPresent(_ content: Tab.TabContent) -> Bool {

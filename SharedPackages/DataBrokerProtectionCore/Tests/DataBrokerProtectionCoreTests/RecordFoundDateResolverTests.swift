@@ -178,10 +178,9 @@ final class RecordFoundDateResolverTests: XCTestCase {
         XCTAssertEqual(result, reappearanceMatchDate)
     }
 
-    func testWhenClearEventWithoutSubsequentMatchReturnsFallback() {
+    func testWhenClearEventWithoutSubsequentMatchReturnsNil() {
         let initialMatchDate = Date(timeIntervalSince1970: 1_000)
         let clearDate = Date(timeIntervalSince1970: 2_000)
-        let fallback = Date(timeIntervalSince1970: 9_999)
 
         let events = [
             HistoryEvent(extractedProfileId: 3, brokerId: 1, profileQueryId: 2, type: .matchesFound(count: 1), date: initialMatchDate),
@@ -203,10 +202,9 @@ final class RecordFoundDateResolverTests: XCTestCase {
         let result = RecordFoundDateResolver.resolve(repository: mockDatabase,
                                                      brokerId: 1,
                                                      profileQueryId: 2,
-                                                     extractedProfileId: 3,
-                                                     fallback: fallback)
+                                                     extractedProfileId: 3)
 
-        XCTAssertEqual(result, fallback)
+        XCTAssertNil(result)
     }
 
     func testWhenMultipleClearEventsUsesMatchAfterLatestClear() {
@@ -244,7 +242,7 @@ final class RecordFoundDateResolverTests: XCTestCase {
         XCTAssertEqual(result, thirdMatch)
     }
 
-    func testReturnsFallbackWhenNoDataAvailable() {
+    func testReturnsNilWhenNoDataAvailable() {
         mockDatabase.optOutToReturn = nil
 
         let fallback = Date(timeIntervalSince1970: 99_999)
@@ -252,9 +250,8 @@ final class RecordFoundDateResolverTests: XCTestCase {
         let result = RecordFoundDateResolver.resolve(repository: mockDatabase,
                                                      brokerId: 1,
                                                      profileQueryId: 2,
-                                                     extractedProfileId: 3,
-                                                     fallback: fallback)
+                                                     extractedProfileId: 3)
 
-        XCTAssertEqual(result, fallback)
+        XCTAssertNil(result)
     }
 }

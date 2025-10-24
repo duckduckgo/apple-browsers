@@ -1,5 +1,5 @@
 //
-//  OptOutConfirmationWideEventData.swift
+//  OptOutSubmissionWideEventData.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,10 +17,11 @@
 //
 
 import Foundation
+import PixelKit
 
-public final class OptOutConfirmationWideEventData: WideEventData {
-    public static let pixelName = "pir_opt_out_confirmation"
-    private static let featureName = "pir-opt-out-confirmation"
+public final class OptOutSubmissionWideEventData: WideEventData {
+    public static let pixelName = "pir_opt_out_submission"
+    private static let featureName = "pir-opt-out-submission"
 
     public var globalData: WideEventGlobalData
     public var contextData: WideEventContextData
@@ -28,7 +29,7 @@ public final class OptOutConfirmationWideEventData: WideEventData {
 
     public var dataBrokerURL: String
     public var dataBrokerVersion: String?
-    public var confirmationInterval: WideEvent.MeasuredInterval?
+    public var submissionInterval: WideEvent.MeasuredInterval?
 
     public var errorData: WideEventErrorData?
 
@@ -37,31 +38,44 @@ public final class OptOutConfirmationWideEventData: WideEventData {
                 appData: WideEventAppData = WideEventAppData(),
                 dataBrokerURL: String,
                 dataBrokerVersion: String?,
-                confirmationInterval: WideEvent.MeasuredInterval? = nil) {
+                submissionInterval: WideEvent.MeasuredInterval? = nil) {
         self.globalData = globalData
         self.contextData = contextData
         self.appData = appData
         self.dataBrokerURL = dataBrokerURL
         self.dataBrokerVersion = dataBrokerVersion
-        self.confirmationInterval = confirmationInterval
+        self.submissionInterval = submissionInterval
     }
 }
 
-extension OptOutConfirmationWideEventData {
+extension OptOutSubmissionWideEventData {
+
+    public enum StatusReason: String {
+        case submissionWindowExpired = "submission_window_expired"
+        case recordFoundDateMissing = "record_found_date_missing"
+    }
+
     public func pixelParameters() -> [String: String] {
         var parameters: [String: String] = [:]
 
         parameters[WideEventParameter.Feature.name] = Self.featureName
-        parameters[WideEventParameter.PIR.OptOutConfirmationFeature.dataBrokerURL] = dataBrokerURL
+        parameters[DBPWideEventParameter.OptOutSubmissionFeature.dataBrokerURL] = dataBrokerURL
 
         if let dataBrokerVersion {
-            parameters[WideEventParameter.PIR.OptOutConfirmationFeature.dataBrokerVersion] = dataBrokerVersion
+            parameters[DBPWideEventParameter.OptOutSubmissionFeature.dataBrokerVersion] = dataBrokerVersion
         }
 
-        if let duration = confirmationInterval?.durationMilliseconds {
-            parameters[WideEventParameter.PIR.OptOutConfirmationFeature.confirmationLatency] = String(duration)
+        if let duration = submissionInterval?.durationMilliseconds {
+            parameters[DBPWideEventParameter.OptOutSubmissionFeature.submissionLatency] = String(duration)
         }
 
         return parameters
+    }
+}
+
+extension OptOutSubmissionWideEventData: WideEventDataMeasuringInterval {
+    public var measuredInterval: WideEvent.MeasuredInterval? {
+        get { submissionInterval }
+        set { submissionInterval = newValue }
     }
 }

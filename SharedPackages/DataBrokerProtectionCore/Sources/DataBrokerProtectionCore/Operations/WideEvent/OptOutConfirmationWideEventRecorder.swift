@@ -1,5 +1,5 @@
 //
-//  OptOutSubmissionWideEventRecorder.swift
+//  OptOutConfirmationWideEventRecorder.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -21,12 +21,12 @@ import BrowserServicesKit
 import PixelKit
 import os.log
 
-final class OptOutSubmissionWideEventRecorder: OptOutWideEventRecording {
+final class OptOutConfirmationWideEventRecorder: OptOutWideEventRecording {
     static let sampleRate: Float = 1.0
 
-    let recorder: WideEventRecorder<OptOutSubmissionWideEventData>
+    let recorder: WideEventRecorder<OptOutConfirmationWideEventData>
 
-    private init(recorder: WideEventRecorder<OptOutSubmissionWideEventData>) {
+    private init(recorder: WideEventRecorder<OptOutConfirmationWideEventData>) {
         self.recorder = recorder
     }
 
@@ -34,35 +34,35 @@ final class OptOutSubmissionWideEventRecorder: OptOutWideEventRecording {
                                identifier: OptOutWideEventIdentifier,
                                dataBrokerURL: String,
                                dataBrokerVersion: String?,
-                               recordFoundDate: Date) -> OptOutSubmissionWideEventRecorder? {
-        guard let recorder = WideEventRecorder<OptOutSubmissionWideEventData>.makeIfPossible(
+                               recordFoundDate: Date) -> OptOutConfirmationWideEventRecorder? {
+        guard let recorder = WideEventRecorder<OptOutConfirmationWideEventData>.makeIfPossible(
             wideEvent: wideEvent,
             identifier: identifier.toGlobalId,
             sampleRate: sampleRate,
             intervalStart: recordFoundDate,
             makeData: { global, interval in
-                OptOutSubmissionWideEventData(globalData: global,
-                                               dataBrokerURL: dataBrokerURL,
-                                               dataBrokerVersion: dataBrokerVersion,
-                                               submissionInterval: interval)
+                OptOutConfirmationWideEventData(globalData: global,
+                                                dataBrokerURL: dataBrokerURL,
+                                                dataBrokerVersion: dataBrokerVersion,
+                                                confirmationInterval: interval)
             }
         ) else { return nil }
 
-        Logger.dataBrokerProtection.debug("PIR submission flow start")
-        return OptOutSubmissionWideEventRecorder(recorder: recorder)
+        Logger.dataBrokerProtection.debug("PIR confirmation flow start")
+        return OptOutConfirmationWideEventRecorder(recorder: recorder)
     }
 
     static func resumeIfPossible(wideEvent: WideEventManaging?,
-                                 identifier: OptOutWideEventIdentifier) -> OptOutSubmissionWideEventRecorder? {
-        guard let recorder = WideEventRecorder<OptOutSubmissionWideEventData>.resumeIfPossible(
+                                 identifier: OptOutWideEventIdentifier) -> OptOutConfirmationWideEventRecorder? {
+        guard let recorder = WideEventRecorder<OptOutConfirmationWideEventData>.resumeIfPossible(
             wideEvent: wideEvent,
             identifier: identifier.toGlobalId
         ) else {
             return nil
         }
 
-        Logger.dataBrokerProtection.debug("PIR submission flow resume")
-        return OptOutSubmissionWideEventRecorder(recorder: recorder)
+        Logger.dataBrokerProtection.debug("PIR confirmation flow resume")
+        return OptOutConfirmationWideEventRecorder(recorder: recorder)
     }
 
     @discardableResult
@@ -70,26 +70,26 @@ final class OptOutSubmissionWideEventRecorder: OptOutWideEventRecording {
                                 identifier: OptOutWideEventIdentifier,
                                 dataBrokerURL: String,
                                 dataBrokerVersion: String?,
-                                recordFoundDateProvider: () -> Date?) -> OptOutSubmissionWideEventRecorder? {
-        guard let recorder = WideEventRecorder<OptOutSubmissionWideEventData>.startIfPossible(
+                                recordFoundDateProvider: () -> Date?) -> OptOutConfirmationWideEventRecorder? {
+        guard let recorder = WideEventRecorder<OptOutConfirmationWideEventData>.startIfPossible(
             wideEvent: wideEvent,
             identifier: identifier.toGlobalId,
             sampleRate: sampleRate,
             intervalStartProvider: recordFoundDateProvider,
             makeData: { global, interval in
-                OptOutSubmissionWideEventData(globalData: global,
-                                               dataBrokerURL: dataBrokerURL,
-                                               dataBrokerVersion: dataBrokerVersion,
-                                               submissionInterval: interval)
+                OptOutConfirmationWideEventData(globalData: global,
+                                                 dataBrokerURL: dataBrokerURL,
+                                                 dataBrokerVersion: dataBrokerVersion,
+                                                 confirmationInterval: interval)
             }
         ) else {
             return nil
         }
 
-        return OptOutSubmissionWideEventRecorder(recorder: recorder)
+        return OptOutConfirmationWideEventRecorder(recorder: recorder)
     }
 
     func markCompleted(at date: Date) {
-        recorder.markCompleted(at: date, invalidIntervalReason: OptOutSubmissionWideEventData.StatusReason.recordFoundDateMissing.rawValue)
+        recorder.markCompleted(at: date, invalidIntervalReason: OptOutConfirmationWideEventData.StatusReason.recordFoundDateMissing.rawValue)
     }
 }

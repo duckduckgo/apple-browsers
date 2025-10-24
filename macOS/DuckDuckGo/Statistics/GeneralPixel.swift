@@ -263,6 +263,12 @@ enum GeneralPixel: PixelKitEvent {
     case userAddedToDockFromDefaultBrowserSection
     case serpAddedToDock
 
+    // SERP Settings
+    // See macOS/PixelDefinitions/pixels/serp_settings_pixels.json5
+    case serpSettingsSerializationFailed
+    case serpSettingsKeyValueStoreReadError
+    case serpSettingsKeyValueStoreWriteError
+
     case protectionToggledOffBreakageReport
     case debugBreakageExperiment
 
@@ -931,6 +937,10 @@ enum GeneralPixel: PixelKitEvent {
         case .userAddedToDockFromMoreOptionsMenu: return "m_mac_user_added_to_dock_from_more_options_menu"
         case .userAddedToDockFromDefaultBrowserSection: return "m_mac_user_added_to_dock_from_default_browser_section"
         case .serpAddedToDock: return "m_mac_serp_added_to_dock"
+
+        case .serpSettingsSerializationFailed: return "m_mac_serp_settings_serialization_failed"
+        case .serpSettingsKeyValueStoreReadError: return "m_mac_serp_settings_keyvalue_store_read_error"
+        case .serpSettingsKeyValueStoreWriteError: return "m_mac_serp_settings_keyvalue_store_write_error"
 
         case .protectionToggledOffBreakageReport: return "m_mac_protection-toggled-off-breakage-report"
         case .debugBreakageExperiment: return "m_mac_debug_breakage_experiment_u"

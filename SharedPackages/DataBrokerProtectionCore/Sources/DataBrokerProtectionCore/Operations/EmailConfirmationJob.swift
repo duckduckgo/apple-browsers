@@ -39,7 +39,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
 
     private let webRunnerForTesting: BrokerProfileOptOutSubJobWebProtocol?
     private let webViewHandlerForTesting: WebViewHandler?
-    private let wideEventRecorder: OptOutSubmissionWideEventRecorder?
 
     private let id = UUID()
     private var _isExecuting = false
@@ -63,12 +62,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         self.jobDependencies = jobDependencies
         self.webRunnerForTesting = webRunnerForTesting
         self.webViewHandlerForTesting = webViewHandlerForTesting
-
-        if let attemptID = UUID(uuidString: jobData.attemptID) {
-            self.wideEventRecorder = OptOutSubmissionWideEventRecorder.resumeIfPossible(wideEvent: jobDependencies.wideEvent, attemptID: attemptID)
-        } else {
-            self.wideEventRecorder = nil
-        }
 
         super.init()
     }
@@ -143,11 +136,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             vpnConnectionState: jobDependencies.vpnBypassService?.connectionStatus ?? "unknown",
             vpnBypassStatus: jobDependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
         )
-        let recordFoundDate = RecordFoundDateResolver.resolve(repository: jobDependencies.database,
-                                                              brokerId: jobData.brokerId,
-                                                              profileQueryId: jobData.profileQueryId,
-                                                              extractedProfileId: jobData.extractedProfileId)
-        stageDurationCalculator.attachWideEventRecorder(wideEventRecorder)
         stageDurationCalculator.setStage(.emailConfirmDecoupled)
 
         let attemptNumber = Int(jobData.emailConfirmationAttemptCount) + 1
@@ -178,6 +166,13 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 )
             )
             stageDurationCalculator.fireOptOutSubmitSuccess(tries: attemptNumber)
+            markSubmissionWideEventCompleted(
+                broker: broker,
+                profileIdentifier: extractedProfile.identifier,
+                brokerId: jobData.brokerId,
+                profileQueryId: jobData.profileQueryId,
+                extractedProfileId: jobData.extractedProfileId
+            )
             try await markAsSuccessful(stageDurationCalculator: stageDurationCalculator, broker: broker)
             Logger.dataBrokerProtection.log("✉️ Email confirmation completed successfully")
         } catch {
@@ -207,52 +202,6 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                        broker: broker,
                                        attemptNumber: attemptNumber,
                                        schedulingConfig: broker.schedulingConfig)
-
-            handleConfirmationWideEventOutcome(error: error,
-                                               attemptNumber: attemptNumber,
-                                               stageDurationCalculator: stageDurationCalculator,
-                                               recordFoundDate: recordFoundDate,
-                                               broker: broker,
-                                               attemptUUID: UUID(uuidString: jobData.attemptID))
-        }
-    }
-
-    private func handleConfirmationWideEventOutcome(error: Error,
-                                                    attemptNumber: Int,
-                                                    stageDurationCalculator: DataBrokerProtectionStageDurationCalculator,
-                                                    recordFoundDate: Date,
-                                                    broker: DataBroker,
-                                                    attemptUUID: UUID?) {
-        switch error {
-        case is TimeoutError:
-            wideEventRecorder?.cancel(with: error)
-            OptOutConfirmationWideEventEmitter.emitCancelled(
-                wideEvent: jobDependencies.wideEvent,
-                attemptID: attemptUUID,
-                dataBrokerURL: broker.url,
-                dataBrokerVersion: broker.version,
-                error: error
-            )
-        case let dbpError as DataBrokerProtectionError where dbpError == .jobTimeout:
-            wideEventRecorder?.cancel(with: error)
-            OptOutConfirmationWideEventEmitter.emitCancelled(
-                wideEvent: jobDependencies.wideEvent,
-                attemptID: attemptUUID,
-                dataBrokerURL: broker.url,
-                dataBrokerVersion: broker.version,
-                error: dbpError
-            )
-        default:
-            if attemptNumber >= Self.maxRetries {
-                wideEventRecorder?.complete(status: .failure, with: error)
-                OptOutConfirmationWideEventEmitter.emitFailure(
-                    wideEvent: jobDependencies.wideEvent,
-                    attemptID: attemptUUID,
-                    dataBrokerURL: broker.url,
-                    dataBrokerVersion: broker.version,
-                    error: error
-                )
-            }
         }
     }
 
@@ -449,6 +398,32 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                                  profileQueryId: profileQueryId,
                                                  extractedProfileId: extractedProfileId,
                                                  schedulingConfig: schedulingConfig)
+    }
+
+    private func markSubmissionWideEventCompleted(broker: DataBroker,
+                                                  profileIdentifier: String?,
+                                                  brokerId: Int64,
+                                                  profileQueryId: Int64,
+                                                  extractedProfileId: Int64) {
+        guard let wideEvent = jobDependencies.wideEvent else { return }
+
+        let recordFoundDateProvider = {
+            RecordFoundDateResolver.resolve(repository: self.jobDependencies.database,
+                                            brokerId: brokerId,
+                                            profileQueryId: profileQueryId,
+                                            extractedProfileId: extractedProfileId)
+        }
+        let wideEventId = OptOutWideEventIdentifier(profileIdentifier: profileIdentifier,
+                                                            brokerId: brokerId,
+                                                            profileQueryId: profileQueryId,
+                                                            extractedProfileId: extractedProfileId)
+        OptOutSubmissionWideEventRecorder.startIfPossible(
+            wideEvent: wideEvent,
+            identifier: wideEventId,
+            dataBrokerURL: broker.url,
+            dataBrokerVersion: broker.version,
+            recordFoundDateProvider: recordFoundDateProvider
+        )?.markCompleted(at: Date())
     }
 
     private func finish() {

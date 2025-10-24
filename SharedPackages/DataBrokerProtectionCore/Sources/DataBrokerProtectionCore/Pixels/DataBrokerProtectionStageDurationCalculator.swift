@@ -96,7 +96,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     private(set) var tries = 1
     let vpnConnectionState: String
     let vpnBypassStatus: String
-    weak var wideEventRecorder: OptOutSubmissionWideEventRecording?
 
     init(attemptId: UUID = UUID(),
          startTime: Date = Date(),
@@ -119,10 +118,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.vpnBypassStatus = vpnBypassStatus
     }
 
-    func attachWideEventRecorder(_ recorder: OptOutSubmissionWideEventRecording?) {
-        self.wideEventRecorder = recorder
-    }
-
     /// Returned in milliseconds
     func durationSinceLastStage() -> Double {
         let now = Date()
@@ -143,10 +138,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         handler.fire(.optOutStart(dataBroker: dataBrokerURL,
                                   attemptId: attemptId,
                                   parent: parentURL ?? ""))
-        wideEventRecorder?.recordStage(.start,
-                                       duration: nil,
-                                       tries: tries,
-                                       actionID: actionID)
     }
 
     func fireOptOutEmailGenerate() {
@@ -158,10 +149,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                           tries: tries,
                                           parent: parentURL ?? "",
                                           actionId: actionID ?? ""))
-        wideEventRecorder?.recordStage(.emailGenerate,
-                                       duration: duration,
-                                       tries: tries,
-                                       actionID: actionID)
     }
 
     func fireOptOutCaptchaParse() {
@@ -173,10 +160,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          tries: tries,
                                          parent: parentURL ?? "",
                                          actionId: actionID ?? ""))
-        wideEventRecorder?.recordStage(.captchaParse,
-                                       duration: duration,
-                                       tries: tries,
-                                       actionID: actionID)
     }
 
     func fireOptOutCaptchaSend() {
@@ -188,10 +171,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                         tries: tries,
                                         parent: parentURL ?? "",
                                         actionId: actionID ?? ""))
-        wideEventRecorder?.recordStage(.captchaSend,
-                                       duration: duration,
-                                       tries: tries,
-                                       actionID: actionID)
     }
 
     func fireOptOutCaptchaSolve() {
@@ -203,10 +182,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          tries: tries,
                                          parent: parentURL ?? "",
                                          actionId: actionID ?? ""))
-        wideEventRecorder?.recordStage(.captchaSolve,
-                                       duration: duration,
-                                       tries: tries,
-                                       actionID: actionID)
     }
 
     func fireOptOutSubmit() {
@@ -219,10 +194,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                    tries: tries,
                                    parent: parentURL ?? "",
                                    actionId: actionID ?? ""))
-        wideEventRecorder?.recordStage(.submit,
-                                       duration: duration,
-                                       tries: tries,
-                                       actionID: actionID)
     }
 
     func fireOptOutEmailReceive() {
@@ -234,10 +205,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          tries: tries,
                                          parent: parentURL ?? "",
                                          actionId: actionID ?? ""))
-        wideEventRecorder?.recordStage(.emailReceive,
-                                       duration: duration,
-                                       tries: tries,
-                                       actionID: actionID)
     }
 
     func fireOptOutEmailConfirm() {
@@ -249,10 +216,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          tries: tries,
                                          parent: parentURL ?? "",
                                          actionId: actionID ?? ""))
-        wideEventRecorder?.recordStage(.emailConfirm,
-                                       duration: duration,
-                                       tries: tries,
-                                       actionID: actionID)
     }
 
     func fireOptOutValidate() {
@@ -265,10 +228,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                      tries: tries,
                                      parent: parentURL ?? "",
                                      actionId: actionID ?? ""))
-        wideEventRecorder?.recordStage(.validate,
-                                       duration: duration,
-                                       tries: tries,
-                                       actionID: actionID)
     }
 
     func fireOptOutFillForm() {
@@ -280,10 +239,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                      tries: tries,
                                      parent: parentURL ?? "",
                                      actionId: actionID ?? ""))
-        wideEventRecorder?.recordStage(.fillForm,
-                                       duration: duration,
-                                       tries: tries,
-                                       actionID: actionID)
     }
 
     func fireOptOutSubmitSuccess(tries: Int) {
@@ -297,10 +252,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                           emailPattern: emailPattern,
                                           vpnConnectionState: vpnConnectionState,
                                           vpnBypassStatus: vpnBypassStatus))
-        wideEventRecorder?.markSubmissionCompleted(at: now,
-                                                   tries: tries,
-                                                   actionID: actionID)
-        wideEventRecorder?.complete(status: .success)
     }
 
     func fireOptOutFailure(tries: Int) {
@@ -327,10 +278,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                            tries: tries,
                                            parent: parentURL ?? "",
                                            actionId: actionID ?? ""))
-        wideEventRecorder?.recordStage(.conditionFound,
-                                       duration: duration,
-                                       tries: tries,
-                                       actionID: actionID)
     }
 
     func fireOptOutConditionNotFound() {
@@ -342,10 +289,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                               tries: tries,
                                               parent: parentURL ?? "",
                                               actionId: actionID ?? ""))
-        wideEventRecorder?.recordStage(.conditionNotFound,
-                                       duration: duration,
-                                       tries: tries,
-                                       actionID: actionID)
     }
 
 #if os(iOS)

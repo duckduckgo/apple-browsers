@@ -22,6 +22,7 @@ import Common
 import AIChat
 import Persistence
 import UserScript
+import BrowserServicesKit
 import SERPSettings
 
 final class SERPSettingsProvider: SERPSettingsProviding {
@@ -30,12 +31,16 @@ final class SERPSettingsProvider: SERPSettingsProviding {
     var eventMapper: EventMapping<SERPSettingsError>?
     var aiChatProvider: AIChatSettingsProvider
 
+    private let featureFlagger: FeatureFlagger
+
     init(keyValueStore: ThrowingKeyValueStoring,
          eventMapper: EventMapping<SERPSettingsError>? = nil,
-         aiChatProvider: AIChatSettingsProvider) {
+         aiChatProvider: AIChatSettingsProvider,
+         featureFlagger: FeatureFlagger) {
         self.keyValueStore = keyValueStore
         self.eventMapper = eventMapper
         self.aiChatProvider = aiChatProvider
+        self.featureFlagger = featureFlagger
     }
 
     func buildMessageOriginRules() -> [HostnameMatchingRule] {

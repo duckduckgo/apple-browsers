@@ -44,6 +44,7 @@ import Navigation
 import Subscription
 import WKAbstractions
 import AIChat
+import SERPSettings
 
 class TabViewController: UIViewController {
 
@@ -3899,16 +3900,15 @@ extension TabViewController {
 }
 
 extension TabViewController: SERPSettingsUserScriptDelegate {
-    
-
-    func serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
+    func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettings.SERPSettingsUserScript) {
         guard let mainVC = parent as? MainViewController else { return }
         mainVC.segueToSettingsPrivateSearch {
             mainVC.closeTab(self.tabModel)
             mainVC.showBars()
         }
     }
-    
+
+    // TODO: Check this on iOS - Maybe is needed
     func serpSettingsUserScriptDidRequestToCloseTabAndOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
         guard let mainVC = parent as? MainViewController else { return }
         mainVC.segueToSettingsAIChat(openedFromSERPSettingsButton: false) { // false because we're reopening previously closed settings

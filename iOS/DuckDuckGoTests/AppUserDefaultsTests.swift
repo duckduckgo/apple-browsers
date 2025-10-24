@@ -221,15 +221,13 @@ class AppUserDefaultsTests: XCTestCase {
 
     func testWhenRefreshButtonPositionIsSetThenItIsPersisted() {
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        appUserDefaults.featureFlagger = createFeatureFlagger(withFeatureFlagEnabled: .refreshButtonPosition)
-        
+
         appUserDefaults.currentRefreshButtonPosition = .menu
         XCTAssertEqual(appUserDefaults.currentRefreshButtonPosition, .menu)
     }
 
     func testWhenReadingRefreshButtonPositionDefaultThenAddressBarIsReturned() {
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        appUserDefaults.featureFlagger = createFeatureFlagger(withFeatureFlagEnabled: .refreshButtonPosition)
         
         XCTAssertEqual(appUserDefaults.currentRefreshButtonPosition, .addressBar)
     }

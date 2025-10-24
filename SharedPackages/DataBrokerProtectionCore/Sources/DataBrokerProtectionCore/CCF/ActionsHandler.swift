@@ -119,7 +119,7 @@ public class ActionsHandler {
 }
 
 extension ActionsHandler {
-    var isForOptOut: Bool {
+    public var isForOptOut: Bool {
         stepType == .optOut
     }
 }

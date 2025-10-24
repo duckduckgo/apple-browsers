@@ -365,6 +365,7 @@ class MockWinbackOfferStore: WinbackOfferStoring {
     var churnDate: Date?
     var offerRedeemed: Bool = false
     var firstDayModalShown: Bool = false
+    var didDismissUrgencyMessage: Bool = false
 
     func storeChurnDate(_ churnDate: Date) {
         self.churnDate = churnDate

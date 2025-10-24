@@ -47,6 +47,7 @@ extension Preferences {
         let settingsIconProvider: SettingsIconsProviding
         let isNew: Bool
         var themeManager: ThemeManager
+        let shouldShowWinBackCampaignBadge: Bool
         @ObservedObject var protectionStatus: PrivacyProtectionStatus
 
         init(pane: PreferencePaneIdentifier,
@@ -56,6 +57,7 @@ extension Preferences {
              settingsIconProvider: SettingsIconsProviding,
              isNew: Bool = false,
              themeManager: ThemeManager,
+             shouldShowWinBackCampaignBadge: Bool = false,
              action: @escaping () -> Void) {
             self.pane = pane
             self.isSelected = isSelected
@@ -65,6 +67,7 @@ extension Preferences {
             self.settingsIconProvider = settingsIconProvider
             self.isNew = isNew
             self.themeManager = themeManager
+            self.shouldShowWinBackCampaignBadge = shouldShowWinBackCampaignBadge
         }
 
         var body: some View {
@@ -83,6 +86,10 @@ extension Preferences {
 
                     if isNew {
                         NewBadgeView()
+                    }
+
+                    if shouldShowWinBackCampaignBadge {
+                        WinBackCampaignBadgeView()
                     }
 
                     Spacer()
@@ -105,6 +112,18 @@ extension Preferences {
     struct NewBadgeView: View {
         var body: some View {
             Text(UserText.newBadge.uppercased())
+                .font(.system(size: 11, weight: .bold))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(Color(designSystemColor: .alertYellow))
+                .foregroundColor(.black)
+                .cornerRadius(4)
+        }
+    }
+
+    struct WinBackCampaignBadgeView: View {
+        var body: some View {
+            Text(UserText.winBackCampaignMenuBadgeText.uppercased())
                 .font(.system(size: 11, weight: .bold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
@@ -180,6 +199,7 @@ extension Preferences {
                                 settingsIconProvider: settingsIconProvider,
                                 isNew: model.isPaneNew(pane: pane),
                                 themeManager: themeManager,
+                                shouldShowWinBackCampaignBadge: model.shouldShowWinBackCampaignBadge(pane: pane),
                                 action: {
                                     model.selectPane(pane)
                                 })

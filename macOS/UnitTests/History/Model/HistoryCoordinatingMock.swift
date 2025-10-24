@@ -56,36 +56,34 @@ class HistoryCoordinatingMock: HistoryCoordinating, SuggestionContainer.HistoryP
         commitChangesCalled = true
     }
 
-    var burnCalled = false
-    var onBurn: (() -> Void)?
-    func burn(except fireproofDomains: FireproofDomains, completion: @escaping () -> Void) {
-        burnCalled = true
-        onBurn?()
-        completion()
-    }
-
     var burnAllCalled = false
     var onBurnAll: (() -> Void)?
-    func burnAll(completion: @escaping () -> Void) {
+    func burnAll(completion: @escaping @MainActor () -> Void) {
         burnAllCalled = true
         onBurnAll?()
-        completion()
+        MainActor.assumeMainThread {
+            completion()
+        }
     }
 
     var burnDomainsCalled = false
     var onBurnDomains: (() -> Void)?
-    func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping (Set<URL>) -> Void) {
+    func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Set<URL>) -> Void) {
         burnDomainsCalled = true
         onBurnDomains?()
-        completion([])
+        MainActor.assumeMainThread {
+            completion([])
+        }
     }
 
     var burnVisitsCalled = false
     var onBurnVisits: (() -> Void)?
-    func burnVisits(_ visits: [Visit], completion: @escaping () -> Void) {
+    func burnVisits(_ visits: [Visit], completion: @escaping @MainActor () -> Void) {
         burnVisitsCalled = true
         onBurnVisits?()
-        completion()
+        MainActor.assumeMainThread {
+            completion()
+        }
     }
 
     var markFailedToLoadUrlCalled = false
@@ -105,7 +103,7 @@ class HistoryCoordinatingMock: HistoryCoordinating, SuggestionContainer.HistoryP
     }
 
     var removeUrlEntryCalled = false
-    func removeUrlEntry(_ url: URL, completion: (((any Error)?) -> Void)?) {
+    func removeUrlEntry(_ url: URL, completion: (@MainActor ((any Error)?) -> Void)?) {
         removeUrlEntryCalled = true
         completion?(nil)
     }

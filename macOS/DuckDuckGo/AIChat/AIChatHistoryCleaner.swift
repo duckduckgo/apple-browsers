@@ -19,6 +19,11 @@
 import BrowserServicesKit
 import Foundation
 import Combine
+import PixelKit
+import WebKit
+import UserScript
+import os.log
+import AIChat
 
 protocol AIChatHistoryCleaning {
     /// Whether the option to clear Duck.ai chat history should be displayed to the user.
@@ -26,9 +31,22 @@ protocol AIChatHistoryCleaning {
 
     /// Publisher that emits updates to the `shouldDisplayCleanAIChatHistoryOption` property.
     var shouldDisplayCleanAIChatHistoryOptionPublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Deletes all Duck.ai chat history.
+    @MainActor func cleanAIChatHistory() async
 }
 
 final class AIChatHistoryCleaner: AIChatHistoryCleaning {
+
+    private let featureFlagger: FeatureFlagger
+    private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+    let notificationCenter: NotificationCenter
+    private var featureDiscoveryObserver: NSObjectProtocol?
+    private let pixelKit: PixelKit?
+    private var historyCleaner: HistoryCleaning
+
+    @Published
+    private var aiChatWasUsedBefore: Bool
 
     @Published
     var shouldDisplayCleanAIChatHistoryOption: Bool = false
@@ -40,18 +58,41 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
     init(featureFlagger: FeatureFlagger,
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
          featureDiscovery: FeatureDiscovery,
-         notificationCenter: NotificationCenter = .default) {
+         notificationCenter: NotificationCenter = .default,
+         pixelKit: PixelKit? = PixelKit.shared,
+         privacyConfig: PrivacyConfigurationManaging) {
         self.featureFlagger = featureFlagger
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.notificationCenter = notificationCenter
+        self.pixelKit = pixelKit
         aiChatWasUsedBefore = featureDiscovery.wasUsedBefore(.aiChat)
 
+        self.historyCleaner = HistoryCleaner(featureFlagger: featureFlagger, privacyConfig: privacyConfig)
         subscribeToChanges()
     }
 
     deinit {
         if let token = featureDiscoveryObserver {
             notificationCenter.removeObserver(token)
+        }
+    }
+
+    /// Launches a headless web view to clear Duck.ai chat history with a C-S-S feature.
+    @MainActor
+    func cleanAIChatHistory() async {
+        guard featureFlagger.isFeatureOn(.aiChatDataClearing) else { return }
+        let result = await historyCleaner.cleanAIChatHistory()
+
+        switch result {
+        case .success:
+            pixelKit?.fire(AIChatPixel.aiChatDeleteHistorySuccessful, frequency: .dailyAndCount)
+        case .failure(let error):
+            Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
+            pixelKit?.fire(AIChatPixel.aiChatDeleteHistoryFailed, frequency: .dailyAndCount)
+
+            if let userScriptError = error as? UserScriptError {
+                userScriptError.fireLoadJSFailedPixelIfNeeded()
+            }
         }
     }
 
@@ -65,18 +106,10 @@ final class AIChatHistoryCleaner: AIChatHistoryCleaning {
         $aiChatWasUsedBefore.combineLatest(aiChatMenuConfiguration.valuesChangedPublisher.prepend(()))
             .map { [weak self] wasUsed, _ in
                 guard let self else { return false }
-                return wasUsed && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.clearAIChatHistory)
+                return wasUsed && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatDataClearing)
             }
-            .prepend(aiChatWasUsedBefore && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.clearAIChatHistory))
+            .prepend(aiChatWasUsedBefore && aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatDataClearing))
             .removeDuplicates()
             .assign(to: &$shouldDisplayCleanAIChatHistoryOption)
     }
-
-    private let featureFlagger: FeatureFlagger
-    private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
-    private let notificationCenter: NotificationCenter
-    private var featureDiscoveryObserver: NSObjectProtocol?
-
-    @Published
-    private var aiChatWasUsedBefore: Bool
 }

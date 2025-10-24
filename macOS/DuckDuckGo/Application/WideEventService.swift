@@ -28,72 +28,21 @@ final class WideEventService {
     private let activationTimeoutInterval: TimeInterval = .hours(4)
     private let restoreTimeoutInterval: TimeInterval = .minutes(15)
 
-    private let sendQueue = DispatchQueue(label: "com.duckduckgo.wide-pixel.send-queue", qos: .utility)
-
     init(wideEvent: WideEventManaging, featureFlagger: FeatureFlagger, subscriptionBridge: SubscriptionAuthV1toV2Bridge) {
         self.wideEvent = wideEvent
         self.featureFlagger = featureFlagger
         self.subscriptionBridge = subscriptionBridge
     }
 
-    func resume() {
-        sendDelayedPixels { }
-    }
-
-    // Runs at app launch, and sends pixels which were abandoned during a flow, such as the user exiting the app during
-    // the flow, or the app crashing.
-    func sendAbandonedPixels(completion: @escaping () -> Void) {
-        let shouldSendSubscriptionPurchaseWidePixel = featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement)
-        let shouldSendSubscriptionRestoreWidePixel = featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement)
-
-        if !shouldSendSubscriptionPurchaseWidePixel && !shouldSendSubscriptionRestoreWidePixel {
-            completion()
-            return
+    func sendPendingEvents() async {
+        if featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) {
+            await sendAbandonedSubscriptionPurchasePixels()
+            await sendDelayedSubscriptionPurchasePixels()
         }
 
-        sendQueue.async { [weak self] in
-            guard let self else { return }
-
-            Task {
-                if shouldSendSubscriptionPurchaseWidePixel {
-                    await self.sendAbandonedSubscriptionPurchasePixels()
-                }
-                if shouldSendSubscriptionRestoreWidePixel {
-                    await self.sendAbandonedSubscriptionRestorePixels()
-                }
-
-                DispatchQueue.main.async {
-                    completion()
-                }
-            }
-        }
-    }
-
-    // Sends pixels which are currently incomplete but may complete later.
-    func sendDelayedPixels(completion: @escaping () -> Void) {
-        let shouldSendSubscriptionPurchaseWidePixel = featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement)
-        let shouldSendSubscriptionRestoreWidePixel = featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement)
-
-        if !shouldSendSubscriptionPurchaseWidePixel && !shouldSendSubscriptionRestoreWidePixel {
-            completion()
-            return
-        }
-
-        sendQueue.async { [weak self] in
-            guard let self else { return }
-
-            Task {
-                if shouldSendSubscriptionPurchaseWidePixel {
-                    await self.sendDelayedSubscriptionPurchasePixels()
-                }
-                if shouldSendSubscriptionRestoreWidePixel {
-                    await self.sendDelayedSubscriptionRestorePixels()
-                }
-
-                DispatchQueue.main.async {
-                    completion()
-                }
-            }
+        if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
+            await sendAbandonedSubscriptionRestorePixels()
+            await sendDelayedSubscriptionRestorePixels()
         }
     }
 

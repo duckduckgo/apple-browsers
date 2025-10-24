@@ -1,31 +1,28 @@
-V DuckDuckGo věříme, že nejlepší způsob, jak ochránit tvoje osobní údaje před hackery, podvodníky a společnostmi, co jim soukromí moc neříká, je vůbec jim přístup k tvým údajům neumožnit. Proto milióny lidí při  prohlížení webu dávají přednost DuckDuckGo před Chromem a dalšími prohlížeči. Náš vyhledávač integrovaný v prohlížeči je jako Google, ale nikdy nesleduje, co hledáš. A naše sada funkcí na ochranu soukromí, která zahrnuje blokování reklamních trackerů a cookies, brání firmám ve sběru tvých dat. Náš prohlížeč je navíc zdarma – vyděláváme na reklamách ve vyhledávání, které respektují soukromí a nezneužívají tvé údaje. Získej zpátky kontrolu nad svými osobními údaji s prohlížečem navrženým pro ochranu dat, ne pro jejich sběr. 
+V DuckDuckGo věříme, že nejlepší způsob, jak ochránit tvoje osobní údaje před hackery, podvodníky a společnostmi, co jim soukromí moc neříká, je vůbec jim přístup k tvým údajům neumožnit. Proto milióny lidí při prohlížení webu dávají přednost DuckDuckGo před Chromem a dalšími prohlížeči. Náš vyhledávač integrovaný v prohlížeči je jako Google, ale nikdy nesleduje, co hledáš. Naše sada funkcí na ochranu soukromí, která zahrnuje blokování reklamních trackerů a cookies, brání firmám ve sběru tvých dat. Naše volitelné integrované funkce s podporou AI, Search Assist a Duck.ai, jsou soukromé a nikdy nepoužívají tvoje data k trénování umělé inteligence. Náš prohlížeč je navíc zdarma – vyděláváme na reklamách ve vyhledávání, které respektují soukromí a nezneužívají tvé údaje. Získej zpátky kontrolu nad svými osobními údaji s prohlížečem navrženým pro ochranu dat, ne pro jejich sběr. 
 
-NEJDŮLEŽITĚJŠÍ FUNKCE
-Spolehni se na ochranu hledání: V prohlížeči je integrované DuckDuckGo Search, takže můžeš na internetu snadno hledat, aniž by tě někdo sledoval. 
+NEJDŮLEŽITĚJŠÍ FUNKCE 
+Spolehni se na ochranu vyhledávání: V prohlížeči je integrované vyhledávání DuckDuckGo Search, takže můžeš na internetu snadno hledat, aniž by tě někdo sledoval.  
+Chraň svou historii prohlížení: Naše ochrana před načítáním trackerů třetích stran blokuje většinu trackerů ještě předtím, než se načtou, takže výrazně překonává to, co ve výchozím nastavení nabízí většina oblíbených prohlížečů.  
+Chatuj soukromě s AI: Duck.ai ti umožňuje vést soukromé konverzace s oblíbenými AI chatovacími modely třetích stran, které anonymizujeme a nikdy je nepoužíváme k trénování umělé inteligence.
+Zabezpeč si e-mail (volitelné): Pomocí funkce Email Protection můžeš zablokovat většinu e-mailových trackerů a skrýt svou skutečnou e-mailovou adresu pomocí adres @duck.com.   
+Sleduj videa na YouTube bez cílených reklam: Duck Player tě ochrání před cílenými reklamami a soubory cookie pomocí rozhraní bez rušivých prvků, které vynucuje to nejpřísnější nastavení ochrany soukromí pro videa na YouTube. 
+Automaticky vynucuj šifrování: Chraň svoje data před slíděním v síti a Wi-Fi tím, že si na mnoha webech vyžádáš připojení HTTPS.  
+Zabraň fingerprintingu: Znesnadni firmám vytváření tvého jedinečného identifikátoru tím, že budeš blokovat jejich pokusy o kombinování informací o tvém prohlížeči a zařízení.  
+Bezpečně synchronizuj a zálohuj (volitelné): Synchronizuj šifrované záložky a hesla mezi svými zařízeními. 
+Vymaž karty a údaje o prohlížení okamžitě pomocí tlačítka Fire Button. 
+Zakaž vyskakovací okna souborů cookie a automaticky nastav své preference tak, aby se minimalizovaly soubory cookie a maximalizovalo soukromí. 
+A spousta dalších ochranných funkcí, které většina prohlížečů nenabízí. 
 
-Chraň svou historii prohlížení: Naše ochrana před načítáním trackerů třetích stran blokuje většinu trackerů ještě předtím, než se načtou, takže výrazně překonává to, co ve výchozím nastavení nabízí většina oblíbených prohlížečů. 
+Předplatné DuckDuckGo
+Výhody pro předplatitele: 
+• Naše VPN: Zabezpeč si připojení až na 5 zařízeních. 
+• Přístup k pokročilým modelům AI v Duck.ai: Chatuj soukromě s modely AI navrženými pro komplexní úkoly.
+• Funkce Personal Information Removal: Najdi a odstraň svoje osobní údaje z webů, které je ukládají a prodávají.
+• Funkce Identity Theft Restoration: Pokud dojde ke krádeži tvé identity, pomůžeme ti ji obnovit.
 
-Zabezpeč si e-mail (volitelné): Pomocí funkce Email Protection můžeš zablokovat většinu e-mailových trackerů a skrýt svou skutečnou e-mailovou adresu pomocí adres @duck.com.  
-
-Sleduj videa na YouTube bez cílených reklam: Duck Player tě ochrání před cílenými reklamami a soubory cookie pomocí rozhraní bez rušivých prvků, které vynucuje to nejpřísnější nastavení ochrany soukromí pro videa na YouTube.
-
-Automaticky vynucuj šifrování: Chraň svoje data před slíděním v síti a Wi-Fi tím, že si na mnoha webech vyžádáš připojení HTTPS. 
-
-Bezpečně synchronizuj a zálohuj (volitelné): Synchronizuj šifrované záložky a hesla mezi svými zařízeními.
-
-Vymaž karty a údaje o prohlížení okamžitě pomocí tlačítka Fire Button.
-
-Zakaž vyskakovací okna souborů cookie a automaticky nastav své preference tak, aby se minimalizovaly soubory cookie a maximalizovalo soukromí.
-
-A mnoho dalších ochranných funkcí, které většina prohlížečů neumožňuje dokonce ani v anonymním režimu, včetně ochrany před sledováním odkazů, funkce Global Privacy Control (GPC) a dalších.
-
-Tak na co čekáš? Vezmi kontrolu nad svými osobními údaji do vlastních rukou! Přidej se k milionům lidí, kteří každý den používají DuckDuckGo k ochraně svého vyhledávání, prohlížení webu a posílání e-mailů. 
-
-Další informace o bezplatné ochraně před trackery si můžeš přečíst na adrese https://help.duckduckgo.com/privacy/web-tracking-protections.
-
-Zásady ochrany osobních údajů: https://duckduckgo.com/privacy/ 
-
-Podmínky služby: https://duckduckgo.com/terms
-
-Poznámka k ochraně před sledováním třetími stranami a reklamám ve vyhledávání: I když možnost sledovat kliknutí na reklamy ve vyhledávání je kvůli tomu omezená, prohlížení reklam ve vyhledávání DuckDuckGo je anonymní. Víc se dozvíš na https://help.duckduckgo.com/privacy/web-tracking-protections.
-
+Ceny a podmínky předplatného DuckDuckGo   
+Platba se ti bude automaticky strhávat z účtu Apple, dokud předplatné nezrušíš, což můžeš udělat v nastavení aplikace. Pokud chceš své předplatné aktivovat na dalších zařízeních, můžeš přidat e-mailovou adresu. Použijeme ji jen k ověření tvého předplatného. Podmínky služby a zásady ochrany osobních údajů  najdeš na https://duckduckgo.com/pro/privacy-terms 
+Další informace o bezplatné ochraně před trackery si můžeš přečíst na adrese https://help.duckduckgo.com/privacy/web-tracking-protections 
+Zásady ochrany osobních údajů: https://duckduckgo.com/privacy/  
+Podmínky služby: https://duckduckgo.com/terms 
+Poznámka k ochraně před sledováním třetími stranami a reklamám ve vyhledávání: I když možnost sledovat kliknutí na reklamy ve vyhledávání je kvůli tomu omezená, prohlížení reklam ve vyhledávání DuckDuckGo je anonymní. Víc se dozvíš na https://help.duckduckgo.com/privacy/web–tracking–protections.

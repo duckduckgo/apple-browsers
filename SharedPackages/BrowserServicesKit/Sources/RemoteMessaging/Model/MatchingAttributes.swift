@@ -30,10 +30,10 @@ struct LocaleMatchingAttribute: SingleValueMatching {
 }
 
 struct OSMatchingAttribute: StringRangeMatching {
-    static let defaultMaxValue: String = AppVersion.shared.osVersion
+    static let defaultMaxValue: String = AppVersion.shared.osVersionMajorMinorPatch
 
     var min: String = MatchingAttributeDefaults.stringDefaultValue
-    var max: String = AppVersion.shared.osVersion
+    var max: String = AppVersion.shared.osVersionMajorMinorPatch
     var value: String = MatchingAttributeDefaults.stringDefaultValue
     var fallback: Bool?
 }
@@ -228,6 +228,18 @@ struct AllFeatureFlagsEnabledMatchingAttribute: ArrayContainsAllMatching {
 
 struct SyncEnabledMatchingAttribute: SingleValueMatching {
     var value: Bool?
+    var fallback: Bool?
+}
+
+struct WinBackOfferUrgencyMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+struct DaysSinceDuckAIUsedMatchingAttribute: NumericRangeMatching {
+    var min: Int = MatchingAttributeDefaults.intDefaultValue
+    var max: Int = MatchingAttributeDefaults.intDefaultMaxValue
+    var value: Int = MatchingAttributeDefaults.intDefaultValue
     var fallback: Bool?
 }
 

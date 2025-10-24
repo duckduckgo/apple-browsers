@@ -16,7 +16,11 @@
 //  limitations under the License.
 //
 
+import Common
+import History
+import HistoryView
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ContextualMenuTests: XCTestCase {
@@ -384,7 +388,7 @@ final class ContextualMenuTests: XCTestCase {
     @MainActor
     func testWhenItemFiresOpenInNewWindowAction_openNewWindowCalled() {
         // GIVEN
-        let bookmark = Bookmark(id: "n", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: true, parentFolderUUID: "1")
+        let bookmark = Bookmark(id: "n", url: "data:text/html,<html>DuckDuckGo</html>", title: "DuckDuckGo", isFavorite: true, parentFolderUUID: "1")
         let menu = BookmarksContextMenu.bookmarkMenu(with: bookmark)
         guard let menuItem = menu.items.first(where: { $0.title == UserText.openInNewWindow }) else {
             XCTFail("No item")
@@ -398,7 +402,7 @@ final class ContextualMenuTests: XCTestCase {
         let manager = menu.windowControllersManager as! WindowControllersManagerMock
         XCTAssertEqual(manager.openWindowCalls, [
             .init(
-                contents: [TabContent.url(.duckDuckGo, source: .bookmark(isFavorite: true))],
+                contents: [TabContent.url(URL(string: "data:text/html,%3Chtml%3EDuckDuckGo%3C/html%3E")!, source: .bookmark(isFavorite: true))],
                 burnerMode: .regular,
                 droppingPoint: nil,
                 contentSize: nil,
@@ -415,16 +419,25 @@ final class ContextualMenuTests: XCTestCase {
     @MainActor
     func testWhenItemFiresOpenAllInNewTabsAction_openNewWindowCalled() {
         // GIVEN
-        let bookmark1 = Bookmark(id: "b1", url: "https://test1.com", title: "Test 1", isFavorite: false, parentFolderUUID: "1")
-        let bookmark2 = Bookmark(id: "b2", url: "https://test2.com", title: "Test 2", isFavorite: false, parentFolderUUID: "1")
-        let bookmark3 = Bookmark(id: "b3", url: "https://test3.com", title: "Test 3", isFavorite: false, parentFolderUUID: "1")
+        let bookmark1 = Bookmark(id: "b1", url: "data:text/html,<html>test1</html>", title: "Test 1", isFavorite: false, parentFolderUUID: "1")
+        let bookmark2 = Bookmark(id: "b2", url: "data:text/html,<html>test2</html>", title: "Test 2", isFavorite: false, parentFolderUUID: "1")
+        let bookmark3 = Bookmark(id: "b3", url: "data:text/html,<html>test3</html>", title: "Test 3", isFavorite: false, parentFolderUUID: "1")
         let folder = BookmarkFolder(id: "1", title: "Folder", children: [bookmark1, bookmark2, bookmark3])
         let menu = BookmarksContextMenu.menu(for: [folder])
         guard let menuItem = menu.items.first(where: { $0.title == UserText.openAllInNewTabs }) else {
             XCTFail("No item")
             return
         }
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
+        let fireCoordinator = FireCoordinator(tld: TLD(),
+                                              featureFlagger: Application.appDelegate.featureFlagger,
+                                              historyCoordinating: HistoryCoordinatingMock(),
+                                              visualizeFireAnimationDecider: nil,
+                                              onboardingContextualDialogsManager: nil,
+                                              fireproofDomains: MockFireproofDomains(),
+                                              faviconManagement: FaviconManagerMock(),
+                                              windowControllersManager: menu.windowControllersManager,
+                                              pixelFiring: nil,
+                                              historyProvider: MockHistoryViewDataProvider())
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
@@ -432,12 +445,16 @@ final class ContextualMenuTests: XCTestCase {
             fireCoordinator: fireCoordinator
         )
         let window = MockWindow(isVisible: false)
-        (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(
+        let mainWindowController = MainWindowController(
             window: window,
             mainViewController: mainViewController,
             fireViewModel: fireCoordinator.fireViewModel,
             themeManager: MockThemeManager()
         )
+        (menu.windowControllersManager as! WindowControllersManagerMock).mainWindowControllers = [mainWindowController]
+        defer {
+            (menu.windowControllersManager as! WindowControllersManagerMock).mainWindowControllers = []
+        }
 
         // WHEN
         _=menuItem.target!.perform(menuItem.action!, with: menuItem)
@@ -454,16 +471,25 @@ final class ContextualMenuTests: XCTestCase {
     @MainActor
     func testWhenItemFiresOpenAllInNewWindowsAction_openNewWindowCalled() {
         // GIVEN
-        let bookmark1 = Bookmark(id: "b1", url: "https://test1.com", title: "Test 1", isFavorite: false, parentFolderUUID: "1")
-        let bookmark2 = Bookmark(id: "b2", url: "https://test2.com", title: "Test 2", isFavorite: false, parentFolderUUID: "1")
-        let bookmark3 = Bookmark(id: "b3", url: "https://test3.com", title: "Test 3", isFavorite: false, parentFolderUUID: "1")
+        let bookmark1 = Bookmark(id: "b1", url: "data:text/html,<html>test1</html>", title: "Test 1", isFavorite: false, parentFolderUUID: "1")
+        let bookmark2 = Bookmark(id: "b2", url: "data:text/html,<html>test2</html>", title: "Test 2", isFavorite: false, parentFolderUUID: "1")
+        let bookmark3 = Bookmark(id: "b3", url: "data:text/html,<html>test3</html>", title: "Test 3", isFavorite: false, parentFolderUUID: "1")
         let folder = BookmarkFolder(id: "1", title: "Folder", children: [bookmark1, bookmark2, bookmark3])
         let menu = BookmarksContextMenu.menu(for: [folder])
         guard let menuItem = menu.items.first(where: { $0.title == UserText.openAllTabsInNewWindow }) else {
             XCTFail("No item")
             return
         }
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
+        let fireCoordinator = FireCoordinator(tld: TLD(),
+                                              featureFlagger: Application.appDelegate.featureFlagger,
+                                              historyCoordinating: HistoryCoordinatingMock(),
+                                              visualizeFireAnimationDecider: nil,
+                                              onboardingContextualDialogsManager: nil,
+                                              fireproofDomains: MockFireproofDomains(),
+                                              faviconManagement: FaviconManagerMock(),
+                                              windowControllersManager: menu.windowControllersManager,
+                                              pixelFiring: nil,
+                                              historyProvider: MockHistoryViewDataProvider())
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
@@ -471,12 +497,16 @@ final class ContextualMenuTests: XCTestCase {
             fireCoordinator: fireCoordinator
         )
         let window = MockWindow(isVisible: false)
-        (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(
+        let mainWindowController = MainWindowController(
             window: window,
             mainViewController: mainViewController,
             fireViewModel: fireCoordinator.fireViewModel,
             themeManager: MockThemeManager()
         )
+        (menu.windowControllersManager as! WindowControllersManagerMock).mainWindowControllers = [mainWindowController]
+        defer {
+            (menu.windowControllersManager as! WindowControllersManagerMock).mainWindowControllers = []
+        }
 
         // WHEN
         _=menuItem.target!.perform(menuItem.action!, with: menuItem)

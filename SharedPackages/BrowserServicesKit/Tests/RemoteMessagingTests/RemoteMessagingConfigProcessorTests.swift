@@ -31,6 +31,7 @@ class RemoteMessagingConfigProcessorTests: XCTestCase {
             appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
             userAttributeMatcher: MobileUserAttributeMatcher(
                 statisticsStore: MockStatisticsStore(),
+                featureDiscovery: MockFeatureDiscovery(),
                 variantManager: MockVariantManager(),
                 bookmarksCount: 0,
                 favoritesCount: 0,
@@ -50,7 +51,8 @@ class RemoteMessagingConfigProcessorTests: XCTestCase {
                 dismissedMessageIds: [],
                 shownMessageIds: [],
                 enabledFeatureFlags: [],
-                isSyncEnabled: false
+                isSyncEnabled: false,
+                shouldShowWinBackOfferUrgencyMessage: false
             ),
             percentileStore: MockRemoteMessagePercentileStore(),
             surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -76,6 +78,7 @@ class RemoteMessagingConfigProcessorTests: XCTestCase {
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
@@ -95,7 +98,8 @@ class RemoteMessagingConfigProcessorTests: XCTestCase {
                     dismissedMessageIds: [],
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
-                    isSyncEnabled: false
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),

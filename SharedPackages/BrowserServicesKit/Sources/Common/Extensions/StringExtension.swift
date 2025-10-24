@@ -51,10 +51,6 @@ public extension String {
 
     // MARK: Prefix/Suffix
 
-    func trimmingWhitespace() -> String {
-        return trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
     func dropping(prefix: String) -> String {
         return hasPrefix(prefix) ? String(dropFirst(prefix.count)) : self
     }
@@ -512,6 +508,11 @@ public extension StringProtocol {
             .map { String($0) }
             .map { $0.idnaEncoded ?? $0 }
             .joined(separator: ".")
+    }
+
+    // MARK: Prefix/Suffix
+    func trimmingWhitespace() -> String {
+        return trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
 }

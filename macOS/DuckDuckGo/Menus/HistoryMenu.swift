@@ -222,8 +222,7 @@ final class HistoryMenu: NSMenu {
             let title = makeTitle(for: grouping)
             let menuItem = NSMenuItem(title: "\(title.0), \(title.1)")
             let isToday = NSCalendar.current.isDateInToday(grouping.date)
-            let dateString = isToday ? nil : title.1
-            let subMenuItems = makeClearThisHistoryMenuItems(with: dateString) + makeMenuItems(from: grouping)
+            let subMenuItems = makeClearTimeWindowHistoryMenuItems(with: isToday ? .today : .other(date: grouping.date)) + makeMenuItems(from: grouping)
             let submenu = NSMenu(items: subMenuItems)
             menuItem.submenu = submenu
             return menuItem
@@ -263,15 +262,15 @@ final class HistoryMenu: NSMenu {
     private func makeTitle(for grouping: HistoryGrouping) -> (String, String) {
         let prefix: String
         if grouping.date > Date.daysAgo(2).startOfDay {
-            prefix = relativePrefixFormatter.string(from: grouping.date)
+            prefix = Self.relativePrefixFormatter.string(from: grouping.date)
         } else {
-            prefix = prefixFormatter.string(from: grouping.date)
+            prefix = Self.prefixFormatter.string(from: grouping.date)
         }
-        let suffix = suffixFormatter.string(from: grouping.date)
+        let suffix = Self.suffixFormatter.string(from: grouping.date)
         return (prefix, suffix)
     }
 
-    let relativePrefixFormatter: DateFormatter = {
+    static let relativePrefixFormatter: DateFormatter = {
         let dateFormatter = DateFormatter()
         dateFormatter.timeStyle = .none
         dateFormatter.dateStyle = .medium
@@ -279,24 +278,23 @@ final class HistoryMenu: NSMenu {
         return dateFormatter
     }()
 
-    let suffixFormatter: DateFormatter = {
+    static let suffixFormatter: DateFormatter = {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "MMMM dd, YYYY"
         return dateFormatter
     }()
 
-    let prefixFormatter: DateFormatter = {
+    static let prefixFormatter: DateFormatter = {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "EEEE"
         return dateFormatter
     }()
 
-    private func makeClearThisHistoryMenuItems(with dateString: String?) -> [NSMenuItem] {
-        let headerItem = ClearThisHistoryMenuItem(title: featureFlagger.isFeatureOn(.historyView) ? UserText.deleteThisHistoryMenuItem : UserText.clearThisHistoryMenuItem,
-                                                  action: #selector(AppDelegate.clearThisHistory(_:)),
-                                                  keyEquivalent: "")
-        let historyTimeWindow = ClearThisHistoryMenuItem.HistoryTimeWindow(dateString: dateString)
-        headerItem.setRepresentingObject(historyTimeWindow: historyTimeWindow)
+    private func makeClearTimeWindowHistoryMenuItems(with timeWindow: ClearTimeWindowHistoryMenuItem.HistoryTimeWindow) -> [NSMenuItem] {
+        let headerItem = ClearTimeWindowHistoryMenuItem(historyTimeWindow: timeWindow,
+                                                        title: featureFlagger.isFeatureOn(.historyView) ? UserText.deleteThisHistoryMenuItem : UserText.clearThisHistoryMenuItem,
+                                                        action: #selector(AppDelegate.clearTimeWindowHistory(_:)),
+                                                        keyEquivalent: "")
         return [
             headerItem,
             .separator()

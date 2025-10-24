@@ -266,9 +266,6 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     func checkForUpdateRespectingRollout() {
 #if DEBUG
         guard NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG) else {
-            Task { @MainActor in
-                updater?.checkForUpdateInformation()
-            }
             return
         }
 #endif
@@ -281,11 +278,8 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     private func performUpdateCheck() async {
         // Check if we can start a new check (Sparkle availability + rate limiting)
         let updaterAvailability = SparkleUpdaterAvailabilityChecker(updater: updater)
-        guard await updateCheckState.canStartNewCheck(updater: updaterAvailability) else {
+        guard await updateCheckState.canStartNewCheck(updater: updaterAvailability, latestUpdate: latestUpdate) else {
             Logger.updates.debug("Update check skipped - not allowed by Sparkle or rate limited")
-            Task { @MainActor in
-                updater?.checkForUpdateInformation()
-            }
             return
         }
 
@@ -358,7 +352,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     private func performUpdateCheckSkippingRollout() async {
         // User-initiated checks skip rate limiting but still respect Sparkle availability
         let updaterAvailability = SparkleUpdaterAvailabilityChecker(updater: updater)
-        guard await updateCheckState.canStartNewCheck(updater: updaterAvailability, minimumInterval: 0) else {
+        guard await updateCheckState.canStartNewCheck(updater: updaterAvailability, latestUpdate: latestUpdate, minimumInterval: 0) else {
             Logger.updates.debug("User-initiated update check skipped - not allowed by Sparkle")
             return
         }

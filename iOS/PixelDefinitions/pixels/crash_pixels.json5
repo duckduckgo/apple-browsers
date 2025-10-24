@@ -139,6 +139,15 @@
         "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
 
+    // Bookmarks database file missing before loading
+    "m_d_bookmarks_database_file_missing": {
+        "description": "Fires when bookmarks database file doesn't exist before attempting to load it.",
+        "owners": ["jaceklyp", "bwaresiak"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
     // Enhanced bookmarks structure lost pixel with diagnostic parameters
     "m_d_bookmarks_structure_lost": {
         "description": "Fires when bookmarks database loads but structure is missing/empty with detailed diagnostics.",
@@ -178,6 +187,16 @@
             {
                 "key": "is-background",
                 "description": "Whether the app was in background state when the validation occurred",
+                "type": "boolean"
+            },
+            {
+                "key": "app-group-container-available",
+                "description": "Whether the app group container URL is accessible",
+                "type": "boolean"
+            },
+            {
+                "key": "app-group-marker-present",
+                "description": "Whether the app group access marker file exists (indicates previous successful access)",
                 "type": "boolean"
             }
         ]

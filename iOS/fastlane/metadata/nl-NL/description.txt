@@ -1,33 +1,28 @@
-Bij DuckDuckGo zijn we ervan overtuigd dat de beste manier om je persoonlijke gegevens te beschermen tegen hackers, oplichters en privacy-invasieve bedrijven is om te voorkomen dat ze worden verzameld. Daarom verkiezen miljoenen mensen DuckDuckGo boven Chrome en andere browsers  om online te zoeken en te surfen. Onze ingebouwde zoekmachine is zoals Google, maar volgt je zoekopdrachten nooit. En met onze browsebescherming, zoals blokkering van advertentietrackers en cookieblokkering, voorkom je dat andere bedrijven je gegevens verzamelen. Bovendien is onze browser gratis - we verdienen geld met zoekadvertenties die de privacy respecteren, niet door je gegevens uit te buiten. Krijg weer controle over je persoonlijke gegevens met de browser die is ontworpen voor gegevensbescherming, niet voor gegevensverzameling. 
+Bij DuckDuckGo zijn we ervan overtuigd dat de beste manier om je persoonlijke gegevens te beschermen tegen hackers, oplichters en privacy-invasieve bedrijven is om te voorkomen dat ze worden verzameld. Daarom verkiezen miljoenen mensen DuckDuckGo boven Chrome en andere browsers om online te zoeken en te browsen. Onze ingebouwde zoekmachine lijkt op Google, maar houdt je zoekopdrachten niet bij. En met onze browsebescherming, zoals blokkering van trackers en cookieblokkering, voorkom je dat andere bedrijven je gegevens verzamelen. Onze optionele geïntegreerde AI-functies, Search Assist en Duck.ai, zijn privé en gebruiken je gegevens nooit om AI te trainen. Bovendien is onze browser gratis - we verdienen geld met zoekadvertenties die je privacy respecteren, niet door je gegevens uit te buiten. Krijg weer de controle over je persoonlijke gegevens met de browser die is ontworpen voor gegevensbescherming, niet voor gegevensverzameling. 
 
-BELANGRIJKSTE FUNCTIEKENMERKEN
-Bescherm je zoekopdrachten standaard: DuckDuckGo Search is ingebouwd, zodat je gemakkelijk online kunt zoeken zonder te worden gevolgd. 
+BELANGRIJKSTE FUNCTIEKENMERKEN 
+Bescherm je zoekopdrachten standaard: DuckDuckGo Search is ingebouwd, zodat je gemakkelijk online kunt zoeken zonder te worden gevolgd.  
+Scherm je browsegeschiedenis af: onze externe Tracker Loading Protection blokkeert de meeste trackers voordat ze worden geladen en gaat daarmee een heel stuk verder dan wat de meeste populaire browsers standaard bieden.  
+Privé chatten met AI: Duck.ai laat je privégesprekken voeren metAI-modellen van derden, geanonimiseerd door ons en nooit gebruikt om AI te trainen.
+Beveilig je e-mail (optioneel): gebruik Email Protection om de meeste e-mailtrackers te blokkeren en je bestaande e-mailadres te verbergen met @duck.com-adressen.   
+Bekijk YouTube-video's zonder gerichte advertenties: Duck Player beschermt je tegen gerichte advertenties en cookies met een interface zonder afleiding die de strengste privacy-instellingen van YouTube voor ingesloten video's hanteert. 
+Dwing versleuteling automatisch af: bescherm je gegevens tegen netwerk- en wifi-snoopers door veel sites te dwingen een HTTPS-verbinding te gebruiken.  
+Ontsnap aan fingerprinting: blokkeer pogingen om informatie over je browser en apparaat te combineren en maak het op die manier moeilijker voor bedrijven om een unieke ID voor je te maken.  
+Synchroniseer en maak veilig back-ups (optioneel): synchroniseer versleutelde bladwijzers en wachtwoorden op je apparaten. 
+Wis je tabbladen en browsegegevens in een oogwenk met de Fire Button. 
+Verban cookie pop-ups en stel automatisch je voorkeuren in om cookies te minimaliseren en privacy te maximaliseren. 
+En nog veel meer beveiligingen die niet beschikbaar zijn in de meeste browsers. 
 
-Scherm je browsegeschiedenis af: onze externe Tracker Loading Protection blokkeert de meeste trackers voordat ze worden geladen en gaat daarmee aanzienlijk verder dan wat de meeste populaire browsers standaard bieden. 
+DuckDuckGo-abonnement
+Abonnees krijgen: 
+• Ons VPN: Beveilig je verbinding op maximaal 5 apparaten. 
+• Toegang tot geavanceerde AI-modellen in Duck.ai: chat privé met AI-modellen die zijn gebouwd voor complexe taken.
+• Personal Information Removal: zoek en verwijder persoonlijke informatie van sites die deze opslaan en verkopen.
+• Identity Theft Restoration: als je identiteit is gestolen, helpen we je deze te herstellen.
 
-Beveilig je e-mail (optioneel): gebruik Email Protection om de meeste e-mailtrackers te blokkeren en je bestaande e-mailadres te verbergen met @duck.com-adressen.  
-
-Bekijk YouTube-video's zonder gerichte advertenties: Duck Player beschermt je tegen gerichte advertenties en cookies met een interface zonder afleiding die de strengste privacy-instellingen van YouTube voor ingesloten video's hanteert.
-
-Dwing versleuteling automatisch af: bescherm je gegevens tegen netwerk- en wifi-snoopers door veel sites te dwingen een HTTPS-verbinding te gebruiken. 
-
-Ontsnap aan fingerprinting: blokkeer pogingen om informatie over je browser en apparaat te combineren en maak het op die manier moeilijker voor bedrijven om een unieke ID voor je te maken. 
-
-Synchroniseer en maak veilig back-ups (Optioneel): synchroniseer versleutelde bladwijzers en wachtwoorden op je apparaten.
-
-Wis je tabbladen en browsegegevens in een oogwenk met de Fire Button.
-
-Verban cookie pop-ups en stel automatisch je voorkeuren in om cookies te minimaliseren en privacy te maximaliseren.
-
-En nog veel meer beveiligingsmethoden die niet beschikbaar zijn in de meeste internetbrowsers, zelfs niet in de privémodus, waaronder bescherming tegen linktracking, Global Privacy Control (GPC) en meer.
-
-Je hoeft niet te wachten om weer controle over je persoonlijke informatie te krijgen. Sluit je aan bij de miljoenen mensen die DuckDuckGo gebruiken om hun dagelijkse zoekopdrachten, browsesessies en e-mails te beschermen. 
-
-Lees meer over onze gratis trackingbescherming op https://help.duckduckgo.com/privacy/web-tracking-protections
-
-Privacybeleid: https://duckduckgo.com/privacy/ 
-
-Algemene voorwaarden: https://duckduckgo.com/terms
-
-Opmerking over externe Tracker Protection en zoekadvertenties: hoewel er enkele beperkingen zijn nadat je op zoekadvertenties hebt geklikt, is het bekijken van advertenties op DuckDuckGo anoniem. Meer informatie vind je hier https://help.duckduckgo.com/privacy/web-tracking-protections
-
+DuckDuckGo-abonnement prijzen & voorwaarden   
+De betaling wordt automatisch in rekening gebracht op je Apple-account totdat je opzegt, wat je kunt doen in de app-instellingen. Je hebt de optie om een e-mailadres op te geven om je abonnement op andere apparaten te activeren, en we zullen dat e-mailadres alleen gebruiken om je abonnement te verifiëren. Voor de servicevoorwaarden en het privacybeleid bezoek je https://duckduckgo.com/pro/privacy-terms 
+Lees meer over onze gratis trackingbescherming op https://help.duckduckgo.com/privacy/web-tracking-protections 
+Privacybeleid: https://duckduckgo.com/privacy/  
+Algemene voorwaarden: https://duckduckgo.com/terms 
+Opmerking over externe Tracker Protection en zoekadvertenties: hoewel er enkele beperkingen zijn nadat je op zoekadvertenties hebt geklikt, is het bekijken van advertenties op DuckDuckGo anoniem. Lees hier meer https://help.duckduckgo.com/privacy/web-tracking-protections

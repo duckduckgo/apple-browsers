@@ -23,11 +23,11 @@ import Persistence
 
 protocol PermissionStore: AnyObject {
     func loadPermissions() throws -> [PermissionEntity]
-    func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?, completionHandler: ((Error?) -> Void)?)
-    func remove(objectWithId id: NSManagedObjectID, completionHandler: ((Error?) -> Void)?)
+    func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?, completionHandler: (@MainActor (Error?) -> Void)?)
+    func remove(objectWithId id: NSManagedObjectID, completionHandler: (@MainActor (Error?) -> Void)?)
     func add(domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision) throws -> StoredPermission
 
-    func clear(except: [StoredPermission], completionHandler: ((Error?) -> Void)?)
+    func clear(except: [StoredPermission], completionHandler: (@MainActor (Error?) -> Void)?)
 }
 
 extension PermissionStore {
@@ -54,7 +54,7 @@ final class LocalPermissionStore: PermissionStore {
     }
 
     func loadPermissions() throws -> [PermissionEntity] {
-        guard let context = context else { return [] }
+        guard let context else { return [] }
 
         var entities = [PermissionEntity]()
         var coreDataError: Error?
@@ -78,13 +78,16 @@ final class LocalPermissionStore: PermissionStore {
         return entities
     }
 
-    func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?, completionHandler: ((Error?) -> Void)?) {
-        guard let context = context else { return }
+    func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?, completionHandler: (@MainActor (Error?) -> Void)?) {
         func mainQueueCompletion(error: Error?) {
             guard completionHandler != nil else { return }
-            DispatchQueue.main.async {
+            DispatchQueue.main.asyncOrNow {
                 completionHandler?(error)
             }
+        }
+        guard let context else {
+            mainQueueCompletion(error: nil)
+            return
         }
 
         context.perform { [context] in
@@ -111,17 +114,20 @@ final class LocalPermissionStore: PermissionStore {
         }
     }
 
-    func remove(objectWithId id: NSManagedObjectID, completionHandler: ((Error?) -> Void)?) {
+    func remove(objectWithId id: NSManagedObjectID, completionHandler: (@MainActor (Error?) -> Void)?) {
         update(objectWithId: id, decision: nil, completionHandler: completionHandler)
     }
 
-    func clear(except exceptions: [StoredPermission], completionHandler: ((Error?) -> Void)?) {
-        guard let context = context else { return }
+    func clear(except exceptions: [StoredPermission], completionHandler: (@MainActor (Error?) -> Void)?) {
         func mainQueueCompletion(error: Error?) {
             guard completionHandler != nil else { return }
-            DispatchQueue.main.async {
+            DispatchQueue.main.asyncOrNow {
                 completionHandler?(error)
             }
+        }
+        guard let context else {
+             mainQueueCompletion(error: nil)
+            return
         }
 
         context.perform { [context] in

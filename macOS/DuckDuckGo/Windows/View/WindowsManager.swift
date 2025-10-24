@@ -156,7 +156,7 @@ final class WindowsManager {
 
     @discardableResult
     class func openNewWindow(with initialUrl: URL, source: Tab.TabContent.URLSource, isBurner: Bool? = nil, parentTab: Tab? = nil, droppingPoint: NSPoint? = nil, showWindow: Bool = true) -> NSWindow? {
-        if let isBurner = isBurner {
+        if let isBurner {
             return openNewWindow(with: Tab(content: .contentFromURL(initialUrl, source: source), parentTab: parentTab, shouldLoadInBackground: true, burnerMode: BurnerMode(isBurner: isBurner)), droppingPoint: droppingPoint, showWindow: showWindow)
         } else {
             return openNewWindow(with: Tab(content: .contentFromURL(initialUrl, source: source), parentTab: parentTab, shouldLoadInBackground: true, burnerMode: burnerModeByDefault()), droppingPoint: droppingPoint, showWindow: showWindow)

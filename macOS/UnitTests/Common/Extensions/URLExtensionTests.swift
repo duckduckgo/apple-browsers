@@ -377,6 +377,437 @@ final class URLExtensionTests {
         #expect(differentPortURL.matches(protectionSpace) == false)
     }
 
+    // MARK: - Internal Page URL Tests
+
+    @Test("Verifying internal page URL constants")
+    func internalPageURLConstants() {
+        #expect(URL.newtab.absoluteString == "duck://newtab")
+        #expect(URL.settings.absoluteString == "duck://settings")
+        #expect(URL.bookmarks.absoluteString == "duck://bookmarks")
+        #expect(URL.history.absoluteString == "duck://history")
+        #expect(URL.releaseNotes.absoluteString == "duck://release-notes")
+        #expect(URL.dataBrokerProtection.absoluteString == "duck://personal-information-removal")
+        #expect(URL.onboarding.absoluteString == "duck://onboarding")
+        #expect(URL.blankPage.absoluteString == "about:blank")
+    }
+
+    @Test("Verifying invalid (legacy) URL constants")
+    func invalidURLConstants() {
+        #expect(URL.Invalid.aboutNewtab.absoluteString == "about:newtab")
+        #expect(URL.Invalid.duckHome.absoluteString == "duck://home")
+        #expect(URL.Invalid.aboutSettings.absoluteString == "about:settings")
+        #expect(URL.Invalid.aboutPreferences.absoluteString == "about:preferences")
+        #expect(URL.Invalid.aboutConfig.absoluteString == "about:config")
+        #expect(URL.Invalid.duckConfig.absoluteString == "duck://config")
+        #expect(URL.Invalid.duckPreferences.absoluteString == "duck://preferences")
+        #expect(URL.Invalid.aboutHistory.absoluteString == "about:history")
+        #expect(URL.Invalid.aboutBookmarks.absoluteString == "about:bookmarks")
+    }
+
+    // MARK: - Settings Pane URL Tests
+
+    static let settingsPaneURLFormationArgs = [
+        // Privacy Protection panes
+        (PreferencePaneIdentifier.defaultBrowser, "duck://settings/defaultBrowser"),
+        (.privateSearch, "duck://settings/privateSearch"),
+        (.webTrackingProtection, "duck://settings/webTrackingProtection"),
+        (.threatProtection, "duck://settings/threatProtection"),
+        (.cookiePopupProtection, "duck://settings/cookiePopupProtection"),
+        (.emailProtection, "duck://settings/emailProtection"),
+        // Main Settings panes
+        (.general, "duck://settings/general"),
+        (.sync, "duck://settings/sync"),
+        (.appearance, "duck://settings/appearance"),
+        (.dataClearing, "duck://settings/dataClearing"),
+        (.autofill, "duck://settings/autofill"),
+        (.accessibility, "duck://settings/accessibility"),
+        (.duckPlayer, "duck://settings/duckplayer"),
+        (.aiChat, "duck://settings/aichat"),
+        // Subscription panes
+        (.subscription, "duck://settings/privacyPro"),
+        (.vpn, "duck://settings/vpn"),
+        (.personalInformationRemoval, "duck://settings/personalInformationRemoval"),
+        (.paidAIChat, "duck://settings/paidAIChat"),
+        (.identityTheftRestoration, "duck://settings/identityTheftRestoration"),
+        (.subscriptionSettings, "duck://settings/subscriptionSettings"),
+        // About
+        (.about, "duck://settings/about")
+    ]
+
+    @Test("Creating settings pane URLs", arguments: settingsPaneURLFormationArgs)
+    func settingsPaneURLFormation(pane: PreferencePaneIdentifier, expectedURL: String) {
+        #expect(URL.settingsPane(pane).absoluteString == expectedURL)
+    }
+
+    static let settingsPaneURLParsingArgs = [
+        // Standard duck://settings URLs (all panes)
+        (URL.settingsPane(.defaultBrowser), PreferencePaneIdentifier.defaultBrowser as PreferencePaneIdentifier?),
+        (URL.settingsPane(.privateSearch), .privateSearch as PreferencePaneIdentifier?),
+        (URL.settingsPane(.webTrackingProtection), .webTrackingProtection as PreferencePaneIdentifier?),
+        (URL.settingsPane(.threatProtection), .threatProtection as PreferencePaneIdentifier?),
+        (URL.settingsPane(.cookiePopupProtection), .cookiePopupProtection as PreferencePaneIdentifier?),
+        (URL.settingsPane(.emailProtection), .emailProtection as PreferencePaneIdentifier?),
+        (URL.settingsPane(.general), .general as PreferencePaneIdentifier?),
+        (URL.settingsPane(.sync), .sync as PreferencePaneIdentifier?),
+        (URL.settingsPane(.appearance), .appearance as PreferencePaneIdentifier?),
+        (URL.settingsPane(.dataClearing), .dataClearing as PreferencePaneIdentifier?),
+        (URL.settingsPane(.autofill), .autofill as PreferencePaneIdentifier?),
+        (URL.settingsPane(.accessibility), .accessibility as PreferencePaneIdentifier?),
+        (URL.settingsPane(.duckPlayer), .duckPlayer as PreferencePaneIdentifier?),
+        (URL.settingsPane(.aiChat), .aiChat as PreferencePaneIdentifier?),
+        (URL.settingsPane(.subscription), .subscription as PreferencePaneIdentifier?),
+        (URL.settingsPane(.vpn), .vpn as PreferencePaneIdentifier?),
+        (URL.settingsPane(.personalInformationRemoval), .personalInformationRemoval as PreferencePaneIdentifier?),
+        (URL.settingsPane(.paidAIChat), .paidAIChat as PreferencePaneIdentifier?),
+        (URL.settingsPane(.identityTheftRestoration), .identityTheftRestoration as PreferencePaneIdentifier?),
+        (URL.settingsPane(.subscriptionSettings), .subscriptionSettings as PreferencePaneIdentifier?),
+        (URL.settingsPane(.about), .about as PreferencePaneIdentifier?),
+        // Legacy URL formats
+        (URL(string: "about:preferences/general")!, .general as PreferencePaneIdentifier?),
+        (URL(string: "about:settings/appearance")!, .appearance as PreferencePaneIdentifier?),
+        (URL(string: "about:config/sync")!, .sync as PreferencePaneIdentifier?),
+        (URL(string: "duck://preferences/autofill")!, .autofill as PreferencePaneIdentifier?),
+        (URL(string: "duck://config/dataClearing")!, .dataClearing as PreferencePaneIdentifier?),
+        // Invalid URLs
+        (URL(string: "https://example.com")!, nil as PreferencePaneIdentifier?),
+        (URL.bookmarks, nil as PreferencePaneIdentifier?),
+        (URL(string: "duck://settings/invalid-pane")!, nil as PreferencePaneIdentifier?)
+    ]
+
+    @Test("Parsing settings pane identifiers from URLs", arguments: settingsPaneURLParsingArgs)
+    func settingsPaneURLParsing(url: URL, expectedPane: PreferencePaneIdentifier?) {
+        #expect(PreferencePaneIdentifier(url: url) == expectedPane)
+    }
+
+    @Test("Validating settings URLs")
+    func settingsURLValidation() {
+        // Valid settings URLs
+        #expect(URL.settings.isSettingsURL == true)
+        #expect(URL.settingsPane(.general).isSettingsURL == true)
+        #expect(URL.settingsPane(.appearance).isSettingsURL == true)
+
+        // Invalid settings URLs
+        #expect(URL.bookmarks.isSettingsURL == false)
+        #expect(URL.history.isSettingsURL == false)
+        #expect(URL(string: "https://duckduckgo.com")!.isSettingsURL == false)
+    }
+
+    // MARK: - History Pane URL Tests
+
+    static let historyPaneURLFormationArgs = [
+        (HistoryPaneIdentifier.all, "duck://history?range=all"),
+        (.today, "duck://history?range=today"),
+        (.yesterday, "duck://history?range=yesterday"),
+        (.older, "duck://history?range=older"),
+        (.sunday, "duck://history?range=sunday"),
+        (.monday, "duck://history?range=monday"),
+        (.tuesday, "duck://history?range=tuesday"),
+        (.wednesday, "duck://history?range=wednesday"),
+        (.thursday, "duck://history?range=thursday"),
+        (.friday, "duck://history?range=friday"),
+        (.saturday, "duck://history?range=saturday"),
+        (.allSites, "duck://history?range=sites")
+    ]
+
+    @Test("Creating history pane URLs", arguments: historyPaneURLFormationArgs)
+    func historyPaneURLFormation(range: HistoryPaneIdentifier, expectedURL: String) {
+        #expect(URL.historyPane(range).absoluteString == expectedURL)
+    }
+
+    static let historyPaneURLParsingArgs = [
+        // Valid duck://history URLs with path format
+        (URL(string: "duck://history/all")!, HistoryPaneIdentifier.all as HistoryPaneIdentifier?),
+        (URL(string: "duck://history/today")!, .today as HistoryPaneIdentifier?),
+        (URL(string: "duck://history/yesterday")!, .yesterday as HistoryPaneIdentifier?),
+        (URL(string: "duck://history/older")!, .older as HistoryPaneIdentifier?),
+        (URL(string: "duck://history/sites")!, .allSites as HistoryPaneIdentifier?),
+        (URL(string: "duck://history/sunday")!, .sunday as HistoryPaneIdentifier?),
+        (URL(string: "duck://history/monday")!, .monday as HistoryPaneIdentifier?),
+        (URL(string: "duck://history/tuesday")!, .tuesday as HistoryPaneIdentifier?),
+        (URL(string: "duck://history/wednesday")!, .wednesday as HistoryPaneIdentifier?),
+        (URL(string: "duck://history/thursday")!, .thursday as HistoryPaneIdentifier?),
+        (URL(string: "duck://history/friday")!, .friday as HistoryPaneIdentifier?),
+        (URL(string: "duck://history/saturday")!, .saturday as HistoryPaneIdentifier?),
+        // Legacy about:history URLs
+        (URL(string: "about:history/all")!, .all as HistoryPaneIdentifier?),
+        (URL(string: "about:history/today")!, .today as HistoryPaneIdentifier?),
+        (URL(string: "about:history/yesterday")!, .yesterday as HistoryPaneIdentifier?),
+        (URL(string: "about:history/older")!, .older as HistoryPaneIdentifier?),
+        (URL(string: "about:history/sites")!, .allSites as HistoryPaneIdentifier?),
+        // Invalid URLs
+        (URL.history, nil as HistoryPaneIdentifier?),
+        (URL.bookmarks, nil as HistoryPaneIdentifier?),
+        (URL(string: "https://example.com")!, nil as HistoryPaneIdentifier?),
+        (URL(string: "duck://history/invalid")!, nil as HistoryPaneIdentifier?)
+    ]
+
+    @Test("Parsing history pane identifiers from URLs", arguments: historyPaneURLParsingArgs)
+    func historyPaneURLParsing(url: URL, expectedRange: HistoryPaneIdentifier?) {
+        #expect(HistoryPaneIdentifier(url: url) == expectedRange)
+    }
+
+    @Test("Validating history URLs")
+    func historyURLValidation() {
+        // Valid history URLs
+        #expect(URL.history.isHistory == true)
+        #expect(URL(string: "duck://history/today")!.isHistory == true)
+
+        // Invalid history URLs
+        #expect(URL.bookmarks.isHistory == false)
+        #expect(URL.settings.isHistory == false)
+        #expect(URL(string: "https://duckduckgo.com")!.isHistory == false)
+    }
+
+    // MARK: - TabContent Creation Tests
+
+    @Test("Creating TabContent from newtab URLs")
+    func tabContentFromNewtabURLs() {
+        #expect(TabContent.contentFromURL(.newtab, source: .ui) == .newtab)
+        #expect(TabContent.contentFromURL(.Invalid.aboutNewtab, source: .ui) == .newtab)
+        #expect(TabContent.contentFromURL(.Invalid.duckHome, source: .ui) == .newtab)
+    }
+
+    static let tabContentFromSettingsURLsArgs = [
+        // Base settings URL
+        (URL.settings, TabContent.anySettingsPane),
+        // Legacy settings URLs
+        (URL.Invalid.aboutPreferences, TabContent.anySettingsPane),
+        (URL.Invalid.aboutConfig, TabContent.anySettingsPane),
+        (URL.Invalid.aboutSettings, TabContent.anySettingsPane),
+        (URL.Invalid.duckConfig, TabContent.anySettingsPane),
+        (URL.Invalid.duckPreferences, TabContent.anySettingsPane),
+        // Settings with specific panes
+        (URL.settingsPane(.general), TabContent.settings(pane: .general)),
+        (URL.settingsPane(.appearance), TabContent.settings(pane: .appearance)),
+        (URL.settingsPane(.sync), TabContent.settings(pane: .sync)),
+        (URL.settingsPane(.autofill), TabContent.settings(pane: .autofill)),
+        (URL.settingsPane(.dataClearing), TabContent.settings(pane: .dataClearing)),
+        (URL.settingsPane(.accessibility), TabContent.settings(pane: .accessibility))
+    ]
+
+    @Test("Creating TabContent from settings URLs", arguments: tabContentFromSettingsURLsArgs)
+    func tabContentFromSettingsURLs(url: URL, expectedContent: TabContent) {
+        #expect(TabContent.contentFromURL(url, source: .ui) == expectedContent)
+    }
+
+    @Test("Creating TabContent from bookmarks URLs")
+    func tabContentFromBookmarksURLs() {
+        #expect(TabContent.contentFromURL(.bookmarks, source: .ui) == .bookmarks)
+        #expect(TabContent.contentFromURL(.Invalid.aboutBookmarks, source: .ui) == .bookmarks)
+    }
+
+    static let tabContentFromHistoryURLsArgs = [
+        // Base history URLs
+        (URL.history, TabContent.anyHistoryPane),
+        (URL.Invalid.aboutHistory, TabContent.anyHistoryPane),
+        // History with specific panes
+        (URL(string: "duck://history/all")!, TabContent.history(pane: .all)),
+        (URL(string: "duck://history/today")!, TabContent.history(pane: .today)),
+        (URL(string: "duck://history/yesterday")!, TabContent.history(pane: .yesterday)),
+        (URL(string: "duck://history/older")!, TabContent.history(pane: .older)),
+        (URL(string: "duck://history/sites")!, TabContent.history(pane: .allSites)),
+        // Legacy about:history with panes
+        (URL(string: "about:history/today")!, TabContent.history(pane: .today))
+    ]
+
+    @Test("Creating TabContent from history URLs", arguments: tabContentFromHistoryURLsArgs)
+    func tabContentFromHistoryURLs(url: URL, expectedContent: TabContent) {
+        #expect(TabContent.contentFromURL(url, source: .ui) == expectedContent)
+    }
+
+    @Test("Creating TabContent from other internal page URLs")
+    func tabContentFromOtherInternalPages() {
+        #expect(TabContent.contentFromURL(.onboarding, source: .ui) == .onboarding)
+        #expect(TabContent.contentFromURL(.dataBrokerProtection, source: .ui) == .dataBrokerProtection)
+        #expect(TabContent.contentFromURL(.releaseNotes, source: .ui) == .releaseNotes)
+    }
+
+    @Test("Creating TabContent from external URLs")
+    func tabContentFromExternalURLs() {
+        let externalURL = URL(string: "https://duckduckgo.com")!
+        let tabContent = TabContent.contentFromURL(externalURL, source: .userEntered("https://duckduckgo.com", downloadRequested: false))
+
+        if case .url(let url, _, _) = tabContent {
+            #expect(url == externalURL)
+        } else {
+            Issue.record("Expected .url case")
+        }
+    }
+
+    static let tabContentURLForWebViewArgs = [
+        // Base internal pages
+        (TabContent.newtab, URL.newtab),
+        (TabContent.bookmarks, URL.bookmarks),
+        (TabContent.anyHistoryPane, URL.history),
+        (TabContent.anySettingsPane, URL.settings),
+        (TabContent.onboarding, URL.onboarding),
+        (TabContent.dataBrokerProtection, URL.dataBrokerProtection),
+        (TabContent.releaseNotes, URL.releaseNotes),
+        // Settings with panes
+        (TabContent.settings(pane: .general), URL.settingsPane(.general)),
+        (TabContent.settings(pane: .appearance), URL.settingsPane(.appearance)),
+        (TabContent.settings(pane: .sync), URL.settingsPane(.sync)),
+        // History with panes (uses query parameter format, parser now accepts both formats)
+        (TabContent.history(pane: .today), URL.historyPane(.today)),
+        (TabContent.history(pane: .all), URL.historyPane(.all)),
+        (TabContent.history(pane: .yesterday), URL.historyPane(.yesterday))
+    ]
+
+    @Test("TabContent urlForWebView returns correct URLs", arguments: tabContentURLForWebViewArgs)
+    func tabContentURLForWebView(content: TabContent, expectedURL: URL) {
+        #expect(content.urlForWebView == expectedURL)
+    }
+
+    // MARK: - Round-trip Tests: URL formation → TabContent → URL validation
+
+    static let settingsPaneRoundTripArgs: [PreferencePaneIdentifier] = [
+        // Privacy Protection panes
+        .defaultBrowser, .privateSearch, .webTrackingProtection, .threatProtection,
+        .cookiePopupProtection, .emailProtection,
+        // Main Settings panes
+        .general, .sync, .appearance, .dataClearing, .autofill, .accessibility,
+        .duckPlayer, .aiChat,
+        // Subscription panes
+        .subscription, .vpn, .personalInformationRemoval, .paidAIChat,
+        .identityTheftRestoration, .subscriptionSettings,
+        // About
+        .about
+        // Note: .otherPlatforms is excluded - it's a special case with an HTTPS URL as rawValue
+        // that opens in a new tab rather than creating a duck://settings/ URL
+    ]
+
+    @Test("Settings pane URLs should be parseable back to PreferencePaneIdentifier",
+          arguments: settingsPaneRoundTripArgs)
+    func settingsPaneURLShouldBeParseable(pane: PreferencePaneIdentifier) {
+        // Given: URL created using URL.settingsPane()
+        let url = URL.settingsPane(pane)
+
+        // When: Parsing the URL back to PreferencePaneIdentifier
+        let parsed = PreferencePaneIdentifier(url: url)
+
+        // Then: Should successfully parse back to the original pane
+        #expect(parsed == pane)
+    }
+
+    @Test("Settings pane round-trip: URL.settingsPane() → TabContent → urlForWebView", arguments: settingsPaneRoundTripArgs)
+    func settingsPaneRoundTrip(pane: PreferencePaneIdentifier) {
+        // Step 1: Form URL using URL extension method
+        let formedURL = URL.settingsPane(pane)
+
+        // Step 2: Create TabContent from the formed URL
+        let tabContent = TabContent.contentFromURL(formedURL, source: .ui)
+
+        // Step 3: Validate TabContent matches expected pane
+        #expect(tabContent == .settings(pane: pane))
+
+        // Step 4: Validate URL from TabContent matches original formed URL
+        #expect(tabContent.urlForWebView == formedURL)
+    }
+
+    static let historyPaneRoundTripArgs: [HistoryPaneIdentifier] = [
+        // Time-based ranges
+        .all, .today, .yesterday, .older,
+        // Weekday ranges
+        .sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday,
+        // Sites view
+        .allSites
+    ]
+
+    @Test("History pane round-trip: path URL → TabContent → query URL (asymmetric)", arguments: historyPaneRoundTripArgs)
+    func historyPaneRoundTrip(range: HistoryPaneIdentifier) {
+        // Note: History has asymmetric URL format
+        // Parsing accepts path-based: duck://history/today
+        // Formation generates query-based: duck://history?range=today
+
+        // Step 1: Create path-based URL for parsing (simulating user navigation)
+        let pathURL = URL(string: "duck://history/\(range.rawValue)")!
+
+        // Step 2: Create TabContent from path-based URL
+        let tabContent = TabContent.contentFromURL(pathURL, source: .ui)
+
+        // Step 3: Validate TabContent matches expected range
+        #expect(tabContent == .history(pane: range))
+
+        // Step 4: Validate URL from TabContent uses query-based format
+        let expectedQueryURL = URL.historyPane(range)
+        #expect(tabContent.urlForWebView == expectedQueryURL)
+        #expect(tabContent.urlForWebView?.absoluteString.contains("?range=") == true)
+    }
+
+    static let internalPageRoundTripArgs = [
+        (URL.bookmarks, TabContent.bookmarks),
+        (URL.newtab, TabContent.newtab),
+        (URL.onboarding, TabContent.onboarding),
+        (URL.dataBrokerProtection, TabContent.dataBrokerProtection),
+        (URL.releaseNotes, TabContent.releaseNotes)
+    ]
+
+    @Test("Internal page round-trip: URL constant → TabContent → urlForWebView", arguments: internalPageRoundTripArgs)
+    func internalPageRoundTrip(url: URL, expectedContent: TabContent) {
+        // Step 1: URL is already formed (internal page constant)
+
+        // Step 2: Create TabContent from URL
+        let tabContent = TabContent.contentFromURL(url, source: .ui)
+
+        // Step 3: Validate TabContent matches expected
+        #expect(tabContent == expectedContent)
+
+        // Step 4: Validate URL from TabContent matches original
+        #expect(tabContent.urlForWebView == url)
+    }
+
+    @Test("Special case: otherPlatforms creates HTTPS URL, not settings URL")
+    func otherPlatformsSpecialCase() {
+        // otherPlatforms is unique - its rawValue is a full HTTPS URL
+        // It's designed to open in a new tab, not create a duck://settings/ URL
+        let otherPlatformsRawValue = PreferencePaneIdentifier.otherPlatforms.rawValue
+
+        // Verify it's an HTTPS URL
+        #expect(otherPlatformsRawValue.hasPrefix("https://"))
+        #expect(otherPlatformsRawValue == "https://duckduckgo.com/app/devices?origin=funnel_app_macos")
+
+        // URL.settingsPane(.otherPlatforms) would create an invalid URL like:
+        // "duck://settings/https://duckduckgo.com/app/devices?origin=funnel_app_macos"
+        // This is by design - otherPlatforms is handled specially in the UI
+        let settingsURL = URL.settingsPane(.otherPlatforms)
+        #expect(settingsURL.absoluteString.contains("duck://settings/https://"))
+
+        // The pane opens an external URL directly, not through settings URL scheme
+        let externalURL = URL(string: otherPlatformsRawValue)
+        #expect(externalURL != nil)
+        #expect(externalURL?.scheme == "https")
+    }
+
+    // MARK: - History Pane Round-Trip Parsing Tests
+
+    @Test("History pane URLs should be parseable back to HistoryPaneIdentifier",
+          arguments: historyPaneRoundTripArgs)
+    func historyPaneURLShouldBeParseable(range: HistoryPaneIdentifier) {
+        // Given: URL created using URL.historyPane() with query parameter format
+        let url = URL.historyPane(range)
+
+        // When: Parsing the URL back to HistoryPaneIdentifier
+        let parsed = HistoryPaneIdentifier(url: url)
+
+        // Then: Should successfully parse back to the original range
+        // Parser now accepts both query (?range=) and path (/today) formats
+        #expect(parsed == range)
+    }
+
+    @Test("History pane parser accepts both query and path formats",
+          arguments: historyPaneRoundTripArgs)
+    func historyPaneParserAcceptsBothFormats(range: HistoryPaneIdentifier) {
+        // Query parameter format (new format used by URL.historyPane())
+        let queryURL = URL(string: "duck://history?range=\(range.rawValue)")!
+        let parsedFromQuery = HistoryPaneIdentifier(url: queryURL)
+        #expect(parsedFromQuery == range, "Query format should parse correctly")
+
+        // Path format (legacy format for backwards compatibility)
+        let pathURL = URL(string: "duck://history/\(range.rawValue)")!
+        let parsedFromPath = HistoryPaneIdentifier(url: pathURL)
+        #expect(parsedFromPath == range, "Path format should still parse for backwards compatibility")
+    }
+
 }
 
 extension URLExtensionTests {

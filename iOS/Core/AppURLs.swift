@@ -19,6 +19,8 @@
 
 import BrowserServicesKit
 import Foundation
+import URLPredictor
+import OSLog
 
 public extension URL {
 
@@ -157,10 +159,30 @@ public extension URL {
 
     private static let defaultStatisticsDependentURLFactory = StatisticsDependentURLFactory()
 
-    static func makeSearchURL(text: String) -> URL? { defaultStatisticsDependentURLFactory.makeSearchURL(text: text) }
+    static func makeSearchURL(text: String) -> URL? {
+        makeSearchURL(query: text)
+    }
 
-    static func makeSearchURL(query: String, forceSearchQuery: Bool = false, queryContext: URL? = nil) -> URL? {
-        defaultStatisticsDependentURLFactory.makeSearchURL(query: query, forceSearchQuery: forceSearchQuery, queryContext: queryContext)
+    static func makeSearchURL(query: String, useUnifiedLogic: Bool = false, forceSearchQuery: Bool = false, queryContext: URL? = nil) -> URL? {
+
+        if useUnifiedLogic && !forceSearchQuery {
+            do {
+                switch try Classifier.classify(input: query) {
+                case .navigate(let url):
+                    return url
+                case .search(let query):
+                    return defaultStatisticsDependentURLFactory.makeSearchURL(query: query, forceSearchQuery: true, queryContext: queryContext)
+                }
+            } catch let error as Classifier.Error {
+                Logger.general.error("Failed to classify \"\(query)\" as URL or search phrase: \(error)")
+                return nil
+            } catch {
+                Logger.general.error("URL extension: Making URL from \(query) failed")
+                return nil
+            }
+        } else {
+            return defaultStatisticsDependentURLFactory.makeSearchURL(query: query, forceSearchQuery: forceSearchQuery, queryContext: queryContext)
+        }
     }
 
     func applyingStatsParams() -> URL { URL.defaultStatisticsDependentURLFactory.applyingStatsParams(to: self) }

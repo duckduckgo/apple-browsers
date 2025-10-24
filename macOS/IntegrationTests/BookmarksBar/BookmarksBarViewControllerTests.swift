@@ -16,8 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
+import Common
 import Combine
+import History
+import HistoryView
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class BookmarksBarViewControllerTests: XCTestCase {
@@ -39,12 +43,23 @@ final class BookmarksBarViewControllerTests: XCTestCase {
     @MainActor
     func testWhenImportBookmarksClicked_ThenDataImportViewShown() throws {
         let mockWindow = MockWindow()
+        let fireCoordinator = FireCoordinator(tld: TLD(),
+                                              featureFlagger: Application.appDelegate.featureFlagger,
+                                              historyCoordinating: HistoryCoordinatingMock(),
+                                              visualizeFireAnimationDecider: nil,
+                                              onboardingContextualDialogsManager: nil,
+                                              fireproofDomains: MockFireproofDomains(),
+                                              faviconManagement: FaviconManagerMock(),
+                                              windowControllersManager: WindowControllersManagerMock(),
+                                              pixelFiring: nil,
+                                              historyProvider: MockHistoryViewDataProvider())
+
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
             bookmarkManager: bookmarksManager,
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
             aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()),
-            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
+            fireCoordinator: fireCoordinator
         )
         mockWindow.contentView = mainViewController.view
 

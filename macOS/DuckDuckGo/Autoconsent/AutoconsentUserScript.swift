@@ -52,9 +52,12 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     public var messageNames: [String] { MessageName.allCases.map(\.rawValue) }
     let source: String
     private let config: PrivacyConfiguration
+    private let statsManager: AutoconsentDailyStatsManaging
     weak var delegate: AutoconsentUserScriptDelegate?
 
-    init(scriptSource: ScriptSourceProviding, config: PrivacyConfiguration) {
+    init(scriptSource: ScriptSourceProviding,
+         config: PrivacyConfiguration,
+         statsManager: AutoconsentDailyStatsManaging) {
         Logger.autoconsent.debug("Initialising autoconsent userscript")
         do {
             source = try Self.loadJS("autoconsent-bundle", from: .main, withReplacements: [:])
@@ -65,6 +68,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
             fatalError("Failed to load JS for AutoconsentUserScript: \(error.localizedDescription)")
         }
         self.config = config
+        self.statsManager = statsManager
     }
 
     func userContentController(_ userContentController: WKUserContentController,
@@ -422,7 +426,10 @@ extension AutoconsentUserScript {
         refreshDashboardState(consentManaged: true, cosmetic: messageData.isCosmetic, optoutFailed: false, selftestFailed: nil)
         firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
 
-        // trigger popup once per domain
+        // Increment the popup managed counter for any popup handling
+        statsManager.incrementPopupCount()
+
+        // Show animation only for first time on a domain
         if !management.sitesNotifiedCache.contains(host) {
             management.sitesNotifiedCache.insert(host)
             if messageData.cmp != Constants.filterListCmpName { // filterlist animation should have been triggered already (see handlePopupFound)

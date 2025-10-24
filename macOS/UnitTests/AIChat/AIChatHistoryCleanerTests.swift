@@ -26,47 +26,50 @@ final class AIChatHistoryCleanerTests: XCTestCase {
     private var featureFlaggerMock: MockFeatureFlagger!
     private var aiChatMenuConfiguration: MockAIChatConfig!
     private var featureDiscoveryMock: MockFeatureDiscovery!
+    private var privacyConfigMock: MockPrivacyConfigurationManager!
 
     override func setUp() {
         super.setUp()
         featureFlaggerMock = MockFeatureFlagger()
         aiChatMenuConfiguration = MockAIChatConfig()
         featureDiscoveryMock = MockFeatureDiscovery()
+        privacyConfigMock = MockPrivacyConfigurationManager()
     }
 
     override func tearDown() {
         featureFlaggerMock = nil
         aiChatMenuConfiguration = nil
         featureDiscoveryMock = nil
+        privacyConfigMock = nil
         super.tearDown()
     }
 
     func testWhenFeatureFlagIsOn_andAIChatShouldBeShown_andAIChatWasUsed_thenShouldDisplayCleanAIChatHistoryOptionIsTrue() {
-        featureFlaggerMock.enabledFeatureFlags = [.clearAIChatHistory]
+        featureFlaggerMock.enabledFeatureFlags = [.aiChatDataClearing]
         aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature = true
         featureDiscoveryMock.setReturnValue(true, for: .aiChat)
 
-        let sut = AIChatHistoryCleaner(featureFlagger: featureFlaggerMock, aiChatMenuConfiguration: aiChatMenuConfiguration, featureDiscovery: featureDiscoveryMock)
+        let sut = AIChatHistoryCleaner(featureFlagger: featureFlaggerMock, aiChatMenuConfiguration: aiChatMenuConfiguration, featureDiscovery: featureDiscoveryMock, privacyConfig: privacyConfigMock)
 
         XCTAssertTrue(sut.shouldDisplayCleanAIChatHistoryOption)
     }
 
     func testWhenFeatureFlagIsOn_andAIChatShouldBeShown_andAIChatWasNotUsed_thenShouldDisplayCleanAIChatHistoryOptionIsFalse() {
-        featureFlaggerMock.enabledFeatureFlags = [.clearAIChatHistory]
+        featureFlaggerMock.enabledFeatureFlags = [.aiChatDataClearing]
         aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature = true
         featureDiscoveryMock.setReturnValue(false, for: .aiChat)
 
-        let sut = AIChatHistoryCleaner(featureFlagger: featureFlaggerMock, aiChatMenuConfiguration: aiChatMenuConfiguration, featureDiscovery: featureDiscoveryMock)
+        let sut = AIChatHistoryCleaner(featureFlagger: featureFlaggerMock, aiChatMenuConfiguration: aiChatMenuConfiguration, featureDiscovery: featureDiscoveryMock, privacyConfig: privacyConfigMock)
 
         XCTAssertFalse(sut.shouldDisplayCleanAIChatHistoryOption)
     }
 
     func testWhenFeatureFlagIsOn_andAIChatShouldNotBeShown_andAIChatWasUsed_thenShouldDisplayCleanAIChatHistoryOptionIsFalse() {
-        featureFlaggerMock.enabledFeatureFlags = [.clearAIChatHistory]
+        featureFlaggerMock.enabledFeatureFlags = [.aiChatDataClearing]
         aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature = false
         featureDiscoveryMock.setReturnValue(true, for: .aiChat)
 
-        let sut = AIChatHistoryCleaner(featureFlagger: featureFlaggerMock, aiChatMenuConfiguration: aiChatMenuConfiguration, featureDiscovery: featureDiscoveryMock)
+        let sut = AIChatHistoryCleaner(featureFlagger: featureFlaggerMock, aiChatMenuConfiguration: aiChatMenuConfiguration, featureDiscovery: featureDiscoveryMock, privacyConfig: privacyConfigMock)
 
         XCTAssertFalse(sut.shouldDisplayCleanAIChatHistoryOption)
     }
@@ -76,18 +79,18 @@ final class AIChatHistoryCleanerTests: XCTestCase {
         aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature = true
         featureDiscoveryMock.setReturnValue(true, for: .aiChat)
 
-        let sut = AIChatHistoryCleaner(featureFlagger: featureFlaggerMock, aiChatMenuConfiguration: aiChatMenuConfiguration, featureDiscovery: featureDiscoveryMock)
+        let sut = AIChatHistoryCleaner(featureFlagger: featureFlaggerMock, aiChatMenuConfiguration: aiChatMenuConfiguration, featureDiscovery: featureDiscoveryMock, privacyConfig: privacyConfigMock)
 
         XCTAssertFalse(sut.shouldDisplayCleanAIChatHistoryOption)
     }
 
     func testWhenNotificationIsPosted_thenShouldDisplayCleanAIChatHistoryOptionIsEnabled() {
-        featureFlaggerMock.enabledFeatureFlags = [.clearAIChatHistory]
+        featureFlaggerMock.enabledFeatureFlags = [.aiChatDataClearing]
         aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature = true
         featureDiscoveryMock.setReturnValue(false, for: .aiChat)
         let notificationCenter = NotificationCenter()
 
-        let sut = AIChatHistoryCleaner(featureFlagger: featureFlaggerMock, aiChatMenuConfiguration: aiChatMenuConfiguration, featureDiscovery: featureDiscoveryMock, notificationCenter: notificationCenter)
+        let sut = AIChatHistoryCleaner(featureFlagger: featureFlaggerMock, aiChatMenuConfiguration: aiChatMenuConfiguration, featureDiscovery: featureDiscoveryMock, notificationCenter: notificationCenter, privacyConfig: privacyConfigMock)
 
         XCTAssertFalse(sut.shouldDisplayCleanAIChatHistoryOption)
 

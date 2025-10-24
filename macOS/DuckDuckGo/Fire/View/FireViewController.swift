@@ -153,7 +153,7 @@ final class FireViewController: NSViewController {
     }
 
     private func subscribeToIsBurning() {
-        fireViewModel.fire.$burningData
+        fireViewModel.fire.burningDataPublisher
             .sink(receiveValue: { [weak self] burningData in
                 guard let burningData = burningData,
                     let self = self else {
@@ -233,7 +233,7 @@ final class FireViewController: NSViewController {
                 guard let self = self else { return }
 
                 // If not finished yet, present the progress indicator
-                if self.fireViewModel.fire.burningData != nil {
+                if self.fireViewModel.isBurning {
 
                     // Waits until windows are closed in Fire.swift
                     DispatchQueue.main.async {

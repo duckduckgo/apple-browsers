@@ -148,6 +148,17 @@ final class HistoryTabExtension: NSObject {
         }
     }
 
+    func clearNavigationHistory(keepingCurrent: Bool) {
+        var indices = localHistory.indices
+        if keepingCurrent,
+           let lastVisit = localHistory.last, lastVisit.historyEntry?.url == self.url {
+            indices.removeLast()
+        }
+        if !indices.isEmpty {
+            localHistory.removeSubrange(indices)
+        }
+    }
+
     @objc private func applicationWillTerminate(_: Notification) {
         commitBeforeClosing()
     }
@@ -228,6 +239,7 @@ extension HistoryTabExtension: NavigationResponder {
 
 protocol HistoryExtensionProtocol: AnyObject, NavigationResponder {
     var localHistory: [Visit] { get }
+    func clearNavigationHistory(keepingCurrent: Bool)
 }
 
 extension HistoryTabExtension: HistoryExtensionProtocol, TabExtension {

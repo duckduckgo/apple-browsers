@@ -193,7 +193,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
 
         let shouldContinue = self.shouldRunNextStep()
         if let action = actionsHandler?.nextAction(), shouldContinue {
-            stageCalculator.setLastActionId(action.id)
+            stageCalculator.setLastAction(action)
             Logger.action.debug(loggerContext(for: action), message: "Next action")
             await runNextAction(action)
         } else {

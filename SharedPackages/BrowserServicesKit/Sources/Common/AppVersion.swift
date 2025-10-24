@@ -20,7 +20,7 @@ import Foundation
 
 public protocol OSVersionProviding {
 
-    var osVersion: String { get }
+    var osVersionMajorMinorPatch: String { get }
 
 }
 
@@ -76,9 +76,14 @@ public struct AppVersion: OSVersionProviding {
         return "\(name) \(versionAndBuildNumber)"
     }
 
-    public var osVersion: String {
+    public var osVersionMajorMinorPatch: String {
         let os = ProcessInfo().operatingSystemVersion
         return "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
+    }
+
+    public var osVersionMajorMinor: String {
+        let os = ProcessInfo().operatingSystemVersion
+        return "\(os.majorVersion).\(os.minorVersion)"
     }
 
     public enum AppRunType: String {

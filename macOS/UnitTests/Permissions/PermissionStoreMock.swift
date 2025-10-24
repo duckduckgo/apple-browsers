@@ -43,14 +43,18 @@ final class PermissionStoreMock: PermissionStore {
         return permissions
     }
 
-    func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?, completionHandler: ((Error?) -> Void)?) {
+    func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?, completionHandler: (@MainActor (Error?) -> Void)?) {
         history.append(.update(id: id, decision: decision))
-        completionHandler?(nil)
+        MainActor.assumeMainThread {
+            completionHandler?(nil)
+        }
     }
 
-    func remove(objectWithId id: NSManagedObjectID, completionHandler: ((Error?) -> Void)?) {
+    func remove(objectWithId id: NSManagedObjectID, completionHandler: (@MainActor (Error?) -> Void)?) {
         history.append(.remove(id))
-        completionHandler?(nil)
+        MainActor.assumeMainThread {
+            completionHandler?(nil)
+        }
     }
 
     func add(domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision) throws -> StoredPermission {
@@ -61,9 +65,11 @@ final class PermissionStoreMock: PermissionStore {
         return StoredPermission(id: .init(), decision: decision)
     }
 
-    func clear(except: [StoredPermission], completionHandler: ((Error?) -> Void)?) {
+    func clear(except: [StoredPermission], completionHandler: (@MainActor (Error?) -> Void)?) {
         history.append(.clear(exceptions: except))
-        completionHandler?(nil)
+        MainActor.assumeMainThread {
+            completionHandler?(nil)
+        }
     }
 
 }

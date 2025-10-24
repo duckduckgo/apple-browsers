@@ -1184,6 +1184,8 @@ struct UserText {
     static let importChooseSourceSyncButtonTitle = NSLocalizedString("import.choose-source.sync-button.title", value: "Using DuckDuckGo on another device?", comment: "Button text for syncing from the data import view")
     static let importChooseSourceSyncButtonAction = NSLocalizedString("import.choose-source.sync-button.action", value: "Sync", comment: "Action text for syncing data with another device from the data import view")
 
+    static let importSelectedDataTitle = NSLocalizedString("import.selected-data.title", value: "Import Selected Data", comment: "Title text for the dialog to confirm which data to import (e.g passwords, bookmarks)")
+
     static func importFromFileTitle(from source: DataImport.Source) -> String {
         String(format: NSLocalizedString("import.from.file.title", value: "Import from %@", comment: "Title text for the file import screen, after the user selects a source"), source.importSourceName)
     }

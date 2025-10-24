@@ -80,9 +80,13 @@ struct DataImportView: ModalView {
                 ImportSourcePickerView(
                     availableSources: model.availableImportSources,
                     selectedSource: model.importSource,
+                    selectedImportTypes: Array(model.selectedDataTypes),
                     shouldShowSyncFeature: syncFeatureVisibility.shouldShowSyncFeature,
                     onSourceSelected: { source in
                         model.update(with: source)
+                    },
+                    onTypeSelected: { type, isSelected in
+                        model.setDataType(type, selected: isSelected)
                     },
                     onSyncSelected: {
                         guard case .show(let syncLauncher) = syncFeatureVisibility else {

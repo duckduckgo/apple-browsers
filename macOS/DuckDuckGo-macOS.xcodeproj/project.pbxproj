@@ -3841,6 +3841,8 @@
 		EE72DCA72EA91C9F0052661B /* ImportSourcePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE72DCA52EA91C9F0052661B /* ImportSourcePickerView.swift */; };
 		EE72DCAA2EAA7E9C0052661B /* ImportSourcePickerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE72DCA82EAA7E9C0052661B /* ImportSourcePickerViewModel.swift */; };
 		EE72DCAB2EAA7E9C0052661B /* ImportSourcePickerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE72DCA82EAA7E9C0052661B /* ImportSourcePickerViewModel.swift */; };
+		EE72DCB32EAB73810052661B /* NewImportTypePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE72DCB22EAB73810052661B /* NewImportTypePickerView.swift */; };
+		EE72DCB42EAB73810052661B /* NewImportTypePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE72DCB22EAB73810052661B /* NewImportTypePickerView.swift */; };
 		EE76B5952E5F249E00600C14 /* DismissableSyncDeviceButtonModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE76B5942E5F248E00600C14 /* DismissableSyncDeviceButtonModelTests.swift */; };
 		EE76B5962E5F249E00600C14 /* DismissableSyncDeviceButtonModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE76B5942E5F248E00600C14 /* DismissableSyncDeviceButtonModelTests.swift */; };
 		EE7E0FD72E3BA8FA00E51C8B /* SyncDialogController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7E0FD62E3BA8FA00E51C8B /* SyncDialogController.swift */; };
@@ -6096,6 +6098,7 @@
 		EE66666E2B56EDE4001D898D /* VPNLocationsHostingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNLocationsHostingViewController.swift; sourceTree = "<group>"; };
 		EE72DCA52EA91C9F0052661B /* ImportSourcePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSourcePickerView.swift; sourceTree = "<group>"; };
 		EE72DCA82EAA7E9C0052661B /* ImportSourcePickerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSourcePickerViewModel.swift; sourceTree = "<group>"; };
+		EE72DCB22EAB73810052661B /* NewImportTypePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewImportTypePickerView.swift; sourceTree = "<group>"; };
 		EE76B5942E5F248E00600C14 /* DismissableSyncDeviceButtonModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DismissableSyncDeviceButtonModelTests.swift; sourceTree = "<group>"; };
 		EE7E0FD62E3BA8FA00E51C8B /* SyncDialogController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDialogController.swift; sourceTree = "<group>"; };
 		EE7F74902BB5D76600CD9456 /* BookmarksBarTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksBarTests.swift; sourceTree = "<group>"; };
@@ -11593,6 +11596,7 @@
 				EE8C11D82E9FE768002FFD72 /* NewImportErrorView.swift */,
 				EE8C11D52E9E8336002FFD72 /* FileImportScreenView.swift */,
 				EE72DCA52EA91C9F0052661B /* ImportSourcePickerView.swift */,
+				EE72DCB22EAB73810052661B /* NewImportTypePickerView.swift */,
 			);
 			path = New;
 			sourceTree = "<group>";
@@ -13877,6 +13881,7 @@
 				7B93A68B2D4A5AF200E9FFC1 /* ExcludedAppsModel.swift in Sources */,
 				1D2FA6552E968BBD008C53F8 /* NewTabPageStateProvider.swift in Sources */,
 				BB7BAABD2DDBAD5A004A5A58 /* IconsProviding.swift in Sources */,
+				EE72DCB42EAB73810052661B /* NewImportTypePickerView.swift in Sources */,
 				BD94DDF92D7A0CEC0090A599 /* DBPMetadataCollector.swift in Sources */,
 				3706FBB7293F65D500E42796 /* FirePopoverViewController.swift in Sources */,
 				3706FBB8293F65D500E42796 /* SavePaymentMethodPopover.swift in Sources */,
@@ -15785,6 +15790,7 @@
 				C1D3C5762E8ADB080086A2BD /* SyncIdentitiesAdapter.swift in Sources */,
 				C1B1CBE12BE1915100B6049C /* DataImportShortcutsViewModel.swift in Sources */,
 				31521AC32CC01BC700248E6F /* AIChatTabOpener.swift in Sources */,
+				EE72DCB32EAB73810052661B /* NewImportTypePickerView.swift in Sources */,
 				BB486B542E749A060026B972 /* AppStoreUpdateController.swift in Sources */,
 				37B904712E2996FA00E5DAF7 /* AppVersionModel.swift in Sources */,
 				B6C0B23C26E87D900031CB7F /* NSAlert+ActiveDownloadsTermination.swift in Sources */,

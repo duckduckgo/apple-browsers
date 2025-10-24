@@ -28,14 +28,18 @@ struct ImportSourcePickerView: View {
 
     init(availableSources: [DataImport.Source],
          selectedSource: DataImport.Source,
+         selectedImportTypes: [DataImport.DataType],
          shouldShowSyncFeature: Bool,
          onSourceSelected: @escaping (DataImport.Source) -> Void,
+         onTypeSelected: @escaping (DataImport.DataType, Bool) -> Void,
          onSyncSelected: @escaping () -> Void) {
         _viewModel = StateObject(wrappedValue: ImportSourcePickerViewModel(
             availableSources: availableSources,
             selectedSource: selectedSource,
+            selectedImportTypes: selectedImportTypes,
             shouldShowSyncButton: shouldShowSyncFeature,
             onSourceSelected: onSourceSelected,
+            onTypeSelected: onTypeSelected,
             onSyncSelected: onSyncSelected
         ))
     }
@@ -48,7 +52,7 @@ struct ImportSourcePickerView: View {
                         .font(.title2.weight(.semibold))
                         .padding(.top, 20)
                     HoverButtonView {
-                        // TODO:
+                        viewModel.showTypeSelectionSheet()
                     } content: {
                         HStack(alignment: .lastTextBaseline, spacing: 1) {
                             Text("Import Bookmarks & Passwords")
@@ -59,6 +63,14 @@ struct ImportSourcePickerView: View {
                                 .frame(width: 10, height: 10)
                                 .rotationEffect(.degrees(90))
                         }
+                    }
+                    .sheet(isPresented: $viewModel.isTypePickerSheetVisible) {
+                        NewImportTypePickerView(
+                            items: $viewModel.importTypeItems,
+                            doneAction: viewModel.typeSelectionDone,
+                            cancelAction: viewModel.typeSelectionCancelled,
+                            isDoneDisabled: $viewModel.isDoneButtonDisabled
+                        )
                     }
                 }
                 .padding(.top, 20)
@@ -142,7 +154,7 @@ private struct RadioGridPicker: View {
                     viewModel.selectSource(option)   // fires on mouse-up inside
                 } label: {
                     RadioCard(
-                        isSelected: viewModel.selectedImportSource == option,
+                        isSelected: viewModel.selectedSource == option,
                         icon: icon,
                         title: option.importSourceName
                     )
@@ -150,7 +162,7 @@ private struct RadioGridPicker: View {
                 .buttonStyle(CardPressStyle()) // gives us configuration.isPressed
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(option.importSourceName.replacingOccurrences(of: "\n", with: " "))
-                .accessibilityAddTraits(option == viewModel.selectedImportSource ? [.isSelected] : [])
+                .accessibilityAddTraits(option == viewModel.selectedSource ? [.isSelected] : [])
                 .accessibilityHint("Activate to select")
             }
         }

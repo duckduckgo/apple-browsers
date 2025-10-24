@@ -25,24 +25,40 @@ final class ImportSourcePickerViewModel: ObservableObject {
         static let minVisibleOptions: Int = 4
     }
 
+    private let initialSelectedImportTypes: [DataImport.DataType]
     @Published var availableImportSources: [DataImport.Source]
-    @Published var selectedImportSource: DataImport.Source
+    @Published var selectedSource: DataImport.Source
     @Published var isPickerExpanded: Bool = false
+    @Published var importTypeItems: [ImportTypeItem] {
+        didSet {
+            isDoneButtonDisabled = importTypeItems.filter { $0.isSelected }.isEmpty
+        }
+    }
+    @Published var isTypePickerSheetVisible: Bool = false
+    @Published var isDoneButtonDisabled = false
     let shouldShowSyncButton: Bool
 
     private let onSourceSelected: (DataImport.Source) -> Void
+    private let onTypeSelected: (DataImport.DataType, Bool) -> Void
     private let onSyncSelected: () -> Void
 
     init(availableSources: [DataImport.Source],
          selectedSource: DataImport.Source,
+         selectedImportTypes: [DataImport.DataType],
          shouldShowSyncButton: Bool,
          onSourceSelected: @escaping (DataImport.Source) -> Void,
+         onTypeSelected: @escaping (DataImport.DataType, Bool) -> Void,
          onSyncSelected: @escaping () -> Void) {
         self.availableImportSources = availableSources
-        self.selectedImportSource = selectedSource
+        self.selectedSource = selectedSource
+        self.initialSelectedImportTypes = selectedImportTypes
         self.shouldShowSyncButton = shouldShowSyncButton
         self.onSourceSelected = onSourceSelected
+        self.onTypeSelected = onTypeSelected
         self.onSyncSelected = onSyncSelected
+        importTypeItems = Self.selectableDataTypes(for: selectedSource).map {
+            .init(dataType: $0, isSelected: selectedImportTypes.contains($0))
+        }
     }
 
     // MARK: - Business Logic
@@ -62,7 +78,7 @@ final class ImportSourcePickerViewModel: ObservableObject {
     // MARK: - Actions
 
     func selectSource(_ source: DataImport.Source) {
-        selectedImportSource = source
+        selectedSource = source
         onSourceSelected(source)
     }
 
@@ -70,7 +86,52 @@ final class ImportSourcePickerViewModel: ObservableObject {
         isPickerExpanded.toggle()
     }
 
+    func showTypeSelectionSheet() {
+        isTypePickerSheetVisible = true
+    }
+
     func syncSelected() {
         onSyncSelected()
+    }
+
+    func typeSelectionCancelled() {
+        importTypeItems = Self.selectableDataTypes(for: selectedSource).map {
+            .init(dataType: $0, isSelected: initialSelectedImportTypes.contains($0))
+        }
+        isTypePickerSheetVisible = false
+    }
+
+    func typeSelectionDone() {
+        importTypeItems.forEach { item in
+            if item.isSelected {
+                onTypeSelected(item.dataType, true)
+            } else {
+                onTypeSelected(item.dataType, false)
+            }
+        }
+        isTypePickerSheetVisible = false
+    }
+}
+
+private extension ImportSourcePickerViewModel {
+    static func selectableDataTypes(for source: DataImport.Source) -> [DataImport.DataType] {
+        switch source {
+        case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera, .operaGX, .safari, .safariTechnologyPreview, .vivaldi, .yandex:
+            return [.bookmarks, .passwords]
+        case .tor:
+            return [.bookmarks]
+        case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv:
+            return [.passwords]
+        case .bookmarksHTML:
+            return [.bookmarks]
+        }
+    }
+}
+
+struct ImportTypeItem: Identifiable, Equatable {
+    var dataType: DataImport.DataType
+    var isSelected: Bool
+    var id: String {
+        dataType.rawValue
     }
 }

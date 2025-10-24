@@ -551,7 +551,6 @@ extension DataImport.DataType {
         case .creditCards: [.json]
         }
     }
-
 }
 
 extension DataImportViewModel {

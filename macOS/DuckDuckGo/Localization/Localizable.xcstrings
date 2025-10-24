@@ -45666,6 +45666,18 @@
         }
       }
     },
+    "import.selected-data.title" : {
+      "comment" : "Title text for the dialog to confirm which data to import (e.g passwords, bookmarks)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Selected Data"
+          }
+        }
+      }
+    },
     "import.shortcuts.bookmarks.subtitle" : {
       "comment" : "Description for the setting to enable the bookmarks bar",
       "extractionState" : "extracted_with_value",

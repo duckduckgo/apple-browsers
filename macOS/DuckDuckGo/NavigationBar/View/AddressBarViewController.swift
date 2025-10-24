@@ -522,7 +522,7 @@ final class AddressBarViewController: NSViewController {
         passiveTextField.textColor = theme.colorsProvider.textPrimaryColor
 
         // Workaround for macOS 26.0 NSTextFieldSimpleLabel rendering bug
-        if #available(macOS 26.0, *) {
+        if #available(macOS 26.0, *), featureFlagger.isFeatureOn(.blurryAddressBarTahoeFix) {
             if addressBarTextField.isHidden {
                 forceHideInternalTextFieldLabels(in: addressBarTextField)
             }

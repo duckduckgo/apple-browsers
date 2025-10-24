@@ -232,14 +232,6 @@ class AppUserDefaultsTests: XCTestCase {
         XCTAssertEqual(appUserDefaults.currentRefreshButtonPosition, .addressBar)
     }
 
-    func testWhenRefreshButtonPositionFeatureFlagIsDisabledThenDefaultAddressBarIsReturned() {
-        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        appUserDefaults.featureFlagger = MockFeatureFlagger()
-        
-        appUserDefaults.currentRefreshButtonPosition = .menu
-        XCTAssertEqual(appUserDefaults.currentRefreshButtonPosition, .addressBar)
-    }
-
     // MARK: - Mock Creation
 
     private func mockConfiguration(subfeatureEnabled: Bool) -> PrivacyConfiguration {

@@ -652,9 +652,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
 
+        defer {
+            refreshPinnedTabsLastSeparator()
+        }
+
         guard collectionView.selectionIndexPaths.first?.item != tabCollectionViewModel.selectionIndex?.item else {
             collectionView.updateItemsLeftToSelectedItems()
-            pinnedTabsCollectionView?.setLastItemSeparatorHidden(tabMode == .divided && tabCollectionViewModel.selectionIndex == .unpinned(0))
             return
         }
 
@@ -668,12 +671,25 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         let newSelectionIndexPath = IndexPath(item: selectionIndex.item)
         if tabMode == .divided {
             collectionView.animator().selectItems(at: [newSelectionIndexPath], scrollPosition: .centeredHorizontally)
-            pinnedTabsCollectionView?.setLastItemSeparatorHidden(selectionIndex == .unpinned(0))
         } else {
             collectionView.selectItems(at: [newSelectionIndexPath], scrollPosition: .centeredHorizontally)
             collectionView.scrollToSelected()
-            pinnedTabsCollectionView?.setLastItemSeparatorHidden(false)
         }
+    }
+
+    private func refreshPinnedTabsLastSeparator() {
+        guard featureFlagger.isFeatureOn(.pinnedTabsViewRewrite), let pinnedTabsCollectionView else {
+            return
+        }
+
+        pinnedTabsCollectionView.setLastItemSeparatorHidden(shouldHideLastPinnedSeparator)
+    }
+
+    private var shouldHideLastPinnedSeparator: Bool {
+        let isTabModeDivided = tabMode == .divided
+        let isFirstUnpinnedTabSelected = tabCollectionViewModel.selectionIndex == .unpinned(.zero)
+
+        return isTabModeDivided && isFirstUnpinnedTabSelected
     }
 
     private func bringSelectedTabCollectionToFront() {
@@ -1428,6 +1444,10 @@ extension TabBarViewController: NSCollectionViewDataSource {
         tabBarViewItem.delegate = self
         tabBarViewItem.isBurner = tabCollectionViewModel.isBurner
         tabBarViewItem.subscribe(to: tabViewModel)
+
+        if let pinnedTabsCollectionView, pinnedTabsCollectionView == collectionView {
+            tabBarViewItem.isLeftToSelected = pinnedTabsCollectionView.isLastItemInSection(indexPath: indexPath) && shouldHideLastPinnedSeparator
+        }
 
         return tabBarViewItem
     }

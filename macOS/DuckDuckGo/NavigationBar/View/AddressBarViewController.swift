@@ -492,17 +492,29 @@ final class AddressBarViewController: NSViewController {
     // MARK: - Layout
 
     /// Workaround for macOS 26.0 NSTextFieldSimpleLabel rendering bug
+    /// Sets the alpha value for internal label views that incorrectly remain visible
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211448334620171?focus=true
+    @available(macOS 26.0, *)
+    private func setInternalTextFieldLabelsAlpha(_ alpha: CGFloat, in textField: NSTextField) {
+        for subview in textField.subviews {
+            /// We use contains given the name of the view has other characters plus the NSTextFieldSimpleLabel
+            if NSStringFromClass(type(of: subview)).contains("NSTextFieldSimpleLabel") {
+                subview.alphaValue = alpha
+            }
+        }
+    }
+
+    /// Workaround for macOS 26.0 NSTextFieldSimpleLabel rendering bug
     /// Aggressively hides internal label views that incorrectly remain visible
     @available(macOS 26.0, *)
     private func forceHideInternalTextFieldLabels(in textField: NSTextField) {
-        for subview in textField.subviews {
-            /// We use contains instead of checking for NSTextFieldSimpleLabel give the name of the class could contain other characters
-            if NSStringFromClass(type(of: subview)).contains("NSTextFieldSimpleLabel") {
-                subview.isHidden = true
-                subview.alphaValue = 0
-                subview.removeFromSuperview()
-            }
-        }
+        setInternalTextFieldLabelsAlpha(0, in: textField)
+    }
+
+    /// Restore previously hidden NSTextFieldSimpleLabel views when address bar defocuses
+    @available(macOS 26.0, *)
+    private func restoreInternalTextFieldLabels(in textField: NSTextField) {
+        setInternalTextFieldLabelsAlpha(1, in: textField)
     }
 
     private func updateView() {
@@ -719,6 +731,11 @@ final class AddressBarViewController: NSViewController {
             activeTextFieldMinXConstraint.isActive = true
         } else if isFirstResponder {
             isFirstResponder = false
+
+            // Restore internal text field labels when address bar loses focus
+            if #available(macOS 26.0, *), featureFlagger.isFeatureOn(.blurryAddressBarTahoeFix) {
+                restoreInternalTextFieldLabels(in: addressBarTextField)
+            }
         }
     }
 
@@ -985,6 +1002,11 @@ extension AddressBarViewController: AddressBarTextFieldFocusDelegate {
     func addressBarDidLoseFocus(_ addressBarTextField: AddressBarTextField) {
         delegate?.resizeAddressBarForHomePage(self)
         addressBarButtonsViewController?.setupButtonPaddings(isFocused: false)
+
+        // Restore internal text field labels when address bar loses focus
+        if #available(macOS 26.0, *), featureFlagger.isFeatureOn(.blurryAddressBarTahoeFix) {
+            restoreInternalTextFieldLabels(in: addressBarTextField)
+        }
     }
 }
 

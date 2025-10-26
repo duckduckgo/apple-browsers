@@ -20,7 +20,6 @@
 import UIKit
 import SetDefaultBrowserUI
 
-// Will be implemented in https://app.asana.com/1/137249556945/task/1211703465383405
 final class DefaultBrowserModalPromptProvider: ModalPromptProvider {
     private let presenter: DefaultBrowserPromptPresenting
 
@@ -29,8 +28,14 @@ final class DefaultBrowserModalPromptProvider: ModalPromptProvider {
     }
 
     func provideModalPrompt() -> ModalPromptConfiguration? {
-        return nil
-    }
+        guard let defaultBrowserPromptVC = presenter.makePresentDefaultModalPrompt() else { return nil }
 
-    func didPresentModal() {}
+        return ModalPromptConfiguration(
+            viewController: defaultBrowserPromptVC,
+            presentationStyle: defaultBrowserPromptVC.modalPresentationStyle,
+            transitionStyle: defaultBrowserPromptVC.modalTransitionStyle,
+            shouldDisablePullDownToDismiss: false,
+            animated: true
+        )
+    }
 }

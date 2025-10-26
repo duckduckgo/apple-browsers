@@ -141,11 +141,21 @@ struct Launching: LaunchingHandling {
         aiChatSettings = AIChatSettings()
 
         // Initialise modal prompts coordination
-        let modalPromptCoordinationService = ModModalPromptCoordinationFactory.makeService(
+        let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
             launchSourceManager: launchSourceManager,
             keyValueFileStoreService: appKeyValueFileStoreService.keyValueFilesStore,
             privacyConfigurationManager: privacyConfigurationManager,
-            defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter
+            providersDependency: .init(
+                newAddressBarPicker: .init(
+                    featureFlagger: featureFlagger,
+                    appSettings: appSettings,
+                    aiChatSettings: aiChatSettings,
+                    experimentalAIChatManager: ExperimentalAIChatManager()
+                ),
+                defaultBrowserPrompt: .init(
+                    presenter: defaultBrowserPromptService.presenter
+                )
+            )
         )
 
         // MARK: - Main Coordinator Setup

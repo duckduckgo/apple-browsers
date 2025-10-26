@@ -17,15 +17,55 @@
 //  limitations under the License.
 //
 
-import Foundation
+import UIKit
+import AIChat
 
-// Will be implemented in https://app.asana.com/1/137249556945/task/1211703465383404
+// Adapter between NewAddressBarPickerPrompt and PromptCoordination system
 final class NewAddressBarPickerModalPromptProvider: ModalPromptProvider {
+    private let validator: NewAddressBarPickerDisplayValidating
+    private let store: NewAddressBarPickerStorageWriting
+    private let aiChatSettings: AIChatSettingsProvider
+    private let isIPad: Bool
+
+    init(
+        validator: NewAddressBarPickerDisplayValidating,
+        store: NewAddressBarPickerStorage,
+        aiChatSettings: AIChatSettingsProvider,
+        isIPad: Bool
+    ) {
+        self.validator = validator
+        self.store = store
+        self.aiChatSettings = aiChatSettings
+        self.isIPad = isIPad
+    }
 
     func provideModalPrompt() -> ModalPromptConfiguration? {
-        return nil
+        guard validator.shouldDisplayNewAddressBarPicker() else {
+            Logger.modalPrompt.info("[Modal Prompt Coordination] - Address Bar Picker Does Not Need To Be Displayed.")
+            return nil
+        }
+
+        let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: aiChatSettings)
+        let modalPresentationStyle: UIModalPresentationStyle
+
+        if #available(iOS 26.0, *), isIPad {
+            modalPresentationStyle = .formSheet
+        } else {
+            modalPresentationStyle = .pageSheet
+        }
+
+        return ModalPromptConfiguration(
+            viewController: pickerViewController,
+            presentationStyle: modalPresentationStyle,
+            transitionStyle: .coverVertical,
+            shouldDisablePullDownToDismiss: true,
+            animated: true
+        )
     }
     
-    func didPresentModal() {}
+    func didPresentModal() {
+        Logger.modalPrompt.info("[Modal Prompt Coordination] - New Address Bar Picker Did Present Prompt")
+        store.markAsShown()
+    }
     
 }

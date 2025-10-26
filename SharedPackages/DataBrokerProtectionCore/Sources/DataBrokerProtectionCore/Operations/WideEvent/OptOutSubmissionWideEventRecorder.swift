@@ -19,157 +19,77 @@
 import Foundation
 import BrowserServicesKit
 import PixelKit
+import os.log
 
-protocol OptOutSubmissionWideEventRecording: AnyObject {
-    func recordStage(_ stage: Stage,
-                     duration: Double?,
-                     tries: Int,
-                     actionID: String?)
-    func markSubmissionCompleted(at date: Date,
-                                 tries: Int,
-                                 actionID: String?)
-    func complete(status: WideEventStatus)
-    func complete(status: WideEventStatus, with error: Error?)
-    func cancel(with error: Error?)
-}
-
-extension OptOutSubmissionWideEventRecording {
-    func complete(status: WideEventStatus) {
-        complete(status: status, with: nil)
-    }
-}
-
-final class OptOutSubmissionWideEventRecorder {
+final class OptOutSubmissionWideEventRecorder: OptOutWideEventRecording {
     static let sampleRate: Float = 1.0
 
-    private let wideEvent: WideEventManaging
-    private var data: OptOutSubmissionWideEventData
-    private let queue = DispatchQueue(label: "com.duckduckgo.dbp.optout-submission-wide-event", qos: .utility)
-    private var isCompleted = false
+    let recorder: WideEventRecorder<OptOutSubmissionWideEventData>
 
-    private init(wideEvent: WideEventManaging,
-                 data: OptOutSubmissionWideEventData,
-                 shouldStartFlow: Bool) {
-        self.wideEvent = wideEvent
-        self.data = data
-
-        if shouldStartFlow {
-            wideEvent.startFlow(data)
-        }
+    private init(recorder: WideEventRecorder<OptOutSubmissionWideEventData>) {
+        self.recorder = recorder
     }
 
     static func makeIfPossible(wideEvent: WideEventManaging?,
-                               attemptID: UUID,
+                               identifier: OptOutWideEventIdentifier,
                                dataBrokerURL: String,
                                dataBrokerVersion: String?,
                                recordFoundDate: Date) -> OptOutSubmissionWideEventRecorder? {
-        guard let wideEvent else { return nil }
+        guard let recorder = WideEventRecorder<OptOutSubmissionWideEventData>.makeIfPossible(
+            wideEvent: wideEvent,
+            identifier: identifier.toGlobalId,
+            sampleRate: sampleRate,
+            intervalStart: recordFoundDate,
+            makeData: { global, interval in
+                OptOutSubmissionWideEventData(globalData: global,
+                                               dataBrokerURL: dataBrokerURL,
+                                               dataBrokerVersion: dataBrokerVersion,
+                                               submissionInterval: interval)
+            }
+        ) else { return nil }
 
-        let global = WideEventGlobalData(id: attemptID.uuidString, sampleRate: sampleRate)
-        let submissionInterval = WideEvent.MeasuredInterval(start: recordFoundDate, end: nil)
-        let data = OptOutSubmissionWideEventData(globalData: global,
-                                                 dataBrokerURL: dataBrokerURL,
-                                                 dataBrokerVersion: dataBrokerVersion,
-                                                 submissionInterval: submissionInterval)
-
-        return OptOutSubmissionWideEventRecorder(wideEvent: wideEvent,
-                                                 data: data,
-                                                 shouldStartFlow: true)
+        Logger.dataBrokerProtection.debug("PIR submission flow start")
+        return OptOutSubmissionWideEventRecorder(recorder: recorder)
     }
 
     static func resumeIfPossible(wideEvent: WideEventManaging?,
-                                 attemptID: UUID) -> OptOutSubmissionWideEventRecorder? {
-        guard let wideEvent,
-              let existing: OptOutSubmissionWideEventData = wideEvent.getFlowData(OptOutSubmissionWideEventData.self,
-                                                                                  globalID: attemptID.uuidString) else {
+                                 identifier: OptOutWideEventIdentifier) -> OptOutSubmissionWideEventRecorder? {
+        guard let recorder = WideEventRecorder<OptOutSubmissionWideEventData>.resumeIfPossible(
+            wideEvent: wideEvent,
+            identifier: identifier.toGlobalId
+        ) else {
             return nil
         }
 
-        return OptOutSubmissionWideEventRecorder(wideEvent: wideEvent,
-                                                 data: existing,
-                                                 shouldStartFlow: false)
+        Logger.dataBrokerProtection.debug("PIR submission flow resume")
+        return OptOutSubmissionWideEventRecorder(recorder: recorder)
     }
 
-    private func addStage(name: OptOutSubmissionWideEventData.StageName,
-                          duration: Double?,
-                          tries: Int?,
-                          actionID: String?) {
-        queue.async {
-            let sanitizedDuration = duration.flatMap { max($0, 0) }
-            let stage = OptOutSubmissionWideEventData.Stage(name: name,
-                                                            duration: sanitizedDuration,
-                                                            tries: tries,
-                                                            actionID: actionID)
-            self.data.appendStage(stage)
-            self.updateFlow()
-        }
-    }
-
-    private func updateFlow() {
-        wideEvent.updateFlow(data)
-    }
-
-    private func setSubmissionEnd(date: Date) {
-        queue.async {
-            self.data.submissionInterval?.end = date
-            self.updateFlow()
-        }
-    }
-
-    private func setError(_ error: Error?) {
-        guard let error else { return }
-        queue.async {
-            self.data.errorData = WideEventErrorData(error: error)
-            self.updateFlow()
-        }
-    }
-
-    private func completeInternal(status: WideEventStatus) {
-        queue.async {
-            guard !self.isCompleted else { return }
-            self.isCompleted = true
-            Task {
-                _ = try? await self.wideEvent.completeFlow(self.data, status: status)
+    @discardableResult
+    static func startIfPossible(wideEvent: WideEventManaging?,
+                                identifier: OptOutWideEventIdentifier,
+                                dataBrokerURL: String,
+                                dataBrokerVersion: String?,
+                                recordFoundDateProvider: () -> Date?) -> OptOutSubmissionWideEventRecorder? {
+        guard let recorder = WideEventRecorder<OptOutSubmissionWideEventData>.startIfPossible(
+            wideEvent: wideEvent,
+            identifier: identifier.toGlobalId,
+            sampleRate: sampleRate,
+            intervalStartProvider: recordFoundDateProvider,
+            makeData: { global, interval in
+                OptOutSubmissionWideEventData(globalData: global,
+                                               dataBrokerURL: dataBrokerURL,
+                                               dataBrokerVersion: dataBrokerVersion,
+                                               submissionInterval: interval)
             }
+        ) else {
+            return nil
         }
+
+        return OptOutSubmissionWideEventRecorder(recorder: recorder)
     }
 
-    private func mapStageName(_ stage: Stage) -> OptOutSubmissionWideEventData.StageName {
-        if let mapped = OptOutSubmissionWideEventData.StageName(rawValue: stage.rawValue) {
-            return mapped
-        } else {
-            assertionFailure("Unknown stage name")
-            return .other
-        }
-    }
-}
-
-extension OptOutSubmissionWideEventRecorder: OptOutSubmissionWideEventRecording {
-    func recordStage(_ stage: Stage,
-                     duration: Double?,
-                     tries: Int,
-                     actionID: String?) {
-        let sanitizedAction = actionID?.isEmpty == false ? actionID : nil
-        let sanitizedDuration = duration.flatMap { max($0, 0) }
-        addStage(name: mapStageName(stage),
-                 duration: sanitizedDuration,
-                 tries: tries,
-                 actionID: sanitizedAction)
-    }
-
-    func markSubmissionCompleted(at date: Date,
-                                 tries: Int,
-                                 actionID: String?) {
-        setSubmissionEnd(date: date)
-    }
-
-    func complete(status: WideEventStatus, with error: Error?) {
-        setError(error)
-        completeInternal(status: status)
-    }
-
-    func cancel(with error: Error?) {
-        setError(error)
-        completeInternal(status: .cancelled)
+    func markCompleted(at date: Date) {
+        recorder.markCompleted(at: date, invalidIntervalReason: OptOutSubmissionWideEventData.StatusReason.recordFoundDateMissing.rawValue)
     }
 }

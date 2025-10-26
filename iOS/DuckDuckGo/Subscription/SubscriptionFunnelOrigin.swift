@@ -26,7 +26,10 @@ enum SubscriptionFunnelOrigin: String {
 
     /// User entered the funnel via the App Settings screen.
     case appSettings = "funnel_appsettings_ios"
-    
+
+    /// User entered the funnel via the VPN menu item in the New Tab Page app menu.
+    case newTabMenu = "funnel_appmenu_ios"
+
     // MARK: - Win-Back Offer Origins
     
     /// User entered via win-back offer launch prompt

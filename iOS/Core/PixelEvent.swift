@@ -154,6 +154,7 @@ extension Pixel {
         case browsingMenuAIChatNewTabPage
         case browsingMenuAIChatWebPage
         case browsingMenuRefreshPage
+        case browsingMenuVPN
 
         case addressBarShare
         case addressBarSettings
@@ -679,6 +680,10 @@ extension Pixel {
         case networkProtectionVPNConfigurationRemovalFailed
 
         case networkProtectionConfigurationInvalidPayload(configuration: Configuration)
+
+        case networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure
+        case networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess
+        case networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure
 
         // MARK: - VPN Tips
 
@@ -1541,7 +1546,8 @@ extension Pixel.Event {
         case .browsingMenuFireproof: return "mb_f"
         case .browsingMenuAutofill: return "m_nav_autofill_menu_item_pressed"
         case .browsingMenuRefreshPage: return "m_menu_refresh_page"
-            
+        case .browsingMenuVPN: return "m_nav_vpn_menu_item_pressed"
+
         case .browsingMenuShare: return "m_browsingmenu_share"
         case .browsingMenuListPrint: return "m_browsing_menu_list_print"
         case .addressBarShare: return "m_addressbar_share"
@@ -2000,6 +2006,10 @@ extension Pixel.Event {
         case .networkProtectionVPNConfigurationRemovalFailed: return "m_netp_vpn_configuration_removal_failed"
 
         case .networkProtectionConfigurationInvalidPayload(let config): return "m_netp_vpn_configuration_\(config.rawValue)_invalid_payload"
+
+        case .networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure: return "m_netp_adapter_end_temporary_shutdown_state_attempt_failure"
+        case .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess: return "m_netp_adapter_end_temporary_shutdown_state_recovery_success"
+        case .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure: return "m_netp_adapter_end_temporary_shutdown_state_recovery_failure"
 
             // MARK: VPN tips
 

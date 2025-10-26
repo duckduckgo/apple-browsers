@@ -133,6 +133,9 @@
 /* New tab menu item opening a new tab */
 "action.title.tab.new" = "Uus vaheleht";
 
+/* VPN menu item */
+"action.title.vpn" = "VPN";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "All";
 
@@ -2317,9 +2320,6 @@
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Kinnita";
 
-/* Description text for the new address bar picker modal */
-"new.address.bar.picker.description" = "Tehisintellekti funktsioonid on alati valikulised.";
-
 /* Footer text for the new address bar picker */
 "new.address.bar.picker.footer" = "Kohanda menüüs Seaded > Tehisintellekti funktsioonid";
 
@@ -2332,8 +2332,8 @@
 /* Option for search only in the new address bar picker */
 "new.address.bar.picker.search.only" = "Ainult otsi";
 
-/* Subtitle for the new address bar picker modal */
-"new.address.bar.picker.subtitle" = "Vaheta otsingu ja tehisintellekti vestluse vahel";
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline" = "Kas soovid AI-chatile lihtsamat juurdepääsu?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Aadressiriba valik";
@@ -2622,6 +2622,9 @@
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Halda krediitkaarte…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "Oled saavutanud maksimaalse krediitkaartide arvu. Kustuta mõni, et jätkata sünkroonimisega.";
 
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Sünkroonimisel ilmnes tõrge. Proovi sellel seadmel sünkroonimine keelata ja seejärel loo uuesti ühendus, kasutades mõnda teist seadet või taastamiskoodi.";
@@ -3843,6 +3846,54 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Sõnum saatjalt %@:";
+
+/* CTA of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.cta" = "Vaata pakkumist";
+
+/* Dismiss of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.dismiss" = "Mitte praegu";
+
+/* Message of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.text" = "Olge kaitstud meie VPN-i, privaatse tehisintellekti ja muu abil. Tellige täna uuesti ja säästke 25%.";
+
+/* Title of message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.title" = "Viimane päev säästa 25%!";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "Säästke 25%";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "Vaata pakkumist";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Mitte praegu";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "Olge kaitstud meie VPN-i, privaatse tehisintellekti ja muu abil. Tellige täna uuesti ja säästke 25%.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Ainult piiratud ajaks";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "Tahame teid tagasi!\nSaate 25% soodustust.";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "Vaata pakkumist";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "Mul on tellimus";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "Piiratud ajaga pakkumine!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "Olge kaitstud meie VPN-i, privaatse tehisintellekti ja muu abil. Tellige täna uuesti ja säästke 25%.\nPiiratud ajaga pakkumine.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "Tellige uuesti ja säästke 25%";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Tellige uuesti ja säästke 25%";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Kas otsid Maci versiooni?";

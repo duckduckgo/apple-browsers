@@ -133,6 +133,9 @@
 /* New tab menu item opening a new tab */
 "action.title.tab.new" = "Yeni Sekme";
 
+/* VPN menu item */
+"action.title.vpn" = "VPN";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Alt";
 
@@ -2317,9 +2320,6 @@
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Onayla";
 
-/* Description text for the new address bar picker modal */
-"new.address.bar.picker.description" = "Yapay zeka özellikleri her zaman isteğe bağlıdır.";
-
 /* Footer text for the new address bar picker */
 "new.address.bar.picker.footer" = "Ayarlar > AI Özellikleri bölümünden ayarlarınızı değiştirebilirsiniz";
 
@@ -2332,8 +2332,8 @@
 /* Option for search only in the new address bar picker */
 "new.address.bar.picker.search.only" = "Yalnızca Arama";
 
-/* Subtitle for the new address bar picker modal */
-"new.address.bar.picker.subtitle" = "Arama ve AI sohbeti arasında geçiş yapın";
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline" = "AI Sohbetine Daha Kolay Erişmek İster misiniz?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Adres çubuğu seçeneği";
@@ -2622,6 +2622,9 @@
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Kredi kartlarını yönetin…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "Maksimum kredi kartı sayısına ulaştınız. Senkronizasyona devam etmek için lütfen bazılarını silin.";
 
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Senkronizasyon bir hatayla karşılaştı. Bu cihazda senkronizasyonu devre dışı bırakmayı deneyin ve ardından başka bir cihaz veya kurtarma kodunuzu kullanarak yeniden bağlanın.";
@@ -3843,6 +3846,54 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "%@ size bir mesaj gönderdi:";
+
+/* CTA of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.cta" = "Teklifi Gör";
+
+/* Dismiss of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.dismiss" = "Şimdi Değil";
+
+/* Message of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.text" = "VPN, özel yapay zeka ve daha fazlasıyla güvende kalın. Bugün yeniden abone olup %25 tasarruf edin.";
+
+/* Title of message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.title" = "%25 tasarruf etmek için son gün!";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "%25 TASARRUF EDİN";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "Teklifi Gör";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Şimdi Değil";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "VPN, özel yapay zekâ ve daha fazlasıyla güvende kalın. Bugün yeniden abone olup %25 tasarruf edin.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Sadece sınırlı bir süre için";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "Geri dönmenizi istiyoruz!\n%25 indirim kazanın.";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "Teklifi Gör";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "Aboneliğim Var";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "Sınırlı bir süre için!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "VPN, özel yapay zeka ve daha fazlasıyla güvende kalın. Bugün yeniden abone olup %25 tasarruf edin.Sınırlı bir süre için.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "Yeniden abone olup %25 tasarruf edin";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Yeniden abone olup %25 tasarruf edin";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Mac Sürümünü mü arıyorsunuz?";

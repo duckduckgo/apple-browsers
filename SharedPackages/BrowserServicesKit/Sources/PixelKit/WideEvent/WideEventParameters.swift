@@ -98,23 +98,4 @@ public enum WideEventParameter {
         public static let underlyingErrorDomain = "feature.data.error.underlying_domain"
         public static let underlyingErrorCode = "feature.data.error.underlying_code"
     }
-
-    public enum PIR {
-        public enum OptOutSubmissionFeature {
-            static let dataBrokerURL = "feature.data.ext.data_broker"
-            static let dataBrokerVersion = "feature.data.ext.data_broker_version"
-            static let submissionLatency = "feature.data.ext.submission_latency_ms"
-
-            static func stagePrefix(index: Int) -> String {
-                return "feature.data.ext.stages.\(index)"
-            }
-        }
-
-        public enum OptOutConfirmationFeature {
-            static let dataBrokerURL = "feature.data.ext.data_broker"
-            static let dataBrokerVersion = "feature.data.ext.data_broker_version"
-            static let confirmationLatency = "feature.data.ext.confirmation_latency_ms"
-        }
-    }
-
 }

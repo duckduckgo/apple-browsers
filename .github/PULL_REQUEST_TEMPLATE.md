@@ -15,6 +15,17 @@ CC:
 1.
 2.
 
+<!-- 
+### Testability Challenges
+If you encountered issues writing tests due to any class in the codebase, please report it in the [Testability Challenges Document](https://app.asana.com/1/137249556945/project/1204186595873227/task/1211703869786699)
+
+1. **Check the Document:** First, check the **Testability Challenges Table** to see if the class you encountered is listed.
+2. **If the Class Exists:**
+   - Update the **Encounter Count** by increasing it by 1.
+3. **If the Class Does Not Exist:**
+   - Add a new entry
+-->
+
 ### Impact and Risks
 <!-- 
 What's the impact on users if something goes wrong?

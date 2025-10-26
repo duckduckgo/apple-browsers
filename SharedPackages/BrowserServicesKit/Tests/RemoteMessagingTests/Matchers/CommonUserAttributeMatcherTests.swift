@@ -26,6 +26,7 @@ import XCTest
 class CommonUserAttributeMatcherTests: XCTestCase {
 
     var mockStatisticsStore: MockStatisticsStore!
+    var mockFeatureDiscovery: MockFeatureDiscovery!
     var manager: MockVariantManager!
     var emailManager: EmailManager!
     var matcher: CommonUserAttributeMatcher!
@@ -41,6 +42,8 @@ class CommonUserAttributeMatcherTests: XCTestCase {
         mockStatisticsStore.appRetentionAtb = "v105-44"
         mockStatisticsStore.searchRetentionAtb = "v105-88"
         mockStatisticsStore.installDate = dateYesterday
+
+        mockFeatureDiscovery = MockFeatureDiscovery()
 
         manager = MockVariantManager(isSupportedReturns: true,
                                          currentVariant: MockVariant(name: "zo", weight: 44, isIncluded: { return true }, features: [.dummy]))
@@ -262,6 +265,44 @@ class CommonUserAttributeMatcherTests: XCTestCase {
         ), .fail)
     }
 
+    // MARK: - Duck.ai
+
+    func testWhenDaysSinceDuckAiUsedEqualOrLowerThanMaxThenReturnMatch() throws {
+        mockFeatureDiscovery.setDaysSinceLastUsedValue(1, for: .aiChat)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: DaysSinceDuckAIUsedMatchingAttribute(max: 1, fallback: nil)), .match)
+    }
+
+    func testWhenDaysSinceDuckAiUsedGreaterThanMaxThenReturnFail() throws {
+        mockFeatureDiscovery.setDaysSinceLastUsedValue(1, for: .aiChat)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: DaysSinceDuckAIUsedMatchingAttribute(max: 0, fallback: nil)), .fail)
+    }
+
+    func testWhenDaysSinceDuckAiUsedEqualOrGreaterThanMinThenReturnMatch() throws {
+        mockFeatureDiscovery.setDaysSinceLastUsedValue(1, for: .aiChat)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: DaysSinceDuckAIUsedMatchingAttribute(min: 1, fallback: nil)), .match)
+    }
+
+    func testWhenDaysSinceDuckAiUsedLowerThanMinThenReturnFail() throws {
+        mockFeatureDiscovery.setDaysSinceLastUsedValue(1, for: .aiChat)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: DaysSinceDuckAIUsedMatchingAttribute(min: 2, fallback: nil)), .fail)
+    }
+
+    func testWhenDaysSinceDuckAiUsedInRangeThenReturnMatch() throws {
+        mockFeatureDiscovery.setDaysSinceLastUsedValue(1, for: .aiChat)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: DaysSinceDuckAIUsedMatchingAttribute(min: 0, max: 1, fallback: nil)), .match)
+    }
+
+    func testWhenDaysSinceDuckAiUsedNotInRangeThenReturnFail() throws {
+        mockFeatureDiscovery.setDaysSinceLastUsedValue(1, for: .aiChat)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: DaysSinceDuckAIUsedMatchingAttribute(min: 2, max: 44, fallback: nil)), .fail)
+    }
+
+    func testWhenDaysSinceDuckAiUsedIsNilThenReturnFail() throws {
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: DaysSinceDuckAIUsedMatchingAttribute(max: 0, fallback: nil)), .fail)
+    }
+
+    // MARK: - Dismissed Messages
+
     func testWhenOneDismissedMessageIdMatchesThenReturnMatch() throws {
         setUpUserAttributeMatcher(dismissedMessageIds: ["1"])
         XCTAssertEqual(matcher.evaluate(
@@ -391,6 +432,7 @@ class CommonUserAttributeMatcherTests: XCTestCase {
     private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [], shownMessageIds: [String] = [], enabledFeatureFlags: [String] = []) {
         matcher = CommonUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
+            featureDiscovery: mockFeatureDiscovery,
             variantManager: manager,
             emailManager: emailManager,
             bookmarksCount: 44,

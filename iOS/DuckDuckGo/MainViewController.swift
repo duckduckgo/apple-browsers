@@ -1949,17 +1949,6 @@ class MainViewController: UIViewController {
                 self?.refreshOmniBar()
             }
             .store(in: &refreshButtonCancellables)
-        
-        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
-            return
-        }
-        
-        overridesHandler.flagDidChangePublisher
-            .filter { $0.0 == .refreshButtonPosition }
-            .sink { [weak self] _ in
-                self?.refreshOmniBar()
-            }
-            .store(in: &refreshButtonCancellables)
     }
 
     private func subscribeToNetworkProtectionEvents() {
@@ -3084,6 +3073,10 @@ extension MainViewController: TabDelegate {
 
     func tabDidRequestSettingsToCreditCardManagement(_ tab: TabViewController, source: AutofillSettingsSource) {
         segueToSettingsAutofillWith(account: nil, card: nil, showCardManagement: true, source: source)
+    }
+
+    func tabDidRequestSettingsToVPN(_ tab: TabViewController) {
+        segueToVPN()
     }
 
     func tabContentProcessDidTerminate(tab: TabViewController) {

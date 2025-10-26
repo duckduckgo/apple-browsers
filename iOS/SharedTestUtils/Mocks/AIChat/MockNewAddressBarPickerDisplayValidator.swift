@@ -1,5 +1,5 @@
 //
-//  NewAddressBarPickerPresenter.swift
+//  MockNewAddressBarPickerDisplayValidator.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -18,25 +18,18 @@
 //
 
 import Foundation
-import Core
+@testable import DuckDuckGo
 
-@MainActor
-protocol NewAddressBarPickerPresenting {
+final class MockNewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating {
+    private let shouldDisplayPicker: Bool
+    var didCallShouldDisplayNewAddressBarPicker = false
 
-    func presentNewAddressBarPickerIfNeeded()
-
-}
-
-final class NewAddressBarPickerPresenter: NewAddressBarPickerPresenting {
-    private let mainViewController: MainViewController
-
-    init(mainViewController: MainViewController) {
-        self.mainViewController = mainViewController
+    init(shouldDisplayPicker: Bool) {
+        self.shouldDisplayPicker = shouldDisplayPicker
     }
 
-    func presentNewAddressBarPickerIfNeeded() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.mainViewController.presentNewAddressBarPickerIfNeeded()
-        }
+    func shouldDisplayNewAddressBarPicker() -> Bool {
+        didCallShouldDisplayNewAddressBarPicker = true
+        return shouldDisplayPicker
     }
 }

@@ -133,8 +133,7 @@ struct Launching: LaunchingHandling {
             featureFlagger: featureFlagger,
             privacyConfigManager: privacyConfigurationManager,
             keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
-            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
-            isOnboardingCompletedProvider: { !daxDialogs.isEnabled }
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager
         )
 
         // Has to be intialised after configuration.start in case values need to be migrated
@@ -178,7 +177,6 @@ struct Launching: LaunchingHandling {
                                               customConfigurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
                                               didFinishLaunchingStartTime: isAppLaunchedInBackground ? nil : didFinishLaunchingStartTime,
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
-                                              defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                                               systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
                                               daxDialogsManager: daxDialogs,
                                               dbpIOSPublicInterface: dbpService.dbpIOSPublicInterface,

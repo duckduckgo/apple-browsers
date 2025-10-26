@@ -35,8 +35,7 @@ final class DefaultBrowserPromptService {
         featureFlagger: FeatureFlagger,
         privacyConfigManager: PrivacyConfigurationManaging,
         keyValueFilesStore: ThrowingKeyValueStoring,
-        systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManager,
-        isOnboardingCompletedProvider: @escaping () -> Bool
+        systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManager
     ) {
 
 #if DEBUG || ALPHA
@@ -68,7 +67,6 @@ final class DefaultBrowserPromptService {
             checkDefaultBrowserDebugEventMapper: checkDefaultBrowserPixelHandler,
             promptUserInteractionEventMapper: promptActivityPixelHandler,
             uiProvider: DefaultBrowserPromptUIProvider(),
-            isOnboardingCompletedProvider: isOnboardingCompletedProvider,
             installDateProvider: { StatisticsUserDefaults().installDate },
             currentDateProvider: defaultBrowserDateProvider
         )

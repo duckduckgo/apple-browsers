@@ -21,19 +21,23 @@ import Foundation
 import Persistence
 import SetDefaultBrowserUI
 import BrowserServicesKit
+import enum Common.DevicePlatform
+import AIChat
+
+// MARK: - Factory
 
 @MainActor
-enum ModModalPromptCoordinationFactory {
+enum ModalPromptCoordinationFactory {
 
     static func makeService(
         launchSourceManager: LaunchSourceManager,
         keyValueFileStoreService: ThrowingKeyValueStoring,
         privacyConfigurationManager: PrivacyConfigurationManaging,
-        defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
+        providersDependency: ProvidersDependency,
     ) -> ModalPromptCoordinationService {
 
-        let newAddressBarPickerModalPromptProvider = NewAddressBarPickerModalPromptProvider()
-        let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: defaultBrowserPromptPresenter)
+        let newAddressBarPickerModalPromptProvider = makeNewAddressBarPickerModalPromptProvider(dependency: providersDependency.newAddressBarPicker)
+        let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: providersDependency.defaultBrowserPrompt.presenter)
         let winBackOfferModalPromptProvider = WinBackOfferModalPromptProvider()
 
         return ModalPromptCoordinationService(
@@ -47,6 +51,59 @@ enum ModModalPromptCoordinationFactory {
                 winBackOffer: winBackOfferModalPromptProvider
             )
         )
+    }
+
+}
+
+// MARK: - New Address Bar Picker
+
+private extension ModalPromptCoordinationFactory {
+
+    static func makeNewAddressBarPickerModalPromptProvider(dependency: ProvidersDependency.NewAddressBarPickerDependency) -> NewAddressBarPickerModalPromptProvider {
+
+        let store = NewAddressBarPickerStore()
+        let aiChatSettings = dependency.aiChatSettings
+
+        let validator = NewAddressBarPickerDisplayValidator(
+            aiChatSettings: aiChatSettings,
+            featureFlagger: dependency.featureFlagger,
+            experimentalAIChatManager: dependency.experimentalAIChatManager,
+            appSettings: dependency.appSettings,
+            pickerStorage: store
+        )
+
+        return NewAddressBarPickerModalPromptProvider(
+            validator: validator,
+            store: store,
+            aiChatSettings: aiChatSettings,
+            isIPad: DevicePlatform.isIpad
+        )
+    }
+
+}
+
+// MARK: - Dependencies
+
+extension ModalPromptCoordinationFactory {
+
+    struct ProvidersDependency {
+        let newAddressBarPicker: NewAddressBarPickerDependency
+        let defaultBrowserPrompt: DefaultBrowserDependency
+    }
+
+}
+
+extension ModalPromptCoordinationFactory.ProvidersDependency {
+
+    struct NewAddressBarPickerDependency {
+        let featureFlagger: FeatureFlagger
+        let appSettings: AppSettings
+        let aiChatSettings: AIChatSettingsProvider
+        let experimentalAIChatManager: ExperimentalAIChatManager
+    }
+
+    struct DefaultBrowserDependency {
+        let presenter: DefaultBrowserPromptPresenting
     }
 
 }

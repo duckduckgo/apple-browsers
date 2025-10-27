@@ -19,4 +19,5 @@
 public enum AIChatURLParameters {
     public static let promptQueryName = "q"
     public static let autoSubmitPromptQueryName = "prompt"
+    public static let autoSubmitPromptQueryValue = "1"
 }

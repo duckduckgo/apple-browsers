@@ -19,6 +19,7 @@
 import Foundation
 
 final public class VPNNotificationsPresenterTogglableDecorator: VPNNotificationsPresenting {
+
     private let settings: VPNSettings
     private let defaults: UserDefaults
     private let wrappeePresenter: VPNNotificationsPresenting
@@ -69,6 +70,12 @@ final public class VPNNotificationsPresenterTogglableDecorator: VPNNotifications
         if defaults.showEntitlementNotification {
             defaults.showEntitlementNotification = false
             wrappeePresenter.showEntitlementNotification()
+        }
+    }
+
+    public func showDebugEventNotification(message: String) {
+        if settings.showDebugVPNEventNotifications {
+            wrappeePresenter.showDebugEventNotification(message: message)
         }
     }
 

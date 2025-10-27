@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Persistence
 import Foundation
+import Common
+import Persistence
 
 /// These features don't have a way to see if have been used before so storage is provided here.
 ///  Don't change these unless you intend to reset the feature discovery flag.
@@ -30,6 +31,10 @@ public enum WasUsedBeforeFeature: String {
 
     public var storageKey: String {
         "featureUsedBefore_\(rawValue)"
+    }
+
+    public var lastUsedTimestampStorageKey: String {
+        "featureLastUsedTimestamp_\(rawValue)"
     }
 
 }
@@ -45,6 +50,9 @@ public protocol FeatureDiscovery {
     /// Retrieve the stored state for a given feature.
     func wasUsedBefore(_ feature: WasUsedBeforeFeature) -> Bool
 
+    /// Returns the number of days since the feature was last used, or nil if the feature has never been used.
+    func daysSinceLastUsed(_ feature: WasUsedBeforeFeature) -> Int?
+
     func addToParams(_ params: [String: String], forFeature feature: WasUsedBeforeFeature) -> [String: String]
 
 }
@@ -53,15 +61,23 @@ final public class DefaultFeatureDiscovery: FeatureDiscovery {
 
     private let wasUsedBeforeStorage: KeyValueStoring
     private let notificationCenter: NotificationCenter
+    private let dateProvider: CurrentDateProviding
 
     public init(wasUsedBeforeStorage: KeyValueStoring = UserDefaults.standard,
-                notificationCenter: NotificationCenter = NotificationCenter.default) {
+                notificationCenter: NotificationCenter = NotificationCenter.default,
+                dateProvider: CurrentDateProviding = DefaultCurrentDateProvider()) {
         self.wasUsedBeforeStorage = wasUsedBeforeStorage
         self.notificationCenter = notificationCenter
+        self.dateProvider = dateProvider
     }
 
     public func setWasUsedBefore(_ feature: WasUsedBeforeFeature) {
         wasUsedBeforeStorage.set(true, forKey: feature.storageKey)
+
+        let currentDate = dateProvider.currentDate
+        let startOfDay = currentDate.startOfDay
+        wasUsedBeforeStorage.set(startOfDay, forKey: feature.lastUsedTimestampStorageKey)
+
         notificationCenter.post(name: .featureDiscoverySetWasUsedBefore,
                                 object: self,
                                 userInfo: ["feature": feature.rawValue])
@@ -69,6 +85,16 @@ final public class DefaultFeatureDiscovery: FeatureDiscovery {
 
     public func wasUsedBefore(_ feature: WasUsedBeforeFeature) -> Bool {
         return wasUsedBeforeStorage.object(forKey: feature.storageKey) as? Bool ?? false
+    }
+
+    public func daysSinceLastUsed(_ feature: WasUsedBeforeFeature) -> Int? {
+        guard let lastUsedDate = wasUsedBeforeStorage.object(forKey: feature.lastUsedTimestampStorageKey) as? Date else {
+            return nil
+        }
+
+        let currentDate = dateProvider.currentDate
+        let daysSinceLastUsedDate = Calendar.current.dateComponents([.day], from: lastUsedDate, to: currentDate)
+        return daysSinceLastUsedDate.day
     }
 
     public func addToParams(_ params: [String: String], forFeature feature: WasUsedBeforeFeature) -> [String: String] {

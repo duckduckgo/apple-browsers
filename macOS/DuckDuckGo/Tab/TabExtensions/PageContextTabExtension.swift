@@ -46,6 +46,7 @@ final class PageContextTabExtension {
     private let aiChatSidebarProvider: AIChatSidebarProviding
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     private let isLoadedInSidebar: Bool
+    private let faviconManagement: FaviconManagement
     private var cachedPageContext: AIChatPageContextData?
 
     /// This flag is set when context collection was requested by the user from the sidebar.
@@ -74,13 +75,15 @@ final class PageContextTabExtension {
         featureFlagger: FeatureFlagger,
         aiChatSidebarProvider: AIChatSidebarProviding,
         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
-        isLoadedInSidebar: Bool
+        isLoadedInSidebar: Bool,
+        faviconManagement: FaviconManagement
     ) {
         self.tabID = tabID
         self.featureFlagger = featureFlagger
         self.aiChatSidebarProvider = aiChatSidebarProvider
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.isLoadedInSidebar = isLoadedInSidebar
+        self.faviconManagement = faviconManagement
 
         guard !isLoadedInSidebar else {
             return
@@ -121,7 +124,9 @@ final class PageContextTabExtension {
                 guard let cachedPageContext, isContextCollectionEnabled else {
                     return
                 }
-                handle(cachedPageContext)
+                Task {
+                    await self.handle(cachedPageContext)
+                }
             }
             .store(in: &cancellables)
 
@@ -152,7 +157,10 @@ final class PageContextTabExtension {
                     return
                 }
                 /// This closure is responsible for handling page context received from the user script.
-                handle(isContextCollectionEnabled ? pageContext : nil)
+                let isEnabled = self.isContextCollectionEnabled
+                Task {
+                    await self.handle(isEnabled ? pageContext : nil)
+                }
             }
             .store(in: &userScriptCancellables)
     }
@@ -175,14 +183,14 @@ final class PageContextTabExtension {
     /// This is the main place where page context handling happens.
     /// We always cache the latest context, and if sidebar is open,
     /// we're passing the context to it.
-    private func handle(_ pageContext: AIChatPageContextData?) {
+    private func handle(_ pageContext: AIChatPageContextData?) async {
         guard featureFlagger.isFeatureOn(.aiChatPageContext) else {
             return
         }
         shouldForceContextCollection = false
-        cachedPageContext = pageContext
+        cachedPageContext = await replaceFaviconURLWithEncodedData(pageContext)
         if let sidebarViewController = aiChatSidebarProvider.getSidebarViewController(for: tabID) {
-            sidebarViewController.setPageContext(pageContext)
+            await sidebarViewController.setPageContext(cachedPageContext)
         }
     }
 
@@ -197,6 +205,44 @@ final class PageContextTabExtension {
     /// or when we allow one-time collection requested by the user.
     private var isContextCollectionEnabled: Bool {
         aiChatMenuConfiguration.shouldAutomaticallySendPageContext || shouldForceContextCollection
+    }
+
+    @MainActor private func replaceFaviconURLWithEncodedData(_ pageContext: AIChatPageContextData?) -> AIChatPageContextData? {
+        guard let pageContext = pageContext,
+              let pageURL = URL(string: pageContext.url),
+              let favicon = getCurrentFavicon(for: pageURL),
+              let base64Favicon = makeBase64EncodedFavicon(from: favicon) else {
+            return pageContext
+        }
+
+        // Replace the favicon array with a single data URL entry
+        let faviconData = AIChatPageContextData.PageContextFavicon(href: base64Favicon, rel: "icon")
+        return AIChatPageContextData(
+            title: pageContext.title,
+            favicon: [faviconData],
+            url: pageContext.url,
+            content: pageContext.content,
+            truncated: pageContext.truncated,
+            fullContentLength: pageContext.fullContentLength
+        )
+    }
+
+    @MainActor private func getCurrentFavicon(for url: URL) -> NSImage? {
+        faviconManagement.getCachedFavicon(for: url, sizeCategory: .small)?.image
+    }
+
+    private func makeBase64EncodedFavicon(from image: NSImage) -> String? {
+        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            return nil
+        }
+
+        let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
+        guard let pngData = bitmapRep.representation(using: .png, properties: [:]) else {
+            return nil
+        }
+
+        let base64String = pngData.base64EncodedString()
+        return "data:image/png;base64,\(base64String)"
     }
 }
 

@@ -42339,6 +42339,18 @@
         }
       }
     },
+    "import.choose-source.show-more-button.title" : {
+      "comment" : "Button text for showing more import options in the data import view",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show More"
+          }
+        }
+      }
+    },
     "import.choose-source.sync-button.action" : {
       "comment" : "Action text for syncing data with another device from the data import view",
       "extractionState" : "extracted_with_value",
@@ -80744,9 +80756,6 @@
           }
         }
       }
-    },
-    "Show More" : {
-
     },
     "Show Next Tab" : {
       "comment" : "Main Menu Window item",

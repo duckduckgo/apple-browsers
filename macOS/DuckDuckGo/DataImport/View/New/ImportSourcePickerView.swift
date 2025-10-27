@@ -80,7 +80,7 @@ struct ImportSourcePickerView: View {
                     HoverButtonView {
                         viewModel.toggleExpansion()
                     } content: {
-                        Text("Show More")
+                        Text(UserText.importChooseSourceShowMoreButtonTitle)
                             .font(.system(size: 11, weight: .semibold))
                             .multilineTextAlignment(.center)
                     }

@@ -506,28 +506,6 @@ private var openPanelDirectoryURL: URL? {
     }
 }
 
-extension DataImport.Source {
-
-//    var initialScreen: DataImportViewModel.Screen {
-//        switch self {
-//        case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera,
-//             .operaGX, .tor, .vivaldi, .yandex:
-//            return .profileAndDataTypesPicker
-//        case .safari, .safariTechnologyPreview:
-//            if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {
-//                return .archiveImport(dataTypes: supportedDataTypes)
-//            } else {
-//                return .profileAndDataTypesPicker
-//            }
-//        case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv:
-//            return .fileImport(dataType: .passwords)
-//        case .bookmarksHTML:
-//            return .fileImport(dataType: .bookmarks)
-//        }
-//    }
-
-}
-
 extension DataImport.DataType {
 
     static func dataTypes(before dataType: DataImport.DataType, inclusive: Bool) -> [Self].SubSequence {

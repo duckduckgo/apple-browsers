@@ -18,6 +18,7 @@
 
 import SwiftUI
 
+@available(*, deprecated, message: "Soon to be replaced by PinnedTabsCollectionView!")
 struct PinnedTabsView: View {
     @ObservedObject var model: PinnedTabsViewModel
     @State private var draggedTab: Tab?

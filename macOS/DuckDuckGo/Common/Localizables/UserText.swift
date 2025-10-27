@@ -1190,6 +1190,10 @@ struct UserText {
         String(format: NSLocalizedString("import.from.file.title", value: "Import from %@", comment: "Title text for the file import screen, after the user selects a source"), source.importSourceName)
     }
 
+    static let importTypeSelectionTitleAll = NSLocalizedString("import.type-selection.title.all", value: "Import Bookmarks & Passwords", comment: "Title text for the button to select the type of data to import (e.g passwords, bookmarks)")
+    static let importTypeSelectionTitleBookmarks = NSLocalizedString("import.type-selection.title.bookmarks", value: "Import Bookmarks", comment: "Title text for the button to select the type of data to import when bookmarks selected")
+    static let importTypeSelectionTitlePasswords = NSLocalizedString("import.type-selection.title.passwords", value: "Import Passwords", comment: "Title text for the button to select the type of data to import when passwords selected")
+
     static let importLoginsCSV = NSLocalizedString("import.logins.csv.title", value: "CSV Passwords File (for other browsers)", comment: "Title text for the CSV importer")
     static let importBookmarksHTML = NSLocalizedString("import.bookmarks.html.title", value: "HTML Bookmarks File (for other browsers)", comment: "Title text for the HTML Bookmarks importer")
     static let importBookmarksSelectHTMLFile = NSLocalizedString("import.bookmarks.select-html-file", value: "Select Bookmarks HTML File…", comment: "Button text for selecting HTML Bookmarks file")

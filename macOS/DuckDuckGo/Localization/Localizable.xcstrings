@@ -40898,9 +40898,6 @@
         }
       }
     },
-    "Import Bookmarks & Passwords" : {
-
-    },
     "Import from %@" : {
 
     },
@@ -45974,6 +45971,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$d Откройте %2$@ **Safari → Файл → Экспорт данных просмотра в файл...**\n%3$d Выберите **Закладки**, **пароли** и/или **кредитные карты** и нажмите **Экспортировать**.\n%4$d Загрузите экспортированный ZIP-архив ниже."
+    "import.type-selection.title.all" : {
+      "comment" : "Title text for the button to select the type of data to import (e.g passwords, bookmarks)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Bookmarks & Passwords"
+          }
+        }
+      }
+    },
+    "import.type-selection.title.bookmarks" : {
+      "comment" : "Title text for the button to select the type of data to import when bookmarks selected",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Bookmarks"
+          }
+        }
+      }
+    },
+    "import.type-selection.title.passwords" : {
+      "comment" : "Title text for the button to select the type of data to import when passwords selected",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Passwords"
           }
         }
       }

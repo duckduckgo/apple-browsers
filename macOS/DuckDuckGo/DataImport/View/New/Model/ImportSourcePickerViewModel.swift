@@ -25,9 +25,22 @@ final class ImportSourcePickerViewModel: ObservableObject {
         static let minVisibleOptions: Int = 4
     }
 
-    private let initialSelectedImportTypes: [DataImport.DataType]
+    var selectedImportTypes: [DataImport.DataType] {
+        didSet {
+            typeButtonTitle = Self.titleFor(selectedImportTypes: selectedImportTypes)
+        }
+    }
+
     @Published var availableImportSources: [DataImport.Source]
-    @Published var selectedSource: DataImport.Source
+    @Published var selectedSource: DataImport.Source {
+        didSet {
+            selectedImportTypes = Self.selectableDataTypes(for: selectedSource)
+            typeButtonTitle = Self.titleFor(selectedImportTypes: selectedImportTypes)
+            importTypeItems = Self.selectableDataTypes(for: selectedSource).map {
+                .init(dataType: $0, isSelected: selectedImportTypes.contains($0))
+            }
+        }
+    }
     @Published var isPickerExpanded: Bool = false
     @Published var importTypeItems: [ImportTypeItem] {
         didSet {
@@ -36,6 +49,8 @@ final class ImportSourcePickerViewModel: ObservableObject {
     }
     @Published var isTypePickerSheetVisible: Bool = false
     @Published var isDoneButtonDisabled = false
+    @Published var typeButtonTitle: String = UserText.importTypeSelectionTitleAll
+
     let shouldShowSyncButton: Bool
 
     private let onSourceSelected: (DataImport.Source) -> Void
@@ -51,11 +66,12 @@ final class ImportSourcePickerViewModel: ObservableObject {
          onSyncSelected: @escaping () -> Void) {
         self.availableImportSources = availableSources
         self.selectedSource = selectedSource
-        self.initialSelectedImportTypes = selectedImportTypes
+        self.selectedImportTypes = selectedImportTypes
         self.shouldShowSyncButton = shouldShowSyncButton
         self.onSourceSelected = onSourceSelected
         self.onTypeSelected = onTypeSelected
         self.onSyncSelected = onSyncSelected
+        typeButtonTitle = Self.titleFor(selectedImportTypes: selectedImportTypes)
         importTypeItems = Self.selectableDataTypes(for: selectedSource).map {
             .init(dataType: $0, isSelected: selectedImportTypes.contains($0))
         }
@@ -96,7 +112,7 @@ final class ImportSourcePickerViewModel: ObservableObject {
 
     func typeSelectionCancelled() {
         importTypeItems = Self.selectableDataTypes(for: selectedSource).map {
-            .init(dataType: $0, isSelected: initialSelectedImportTypes.contains($0))
+            .init(dataType: $0, isSelected: selectedImportTypes.contains($0))
         }
         isTypePickerSheetVisible = false
     }
@@ -109,6 +125,7 @@ final class ImportSourcePickerViewModel: ObservableObject {
                 onTypeSelected(item.dataType, false)
             }
         }
+        selectedImportTypes = importTypeItems.filter(\.isSelected).map( \.dataType )
         isTypePickerSheetVisible = false
     }
 }
@@ -124,6 +141,21 @@ private extension ImportSourcePickerViewModel {
             return [.passwords]
         case .bookmarksHTML:
             return [.bookmarks]
+        }
+    }
+
+    static func titleFor(selectedImportTypes: [DataImport.DataType]) -> String {
+        if selectedImportTypes.count >= 2,
+            selectedImportTypes.contains(.passwords),
+            selectedImportTypes.contains(.bookmarks) {
+            return UserText.importTypeSelectionTitleAll
+        } else if selectedImportTypes.first == .bookmarks {
+            return UserText.importTypeSelectionTitleBookmarks
+        } else if selectedImportTypes.first == .passwords {
+            return UserText.importTypeSelectionTitlePasswords
+        } else {
+            assert(false, "Unsupported data type selection: \(selectedImportTypes)")
+            return UserText.importDataImportTypeTitleSelected
         }
     }
 }

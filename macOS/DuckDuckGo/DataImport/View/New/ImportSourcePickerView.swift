@@ -55,7 +55,7 @@ struct ImportSourcePickerView: View {
                         viewModel.showTypeSelectionSheet()
                     } content: {
                         HStack(alignment: .lastTextBaseline, spacing: 1) {
-                            Text("Import Bookmarks & Passwords")
+                            Text(viewModel.typeButtonTitle)
                                 .font(.system(size: 13, weight: .semibold))
                             Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight)
                                 .renderingMode(.template)

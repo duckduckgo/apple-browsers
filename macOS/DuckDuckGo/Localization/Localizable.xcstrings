@@ -44842,7 +44842,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Choose **Bookmarks, Passwords,** and/or **Credit Cards**, then click **Export**\n%4$d Add the exported ZIP file below"
+            "value" : "%1$d Open **Safari → File → Export → Bookmarks** and save the file\n%2$d Upload the exported HTML file to DuckDuckGo"
           }
         }
       }
@@ -45915,6 +45915,42 @@
         }
       }
     },
+    "import.type-selection.title.all" : {
+      "comment" : "Title text for the button to select the type of data to import (e.g passwords, bookmarks)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Bookmarks & Passwords"
+          }
+        }
+      }
+    },
+    "import.type-selection.title.bookmarks" : {
+      "comment" : "Title text for the button to select the type of data to import when bookmarks selected",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Bookmarks"
+          }
+        }
+      }
+    },
+    "import.type-selection.title.passwords" : {
+      "comment" : "Title text for the button to select the type of data to import when passwords selected",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Passwords"
+          }
+        }
+      }
+    },
     "import.zip.instructions.safari" : {
       "comment" : "Instructions to import multiple data types exported as ZIP from Safari.\n%N$d - step number\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
@@ -45971,38 +46007,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$d Откройте %2$@ **Safari → Файл → Экспорт данных просмотра в файл...**\n%3$d Выберите **Закладки**, **пароли** и/или **кредитные карты** и нажмите **Экспортировать**.\n%4$d Загрузите экспортированный ZIP-архив ниже."
-    "import.type-selection.title.all" : {
-      "comment" : "Title text for the button to select the type of data to import (e.g passwords, bookmarks)",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Import Bookmarks & Passwords"
-          }
-        }
-      }
-    },
-    "import.type-selection.title.bookmarks" : {
-      "comment" : "Title text for the button to select the type of data to import when bookmarks selected",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Import Bookmarks"
-          }
-        }
-      }
-    },
-    "import.type-selection.title.passwords" : {
-      "comment" : "Title text for the button to select the type of data to import when passwords selected",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Import Passwords"
           }
         }
       }

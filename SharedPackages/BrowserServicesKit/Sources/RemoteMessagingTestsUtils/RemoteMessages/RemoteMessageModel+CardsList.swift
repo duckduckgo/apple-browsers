@@ -62,7 +62,7 @@ public extension RemoteMessageModelType.ListItem {
             type: type,
             titleText: titleText,
             descriptionText: descriptionText,
-            placeholderImage: .announce,
+            placeholderImage: placeholder,
             action: action,
             matchingRules: [],
             exclusionRules: []

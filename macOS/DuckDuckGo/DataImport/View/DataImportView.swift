@@ -93,7 +93,7 @@ struct DataImportView: ModalView {
                             return
                         }
                         syncLauncher.startDeviceSyncFlow(source: .dataImportStart) {
-                            importFlowLauncher.launchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded)
+                            importFlowLauncher.relaunchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded)
                         }
                         dismiss.callAsFunction()
                     }

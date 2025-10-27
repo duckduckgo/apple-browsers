@@ -1228,6 +1228,7 @@ extension Tab: UserContentControllerDelegate {
         userScripts.pageObserverScript.delegate = self
         userScripts.printingUserScript.delegate = self
         userScripts.serpSettingsUserScript?.delegate = self
+        userScripts.serpSettingsUserScript?.webView = self.webView
         specialPagesUserScript = nil
     }
 

@@ -2330,7 +2330,7 @@
 "new.address.bar.picker.search.only" = "Tylko wyszukiwanie";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "Chcesz łatwiejszego dostępu do AI Chat?";
+"new.address.bar.picker.subheadline.private" = "Chcesz łatwiejszego dostępu do prywatnego czatu AI?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Opcja paska adresu";

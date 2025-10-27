@@ -2330,7 +2330,7 @@
 "new.address.bar.picker.search.only" = "Yalnızca Arama";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "AI Sohbetine Daha Kolay Erişmek İster misiniz?";
+"new.address.bar.picker.subheadline.private" = "Gizli AI sohbetine daha kolay erişmek ister misiniz?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Adres çubuğu seçeneği";

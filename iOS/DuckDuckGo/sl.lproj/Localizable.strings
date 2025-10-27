@@ -2330,7 +2330,7 @@
 "new.address.bar.picker.search.only" = "Samo iskanje";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "Želite lažji dostop do klepeta z umetno inteligenco?";
+"new.address.bar.picker.subheadline.private" = "Želite lažji dostop do zasebnega klepeta z umetno inteligenco?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Možnost naslovne vrstice";

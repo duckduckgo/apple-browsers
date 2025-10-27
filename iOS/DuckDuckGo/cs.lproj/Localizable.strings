@@ -2330,7 +2330,7 @@
 "new.address.bar.picker.search.only" = "Jen vyhledávání";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "Chceš mít AI chat hned po ruce?";
+"new.address.bar.picker.subheadline.private" = "Chceš mít soukromý AI chat hned po ruce?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Možnost adresního řádku";

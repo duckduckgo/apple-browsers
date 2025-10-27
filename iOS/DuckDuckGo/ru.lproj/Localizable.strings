@@ -2330,7 +2330,7 @@
 "new.address.bar.picker.search.only" = "Только поиск";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "Нужен удобный доступ \nк чату с ИИ?";
+"new.address.bar.picker.subheadline.private" = "Нужен удобный доступ к приватному чату с ИИ?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Опция адресной строки";

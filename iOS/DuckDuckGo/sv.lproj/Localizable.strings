@@ -2330,7 +2330,7 @@
 "new.address.bar.picker.search.only" = "Sök endast";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "Vill du ha enklare tillgång till AI-chatt?";
+"new.address.bar.picker.subheadline.private" = "Vill du ha enklare tillgång till privat AI-chatt?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Alternativ för adressfält";

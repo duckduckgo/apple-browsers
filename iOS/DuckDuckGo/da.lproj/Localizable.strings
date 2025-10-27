@@ -2330,7 +2330,7 @@
 "new.address.bar.picker.search.only" = "Kun søgning";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "Vil du have nemmere adgang til AI-chat?";
+"new.address.bar.picker.subheadline.private" = "Vil du have nemmere adgang til privat AI-chat?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Indstilling af adresselinje";

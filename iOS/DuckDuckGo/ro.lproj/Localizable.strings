@@ -2330,7 +2330,7 @@
 "new.address.bar.picker.search.only" = "Doar căutare";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "Vrei un acces mai ușor la chatul cu IA?";
+"new.address.bar.picker.subheadline.private" = "Dorești un acces mai ușor la chatul privat cu IA?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Opțiunea bară de adrese";

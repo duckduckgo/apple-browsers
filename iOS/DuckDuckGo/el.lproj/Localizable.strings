@@ -2330,7 +2330,7 @@
 "new.address.bar.picker.search.only" = "Αναζήτηση μόνο";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "Θέλετε πιο εύκολη πρόσβαση στο AI Chat;";
+"new.address.bar.picker.subheadline.private" = "Θέλετε πιο εύκολη πρόσβαση στο ιδιωτικό AI chat;";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Επιλογή γραμμής διευθύνσεων";

@@ -2330,7 +2330,7 @@
 "new.address.bar.picker.search.only" = "Vain haku";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "Haluatko helpomman pääsyn tekoäly-chatiin?";
+"new.address.bar.picker.subheadline.private" = "Haluatko helpomman pääsyn\nyksityiseen tekoäly-chatiin?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Osoiterivi-vaihtoehto";

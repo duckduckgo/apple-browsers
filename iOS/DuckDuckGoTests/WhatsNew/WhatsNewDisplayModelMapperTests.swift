@@ -138,6 +138,39 @@ final class WhatsNewDisplayModelMapperTests {
         #expect(displayModel.items[safe: 1]?.onTapAction == nil)
         #expect(displayModel.items[safe: 2]?.onTapAction != nil)
     }
+
+    @Test(
+        "Check Mapper Sets Disclosure Icon Based On Action Presence",
+        arguments: [
+            (RemoteAction.urlInContext(value: "https://example.com"), true),
+            (RemoteAction.navigation(value: .importPasswords), true),
+            (RemoteAction.navigation(value: .settings), true),
+            (RemoteAction.url(value: "https://example.com"), true),
+            (nil, false)
+        ] as [(RemoteAction?, Bool)]
+    )
+    func whenItemHasActionThenDisclosureIconIsSetAccordingly(action: RemoteAction?, shouldHaveIcon: Bool) throws {
+        // GIVEN
+        let item = RemoteMessageModelType.ListItem.makeListItem(id: "test-item", action: action)
+        let message = RemoteMessageModel.makeCardsListMessage(items: [item])
+
+        // WHEN
+        let displayModel = try #require(
+            WhatsNewDisplayModelMapper.makeDisplayModel(
+                from: message,
+                onItemAction: { _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        // THEN
+        if shouldHaveIcon {
+            #expect(displayModel.items.first?.disclosureIcon != nil)
+        } else {
+            #expect(displayModel.items.first?.disclosureIcon == nil)
+        }
+    }
 }
 
 @MainActor

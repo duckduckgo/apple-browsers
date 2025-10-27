@@ -48,11 +48,13 @@ struct WhatsNewDisplayModelMapper {
 
         // Map items to display model items
         let promoItems = items.map { remoteListItem in
-            RemoteMessagingUI.CardsListDisplayModel.Item(
+            let disclosureIcon = remoteListItem.action != nil ? Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronRightSmall) : nil
+
+            return RemoteMessagingUI.CardsListDisplayModel.Item(
                 icon: Image(remoteListItem.placeholderImage.rawValue),
                 title: remoteListItem.titleText,
                 description: remoteListItem.descriptionText,
-                disclosureIcon: Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronRightSmall),
+                disclosureIcon: disclosureIcon,
                 onTapAction: remoteListItem.action.map { action in
                     makeAction(for: action, handler: onItemAction)
                 }

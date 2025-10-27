@@ -1,5 +1,5 @@
 //
-//  DataImportView.swift
+//  LegacyDataImportView.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -24,21 +24,21 @@ import DesignResourcesKitIcons
 import UniformTypeIdentifiers
 
 @MainActor
-struct DataImportView: ModalView {
+struct LegacyDataImportView: ModalView {
     private let isDataTypePickerExpanded: Bool
     @Environment(\.dismiss) private var dismiss
 
-    @State var model: DataImportViewModel
+    @State var model: LegacyDataImportViewModel
     let title: String
 
-    let importFlowLauncher: DataImportFlowRelaunching
+    let importFlowLauncher: LegacyDataImportFlowRelaunching
 
     @State private var isInternalUser = false
     let internalUserDecider: InternalUserDecider = Application.appDelegate.internalUserDecider
 
     private let syncFeatureVisibility: SyncFeatureVisibility
 
-    init(model: DataImportViewModel = DataImportViewModel(), importFlowLauncher: DataImportFlowRelaunching, title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool, syncFeatureVisibility: SyncFeatureVisibility) {
+    init(model: LegacyDataImportViewModel = LegacyDataImportViewModel(), importFlowLauncher: LegacyDataImportFlowRelaunching, title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool, syncFeatureVisibility: SyncFeatureVisibility) {
         self._model = State(initialValue: model)
         self.importFlowLauncher = importFlowLauncher
         self.title = title
@@ -180,7 +180,7 @@ struct DataImportView: ModalView {
             case .archiveImport:
                 multifileImportBody(fileTypes: model.importSource.archiveImportSupportedFiles)
             case .summary(let dataTypes, let previousScreen):
-                DataImportSummaryView(model, dataTypes: dataTypes, isFileImport: previousScreen.isFileImport)
+                LegacyDataImportSummaryView(model, dataTypes: dataTypes, isFileImport: previousScreen.isFileImport)
             case .feedback:
                 feedbackBody
             case .shortcuts(let dataTypes):
@@ -202,7 +202,7 @@ struct DataImportView: ModalView {
                     .disabled(model.isImportSourcePickerDisabled)
                 }
 
-                DataImportTypePicker(viewModel: $model, isDataTypePickerExpanded: isDataTypePickerExpanded)
+                LegacyDataImportTypePicker(viewModel: $model, isDataTypePickerExpanded: isDataTypePickerExpanded)
                     .disabled(model.isImportSourcePickerDisabled)
                 .padding(.top, 8)
             }
@@ -237,7 +237,7 @@ struct DataImportView: ModalView {
     private var feedbackBody: some View {
         importSourceDataTitle
         VStack(alignment: .leading, spacing: 0) {
-            DataImportSummaryView(model)
+            LegacyDataImportSummaryView(model)
                 .padding(.bottom, 20)
             ReportFeedbackView(model: $model.reportModel)
         }
@@ -257,7 +257,7 @@ struct DataImportView: ModalView {
         importPickerPanel {
             VStack(alignment: .leading, spacing: 0) {
                 if !summaryTypes.isEmpty {
-                    DataImportSummaryView(model, dataTypes: summaryTypes)
+                    LegacyDataImportSummaryView(model, dataTypes: summaryTypes)
                         .padding(.bottom, 24)
                 }
 
@@ -332,7 +332,7 @@ struct DataImportView: ModalView {
         Text(UserText.importDataSourceTitle)
     }
 
-    private func progressView(_ progress: TaskProgress<DataImportViewModel, Never, DataImportProgressEvent>) -> some View {
+    private func progressView(_ progress: TaskProgress<LegacyDataImportViewModel, Never, DataImportProgressEvent>) -> some View {
         // Progress bar with label: Importing [bookmarks|passwords]…
         ProgressView(value: self.progress?.fraction) {
             Text(self.progress?.text ?? "")
@@ -387,7 +387,7 @@ struct DataImportView: ModalView {
         }
     }
 
-    private func handleImportProgress(_ progress: TaskProgress<DataImportViewModel, Never, DataImportProgressEvent>) async {
+    private func handleImportProgress(_ progress: TaskProgress<LegacyDataImportViewModel, Never, DataImportProgressEvent>) async {
         // receive import progress update events
         // the loop is completed on the import task
         // cancellation/completion or on did disappear
@@ -484,7 +484,7 @@ struct DataImportView: ModalView {
             case zeroSuccess: model.testImportResults[dataType] = .success(.empty)
             default:
                 let errorType = DataImport.ErrorType(rawValue: reason)!
-                let error = DataImportViewModel.TestImportError(action: dataType.importAction, errorType: errorType)
+                let error = LegacyDataImportViewModel.TestImportError(action: dataType.importAction, errorType: errorType)
                 model.testImportResults[dataType] = .failure(error)
             }
         }) {
@@ -504,41 +504,7 @@ struct DataImportView: ModalView {
 
 }
 
-extension DataImportProgressEvent {
-
-    var fraction: Double? {
-        switch self {
-        case .initial:
-            nil
-        case .importingBookmarks(numberOfBookmarks: _, fraction: let fraction):
-            fraction
-        case .importingPasswords(numberOfPasswords: _, fraction: let fraction):
-            fraction
-        case .importingCreditCards(numberOfCreditCards: _, fraction: let fraction):
-            fraction
-        case .done:
-            nil
-        }
-    }
-
-    var description: String? {
-        switch self {
-        case .initial:
-            nil
-        case .importingBookmarks(numberOfBookmarks: let num, fraction: _):
-            UserText.importingBookmarks(num)
-        case .importingPasswords(numberOfPasswords: let num, fraction: _):
-            UserText.importingPasswords(num)
-        case .importingCreditCards(numberOfCreditCards: let num, fraction: _):
-            UserText.importingCreditCards(num)
-        case .done:
-            nil
-        }
-    }
-
-}
-
-extension DataImportViewModel.ButtonType {
+extension LegacyDataImportViewModel.ButtonType {
 
     var shortcut: KeyboardShortcut? {
         switch self {
@@ -554,7 +520,7 @@ extension DataImportViewModel.ButtonType {
 
 }
 
-extension DataImportViewModel.ButtonType {
+extension LegacyDataImportViewModel.ButtonType {
 
     func title(dataType: DataImport.DataType?) -> String {
         switch self {
@@ -590,7 +556,7 @@ private final class PreviewPreferences: ObservableObject {
     @Published var shouldDisplayProgress = false
     static let shared = PreviewPreferences()
 }
-extension DataImportView {
+extension LegacyDataImportView {
 
     struct PreviewPreferencesView: View {
         @ObservedObject fileprivate var prefs = PreviewPreferences.shared
@@ -609,121 +575,11 @@ extension DataImportView {
         }
     }
 }
-extension DataImportViewModel {
-    final class MockDataImporter: DataImporter {
 
-        struct MockError: Error { }
-
-        enum ImportError: DataImportError {
-            enum OperationType: Int {
-                case imp
-            }
-
-            var type: OperationType { .imp }
-            var action: DataImportAction { .generic }
-            var underlyingError: Error? {
-                if case .err(let err) = self {
-                    return err
-                }
-                return nil
-            }
-            var errorType: DataImport.ErrorType { .noData }
-
-            case err(Error)
-        }
-        let source: DataImport.Source
-        var dataType: DataImport.DataType?
-        var importableTypes: [DataImport.DataType] {
-            [.safari, .yandex].contains(source) && dataType == nil ? [.bookmarks] : [.bookmarks, .passwords]
-        }
-
-        func validateAccess(for types: Set<DataImport.DataType>) -> [DataImport.DataType: any DataImportError]? {
-            source == .firefox && types.contains(.passwords) ? [.passwords: FirefoxLoginReader.ImportError(type: .requiresPrimaryPassword, underlyingError: nil)] : nil
-        }
-
-        func requiresKeychainPassword(for selectedDataTypes: Set<DataImport.DataType>) -> Bool {
-            source == .chrome && selectedDataTypes.contains(.passwords) ? true : false
-        }
-
-        init(source: DataImport.Source, dataType: DataType? = nil) {
-            self.source = source
-            self.dataType = dataType
-        }
-
-        func importData(types: Set<DataImport.DataType>) -> DataImportTask {
-            .detachedWithProgress(.initial) { progressUpdate in
-                func makeProgress(_ op: (Double) throws -> Void) async throws {
-                    guard PreviewPreferences.shared.shouldDisplayProgress else { return }
-                    let n = 20
-                    for i in 0..<n {
-                        let ticksInS = 1.0 / Double(n)
-                        try op(Double(i) / ticksInS)
-                        try await Task.sleep(interval: ticksInS)
-                    }
-                }
-                print("importing 1")
-                do {
-                    if types.contains(.bookmarks) {
-                        try await makeProgress { fraction in
-                            try progressUpdate(
-                                .importingBookmarks(
-                                    numberOfBookmarks: nil,
-                                    fraction: fraction
-                                )
-                            )
-                        }
-
-                        try await makeProgress { fraction in
-                            try progressUpdate(
-                                .importingBookmarks(
-                                    numberOfBookmarks: 42,
-                                    fraction: fraction
-                                )
-                            )
-                        }
-                    }
-
-                    if types.contains(.passwords) {
-                        print("importing 3")
-                        try await makeProgress { fraction in
-                            try progressUpdate(
-                                .importingPasswords(
-                                    numberOfPasswords: nil,
-                                    fraction: fraction
-                                )
-                            )
-                        }
-                        print("importing 4")
-                        try await makeProgress { fraction in
-                            try progressUpdate(
-                                .importingPasswords(
-                                    numberOfPasswords: 2442,
-                                    fraction: fraction
-                                )
-                            )
-                        }
-                    }
-                    print("importing done")
-                    try progressUpdate(
-                        .done
-                    )
-
-                    var result = DataImportSummary()
-                    for type in types {
-                        result[type] = .success(.init(successful: Int.random(in: 0..<100000), duplicate: 0, failed: 0))
-                    }
-                    return result
-
-                } catch {
-                    print("import cancelled", error)
-                    return types.reduce(into: [:]) { $0[$1] = .failure(ImportError.err(error)) }
-                }
-            }
-        }
-    }
+extension LegacyDataImportViewModel {
     // swiftlint:disable:next identifier_name
-    static func _mockPreviewViewModel() -> DataImportViewModel {
-        DataImportViewModel(importSource: .bookmarksHTML, availableImportSources: DataImport.Source.allCases) { browser in
+    static func _mockPreviewViewModel() -> LegacyDataImportViewModel {
+        LegacyDataImportViewModel(importSource: .bookmarksHTML, availableImportSources: DataImport.Source.allCases) { browser in
             guard case .chrome = browser else {
                 print("empty profiles")
                 return .init(browser: browser, profiles: [])
@@ -739,7 +595,7 @@ extension DataImportViewModel {
             ], validateProfileData: { _ in { .init(logins: .available, bookmarks: .available) } // swiftlint:disable:this opening_brace
             })
         } dataImporterFactory: { source, type, _, _ in
-            return MockDataImporter(source: source, dataType: type)
+            return DataImportViewModel.MockDataImporter(source: source, dataType: type)
         } requestPrimaryPasswordCallback: { _ in
             print("primary password requested")
             return "password"

@@ -36,31 +36,6 @@ import Configuration
 import Network
 import Persistence
 
-// Adapter to convert UserDefaults to ThrowingKeyValueStoring
-private class UserDefaultsThrowingKeyValueStoreAdapter: ThrowingKeyValueStoring {
-    private let userDefaults: UserDefaults
-    
-    init(_ userDefaults: UserDefaults) {
-        self.userDefaults = userDefaults
-    }
-    
-    func object(forKey key: String) throws -> Any? {
-        return userDefaults.object(forKey: key)
-    }
-    
-    func set(_ value: Any?, forKey key: String) throws {
-        userDefaults.set(value, forKey: key)
-    }
-    
-    func removeObject(forKey key: String) throws {
-        userDefaults.removeObject(forKey: key)
-    }
-    
-    func dictionaryRepresentation() throws -> [String: Any] {
-        return userDefaults.dictionaryRepresentation()
-    }
-}
-
 protocol DependencyProvider {
 
     var appSettings: AppSettings { get }
@@ -84,7 +59,6 @@ protocol DependencyProvider {
     var vpnSettings: VPNSettings { get }
     var persistentPixel: PersistentPixelFiring { get }
     var wideEvent: WideEventManaging { get }
-    var keyValueStore: ThrowingKeyValueStoring { get }
 
     // Subscription
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge { get }
@@ -139,7 +113,6 @@ final class AppDependencyProvider: DependencyProvider {
     let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
     let persistentPixel: PersistentPixelFiring = PersistentPixel()
     let wideEvent: WideEventManaging = WideEvent()
-    let keyValueStore: ThrowingKeyValueStoring
 
     private init() {
         let featureFlaggerOverrides = FeatureFlagLocalOverrides(keyValueStore: UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!,
@@ -319,12 +292,6 @@ final class AppDependencyProvider: DependencyProvider {
                 try? tokenStorageV2.saveTokenContainer(nil)
                 subscriptionEndpointService.clearSubscription()
             }
-        }
-
-        do {
-            keyValueStore = try AppKeyValueFileStoreService().keyValueFilesStore
-        } catch {
-            keyValueStore = UserDefaultsThrowingKeyValueStoreAdapter(UserDefaults.app)
         }
 
         vpnFeatureVisibility = DefaultNetworkProtectionVisibility(authenticationStateProvider: authenticationStateProvider)

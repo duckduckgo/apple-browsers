@@ -685,40 +685,6 @@ final class TabCollectionViewModel: NSObject {
         delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 
-    func removeAllTabsAndAppendNew(forceChange: Bool = false) {
-        guard changesEnabled || forceChange else { return }
-
-        tabCollection.removeAll(andAppend: Tab(content: .newtab, burnerMode: burnerMode))
-        selectUnpinnedTab(at: 0, forceChange: forceChange)
-
-        delegate?.tabCollectionViewModelDidMultipleChanges(self)
-    }
-
-    func removeTabsAndAppendNew(at indexSet: IndexSet, forceChange: Bool = false) {
-        guard !indexSet.isEmpty, changesEnabled || forceChange else { return }
-        guard let selectionIndex = selectionIndex?.item else {
-            Logger.tabLazyLoading.error("TabCollection: No tab selected")
-            return
-        }
-
-        tabCollection.removeTabs(at: indexSet)
-        if tabCollection.tabs.isEmpty {
-            tabCollection.append(tab: Tab(content: .newtab, burnerMode: burnerMode))
-            selectUnpinnedTab(at: 0, forceChange: forceChange)
-        } else {
-            let selectionDiff = indexSet.reduce(0) { result, index in
-                if index < selectionIndex {
-                    return result + 1
-                } else {
-                    return result
-                }
-            }
-
-            selectUnpinnedTab(at: max(min(selectionIndex - selectionDiff, tabCollection.tabs.count - 1), 0), forceChange: forceChange)
-        }
-        delegate?.tabCollectionViewModelDidMultipleChanges(self)
-    }
-
     func removeSelected(forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
 

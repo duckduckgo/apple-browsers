@@ -139,15 +139,10 @@ private extension StateRestorationPromptTests {
     }
 
     func waitForSessionFileToExist() {
-        let fileSavedExpectation = expectation(description: "Session persistence file should be saved")
-        let checkTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
-            if FileManager.default.fileExists(atPath: Self.persistenceFileLocation.path) {
-                fileSavedExpectation.fulfill()
-                timer.invalidate()
-            }
-        }
-        wait(for: [fileSavedExpectation], timeout: UITests.Timeouts.elementExistence)
-        checkTimer.invalidate()
+        let expectation = expectation(for: NSPredicate(description: "Session persistence file should be saved", block: { _, _ in
+            FileManager.default.fileExists(atPath: Self.persistenceFileLocation.path)
+        }), evaluatedWith: nil)
+        wait(for: [expectation], timeout: UITests.Timeouts.elementExistence)
     }
 
     func waitForSessionFileToBeUpdated(since previouslySavedState: Date?) {
@@ -155,18 +150,13 @@ private extension StateRestorationPromptTests {
             XCTFail("Date for previously saved state was unexpectedly nil.")
             return
         }
-        let fileUpdatedExpectation = expectation(description: "Session persistence file should be updated")
-        let checkTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] timer in
-            guard let self, let lastSavedState = dateOfLastSavedState() else {
-                return
+        let expectation = expectation(for: NSPredicate(description: "Session persistence file should be updated since \(previouslySavedState ??? "<nil>")") { _, _ in
+            guard let dateOfLastSavedState = self.dateOfLastSavedState() else {
+                return false
             }
-            if lastSavedState > previouslySavedState {
-                fileUpdatedExpectation.fulfill()
-                timer.invalidate()
-            }
-        }
-        wait(for: [fileUpdatedExpectation], timeout: UITests.Timeouts.elementExistence)
-        checkTimer.invalidate()
+            return dateOfLastSavedState > previouslySavedState
+        }, evaluatedWith: nil)
+        wait(for: [expectation], timeout: UITests.Timeouts.elementExistence)
     }
 }
 

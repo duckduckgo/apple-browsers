@@ -54,7 +54,7 @@ final class TabURLInterceptorDefault: TabURLInterceptor {
     
     func allowsNavigatingTo(url: URL) -> Bool {
         if url.isDuckAIURL {
-            return handleURLInterception(interceptedURLType: .aiChat)
+            return handleURLInterception(interceptedURLType: .aiChat, interceptedURL: url)
         }
 
         guard url.isPart(ofDomain: "duckduckgo.com") || (url.isPart(ofDomain: "duck.co") && featureFlagger.internalUserDecider.isInternalUser),
@@ -86,7 +86,7 @@ extension TabURLInterceptorDefault {
         return URLComponents(string: "\(URL.URLProtocol.https.scheme)\(noScheme)")
     }
 
-    private func handleURLInterception(interceptedURLType: InterceptedURLType, interceptedURLComponents: URLComponents? = nil) -> Bool {
+    private func handleURLInterception(interceptedURLType: InterceptedURLType, interceptedURLComponents: URLComponents? = nil, interceptedURL: URL? = nil) -> Bool {
         switch interceptedURLType {
             // Opens the DuckDuckGo Subscription Purchase page (if user can purchase)
         case .subscription:
@@ -107,10 +107,15 @@ extension TabURLInterceptorDefault {
                 return false
             }
         case .aiChat:
+            var userInfo: [AnyHashable: Any]?
+            if let url = interceptedURL {
+                userInfo = [TabURLInterceptorParameter.interceptedURL: url]
+            }
+
             NotificationCenter.default.post(
                 name: .urlInterceptAIChat,
                 object: nil,
-                userInfo: nil
+                userInfo: userInfo
             )
             return false
         }
@@ -125,4 +130,5 @@ extension NSNotification.Name {
 
 public enum TabURLInterceptorParameter {
     public static let interceptedURLComponents = "interceptedURLComponents"
+    public static let interceptedURL = "interceptedURL"
 }

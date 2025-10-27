@@ -66,6 +66,7 @@ class RemoteMessagingProcessingTests: XCTestCase {
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     emailManager: EmailManager(storage: emailManagerStorage),
                     bookmarksCount: 10,

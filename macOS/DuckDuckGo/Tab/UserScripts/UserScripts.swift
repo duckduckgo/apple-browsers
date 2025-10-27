@@ -26,6 +26,7 @@ import SpecialErrorPages
 import Subscription
 import UserScript
 import WebKit
+import SERPSettings
 
 @MainActor
 final class UserScripts: UserScriptsProvider {
@@ -84,7 +85,7 @@ final class UserScripts: UserScriptsProvider {
             navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
             debugHost: aiChatDebugURLSettings.customURLHostname
         )
-        serpSettingsUserScript = SERPSettingsUserScript()
+        serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider())
 
         let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
         let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig

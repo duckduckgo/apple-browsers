@@ -133,6 +133,9 @@
 /* New tab menu item opening a new tab */
 "action.title.tab.new" = "Нов раздел";
 
+/* VPN menu item */
+"action.title.vpn" = "VPN";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Отдолу";
 
@@ -2317,9 +2320,6 @@
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Потвърдете";
 
-/* Description text for the new address bar picker modal */
-"new.address.bar.picker.description" = "AI функциите винаги са незадължителни.";
-
 /* Footer text for the new address bar picker */
 "new.address.bar.picker.footer" = "Настройване в Настройки > AI функции";
 
@@ -2332,8 +2332,8 @@
 /* Option for search only in the new address bar picker */
 "new.address.bar.picker.search.only" = "Само търсене";
 
-/* Subtitle for the new address bar picker modal */
-"new.address.bar.picker.subtitle" = "Превключвайте между търсене и AI чат";
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline" = "Искаш ли по-лесен достъп до AI чат?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Опция за адресната лента";
@@ -2622,6 +2622,9 @@
 
 /* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
 "prefrences.sync.credit-cards-limit-exceeded-action" = "Управление на кредитните карти…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "Достигнахте максималния брой кредитни карти. Изтрийте някои от тях, за да възобновите синхронизирането.";
 
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Грешка при синхронизирането. Опитайте да деактивирате синхронизирането на това устройство и след това се свържете отново чрез друго устройство или със своя код за възстановяване.";
@@ -3843,6 +3846,54 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Съобщение от %@:";
+
+/* CTA of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.cta" = "Виж офертата";
+
+/* Dismiss of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.dismiss" = "Не сега";
+
+/* Message of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.text" = "Получаваш защита с нашата VPN, личен изкуствен интелект и още много. Абонирай се отново днес и спести 25%.";
+
+/* Title of message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.title" = "Последен ден да спестиш 25%!";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "Спести 25%!";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "Виж офертата";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Не сега";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "Получаваш защита с нашата VPN, личен изкуствен интелект и още много. Абонирай се отново днес и спести 25%.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Само за ограничено време";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "Искаме да се върнеш!\nВземи 25% отстъпка.";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "Виж офертата";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "Имам абонамент";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "Оферта за ограничено време!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "Получаваш защита с нашата VPN, личен изкуствен интелект и още много. Абонирай се отново днес и спести 25%.Оферта за ограничено време.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "Абонирай се отново и спести 25%";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Абонирай се отново и спести 25%";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Търсите версията за Mac?";

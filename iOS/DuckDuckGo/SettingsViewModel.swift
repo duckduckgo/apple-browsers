@@ -35,6 +35,12 @@ import SystemSettingsPiPTutorial
 
 final class SettingsViewModel: ObservableObject {
 
+    /// There's an improved picker cell being rolled out with the feature flag below.
+    /// Once it has passed a ship review we'll move to the improved one.
+    var useImprovedPicker: Bool {
+        featureFlagger.isFeatureOn(.mobileCustomization)
+    }
+
     // Dependencies
     private(set) lazy var appSettings = AppDependencyProvider.shared.appSettings
     private(set) var privacyStore = PrivacyUserDefaults()
@@ -138,10 +144,6 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
     }
     
-    var isRefreshButtonPositionEnabled: Bool {
-        featureFlagger.isFeatureOn(.refreshButtonPosition)
-    }
-    
     var firstSectionTitle: String {
         featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) ? UserText.aiChatSettingsBrowserShortcutsSectionTitle : ""
     }
@@ -176,6 +178,30 @@ final class SettingsViewModel: ObservableObject {
     @Published private(set) var deepLinkTarget: SettingsDeepLinkSection?
 
     // MARK: Bindings
+
+    var selectedToolbarButton: Binding<MobileCustomization.Button> {
+        Binding<MobileCustomization.Button>(
+            get: {
+                self.state.mobileCustomization.currentToolbarButton
+            },
+            set: {
+                self.objectWillChange.send()
+                self.state.mobileCustomization.currentToolbarButton = $0
+            }
+        )
+    }
+
+    var selectedAddressBarButton: Binding<MobileCustomization.Button> {
+        Binding<MobileCustomization.Button>(
+            get: {
+                self.state.mobileCustomization.currentAddressBarButton
+            },
+            set: {
+                self.objectWillChange.send()
+                self.state.mobileCustomization.currentAddressBarButton = $0
+            }
+        )
+    }
 
     var themeStyleBinding: Binding<ThemeStyle> {
         Binding<ThemeStyle>(
@@ -544,6 +570,7 @@ final class SettingsViewModel: ObservableObject {
     var isAIChatEnabled: Bool {
         aiChatSettings.isAIChatEnabled
     }
+    
 
     // MARK: Default Init
     init(state: SettingsState? = nil,
@@ -636,6 +663,7 @@ extension SettingsViewModel {
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
+            mobileCustomization: MobileCustomization.load(featureFlagger: featureFlagger, keyValueStore: keyValueStore),
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,

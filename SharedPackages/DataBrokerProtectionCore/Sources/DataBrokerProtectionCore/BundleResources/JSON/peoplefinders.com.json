@@ -1,7 +1,7 @@
 {
   "name": "PeopleFinders",
   "url": "peoplefinders.com",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "addedDatetime": 1677132000000,
   "optOutUrl": "https://www.peoplefinders.com/opt-out",
   "steps": [
@@ -13,6 +13,17 @@
           "actionType": "navigate",
           "id": "12c69911-415b-4904-8162-d7993d44e348",
           "url": "https://www.peoplefinders.com/people/${firstName}-${lastName}/${state}/${city}?landing=all"
+        },
+        {
+          "_comment": "Wait for CF challenge interstitial to complete",
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "body.peoplesearch"
+            }
+          ],
+          "id": "aaaab20b-aaaa-45b6-8c53-36e9bed2612b"
         },
         {
           "actionType": "extract",
@@ -57,6 +68,7 @@
           "url": "https://www.peoplefinders.com/opt-out"
         },
         {
+          "_comment": "Wait for CF challenge interstitial to complete",
           "actionType": "expectation",
           "expectations": [
             {

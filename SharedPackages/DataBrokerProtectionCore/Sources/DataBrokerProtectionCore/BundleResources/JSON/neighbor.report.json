@@ -1,7 +1,7 @@
 {
   "name": "Neighbor Report",
   "url": "neighbor.report",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "addedDatetime": 1703570400000,
   "optOutUrl": "https://neighbor.report/remove",
   "steps": [
@@ -13,6 +13,17 @@
           "actionType": "navigate",
           "id": "6e589101-df53-4af7-bf6a-41376927f6ec",
           "url": "https://neighbor.report/${firstName}-${lastName}/${state|stateFull|hyphenated}/${city|hyphenated}"
+        },
+        {
+          "_comment": "Wait for CF challenge interstitial to complete",
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#logo"
+            }
+          ],
+          "id": "aaaab20b-aaaa-45b6-8c53-9ee1354e918b"
         },
         {
           "actionType": "extract",
@@ -57,6 +68,17 @@
           "actionType": "navigate",
           "id": "d894a462-02c3-4f2a-966d-44aea2fbb6d4",
           "url": "https://neighbor.report/remove"
+        },
+        {
+          "_comment": "Wait for CF challenge interstitial to complete",
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#logo"
+            }
+          ],
+          "id": "aaaab20b-bbbb-45b6-8c53-9ee1354e918b"
         },
         {
           "actionType": "fillForm",

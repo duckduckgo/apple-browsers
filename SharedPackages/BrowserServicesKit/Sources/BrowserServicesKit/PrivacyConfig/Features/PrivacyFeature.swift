@@ -142,6 +142,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// New App Store Update flow feature flag
     /// https://app.asana.com/1/137249556945/project/1199230911884351/task/1211563301906360?focus=true
     case appStoreUpdateFlow
+
+    /// Feature flag for a macOS Tahoe fix only
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
+    case blurryAddressBarTahoeFix
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -162,14 +166,14 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
     case inactivityNotification
 
-    /// https://app.asana.com/1/137249556945/project/1210947754188321/task/1210869716452616?focus=true
-    case refreshButtonPosition
-
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210659895188821?focus=true
     case embeddedSERPSettings
 
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1210997282929955?focus=true
     case unifiedURLPredictor
+
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210869716452614?focus=true
+    case customization
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -357,6 +361,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionRestoreWidePixelMeasurement
     case authV2WideEventEnabled
     case winBackOffer
+    case vpnMenuItem
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

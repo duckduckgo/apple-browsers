@@ -36,6 +36,7 @@ class BrowsingHistoryTests: UITestCase {
         app = XCUIApplication.setUp()
         app.enforceSingleWindow()
 
+        // Clear history using Fire Dialog
         XCTAssertTrue(
             app.historyMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "History menu bar item didn't appear in a reasonable timeframe."
@@ -48,11 +49,28 @@ class BrowsingHistoryTests: UITestCase {
         )
         app.clearAllHistoryMenuItem.click()
 
+        // Fire Dialog should appear instead of old alert
         XCTAssertTrue(
-            app.clearAllHistoryAlertClearButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Clear all history item didn't appear in a reasonable timeframe."
+            fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Fire dialog didn't appear in a reasonable timeframe."
         )
-        app.clearAllHistoryAlertClearButton.click() // Manually remove the history
+
+        // Select "Everything" scope to clear all history
+        app.fireDialogSegmentedControl.buttons["Everything"].click()
+
+        // Ensure history toggle is enabled
+        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+        fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+        fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+
+        // Click burn button to clear history
+        fireDialogBurnButton.click()
+
+        // Wait for fire animation to complete
+        XCTAssertTrue(
+            app.fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation),
+            "Fire animation didn't finish and cease existing in a reasonable timeframe."
+        )
     }
 
     func test_recentlyVisited_showsLastVisitedSite() throws {

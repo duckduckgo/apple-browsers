@@ -18,9 +18,10 @@
 //
 
 import BrowserServicesKit
+import Persistence
 
 // This may change to a class, but is just to get the feature flag in and testable for now.
-struct MobileCustomization {
+class MobileCustomization {
 
     enum Button: String, CustomStringConvertible {
 
@@ -75,6 +76,9 @@ struct MobileCustomization {
         case passwords
     }
 
+    static let addressBarDefault: Button = .share
+    static let toolbarDefault: Button = .fire
+
     static let addressBarButtons: [Button?] = {
         let sortedButtons: [Button] = [
             .addRemoveBookmark,
@@ -106,9 +110,50 @@ struct MobileCustomization {
     }()
     /// Is customization enabled as a feature?
     let isEnabled: Bool
+    let keyValueStore: ThrowingKeyValueStoring
 
     static func descriptionComparison(lhs: CustomStringConvertible, rhs: CustomStringConvertible) -> Bool {
         lhs.description.localizedCaseInsensitiveCompare(rhs.description) == .orderedAscending
+    }
+
+    enum StorageKeys: String {
+
+        case toolbarButton = "mobileCustomizationToolbarButton"
+        case addressBarButton = "mobileCustomizationAddressBarButton"
+
+    }
+
+    init(isEnabled: Bool, keyValueStore: ThrowingKeyValueStoring) {
+        self.isEnabled = isEnabled
+        self.keyValueStore = keyValueStore
+    }
+
+    private func current(forKey key: StorageKeys, _ defaultButton: Button) -> Button {
+        if let value = try? keyValueStore.object(forKey: key.rawValue) as? String {
+            Button(rawValue: value) ?? defaultButton
+        } else {
+            defaultButton
+        }
+    }
+
+    public var currentAddressBarButton: Button {
+        get {
+            current(forKey: .addressBarButton, Self.addressBarDefault)
+        }
+
+        set {
+            try? keyValueStore.set(newValue.rawValue, forKey: StorageKeys.addressBarButton.rawValue)
+        }
+    }
+
+    public var currentToolbarButton: Button {
+        get {
+            current(forKey: .toolbarButton, Self.toolbarDefault)
+        }
+
+        set {
+            try? keyValueStore.set(newValue.rawValue, forKey: StorageKeys.toolbarButton.rawValue)
+        }
     }
 
 }
@@ -116,8 +161,12 @@ struct MobileCustomization {
 // Using FeatureFlagger
 extension MobileCustomization {
 
-    static func load(featureFlagger: FeatureFlagger) -> MobileCustomization {
-        return MobileCustomization(isEnabled: featureFlagger.isFeatureOn(.mobileCustomization))
+    /// @param featureFlagger - the app's feature flagger
+    /// @param keyValueStore - the app's key value store
+    static func load(featureFlagger: FeatureFlagger, keyValueStore: ThrowingKeyValueStoring) -> MobileCustomization {
+        return MobileCustomization(
+            isEnabled: featureFlagger.isFeatureOn(.mobileCustomization),
+            keyValueStore: keyValueStore)
     }
 
 }
@@ -127,8 +176,18 @@ extension MobileCustomization {
 
     static var defaults: MobileCustomization {
         MobileCustomization(
-            isEnabled: false
+            isEnabled: false,
+            keyValueStore: NilKeyValueStore()
         )
     }
 
+    private struct NilKeyValueStore: ThrowingKeyValueStoring {
+        func object(forKey defaultName: String) throws -> Any? {
+            return nil
+        }
+        
+        func set(_ value: Any?, forKey defaultName: String) throws { }
+
+        func removeObject(forKey defaultName: String) throws { }
+    }
 }

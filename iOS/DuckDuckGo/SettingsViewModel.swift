@@ -179,6 +179,30 @@ final class SettingsViewModel: ObservableObject {
 
     // MARK: Bindings
 
+    var selectedToolbarButton: Binding<MobileCustomization.Button> {
+        Binding<MobileCustomization.Button>(
+            get: {
+                self.state.mobileCustomization.currentToolbarButton
+            },
+            set: {
+                self.objectWillChange.send()
+                self.state.mobileCustomization.currentToolbarButton = $0
+            }
+        )
+    }
+
+    var selectedAddressBarButton: Binding<MobileCustomization.Button> {
+        Binding<MobileCustomization.Button>(
+            get: {
+                self.state.mobileCustomization.currentAddressBarButton
+            },
+            set: {
+                self.objectWillChange.send()
+                self.state.mobileCustomization.currentAddressBarButton = $0
+            }
+        )
+    }
+
     var themeStyleBinding: Binding<ThemeStyle> {
         Binding<ThemeStyle>(
             get: { self.state.appThemeStyle },
@@ -546,6 +570,7 @@ final class SettingsViewModel: ObservableObject {
     var isAIChatEnabled: Bool {
         aiChatSettings.isAIChatEnabled
     }
+    
 
     // MARK: Default Init
     init(state: SettingsState? = nil,
@@ -638,7 +663,7 @@ extension SettingsViewModel {
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
-            mobileCustomization: MobileCustomization.load(featureFlagger: featureFlagger),
+            mobileCustomization: MobileCustomization.load(featureFlagger: featureFlagger, keyValueStore: keyValueStore),
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,

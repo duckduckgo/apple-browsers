@@ -26,9 +26,17 @@ struct SettingsAppearanceView: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
 
-    @State var selectedToolbarButton: MobileCustomization.Button = MobileCustomization.toolbarButtons[0]
-    @State var selectedAddressBarButton: MobileCustomization.Button = MobileCustomization.addressBarButtons[0]!
-    @State var showReloadButton: Bool = true
+    /// Once the feature is rolled out move this to view model
+    var showReloadButton: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                viewModel.refreshButtonPositionBinding.wrappedValue == .addressBar
+            },
+            set: {
+                viewModel.refreshButtonPositionBinding.wrappedValue = $0 ? .addressBar : .menu
+            }
+        )
+    }
 
     var body: some View {
         List {
@@ -135,7 +143,7 @@ struct SettingsAppearanceView: View {
             useImprovedPicker: true,
             label: "Customizable Button",
             options: MobileCustomization.addressBarButtons,
-            selectedOption: $selectedAddressBarButton,
+            selectedOption: viewModel.selectedAddressBarButton,
             iconProvider: buttonIconProvider)
 
     }
@@ -148,7 +156,7 @@ struct SettingsAppearanceView: View {
             useImprovedPicker: true,
             label: "Customizable Button",
             options: MobileCustomization.toolbarButtons,
-            selectedOption: $selectedToolbarButton,
+            selectedOption: viewModel.selectedToolbarButton,
             iconProvider: buttonIconProvider)
 
     }
@@ -156,7 +164,7 @@ struct SettingsAppearanceView: View {
     @ViewBuilder
     func showReloadButtonSetting() -> some View {
         SettingsCellView(label: "Show Reload Button",
-                         accessory: .toggle(isOn: $showReloadButton))
+                         accessory: .toggle(isOn: showReloadButton))
     }
 
     @ViewBuilder

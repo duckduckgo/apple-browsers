@@ -239,6 +239,7 @@ class MainViewController: UIViewController {
     private let launchSourceManager: LaunchSourceManaging
     
     let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+    let mobileCustomization: MobileCustomization
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -317,6 +318,7 @@ class MainViewController: UIViewController {
         self.dbpIOSPublicInterface = dbpIOSPublicInterface
         self.launchSourceManager = launchSourceManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+        self.mobileCustomization = MobileCustomization(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self

@@ -319,6 +319,47 @@ final class TabBarViewItemTests: XCTestCase {
         XCTAssertTrue(delegate.tabBarViewItemRemoveBookmarkActionCalled)
     }
 
+    @MainActor
+    func testWhenTabIsPinnedThenBookmarkAllOpenTabsItemIsNotVisible() throws {
+        // GIVEN
+        let tabBarViewModel = TabBarViewModelMock(pinned: true)
+        tabBarViewItem.subscribe(to: tabBarViewModel)
+        tabBarViewItem.menuNeedsUpdate(menu)
+
+        // WHEN
+        let item = menu.item(withTitle: UserText.bookmarkAllTabs)
+
+        // THEN
+        XCTAssertNil(item)
+    }
+
+    @MainActor
+    func testWhenTabIsPinnedThenMoveTabToNewWindowIsNotVisible() {
+        // GIVEN
+        let tabBarViewModel = TabBarViewModelMock(pinned: true)
+        tabBarViewItem.subscribe(to: tabBarViewModel)
+        tabBarViewItem.menuNeedsUpdate(menu)
+
+        // WHEN
+        let item = menu.item(withTitle: UserText.moveTabToNewWindow)
+
+        // THEN
+        XCTAssertNil(item)
+    }
+
+    @MainActor
+    func testWhenTabIsPinnedThenPinTabIsNotVisible() {
+        // GIVEN
+        let tabBarViewModel = TabBarViewModelMock(pinned: true)
+        tabBarViewItem.subscribe(to: tabBarViewModel)
+        tabBarViewItem.menuNeedsUpdate(menu)
+
+        // WHEN
+        let item = menu.item(withTitle: UserText.pinTab)
+
+        // THEN
+        XCTAssertNil(item)
+    }
 }
 
 private class TabBarViewModelMock: TabBarViewModel {

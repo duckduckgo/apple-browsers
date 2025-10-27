@@ -20,7 +20,7 @@
 import BrowserServicesKit
 import Persistence
 
-// This may change to a class, but is just to get the feature flag in and testable for now.
+/// Handles logic and persistence of customization options.
 class MobileCustomization {
 
     enum Button: String, CustomStringConvertible {

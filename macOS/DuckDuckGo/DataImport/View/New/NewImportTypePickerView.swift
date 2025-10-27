@@ -56,7 +56,7 @@ struct NewImportTypePickerView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(designSystemColor: .surface))
+                    .fill(Color(designSystemColor: .surfacePrimary))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)

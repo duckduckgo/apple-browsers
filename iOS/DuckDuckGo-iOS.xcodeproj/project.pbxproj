@@ -1210,6 +1210,10 @@
 		9F254B082CF9FC270063B308 /* SpecialErrorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F254B072CF9FC270063B308 /* SpecialErrorModel.swift */; };
 		9F2D99E42EA9F9EE003950CC /* DefaultBrowserModalPromptProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F2D99E32EA9F9EE003950CC /* DefaultBrowserModalPromptProviderTests.swift */; };
 		9F2E797E2E0B9F6500E2BEF3 /* DefaultBrowserPromptService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F2E797D2E0B9F6500E2BEF3 /* DefaultBrowserPromptService.swift */; };
+		9F3668752EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */; };
+		9F3668762EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */; };
+		9F3668772EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */; };
+		9F3668782EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */; };
 		9F387DD82EA86CE3006861F8 /* PromptCooldownStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DD72EA86CE3006861F8 /* PromptCooldownStoreTests.swift */; };
 		9F387DDA2EA87C0F006861F8 /* PromptCooldownManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DD92EA87C0F006861F8 /* PromptCooldownManagerTests.swift */; };
 		9F387DDD2EA881D1006861F8 /* PromptCooldownMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387DDC2EA881C7006861F8 /* PromptCooldownMocks.swift */; };
@@ -3468,6 +3472,7 @@
 		9F254B072CF9FC270063B308 /* SpecialErrorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialErrorModel.swift; sourceTree = "<group>"; };
 		9F2D99E32EA9F9EE003950CC /* DefaultBrowserModalPromptProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserModalPromptProviderTests.swift; sourceTree = "<group>"; };
 		9F2E797D2E0B9F6500E2BEF3 /* DefaultBrowserPromptService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptService.swift; sourceTree = "<group>"; };
+		9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockContextualOnboardingStatusProvider.swift; sourceTree = "<group>"; };
 		9F387DD72EA86CE3006861F8 /* PromptCooldownStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownStoreTests.swift; sourceTree = "<group>"; };
 		9F387DD92EA87C0F006861F8 /* PromptCooldownManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownManagerTests.swift; sourceTree = "<group>"; };
 		9F387DDC2EA881C7006861F8 /* PromptCooldownMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptCooldownMocks.swift; sourceTree = "<group>"; };
@@ -5261,6 +5266,7 @@
 		362E3EC72E7185A200E4C762 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
+				9F3668742EAF0A6900AA8670 /* MockContextualOnboardingStatusProvider.swift */,
 				98E563932DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift */,
 				98E563B62DE8B32D00E6E75F /* OnboardingFirePixelMock.swift */,
 				98E563B72DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift */,
@@ -11275,6 +11281,7 @@
 				6FF9AD412CE6610F00C5A406 /* TabSwitcherOpenDailyPixelTests.swift in Sources */,
 				569437342BE4E41500C0881B /* SyncErrorHandlerSyncErrorsAlertsTests.swift in Sources */,
 				9F387DF52EA8BED0006861F8 /* ModalPromptCoordinationServiceTests.swift in Sources */,
+				9F3668762EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */,
 				CBC88EE32C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift in Sources */,
 				85C11E4120904BBE00BFFEB4 /* VariantManagerTests.swift in Sources */,
 				563A3D032D37C363001966FD /* AppConfigurationURLProviderTests.swift in Sources */,
@@ -11594,6 +11601,7 @@
 				9876DF2E2DEEE21700E30713 /* MockThemeManager.swift in Sources */,
 				98E5640B2DE8B32D00E6E75F /* MockStatisticsStore.swift in Sources */,
 				98E5640C2DE8B32D00E6E75F /* MockTabPreviewsSource.swift in Sources */,
+				9F3668752EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */,
 				98E5640D2DE8B32D00E6E75F /* MockDataExtensions.swift in Sources */,
 				98E5640E2DE8B32D00E6E75F /* MockBundle.swift in Sources */,
 				98E5640F2DE8B32D00E6E75F /* MockTabInteractionStateSource.swift in Sources */,
@@ -11757,6 +11765,7 @@
 				98E563DD2DE8B32D00E6E75F /* MockPersistentPixel.swift in Sources */,
 				98E563DE2DE8B32D00E6E75F /* MockTabDelegate.swift in Sources */,
 				98E563DF2DE8B32D00E6E75F /* MockTutorialSettings.swift in Sources */,
+				9F3668782EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */,
 				98E563E02DE8B32D00E6E75F /* OnboardingPixelReporterMock.swift in Sources */,
 				98E563E12DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,
 				98E564A52DE8EDE200E6E75F /* CapturingAlertPresenter.swift in Sources */,
@@ -11849,6 +11858,7 @@
 				98E5647F2DE8DDE200E6E75F /* HtmlTestDataLoader.swift in Sources */,
 				F1A83D892E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */,
 				98E564802DE8DDE200E6E75F /* CoreDataTestUtilities.swift in Sources */,
+				9F3668772EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */,
 				98E5646D2DE8DDDC00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,
 				98E5646E2DE8DDDC00E6E75F /* OnboardingManagerMock.swift in Sources */,
 				98E564A12DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift in Sources */,

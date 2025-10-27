@@ -306,7 +306,7 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     /// - Returns: Boolean indicating if AI chat is enabled
     @MainActor
     private func isNativeDuckAiEnabled(params: Any, message: UserScriptMessage) -> Encodable? {
-        return serpSettingsProviding.isAIChatEnabled
+        return NativeDuckAIState(enabled: serpSettingsProviding.isAIChatEnabled)
     }
 
     // MARK: - Native to SERP Communication
@@ -330,7 +330,7 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
         }
 
         broker?.push(method: SERPSettingsUserScriptMessages.nativeDuckAiSettingChanged.rawValue,
-                     params: serpSettingsProviding.isAIChatEnabled,
+                     params: NativeDuckAIState(enabled: serpSettingsProviding.isAIChatEnabled),
                      for: self,
                      into: webView)
     }
@@ -355,3 +355,14 @@ public extension Notification.Name {
     static let aiChatSettingsChanged = Notification.Name("com.duckduckgo.aichat.settings.changed")
 }
 #endif
+
+
+/// Model that holds the state of the Duck.ai state
+/// Needed for sending/receiving between SERP and Native.
+private struct NativeDuckAIState: Encodable {
+    let enabled: Bool
+
+    init(enabled: Bool) {
+        self.enabled = enabled
+    }
+}

@@ -184,12 +184,30 @@ private extension AutocompleteTests {
         )
         clearAllHistoryMenuItem.click()
 
+        // Fire Dialog should appear instead of old alert
+        let fireDialogTitle = app.fireDialogTitle
         XCTAssertTrue(
-            clearAllHistoryAlertClearButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Clear all history item didn't appear in a reasonable timeframe."
+            fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Fire dialog didn't appear in a reasonable timeframe."
         )
-        clearAllHistoryAlertClearButton.click() // Manually remove the history
-        XCTAssertTrue( // Let any ongoing fire animation or data processes complete
+
+        // Select "Everything" scope to clear all history
+        app.fireDialogSegmentedControl.buttons["Everything"].click()
+
+        // Ensure history, cookies, and tabs toggles are enabled
+        let fireDialogHistoryToggle = app.fireDialogHistoryToggle
+        let fireDialogCookiesToggle = app.fireDialogCookiesToggle
+        let fireDialogTabsToggle = app.fireDialogTabsToggle
+        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+        fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+        fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+
+        // Click burn button to clear history
+        let fireDialogBurnButton = app.fireDialogBurnButton
+        fireDialogBurnButton.click()
+
+        // Wait for fire animation to complete
+        XCTAssertTrue(
             fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation),
             "Fire animation didn't finish and cease existing in a reasonable timeframe."
         )

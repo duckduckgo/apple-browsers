@@ -172,7 +172,7 @@ final class AppContentBlocking {
         var finalParameters = parameters ?? [:]
         switch event {
         case .trackerDataParseFailed:
-            domainEvent = .trackerDataParseFailed
+            domainEvent = .couldNotParseConfiguration(configuration: .trackerDataSet)
             if let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
                 finalParameters[Constants.ParameterName.experimentName] = experimentName
                 finalParameters[Constants.ParameterName.etag] = Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager.fetchedData?.etag ?? ""
@@ -182,16 +182,13 @@ final class AppContentBlocking {
             domainEvent = .trackerDataReloadFailed
 
         case .trackerDataCouldNotBeLoaded:
-            domainEvent = .trackerDataCouldNotBeLoaded
+            domainEvent = .couldNotLoadConfiguration(configuration: .trackerDataSet)
 
         case .privacyConfigurationReloadFailed:
             domainEvent = .privacyConfigurationReloadFailed
 
         case .privacyConfigurationParseFailed:
-            domainEvent = .privacyConfigurationParseFailed
-
-        case .privacyConfigurationCouldNotBeLoaded:
-            domainEvent = .privacyConfigurationCouldNotBeLoaded
+            domainEvent = .couldNotParseConfiguration(configuration: .privacyConfiguration)
 
         case .contentBlockingCompilationFailed(let listName, let component):
             let defaultTDSListName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName

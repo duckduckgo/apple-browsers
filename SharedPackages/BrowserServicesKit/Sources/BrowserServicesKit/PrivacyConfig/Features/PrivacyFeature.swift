@@ -142,6 +142,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// New App Store Update flow feature flag
     /// https://app.asana.com/1/137249556945/project/1199230911884351/task/1211563301906360?focus=true
     case appStoreUpdateFlow
+
+    /// Feature flag for a macOS Tahoe fix only
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
+    case blurryAddressBarTahoeFix
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

@@ -455,6 +455,15 @@ struct BrokerProfileScanSubJob {
                 try database.updateRemovedDate(Date(), on: extractedProfileId)
                 shouldSendProfileRemovedEvent = true
 
+                markConfirmationWideEventCompleted(
+                    brokerProfileQueryData: brokerProfileQueryData,
+                    database: database,
+                    profileIdentifier: removedProfile.identifier,
+                    brokerId: brokerId,
+                    profileQueryId: profileQueryId,
+                    extractedProfileId: extractedProfileId
+                )
+
                 try updateOperationDataDates(
                     origin: .scan,
                     brokerId: brokerId,
@@ -482,20 +491,6 @@ struct BrokerProfileScanSubJob {
                                                      brokerType: brokerProfileQueryData.dataBroker.type,
                                                      vpnConnectionState: vpnConnectionState,
                                                      vpnBypassStatus: vpnBypassStatus))
-
-                    let recordFoundDate = RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
-                                                                          repository: dependencies.database,
-                                                                          brokerId: brokerId,
-                                                                          profileQueryId: profileQueryId,
-                                                                          extractedProfileId: extractedProfileId)
-                    OptOutConfirmationWideEventEmitter.emitSuccess(
-                        wideEvent: dependencies.wideEvent,
-                        attemptID: attemptUUID,
-                        recordFoundDate: recordFoundDate,
-                        confirmationDate: now,
-                        dataBrokerURL: brokerProfileQueryData.dataBroker.url,
-                        dataBrokerVersion: brokerProfileQueryData.dataBroker.version
-                    )
                 }
             }
         }
@@ -503,6 +498,32 @@ struct BrokerProfileScanSubJob {
         if shouldSendProfileRemovedEvent {
             sendProfilesRemovedEventIfNecessary(eventsHandler: eventsHandler, database: database)
         }
+    }
+
+    private func markConfirmationWideEventCompleted(brokerProfileQueryData: BrokerProfileQueryData,
+                                                    database: DataBrokerProtectionRepository,
+                                                    profileIdentifier: String?,
+                                                    brokerId: Int64,
+                                                    profileQueryId: Int64,
+                                                    extractedProfileId: Int64) {
+        let recordFoundDateProvider = {
+            RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
+                                            repository: database,
+                                            brokerId: brokerId,
+                                            profileQueryId: profileQueryId,
+                                            extractedProfileId: extractedProfileId)
+        }
+        let wideEventId = OptOutWideEventIdentifier(profileIdentifier: profileIdentifier,
+                                                    brokerId: brokerId,
+                                                    profileQueryId: profileQueryId,
+                                                    extractedProfileId: extractedProfileId)
+        OptOutConfirmationWideEventRecorder.startIfPossible(
+            wideEvent: dependencies.wideEvent,
+            identifier: wideEventId,
+            dataBrokerURL: brokerProfileQueryData.dataBroker.url,
+            dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+            recordFoundDateProvider: recordFoundDateProvider
+        )?.markCompleted(at: Date())
     }
 
     private func sendProfilesRemovedEventIfNecessary(eventsHandler: EventMapping<JobEvent>,

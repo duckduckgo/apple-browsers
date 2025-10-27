@@ -264,14 +264,20 @@ public extension SubJobWebRunning {
     }
 
     func success(actionId: String, actionType: ActionType) async {
+        let isForOptOut = actionsHandler?.isForOptOut == true
+
         switch actionType {
         case .click:
-            stageCalculator.fireOptOutFillForm()
+            if isForOptOut {
+                stageCalculator.fireOptOutFillForm()
+            }
             // We wait 40 seconds before tapping
             try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
             await executeNextStep()
         case .fillForm:
-            stageCalculator.fireOptOutFillForm()
+            if isForOptOut {
+                stageCalculator.fireOptOutFillForm()
+            }
             await executeNextStep()
         default: await executeNextStep()
         }

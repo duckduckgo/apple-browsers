@@ -165,15 +165,16 @@ final class ConfigurationStore: ConfigurationStoring {
                 let nserror = error as NSError
 
                 if nserror.domain != NSCocoaErrorDomain || nserror.code != NSFileReadNoSuchFileError {
-                    if config == .trackerDataSet, let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
-                        let parameters = [
+                    let pixel = GeneralPixel.couldNotLoadConfiguration(configuration: config)
+                    let parameters: [String: String] = if config == .trackerDataSet, let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
+                        [
                             "experimentName": experimentName,
                             "etag": loadEtag(for: .trackerDataSet) ?? ""
                         ]
-                        PixelKit.fire(DebugEvent(GeneralPixel.trackerDataCouldNotBeLoaded, error: error), withAdditionalParameters: parameters)
                     } else {
-                        PixelKit.fire(DebugEvent(GeneralPixel.trackerDataCouldNotBeLoaded, error: error))
+                        [:]
                     }
+                    PixelKit.fire(DebugEvent(pixel, error: error), frequency: .dailyAndCount, withAdditionalParameters: parameters)
                 }
             }
         }

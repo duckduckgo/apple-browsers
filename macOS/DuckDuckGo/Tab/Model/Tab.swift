@@ -59,7 +59,7 @@ protocol NewWindowPolicyDecisionMaker {
         var certificateTrustEvaluator: CertificateTrustEvaluating
         var tunnelController: NetworkProtectionIPCTunnelController?
         var maliciousSiteDetector: MaliciousSiteDetecting
-        var faviconManagement: FaviconManagement?
+        var faviconManagement: FaviconManagement
         var featureFlagger: FeatureFlagger
         var contentScopeExperimentsManager: ContentScopeExperimentsManaging
         var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable

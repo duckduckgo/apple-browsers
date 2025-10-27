@@ -23,6 +23,17 @@ public protocol WireGuardInterface {
 
 // MARK: - WireGuard Adapter
 
+public enum WireGuardAdapterEvent {
+    /// Sent when the attempt to exit the temporary shutdown state fails for any reason.
+    case endTemporaryShutdownStateAttemptFailure(Error)
+
+    /// Sent when the adapter restart had already failed and a subsequent attempt to restart the backend succeeded.
+    case endTemporaryShutdownStateRecoverySuccess
+
+    /// Sent when the adapter restart had already failed and a subsequent attempt to restart the backend also failed.
+    case endTemporaryShutdownStateRecoveryFailure(Error)
+}
+
 public enum WireGuardAdapterErrorInvalidStateReason: String {
     case alreadyStarted
     case alreadyStopped
@@ -145,6 +156,9 @@ public class WireGuardAdapter {
     /// Packet tunnel provider.
     private weak var packetTunnelProvider: NEPacketTunnelProvider?
 
+    /// Emits events for pixel and logging purposes.
+    private let eventMapper: EventMapping<WireGuardAdapterEvent>
+
     /// Log handler closure.
     private let logHandler: LogHandler
 
@@ -153,6 +167,9 @@ public class WireGuardAdapter {
 
     /// Adapter state.
     private var state: State = .stopped
+
+    /// Keeps track of whether a recovery attempt from temporary shutdown has already failed.
+    private var temporaryShutdownRecoveryFailed = false
 
     private let wireGuardInterface: WireGuardInterface
 
@@ -227,11 +244,15 @@ public class WireGuardAdapter {
     ///   as a weak reference.
     /// - Parameter logHandler: a log handler closure.
 
-    public init(with packetTunnelProvider: NEPacketTunnelProvider, wireGuardInterface: WireGuardInterface, logHandler: @escaping LogHandler) {
+    public init(with packetTunnelProvider: NEPacketTunnelProvider,
+                wireGuardInterface: WireGuardInterface,
+                eventMapper: EventMapping<WireGuardAdapterEvent>,
+                logHandler: @escaping LogHandler) {
         Logger.networkProtectionMemory.debug("[+] WireGuardAdapter")
 
         self.packetTunnelProvider = packetTunnelProvider
         self.wireGuardInterface = wireGuardInterface
+        self.eventMapper = eventMapper
         self.logHandler = logHandler
 
         setupLogHandler()
@@ -655,6 +676,7 @@ public class WireGuardAdapter {
                 self.logHandler(.verbose, "Connectivity offline, pausing backend.")
 
                 self.state = .temporaryShutdown(settingsGenerator)
+                self.temporaryShutdownRecoveryFailed = false
                 self.wireGuardInterface.turnOff(handle: handle)
             }
 
@@ -673,8 +695,21 @@ public class WireGuardAdapter {
                     try self.startWireGuardBackend(wgConfig: wgConfig),
                     settingsGenerator
                 )
+
+                if self.temporaryShutdownRecoveryFailed {
+                    self.eventMapper.fire(.endTemporaryShutdownStateRecoverySuccess)
+                }
+
+                self.temporaryShutdownRecoveryFailed = false
             } catch {
                 self.logHandler(.error, "Failed to restart backend: \(error.localizedDescription)")
+
+                if self.temporaryShutdownRecoveryFailed {
+                    self.eventMapper.fire(.endTemporaryShutdownStateRecoveryFailure(error))
+                } else {
+                    self.eventMapper.fire(.endTemporaryShutdownStateAttemptFailure(error))
+                    self.temporaryShutdownRecoveryFailed = true
+                }
             }
 
         case .stopped, .snoozing:

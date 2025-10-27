@@ -110,6 +110,10 @@ public class DBPIOSInterface {
         func tryToFireWeeklyPixels()
     }
 
+    protocol DBPWideEventsDelegate: AnyObject {
+        func sweepWideEvents()
+    }
+
     protocol OptOutEmailConfirmationHandlingDelegate: AnyObject {
         func checkForEmailConfirmationData() async
     }
@@ -142,6 +146,7 @@ public final class DataBrokerProtectionIOSManager {
     private let featureFlagger: DBPFeatureFlagging
     private let settings: DataBrokerProtectionSettings
     private let subscriptionManager: DataBrokerProtectionSubscriptionManager
+    private let wideEventSweeper: DBPWideEventSweeper?
     private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
             directoryName: DatabaseConstants.directoryName,
@@ -175,7 +180,8 @@ public final class DataBrokerProtectionIOSManager {
          feedbackViewCreator: @escaping () -> (any View),
          featureFlagger: DBPFeatureFlagging,
          settings: DataBrokerProtectionSettings,
-         subscriptionManager: DataBrokerProtectionSubscriptionManager
+         subscriptionManager: DataBrokerProtectionSubscriptionManager,
+         wideEvent: WideEventManaging?
     ) {
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
@@ -192,10 +198,13 @@ public final class DataBrokerProtectionIOSManager {
         self.featureFlagger = featureFlagger
         self.settings = settings
         self.subscriptionManager = subscriptionManager
+        self.wideEventSweeper = wideEvent.map { DBPWideEventSweeper(wideEvent: $0) }
 
         self.queueManager.delegate = self
 
         registerBackgroundTaskHandler()
+        Logger.dataBrokerProtection.debug("PIR wide event sweep requested (iOS setup)")
+        sweepWideEvents()
     }
 }
 
@@ -209,7 +218,9 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
 
     public func appDidBecomeActive() {
         tryToFireWeeklyPixels()
-        
+        Logger.dataBrokerProtection.debug("PIR wide event sweep requested (app active)")
+        sweepWideEvents()
+
         Task {
             await checkForEmailConfirmationData()
         }
@@ -422,6 +433,12 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.WeeklyPixelsDelegate {
             handler: jobDependencies.pixelHandler
         )
         eventPixels.tryToFireWeeklyPixels()
+    }
+}
+
+extension DataBrokerProtectionIOSManager: DBPIOSInterface.DBPWideEventsDelegate {
+    func sweepWideEvents() {
+        wideEventSweeper?.sweep()
     }
 }
 

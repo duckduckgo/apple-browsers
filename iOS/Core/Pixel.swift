@@ -204,6 +204,11 @@ public class Pixel {
         static let phone = "phone"
     }
 
+    public enum BuildTarget: String {
+        case app
+        case vpn
+    }
+
     public static var isDryRun = false
 
     private static var isInternalUser: Bool {

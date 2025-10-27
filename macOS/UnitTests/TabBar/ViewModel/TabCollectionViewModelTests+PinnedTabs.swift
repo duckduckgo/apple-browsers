@@ -133,24 +133,6 @@ extension TabCollectionViewModelTests {
         XCTAssertEqual(tabCollectionViewModel.selectedTab, demoTab1)
     }
 
-    @MainActor
-    func test_WithPinnedTabs_WhenSelectIsInvokedWithPinnedTabThenSelectedTabIsUpdatedAccordingly() throws {
-        let demoTab0 = Tab(content: .url(.duckDuckGo, source: .link))
-        let demoTab1 = Tab(content: .url(.bookmarks, source: .link))
-
-        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
-        let pinnedTabsCollection = try XCTUnwrap(tabCollectionViewModel.pinnedTabsManager?.tabCollection)
-        pinnedTabsCollection.insert(demoTab0, at: 0)
-        pinnedTabsCollection.insert(demoTab1, at: 1)
-
-        tabCollectionViewModel.select(at: .unpinned(0))
-        XCTAssertEqual(tabCollectionViewModel.selectedTab?.content, .newtab)
-
-        tabCollectionViewModel.select(tab: demoTab1)
-        XCTAssertEqual(tabCollectionViewModel.selectedTab, demoTab1)
-        XCTAssertEqual(tabCollectionViewModel.selectedTabIndex, .pinned(1))
-    }
-
     // MARK: - Insert
 
     @MainActor

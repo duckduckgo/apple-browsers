@@ -93,12 +93,6 @@ public protocol SERPSettingsProviding {
     /// that survives app restarts. Typical implementations use UserDefaults or Keychain.
     var keyValueStore: ThrowingKeyValueStoring { get }
 
-    /// Serial dispatch queue for thread-safe storage access.
-    ///
-    /// All read and write operations to the settings storage are serialized through
-    /// this queue to prevent race conditions and ensure data consistency.
-    var settingsQueue: DispatchQueue { get }
-
     /// Optional event mapper for reporting storage errors.
     ///
     /// When provided, storage errors are reported through this mapper for analytics
@@ -124,37 +118,33 @@ public extension SERPSettingsProviding {
     /// Retrieves stored SERP settings in a thread-safe manner.
     ///
     /// This default implementation:
-    /// 1. Serializes access through the settings queue
-    /// 2. Attempts to read data from the key-value store
-    /// 3. Reports any errors through the event mapper
-    /// 4. Returns data wrapped in a JSONBlob if successful
+    /// 1. Attempts to read data from the key-value store
+    /// 2. Reports any errors through the event mapper
+    /// 3. Returns data wrapped in a JSONBlob if successful
     ///
     /// - Returns: Encoded settings blob, or an empty JSON object if no data exists, or `nil` if an error occurs
     func getSERPSettings() -> Encodable? {
-        settingsQueue.sync {
-            do {
-                if let data = try keyValueStore.object(forKey: SERPSettingsConstants.serpSettingsStorage) as? Data {
-                    return JSONBlob(data: data)
-                } else {
-                    // First-time access: return empty JSON object
-                    let emptyJSON = try JSONSerialization.data(withJSONObject: [:], options: [])
-                    return JSONBlob(data: emptyJSON)
-                }
-            } catch {
-                eventMapper?.fire(.keyValueStoreReadError, error: error)
+        do {
+            if let data = try keyValueStore.object(forKey: SERPSettingsConstants.serpSettingsStorage) as? Data {
+                return JSONBlob(data: data)
+            } else {
+                // First-time access: return empty JSON object
+                let emptyJSON = try JSONSerialization.data(withJSONObject: [:], options: [])
+                return JSONBlob(data: emptyJSON)
             }
-
-            return nil
+        } catch {
+            eventMapper?.fire(.keyValueStoreReadError, error: error)
         }
+
+        return nil
     }
 
     /// Stores SERP settings in a thread-safe manner.
     ///
     /// This default implementation:
-    /// 1. Serializes access through the settings queue
-    /// 2. Converts the settings dictionary to JSON data
-    /// 3. Writes the data to the key-value store
-    /// 4. Reports any errors through the event mapper
+    /// 1. Converts the settings dictionary to JSON data
+    /// 2. Writes the data to the key-value store
+    /// 3. Reports any errors through the event mapper
     ///
     /// ## Error Handling
     ///
@@ -166,17 +156,15 @@ public extension SERPSettingsProviding {
     ///
     /// - Parameter settings: Complete dictionary of SERP settings to store
     func storeSERPSettings(settings: [String: Any]) {
-        settingsQueue.sync {
+        do {
+            let data = try JSONSerialization.data(withJSONObject: settings, options: [])
             do {
-                let data = try JSONSerialization.data(withJSONObject: settings, options: [])
-                do {
-                    try keyValueStore.set(data, forKey: SERPSettingsConstants.serpSettingsStorage)
-                } catch {
-                    eventMapper?.fire(.keyValueStoreWriteError, error: error)
-                }
+                try keyValueStore.set(data, forKey: SERPSettingsConstants.serpSettingsStorage)
             } catch {
-                eventMapper?.fire(.serializationFailed, error: error)
+                eventMapper?.fire(.keyValueStoreWriteError, error: error)
             }
+        } catch {
+            eventMapper?.fire(.serializationFailed, error: error)
         }
     }
 

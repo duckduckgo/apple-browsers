@@ -64,12 +64,6 @@ final class SERPSettingsProvider: SERPSettingsProviding {
     /// Used to determine the value of `isAIChatEnabled`.
     var aiChatPreferencesStorage: AIChatPreferencesStorage
 
-    /// Serial dispatch queue for thread-safe storage access.
-    ///
-    /// All read and write operations to the key-value store are serialized
-    /// through this queue to prevent race conditions.
-    var settingsQueue: DispatchQueue = DispatchQueue(label: "com.duckduckgo.serp.settings")
-
     /// Optional event mapper for error reporting.
     ///
     /// When set, storage errors are reported as pixels through `SERPSettingsEventHandler`.

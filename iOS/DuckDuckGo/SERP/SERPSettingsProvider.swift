@@ -27,7 +27,6 @@ import SERPSettings
 
 final class SERPSettingsProvider: SERPSettingsProviding {
     var keyValueStore: ThrowingKeyValueStoring
-    var settingsQueue: DispatchQueue = DispatchQueue(label: "com.duckduckgo.serpSettings", qos: .userInteractive)
     var eventMapper: EventMapping<SERPSettingsError>?
     var aiChatProvider: AIChatSettingsProvider
 

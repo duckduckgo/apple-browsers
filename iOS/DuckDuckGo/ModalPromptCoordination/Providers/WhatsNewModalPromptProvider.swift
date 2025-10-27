@@ -26,7 +26,7 @@ import RemoteMessaging
 final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
     private let remoteMessageStore: RemoteMessagingStoring
     private let remoteMessageActionHandler: RemoteMessagingActionHandling
-    private var navigationController: UINavigationController?
+    private weak var navigationController: UINavigationController?
     private var currentMessageId: String?
 
     init(

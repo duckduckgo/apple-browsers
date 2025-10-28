@@ -213,7 +213,7 @@ class PinnedTabsTests: UITestCase {
 
 class PinnedTabsAppKitRewriteTests: PinnedTabsTests {
 
-    override var featureFlags: [String : Bool] {
+    override var featureFlags: [String: Bool] {
         ["pinnedTabsViewRewrite": true]
     }
 }

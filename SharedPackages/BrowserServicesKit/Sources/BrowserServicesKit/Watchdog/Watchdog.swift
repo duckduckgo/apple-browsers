@@ -25,10 +25,21 @@ import os.log
 ///
 public final actor Watchdog {
     /// The current state of the main thread.
-    public enum HangState {
+    public enum HangState: CustomStringConvertible {
         case responsive
         case hanging
         case timeout
+
+        public var description: String {
+            switch self {
+            case .responsive:
+                return "responsive"
+            case .hanging:
+                return "hanging"
+            case .timeout:
+                return "timeout"
+            }
+        }
     }
 
     /// Events for use with an EventMapper.
@@ -126,9 +137,8 @@ public final actor Watchdog {
     /// Starts the watchdog running.
     ///
     public func start() async {
-        // Cancel any existing task
-        monitoringTask?.cancel()
-        heartbeatUpdateTask?.cancel()
+        cancelAndClearTasks()
+        resetHangState()
 
         // Ensure we start in an unpaused state
         isPaused = false
@@ -145,15 +155,19 @@ public final actor Watchdog {
     /// Stops the watchdog entirely.
     ///
     public func stop() async {
+        cancelAndClearTasks()
+
+        Self.logger.info("Watchdog stopped monitoring")
+
+        await setIsRunning(false)
+    }
+
+    private func cancelAndClearTasks() {
         monitoringTask?.cancel()
         monitoringTask = nil
 
         heartbeatUpdateTask?.cancel()
         heartbeatUpdateTask = nil
-
-        Self.logger.info("Watchdog stopped monitoring")
-
-        await setIsRunning(false)
     }
 
     /// Pauses the watchdog, if running. Can be resumed with `resume`.
@@ -204,8 +218,8 @@ public final actor Watchdog {
             }
 
             // Check if the heartbeat was actually updated
-            let timeSinceLastCheck = await monitor.timeSinceLastHeartbeat()
-            handleHangDetection(timeSinceLastCheck: timeSinceLastCheck)
+            let timeSinceLastHeartbeat = await monitor.timeSinceLastHeartbeat()
+            handleHangDetection(timeSinceLastHeartbeat: timeSinceLastHeartbeat)
         }
     }
 
@@ -213,46 +227,34 @@ public final actor Watchdog {
         heartbeatUpdateTask = nil
     }
 
-    private func handleHangDetection(timeSinceLastCheck: TimeInterval) {
+    private func handleHangDetection(timeSinceLastHeartbeat: TimeInterval) {
         let now = Date()
 
         // Skip hang detection checks if the watchdog is paused
         guard !isPaused else {
-            Self.logger.debug("Ignoring hang detection while paused. Last heartbeat: \(timeSinceLastCheck)s ago.")
+            Self.logger.debug("Ignoring hang detection while paused. Last heartbeat: \(timeSinceLastHeartbeat)s ago.")
             return
         }
 
         switch hangState {
         case .responsive:
-            if timeSinceLastCheck > minimumHangDuration {
-                // Start of hang detected
-                hangState = .hanging
-                hangStartTime = now.addingTimeInterval(-timeSinceLastCheck)
-                Self.logger.info("Main thread hang detected! Last heartbeat: \(timeSinceLastCheck)s ago.")
+            if timeSinceLastHeartbeat > minimumHangDuration {
+                transition(from: .responsive, to: .hanging, at: now, timeSinceLastHeartbeat: timeSinceLastHeartbeat)
             }
         case .hanging:
-            if timeSinceLastCheck <= minimumHangDuration {
+            if timeSinceLastHeartbeat <= minimumHangDuration {
                 // Hang ended
-                logHangDuration(message: "Main thread hang ended.", currentTime: now)
-                fireHangEvent(Watchdog.Event.uiHangRecovered, currentTime: now)
-
-                resetHangState()
-            } else if timeSinceLastCheck > maximumHangDuration {
-                hangState = .timeout
-
-                logHangDuration(message: "Main thread hang timeout reached.", currentTime: now)
-                fireHangEvent(Watchdog.Event.uiHangNotRecovered, currentTime: now)
+                transition(from: .hanging, to: .responsive, at: now, timeSinceLastHeartbeat: timeSinceLastHeartbeat)
+            } else if timeSinceLastHeartbeat > maximumHangDuration {
+                transition(from: .hanging, to: .timeout, at: now, timeSinceLastHeartbeat: timeSinceLastHeartbeat)
             } else {
-                // Still hanging
                 logHangDuration(message: "Ongoing main thread hang.", currentTime: now)
             }
         case .timeout:
-            if timeSinceLastCheck <= minimumHangDuration {
-                // Hang became responsive again after timeout. Reset hang state.
-                resetHangState()
-
-                logHangDuration(message: "Main thread hang ended after timeout.", currentTime: now)
-            } else if timeSinceLastCheck > maximumHangDuration && crashOnTimeout {
+            if timeSinceLastHeartbeat <= minimumHangDuration {
+                // Hang became responsive again after timeout
+                transition(from: .timeout, to: .responsive, at: now, timeSinceLastHeartbeat: timeSinceLastHeartbeat)
+            } else if timeSinceLastHeartbeat > maximumHangDuration && crashOnTimeout {
                 logHangDuration(message: "Main thread hang timeout reached. Crashing app.", currentTime: now)
                 killAppFunction?(maximumHangDuration) ?? killApp(timeout: maximumHangDuration)
             }
@@ -262,6 +264,35 @@ public final actor Watchdog {
     private func killApp(timeout: TimeInterval) {
         // Use `fatalError` to generate crash report with stack trace
         fatalError("Main thread hang detected by Watchdog (timeout: \(maximumHangDuration)s). This crash is intentional to provide debugging information.")
+    }
+
+    // MARK: - State transitions
+
+    private func transition(from currentState: HangState, to newState: HangState, at time: Date, timeSinceLastHeartbeat: TimeInterval) {
+        guard currentState != newState else { return }
+
+        switch (currentState, newState) {
+        case (.responsive, .hanging):
+            hangState = .hanging
+            hangStartTime = time.addingTimeInterval(-timeSinceLastHeartbeat)
+            Self.logger.info("Main thread hang detected! Last heartbeat: \(timeSinceLastHeartbeat)s ago.")
+        case (.hanging, .responsive):
+            logHangDuration(message: "Main thread hang ended.", currentTime: time)
+            fireHangEvent(Watchdog.Event.uiHangRecovered, currentTime: time)
+            resetHangState()
+        case (.hanging, .timeout):
+            hangState = .timeout
+            logHangDuration(message: "Main thread hang timeout reached.", currentTime: time)
+            fireHangEvent(Watchdog.Event.uiHangNotRecovered, currentTime: time)
+        case (.timeout, .responsive):
+            resetHangState()
+            logHangDuration(message: "Main thread hang ended after timeout.", currentTime: time)
+        case (.responsive, .responsive), (.hanging, .hanging), (.timeout, .timeout),
+             (.responsive, .timeout), (.timeout, .hanging):
+            // We can't timeout from a responsive state, or go back to hanging from a timeout state
+            // and we should never transition to the same state we're already in
+            Self.logger.warning("Invalid transition from \(currentState.description) to \(newState.description)")
+        }
     }
 
     // MARK: Event firing

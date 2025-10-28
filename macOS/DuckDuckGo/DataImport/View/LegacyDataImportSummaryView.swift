@@ -249,7 +249,7 @@ private extension View {
 #Preview {
     VStack {
         HStack {
-            DataImportSummaryView(model: .init(source: .chrome, results: [
+            LegacyDataImportSummaryView(model: .init(source: .chrome, results: [
                 .init(.bookmarks, .success(.init(successful: 123, duplicate: 456, failed: 7890))),
                 .init(.passwords, .success(.init(successful: 123, duplicate: 456, failed: 7890))),
                 .init(.bookmarks, .failure(LegacyDataImportViewModel.TestImportError(action: .bookmarks, errorType: .dataCorrupted))),

@@ -69,7 +69,7 @@ public final actor Watchdog {
     private var hangState: HangState = .responsive {
         didSet {
             if hangState != oldValue {
-                let duration = hangStartTime.map { Date().timeIntervalSince($0) }
+                let duration = currentHangDuration(currentTime: Date())
                 hangStateSubject.send((hangState, duration))
             }
         }
@@ -107,7 +107,7 @@ public final actor Watchdog {
     ///   - crashOnTimeout: Whether the watchdog should kill the app once the maximum hang duration has been reached (used for debugging purposes)
     ///   - killAppFunction: A closure to be executed when the maximum hang duration has been reached (used for testing purposes)
     ///
-    public init(minimumHangDuration: TimeInterval = 1.0, maximumHangDuration: TimeInterval = 5.0, checkInterval: TimeInterval = 0.5, eventMapper: EventMapping<Watchdog.Event>? = nil, crashOnTimeout: Bool = false, killAppFunction: ((TimeInterval) -> Void)? = nil) {
+    public init(minimumHangDuration: TimeInterval = 2.0, maximumHangDuration: TimeInterval = 5.0, checkInterval: TimeInterval = 0.5, eventMapper: EventMapping<Watchdog.Event>? = nil, crashOnTimeout: Bool = false, killAppFunction: ((TimeInterval) -> Void)? = nil) {
 
         assert(checkInterval > 0, "checkInterval must be greater than 0")
         assert(minimumHangDuration >= 0, "minimumHangDuration must be greater than or equal to 0")
@@ -245,7 +245,7 @@ public final actor Watchdog {
             if timeSinceLastHeartbeat <= minimumHangDuration {
                 // Hang ended
                 transition(from: .hanging, to: .responsive, at: now, timeSinceLastHeartbeat: timeSinceLastHeartbeat)
-            } else if timeSinceLastHeartbeat > maximumHangDuration {
+            } else if currentHangDuration(currentTime: now) > maximumHangDuration {
                 transition(from: .hanging, to: .timeout, at: now, timeSinceLastHeartbeat: timeSinceLastHeartbeat)
             } else {
                 logHangDuration(message: "Ongoing main thread hang.", currentTime: now)
@@ -254,7 +254,7 @@ public final actor Watchdog {
             if timeSinceLastHeartbeat <= minimumHangDuration {
                 // Hang became responsive again after timeout
                 transition(from: .timeout, to: .responsive, at: now, timeSinceLastHeartbeat: timeSinceLastHeartbeat)
-            } else if timeSinceLastHeartbeat > maximumHangDuration && crashOnTimeout {
+            } else if currentHangDuration(currentTime: now) > maximumHangDuration && crashOnTimeout {
                 logHangDuration(message: "Main thread hang timeout reached. Crashing app.", currentTime: now)
                 killAppFunction?(maximumHangDuration) ?? killApp(timeout: maximumHangDuration)
             }
@@ -274,7 +274,8 @@ public final actor Watchdog {
         switch (currentState, newState) {
         case (.responsive, .hanging):
             hangState = .hanging
-            hangStartTime = time.addingTimeInterval(-timeSinceLastHeartbeat)
+            // Account for half the check interval - the hang will likely have started earlier than the last missed heartbeat
+            hangStartTime = time.addingTimeInterval(-max((timeSinceLastHeartbeat - checkInterval / 2), 0))
             Self.logger.info("Main thread hang detected! Last heartbeat: \(timeSinceLastHeartbeat)s ago.")
         case (.hanging, .responsive):
             logHangDuration(message: "Main thread hang ended.", currentTime: time)
@@ -300,13 +301,15 @@ public final actor Watchdog {
     private func fireHangEvent(_ eventFactory: (Int) -> Watchdog.Event, currentTime: Date) {
         let actualHangDuration = currentHangDuration(currentTime: currentTime)
         let nearestSecond = hangDurationToNearestSecond(duration: actualHangDuration)
-        eventMapper?.fire(eventFactory(nearestSecond))
+        let reportedSecond = max(Int(minimumHangDuration), min(nearestSecond, Int(maximumHangDuration)))
+        eventMapper?.fire(eventFactory(reportedSecond))
     }
 
     // MARK: Duration handling
 
     private func currentHangDuration(currentTime: Date) -> TimeInterval {
-        return hangStartTime.map { currentTime.timeIntervalSince($0) } ?? 0
+        guard let hangStartTime = hangStartTime else { return 0 }
+        return currentTime.timeIntervalSince(hangStartTime)
     }
 
     private func hangDurationToNearestSecond(duration: TimeInterval) -> Int {

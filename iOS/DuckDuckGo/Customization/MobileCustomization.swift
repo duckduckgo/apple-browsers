@@ -19,6 +19,8 @@
 
 import BrowserServicesKit
 import Persistence
+import DesignResourcesKitIcons
+import UIKit
 
 /// Handles logic and persistence of customization options.
 class MobileCustomization {
@@ -65,6 +67,79 @@ class MobileCustomization {
                 "Passwords"
             case .voiceSearch:
                 "Voice Search"
+            }
+        }
+
+        var largeIcon: UIImage? {
+            switch self {
+            case .share:
+                DesignSystemImages.Glyphs.Size24.shareApple
+            case .addRemoveBookmark:
+                DesignSystemImages.Glyphs.Size24.bookmark
+            case .addRemoveFavorite:
+                DesignSystemImages.Glyphs.Size24.favorite
+            case .zoom:
+                DesignSystemImages.Glyphs.Size24.typeSize
+            case .none:
+                nil
+            case .home:
+                DesignSystemImages.Glyphs.Size24.home
+            case .newTab:
+                DesignSystemImages.Glyphs.Size24.add
+            case .bookmarks:
+                DesignSystemImages.Glyphs.Size24.bookmarks
+            case .duckAi:
+                DesignSystemImages.Glyphs.Size24.aiChat
+            case .fire:
+                DesignSystemImages.Glyphs.Size24.fireSolid
+            case .vpn:
+                DesignSystemImages.Glyphs.Size24.vpn
+            case .passwords:
+                DesignSystemImages.Glyphs.Size24.key
+            case .voiceSearch:
+                DesignSystemImages.Glyphs.Size24.microphone
+            }
+        }
+
+        var smallIcon: UIImage? {
+            switch self {
+            case .share:
+                DesignSystemImages.Glyphs.Size16.shareApple
+            case .addRemoveBookmark:
+                DesignSystemImages.Glyphs.Size16.bookmark
+            case .addRemoveFavorite:
+                DesignSystemImages.Glyphs.Size16.favorite
+            case .zoom:
+                DesignSystemImages.Glyphs.Size16.typeSize
+            case .none:
+                nil
+            case .home:
+                DesignSystemImages.Glyphs.Size16.home
+            case .newTab:
+                DesignSystemImages.Glyphs.Size16.add
+            case .bookmarks:
+                DesignSystemImages.Glyphs.Size16.bookmarks
+            case .duckAi:
+                DesignSystemImages.Glyphs.Size16.aiChat
+            case .fire:
+                DesignSystemImages.Glyphs.Size16.fireSolid
+            case .vpn:
+                DesignSystemImages.Glyphs.Size16.vpnOn
+            case .passwords:
+                DesignSystemImages.Glyphs.Size16.keyLogin
+            case .voiceSearch:
+                DesignSystemImages.Glyphs.Size16.microphone
+            }
+        }
+
+        // BRINDY TODO
+        var enabledOnNewTabPage: Bool {
+            switch self {
+            case .share:
+                return false
+
+            default:
+                return true
             }
         }
 
@@ -157,6 +232,7 @@ class MobileCustomization {
     func persist(_ state: State) {
         setCurrentToolbarButton(state.currentToolbarButton)
         setCurrentAddressBarButton(state.currentAddressBarButton)
+        NotificationCenter.default.post(name: AppUserDefaults.Notifications.customizationSettingsChanged, object: state)
     }
 
     private func setCurrentToolbarButton(_ button: Button) {

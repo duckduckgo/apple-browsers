@@ -138,7 +138,7 @@ class MainViewController: UIViewController {
     private var vpnCancellables = Set<AnyCancellable>()
     private var feedbackCancellable: AnyCancellable?
     private var aiChatCancellables = Set<AnyCancellable>()
-    private var refreshButtonCancellables = Set<AnyCancellable>()
+    private var settingsCancellables = Set<AnyCancellable>()
     private var syncRecoveryPromptService: SyncRecoveryPromptService?
 
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
@@ -419,6 +419,7 @@ class MainViewController: UIViewController {
         subscribeToUnifiedFeedbackNotifications()
         subscribeToAIChatSettingsEvents()
         subscribeToRefreshButtonSettingsEvents()
+        subscribeToCustomizationSettingsEvents()
 
         checkSubscriptionEntitlements()
 
@@ -443,6 +444,7 @@ class MainViewController: UIViewController {
 
         // Needs to be called here to established correct view hierarchy
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
+        applyCustomizationState(mobileCustomization.state)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -743,7 +745,12 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarPasswordsButton.setCustomItemAction(on: self, action: #selector(onPasswordsPressed))
         viewCoordinator.toolbarBookmarksButton.setCustomItemAction(on: self, action: #selector(onToolbarBookmarksPressed))
         viewCoordinator.menuToolbarButton.setCustomItemAction(on: self, action: #selector(onMenuPressed))
-        viewCoordinator.toolbarFireBarButtonItem.setCustomItemAction(on: self, action: #selector(onFirePressed))
+
+        if mobileCustomization.state.isEnabled {
+            viewCoordinator.toolbarFireBarButtonItem.setCustomItemAction(on: self, action: #selector(performCustomizationActionForToolbar))
+        } else {
+            viewCoordinator.toolbarFireBarButtonItem.setCustomItemAction(on: self, action: #selector(onFirePressed))
+        }
 
         viewCoordinator.menuToolbarButton.customView?
             .addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(onMenuLongPressed)))
@@ -1964,7 +1971,7 @@ class MainViewController: UIViewController {
             .sink { [weak self] _ in
                 self?.refreshOmniBar()
             }
-            .store(in: &refreshButtonCancellables)
+            .store(in: &settingsCancellables)
     }
 
     private func subscribeToNetworkProtectionEvents() {
@@ -2699,7 +2706,7 @@ extension MainViewController: OmniBarDelegate {
         guard let tabURL = currentTab?.url else { return false }
         return tabURL.isDuckDuckGoSearch
     }
-    
+
     func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool) {
         // We don't want any action here if we're still in autocomplete context
         guard !isShowingAutocompleteSuggestions else { return }
@@ -3783,4 +3790,66 @@ extension MainViewController: MainViewEditingStateTransitioning {
         additionalSafeAreaInsets.top = 0
         omniBar.barView.revealButtons()
     }
+}
+
+// MARK: Customization support
+extension MainViewController {
+
+    private func subscribeToCustomizationSettingsEvents() {
+        NotificationCenter.default.publisher(for: AppUserDefaults.Notifications.customizationSettingsChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] output in
+                guard let state = output.object as? MobileCustomization.State else { return }
+                self?.applyCustomizationState(state)
+            }
+            .store(in: &settingsCancellables)
+    }
+
+    func applyCustomizationState(_ state: MobileCustomization.State) {
+        guard state.isEnabled else { return }
+        applyCustomizationForToolbar(state)
+        // coming later - address bar
+    }
+
+    @objc private func performCustomizationActionForToolbar() {
+        switch mobileCustomization.state.currentToolbarButton {
+        case .home:
+            guard let tab = self.currentTab?.tabModel else { return }
+            self.closeTab(tab, andOpenEmptyOneAtSamePosition: true)
+
+        case .newTab:
+            self.newTab()
+
+        case .fire:
+            self.onFirePressed()
+
+        case .bookmarks:
+            self.segueToBookmarks()
+
+        case .duckAi:
+            self.openAIChat()
+
+        case .passwords:
+            self.launchAutofillLogins(with: currentTab?.url, currentTabUid: currentTab?.tabModel.uid, source: .customizedToolbarButton, selectedAccount: nil)
+
+        case .vpn:
+            self.segueToVPN()
+
+        case .share:
+            ActionMessageView.present(message: "NOT IMPLEMENTED YET")
+
+        default:
+            // Eventually this will be an extensive list with no default block
+            break
+        }
+    }
+
+    private func applyCustomizationForToolbar(_ state: MobileCustomization.State) {
+        guard let browserChrome = viewCoordinator.toolbarFireBarButtonItem.customView as? BrowserChromeButton else {
+            assertionFailure("Expected BrowserChromeButton")
+            return
+        }
+        browserChrome.setImage(state.currentToolbarButton.largeIcon)
+    }
+
 }

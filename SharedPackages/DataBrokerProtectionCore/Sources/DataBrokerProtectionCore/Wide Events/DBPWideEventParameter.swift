@@ -1,5 +1,5 @@
 //
-//  DateProvider.swift
+//  DBPWideEventParameter.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,13 +17,18 @@
 //
 
 import Foundation
+import PixelKit
 
-public protocol DateProviding {
-    var currentDate: Date { get }
-}
+enum DBPWideEventParameter {
+    enum OptOutSubmissionFeature {
+        static let dataBrokerURL = "feature.data.ext.data_broker"
+        static let dataBrokerVersion = "feature.data.ext.data_broker_version"
+        static let submissionLatency = "feature.data.ext.submission_latency_ms"
+    }
 
-extension Date: DateProviding {
-    public var currentDate: Date {
-        return self
+    enum OptOutConfirmationFeature {
+        static let dataBrokerURL = "feature.data.ext.data_broker"
+        static let dataBrokerVersion = "feature.data.ext.data_broker_version"
+        static let confirmationLatency = "feature.data.ext.confirmation_latency_ms"
     }
 }

@@ -31,6 +31,7 @@ import PixelKit
 import SpecialErrorPages
 import UserScript
 import WebKit
+import SERPSettings
 
 protocol TabDelegate: ContentOverlayUserScriptDelegate {
     func tabWillStartNavigation(_ tab: Tab, isUserInitiated: Bool)
@@ -58,7 +59,7 @@ protocol NewWindowPolicyDecisionMaker {
         var certificateTrustEvaluator: CertificateTrustEvaluating
         var tunnelController: NetworkProtectionIPCTunnelController?
         var maliciousSiteDetector: MaliciousSiteDetecting
-        var faviconManagement: FaviconManagement?
+        var faviconManagement: FaviconManagement
         var featureFlagger: FeatureFlagger
         var contentScopeExperimentsManager: ContentScopeExperimentsManaging
         var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
@@ -1241,15 +1242,13 @@ extension Tab: PageObserverUserScriptDelegate {
 }
 
 extension Tab: SERPSettingsUserScriptDelegate {
-
     func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
         delegate?.closeTab(self)
     }
 
-    func serpSettingsUserScriptDidRequestToOpenDuckAISettings(_ userScript: SERPSettingsUserScript) {
+    func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
         delegate?.closeTab(self)
     }
-
 }
 
 extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift

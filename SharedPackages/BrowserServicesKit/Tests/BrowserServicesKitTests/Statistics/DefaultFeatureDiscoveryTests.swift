@@ -18,24 +18,32 @@
 import XCTest
 @testable import BrowserServicesKit
 import PersistenceTestingUtils
+import BrowserServicesKitTestsUtils
 
 final class DefaultFeatureDiscoveryTests: XCTestCase {
 
     var featureDiscovery: DefaultFeatureDiscovery!
     var mockStorage: MockKeyValueStore!
     var mockNotificationCenter: NotificationCenter!
+    var mockDateProvider: MockCurrentDateProvider!
 
     override func setUp() {
         super.setUp()
         mockStorage = MockKeyValueStore()
         mockNotificationCenter = NotificationCenter()
-        featureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: mockStorage, notificationCenter: mockNotificationCenter)
+        mockDateProvider = MockCurrentDateProvider()
+        featureDiscovery = DefaultFeatureDiscovery(
+            wasUsedBeforeStorage: mockStorage,
+            notificationCenter: mockNotificationCenter,
+            dateProvider: mockDateProvider
+        )
     }
 
     override func tearDown() {
         featureDiscovery = nil
         mockNotificationCenter = nil
         mockStorage = nil
+        mockDateProvider = nil
         super.tearDown()
     }
 
@@ -76,4 +84,60 @@ final class DefaultFeatureDiscoveryTests: XCTestCase {
         waitForExpectations(timeout: 1, handler: nil)
         mockNotificationCenter.removeObserver(observer)
     }
+
+    func testSetWasUsedBeforeStoresTimestamp() {
+        mockDateProvider.currentDate = Date()
+        featureDiscovery.setWasUsedBefore(.aiChat)
+
+        let storedDate = mockStorage.object(forKey: WasUsedBeforeFeature.aiChat.lastUsedTimestampStorageKey) as? Date
+        XCTAssertNotNil(storedDate)
+    }
+
+    func testSetWasUsedBeforeStoresStartOfDay() {
+        let current = Date()
+        mockDateProvider.currentDate = current
+
+        featureDiscovery.setWasUsedBefore(.aiChat)
+
+        let storedDate = mockStorage.object(forKey: WasUsedBeforeFeature.aiChat.lastUsedTimestampStorageKey) as? Date
+        let expectedStartOfDay = current.startOfDay
+
+        XCTAssertEqual(storedDate, expectedStartOfDay)
+    }
+
+    func testDaysSinceLastUsedWhenNeverUsed() {
+        let daysSince = featureDiscovery.daysSinceLastUsed(.vpn)
+        XCTAssertNil(daysSince)
+    }
+
+    func testDaysSinceLastUsedWhenUsedDaysAgo() {
+        let startDate = Date(timeIntervalSince1970: 1000000)
+        mockDateProvider.currentDate = startDate
+        featureDiscovery.setWasUsedBefore(.privacyDashboard)
+
+        // Move forward 5 days
+        mockDateProvider.currentDate = startDate.addingTimeInterval(5 * 24 * 60 * 60)
+
+        let daysSince = featureDiscovery.daysSinceLastUsed(.privacyDashboard)
+        XCTAssertEqual(daysSince, 5)
+    }
+
+    func testMultipleCallsToSetWasUsedBeforeUpdatesTimestamp() {
+        let firstDate = Date(timeIntervalSince1970: 1000000)
+        mockDateProvider.currentDate = firstDate
+        featureDiscovery.setWasUsedBefore(.vpn)
+
+        let firstStoredDate = mockStorage.object(forKey: WasUsedBeforeFeature.vpn.lastUsedTimestampStorageKey) as? Date
+
+        // Move forward a day
+        let secondDate = firstDate.addingTimeInterval(.days(1))
+        mockDateProvider.currentDate = secondDate
+        featureDiscovery.setWasUsedBefore(.vpn)
+
+        let secondStoredDate = mockStorage.object(forKey: WasUsedBeforeFeature.vpn.lastUsedTimestampStorageKey) as? Date
+
+        XCTAssertNotEqual(firstStoredDate, secondStoredDate)
+        XCTAssertEqual(secondStoredDate, secondDate.startOfDay)
+    }
+
 }

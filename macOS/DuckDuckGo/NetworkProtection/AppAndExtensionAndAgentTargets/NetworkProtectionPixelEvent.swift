@@ -113,7 +113,12 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
 
     case networkProtectionConfigurationInvalidPayload(configuration: Configuration)
     case networkProtectionConfigurationErrorLoadingCachedConfig(_ error: Error)
-    case networkProtectionConfigurationFailedToParse(_ error: Error)
+
+    case couldNotParseConfiguration(configuration: Configuration, error: Error)
+
+    case networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure(_ error: Error)
+    case networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess
+    case networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure(_ error: Error)
 
     case networkProtectionUnhandledError(function: String, line: Int, error: Error)
 
@@ -333,8 +338,17 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
         case .networkProtectionConfigurationErrorLoadingCachedConfig:
             return "netp_ev_configuration_error_loading_cached_config"
 
-        case .networkProtectionConfigurationFailedToParse:
-            return "netp_ev_configuration_failed_to_parse"
+        case .couldNotParseConfiguration(let configuration, _):
+            return "\(configuration)_parse_failed_vpn".lowercased()
+
+        case .networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure:
+            return "netp_ev_adapter_end_temporary_shutdown_state_attempt_failure"
+
+        case .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess:
+            return "netp_ev_adapter_end_temporary_shutdown_state_recovery_success"
+
+        case .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure:
+            return "netp_ev_adapter_end_temporary_shutdown_state_recovery_failure"
 
         case .networkProtectionUnhandledError:
             return "netp_unhandled_error"
@@ -400,11 +414,15 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
             return error?.pixelParameters
         case .networkProtectionConfigurationErrorLoadingCachedConfig(let error):
             return error.pixelParameters
-        case .networkProtectionConfigurationFailedToParse(let error):
+        case .couldNotParseConfiguration(_, let error):
             return error.pixelParameters
         case .networkProtectionVPNAccessRevoked(let error):
             return error.pixelParameters
         case .networkProtectionUnmanagedSubscriptionError(let error):
+            return error.pixelParameters
+        case .networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure(let error):
+            return error.pixelParameters
+        case .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure(let error):
             return error.pixelParameters
         case .networkProtectionActiveUser,
                 .networkProtectionNewUser,
@@ -452,6 +470,7 @@ enum NetworkProtectionPixelEvent: PixelKitEvent {
                 .networkProtectionServerMigrationSuccess,
                 .networkProtectionDNSUpdateCustom,
                 .networkProtectionDNSUpdateDefault,
+                .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess,
                 .networkProtectionConfigurationInvalidPayload:
             return nil
         }

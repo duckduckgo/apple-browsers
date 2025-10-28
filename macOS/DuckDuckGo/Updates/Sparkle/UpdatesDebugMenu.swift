@@ -18,6 +18,7 @@
 
 import AppKit
 import AIChat
+import Common
 
 final class UpdatesDebugMenu: NSMenu {
     init() {
@@ -28,6 +29,15 @@ final class UpdatesDebugMenu: NSMenu {
                 .targetting(self)
             NSMenuItem(title: "Reset last update check", action: #selector(resetLastUpdateCheck))
                 .targetting(self)
+            NSMenuItem.separator()
+            NSMenuItem(title: "Test Update Pixels") {
+                NSMenuItem(title: "Success (Expected)", action: #selector(testUpdateSuccessOnNextLaunch))
+                    .targetting(self)
+                NSMenuItem(title: "Success (Unexpected)", action: #selector(testUnexpectedUpdateSuccessOnNextLaunch))
+                    .targetting(self)
+                NSMenuItem(title: "Failure", action: #selector(testUpdateFailureOnNextLaunch))
+                    .targetting(self)
+            }
         }
     }
 
@@ -49,6 +59,18 @@ final class UpdatesDebugMenu: NSMenu {
 
     @objc func resetLastUpdateCheck() {
         pendingUpdateSince = .distantPast
+    }
+
+    @objc func testUpdateSuccessOnNextLaunch() {
+        SparkleDebugHelper.configureExpectedUpdateSuccess()
+    }
+
+    @objc func testUpdateFailureOnNextLaunch() {
+        SparkleDebugHelper.configureUpdateFailure()
+    }
+
+    @objc func testUnexpectedUpdateSuccessOnNextLaunch() {
+        SparkleDebugHelper.configureUnexpectedUpdateSuccess()
     }
 
 }

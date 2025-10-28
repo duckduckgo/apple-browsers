@@ -1,7 +1,7 @@
 //
-//  NativeMessagingHandlerFactory.swift
+//  MockCurrentDateProvider.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,14 +17,12 @@
 //
 
 import Foundation
+import Common
 
-@available(macOS 15.4, *)
-final class NativeMessagingHandlerFactory {
+public class MockCurrentDateProvider: CurrentDateProviding {
+    public var currentDate: Date
 
-    static func makeHandler(for extensionIdentifier: WebExtensionIdentifier) -> NativeMessagingHandling? {
-        switch extensionIdentifier {
-        case .bitwarden:
-            return BitwardenNativeMessagingHandler()
-        }
+    public init(currentDate: Date = Date()) {
+        self.currentDate = currentDate
     }
 }

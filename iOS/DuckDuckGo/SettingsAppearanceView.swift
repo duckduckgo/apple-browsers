@@ -20,10 +20,23 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct SettingsAppearanceView: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
+
+    /// Once the feature is rolled out move this to view model
+    var showReloadButton: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                viewModel.refreshButtonPositionBinding.wrappedValue == .addressBar
+            },
+            set: {
+                viewModel.refreshButtonPositionBinding.wrappedValue = $0 ? .addressBar : .menu
+            }
+        )
+    }
 
     var body: some View {
         List {
@@ -37,35 +50,17 @@ struct SettingsAppearanceView: View {
                                  isButton: true)
 
                 // Theme
-                SettingsPickerCellView(label: UserText.settingsTheme,
+                SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
+                                       label: UserText.settingsTheme,
                                        options: ThemeStyle.allCases,
                                        selectedOption: viewModel.themeStyleBinding)
             }
 
-            Section(header: Text(UserText.addressBar)) {
-                if viewModel.state.addressBar.enabled {
-                    // Address Bar Position
-                    SettingsPickerCellView(label: UserText.settingsAddressBar,
-                                           options: AddressBarPosition.allCases,
-                                           selectedOption: viewModel.addressBarPositionBinding)
-                }
-
-                if viewModel.isRefreshButtonPositionEnabled {
-                    // Refresh Button Position
-                    SettingsPickerCellView(label: UserText.settingsRefreshButtonPositionTitle,
-                                           options: RefreshButtonPosition.allCases,
-                                           selectedOption: viewModel.refreshButtonPositionBinding)
-                }
-                
-                // Show Full Site Address
-                SettingsCellView(label: UserText.settingsFullURL,
-                                 accessory: .toggle(isOn: viewModel.addressBarShowsFullURL))
-            }
 
             if viewModel.state.mobileCustomization.isEnabled {
-                Section(header: Text(verbatim: "Customization coming soon")) {
-                    EmptyView()
-                }
+                customizableSettings()
+            } else {
+                legacySettings()
             }
 
         }
@@ -76,4 +71,131 @@ struct SettingsAppearanceView: View {
             Pixel.fire(pixel: .settingsAppearanceOpen)
         }
     }
+
+    @ViewBuilder
+    func customizableSettings() -> some View {
+        Section {
+            addressBarPositionSetting()
+
+            showFullSiteAddressSetting()
+
+            showReloadButtonSetting()
+
+            addressBarButtonSetting()
+        } header: {
+            Text(UserText.addressBar)
+        } footer: {
+            Text(verbatim: "Note that the reload button and customizable button are none-functional at this time.")
+        }
+
+        Section {
+            toolbarButtonSetting()
+        } header: {
+            Text(verbatim: "Toolbar")
+        } footer: {
+            Text(verbatim: "Note that customizable button is none-functional at this time.")
+        }
+    }
+
+    func buttonIconProvider(_ button: MobileCustomization.Button) -> Image? {
+
+        let image: UIImage? =
+        switch button {
+        case .share:
+            DesignSystemImages.Glyphs.Size16.shareApple
+        case .addRemoveBookmark:
+            DesignSystemImages.Glyphs.Size16.bookmark
+        case .addRemoveFavorite:
+            DesignSystemImages.Glyphs.Size16.favorite
+        case .zoom:
+            DesignSystemImages.Glyphs.Size16.typeSize
+        case .none:
+            nil
+        case .home:
+            DesignSystemImages.Glyphs.Size16.home
+        case .newTab:
+            DesignSystemImages.Glyphs.Size16.add
+        case .bookmarks:
+            DesignSystemImages.Glyphs.Size16.bookmarks
+        case .duckAi:
+            DesignSystemImages.Glyphs.Size16.aiChat
+        case .fire:
+            DesignSystemImages.Glyphs.Size16.fire
+        case .vpn:
+            DesignSystemImages.Glyphs.Size16.vpnOn
+        case .passwords:
+            DesignSystemImages.Glyphs.Size16.keyLogin
+        case .voiceSearch:
+            DesignSystemImages.Glyphs.Size16.microphone
+        }
+
+        if let image {
+            return Image(uiImage: image)
+        }
+
+        return nil
+    }
+
+    @ViewBuilder
+    func addressBarButtonSetting() -> some View {
+
+        SettingsPickerCellView(
+            useImprovedPicker: true,
+            label: "Customizable Button",
+            options: MobileCustomization.addressBarButtons,
+            selectedOption: viewModel.selectedAddressBarButton,
+            iconProvider: buttonIconProvider)
+
+    }
+
+    @ViewBuilder
+    func toolbarButtonSetting() -> some View {
+
+        SettingsPickerCellView(
+            
+            useImprovedPicker: true,
+            label: "Customizable Button",
+            options: MobileCustomization.toolbarButtons,
+            selectedOption: viewModel.selectedToolbarButton,
+            iconProvider: buttonIconProvider)
+
+    }
+
+    @ViewBuilder
+    func showReloadButtonSetting() -> some View {
+        SettingsCellView(label: "Show Reload Button",
+                         accessory: .toggle(isOn: showReloadButton))
+    }
+
+    @ViewBuilder
+    func legacySettings() -> some View {
+        Section(header: Text(UserText.addressBar)) {
+            addressBarPositionSetting()
+
+            // Refresh Button Position
+            SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
+                                   label: UserText.settingsRefreshButtonPositionTitle,
+                                   options: RefreshButtonPosition.allCases,
+                                   selectedOption: viewModel.refreshButtonPositionBinding)
+
+            showFullSiteAddressSetting()
+        }
+    }
+
+    @ViewBuilder
+    func showFullSiteAddressSetting() -> some View {
+        SettingsCellView(label: UserText.settingsFullURL,
+                         accessory: .toggle(isOn: viewModel.addressBarShowsFullURL))
+    }
+
+    @ViewBuilder
+    func addressBarPositionSetting() -> some View {
+        if viewModel.state.addressBar.enabled {
+            SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
+                                   label: UserText.settingsAddressBar,
+                                   options: AddressBarPosition.allCases,
+                                   selectedOption: viewModel.addressBarPositionBinding)
+        }
+    }
+
 }

@@ -47,5 +47,269 @@
             "appVersion",
             "pixelSource"
         ]
+    },
+    "m_mac_wide_sparkle_update_cycle": {
+        "description": "Wide pixel tracking the complete Sparkle update cycle from check to installation",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "widePixelAppName",
+            "widePixelAppVersion",
+            "widePixelInternalUser",
+            "widePixelPlatform",
+            "widePixelType",
+            "widePixelSampleRate",
+            "widePixelFeatureStatus",
+            "widePixelErrorDomain",
+            "widePixelErrorCode",
+            "widePixelUnderlyingErrorDomain",
+            "widePixelUnderlyingErrorCode",
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["sparkle-update"]
+            },
+            {
+                "key": "feature.data.ext.from_version",
+                "type": "string",
+                "description": "App version before update"
+            },
+            {
+                "key": "feature.data.ext.from_build",
+                "type": "string",
+                "description": "App build number before update"
+            },
+            {
+                "key": "feature.data.ext.to_version",
+                "type": "string",
+                "description": "Target update version"
+            },
+            {
+                "key": "feature.data.ext.to_build",
+                "type": "string",
+                "description": "Target update build number"
+            },
+            {
+                "key": "feature.data.ext.update_type",
+                "type": "string",
+                "description": "Type of update",
+                "enum": ["regular", "critical"]
+            },
+            {
+                "key": "feature.data.ext.initiation_type",
+                "type": "string",
+                "description": "How the update was initiated",
+                "enum": ["automatic", "manual"]
+            },
+            {
+                "key": "feature.data.ext.update_configuration",
+                "type": "string",
+                "description": "User's automatic update setting",
+                "enum": ["automatic", "manual"]
+            },
+            {
+                "key": "feature.data.ext.last_known_step",
+                "type": "string",
+                "description": "Last step reached in the update process",
+                "enum": [
+                    "updateCheckStarted",
+                    "updateFound",
+                    "noUpdateFound",
+                    "downloadStarted",
+                    "downloadCompleted",
+                    "extractionStarted",
+                    "extractionCompleted",
+                    "readyToInstall"
+                ]
+            },
+            {
+                "key": "feature.data.ext.is_internal_user",
+                "type": "string",
+                "description": "Whether user is internal",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "feature.data.ext.os_version",
+                "type": "string",
+                "description": "macOS version string"
+            },
+            {
+                "key": "feature.data.ext.cancellation_reason",
+                "type": "string",
+                "description": "Reason for update cancellation, when applicable",
+                "enum": ["appQuit", "userDismissed", "settingsChanged", "buildExpired", "newCheckStarted"]
+            },
+            {
+                "key": "feature.data.ext.disk_space_remaining_bytes",
+                "type": "string",
+                "description": "Available disk space in bytes"
+            },
+            {
+                "key": "feature.data.ext.time_since_last_update",
+                "type": "string",
+                "description": "Time since last successful update (bucketed for privacy)",
+                "enum": ["<30m", "<2h", "<6h", "<1d", "<2d", "<1w", "<1M", ">=1M"]
+            },
+            {
+                "key": "feature.data.ext.update_check_duration_ms",
+                "type": "string",
+                "description": "Duration of update check phase in milliseconds"
+            },
+            {
+                "key": "feature.data.ext.download_duration_ms",
+                "type": "string",
+                "description": "Duration of download phase in milliseconds"
+            },
+            {
+                "key": "feature.data.ext.extraction_duration_ms",
+                "type": "string",
+                "description": "Duration of extraction phase in milliseconds"
+            },
+            {
+                "key": "feature.data.ext.total_duration_ms",
+                "type": "string",
+                "description": "Total duration of update cycle in milliseconds"
+            },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Context name for the update flow",
+                "enum": ["sparkle_update"]
+            }
+        ]
+    },
+    "m_mac_update_application_success": {
+        "description": "Fired once after successful app update on first launch",
+        "owners": ["diegoreymendez"],
+        "triggers": ["other"],
+        "parameters": [
+            {
+                "key": "sourceVersion",
+                "type": "string",
+                "description": "App version before update"
+            },
+            {
+                "key": "sourceBuild",
+                "type": "string",
+                "description": "Build number before update"
+            },
+            {
+                "key": "targetVersion",
+                "type": "string",
+                "description": "App version after update"
+            },
+            {
+                "key": "targetBuild",
+                "type": "string",
+                "description": "Build number after update"
+            },
+            {
+                "key": "initiationType",
+                "type": "string",
+                "description": "How update was initiated",
+                "enum": ["automatic", "manual"]
+            },
+            {
+                "key": "updateConfiguration",
+                "type": "string",
+                "description": "User's automatic update setting",
+                "enum": ["automatic", "manual"]
+            },
+            {
+                "key": "osVersion",
+                "type": "string",
+                "description": "macOS version"
+            },
+            "appVersion",
+            "pixelSource"
+        ]
+    },
+    "m_mac_update_application_failure": {
+        "description": "Fired when expected Sparkle update fails to complete",
+        "owners": ["diegoreymendez"],
+        "triggers": ["other"],
+        "parameters": [
+            {
+                "key": "sourceVersion",
+                "type": "string",
+                "description": "Version we were updating from"
+            },
+            {
+                "key": "sourceBuild",
+                "type": "string",
+                "description": "Build we were updating from"
+            },
+            {
+                "key": "expectedVersion",
+                "type": "string",
+                "description": "Version we expected to reach"
+            },
+            {
+                "key": "expectedBuild",
+                "type": "string",
+                "description": "Build we expected to reach"
+            },
+            {
+                "key": "actualVersion",
+                "type": "string",
+                "description": "Version we ended up with after failed update"
+            },
+            {
+                "key": "actualBuild",
+                "type": "string",
+                "description": "Build we ended up with after failed update"
+            },
+            {
+                "key": "failureStatus",
+                "type": "string",
+                "description": "Type of failure",
+                "enum": ["noChange", "downgraded"]
+            },
+            {
+                "key": "initiationType",
+                "type": "string",
+                "description": "How update was initiated",
+                "enum": ["automatic", "manual"]
+            },
+            {
+                "key": "updateConfiguration",
+                "type": "string",
+                "description": "User's automatic update setting",
+                "enum": ["automatic", "manual"]
+            },
+            {
+                "key": "osVersion",
+                "type": "string",
+                "description": "macOS version"
+            },
+            "appVersion",
+            "pixelSource"
+        ]
+    },
+    "m_mac_update_application_unexpected": {
+        "description": "Fired when app update is detected outside Sparkle flow (not initiated by our update mechanism)",
+        "owners": ["diegoreymendez"],
+        "triggers": ["other"],
+        "parameters": [
+            {
+                "key": "targetVersion",
+                "type": "string",
+                "description": "App version after update"
+            },
+            {
+                "key": "targetBuild",
+                "type": "string",
+                "description": "Build number after update"
+            },
+            {
+                "key": "osVersion",
+                "type": "string",
+                "description": "macOS version"
+            },
+            "appVersion",
+            "pixelSource"
+        ]
     }
 }

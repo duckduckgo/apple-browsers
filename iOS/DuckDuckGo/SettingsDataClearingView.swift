@@ -29,7 +29,8 @@ struct SettingsDataClearingView: View {
         List {
             Section {
                 // Fire Button Animation
-                SettingsPickerCellView(label: UserText.settingsFirebutton,
+                SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
+                                       label: UserText.settingsFirebutton,
                                        options: FireButtonAnimationType.allCases,
                                        selectedOption: viewModel.fireButtonAnimationBinding)
             }
@@ -49,6 +50,15 @@ struct SettingsDataClearingView: View {
                                                          : UserText.autoClearAccessoryOff),
                                   disclosureIndicator: true,
                                   isButton: true)
+            }
+
+            if viewModel.isAIChatEnabled && viewModel.isDuckAiDataClearingEnabled {
+                Section {
+                    SettingsCellView(label: UserText.settingsClearAIChatHistory,
+                                     accessory: .toggle(isOn: viewModel.autoClearAIChatHistoryBinding))
+                } footer: {
+                    Text(UserText.settingsClearAIChatHistoryFooter)
+                }
             }
         }
         .applySettingsListModifiers(title: UserText.dataClearing,

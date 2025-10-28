@@ -40,7 +40,7 @@
 /// ```
 public protocol SERPSettingsUserScriptDelegate: AnyObject {
 
-#if os(macOS)
+
     /// Requests closing the current tab.
     ///
     /// Called when the user clicks a "Save & Exit" link on the SERP (either on Privacy or AI settings) when coming from native Settings.
@@ -53,7 +53,7 @@ public protocol SERPSettingsUserScriptDelegate: AnyObject {
     ///
     /// - Parameter userScript: The user script instance making the request
     func serpSettingsUserScriptDidRequestToCloseTab(_ userScript: SERPSettingsUserScript)
-#endif
+
     /// Requests opening AI features settings
     ///
     /// Called when the user clicks 'Open Duck.ai Settings' from the SERP AI Features Settings.

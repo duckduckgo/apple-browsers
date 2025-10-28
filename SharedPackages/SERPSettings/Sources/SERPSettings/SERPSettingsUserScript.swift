@@ -293,13 +293,9 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
         guard let parameters = params as? [String: String] else { return nil }
 
         if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.privateSearch {
-            #if os(macos)
             delegate?.serpSettingsUserScriptDidRequestToCloseTab(self)
-            #endif
         } else if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.aiFeatures {
-            #if os(macos)
             delegate?.serpSettingsUserScriptDidRequestToCloseTab(self)
-            #endif
         } else if parameters[SERPSettingsConstants.screenParameterKey] == SERPSettingsConstants.aiFeatures {
             delegate?.serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(self)
         }

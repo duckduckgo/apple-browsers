@@ -45,10 +45,11 @@ final class SERPSettingsProvider: SERPSettingsProviding {
         if let ddgDomain = URL.ddg.host {
             rules.append(.exact(hostname: ddgDomain))
         }
+
         return rules
     }
 
     func isSERPSettingsFeatureOn() -> Bool {
-        return false
+        return true
     }
 }

@@ -232,7 +232,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         // Then - Should call the correct delegate method and return nil
         XCTAssertNil(result, "Should always return nil")
-        XCTAssertEqual(mockDelegate.closeTabAndOpenPrivacySettingsCallCount, 1)
+        XCTAssertEqual(mockDelegate.closeTabCallCount, 1)
         XCTAssertEqual(mockDelegate.openAIFeaturesSettingsCallCount, 0)
     }
 
@@ -250,8 +250,8 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         // Then - Should call the correct delegate method and return nil
         XCTAssertNil(result, "Should always return nil")
-        XCTAssertEqual(mockDelegate.closeTabAndOpenPrivacySettingsCallCount, 0)
-        XCTAssertEqual(mockDelegate.openAIFeaturesSettingsCallCount, 1)
+        XCTAssertEqual(mockDelegate.closeTabCallCount, 1)
+        XCTAssertEqual(mockDelegate.openAIFeaturesSettingsCallCount, 0)
     }
 
     func testOpenNativeSettings_withScreenAIFeatures_callsOpenAIFeaturesSettings() async throws {
@@ -268,7 +268,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         // Then - Should call the correct delegate method and return nil
         XCTAssertNil(result, "Should always return nil")
-        XCTAssertEqual(mockDelegate.closeTabAndOpenPrivacySettingsCallCount, 0)
+        XCTAssertEqual(mockDelegate.closeTabCallCount, 0)
         XCTAssertEqual(mockDelegate.openAIFeaturesSettingsCallCount, 1)
     }
 
@@ -286,7 +286,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         // Then - Should not call any delegate methods and return nil
         XCTAssertNil(result, "Should always return nil")
-        XCTAssertEqual(mockDelegate.closeTabAndOpenPrivacySettingsCallCount, 0)
+        XCTAssertEqual(mockDelegate.closeTabCallCount, 0)
         XCTAssertEqual(mockDelegate.openAIFeaturesSettingsCallCount, 0)
     }
 
@@ -304,7 +304,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         // Then - Should not call any delegate methods and return nil
         XCTAssertNil(result, "Should always return nil")
-        XCTAssertEqual(mockDelegate.closeTabAndOpenPrivacySettingsCallCount, 0)
+        XCTAssertEqual(mockDelegate.closeTabCallCount, 0)
         XCTAssertEqual(mockDelegate.openAIFeaturesSettingsCallCount, 0)
     }
 
@@ -322,7 +322,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         // Then - Should return nil and not call any delegate methods
         XCTAssertNil(result, "Should return nil for invalid parameters")
-        XCTAssertEqual(mockDelegate.closeTabAndOpenPrivacySettingsCallCount, 0)
+        XCTAssertEqual(mockDelegate.closeTabCallCount, 0)
         XCTAssertEqual(mockDelegate.openAIFeaturesSettingsCallCount, 0)
     }
 

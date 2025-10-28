@@ -88,6 +88,10 @@ public final actor Watchdog {
         crashOnTimeout = state
     }
 
+    private let recoveryRequiredHeartbeats: Int
+    private var recoveryFirstHeartbeatResponseTime: Date?
+    private var recoveryDetectedResponsiveHeartbeats: Int = 0
+
     @MainActor
     public private(set) var isRunning: Bool = false
 
@@ -103,11 +107,12 @@ public final actor Watchdog {
     ///   - maximumHangDuration: The maximum duration of hang to be detected. After this point, the hang will stop being measured
     ///                          and will be reported as a timeout.
     ///   - checkInterval: The interval at which the main thread is checked for hangs.
+    ///   - requiredRecoveryHeartbeats: The number of consecutive responsive heartbeats required to detect recovery.
     ///   - eventMapper: An event mapper that can map between watchdog events and pixels.
     ///   - crashOnTimeout: Whether the watchdog should kill the app once the maximum hang duration has been reached (used for debugging purposes)
     ///   - killAppFunction: A closure to be executed when the maximum hang duration has been reached (used for testing purposes)
     ///
-    public init(minimumHangDuration: TimeInterval = 2.0, maximumHangDuration: TimeInterval = 5.0, checkInterval: TimeInterval = 0.5, eventMapper: EventMapping<Watchdog.Event>? = nil, crashOnTimeout: Bool = false, killAppFunction: ((TimeInterval) -> Void)? = nil) {
+    public init(minimumHangDuration: TimeInterval = 2.0, maximumHangDuration: TimeInterval = 5.0, checkInterval: TimeInterval = 0.5, requiredRecoveryHeartbeats: Int = 4,  eventMapper: EventMapping<Watchdog.Event>? = nil, crashOnTimeout: Bool = false, killAppFunction: ((TimeInterval) -> Void)? = nil) {
 
         assert(checkInterval > 0, "checkInterval must be greater than 0")
         assert(minimumHangDuration >= 0, "minimumHangDuration must be greater than or equal to 0")
@@ -117,6 +122,7 @@ public final actor Watchdog {
         self.minimumHangDuration = minimumHangDuration
         self.maximumHangDuration = maximumHangDuration
         self.checkInterval = checkInterval
+        self.recoveryRequiredHeartbeats = requiredRecoveryHeartbeats
         self.eventMapper = eventMapper
         self.crashOnTimeout = crashOnTimeout
         self.killAppFunction = killAppFunction
@@ -193,8 +199,10 @@ public final actor Watchdog {
     }
 
     private func resetHangState() {
-        hangStartTime = nil
         hangState = .responsive
+        hangStartTime = nil
+        recoveryFirstHeartbeatResponseTime = nil
+        recoveryDetectedResponsiveHeartbeats = 0
     }
 
     // MARK: - Monitoring
@@ -246,8 +254,7 @@ public final actor Watchdog {
             }
         case .hanging:
             if timeSinceLastHeartbeat <= minimumHangDuration {
-                // Hang ended
-                transition(from: .hanging, to: .responsive, at: now, timeSinceLastHeartbeat: timeSinceLastHeartbeat)
+                handleRecoveryDetection(at: now, timeSinceLastHeartbeat: timeSinceLastHeartbeat)
             } else if currentHangDuration(currentTime: now) > maximumHangDuration {
                 transition(from: .hanging, to: .timeout, at: now, timeSinceLastHeartbeat: timeSinceLastHeartbeat)
             } else {
@@ -255,8 +262,7 @@ public final actor Watchdog {
             }
         case .timeout:
             if timeSinceLastHeartbeat <= minimumHangDuration {
-                // Hang became responsive again after timeout
-                transition(from: .timeout, to: .responsive, at: now, timeSinceLastHeartbeat: timeSinceLastHeartbeat)
+                handleRecoveryDetection(at: now, timeSinceLastHeartbeat: timeSinceLastHeartbeat)
             } else if currentHangDuration(currentTime: now) > maximumHangDuration && crashOnTimeout {
                 logHangDuration(message: "Main thread hang timeout reached. Crashing app.", currentTime: now)
                 killAppFunction?(maximumHangDuration) ?? killApp(timeout: maximumHangDuration)
@@ -289,13 +295,27 @@ public final actor Watchdog {
             logHangDuration(message: "Main thread hang timeout reached.", currentTime: time)
             fireHangEvent(Watchdog.Event.uiHangNotRecovered, currentTime: time)
         case (.timeout, .responsive):
-            resetHangState()
             logHangDuration(message: "Main thread hang ended after timeout.", currentTime: time)
+            resetHangState()
         case (.responsive, .responsive), (.hanging, .hanging), (.timeout, .timeout),
              (.responsive, .timeout), (.timeout, .hanging):
             // We can't timeout from a responsive state, or go back to hanging from a timeout state
             // and we should never transition to the same state we're already in
             Self.logger.warning("Invalid transition from \(currentState.description) to \(newState.description)")
+        }
+    }
+
+    private func handleRecoveryDetection(at time: Date, timeSinceLastHeartbeat: TimeInterval) {
+        if recoveryDetectedResponsiveHeartbeats == 0 {
+            recoveryFirstHeartbeatResponseTime = time
+            Self.logger.info("Recovery detected! First heartbeat response time: \(self.recoveryFirstHeartbeatResponseTime!)")
+        }
+
+        recoveryDetectedResponsiveHeartbeats += 1
+        Self.logger.info("Responsive heartbeats for recovery: \(self.recoveryDetectedResponsiveHeartbeats)")
+
+        if recoveryDetectedResponsiveHeartbeats >= recoveryRequiredHeartbeats {
+            transition(from: hangState, to: .responsive, at: time, timeSinceLastHeartbeat: timeSinceLastHeartbeat)
         }
     }
 
@@ -312,6 +332,13 @@ public final actor Watchdog {
 
     private func currentHangDuration(currentTime: Date) -> TimeInterval {
         guard let hangStartTime = hangStartTime else { return 0 }
+    
+        // If we're still in recovery phase, hang ended when recovery started
+        if let recoveryFirstHeartbeatResponseTime = recoveryFirstHeartbeatResponseTime {
+            return recoveryFirstHeartbeatResponseTime.timeIntervalSince(hangStartTime)
+        }
+        
+        // If no recovery detected yet, hang is still ongoing
         return currentTime.timeIntervalSince(hangStartTime)
     }
 

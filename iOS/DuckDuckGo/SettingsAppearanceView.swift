@@ -92,8 +92,6 @@ struct SettingsAppearanceView: View {
             toolbarButtonSetting()
         } header: {
             Text(verbatim: "Toolbar")
-        } footer: {
-            Text(verbatim: "Note: Only Home, New Tab and Fire will be applied to UI if selected.  Others will follow.")
         }
     }
 
@@ -117,8 +115,7 @@ struct SettingsAppearanceView: View {
     @ViewBuilder
     func toolbarButtonSetting() -> some View {
 
-        SettingsPickerCellView(
-            
+        SettingsPickerCellView(            
             useImprovedPicker: true,
             label: "Customizable Button",
             options: MobileCustomization.toolbarButtons,

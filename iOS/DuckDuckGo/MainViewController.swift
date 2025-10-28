@@ -1062,7 +1062,6 @@ class MainViewController: UIViewController {
                 fatalError("Unable to create tab")
             }
             attachTab(tab: tab)
-            refreshControls()
         } else {
             attachHomeScreen()
         }
@@ -1388,7 +1387,6 @@ class MainViewController: UIViewController {
             attachHomeScreen()
         } else {
             attachTab(tab: tab)
-            refreshControls()
         }
         themeColorManager.updateThemeColor()
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
@@ -1413,6 +1411,8 @@ class MainViewController: UIViewController {
         chromeManager.attach(to: tab.webView.scrollView)
         themeColorManager.attach(to: tab)
         tab.chromeDelegate = self
+
+        refreshControls()
     }
 
     private func addToContentContainer(controller: UIViewController) {
@@ -1443,6 +1443,11 @@ class MainViewController: UIViewController {
         refreshBackForwardButtons()
         refreshBackForwardMenuItems()
         updateChromeForDuckPlayer()
+        refreshMiddleButton()
+    }
+
+    private func refreshMiddleButton() {
+        applyCustomizationForToolbar(mobileCustomization.state)
     }
 
     private func refreshTabIcon() {
@@ -3824,6 +3829,13 @@ extension MainViewController {
     }
 
     @objc private func performCustomizationActionForToolbar() {
+        // On NTP the default is fire button
+        if isNewTabPageVisible {
+            self.onFirePressed()
+            return
+        }
+
+        // Will be removed when feature flag is removed
         guard mobileCustomization.state.isEnabled else {
             self.onFirePressed()
             return
@@ -3853,7 +3865,7 @@ extension MainViewController {
             self.segueToVPN()
 
         case .share:
-            ActionMessageView.present(message: "NOT IMPLEMENTED YET")
+            self.onSharePressed()
 
         default:
             // Eventually this will be an extensive list with no default block
@@ -3861,12 +3873,18 @@ extension MainViewController {
         }
     }
 
+    /// Applies customization if enabled, ensures default otherwise.
     private func applyCustomizationForToolbar(_ state: MobileCustomization.State) {
         guard let browserChrome = viewCoordinator.toolbarFireBarButtonItem.customView as? BrowserChromeButton else {
             assertionFailure("Expected BrowserChromeButton")
             return
         }
-        browserChrome.setImage(state.currentToolbarButton.largeIcon)
+
+        if isNewTabPageVisible {
+            browserChrome.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
+        } else if state.isEnabled {
+            browserChrome.setImage(state.currentToolbarButton.largeIcon)
+        }
     }
 
 }

@@ -69,17 +69,7 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
         title: String,
         isDataTypePickerExpanded: Bool
     ) {
-        let ddgSync = NSApp.delegateTyped.syncService
-        let syncFeatureVisibility: SyncFeatureVisibility
         let featureFlagger = NSApp.delegateTyped.featureFlagger
-        if
-            case .inactive = ddgSync?.authState,
-            let deviceSyncLauncher = DeviceSyncCoordinator(),
-            featureFlagger.isNewSyncEntryPointsFeatureOn {
-            syncFeatureVisibility = .show(syncLauncher: deviceSyncLauncher)
-        } else {
-            syncFeatureVisibility = .hide
-        }
         DataImportView(
             model: model,
             importFlowLauncher: self,
@@ -95,17 +85,7 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
         title: String,
         isDataTypePickerExpanded: Bool
     ) {
-        let ddgSync = NSApp.delegateTyped.syncService
-        let syncFeatureVisibility: SyncFeatureVisibility
         let featureFlagger = NSApp.delegateTyped.featureFlagger
-        if
-            case .inactive = ddgSync?.authState,
-            let deviceSyncLauncher = DeviceSyncCoordinator(),
-            featureFlagger.isNewSyncEntryPointsFeatureOn {
-            syncFeatureVisibility = .show(syncLauncher: deviceSyncLauncher)
-        } else {
-            syncFeatureVisibility = .hide
-        }
         LegacyDataImportView(
             model: model,
             importFlowLauncher: self,
@@ -124,17 +104,7 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
         onCancelled: @escaping () -> Void = {},
         completion: (() -> Void)? = nil
     ) {
-        let ddgSync = NSApp.delegateTyped.syncService
-        let syncFeatureVisibility: SyncFeatureVisibility
         let featureFlagger = NSApp.delegateTyped.featureFlagger
-        if
-            case .inactive = ddgSync?.authState,
-            let deviceSyncLauncher = DeviceSyncCoordinator(),
-            featureFlagger.isNewSyncEntryPointsFeatureOn {
-            syncFeatureVisibility = .show(syncLauncher: deviceSyncLauncher)
-        } else {
-            syncFeatureVisibility = .hide
-        }
         guard featureFlagger.isFeatureOn(.dataImportNewExperience) else {
             let viewModel = LegacyDataImportViewModel(onFinished: onFinished, onCancelled: onCancelled)
             LegacyDataImportView(
@@ -153,5 +123,19 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
             isDataTypePickerExpanded: isDataTypePickerExpanded,
             syncFeatureVisibility: syncFeatureVisibility
         ).show(in: window, completion: completion)
+    }
+
+    @MainActor
+    private var syncFeatureVisibility: SyncFeatureVisibility {
+        let ddgSync = NSApp.delegateTyped.syncService
+        let featureFlagger = NSApp.delegateTyped.featureFlagger
+        if
+            case .inactive = ddgSync?.authState,
+            let deviceSyncLauncher = DeviceSyncCoordinator(),
+            featureFlagger.isNewSyncEntryPointsFeatureOn {
+            return .show(syncLauncher: deviceSyncLauncher)
+        } else {
+            return .hide
+        }
     }
 }

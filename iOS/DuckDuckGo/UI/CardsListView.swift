@@ -181,9 +181,9 @@ private extension RemoteMessagingUI.CardGradient {
                     Gradient.Stop(color: Color(red: 0.88, green: 0.82, blue: 0.93), location: 1.00),
                 ],
                 center: .center,
-                angle: .degrees(171)
+                angle: .degrees(80.67)
             )
-            .blur(radius: 58)
+            .blur(radius: 15)
         }
     }
 

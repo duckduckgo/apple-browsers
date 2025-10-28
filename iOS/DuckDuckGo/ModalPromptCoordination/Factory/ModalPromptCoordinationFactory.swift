@@ -23,6 +23,7 @@ import SetDefaultBrowserUI
 import BrowserServicesKit
 import enum Common.DevicePlatform
 import AIChat
+import RemoteMessaging
 
 // MARK: - Factory
 
@@ -30,26 +31,24 @@ import AIChat
 enum ModalPromptCoordinationFactory {
 
     static func makeService(
-        launchSourceManager: LaunchSourceManager,
-        daxDialogs: DaxDialogs,
-        keyValueFileStoreService: ThrowingKeyValueStoring,
-        privacyConfigurationManager: PrivacyConfigurationManaging,
-        providersDependency: ProvidersDependency,
+        dependency: Dependency
     ) -> ModalPromptCoordinationService {
 
-        let newAddressBarPickerModalPromptProvider = makeNewAddressBarPickerModalPromptProvider(dependency: providersDependency.newAddressBarPicker)
-        let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: providersDependency.defaultBrowserPrompt.presenter)
+        let newAddressBarPickerModalPromptProvider = makeNewAddressBarPickerModalPromptProvider(dependency: dependency)
+        let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: dependency.defaultBrowserPromptPresenter)
         let winBackOfferModalPromptProvider = WinBackOfferModalPromptProvider()
+        let whatsNewModalPromptProvider = WhatsNewCoordinator(remoteMessageStore: dependency.remoteMessagingStore, remoteMessageActionHandler: dependency.remoteMessagingActionHandler)
 
         return ModalPromptCoordinationService(
-            launchSourceManager: launchSourceManager,
-            keyValueStore: keyValueFileStoreService,
-            contextualOnboardingStatusProvider: daxDialogs,
-            privacyConfigManager: privacyConfigurationManager,
+            launchSourceManager: dependency.launchSourceManager,
+            keyValueStore: dependency.keyValueFileStoreService,
+            contextualOnboardingStatusProvider: dependency.contextualOnboardingStatusProvider,
+            privacyConfigManager: dependency.privacyConfigurationManager,
             providers: .init(
                 newAddressBarPicker: newAddressBarPickerModalPromptProvider,
                 defaultBrowser: defaultBrowserModalPromptProvider,
-                winBackOffer: winBackOfferModalPromptProvider
+                winBackOffer: winBackOfferModalPromptProvider,
+                whatsNew: whatsNewModalPromptProvider
             )
         )
     }
@@ -60,7 +59,7 @@ enum ModalPromptCoordinationFactory {
 
 private extension ModalPromptCoordinationFactory {
 
-    static func makeNewAddressBarPickerModalPromptProvider(dependency: ProvidersDependency.NewAddressBarPickerDependency) -> NewAddressBarPickerModalPromptProvider {
+    static func makeNewAddressBarPickerModalPromptProvider(dependency: Dependency) -> NewAddressBarPickerModalPromptProvider {
 
         let store = NewAddressBarPickerStore()
         let aiChatSettings = dependency.aiChatSettings
@@ -87,24 +86,18 @@ private extension ModalPromptCoordinationFactory {
 
 extension ModalPromptCoordinationFactory {
 
-    struct ProvidersDependency {
-        let newAddressBarPicker: NewAddressBarPickerDependency
-        let defaultBrowserPrompt: DefaultBrowserDependency
-    }
-
-}
-
-extension ModalPromptCoordinationFactory.ProvidersDependency {
-
-    struct NewAddressBarPickerDependency {
+    struct Dependency {
+        let launchSourceManager: LaunchSourceManager
+        let contextualOnboardingStatusProvider: ContextualDaxDialogStatusProvider
+        let keyValueFileStoreService: ThrowingKeyValueStoring
+        let privacyConfigurationManager: PrivacyConfigurationManaging
         let featureFlagger: FeatureFlagger
+        let remoteMessagingStore: RemoteMessagingStoring
+        let remoteMessagingActionHandler: RemoteMessagingActionHandling
         let appSettings: AppSettings
         let aiChatSettings: AIChatSettingsProvider
         let experimentalAIChatManager: ExperimentalAIChatManager
-    }
-
-    struct DefaultBrowserDependency {
-        let presenter: DefaultBrowserPromptPresenting
+        let defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
     }
 
 }

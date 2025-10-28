@@ -320,8 +320,7 @@ extension MainViewController {
                                                             dbpIOSPublicInterface: dbpIOSPublicInterface)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
-        let serpSettingsProvider = SERPSettingsProvider(keyValueStore: keyValueStore,
-                                                        aiChatProvider: aiChatSettings,
+        let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
                                                         featureFlagger: featureFlagger)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,

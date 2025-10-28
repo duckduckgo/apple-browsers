@@ -26,17 +26,15 @@ import BrowserServicesKit
 import SERPSettings
 
 final class SERPSettingsProvider: SERPSettingsProviding {
-    var keyValueStore: ThrowingKeyValueStoring
+    var keyValueStore: ThrowingKeyValueStoring?
     var eventMapper: EventMapping<SERPSettingsError>?
     var aiChatProvider: AIChatSettingsProvider
 
     private let featureFlagger: FeatureFlagger
 
-    init(keyValueStore: ThrowingKeyValueStoring,
-         eventMapper: EventMapping<SERPSettingsError>? = nil,
+    init(eventMapper: EventMapping<SERPSettingsError>? = nil,
          aiChatProvider: AIChatSettingsProvider,
          featureFlagger: FeatureFlagger) {
-        self.keyValueStore = keyValueStore
         self.eventMapper = eventMapper
         self.aiChatProvider = aiChatProvider
         self.featureFlagger = featureFlagger

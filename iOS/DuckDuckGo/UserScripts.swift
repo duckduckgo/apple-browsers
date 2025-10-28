@@ -62,8 +62,7 @@ final class UserScripts: UserScriptsProvider {
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
-         keyValueStore: ThrowingKeyValueStoring = AppDependencyProvider.shared.keyValueStore) {
+         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
         contentBlockerUserScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig)
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig)
@@ -91,7 +90,7 @@ final class UserScripts: UserScriptsProvider {
         let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
-        serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(keyValueStore: keyValueStore, aiChatProvider: AIChatSettings(), featureFlagger: featureFlagger))
+        serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: AIChatSettings(), featureFlagger: featureFlagger))
 
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
         subscriptionUserScript = SubscriptionUserScript(

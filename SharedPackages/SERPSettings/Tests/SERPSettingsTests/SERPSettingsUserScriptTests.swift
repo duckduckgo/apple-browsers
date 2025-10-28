@@ -72,7 +72,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
         XCTAssertNil(result, "Should return nil when feature flag is off, even if data exists")
     }
 
-    func testGetNativeSettingsIsNil_ifNoDataIsPresentAndFeatureFlagIsOn() async throws {
+    func testGetNativeSettingsIsEmpty_ifNoDataIsPresentAndFeatureFlagIsOn() async throws {
         // Given - Feature flag is ON but no data exists
         mockProvider.mockIsSERPSettingsFeatureOn = true
         // Don't store any data
@@ -86,7 +86,12 @@ final class SERPSettingsUserScriptTests: XCTestCase {
         let result = try await handler([:], WKScriptMessage())
 
         // Then - Should return nil because no data is stored
-        XCTAssertNil(result, "Should return nil when no data is present")
+        let emptyJSON = try JSONSerialization.data(withJSONObject: [:], options: [])
+        if let result = result as? JSONBlob {
+            XCTAssertEqual(result.data, emptyJSON)
+        } else {
+            XCTFail("The result should be a JSONBlob")
+        }
     }
 
     func testGetNativeSettingsReturnsPersistedSettings_whenSettingsArePersistedInNative() async throws {
@@ -140,7 +145,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
         // Then - Should return nil and storeSERPSettings should have not been called
         XCTAssertNil(result, "Should return nil when feature flag is off, even if data exists")
         XCTAssertFalse(mockProvider.wasStoreSettingsCalled)
-        XCTAssertNil(try mockProvider.keyValueStore.object(forKey: SERPSettingsConstants.serpSettingsStorage))
+        XCTAssertNil(try mockProvider.keyValueStore?.object(forKey: SERPSettingsConstants.serpSettingsStorage))
     }
 
     func testUpdateNativeSettingsReturnsNilAndStoresSERPSettings_ifFeatureFlagIsOn() async throws {
@@ -187,8 +192,8 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         let result = try await handler([:], WKScriptMessage())
 
-        if let result = result as? Bool {
-            XCTAssertTrue(result)
+        if let result = result as? NativeDuckAIState {
+            XCTAssertTrue(result.enabled)
         } else {
             XCTFail("Result should be a boolean")
         }
@@ -204,8 +209,8 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         let result = try await handler([:], WKScriptMessage())
 
-        if let result = result as? Bool {
-            XCTAssertFalse(result)
+        if let result = result as? NativeDuckAIState {
+            XCTAssertFalse(result.enabled)
         } else {
             XCTFail("Result should be a boolean")
         }

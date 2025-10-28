@@ -20,6 +20,7 @@ import Common
 import UserScript
 import Foundation
 import WebKit
+import Persistence
 #if os(macOS)
 import Combine
 #endif
@@ -119,7 +120,7 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     ///
     /// Handles the actual persistence, platform-specific AI state queries,
     /// and feature flag checks.
-    private let serpSettingsProviding: SERPSettingsProviding
+    private var serpSettingsProviding: SERPSettingsProviding
 
 #if os(macOS)
     /// Combine cancellable for AI features publisher subscription.
@@ -167,6 +168,16 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
         }
         #endif
     }
+
+
+#if os(iOS)
+    /// Sets the store where to save the SERP settings. This is used on `iOS only`.
+    ///
+    /// - Parameter store: A `ThrowingKeyValueStoring` concrecte object.
+    public func setStore(_ store: ThrowingKeyValueStoring) {
+        self.serpSettingsProviding.keyValueStore = store
+    }
+#endif
 
     // MARK: - Subfeature
 
@@ -359,7 +370,7 @@ public extension Notification.Name {
 
 /// Model that holds the state of the Duck.ai state
 /// Needed for sending/receiving between SERP and Native.
-private struct NativeDuckAIState: Encodable {
+struct NativeDuckAIState: Encodable {
     let enabled: Bool
 
     init(enabled: Bool) {

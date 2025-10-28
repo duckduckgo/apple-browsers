@@ -91,7 +91,7 @@ public protocol SERPSettingsProviding {
     ///
     /// The store must support throwing operations and should provide persistent storage
     /// that survives app restarts. Typical implementations use UserDefaults or Keychain.
-    var keyValueStore: ThrowingKeyValueStoring { get }
+    var keyValueStore: ThrowingKeyValueStoring? { get set }
 
     /// Optional event mapper for reporting storage errors.
     ///
@@ -125,7 +125,7 @@ public extension SERPSettingsProviding {
     /// - Returns: Encoded settings blob, or an empty JSON object if no data exists, or `nil` if an error occurs
     func getSERPSettings() -> Encodable? {
         do {
-            if let data = try keyValueStore.object(forKey: SERPSettingsConstants.serpSettingsStorage) as? Data {
+            if let data = try keyValueStore?.object(forKey: SERPSettingsConstants.serpSettingsStorage) as? Data {
                 return JSONBlob(data: data)
             } else {
                 // First-time access: return empty JSON object
@@ -159,7 +159,7 @@ public extension SERPSettingsProviding {
         do {
             let data = try JSONSerialization.data(withJSONObject: settings, options: [])
             do {
-                try keyValueStore.set(data, forKey: SERPSettingsConstants.serpSettingsStorage)
+                try keyValueStore?.set(data, forKey: SERPSettingsConstants.serpSettingsStorage)
             } catch {
                 eventMapper?.fire(.keyValueStoreWriteError, error: error)
             }

@@ -57,7 +57,7 @@ final class SERPSettingsProvider: SERPSettingsProviding {
     ///
     /// Defaults to the app's global key-value store, which uses UserDefaults
     /// for macOS application settings.
-    var keyValueStore: ThrowingKeyValueStoring
+    var keyValueStore: ThrowingKeyValueStoring?
 
     /// AI chat preferences storage for querying AI feature state.
     ///

@@ -1400,6 +1400,7 @@ public struct UserText {
     public static let settingsClearAIChatHistoryFooter = NSLocalizedString("settings.clear.aichat.history.footer", value: "Fire Button will also delete Duck.ai history, including pinned chats.", comment: "Settings screen footer text explaining that Fire Button also clears AI chat history")
     public static let settingsAutolock = NSLocalizedString("settings.autolock", value: "Application Lock", comment: "Settings screen cell text for Application Lock")
     public static let settingsAutoLockDescription = NSLocalizedString("settings.autolock.description", value: "If Touch ID, Face ID, or a system passcode is enabled, you'll be asked to unlock the app when opening it.", comment: "Section footer Autolock description")
+    public static let settingsDataClearingForgetAllFootnote = NSLocalizedString("settings.data.clear.forget.all.footnote", value: "Closes all tabs and clears data for any sites you haven't fireproofed.", comment: "Clear data footnote")
 
     // Subscription Section
     public static let settingsSubscriptionSection = NSLocalizedString("settings.subscription.Section", value: "DuckDuckGo Subscription", comment: "Product name for the subscription bundle")

@@ -2770,6 +2770,9 @@ Take back control of your personal information with the browser designed for dat
 /* Settings title for the customize section */
 "settings.customize" = "Customize";
 
+/* Clear data footnote */
+"settings.data.clear.forget.all.footnote" = "Closes all tabs and clears data for any sites you haven't fireproofed.";
+
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Data Clearing";
 

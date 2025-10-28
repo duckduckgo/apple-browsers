@@ -3450,7 +3450,7 @@ extension MainViewController: AutoClearWorker {
         self.forgetTextZoom()
         await historyManager.removeAllHistory()
 
-        cleanAIChatHistory()
+        await cleanAIChatHistory()
 
         self.clearInProgress = false
         
@@ -3462,8 +3462,9 @@ extension MainViewController: AutoClearWorker {
         AppDependencyProvider.shared.downloadManager.cancelAllDownloads()
     }
 
-    private func cleanAIChatHistory() {
+    private func cleanAIChatHistory() async {
         if appSettings.autoClearAIChatHistory && featureFlagger.isFeatureOn(.duckAiDataClearing) {
+
             let result = await aiChatHistoryCleaner.cleanAIChatHistory()
             switch result {
             case .success:
@@ -3472,6 +3473,9 @@ extension MainViewController: AutoClearWorker {
             case .failure(let error):
                 Logger.aiChat.log("Failed to clear Duck.ai chat history")
             }
+
+            /// If the fire button clears recent chats, we shouldn’t keep the session alive, since it will be empty
+            await aiChatViewControllerManager.killSessionAndResetTimer()
         }
     }
 

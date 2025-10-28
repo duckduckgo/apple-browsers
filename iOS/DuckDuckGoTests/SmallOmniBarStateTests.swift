@@ -458,7 +458,6 @@ class SmallOmniBarStateTests: XCTestCase {
     }
     
     func testWhenInBrowsingNonEditingStateThenRefreshButtonIsHiddenIfNotEnabled() {
-        mockFeatureFlagger.enabledFeatureFlags = [.refreshButtonPosition]
         let mockAppSettings = AppSettingsMock()
         mockAppSettings.currentRefreshButtonPosition = .menu
         let dependencies = MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper,
@@ -521,7 +520,6 @@ class SmallOmniBarStateTests: XCTestCase {
     
     func testWhenRefreshButtonFeatureFlagIsOnThenIsRefreshButtonEnabledReturnsAppSettingsValue() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.refreshButtonPosition]
         let mockAppSettings = AppSettingsMock()
         mockAppSettings.currentRefreshButtonPosition = .addressBar
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,

@@ -283,7 +283,7 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
         historyMessageManager.shownToUser()
     }
 
-    func onSuggestionSelected(_ suggestion: Suggestion) {
+    func onSuggestionSelected(_ suggestion: Suggestion, ddgSuggestionIndex: Int?) {
         switch suggestion {
         case .bookmark(_, _, let isFavorite, _):
             Pixel.fire(pixel: isFavorite ? .autocompleteClickFavorite : .autocompleteClickBookmark)
@@ -292,10 +292,12 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
             Pixel.fire(pixel: url.isDuckDuckGoSearch ? .autocompleteClickSearchHistory : .autocompleteClickSiteHistory)
 
         case .phrase:
-            Pixel.fire(pixel: .autocompleteClickPhrase)
+            let parameters = createPixelIndexParam(for: ddgSuggestionIndex)
+            Pixel.fire(pixel: .autocompleteClickPhrase, withAdditionalParameters: parameters)
 
         case .website:
-            Pixel.fire(pixel: .autocompleteClickWebsite)
+            let parameters = createPixelIndexParam(for: ddgSuggestionIndex)
+            Pixel.fire(pixel: .autocompleteClickWebsite, withAdditionalParameters: parameters)
 
         case .openTab:
             Pixel.fire(pixel: .autocompleteClickOpenTab)
@@ -335,6 +337,12 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
         default:
             assertionFailure("Only history items can be deleted")
         }
+    }
+
+    private func createPixelIndexParam(for index: Int?) -> [String: String] {
+        return index.map { i in
+            ["search_suggestion_index": String(i)]
+        } ?? [:]
     }
 }
 

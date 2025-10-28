@@ -166,7 +166,8 @@ public class DataBrokerProtectionIOSManagerProvider {
             feedbackViewCreator: feedbackViewCreator,
             featureFlagger: featureFlagger,
             settings: dbpSettings,
-            subscriptionManager: subscriptionManager
+            subscriptionManager: subscriptionManager,
+            wideEvent: wideEvent
         )
     }
 }

@@ -459,4 +459,20 @@ public final class VPNSettings {
             defaults.networkProtectionSettingDisableRekeying = newValue
         }
     }
+
+    // MARK: - Show Debug VPN Event Notifications
+
+    public var showDebugVPNEventNotificationsPublisher: AnyPublisher<Bool, Never> {
+        defaults.networkProtectionSettingShowDebugVPNEventNotificationsPublisher
+    }
+
+    public var showDebugVPNEventNotifications: Bool {
+        get {
+            defaults.networkProtectionSettingShowDebugVPNEventNotifications
+        }
+
+        set {
+            defaults.networkProtectionSettingShowDebugVPNEventNotifications = newValue
+        }
+    }
 }

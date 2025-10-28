@@ -2333,7 +2333,7 @@
 "new.address.bar.picker.search.only" = "Alleen zoeken";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "Wil je eenvoudiger toegang tot AI Chat?";
+"new.address.bar.picker.subheadline.private" = "Wil je eenvoudiger toegang\ntot privé AI-chat?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Optie voor adresbalk";
@@ -2847,6 +2847,12 @@
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Browserfeedback";
+
+/* Settings screen footer text explaining that Fire Button also clears AI chat history */
+"settings.clear.aichat.history.footer" = "Fire Button verwijdert ook de Duck.ai-geschiedenis, inclusief vastgepinde chats.";
+
+/* Settings screen cell text for clearing AI chat history */
+"settings.clear.aichat.history.title" = "Duck.ai chats wissen";
 
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Gegevens automatisch wissen";

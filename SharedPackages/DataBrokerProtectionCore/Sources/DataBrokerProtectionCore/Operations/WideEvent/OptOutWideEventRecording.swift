@@ -1,7 +1,7 @@
 //
-//  NativeMessagingHandling.swift
+//  OptOutWideEventRecording.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,10 +17,12 @@
 //
 
 import Foundation
-import WebKit
+import PixelKit
 
-@available(macOS 15.4, *)
-protocol NativeMessagingHandling {
-    func handleMessage(_ message: Any, to applicationIdentifier: String?, for extensionContext: WKWebExtensionContext) async throws -> Any?
-    func handleConnection(using port: WKWebExtension.MessagePort, for extensionContext: WKWebExtensionContext) throws
+protocol OptOutWideEventRecording: AnyObject {
+    associatedtype Data: WideEventData & WideEventDataMeasuringInterval
+
+    var recorder: WideEventRecorder<Data> { get }
+
+    func markCompleted(at date: Date)
 }

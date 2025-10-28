@@ -99,6 +99,7 @@ public class AppUserDefaults: AppSettings {
         static let duckPlayerControlsVisible = "com.duckduckgo.ios.duckPlayerControlsVisible"
         static let duckPlayerNativeUIWasUsed = "com.duckduckgo.ios.duckPlayerNativeUIWasUsed"
         static let duckPlayerNativeUISettingsMapped = "com.duckduckgo.ios.duckPlayerNativeUISettingsMapped"
+        static let autoClearAIChatHistory = "com.duckduckgo.ios.autoClearAIChatHistory"
     }
 
     private struct DebugKeys {
@@ -255,9 +256,6 @@ public class AppUserDefaults: AppSettings {
     
     var currentRefreshButtonPosition: RefreshButtonPosition {
         get {
-            guard featureFlagger.isFeatureOn(.refreshButtonPosition) else {
-                return .addressBar
-            }
             guard let value = userDefaults?.string(forKey: Keys.refreshButtonPosition), let refreshButtonPosition = RefreshButtonPosition(rawValue: value) else {
                 return .addressBar
             }
@@ -626,6 +624,9 @@ public class AppUserDefaults: AppSettings {
 
     @UserDefaultsWrapper(key: .duckPlayerControlsVisible, defaultValue: true)
     var duckPlayerControlsVisible: Bool
+
+    @UserDefaultsWrapper(key: .autoClearAIChatHistory, defaultValue: false)
+    var autoClearAIChatHistory: Bool
 }
 
 extension AppUserDefaults: AppConfigurationFetchStatistics {

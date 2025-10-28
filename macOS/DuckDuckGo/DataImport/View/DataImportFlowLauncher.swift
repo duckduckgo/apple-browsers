@@ -120,6 +120,7 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
         DataImportView(
             model: viewModel,
             importFlowLauncher: self,
+            title: title,
             isDataTypePickerExpanded: isDataTypePickerExpanded,
             syncFeatureVisibility: syncFeatureVisibility
         ).show(in: window, completion: completion)

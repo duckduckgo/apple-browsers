@@ -1248,8 +1248,15 @@ extension Tab: SERPSettingsUserScriptDelegate {
         delegate?.closeTab(self)
     }
 
+    @MainActor
     func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
-        delegate?.closeTab(self) // TODO: We should open AI Feature settings
+        guard let tabCollection = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
+        else {
+            assertionFailure("could not access shared tabCollectionViewModel")
+            return
+        }
+
+        tabCollection.appendNewTab(with: .settings(pane: .aiChat), selected: true)
     }
 }
 

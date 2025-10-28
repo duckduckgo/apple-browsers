@@ -791,6 +791,8 @@ extension Pixel {
         case debugBookmarksInitialStructureQueryFailed
         case debugBookmarksDatabaseFileMissing
         case debugBookmarksStructureLost
+        
+        case debugAppDelegateInitToLaunchTime
         case debugBookmarksStructureNotRecovered
         case debugBookmarksInvalidRoots
         case debugBookmarksValidationFailed
@@ -2131,6 +2133,7 @@ extension Pixel.Event {
         case .debugBookmarksInitialStructureQueryFailed: return "m_d_bookmarks-initial-structure-query-failed"
         case .debugBookmarksDatabaseFileMissing: return "m_d_bookmarks_database_file_missing"
         case .debugBookmarksStructureLost: return "m_d_bookmarks_structure_lost"
+        case .debugAppDelegateInitToLaunchTime: return "m_d_app_delegate_init_to_launch_time"
         case .debugBookmarksStructureNotRecovered: return "m_d_bookmarks_structure_not_recovered"
         case .debugBookmarksInvalidRoots: return "m_d_bookmarks_invalid_roots"
         case .debugBookmarksValidationFailed: return "m_d_bookmarks_validation_failed"

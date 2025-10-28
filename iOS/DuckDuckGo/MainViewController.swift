@@ -225,6 +225,11 @@ class MainViewController: UIViewController {
         return OmnibarAccessoryHandler(settings: settings)
     }()
 
+    private lazy var aiChatHistoryCleaner: HistoryCleaning = {
+        return HistoryCleaner(featureFlagger: featureFlagger,
+                             privacyConfig: ContentBlocking.shared.privacyConfigurationManager)
+    }()
+
     let isAuthV2Enabled: Bool
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
@@ -3445,6 +3450,8 @@ extension MainViewController: AutoClearWorker {
         self.forgetTextZoom()
         await historyManager.removeAllHistory()
 
+        cleanAIChatHistory()
+
         self.clearInProgress = false
         
         self.postClear?()
@@ -3454,7 +3461,20 @@ extension MainViewController: AutoClearWorker {
     func stopAllOngoingDownloads() {
         AppDependencyProvider.shared.downloadManager.cancelAllDownloads()
     }
-    
+
+    private func cleanAIChatHistory() {
+        if appSettings.autoClearAIChatHistory && featureFlagger.isFeatureOn(.duckAiDataClearing) {
+            let result = await aiChatHistoryCleaner.cleanAIChatHistory()
+            switch result {
+            case .success:
+                //TODO: Pixels
+                Logger.aiChat.log("Successfully cleared Duck.ai chat history")
+            case .failure(let error):
+                Logger.aiChat.log("Failed to clear Duck.ai chat history")
+            }
+        }
+    }
+
     func forgetAllWithAnimation(transitionCompletion: (() -> Void)? = nil, showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         Pixel.fire(pixel: .forgetAllExecuted)

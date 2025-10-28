@@ -150,6 +150,17 @@ public extension RemoteMessageModelType {
         public let action: RemoteAction?
         public let matchingRules: [Int]
         public let exclusionRules: [Int]
+
+        public init(id: String, type: ListItemType, titleText: String, descriptionText: String, placeholderImage: RemotePlaceholder, action: RemoteAction?, matchingRules: [Int], exclusionRules: [Int]) {
+            self.id = id
+            self.type = type
+            self.titleText = titleText
+            self.descriptionText = descriptionText
+            self.placeholderImage = placeholderImage
+            self.action = action
+            self.matchingRules = matchingRules
+            self.exclusionRules = exclusionRules
+        }
     }
 }
 

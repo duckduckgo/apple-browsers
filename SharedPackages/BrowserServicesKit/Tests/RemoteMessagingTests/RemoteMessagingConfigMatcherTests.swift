@@ -581,7 +581,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
     func testWhenMessageWithItemsPassesAndAllItemsPassRules_ThenReturnMessage() {
         // GIVEN
-        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         let items = [
             listItem(id: "item1", matchingRules: [1]), // Will pass
             listItem(id: "item2", matchingRules: [1])  // Will pass
@@ -599,7 +599,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
     func testWhenMessageWithItemsPassesButAllItemsFailRules_ThenReturnNull() {
         // GIVEN
         // Valid rule applied at message level
-        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         // Invalid rule applied at item level
         let rule2 = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
         let items = [
@@ -618,7 +618,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
     func testWhenMessageWithItemsPassesAndSomeItemsPassRules_ThenReturnMessage() throws {
         // GIVEN
         // Valid rule
-        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         // Invalid rule
         let rule2 = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
         let items = [
@@ -638,7 +638,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
     func testWhenMessageWithItemsHasNoItemRules_ThenAllItemsPassAndReturnMessage() {
         // GIVEN
-        let validRule = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+        let validRule = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         let items = [
             listItem(id: "item1", matchingRules: []), // No rules -> Will pass
             listItem(id: "item2", matchingRules: [])  // No rules -> Will pass
@@ -655,7 +655,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
     func testWhenMessageWithItemsHasExclusionRules_ThenFilterItemsCorrectly() throws {
         // GIVEN
-        let validRule = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+        let validRule = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         let items = [
             listItem(id: "item1", matchingRules: [1]), // Will pass
             listItem(id: "item2", exclusionRules: [1]) // Will be excluded (rule matches)
@@ -674,7 +674,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
     func testWhenMessageFailsRules_ThenItemRulesNotEvaluated() {
         // GIVEN
         // Valid rule
-        let validRule = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+        let validRule = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         // Invalid rule
         let invalidRule = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
         let items = [
@@ -693,7 +693,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
     func testWhenMessageWithoutItems_ThenEvaluateNormally() {
         // GIVEN
-        let validRule = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+        let validRule = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         let expectedMessage = mediumMessage(matchingRules: [1], exclusionRules: [])
         let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: [validRule])
 
@@ -709,11 +709,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
     func testWhenMessagePassesButAllItemsFailPercentile_ThenReturnNull() {
         // GIVEN
         // Rule 1 50% of users
-        let rule1 = RemoteConfigRule(id: 1, targetPercentile: RemoteConfigTargetPercentile(before: 0.5), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: RemoteConfigTargetPercentile(before: 0.5), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         // Rule 2 40% of users
-        let rule2 = RemoteConfigRule(id: 2, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         // Rule 3 40% of users
-        let rule3 = RemoteConfigRule(id: 3, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+        let rule3 = RemoteConfigRule(id: 3, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
 
         let percentileStore = MockRemoteMessagePercentileStore()
         percentileStore.percentileStorage = [
@@ -739,11 +739,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
     func testWhenMessagePassesAndSomeItemsPassPercentile_ThenReturnMessageWithFilteredItems() throws {
         // GIVEN
         // Rule 1 50% of users
-        let rule1 = RemoteConfigRule(id: 1, targetPercentile: RemoteConfigTargetPercentile(before: 0.5), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: RemoteConfigTargetPercentile(before: 0.5), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         // Rule 2 40% of users
-        let rule2 = RemoteConfigRule(id: 2, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         // Rule 3 40% of users
-        let rule3 = RemoteConfigRule(id: 3, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+        let rule3 = RemoteConfigRule(id: 3, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
 
         let percentileStore = MockRemoteMessagePercentileStore()
         percentileStore.percentileStorage = [
@@ -771,11 +771,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
     func testWhenMessageFailsPercentile_ThenItemPercentileNotEvaluated() {
         // GIVEN
         // Rule 1 50% of users
-        let rule1 = RemoteConfigRule(id: 1, targetPercentile: RemoteConfigTargetPercentile(before: 0.5), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: RemoteConfigTargetPercentile(before: 0.5), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         // Rule 2 40% of users
-        let rule2 = RemoteConfigRule(id: 2, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         // Rule 3 40% of users
-        let rule3 = RemoteConfigRule(id: 3, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+        let rule3 = RemoteConfigRule(id: 3, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
 
         let percentileStore = MockRemoteMessagePercentileStore()
         percentileStore.percentileStorage = [
@@ -800,7 +800,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
     func testWhenItemsHaveNoPercentileRules_ThenAllItemsPass() {
         // GIVEN
-        let rule1 = RemoteConfigRule(id: 1, targetPercentile: RemoteConfigTargetPercentile(before: 0.5), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: RemoteConfigTargetPercentile(before: 0.5), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
 
         let percentileStore = MockRemoteMessagePercentileStore()
         percentileStore.percentileStorage = [
@@ -830,6 +830,7 @@ private extension RemoteMessagingConfigMatcherTests {
             appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
             userAttributeMatcher: MobileUserAttributeMatcher(
                 statisticsStore: MockStatisticsStore(),
+                featureDiscovery: MockFeatureDiscovery(),
                 variantManager: MockVariantManager(),
                 bookmarksCount: 0,
                 favoritesCount: 0,
@@ -849,7 +850,8 @@ private extension RemoteMessagingConfigMatcherTests {
                 dismissedMessageIds: [],
                 shownMessageIds: [],
                 enabledFeatureFlags: [],
-                isSyncEnabled: false
+                isSyncEnabled: false,
+                shouldShowWinBackOfferUrgencyMessage: false
             ),
             percentileStore: percentileStore,
             surveyActionMapper: MockRemoteMessageSurveyActionMapper(),

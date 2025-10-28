@@ -247,6 +247,17 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
 
         checkForUpdateRespectingRollout()
         subscribeToResignKeyNotifications()
+
+        validateUpdateExpectations()
+    }
+
+    private func validateUpdateExpectations() {
+        let updateStatus = ApplicationUpdateDetector.isApplicationUpdated()
+
+        SparkleUpdateCompletionValidator.validateExpectations(
+            updateStatus: updateStatus,
+            currentVersion: AppVersion.shared.versionNumber,
+            currentBuild: AppVersion.shared.buildNumber)
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -273,6 +284,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
 
     private func checkNewApplicationVersion() {
         let updateStatus = ApplicationUpdateDetector.isApplicationUpdated()
+
         switch updateStatus {
         case .noChange: break
         case .updated:
@@ -557,6 +569,19 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
 
     func updaterWillRelaunchApplication(_ updater: SPUUpdater) {
         Logger.updates.log("Updater will relaunch application - completing wide event")
+
+        // Capture metadata from wide event before completing
+        if let flowData = updateWideEvent.getCurrentFlowData() {
+            SparkleUpdateCompletionValidator.storePendingUpdateMetadata(
+                sourceVersion: flowData.fromVersion,
+                sourceBuild: flowData.fromBuild,
+                expectedVersion: flowData.toVersion ?? "unknown",
+                expectedBuild: flowData.toBuild ?? "unknown",
+                initiationType: flowData.initiationType.rawValue,
+                updateConfiguration: flowData.updateConfiguration.rawValue
+            )
+        }
+
         // Complete WideEvent with success - update is being installed and app will restart
         // This is the last reliable callback before the app terminates, so we complete here
         // rather than in didFinishUpdateCycleFor (which won't be called for restart scenarios)

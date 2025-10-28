@@ -103,6 +103,11 @@ final class SparkleUpdateWideEvent {
         wideEventManager.startFlow(eventData)
     }
 
+    func getCurrentFlowData() -> UpdateWideEventData? {
+        guard let globalID = currentFlowID else { return nil }
+        return wideEventManager.getFlowData(UpdateWideEventData.self, globalID: globalID)
+    }
+
     func didStartUpdateCheck() {
         guard let globalID = currentFlowID else { return }
         wideEventManager.updateFlow(globalID: globalID) { (data: inout UpdateWideEventData) in

@@ -554,12 +554,11 @@ extension LegacyDataImportViewModel.ButtonType {
 #if DEBUG
 private final class PreviewPreferences: ObservableObject {
     @Published var shouldDisplayProgress = false
-    static let shared = PreviewPreferences()
 }
 extension LegacyDataImportView {
 
     struct PreviewPreferencesView: View {
-        @ObservedObject fileprivate var prefs = PreviewPreferences.shared
+        @ObservedObject fileprivate var prefs = PreviewPreferences()
 
         var body: some View {
             VStack(alignment: .leading, spacing: 10) {

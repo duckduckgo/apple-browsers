@@ -79,7 +79,8 @@ extension WhatsNewCoordinator: RemoteMessagingPresenter {
 
     @MainActor
     func presentActivitySheet(value: String, title: String?) async {
-        print("[Modal Prompt Coordination] - What's New - Present Share Item")
+        let activityController = UIActivityViewController(activityItems: [TitleValueShareItem(value: value, title: title).item], applicationActivities: nil)
+        navigationController?.present(activityController, animated: true)
     }
 
     @MainActor

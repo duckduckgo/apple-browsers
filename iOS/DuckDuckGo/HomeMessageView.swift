@@ -25,26 +25,9 @@ import Core
 
 struct HomeMessageView: View {
 
-    struct ShareItem: Identifiable {
-        var id: String {
-            value
-        }
-
-        var item: Any {
-            if let url = URL(string: value), let title = title {
-                return TitledURLActivityItem(url, title)
-            } else {
-                return value
-            }
-        }
-
-        let value: String
-        let title: String?
-    }
-
     let viewModel: HomeMessageViewModel
 
-    @State var activityItem: ShareItem?
+    @State var activityItem: TitleValueShareItem?
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -233,7 +216,7 @@ extension HomeMessageView: RemoteMessagingPresenter {
 
     @MainActor
     func presentActivitySheet(value: String, title: String?) async {
-        activityItem = ShareItem(value: value, title: title)
+        activityItem = TitleValueShareItem(value: value, title: title)
     }
 
     @MainActor

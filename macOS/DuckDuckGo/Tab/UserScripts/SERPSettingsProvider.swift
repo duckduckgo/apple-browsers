@@ -104,8 +104,6 @@ final class SERPSettingsProvider: SERPSettingsProviding {
             rules.append(.exact(hostname: ddgDomain))
         }
 
-        rules.append(.exact(hostname: "achawdhary.duckduckgo.com"))
-
         return rules
     }
 
@@ -116,7 +114,6 @@ final class SERPSettingsProvider: SERPSettingsProviding {
     ///
     /// - Returns: `true` (feature is always enabled)
     func isSERPSettingsFeatureOn() -> Bool {
-        return true
         return featureFlagger.isFeatureOn(.serpSettings)
     }
 }

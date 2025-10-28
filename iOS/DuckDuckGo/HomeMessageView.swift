@@ -238,7 +238,7 @@ extension HomeMessageView: RemoteMessagingPresenter {
 
     @MainActor
     func presentEmbeddedWebView(url: URL) async {
-        // Not implemented yet
+        assertionFailure("Action defined as part of https://app.asana.com/1/137249556945/project/1206329551987282/task/1211135151986316. Not implemented yet for Home Messages")
     }
 
 }

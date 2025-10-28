@@ -84,7 +84,8 @@ extension WhatsNewCoordinator: RemoteMessagingPresenter {
 
     @MainActor
     func presentEmbeddedWebView(url: URL) async {
-        print("[Modal Prompt Coordination] - What's New - Present Embedded Web View")
+        let embeddedWebViewController = EmbeddedWebViewController(url: url)
+        navigationController?.pushViewController(embeddedWebViewController, animated: true)
     }
 
 }
@@ -96,6 +97,7 @@ extension WhatsNewCoordinator: UIAdaptivePresentationControllerDelegate {
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
         dismiss(source: .pullDown)
     }
+
 }
 
 // MARK: - Private

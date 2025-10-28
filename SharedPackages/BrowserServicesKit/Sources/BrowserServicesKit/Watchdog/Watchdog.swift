@@ -139,17 +139,15 @@ public final actor Watchdog {
     public func start() async {
         cancelAndClearTasks()
         resetHangState()
-
-        // Ensure we start in an unpaused state
         isPaused = false
-
-        Self.logger.info("Watchdog started monitoring main thread with timeout: \(self.maximumHangDuration)s")
 
         monitoringTask = Task.detached { [weak self] in
             await self?.runMonitoringLoop()
         }
 
         await setIsRunning(true)
+
+        Self.logger.info("Watchdog started monitoring main thread with timeout: \(self.maximumHangDuration)s")
     }
 
     /// Stops the watchdog entirely.
@@ -173,20 +171,25 @@ public final actor Watchdog {
     /// Pauses the watchdog, if running. Can be resumed with `resume`.
     ///
     public func pause() async {
+        guard await isRunning else { return }
+        
         Self.logger.info("Watchdog paused")
         isPaused = true
+        await stop()
     }
 
     /// Resumes the watchdog after being paused. Will only resume if the watchdog was previously running.
     ///
     public func resume() async {
+        guard isPaused else { return }
+        
         Self.logger.info("Watchdog resumed")
 
         // Reset the heartbeat and state to start fresh after resume
         await monitor.resetHeartbeat()
         resetHangState()
 
-        isPaused = false
+        await start()
     }
 
     private func resetHangState() {

@@ -1538,7 +1538,12 @@ extension TabBarViewController: NSCollectionViewDelegate {
 
         let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(proposedDropIndexPath.pointee.item) : .unpinned(proposedDropIndexPath.pointee.item)
 
-        // move tab within one window if needed
+        // move tab within one window if needed: bail out if we're outside the CollectionView Bounds!
+        let locationInView = collectionView.convert(draggingInfo.draggingLocation, from: nil)
+        guard collectionView.frame.contains(locationInView) else {
+            return .none
+        }
+
         moveItemIfNeeded(to: tabIndex)
 
         return .private

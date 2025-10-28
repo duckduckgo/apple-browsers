@@ -1539,8 +1539,10 @@ extension TabBarViewController: NSCollectionViewDelegate {
         let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(proposedDropIndexPath.pointee.item) : .unpinned(proposedDropIndexPath.pointee.item)
 
         // move tab within one window if needed: bail out if we're outside the CollectionView Bounds!
+        let isPinnedTabsRewriteEnabled = featureFlagger.isFeatureOn(.pinnedTabsViewRewrite)
         let locationInView = collectionView.convert(draggingInfo.draggingLocation, from: nil)
-        guard collectionView.frame.contains(locationInView) else {
+
+        guard collectionView.frame.contains(locationInView) || !isPinnedTabsRewriteEnabled else {
             return .none
         }
 

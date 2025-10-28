@@ -60,6 +60,8 @@ final class WhatsNewViewController: UINavigationController {
 private extension WhatsNewViewController {
 
     func setupView() {
+        decorateNavigationBar(navigationBar)
+
         let contentView = RemoteMessagingUI.CardsListView(displayModel: displayModel)
         let hostingController = UIHostingController(rootView: contentView)
 

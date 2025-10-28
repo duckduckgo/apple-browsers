@@ -145,7 +145,7 @@ private extension WhatsNewCoordinator {
     }
 
     func handleAction(_ action: RemoteAction) async {
-        await remoteMessageActionHandler.handleAction(action, presenter: self)
+        await remoteMessageActionHandler.handleAction(action, context: .init(presenter: self, presentationStyle: .withinCurrentContext))
     }
 
     func dismiss(source: DismissSource) {

@@ -23,17 +23,17 @@ import DDGSync
 
 protocol MessageNavigator {
 
-    func navigateTo(_ target: NavigationTarget)
+    func navigateTo(_ target: NavigationTarget, context: PresentationContext)
 
 }
 
 protocol MessageNavigationDelegate: AnyObject {
 
-    func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, completion: (() -> Void)?)
-    func segueToSettings()
-    func segueToFeedback()
-    func segueToSettingsSync(with source: String?, pairingInfo: PairingInfo?)
-
+    func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, presentationStyle: PresentationContext.Style)
+    func segueToSettings(presentationStyle: PresentationContext.Style)
+    func segueToFeedback(presentationStyle: PresentationContext.Style)
+    func segueToSettingsSync(with source: String?, pairingInfo: PairingInfo?, presentationStyle: PresentationContext.Style)
+    func segueToImportPasswords(presentationStyle: PresentationContext.Style)
 }
 
 class DefaultMessageNavigator: MessageNavigator {
@@ -44,21 +44,20 @@ class DefaultMessageNavigator: MessageNavigator {
         self.delegate = delegate
     }
 
-    func navigateTo(_ target: NavigationTarget) {
+    func navigateTo(_ target: NavigationTarget, context: PresentationContext) {
         assert(delegate != nil)
         switch target {
         case .duckAISettings:
             delegate?.segueToSettingsAIChat(openedFromSERPSettingsButton: false,
-                                            completion: nil)
+                                            presentationStyle: context.presentationStyle)
         case .settings:
-            delegate?.segueToSettings()
+            delegate?.segueToSettings(presentationStyle: context.presentationStyle)
         case .feedback:
-            delegate?.segueToFeedback()
+            delegate?.segueToFeedback(presentationStyle: context.presentationStyle)
         case .sync:
-            delegate?.segueToSettingsSync(with: nil, pairingInfo: nil)
+            delegate?.segueToSettingsSync(with: nil, pairingInfo: nil, presentationStyle: context.presentationStyle)
         case .importPasswords:
-            // Segue to Import Passwords
-            break
+            delegate?.segueToImportPasswords(presentationStyle: context.presentationStyle)
         }
     }
 

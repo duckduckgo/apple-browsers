@@ -353,7 +353,7 @@ struct HomeMessageView_Previews: PreviewProvider {
     }
 
     struct PreviewNavigator: MessageNavigator {
-        func navigateTo(_ target: RemoteMessaging.NavigationTarget) {
+        func navigateTo(_ target: RemoteMessaging.NavigationTarget, context: PresentationContext) {
             // no-op
         }
     }

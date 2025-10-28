@@ -444,7 +444,23 @@ class MainViewController: UIViewController {
 
         // Needs to be called here to established correct view hierarchy
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
-        applyCustomizationState(mobileCustomization.state)
+        applyCustomizationState()
+        subscribeToCustomizationFeatureFlagChanges()
+    }
+
+    @MainActor
+    func subscribeToCustomizationFeatureFlagChanges() {
+        guard let overridesHandler = AppDependencyProvider.shared.featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+
+        overridesHandler.flagDidChangePublisher
+            .filter { $0.0 == .mobileCustomization }
+            .sink { [weak self] (_, value) in
+                guard let self else { return }
+                self.applyCustomizationState()
+            }
+            .store(in: &settingsCancellables)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -746,11 +762,7 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarBookmarksButton.setCustomItemAction(on: self, action: #selector(onToolbarBookmarksPressed))
         viewCoordinator.menuToolbarButton.setCustomItemAction(on: self, action: #selector(onMenuPressed))
 
-        if mobileCustomization.state.isEnabled {
-            viewCoordinator.toolbarFireBarButtonItem.setCustomItemAction(on: self, action: #selector(performCustomizationActionForToolbar))
-        } else {
-            viewCoordinator.toolbarFireBarButtonItem.setCustomItemAction(on: self, action: #selector(onFirePressed))
-        }
+        viewCoordinator.toolbarFireBarButtonItem.setCustomItemAction(on: self, action: #selector(performCustomizationActionForToolbar))
 
         viewCoordinator.menuToolbarButton.customView?
             .addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(onMenuLongPressed)))
@@ -3798,20 +3810,25 @@ extension MainViewController {
     private func subscribeToCustomizationSettingsEvents() {
         NotificationCenter.default.publisher(for: AppUserDefaults.Notifications.customizationSettingsChanged)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] output in
-                guard let state = output.object as? MobileCustomization.State else { return }
-                self?.applyCustomizationState(state)
+            .sink { [weak self] _ in
+                self?.applyCustomizationState()
             }
             .store(in: &settingsCancellables)
     }
 
-    func applyCustomizationState(_ state: MobileCustomization.State) {
+    func applyCustomizationState() {
+        let state = mobileCustomization.state
         guard state.isEnabled else { return }
         applyCustomizationForToolbar(state)
         // coming later - address bar
     }
 
     @objc private func performCustomizationActionForToolbar() {
+        guard mobileCustomization.state.isEnabled else {
+            self.onFirePressed()
+            return
+        }
+
         switch mobileCustomization.state.currentToolbarButton {
         case .home:
             guard let tab = self.currentTab?.tabModel else { return }

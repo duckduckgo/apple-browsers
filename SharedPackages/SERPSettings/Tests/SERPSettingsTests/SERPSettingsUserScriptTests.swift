@@ -85,7 +85,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         let result = try await handler([:], WKScriptMessage())
 
-        // Then - Should return nil because no data is stored
+        // Then - Should return empty JSON object because no data is stored
         let emptyJSON = try JSONSerialization.data(withJSONObject: [:], options: [])
         if let result = result as? JSONBlob {
             XCTAssertEqual(result.data, emptyJSON)

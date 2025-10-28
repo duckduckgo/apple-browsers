@@ -280,9 +280,9 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     /// ## Parameter Format
     ///
     /// The parameters dictionary can contain:
-    /// - `"return": "privateSearch"` - Navigate to privacy settings
-    /// - `"return": "aiFeatures"` - Navigate to AI settings after closing tab
-    /// - `"screen": "aiFeatures"` - Navigate directly to AI settings
+    /// - `"return": "privateSearch"` - Navigating back from Privacy Settings on SERP after tapping 'Save & Exit' (macOS only)
+    /// - `"return": "aiFeatures"` -Navigating back from Privacy Settings on SERP after tapping 'Save & Exit' (macOS only)
+    /// - `"screen": "aiFeatures"` - Navigate directly to AI settings after user tapped 'Open Duck.Ai Settings' on the SERP
     ///
     /// - Parameters:
     ///   - params: Dictionary specifying which screen to open
@@ -292,14 +292,15 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     private func openNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
         guard let parameters = params as? [String: String] else { return nil }
 
-        // Check "return" parameter for navigation after closing tab
         if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.privateSearch {
-            delegate?.serpSettingsUserScriptDidRequestToOpenPrivacySettings(self)
+            #if os(macos)
+            delegate?.serpSettingsUserScriptDidRequestToCloseTab(self)
+            #endif
         } else if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.aiFeatures {
-            delegate?.serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(self)
-        }
-        // Check "screen" parameter for direct navigation
-        else if parameters[SERPSettingsConstants.screenParameterKey] == SERPSettingsConstants.aiFeatures {
+            #if os(macos)
+            delegate?.serpSettingsUserScriptDidRequestToCloseTab(self)
+            #endif
+        } else if parameters[SERPSettingsConstants.screenParameterKey] == SERPSettingsConstants.aiFeatures {
             delegate?.serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(self)
         }
 

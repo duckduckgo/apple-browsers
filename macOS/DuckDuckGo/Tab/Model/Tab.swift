@@ -1243,12 +1243,13 @@ extension Tab: PageObserverUserScriptDelegate {
 }
 
 extension Tab: SERPSettingsUserScriptDelegate {
-    func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
+
+    func serpSettingsUserScriptDidRequestToCloseTab(_ userScript: SERPSettingsUserScript) {
         delegate?.closeTab(self)
     }
 
     func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
-        delegate?.closeTab(self)
+        delegate?.closeTab(self) // TODO: We should open AI Feature settings
     }
 }
 

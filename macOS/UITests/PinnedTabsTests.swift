@@ -20,11 +20,14 @@ import XCTest
 
 class PinnedTabsTests: UITestCase {
     private static let failureObserver = TestFailureObserver()
+    var featureFlags: [String: Bool] {
+        [:]
+    }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp()
+        app = XCUIApplication.setUp(featureFlags: featureFlags)
 
         app.openNewWindow()
     }
@@ -172,7 +175,7 @@ class PinnedTabsTests: UITestCase {
     }
 
     private func assertPinnedTabsRestoredState() {
-        let newApp = XCUIApplication.setUp()
+        let newApp = XCUIApplication.setUp(featureFlags: featureFlags)
         XCTAssertTrue(
             newApp.windows.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "App window didn't become available in a reasonable timeframe."
@@ -205,5 +208,12 @@ class PinnedTabsTests: UITestCase {
 
     private func waitForSite(pageTitle: String) {
         XCTAssertTrue(app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+    }
+}
+
+class PinnedTabsAppKitRewriteTests: PinnedTabsTests {
+
+    override var featureFlags: [String : Bool] {
+        ["pinnedTabsViewRewrite": true]
     }
 }

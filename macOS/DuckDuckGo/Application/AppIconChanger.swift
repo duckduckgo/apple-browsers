@@ -24,17 +24,28 @@ final class AppIconChanger {
 
     private var cancellables = Set<AnyCancellable>()
     private var isInternalUser: Bool = false
+    private weak var appearancePreferences: AppearancePreferences?
 
     init(internalUserDecider: InternalUserDecider, appearancePreferences: AppearancePreferences) {
+        self.appearancePreferences = appearancePreferences
         subscribeToIsInternal(internalUserDecider)
         subscribeToThemeChanges(appearancePreferences)
+        subscribeToIconSyncPreferenceChanges(appearancePreferences)
     }
 
-    func updateIcon(isInternalChannel: Bool, themeName: ThemeName? = nil) {
+    func updateIcon(isInternalChannel: Bool, themeName: ThemeName? = nil, forceSyncCheck: Bool = true) {
         self.isInternalUser = isInternalChannel
 
         // Theme icon takes precedence over internal user icon
-        if let themeName = themeName, let themeIcon = icon(for: themeName) {
+        let shouldApplyThemeIcon = if forceSyncCheck {
+            themeName != nil && appearancePreferences?.syncAppIconWithTheme == true
+        } else {
+            themeName != nil
+        }
+
+        if shouldApplyThemeIcon,
+           let themeName = themeName,
+           let themeIcon = icon(for: themeName) {
             NSApplication.shared.applicationIconImage = themeIcon
             return
         }
@@ -71,6 +82,16 @@ final class AppIconChanger {
             .sink { [weak self] themeName in
                 guard let self = self else { return }
                 self.updateIcon(isInternalChannel: self.isInternalUser, themeName: themeName)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToIconSyncPreferenceChanges(_ appearancePreferences: AppearancePreferences) {
+        appearancePreferences.$syncAppIconWithTheme
+            .sink { [weak self] isSyncEnabled in
+                guard let self = self else { return }
+                let themeName = isSyncEnabled ? appearancePreferences.themeName : nil
+                self.updateIcon(isInternalChannel: self.isInternalUser, themeName: themeName, forceSyncCheck: false)
             }
             .store(in: &cancellables)
     }

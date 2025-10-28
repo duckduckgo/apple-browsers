@@ -71359,6 +71359,18 @@
         }
       }
     },
+    "preferences.appearance.sync-app-icon-with-theme" : {
+      "comment" : "Checkbox option to sync the app icon with the selected theme",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Change app icon to match theme"
+          }
+        }
+      }
+    },
     "preferences.appearance.theme" : {
       "comment" : "Theme preferences",
       "extractionState" : "extracted_with_value",

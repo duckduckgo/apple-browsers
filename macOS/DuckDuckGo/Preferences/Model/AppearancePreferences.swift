@@ -32,6 +32,7 @@ protocol AppearancePreferencesPersistor {
     var showFullURL: Bool { get set }
     var themeAppearance: String { get set }
     var themeName: String { get set }
+    var syncAppIconWithTheme: Bool { get set }
     var favoritesDisplayMode: String? { get set }
     var isOmnibarVisible: Bool { get set }
     var isFavoriteVisible: Bool { get set }
@@ -81,6 +82,9 @@ struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersisto
 
     @UserDefaultsWrapper(key: .themeName, defaultValue: ThemeName.default.rawValue)
     var themeName: String
+
+    @UserDefaultsWrapper(key: .syncAppIconWithTheme, defaultValue: false)
+    var syncAppIconWithTheme: Bool
 
     @UserDefaultsWrapper(key: .favoritesDisplayMode, defaultValue: FavoritesDisplayMode.displayNative(.desktop).description)
     var favoritesDisplayMode: String?
@@ -257,6 +261,12 @@ final class AppearancePreferences: ObservableObject {
     @Published var themeName: ThemeName {
         didSet {
             persistor.themeName = themeName.rawValue
+        }
+    }
+
+    @Published var syncAppIconWithTheme: Bool {
+        didSet {
+            persistor.syncAppIconWithTheme = syncAppIconWithTheme
         }
     }
 
@@ -442,6 +452,7 @@ final class AppearancePreferences: ObservableObject {
         continueSetUpCardsClosed = persistor.continueSetUpCardsClosed
         themeAppearance = .init(rawValue: persistor.themeAppearance) ?? .systemDefault
         themeName = .init(rawValue: persistor.themeName) ?? .default
+        syncAppIconWithTheme = persistor.syncAppIconWithTheme
         showFullURL = persistor.showFullURL
         favoritesDisplayMode = persistor.favoritesDisplayMode.flatMap(FavoritesDisplayMode.init) ?? .default
         isOmnibarVisible = persistor.isOmnibarVisible
@@ -465,6 +476,7 @@ final class AppearancePreferences: ObservableObject {
         continueSetUpCardsClosed = persistor.continueSetUpCardsClosed
         themeAppearance = .init(rawValue: persistor.themeAppearance) ?? .systemDefault
         themeName = .init(rawValue: persistor.themeName) ?? .default
+        syncAppIconWithTheme = persistor.syncAppIconWithTheme
         showFullURL = persistor.showFullURL
         favoritesDisplayMode = persistor.favoritesDisplayMode.flatMap(FavoritesDisplayMode.init) ?? .default
         isOmnibarVisible = persistor.isOmnibarVisible

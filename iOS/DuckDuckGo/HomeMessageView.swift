@@ -25,26 +25,9 @@ import Core
 
 struct HomeMessageView: View {
 
-    struct ShareItem: Identifiable {
-        var id: String {
-            value
-        }
-
-        var item: Any {
-            if let url = URL(string: value), let title = title {
-                return TitledURLActivityItem(url, title)
-            } else {
-                return value
-            }
-        }
-
-        let value: String
-        let title: String?
-    }
-
     let viewModel: HomeMessageViewModel
 
-    @State var activityItem: ShareItem?
+    @State var activityItem: TitleValueShareItem?
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -233,12 +216,12 @@ extension HomeMessageView: RemoteMessagingPresenter {
 
     @MainActor
     func presentActivitySheet(value: String, title: String?) async {
-        activityItem = ShareItem(value: value, title: title)
+        activityItem = TitleValueShareItem(value: value, title: title)
     }
 
     @MainActor
     func presentEmbeddedWebView(url: URL) async {
-        // Not implemented yet
+        assertionFailure("Action defined as part of https://app.asana.com/1/137249556945/project/1206329551987282/task/1211135151986316. Not implemented yet for Home Messages")
     }
 
 }

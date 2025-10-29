@@ -456,7 +456,7 @@ class MainViewController: UIViewController {
 
         overridesHandler.flagDidChangePublisher
             .filter { $0.0 == .mobileCustomization }
-            .sink { [weak self] (_, value) in
+            .sink { [weak self] (_, _) in
                 guard let self else { return }
                 self.applyCustomizationState()
             }

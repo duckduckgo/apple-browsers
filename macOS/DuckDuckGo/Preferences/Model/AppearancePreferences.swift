@@ -267,6 +267,8 @@ final class AppearancePreferences: ObservableObject {
     @Published var syncAppIconWithTheme: Bool {
         didSet {
             persistor.syncAppIconWithTheme = syncAppIconWithTheme
+            let pixel: SettingsPixel = syncAppIconWithTheme ? .syncAppIconWithThemeTurnedOn : .syncAppIconWithThemeTurnedOff
+            pixelFiring?.fire(pixel, frequency: .dailyAndCount)
         }
     }
 

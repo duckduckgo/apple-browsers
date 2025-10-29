@@ -142,6 +142,7 @@ struct Launching: LaunchingHandling {
         // Initialise modal prompts coordination
         let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
             launchSourceManager: launchSourceManager,
+            daxDialogs: daxDialogs,
             keyValueFileStoreService: appKeyValueFileStoreService.keyValueFilesStore,
             privacyConfigurationManager: privacyConfigurationManager,
             providersDependency: .init(

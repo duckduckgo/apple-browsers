@@ -31,6 +31,7 @@ enum ModalPromptCoordinationFactory {
 
     static func makeService(
         launchSourceManager: LaunchSourceManager,
+        daxDialogs: DaxDialogs,
         keyValueFileStoreService: ThrowingKeyValueStoring,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         providersDependency: ProvidersDependency,
@@ -43,7 +44,7 @@ enum ModalPromptCoordinationFactory {
         return ModalPromptCoordinationService(
             launchSourceManager: launchSourceManager,
             keyValueStore: keyValueFileStoreService,
-            tutorialSettings: DefaultTutorialSettings(),
+            contextualOnboardingStatusProvider: daxDialogs,
             privacyConfigManager: privacyConfigurationManager,
             providers: .init(
                 newAddressBarPicker: newAddressBarPickerModalPromptProvider,

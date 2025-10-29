@@ -44,12 +44,12 @@ struct ModalPromptProviders {
 final class ModalPromptCoordinationService {
     private let modalPromptCoordinationManager: ModalPromptCoordinationManaging
     private let launchSourceManager: LaunchSourceManaging
-    private let tutorialSettings: TutorialSettings
+    private let contextualOnboardingStatusProvider: ContextualDaxDialogStatusProvider
 
     convenience init(
         launchSourceManager: LaunchSourceManaging,
         keyValueStore: ThrowingKeyValueStoring,
-        tutorialSettings: TutorialSettings,
+        contextualOnboardingStatusProvider: ContextualDaxDialogStatusProvider,
         privacyConfigManager: PrivacyConfigurationManaging,
         providers: ModalPromptProviders
     ) {
@@ -75,16 +75,16 @@ final class ModalPromptCoordinationService {
             cooldownManager: cooldownManager,
         )
 
-        self.init(launchSourceManager: launchSourceManager, tutorialSettings: tutorialSettings, modalPromptCoordinationManager: modalPromptCoordinationManager)
+        self.init(launchSourceManager: launchSourceManager, contextualOnboardingStatusProvider: contextualOnboardingStatusProvider, modalPromptCoordinationManager: modalPromptCoordinationManager)
     }
 
     init(
         launchSourceManager: LaunchSourceManaging,
-        tutorialSettings: TutorialSettings,
+        contextualOnboardingStatusProvider: ContextualDaxDialogStatusProvider,
         modalPromptCoordinationManager: ModalPromptCoordinationManaging
     ) {
         self.launchSourceManager = launchSourceManager
-        self.tutorialSettings = tutorialSettings
+        self.contextualOnboardingStatusProvider = contextualOnboardingStatusProvider
         self.modalPromptCoordinationManager = modalPromptCoordinationManager
     }
 
@@ -94,7 +94,7 @@ final class ModalPromptCoordinationService {
             return
         }
 
-        guard tutorialSettings.hasSeenOnboarding else {
+        guard contextualOnboardingStatusProvider.hasSeenOnboarding else {
             Logger.modalPrompt.info("[Modal Prompt Coordination] - Skipping modal prompt - Onboarding not completed.")
             return
         }

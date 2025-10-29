@@ -27,14 +27,14 @@ import PersistenceTestingUtils
 @Suite("Modal Prompt Coordination - Service")
 final class ModalPromptCoordinationServiceTests {
     private let launchSourceManagerMock: MockLaunchSourceManager
-    private let tutorialSettingsMock: MockTutorialSettings
+    private let contextualOnboardingMock: MockContextualOnboardingStatusProvider
     private let managerMock: MockModalPromptCoordinationManager
     private let presenterMock: MockModalPromptPresenter
     private var sut: ModalPromptCoordinationService!
 
     init() {
         launchSourceManagerMock = MockLaunchSourceManager()
-        tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: true)
+        contextualOnboardingMock = MockContextualOnboardingStatusProvider(hasSeenOnboarding: true)
         managerMock = MockModalPromptCoordinationManager()
         presenterMock = MockModalPromptPresenter()
     }
@@ -51,11 +51,11 @@ final class ModalPromptCoordinationServiceTests {
     func whenDifferentNonStandardLaunchSourcesThenModalIsNotPresented(launchSource: LaunchSource) {
         // GIVEN
         launchSourceManagerMock.source = launchSource
-        tutorialSettingsMock.hasSeenOnboarding = true
+        contextualOnboardingMock.hasSeenOnboarding = true
         presenterMock.presentedViewController = nil
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            tutorialSettings: tutorialSettingsMock,
+            contextualOnboardingStatusProvider: contextualOnboardingMock,
             modalPromptCoordinationManager: managerMock
         )
 
@@ -70,11 +70,11 @@ final class ModalPromptCoordinationServiceTests {
     func whenLaunchSourceIsStandardThenModalIsPresented() {
         // GIVEN
         launchSourceManagerMock.source = .standard
-        tutorialSettingsMock.hasSeenOnboarding = true
+        contextualOnboardingMock.hasSeenOnboarding = true
         presenterMock.presentedViewController = nil
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            tutorialSettings: tutorialSettingsMock,
+            contextualOnboardingStatusProvider: contextualOnboardingMock,
             modalPromptCoordinationManager: managerMock
         )
 
@@ -92,11 +92,11 @@ final class ModalPromptCoordinationServiceTests {
     func whenOnboardingNotCompletedThenModalIsNotPresented() {
         // GIVEN
         launchSourceManagerMock.source = .standard
-        tutorialSettingsMock.hasSeenOnboarding = false
+        contextualOnboardingMock.hasSeenOnboarding = false
         presenterMock.presentedViewController = nil
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            tutorialSettings: tutorialSettingsMock,
+            contextualOnboardingStatusProvider: contextualOnboardingMock,
             modalPromptCoordinationManager: managerMock
         )
 
@@ -111,11 +111,11 @@ final class ModalPromptCoordinationServiceTests {
     func whenOnboardingCompletedThenModalIsPresented() {
         // GIVEN
         launchSourceManagerMock.source = .standard
-        tutorialSettingsMock.hasSeenOnboarding = true
+        contextualOnboardingMock.hasSeenOnboarding = true
         presenterMock.presentedViewController = nil
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            tutorialSettings: tutorialSettingsMock,
+            contextualOnboardingStatusProvider: contextualOnboardingMock,
             modalPromptCoordinationManager: managerMock
         )
 
@@ -132,12 +132,12 @@ final class ModalPromptCoordinationServiceTests {
     func whenAnotherModalIsPresentedThenModalIsNotPresented() {
         // GIVEN
         launchSourceManagerMock.source = .standard
-        tutorialSettingsMock.hasSeenOnboarding = true
+        contextualOnboardingMock.hasSeenOnboarding = true
         let alreadyPresentedVC = UIViewController()
         presenterMock.presentedViewController = alreadyPresentedVC
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            tutorialSettings: tutorialSettingsMock,
+            contextualOnboardingStatusProvider: contextualOnboardingMock,
             modalPromptCoordinationManager: managerMock
         )
 
@@ -152,11 +152,11 @@ final class ModalPromptCoordinationServiceTests {
     func whenNoModalIsPresentedThenModalIsPresented() {
         // GIVEN
         launchSourceManagerMock.source = .standard
-        tutorialSettingsMock.hasSeenOnboarding = true
+        contextualOnboardingMock.hasSeenOnboarding = true
         presenterMock.presentedViewController = nil
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            tutorialSettings: tutorialSettingsMock,
+            contextualOnboardingStatusProvider: contextualOnboardingMock,
             modalPromptCoordinationManager: managerMock
         )
 
@@ -171,13 +171,13 @@ final class ModalPromptCoordinationServiceTests {
     func whenPresentedModalIsBeingDismissedThenModalIsPresented() {
         // GIVEN
         launchSourceManagerMock.source = .standard
-        tutorialSettingsMock.hasSeenOnboarding = true
+        contextualOnboardingMock.hasSeenOnboarding = true
         let dismissingVC = MockDismissingViewController()
         dismissingVC.isBeingDismissed = true
         presenterMock.presentedViewController = dismissingVC
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            tutorialSettings: tutorialSettingsMock,
+            contextualOnboardingStatusProvider: contextualOnboardingMock,
             modalPromptCoordinationManager: managerMock
         )
 
@@ -192,11 +192,11 @@ final class ModalPromptCoordinationServiceTests {
     func whenMultipleConditionsFailThenModalIsNotPresented() {
         // GIVEN
         launchSourceManagerMock.source = .URL
-        tutorialSettingsMock.hasSeenOnboarding = false
+        contextualOnboardingMock.hasSeenOnboarding = false
         presenterMock.presentedViewController = UIViewController()
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
-            tutorialSettings: tutorialSettingsMock,
+            contextualOnboardingStatusProvider: contextualOnboardingMock,
             modalPromptCoordinationManager: managerMock
         )
 
@@ -221,13 +221,13 @@ final class ModalPromptCoordinationServiceTests {
             winBackOffer: winBackOfferProvider
         )
         launchSourceManagerMock.source = .standard
-        tutorialSettingsMock.hasSeenOnboarding = true
+        contextualOnboardingMock.hasSeenOnboarding = true
         presenterMock.presentedViewController = nil
 
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             keyValueStore: keyValueStore,
-            tutorialSettings: tutorialSettingsMock,
+            contextualOnboardingStatusProvider: contextualOnboardingMock,
             privacyConfigManager: privacyConfigManager,
             providers: providers
         )
@@ -255,13 +255,13 @@ final class ModalPromptCoordinationServiceTests {
             winBackOffer: winBackOfferProvider
         )
         launchSourceManagerMock.source = .standard
-        tutorialSettingsMock.hasSeenOnboarding = true
+        contextualOnboardingMock.hasSeenOnboarding = true
         presenterMock.presentedViewController = nil
 
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             keyValueStore: keyValueStore,
-            tutorialSettings: tutorialSettingsMock,
+            contextualOnboardingStatusProvider: contextualOnboardingMock,
             privacyConfigManager: privacyConfigManager,
             providers: providers
         )
@@ -289,13 +289,13 @@ final class ModalPromptCoordinationServiceTests {
             winBackOffer: winBackOfferProvider
         )
         launchSourceManagerMock.source = .standard
-        tutorialSettingsMock.hasSeenOnboarding = true
+        contextualOnboardingMock.hasSeenOnboarding = true
         presenterMock.presentedViewController = nil
 
         sut = ModalPromptCoordinationService(
             launchSourceManager: launchSourceManagerMock,
             keyValueStore: keyValueStore,
-            tutorialSettings: tutorialSettingsMock,
+            contextualOnboardingStatusProvider: contextualOnboardingMock,
             privacyConfigManager: privacyConfigManager,
             providers: providers
         )

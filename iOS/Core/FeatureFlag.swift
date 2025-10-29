@@ -228,10 +228,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .authV2WideEventEnabled,
              .embeddedSERPSettings,
              .syncCreditCards,
-             .unifiedURLPredictor,
-             .autofillExtensionSettings,
-             .canPromoteAutofillExtensionInBrowser,
-             .canPromoteAutofillExtensionInPasswordManagement:
+             .unifiedURLPredictor:
             true
         default:
             false

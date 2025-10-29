@@ -36,7 +36,6 @@ final class AppIconChanger {
     func updateIcon(isInternalChannel: Bool, themeName: ThemeName? = nil, forceSyncCheck: Bool = true) {
         self.isInternalUser = isInternalChannel
 
-        // Theme icon takes precedence over internal user icon
         let shouldApplyThemeIcon = if forceSyncCheck {
             themeName != nil && appearancePreferences?.syncAppIconWithTheme == true
         } else {

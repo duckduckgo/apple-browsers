@@ -248,7 +248,7 @@ final class TabCollectionViewModelCloseTabLogicTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenWeCloseATabAfterPerformingSomeMoveOperation_thenWeSelectTheLastActiveTAb() throws {
+    func testWhenWeCloseATabAfterPerformingSomeMoveOperation_thenWeSelectTheLastActiveTab() throws {
         let sourceTabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let destinationTabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
 

@@ -22,7 +22,7 @@ import AttributedMetric
 public final class SubscriptionStateProviderMock: SubscriptionStateProviding {
     public var isFreeTrialValue: Bool = false
     public var isActive: Bool = false
-    public var subscriptionDateValue: Date? = nil
+    public var subscriptionDateValue: Date?
 
     public init(isFreeTrial: Bool = false, isActive: Bool = false, subscriptionDate: Date? = nil) {
         self.isFreeTrialValue = isFreeTrial

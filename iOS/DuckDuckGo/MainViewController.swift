@@ -46,6 +46,7 @@ import Configuration
 import PixelKit
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
+import UserScript
 
 class MainViewController: UIViewController {
 
@@ -219,6 +220,11 @@ class MainViewController: UIViewController {
         return manager
     }()
 
+    private lazy var aiChatHistoryCleaner: HistoryCleaning = {
+        return HistoryCleaner(featureFlagger: featureFlagger,
+                             privacyConfig: ContentBlocking.shared.privacyConfigurationManager)
+    }()
+    
     let isAuthV2Enabled: Bool
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
@@ -3452,6 +3458,8 @@ extension MainViewController: AutoClearWorker {
         self.forgetTextZoom()
         await historyManager.removeAllHistory()
 
+        await cleanAIChatHistoryAndResetSession()
+
         self.clearInProgress = false
         
         self.postClear?()
@@ -3461,7 +3469,27 @@ extension MainViewController: AutoClearWorker {
     func stopAllOngoingDownloads() {
         AppDependencyProvider.shared.downloadManager.cancelAllDownloads()
     }
-    
+
+    private func cleanAIChatHistoryAndResetSession() async {
+        guard appSettings.autoClearAIChatHistory && featureFlagger.isFeatureOn(.duckAiDataClearing) else { return }
+        
+        let result = await aiChatHistoryCleaner.cleanAIChatHistory()
+        switch result {
+        case .success:
+            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteSuccessful)
+        case .failure(let error):
+            Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
+            DailyPixel.fireDailyAndCount(pixel: .aiChatHistoryDeleteFailed)
+
+            if let userScriptError = error as? UserScriptError {
+                userScriptError.fireLoadJSFailedPixelIfNeeded()
+            }
+        }
+        
+        /// If the fire button clears recent chats, we shouldn't keep the session alive, since it will be empty
+        await aiChatViewControllerManager.killSessionAndResetTimer()
+    }
+
     func forgetAllWithAnimation(transitionCompletion: (() -> Void)? = nil, showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         Pixel.fire(pixel: .forgetAllExecuted)
@@ -3803,9 +3831,7 @@ extension MainViewController {
     }
 
     func applyCustomizationState() {
-        let state = mobileCustomization.state
-        guard state.isEnabled else { return }
-        applyCustomizationForToolbar(state)
+        applyCustomizationForToolbar(mobileCustomization.state)
         // coming later - address bar
     }
 

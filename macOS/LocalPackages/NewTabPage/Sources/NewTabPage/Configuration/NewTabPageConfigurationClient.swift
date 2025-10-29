@@ -141,13 +141,14 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         var widgets: [NewTabPageDataModel.NewTabPageConfiguration.Widget] = [
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
+            .init(id: .subscriptionWinBackBanner),
             .init(id: .nextSteps),
             .init(id: .favorites),
             .init(id: .protections)
         ]
 
         if sectionsAvailabilityProvider.isOmnibarAvailable {
-            widgets.insert(.init(id: .omnibar), at: 2)
+            widgets.insert(.init(id: .omnibar), at: 3)
         }
 
         return widgets

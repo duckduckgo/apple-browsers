@@ -212,6 +212,7 @@ class MobileCustomization {
 
     private let featureFlagger: FeatureFlagger
     private let keyValueStore: ThrowingKeyValueStoring
+    private let postChangeNotification: (State) -> Void
 
     static func descriptionComparison(lhs: CustomStringConvertible, rhs: CustomStringConvertible) -> Bool {
         lhs.description.localizedCaseInsensitiveCompare(rhs.description) == .orderedAscending
@@ -224,9 +225,15 @@ class MobileCustomization {
 
     }
 
-    init(featureFlagger: FeatureFlagger, keyValueStore: ThrowingKeyValueStoring) {
+    init(featureFlagger: FeatureFlagger,
+         keyValueStore: ThrowingKeyValueStoring,
+         postChangeNotification: @escaping ((State) -> Void) = {
+            NotificationCenter.default.post(name: AppUserDefaults.Notifications.customizationSettingsChanged, object: $0)
+        }
+    ) {
         self.featureFlagger = featureFlagger
         self.keyValueStore = keyValueStore
+        self.postChangeNotification = postChangeNotification
     }
 
     private func current(forKey key: StorageKeys, _ defaultButton: Button) -> Button {
@@ -240,7 +247,7 @@ class MobileCustomization {
     func persist(_ state: State) {
         setCurrentToolbarButton(state.currentToolbarButton)
         setCurrentAddressBarButton(state.currentAddressBarButton)
-        NotificationCenter.default.post(name: AppUserDefaults.Notifications.customizationSettingsChanged, object: state)
+        postChangeNotification(state)
     }
 
     private func setCurrentToolbarButton(_ button: Button) {

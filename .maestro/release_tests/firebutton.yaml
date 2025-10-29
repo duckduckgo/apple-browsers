@@ -99,6 +99,36 @@ tags:
 - assertVisible: "1 Private Tab"
 - tapOn: "Done"
 
+# Load Site
+- assertVisible:
+    id: "searchEntry"
+- tapOn: 
+    id: "searchEntry"
 
+- inputText: "ex"
+- assertNotVisible: "example.com"
+- assertNotVisible: "Example Domain"
 
+- pressKey: Backspace
+- pressKey: Backspace
+
+- inputText: "https://privacy-test-pages.site/features/local-storage.html"
+- pressKey: Enter
+- assertVisible: "Storage Counter: undefined"
+- assertVisible: "Cookie Counter:"
+
+# Clear from Data Clearing Settings
+
+- tapOn: "Browsing Menu"
+- tapOn: "Settings"
+- scrollUntilVisible: 
+    element: "Data Clearing"
+- tapOn: "Data Clearing"
+- tapOn: "Close Tabs and Clear Data"
+- tapOn: "Close Tabs and Clear Data"
+- tapOn: "Settings"
+- tapOn: "Done"
+
+- assertNotVisible: "https://privacy-test-pages.site/features/local-storage.html"
+- assertVisible: "Search or enter address"
 

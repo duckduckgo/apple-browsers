@@ -207,7 +207,7 @@ class MobileCustomization {
     var state: State {
         State(isEnabled: featureFlagger.isFeatureOn(.mobileCustomization),
               currentToolbarButton: current(forKey: .toolbarButton, Self.toolbarDefault),
-              currentAddressBarButton: current(forKey: .addressBarButton, Self.toolbarDefault))
+              currentAddressBarButton: current(forKey: .addressBarButton, Self.addressBarDefault))
     }
 
     private let featureFlagger: FeatureFlagger

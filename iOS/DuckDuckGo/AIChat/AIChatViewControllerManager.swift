@@ -171,36 +171,36 @@ final class AIChatViewControllerManager {
             Task {
                 await cleanUpSession()
                 self.performSetup(query, payload: payload, autoSend: autoSend, tools: tools,
-                                presentationMode: presentationMode, containerView: containerView,
-                                viewController: viewController, completion: completion)
+                                  presentationMode: presentationMode, containerView: containerView,
+                                  viewController: viewController, completion: completion)
             }
         } else {
             performSetup(query, payload: payload, autoSend: autoSend, tools: tools,
-                       presentationMode: presentationMode, containerView: containerView,
-                       viewController: viewController, completion: completion)
+                         presentationMode: presentationMode, containerView: containerView,
+                         viewController: viewController, completion: completion)
         }
     }
 
     /// Routes to appropriate setup method based on presentation mode.
     @MainActor
     private func performSetup(_ query: String?,
-                             payload: Any?,
-                             autoSend: Bool,
-                             tools: [AIChatRAGTool]?,
-                             presentationMode: AIChatPresentationMode,
-                             containerView: UIView?,
-                             viewController: UIViewController?,
-                             completion: (() -> Void)?) {
+                              payload: Any?,
+                              autoSend: Bool,
+                              tools: [AIChatRAGTool]?,
+                              presentationMode: AIChatPresentationMode,
+                              containerView: UIView?,
+                              viewController: UIViewController?,
+                              completion: (() -> Void)?) {
         switch presentationMode {
         case .modal:
             guard let viewController = viewController else { return }
             setupAndPresentAIChat(query, payload: payload, autoSend: autoSend,
-                                tools: tools, on: viewController)
+                                  tools: tools, on: viewController)
         case .container:
             guard let containerView = containerView, let viewController = viewController else { return }
             setupAndAddToContainer(query, payload: payload, autoSend: autoSend,
-                                 tools: tools, in: containerView,
-                                 parentViewController: viewController, completion: completion)
+                                   tools: tools, in: containerView,
+                                   parentViewController: viewController, completion: completion)
         }
     }
 

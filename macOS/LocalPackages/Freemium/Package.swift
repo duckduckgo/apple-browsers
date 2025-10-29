@@ -22,7 +22,7 @@ import PackageDescription
 
 let package = Package(
     name: "Freemium",
-    platforms: [ .macOS("11.4") ],
+    platforms: [ .macOS("11.4"), .iOS(.v15) ],
     products: [
         .library(
             name: "Freemium",

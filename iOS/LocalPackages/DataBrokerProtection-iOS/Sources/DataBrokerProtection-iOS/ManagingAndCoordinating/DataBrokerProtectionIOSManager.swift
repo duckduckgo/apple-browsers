@@ -28,6 +28,7 @@ import UserNotifications
 import DataBrokerProtectionCore
 import WebKit
 import BackgroundTasks
+import Freemium
 import SwiftUI
 
 /*
@@ -109,6 +110,8 @@ public class DBPIOSInterface {
     protocol PixelsDelegate: AnyObject {
         func tryToFireEngagementPixels()
         func tryToFireWeeklyPixels()
+        func tryToFireStatsPixels()
+        func tryToFireCustomStatsPixels()
     }
 
     protocol DBPWideEventsDelegate: AnyObject {
@@ -149,6 +152,7 @@ public final class DataBrokerProtectionIOSManager {
     private let settings: DataBrokerProtectionSettings
     private let subscriptionManager: DataBrokerProtectionSubscriptionManaging
     private let wideEventSweeper: DBPWideEventSweeper?
+    private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager?
     private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
             directoryName: DatabaseConstants.directoryName,
@@ -172,6 +176,14 @@ public final class DataBrokerProtectionIOSManager {
         handler: jobDependencies.pixelHandler,
         repository: engagementPixelsRepository
     )
+    private lazy var eventPixels = DataBrokerProtectionEventPixels(
+        database: jobDependencies.database,
+        handler: jobDependencies.pixelHandler
+    )
+    private lazy var statsPixels = DataBrokerProtectionStatsPixels(
+        database: jobDependencies.database,
+        handler: jobDependencies.pixelHandler
+    )
 
     init(queueManager: JobQueueManaging,
          jobDependencies: BrokerProfileJobDependencyProviding,
@@ -186,6 +198,7 @@ public final class DataBrokerProtectionIOSManager {
          minBackgroundTaskWaitTime: TimeInterval = Constants.defaultMinBackgroundTaskWaitTime,
          feedbackViewCreator: @escaping () -> (any View),
          featureFlagger: DBPFeatureFlagging,
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManager? = DefaultFreemiumDBPUserStateManager(userDefaults: .standard),
          settings: DataBrokerProtectionSettings,
          subscriptionManager: DataBrokerProtectionSubscriptionManaging,
          wideEvent: WideEventManaging?,
@@ -205,6 +218,7 @@ public final class DataBrokerProtectionIOSManager {
         self.maxBackgroundTaskWaitTime = maxBackgroundTaskWaitTime
         self.minBackgroundTaskWaitTime = minBackgroundTaskWaitTime
         self.featureFlagger = featureFlagger
+        self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.settings = settings
         self.subscriptionManager = subscriptionManager
         self.wideEventSweeper = wideEvent.map { DBPWideEventSweeper(wideEvent: $0) }
@@ -226,17 +240,22 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
     }
 
     public func appDidBecomeActive() {
-        // Only send pixels for authenticated users
         guard authenticationManager.isUserAuthenticated else { return }
 
-        tryToFireEngagementPixels()
-        tryToFireWeeklyPixels()
-        Logger.dataBrokerProtection.debug("PIR wide event sweep requested (app active)")
-        sweepWideEvents()
+        fireMonitoringPixels()
 
         Task {
             await checkForEmailConfirmationData()
         }
+    }
+
+    func fireMonitoringPixels() {
+        tryToFireEngagementPixels()
+        tryToFireWeeklyPixels()
+        tryToFireStatsPixels()
+        tryToFireCustomStatsPixels()
+        Logger.dataBrokerProtection.debug("PIR wide event sweep requested (app active)")
+        sweepWideEvents()
     }
 }
 
@@ -445,11 +464,17 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.PixelsDelegate {
     }
 
     func tryToFireWeeklyPixels() {
-        let eventPixels = DataBrokerProtectionEventPixels(
-            database: jobDependencies.database,
-            handler: jobDependencies.pixelHandler
-        )
         eventPixels.tryToFireWeeklyPixels()
+    }
+
+    func tryToFireStatsPixels() {
+        statsPixels.tryToFireStatsPixels()
+    }
+
+    func tryToFireCustomStatsPixels() {
+        // If a user upgraded from Freemium, don't send 24-hour opt-out submit pixels
+        guard let freemiumDBPUserStateManager, !freemiumDBPUserStateManager.didActivate else { return }
+        statsPixels.fireCustomStatsPixelsIfNeeded()
     }
 }
 

@@ -42,6 +42,7 @@ let package = Package(
                 .product(name: "DataBrokerProtectionCore", package: "DataBrokerProtectionCore"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "Freemium", package: "Freemium"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -53,6 +54,7 @@ let package = Package(
                 "DataBrokerProtection-iOS",
                 "DataBrokerProtectionCore",
                 "BrowserServicesKit",
+                "Freemium",
                 .product(name: "DataBrokerProtectionCoreTestsUtils", package: "DataBrokerProtectionCore"),
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),

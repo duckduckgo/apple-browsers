@@ -332,7 +332,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                .failsafeExamplePlatformSpecificSubfeature,
                .experimentalAddressBar,
                .aiChatKeepSession,
-               .aiFeaturesSettingsUpdate:
+               .aiFeaturesSettingsUpdate,
+               .canPromoteImportPasswordsInBrowser,
+               .canPromoteImportPasswordsInPasswordManagement,
+               .newDeviceSyncPrompt:
             return false
         }
     }

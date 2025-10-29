@@ -76,7 +76,7 @@ extension MockASCredentialIdentityStore {
         }
     }
 
-    func saveCredentialIdentities(_ credentials: [ASCredentialIdentity]) async throws {
+    public func saveCredentialIdentities(_ credentials: [ASCredentialIdentity]) async throws {
         if let error = error {
             throw error
         }

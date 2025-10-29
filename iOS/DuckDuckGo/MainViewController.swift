@@ -1387,7 +1387,7 @@ class MainViewController: UIViewController {
 
     fileprivate func select(tab: TabViewController) {
         hideNotificationBarIfBrokenSitePromptShown()
-        if tab.link == nil {
+        if tab.link == nil && tab.tabModel.isWebTab {
             attachHomeScreen()
         } else {
             attachTab(tab: tab)

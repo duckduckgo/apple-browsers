@@ -3867,6 +3867,9 @@ extension MainViewController {
         case .share:
             self.onSharePressed()
 
+        case .downloads:
+            self.segueToDownloads()
+
         default:
             // Eventually this will be an extensive list with no default block
             break

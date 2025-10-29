@@ -67,6 +67,8 @@ class MobileCustomization {
                 "Passwords"
             case .voiceSearch:
                 "Voice Search"
+            case .downloads:
+                "Downloads"
             }
         }
 
@@ -98,6 +100,8 @@ class MobileCustomization {
                 DesignSystemImages.Glyphs.Size24.key
             case .voiceSearch:
                 DesignSystemImages.Glyphs.Size24.microphone
+            case .downloads:
+                DesignSystemImages.Glyphs.Size24.downloads
             }
         }
 
@@ -129,6 +133,8 @@ class MobileCustomization {
                 DesignSystemImages.Glyphs.Size16.keyLogin
             case .voiceSearch:
                 DesignSystemImages.Glyphs.Size16.microphone
+            case .downloads:
+                DesignSystemImages.Glyphs.Size16.downloads
             }
         }
 
@@ -156,6 +162,7 @@ class MobileCustomization {
         case newTab
         case bookmarks
         case duckAi
+        case downloads
 
         // Shared
         case fire
@@ -188,7 +195,8 @@ class MobileCustomization {
             .newTab,
             .passwords,
             .share,
-            .vpn
+            .vpn,
+            .downloads,
         ].sorted(by: descriptionComparison)
 
         return [.fire] // default

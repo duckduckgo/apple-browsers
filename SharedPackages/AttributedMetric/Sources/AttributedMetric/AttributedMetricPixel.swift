@@ -44,7 +44,7 @@ enum AttributedMetricPixel: PixelKitEvent {
     case userRetentionWeek(origin: String?, installDate: String?, defaultBrowser: Bool, count: Int, bucketVersion: Int)
     case userRetentionMonth(origin: String?, installDate: String?, defaultBrowser: Bool, count: Int, bucketVersion: Int)
     case userActivePastWeek(origin: String?, installDate: String?, days: Int, daysSinceInstalled: Int?, bucketVersion: Int)
-    case userAverageSearchesPastWeekFirstMonth(origin: String?, installDate: String?, count: Int, dayAverage: Int, bucketVersion: Int)
+    case userAverageSearchesPastWeekFirstMonth(origin: String?, installDate: String?, count: Int, bucketVersion: Int)
     case userAverageSearchesPastWeek(origin: String?, installDate: String?, count: Int, bucketVersion: Int)
     case userAverageAdClicksPastWeek(origin: String?, installDate: String?, count: Int, bucketVersion: Int)
     case userAverageDuckAiUsagePastWeek(origin: String?, installDate: String?, count: Int, bucketVersion: Int)
@@ -84,7 +84,6 @@ enum AttributedMetricPixel: PixelKitEvent {
         static let count = "count"
         static let days = "days"
         static let daysSinceInstalled = "daysSinceInstalled"
-        static let dayAverage = "day_average"
         static let length = "length"
         static let numberOfDevices = "number_of_devices"
         static let origin = "origin"
@@ -113,9 +112,8 @@ enum AttributedMetricPixel: PixelKitEvent {
             }
             addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
             return result
-        case .userAverageSearchesPastWeekFirstMonth(origin: let origin, installDate: let installDate, count: let count, dayAverage: let dayAverage, bucketVersion: let bucketVersion):
+        case .userAverageSearchesPastWeekFirstMonth(origin: let origin, installDate: let installDate, count: let count, bucketVersion: let bucketVersion):
             var result = [ConstantKeys.count: count.payloadString,
-                          ConstantKeys.dayAverage: dayAverage.payloadString,
                           ConstantKeys.bucketVersion: bucketVersion.payloadString]
             addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
             return result

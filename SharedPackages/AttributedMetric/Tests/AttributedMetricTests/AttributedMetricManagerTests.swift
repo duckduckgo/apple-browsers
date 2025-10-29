@@ -437,13 +437,11 @@ final class AttributedMetricManagerTests: XCTestCase {
     func testProcessAverageSearchCountFirstMonth() {
         let pixelExpectation = XCTestExpectation(description: "Average search count pixel fired")
         var capturedCount: Int?
-        var capturedDayAverage: Int?
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
             case "m_mac_user_average_searches_past_week_first_month":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
-                capturedDayAverage = self.extractIntParameter(parameters, key: "day_average")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
                     return
@@ -470,7 +468,6 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         wait(for: [pixelExpectation], timeout: 1.0)
         XCTAssertNotNil(capturedCount, "Should capture bucketed count")
-        XCTAssertNotNil(capturedDayAverage, "Should include day average for first month")
     }
 
     /// Tests average search count pixel after first month (NO day_average parameter)

@@ -279,7 +279,6 @@ public final class AttributedMetricManager {
             pixelKit.fire(AttributedMetricPixel.userAverageSearchesPastWeekFirstMonth(origin: originOrInstall.origin,
                                                                                       installDate: originOrInstall.installDate,
                                                                                       count: bucket.value,
-                                                                                      dayAverage: search8Days.count,
                                                                                       bucketVersion: bucket.version),
                           frequency: .legacyDailyNoSuffix)
         } else {

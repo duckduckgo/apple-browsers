@@ -53,7 +53,7 @@ public struct RemoteMessagingConfigProcessor: RemoteMessagingConfigProcessing {
 
         let isNewVersion = newVersion != currentVersion
 
-        if isNewVersion || shouldProcessConfig(currentConfig) {
+        if isNewVersion || shouldProcessConfig(currentConfig) || true {
             let config = JsonToRemoteConfigModelMapper.mapJson(
                 remoteMessagingConfig: jsonRemoteMessagingConfig,
                 surveyActionMapper: remoteMessagingConfigMatcher.surveyActionMapper

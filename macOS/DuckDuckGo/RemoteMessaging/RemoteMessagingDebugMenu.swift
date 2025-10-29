@@ -27,6 +27,9 @@ import os.log
 final class RemoteMessagingDebugMenu: NSMenu {
 
     private let configurationURLProvider: CustomConfigurationURLProviding
+    private let configurationURLMenuItem: NSMenuItem = {
+        return NSMenuItem(title: "")
+    }()
 
     struct MessageModel: CustomStringConvertible {
         let id: String
@@ -63,6 +66,8 @@ final class RemoteMessagingDebugMenu: NSMenu {
         super.init(title: "")
 
         buildItems {
+            configurationURLMenuItem
+            NSMenuItem.separator()
             NSMenuItem(title: "Reset Remote Messages", action: #selector(AppDelegate.resetRemoteMessages))
                 .withAccessibilityIdentifier("RemoteMessagingDebugMenu.resetRemoteMessages")
             NSMenuItem(title: "Refresh Config", action: #selector(fetchRemoteMessagesConfig), target: self)
@@ -82,12 +87,17 @@ final class RemoteMessagingDebugMenu: NSMenu {
     }
 
     override func update() {
+        updateConfigurationURL()
         populateMessages()
     }
 
+    private func updateConfigurationURL() {
+        configurationURLMenuItem.title = "Configuration URL: \(configurationURLProvider.url(for: .remoteMessagingConfig).absoluteString)"
+    }
+
     private func populateMessages() {
-        (6..<self.numberOfItems).forEach { _ in
-            removeItem(at: 6)
+        (8..<self.numberOfItems).forEach { _ in
+            removeItem(at: 8)
         }
 
         guard AppVersion.runType.requiresEnvironment, NSApp.delegateTyped.remoteMessagingClient.isRemoteMessagingDatabaseLoaded else {
@@ -161,19 +171,14 @@ final class RemoteMessagingDebugMenu: NSMenu {
         }
     }
 
-    private func setRemoteMessagingConfigurationUrl(_ configurationUrl: URL?) async throws {
-        try configurationURLProvider.setCustomURL(configurationUrl, for: .remoteMessagingConfig)
+    private func setRemoteMessagingConfigurationUrl(_ configurationURL: URL?) async throws {
+        try configurationURLProvider.setCustomURL(configurationURL, for: .remoteMessagingConfig)
         await NSApp.delegateTyped.remoteMessagingClient.refreshRemoteMessages()
-        if let configurationUrl {
-            Logger.config.debug("New Remote Messaging configuration URL set to \(configurationUrl.absoluteString)")
-        } else {
-            Logger.config.log("Remote Messaging configuration URL reset to default")
-        }
     }
 
     private func showErrorAlert(message: String) {
         let alert = NSAlert()
-        alert.messageText = "Error"
+        alert.messageText = "RMF Override Error"
         alert.informativeText = message
         alert.alertStyle = .warning
         alert.runModal()

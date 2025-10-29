@@ -348,7 +348,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         mockWinBackOfferVisibilityManager.isOfferAvailable = true
         subscriptionManager.canPurchase = true
         setupMoreOptionsMenu()
-        
+
         let subscriptionItemIndex = try XCTUnwrap(moreOptionsMenu.indexOfItem(with: #selector(MoreOptionsMenu.openWinBackOfferPurchasePage(_:))))
 
         // When

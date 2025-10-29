@@ -454,6 +454,15 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Enable Email Protection";
 
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Off";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "On";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Autofill Passwords in Other Apps";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Hide CVV";
 

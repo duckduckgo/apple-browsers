@@ -110,7 +110,6 @@ public class DBPIOSInterface {
         func tryToFireEngagementPixels()
         func tryToFireWeeklyPixels()
         func tryToFireStatsPixels()
-        func tryToFireCustomStatsPixels()
     }
 
     protocol DBPWideEventsDelegate: AnyObject {
@@ -199,7 +198,7 @@ public final class DataBrokerProtectionIOSManager {
          settings: DataBrokerProtectionSettings,
          subscriptionManager: DataBrokerProtectionSubscriptionManaging,
          wideEvent: WideEventManaging?,
-         engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults()
+         engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults(userDefaults: .dbp)
     ) {
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
@@ -249,7 +248,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
         tryToFireEngagementPixels()
         tryToFireWeeklyPixels()
         tryToFireStatsPixels()
-        tryToFireCustomStatsPixels()
+        
         Logger.dataBrokerProtection.debug("PIR wide event sweep requested (app active)")
         sweepWideEvents()
     }
@@ -465,9 +464,6 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.PixelsDelegate {
 
     func tryToFireStatsPixels() {
         statsPixels.tryToFireStatsPixels()
-    }
-
-    func tryToFireCustomStatsPixels() {
         statsPixels.fireCustomStatsPixelsIfNeeded()
     }
 }

@@ -86,11 +86,13 @@ extension WinBackOfferCoordinator: WinBackOfferCoordinating {
     func markLaunchPromptPresented() {
         visibilityManager.setLaunchMessagePresented(true)
         Logger.subscription.debug("[Win-Back Offer] Launch message marked as presented.")
+        Pixel.fire(pixel: .subscriptionWinBackOfferLaunchPromptShown)
     }
 
     func handleCTAAction() {
         Logger.subscription.debug("[Win-Back Offer] CTA action triggered.")
-        
+        Pixel.fire(pixel: .subscriptionWinBackOfferLaunchPromptCTAClicked)
+
         let comps = SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(
             origin: SubscriptionFunnelOrigin.winBackLaunch.rawValue,
             featurePage: SubscriptionURL.FeaturePage.winback
@@ -101,5 +103,6 @@ extension WinBackOfferCoordinator: WinBackOfferCoordinating {
 
     func handleDismissAction() {
         Logger.subscription.debug("[Win-Back Offer] Dismiss action triggered.")
+        Pixel.fire(pixel: .subscriptionWinBackOfferLaunchPromptDismissed)
     }
 }

@@ -210,10 +210,3 @@ class PinnedTabsTests: UITestCase {
         XCTAssertTrue(app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 }
-
-class PinnedTabsAppKitRewriteTests: PinnedTabsTests {
-
-    override var featureFlags: [String: Bool] {
-        ["pinnedTabsViewRewrite": true]
-    }
-}

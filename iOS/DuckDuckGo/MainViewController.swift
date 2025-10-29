@@ -3883,9 +3883,9 @@ extension MainViewController {
             return
         }
 
-        if isNewTabPageVisible {
-            browserChrome.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
-        } else if state.isEnabled {
+        browserChrome.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
+
+        if !isNewTabPageVisible && state.isEnabled {
             browserChrome.setImage(state.currentToolbarButton.largeIcon)
         }
     }

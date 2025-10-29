@@ -22,12 +22,16 @@ import Foundation
 public class RollingEightDays<T: Codable & Equatable>: RollingArray<T> {
 
     var lastDay: Date?
+    let dateProvider: DateProviding
 
     /// Creates a new `RollingEightDays` instance with 8 empty slots.
     ///
     /// The rolling eight-day structure is initialized with a fixed capacity of 8 slots,
     /// all initially empty and ready to receive daily data values.
-    public init() {
+    ///
+    /// - Parameter dateProvider: The date provider to use for date calculations. Defaults to `DefaultDateProvider`.
+    public init(dateProvider: DateProviding = DefaultDateProvider()) {
+        self.dateProvider = dateProvider
         super.init(capacity: 8)
     }
 
@@ -39,6 +43,7 @@ public class RollingEightDays<T: Codable & Equatable>: RollingArray<T> {
     /// - Parameter decoder: The decoder to read data from.
     /// - Throws: An error if decoding fails.
     public required init(from decoder: Decoder) throws {
+        self.dateProvider = DefaultDateProvider()
         try super.init(from: decoder)
     }
 
@@ -56,7 +61,7 @@ public class RollingEightDaysBool: RollingEightDays<Bool> {
 
     /// Sets the last value to `true` if in the same day, creates a new one otherwise.
     public func setTodayToTrue() {
-        let now = Date()
+        let now = dateProvider.now()
 
         if lastDay == nil {
             lastDay = now
@@ -92,7 +97,7 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
     /// rolling.increment() // [2, unknown, unknown, 1]
     /// ```
     public func increment() {
-        let now = Date()
+        let now = dateProvider.now()
 
         // First time initialization
         if lastDay == nil {

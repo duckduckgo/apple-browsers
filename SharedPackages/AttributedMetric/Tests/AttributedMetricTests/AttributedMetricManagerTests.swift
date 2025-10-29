@@ -70,7 +70,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         )
 
         let errorHandler = AttributedMetricErrorHandler(pixelKit: pixelKit)
-        let dataStorage = AttributedMetricDataStorage(userDefaults: userDefaults, errorHandler: errorHandler)
+        let dataStorage = AttributedMetricDataStorage(userDefaults: userDefaults, errorHandler: errorHandler, dateProvider: timeMachine)
         let featureFlagger: any FeatureFlagger = MockFeatureFlagger(
             featuresStub: [AttributedMetric.AttributedMetricFeatureFlag.attributedMetrics.rawValue: true]
         )
@@ -229,7 +229,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         }
 
         let errorhandler = AttributedMetricErrorHandler(pixelKit: pixelKit)
-        let dataStorage = AttributedMetricDataStorage(userDefaults: userDefaults, errorHandler: errorhandler)
+        let dataStorage = AttributedMetricDataStorage(userDefaults: userDefaults, errorHandler: errorhandler, dateProvider: timeMachine)
         let featureFlagger: any FeatureFlagger = MockFeatureFlagger(featuresStub:
             [AttributedMetric.AttributedMetricFeatureFlag.attributedMetrics.rawValue: true])
         let originProvider: AttributedMetricOriginProvider = AttributedMetricOriginProviderMock()

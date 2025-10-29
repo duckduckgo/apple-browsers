@@ -85,10 +85,12 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
 
     private let userDefaults: UserDefaults
     private let errorHandler: AttributedMetricErrorHandler
+    private let dateProvider: DateProviding
 
-    public init(userDefaults: UserDefaults, errorHandler: AttributedMetricErrorHandler) {
+    public init(userDefaults: UserDefaults, errorHandler: AttributedMetricErrorHandler, dateProvider: DateProviding = DefaultDateProvider()) {
         self.userDefaults = userDefaults
         self.errorHandler = errorHandler
+        self.dateProvider = dateProvider
     }
 
     /// UserDefaults keys for storing metric data.
@@ -153,17 +155,17 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
     }
 
     public var search8Days: RollingEightDaysInt {
-        get { return decode(from: userDefaults, key: .search8Days) ?? RollingEightDaysInt() }
+        get { return decode(from: userDefaults, key: .search8Days) ?? RollingEightDaysInt(dateProvider: dateProvider) }
         set { encode(newValue, to: userDefaults, key: .search8Days) }
     }
 
     public var adClick8Days: RollingEightDaysInt {
-        get { return decode(from: userDefaults, key: .adClick8Days) ?? RollingEightDaysInt() }
+        get { return decode(from: userDefaults, key: .adClick8Days) ?? RollingEightDaysInt(dateProvider: dateProvider) }
         set { encode(newValue, to: userDefaults, key: .adClick8Days) }
     }
 
     public var duckAIChat8Days: RollingEightDaysInt {
-        get { return decode(from: userDefaults, key: .duckAIChat8Days) ?? RollingEightDaysInt() }
+        get { return decode(from: userDefaults, key: .duckAIChat8Days) ?? RollingEightDaysInt(dateProvider: dateProvider) }
         set { encode(newValue, to: userDefaults, key: .duckAIChat8Days) }
     }
 

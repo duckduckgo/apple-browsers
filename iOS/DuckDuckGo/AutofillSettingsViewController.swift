@@ -40,6 +40,7 @@ enum AutofillSettingsSource: String {
     case newTabPageToolbar = "new_tab_page_toolbar"
     case viewSavedCreditCardPrompt = "view_saved_credit_card_prompt"
     case creditCardKeyboardShortcut = "credit_card_keyboard_shortcut"
+    case customizedToolbarButton = "customized_toolbar_button"
 }
 
 protocol AutofillSettingsViewControllerDelegate: AnyObject {

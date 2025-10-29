@@ -20,7 +20,6 @@ import Foundation
 import Combine
 import SwiftUI
 import PixelKit
-import Networking
 import Subscription
 import BrowserServicesKit
 
@@ -29,8 +28,7 @@ protocol UnifiedFeedbackFormViewModelDelegate: AnyObject {
 }
 
 final class UnifiedFeedbackFormViewModel: ObservableObject {
-    private static let feedbackEndpoint = URL(string: "https://subscriptions.duckduckgo.com/api/feedback")!
-    private static let platform = "macos"
+    private static let supportURL = URL(string: "https://duckduckgo.com/subscription-support")!
     private let featureFlagger: FeatureFlagger
 
     enum ViewState {
@@ -49,11 +47,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         }
     }
 
-    enum Error: String, Swift.Error {
-        case missingAccessToken
-        case invalidResponse
-    }
-
     enum ViewAction {
         case cancel
         case submit
@@ -61,26 +54,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         case reportShow
         case reportSubmitShow
         case reportFAQClick
-    }
-
-    struct Payload: Codable {
-        let userEmail: String
-        let feedbackSource: String
-        let platform: String
-        let problemCategory: String
-
-        let feedbackText: String
-        let problemSubCategory: String
-        let customMetadata: String
-
-        func toData() -> Data? {
-            try? JSONEncoder().encode(self)
-        }
-    }
-
-    struct Response: Codable {
-        let message: String?
-        let error: String?
+        case contactSupportClick
     }
 
     @Published var viewState: ViewState {
@@ -123,12 +97,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         }
     }
 
-    @Published var userEmail = "" {
-        didSet {
-            updateSubmitButtonStatus()
-        }
-    }
-
     private var selectedSubcategoryPrompt: String {
         switch UnifiedFeedbackCategory(rawValue: selectedCategory) {
         case .selectFeature, nil: return ""
@@ -154,7 +122,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     weak var delegate: UnifiedFeedbackFormViewModelDelegate?
 
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
-    private let apiService: any Networking.APIService
     private let vpnMetadataCollector: any UnifiedMetadataCollector
     private let dbpMetadataCollector: any UnifiedMetadataCollector
     private let defaultMetadataCollector: any UnifiedMetadataCollector
@@ -164,7 +131,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     private(set) var availableCategories: [UnifiedFeedbackCategory] = [.selectFeature, .subscription]
 
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-         apiService: any Networking.APIService,
          vpnMetadataCollector: any UnifiedMetadataCollector,
          dbpMetadataCollector: any UnifiedMetadataCollector,
          defaultMetadataCollector: any UnifiedMetadataCollector = EmptyMetadataCollector(),
@@ -174,7 +140,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         self.viewState = .feedbackPending
 
         self.subscriptionManager = subscriptionManager
-        self.apiService = apiService
         self.vpnMetadataCollector = vpnMetadataCollector
         self.dbpMetadataCollector = dbpMetadataCollector
         self.defaultMetadataCollector = defaultMetadataCollector
@@ -231,9 +196,12 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
                                                          reportType: selectedReportType,
                                                          category: selectedCategory,
                                                          subcategory: selectedSubcategory)
+        case .contactSupportClick:
+            openSupport()
         }
     }
 
+    @MainActor
     private func openFAQ() async {
         guard !selectedReportType.isEmpty, UnifiedFeedbackReportType(rawValue: selectedReportType) == .reportIssue,
               !selectedCategory.isEmpty, let category = UnifiedFeedbackCategory(rawValue: selectedCategory),
@@ -253,7 +221,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         }()
 
         if let url {
-            NSWorkspace.shared.open(url)
+            Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
         }
     }
 
@@ -276,7 +244,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         switch UnifiedFeedbackCategory(rawValue: selectedCategory) {
         case .vpn:
             let metadata = await vpnMetadataCollector.collectMetadata()
-            try await submitIssue(metadata: metadata)
             try await feedbackSender.sendReportIssuePixel(source: source,
                                                           category: selectedCategory,
                                                           subcategory: selectedSubcategory,
@@ -284,7 +251,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
                                                           metadata: metadata as? VPNMetadata)
         case .pir:
             let metadata = await dbpMetadataCollector.collectMetadata()
-            try await submitIssue(metadata: metadata)
             try await feedbackSender.sendReportIssuePixel(source: source,
                                                           category: selectedCategory,
                                                           subcategory: selectedSubcategory,
@@ -292,7 +258,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
                                                           metadata: metadata as? DBPFeedbackMetadata)
         default:
             let metadata = await defaultMetadataCollector.collectMetadata()
-            try await submitIssue(metadata: metadata)
             try await feedbackSender.sendReportIssuePixel(source: source,
                                                           category: selectedCategory,
                                                           subcategory: selectedSubcategory,
@@ -301,34 +266,8 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         }
     }
 
-    private func submitIssue(metadata: UnifiedFeedbackMetadata?) async throws {
-        guard !userEmail.isEmpty else { return }
-
-        guard let accessToken = try? await subscriptionManager.getAccessToken() else {
-            throw Error.missingAccessToken
-        }
-
-        let payload = Payload(userEmail: userEmail,
-                              feedbackSource: source.rawValue,
-                              platform: Self.platform,
-                              problemCategory: selectedCategory,
-                              feedbackText: feedbackFormText,
-                              problemSubCategory: selectedSubcategory,
-                              customMetadata: metadata?.toString() ?? "")
-        let headers = APIRequestV2.HeadersV2(additionalHeaders: [HTTPHeaderKey.authorization: "Bearer \(accessToken)"])
-        guard let request = APIRequestV2(url: Self.feedbackEndpoint, method: .post, headers: headers, body: payload.toData()) else {
-            assertionFailure("Invalid request")
-            return
-        }
-
-        let response: Response = try await apiService.fetch(request: request).decodeBody()
-        if let error = response.error, !error.isEmpty {
-            throw Error.invalidResponse
-        }
-    }
-
     private func updateSubmitButtonStatus() {
-        self.submitButtonEnabled = viewState.canSubmit && !feedbackFormText.isEmpty && (userEmail.isEmpty || userEmail.isValidEmail)
+        self.submitButtonEnabled = viewState.canSubmit && !feedbackFormText.isEmpty
     }
 
     private func updateSubmitShowStatus() {
@@ -343,11 +282,9 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
             }
         }()
     }
-}
 
-private extension String {
-    var isValidEmail: Bool {
-        guard let regex = try? NSRegularExpression(pattern: #"[^\s]+@[^\s]+\.[^\s]+"#) else { return false }
-        return matches(regex)
+    @MainActor
+    private func openSupport() {
+        Application.appDelegate.windowControllersManager.show(url: Self.supportURL, source: .ui, newTab: true)
     }
 }

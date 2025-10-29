@@ -112,7 +112,6 @@ extension RoundedRectangle {
 
 }
 
-// TODO rename this
 @available(iOSApplicationExtension 17, *)
 private struct RenderingAwareFieldFillColor: ViewModifier {
 

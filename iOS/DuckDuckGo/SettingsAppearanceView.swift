@@ -81,59 +81,23 @@ struct SettingsAppearanceView: View {
 
             showReloadButtonSetting()
 
-            addressBarButtonSetting()
         } header: {
             Text(UserText.addressBar)
         } footer: {
-            Text(verbatim: "Note that the reload button and customizable button are none-functional at this time.")
+            Text(verbatim: "Note: Reload button should work as expected. Address button state is persisted but NOT applied to the UI.")
         }
 
         Section {
+            addressBarButtonSetting()
             toolbarButtonSetting()
         } header: {
-            Text(verbatim: "Toolbar")
-        } footer: {
-            Text(verbatim: "Note that customizable button is none-functional at this time.")
+            Text(verbatim: "Customizable Buttons")
         }
     }
 
     func buttonIconProvider(_ button: MobileCustomization.Button) -> Image? {
-
-        let image: UIImage? =
-        switch button {
-        case .share:
-            DesignSystemImages.Glyphs.Size16.shareApple
-        case .addRemoveBookmark:
-            DesignSystemImages.Glyphs.Size16.bookmark
-        case .addRemoveFavorite:
-            DesignSystemImages.Glyphs.Size16.favorite
-        case .zoom:
-            DesignSystemImages.Glyphs.Size16.typeSize
-        case .none:
-            nil
-        case .home:
-            DesignSystemImages.Glyphs.Size16.home
-        case .newTab:
-            DesignSystemImages.Glyphs.Size16.add
-        case .bookmarks:
-            DesignSystemImages.Glyphs.Size16.bookmarks
-        case .duckAi:
-            DesignSystemImages.Glyphs.Size16.aiChat
-        case .fire:
-            DesignSystemImages.Glyphs.Size16.fire
-        case .vpn:
-            DesignSystemImages.Glyphs.Size16.vpnOn
-        case .passwords:
-            DesignSystemImages.Glyphs.Size16.keyLogin
-        case .voiceSearch:
-            DesignSystemImages.Glyphs.Size16.microphone
-        }
-
-        if let image {
-            return Image(uiImage: image)
-        }
-
-        return nil
+        guard let icon = button.smallIcon else { return nil }
+        return Image(uiImage: icon)
     }
 
     @ViewBuilder
@@ -141,7 +105,7 @@ struct SettingsAppearanceView: View {
 
         SettingsPickerCellView(
             useImprovedPicker: true,
-            label: "Customizable Button",
+            label: "Address Bar",
             options: MobileCustomization.addressBarButtons,
             selectedOption: viewModel.selectedAddressBarButton,
             iconProvider: buttonIconProvider)
@@ -152,9 +116,8 @@ struct SettingsAppearanceView: View {
     func toolbarButtonSetting() -> some View {
 
         SettingsPickerCellView(
-            
             useImprovedPicker: true,
-            label: "Customizable Button",
+            label: "Toolbar",
             options: MobileCustomization.toolbarButtons,
             selectedOption: viewModel.selectedToolbarButton,
             iconProvider: buttonIconProvider)

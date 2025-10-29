@@ -133,7 +133,7 @@ public final class AttributedMetricManager {
         guard let installDate = dataStorage.installDate else {
             return false
         }
-        return Calendar.current.isDate(dateProvider.now(), inSameDayAs: installDate)
+        return Calendar.eastern.isDate(dateProvider.now(), inSameDayAs: installDate)
     }
 
     // MARK: - Buckets settings

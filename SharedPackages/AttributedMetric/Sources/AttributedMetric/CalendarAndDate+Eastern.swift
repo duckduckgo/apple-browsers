@@ -18,6 +18,7 @@
 
 import Foundation
 
+/// Any date and calendar calculation in the framework should be done here for guaranteeing that only Eastern time is used.
 extension Calendar {
 
     /// Calendar configured for Eastern Time Zone (America/New_York)

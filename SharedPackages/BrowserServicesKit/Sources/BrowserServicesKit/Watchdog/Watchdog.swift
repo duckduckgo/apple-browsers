@@ -289,6 +289,7 @@ public final actor Watchdog {
         case (.responsive, .hanging):
             hangState = .hanging
             // Account for half the check interval - the hang will likely have started earlier than the last missed heartbeat
+            // The max() guards against potential negative values – if the time since last heartbeat is less than the check interval/2.
             hangStartTime = time.addingTimeInterval(-max((timeSinceLastHeartbeat - checkInterval / 2), 0))
             Self.logger.info("Main thread hang detected! Last heartbeat: \(timeSinceLastHeartbeat)s ago.")
         case (.hanging, .responsive):

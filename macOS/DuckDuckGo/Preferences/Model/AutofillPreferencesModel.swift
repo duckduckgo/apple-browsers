@@ -70,41 +70,14 @@ final class AutofillPreferencesModel: ObservableObject {
 
             persistor.passwordManager = passwordManager
 
-            if #available(macOS 15.4, *), NSApp.delegateTyped.webExtensionManager != nil {
-                // New logic with web extensions support
-
-                // Handle cleanup from previous value
-                switch oldValue {
-                case .duckduckgo:
-                    showSyncPromo = false
-                case .bitwarden:
-                    PasswordManagerCoordinator.shared.setEnabled(false)
-                case .bitwardenExtension:
-                    uninstallBitwardenExtension()
-                }
-
-                // Handle setup for new value
-                switch passwordManager {
-                case .bitwarden:
-                    PasswordManagerCoordinator.shared.setEnabled(true)
-                    presentBitwardenSetupFlow()
-
-                case .bitwardenExtension:
-                    installBitwardenExtensionIfNeeded()
-
-                case .duckduckgo:
-                    setShouldShowSyncPromo()
-                }
+            // Original logic (preserved ad-verbatim)
+            let enabled = passwordManager == .bitwarden
+            PasswordManagerCoordinator.shared.setEnabled(enabled)
+            if enabled {
+                presentBitwardenSetupFlow()
+                showSyncPromo = false
             } else {
-                // Original logic (preserved ad-verbatim)
-                let enabled = passwordManager == .bitwarden
-                PasswordManagerCoordinator.shared.setEnabled(enabled)
-                if enabled {
-                    presentBitwardenSetupFlow()
-                    showSyncPromo = false
-                } else {
-                    setShouldShowSyncPromo()
-                }
+                setShouldShowSyncPromo()
             }
         }
     }
@@ -157,33 +130,6 @@ final class AutofillPreferencesModel: ObservableObject {
 
     func openExportLogins() {
         NSApp.sendAction(#selector(AppDelegate.openExportLogins(_:)), to: nil, from: nil)
-    }
-
-    @MainActor
-    private func installBitwardenExtensionIfNeeded() {
-        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            let bitwardenExtensionPath = WebExtensionIdentifier.bitwarden.defaultPath
-
-            // Only install if not already installed
-            if !webExtensionManager.webExtensionPaths.contains(bitwardenExtensionPath) {
-                Task {
-                    await webExtensionManager.installExtension(path: bitwardenExtensionPath)
-                }
-            }
-        }
-    }
-
-    @MainActor
-    private func uninstallBitwardenExtension() {
-        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            let bitwardenExtensionPath = WebExtensionIdentifier.bitwarden.defaultPath
-
-            if webExtensionManager.webExtensionPaths.contains(bitwardenExtensionPath) {
-                Task {
-                    try? webExtensionManager.uninstallExtension(path: bitwardenExtensionPath)
-                }
-            }
-        }
     }
 
     @MainActor

@@ -36,7 +36,7 @@ public enum SpecialErrorData: Encodable, Equatable {
         case url
     }
 
-    case ssl(type: SSLErrorType, domain: String, eTldPlus1: String?)
+    case ssl(type: SSLErrorType, domain: String, eTldPlus1: String)
     case maliciousSite(kind: MaliciousSiteProtection.ThreatKind, url: URL)
 
     public func encode(to encoder: any Encoder) throws {
@@ -51,10 +51,6 @@ public enum SpecialErrorData: Encodable, Equatable {
             switch type {
             case .expired, .selfSigned, .invalid: break
             case .wrongHost:
-                guard let eTldPlus1 else {
-                    assertionFailure("expected eTldPlus1 != nil when kind is .wrongHost")
-                    break
-                }
                 try container.encode(eTldPlus1, forKey: .eTldPlus1)
             }
 

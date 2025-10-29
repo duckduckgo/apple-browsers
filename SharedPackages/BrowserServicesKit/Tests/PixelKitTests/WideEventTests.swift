@@ -471,6 +471,25 @@ final class WideEventTests: XCTestCase {
         XCTAssert(capturedPixels.count >= 1 && capturedPixels.count <= 2)
     }
 
+    func testCompleteFlowWithSuccessReason_includesReasonInPixelParameters() throws {
+        let data = makeTestMockData()
+        wideEvent.startFlow(data)
+
+        let expectation = XCTestExpectation(description: "Flow completed with success reason")
+        wideEvent.completeFlow(data, status: .success(reason: "test_success_reason")) { success, error in
+            XCTAssertTrue(success)
+            XCTAssertNil(error)
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 1.0)
+
+        XCTAssert(capturedPixels.count >= 1 && capturedPixels.count <= 2)
+        let params = capturedPixels[0].parameters
+        XCTAssertEqual(params["feature.status"], "SUCCESS")
+        XCTAssertEqual(params["feature.status_reason"], "test_success_reason")
+    }
+
     func testFlowRestartWithSameContextID() throws {
         let data1 = makeTestMockData(contextName: "first")
         wideEvent.startFlow(data1)

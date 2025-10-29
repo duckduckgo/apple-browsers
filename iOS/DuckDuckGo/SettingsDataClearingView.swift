@@ -51,6 +51,15 @@ struct SettingsDataClearingView: View {
                                   disclosureIndicator: true,
                                   isButton: true)
             }
+
+            if viewModel.isAIChatEnabled && viewModel.isDuckAiDataClearingEnabled {
+                Section {
+                    SettingsCellView(label: UserText.settingsClearAIChatHistory,
+                                     accessory: .toggle(isOn: viewModel.autoClearAIChatHistoryBinding))
+                } footer: {
+                    Text(UserText.settingsClearAIChatHistoryFooter)
+                }
+            }
         }
         .applySettingsListModifiers(title: UserText.dataClearing,
                                     displayMode: .inline,

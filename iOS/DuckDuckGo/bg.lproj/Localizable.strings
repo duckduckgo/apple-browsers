@@ -2333,7 +2333,7 @@
 "new.address.bar.picker.search.only" = "Само търсене";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "Искаш ли по-лесен достъп до AI чат?";
+"new.address.bar.picker.subheadline.private" = "Искаш ли по-лесен достъп до поверителен AI чат?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Опция за адресната лента";
@@ -2847,6 +2847,12 @@
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Отзив за браузъра";
+
+/* Settings screen footer text explaining that Fire Button also clears AI chat history */
+"settings.clear.aichat.history.footer" = "Fire Button ще изтрие също и историята на Duck.ai, включително закачените чатове.";
+
+/* Settings screen cell text for clearing AI chat history */
+"settings.clear.aichat.history.title" = "Изчистване на чатовете с Duck.ai";
 
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Автоматично изчистване на данните";

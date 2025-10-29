@@ -2333,7 +2333,7 @@
 "new.address.bar.picker.search.only" = "Yalnızca Arama";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "AI Sohbetine Daha Kolay Erişmek İster misiniz?";
+"new.address.bar.picker.subheadline.private" = "Gizli AI sohbetine daha kolay erişmek ister misiniz?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Adres çubuğu seçeneği";
@@ -2847,6 +2847,12 @@
 
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Tarayıcı Geri Bildirimi";
+
+/* Settings screen footer text explaining that Fire Button also clears AI chat history */
+"settings.clear.aichat.history.footer" = "Fire Button, sabitlenmiş sohbetler dahil olmak üzere Duck.ai geçmişini de silecektir.";
+
+/* Settings screen cell text for clearing AI chat history */
+"settings.clear.aichat.history.title" = "Duck.ai Sohbetlerini Temizle";
 
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Verileri Otomatik Olarak Temizle";

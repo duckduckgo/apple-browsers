@@ -155,3 +155,34 @@ final class WhatsNewCoordinatorTests {
     }
 
 }
+
+@MainActor
+@Suite("Modal Prompt Coordination - What's New Coordinator Action Handling")
+struct WhatsNewCoordinatorActionHandlingTests {
+
+    @Test("Check Present Embedded Web View Pushes View Controller")
+    func whenPresentEmbeddedWebViewThenViewControllerIsPushed() async throws {
+        // GIVEN
+        let testURL = URL(string: "https://example.com/help")!
+        let message = RemoteMessageModel.makeCardsListMessage()
+        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockHandler = MockRemoteMessagingActionHandler()
+
+        let coordinator = WhatsNewCoordinator(
+            remoteMessageStore: mockStore,
+            remoteMessageActionHandler: mockHandler
+        )
+
+        let configuration = try #require(coordinator.provideModalPrompt())
+        let navController = try #require(configuration.viewController as? WhatsNewViewController)
+
+        // WHEN
+        await coordinator.presentEmbeddedWebView(url: testURL)
+
+        // THEN
+        let lastViewController = try #require(navController.viewControllers.last as? EmbeddedWebViewController)
+        #expect(navController.viewControllers.count == 2)
+        #expect(lastViewController.url == testURL)
+    }
+
+}

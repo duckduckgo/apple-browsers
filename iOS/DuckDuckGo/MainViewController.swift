@@ -3471,7 +3471,7 @@ extension MainViewController: AutoClearWorker {
     }
 
     private func cleanAIChatHistoryAndResetSession() async {
-        guard appSettings.autoClearAIChatHistory && featureFlagger.isFeatureOn(.duckAiDataClearing) else { return }
+        guard appSettings.autoClearAIChatHistory else { return }
         
         let result = await aiChatHistoryCleaner.cleanAIChatHistory()
         switch result {

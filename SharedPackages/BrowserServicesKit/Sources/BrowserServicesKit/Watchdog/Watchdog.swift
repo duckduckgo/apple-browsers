@@ -262,6 +262,7 @@ public final actor Watchdog {
             } else if currentHangDuration(currentTime: now) > maximumHangDuration {
                 transition(from: .hanging, to: .timeout, at: now, timeSinceLastHeartbeat: timeSinceLastHeartbeat)
             } else {
+                recoveryState.reset()
                 logHangDuration(message: "Ongoing main thread hang.", currentTime: now)
             }
         case .timeout:

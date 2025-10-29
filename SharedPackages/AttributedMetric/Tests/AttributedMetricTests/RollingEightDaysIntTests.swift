@@ -43,7 +43,7 @@ final class RollingEightDaysIntTests: XCTestCase {
     func testIncrementFirstTime() {
         let beforeDate = Date()
 
-        rollingInt.increment()
+        rollingInt.increment(dateProvider: DefaultDateProvider())
 
         let afterDate = Date()
 
@@ -62,12 +62,12 @@ final class RollingEightDaysIntTests: XCTestCase {
 
     func testIncrementSameDay() {
         // Set up initial state
-        rollingInt.increment()
+        rollingInt.increment(dateProvider: DefaultDateProvider())
         let initialLastDay = rollingInt.lastDay
 
         // Call increment again on same day
-        rollingInt.increment()
-        rollingInt.increment()
+        rollingInt.increment(dateProvider: DefaultDateProvider())
+        rollingInt.increment(dateProvider: DefaultDateProvider())
 
         // Should increment the last value, not add new entries
         XCTAssertEqual(rollingInt.count, 1)
@@ -85,7 +85,7 @@ final class RollingEightDaysIntTests: XCTestCase {
         let initialCount = rollingInt.count
 
         // Call increment (should be different day)
-        rollingInt.increment()
+        rollingInt.increment(dateProvider: DefaultDateProvider())
 
         // Should increment count and append new value
         XCTAssertEqual(rollingInt.count, initialCount + 1)
@@ -191,7 +191,7 @@ final class RollingEightDaysIntTests: XCTestCase {
 
             // Perform multiple increments on same day
             for _ in 0..<increments {
-                rollingInt.increment()
+                rollingInt.increment(dateProvider: DefaultDateProvider())
             }
 
             // Verify the last value matches expected increments
@@ -234,7 +234,7 @@ final class RollingEightDaysIntTests: XCTestCase {
         rollingInt.append(initialValue)
 
         // Now increment (should add 2 unknown days and then 1)
-        rollingInt.increment()
+        rollingInt.increment(dateProvider: DefaultDateProvider())
 
         // Verify structure: should have removed oldest values and added unknowns
         // The last value should be 1 (new day)
@@ -249,8 +249,8 @@ final class RollingEightDaysIntTests: XCTestCase {
 
     func testIncrementMultipleMissingDays() {
         // Day 1: Add value
-        rollingInt.increment()
-        rollingInt.increment()
+        rollingInt.increment(dateProvider: DefaultDateProvider())
+        rollingInt.increment(dateProvider: DefaultDateProvider())
         XCTAssertEqual(rollingInt.last, 2)
         XCTAssertEqual(rollingInt.count, 1) // Only one day with data
 
@@ -258,7 +258,7 @@ final class RollingEightDaysIntTests: XCTestCase {
         rollingInt.lastDay = Calendar.eastern.date(byAdding: .day, value: -5, to: Date())!
 
         // Day 7: Increment
-        rollingInt.increment()
+        rollingInt.increment(dateProvider: DefaultDateProvider())
 
         // Should have: [2, unknown, unknown, unknown, unknown, 1]
         XCTAssertEqual(rollingInt.last, 1)
@@ -280,14 +280,14 @@ final class RollingEightDaysIntTests: XCTestCase {
 
     func testIncrementSameDayDoesNotAddUnknowns() {
         // Day 1: First increment
-        rollingInt.increment()
+        rollingInt.increment(dateProvider: DefaultDateProvider())
         XCTAssertEqual(rollingInt.last, 1)
 
         let initialValuesCount = rollingInt.values.count
 
         // Day 1: Same day increments
-        rollingInt.increment()
-        rollingInt.increment()
+        rollingInt.increment(dateProvider: DefaultDateProvider())
+        rollingInt.increment(dateProvider: DefaultDateProvider())
 
         // Should increment value without adding unknowns
         XCTAssertEqual(rollingInt.last, 3)

@@ -230,7 +230,7 @@ public final class AttributedMetricManager {
 
     func recordActiveSearchDay() {
         let search8Days = dataStorage.search8Days
-        search8Days.increment()
+        search8Days.increment(dateProvider: dateProvider)
         dataStorage.search8Days = search8Days
     }
 
@@ -300,7 +300,7 @@ public final class AttributedMetricManager {
 
     func recordAdClick() {
         let adClick8Days = dataStorage.adClick8Days
-        adClick8Days.increment()
+        adClick8Days.increment(dateProvider: dateProvider)
         dataStorage.adClick8Days = adClick8Days
     }
 
@@ -327,7 +327,7 @@ public final class AttributedMetricManager {
 
     func recordDuckAIChat() {
         let duckAIChat8Days = dataStorage.duckAIChat8Days
-        duckAIChat8Days.increment()
+        duckAIChat8Days.increment(dateProvider: dateProvider)
         dataStorage.duckAIChat8Days = duckAIChat8Days
     }
 

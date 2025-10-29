@@ -21,8 +21,12 @@ import RemoteMessaging
 import AppKitExtensions
 import BrowserServicesKit
 import Common
+import Configuration
+import os.log
 
 final class RemoteMessagingDebugMenu: NSMenu {
+
+    private let configurationURLProvider: CustomConfigurationURLProviding
 
     struct MessageModel: CustomStringConvertible {
         let id: String
@@ -54,7 +58,8 @@ final class RemoteMessagingDebugMenu: NSMenu {
         }
     }
 
-    init() {
+    init(configurationURLProvider: CustomConfigurationURLProviding) {
+        self.configurationURLProvider = configurationURLProvider
         super.init(title: "")
 
         buildItems {
@@ -64,6 +69,11 @@ final class RemoteMessagingDebugMenu: NSMenu {
                 .withAccessibilityIdentifier("RemoteMessagingDebugMenu.fetchRemoteMessagesConfig")
             NSMenuItem(title: "View Config", action: #selector(openRemoteMessagesConfig), target: self)
                 .withAccessibilityIdentifier("RemoteMessagingDebugMenu.openRemoteMessagesConfig")
+            NSMenuItem.separator()
+            NSMenuItem(title: "Override Remote Messaging URL…", action: #selector(setCustomRemoteMessagingURL), target: self)
+                .withAccessibilityIdentifier("RemoteMessagingDebugMenu.setCustomRemoteMessagingURL")
+            NSMenuItem(title: "Reset Remote Messaging URL to Default", action: #selector(resetRemoteMessagingURLToDefault), target: self)
+                .withAccessibilityIdentifier("RemoteMessagingDebugMenu.resetRemoteMessagingURLToDefault")
         }
     }
 
@@ -76,8 +86,8 @@ final class RemoteMessagingDebugMenu: NSMenu {
     }
 
     private func populateMessages() {
-        (3..<self.numberOfItems).forEach { _ in
-            removeItem(at: 3)
+        (6..<self.numberOfItems).forEach { _ in
+            removeItem(at: 6)
         }
 
         guard AppVersion.runType.requiresEnvironment, NSApp.delegateTyped.remoteMessagingClient.isRemoteMessagingDatabaseLoaded else {
@@ -119,6 +129,54 @@ final class RemoteMessagingDebugMenu: NSMenu {
         Task { @MainActor in
             Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(RemoteMessagingClient.Constants.endpoint, source: .appOpenUrl))
         }
+    }
+
+    @objc func setCustomRemoteMessagingURL(_ sender: Any?) {
+        let remoteMessagingURL = configurationURLProvider.url(for: .remoteMessagingConfig).absoluteString
+        let alert = NSAlert.customConfigurationAlert(configurationUrl: remoteMessagingURL)
+        if alert.runModal() != .cancel {
+            guard let textField = alert.accessoryView as? NSTextField,
+                  let newConfigurationUrl = URL(string: textField.stringValue) else {
+                Logger.config.error("Failed to set custom Remote Messaging configuration URL")
+                return
+            }
+
+            Task { @MainActor in
+                do {
+                    try await setRemoteMessagingConfigurationUrl(newConfigurationUrl)
+                } catch let error {
+                    showErrorAlert(message: error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    @objc func resetRemoteMessagingURLToDefault(_ sender: Any?) {
+        Task { @MainActor in
+            do {
+                try await setRemoteMessagingConfigurationUrl(nil)
+            } catch let error {
+                showErrorAlert(message: error.localizedDescription)
+            }
+        }
+    }
+
+    private func setRemoteMessagingConfigurationUrl(_ configurationUrl: URL?) async throws {
+        try configurationURLProvider.setCustomURL(configurationUrl, for: .remoteMessagingConfig)
+        NSApp.delegateTyped.remoteMessagingClient.refreshRemoteMessages()
+        if let configurationUrl {
+            Logger.config.debug("New Remote Messaging configuration URL set to \(configurationUrl.absoluteString)")
+        } else {
+            Logger.config.log("Remote Messaging configuration URL reset to default")
+        }
+    }
+
+    private func showErrorAlert(message: String) {
+        let alert = NSAlert()
+        alert.messageText = "Error"
+        alert.informativeText = message
+        alert.alertStyle = .warning
+        alert.runModal()
     }
 
 }

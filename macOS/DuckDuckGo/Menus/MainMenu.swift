@@ -802,7 +802,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Reset configuration to default", action: #selector(AppDelegate.resetPrivacyConfigurationToDefault))
             }
             NSMenuItem(title: "Remote Messaging Framework")
-                .submenu(RemoteMessagingDebugMenu())
+                .submenu(RemoteMessagingDebugMenu(configurationURLProvider: configurationURLProvider))
             NSMenuItem(title: "User Scripts") {
                 NSMenuItem(title: "Remove user scripts from selected tab", action: #selector(MainViewController.removeUserScripts))
             }

@@ -67,6 +67,9 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Tabs and data cleared";
 
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Close Tabs, Data and Duck.ai Chats";
+
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Open in Background";
 
@@ -2724,6 +2727,12 @@ Take back control of your personal information with the browser designed for dat
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Disable to prevent links from automatically opening in other installed apps.";
+
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Clear Tabs and Data";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Clear Tabs, Data and Duck.ai Chats";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Search Suggestions";

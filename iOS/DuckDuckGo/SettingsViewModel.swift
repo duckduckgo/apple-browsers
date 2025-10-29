@@ -551,7 +551,13 @@ final class SettingsViewModel: ObservableObject {
 
     var autoClearAIChatHistoryBinding: Binding<Bool> {
         Binding<Bool>(
-            get: { self.state.autoClearAIChatHistory },
+            get: {
+                if self.featureFlagger.isFeatureOn(.duckAiDataClearing) {
+                    return self.state.autoClearAIChatHistory
+                } else {
+                    return false
+                }
+            },
             set: {
                 self.appSettings.autoClearAIChatHistory = $0
                 self.state.autoClearAIChatHistory = $0

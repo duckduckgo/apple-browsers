@@ -429,6 +429,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         collectionView.setAccessibilitySubrole(nil)
         collectionView.setAccessibilityTitle("Tabs")
 
+        pinnedTabsCollectionView?.setAccessibilityIdentifier("PinnedTabsView")
+        pinnedTabsCollectionView?.setAccessibilityRole(.tabGroup)
+        pinnedTabsCollectionView?.setAccessibilityTitle("Pinned Tabs")
+
         addTabButton.cell?.setAccessibilityParent(collectionView)
 
         leftScrollButton.setAccessibilityIdentifier("TabBarViewController.leftScrollButton")
@@ -1534,7 +1538,14 @@ extension TabBarViewController: NSCollectionViewDelegate {
 
         let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(proposedDropIndexPath.pointee.item) : .unpinned(proposedDropIndexPath.pointee.item)
 
-        // move tab within one window if needed
+        // move tab within one window if needed: bail out if we're outside the CollectionView Bounds!
+        let isPinnedTabsRewriteEnabled = featureFlagger.isFeatureOn(.pinnedTabsViewRewrite)
+        let locationInView = collectionView.convert(draggingInfo.draggingLocation, from: nil)
+
+        guard collectionView.frame.contains(locationInView) || !isPinnedTabsRewriteEnabled else {
+            return .none
+        }
+
         moveItemIfNeeded(to: tabIndex)
 
         return .private

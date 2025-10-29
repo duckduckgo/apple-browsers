@@ -115,7 +115,7 @@ struct SettingsAppearanceView: View {
     @ViewBuilder
     func toolbarButtonSetting() -> some View {
 
-        SettingsPickerCellView(            
+        SettingsPickerCellView(
             useImprovedPicker: true,
             label: "Toolbar",
             options: MobileCustomization.toolbarButtons,

@@ -144,14 +144,20 @@ private extension WhatsNewCoordinator {
         Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Marked message as shown: \(messageId, privacy: .public)")
     }
 
-    func handleAction(_ action: RemoteAction) async {
-        await remoteMessageActionHandler.handleAction(action, context: .init(presenter: self, presentationStyle: .withinCurrentContext))
-    }
-
     func dismiss(source: DismissSource) {
         Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Dismissed From source: \(source.debugDescription, privacy: .public)")
         navigationController?.dismiss(animated: true)
     }
+}
+
+// MARK: - Action Handling
+
+extension WhatsNewCoordinator {
+
+    func handleAction(_ action: RemoteAction) async {
+        await remoteMessageActionHandler.handleAction(action, context: .init(presenter: self, presentationStyle: .withinCurrentContext))
+    }
+    
 }
 
 private extension WhatsNewCoordinator {

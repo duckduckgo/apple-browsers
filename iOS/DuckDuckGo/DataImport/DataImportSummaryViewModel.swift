@@ -29,7 +29,7 @@ protocol DataImportSummaryViewModelDelegate: AnyObject {
 
 final class DataImportSummaryViewModel: ObservableObject {
 
-    enum Footer {
+    enum Footer: Equatable {
         case syncButton(title: String)
         case message(body: String)
     }

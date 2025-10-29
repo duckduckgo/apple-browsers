@@ -80,18 +80,20 @@ class DataImportSummaryViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isAllSuccessful())
     }
     
-    func testSyncButtonTitle_WithBothTypes_ShowsCorrectTitle() {
+    func testSyncButtonTitle_WithBothTypes_ShowsCorrectTitle() throws {
         let summary = createSummary(passwords: true, bookmarks: true)
+        mockSyncService.authState = .inactive
         viewModel = DataImportSummaryViewModel(summary: summary, importScreen: .bookmarks, syncService: mockSyncService)
 
-        XCTAssertEqual(viewModel.syncButtonTitle, expectedFullSyncTitle)
+        XCTAssertEqual(viewModel.footer?.syncTitle, expectedFullSyncTitle)
     }
     
     func testSyncButtonTitle_WithOnlyPasswords_ShowsPasswordsTitle() {
         let summary = createSummary(passwords: true, bookmarks: false)
+        mockSyncService.authState = .inactive
         viewModel = DataImportSummaryViewModel(summary: summary, importScreen: .bookmarks, syncService: mockSyncService)
 
-        XCTAssertEqual(viewModel.syncButtonTitle, expectedPasswordsSyncTitle)
+        XCTAssertEqual(viewModel.footer?.syncTitle, expectedPasswordsSyncTitle)
     }
     
     func testLaunchSync_NotifiesDelegate() {
@@ -227,5 +229,17 @@ private extension DataImportSummaryViewModelTests {
         summary[.bookmarks] = .failure(TestError())
         summary[.creditCards] = .failure(TestError())
         return summary
+    }
+}
+
+extension DataImportSummaryViewModel.Footer {
+
+    var syncTitle: String? {
+        switch self {
+        case let .syncButton(title):
+            return title
+        default:
+            return nil
+        }
     }
 }

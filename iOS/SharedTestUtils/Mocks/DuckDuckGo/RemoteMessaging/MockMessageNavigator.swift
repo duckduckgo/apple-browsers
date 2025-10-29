@@ -25,7 +25,7 @@ final class MockMessageNavigator: MessageNavigator {
     private(set) var didCallNavigateToNavigationTarget = false
     private(set) var capturedNavigationTarget: NavigationTarget?
 
-    func navigateTo(_ target: NavigationTarget) {
+    func navigateTo(_ target: NavigationTarget, presentationStyle: DuckDuckGo.PresentationContext.Style) {
         didCallNavigateToNavigationTarget = true
         capturedNavigationTarget = target
     }

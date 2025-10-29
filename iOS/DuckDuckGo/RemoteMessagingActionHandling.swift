@@ -79,7 +79,7 @@ final class RemoteMessagingActionHandler: RemoteMessagingActionHandling {
             let refreshedURL = lastSearchStateRefresher.refreshLastSearchState(forURLPath: value)
             browserTabUrlOpener(refreshedURL)
         case .navigation(let target):
-            messageNavigator?.navigateTo(target, context: context)
+            messageNavigator?.navigateTo(target, presentationStyle: context.presentationStyle)
         case .dismiss:
             break
         }

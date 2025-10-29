@@ -23,7 +23,7 @@ import DDGSync
 
 protocol MessageNavigator {
 
-    func navigateTo(_ target: NavigationTarget, context: PresentationContext)
+    func navigateTo(_ target: NavigationTarget, presentationStyle: PresentationContext.Style)
 
 }
 
@@ -44,20 +44,20 @@ class DefaultMessageNavigator: MessageNavigator {
         self.delegate = delegate
     }
 
-    func navigateTo(_ target: NavigationTarget, context: PresentationContext) {
+    func navigateTo(_ target: NavigationTarget, presentationStyle: PresentationContext.Style) {
         assert(delegate != nil)
         switch target {
         case .duckAISettings:
             delegate?.segueToSettingsAIChat(openedFromSERPSettingsButton: false,
-                                            presentationStyle: context.presentationStyle)
+                                            presentationStyle: presentationStyle)
         case .settings:
-            delegate?.segueToSettings(presentationStyle: context.presentationStyle)
+            delegate?.segueToSettings(presentationStyle: presentationStyle)
         case .feedback:
-            delegate?.segueToFeedback(presentationStyle: context.presentationStyle)
+            delegate?.segueToFeedback(presentationStyle: presentationStyle)
         case .sync:
-            delegate?.segueToSettingsSync(with: nil, pairingInfo: nil, presentationStyle: context.presentationStyle)
+            delegate?.segueToSettingsSync(with: nil, pairingInfo: nil, presentationStyle: presentationStyle)
         case .importPasswords:
-            delegate?.segueToImportPasswords(presentationStyle: context.presentationStyle)
+            delegate?.segueToImportPasswords(presentationStyle: presentationStyle)
         }
     }
 

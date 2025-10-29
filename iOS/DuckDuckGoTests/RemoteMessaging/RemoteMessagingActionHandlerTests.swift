@@ -40,7 +40,7 @@ struct RemoteMessagingActionHandlerTests {
         let shareAction = RemoteAction.share(value: value, title: title)
 
         // WHEN
-        await sut.handleAction(shareAction, presenter: mockPresenter)
+        await sut.handleAction(shareAction, context: .init(presenter: mockPresenter))
 
         // THEN
         #expect(mockPresenter.didCallPresentActivitySheet)
@@ -58,7 +58,7 @@ struct RemoteMessagingActionHandlerTests {
         let urlAction = RemoteAction.url(value: "https://example.com")
 
         // WHEN
-        await sut.handleAction(urlAction, presenter: mockPresenter)
+        await sut.handleAction(urlAction, context: .init(presenter: mockPresenter))
 
         // THEN
         #expect(mockTabOpener.openedURL == "https://example.com")
@@ -72,7 +72,7 @@ struct RemoteMessagingActionHandlerTests {
         let urlInContextAction = RemoteAction.urlInContext(value: "https://example.com")
 
         // WHEN
-        await sut.handleAction(urlInContextAction, presenter: mockPresenter)
+        await sut.handleAction(urlInContextAction, context: .init(presenter: mockPresenter))
 
         // THEN
         #expect(mockPresenter.didCallPresentEmbeddedWebView)
@@ -87,7 +87,7 @@ struct RemoteMessagingActionHandlerTests {
         let urlInContextAction = RemoteAction.urlInContext(value: "not a valid url")
 
         // WHEN
-        await sut.handleAction(urlInContextAction, presenter: mockPresenter)
+        await sut.handleAction(urlInContextAction, context: .init(presenter: mockPresenter))
 
         // THEN
         #expect(!mockPresenter.didCallPresentEmbeddedWebView)
@@ -103,7 +103,7 @@ struct RemoteMessagingActionHandlerTests {
         let sut = RemoteMessagingActionHandler(urlOpener: mockURLOpener)
 
         // WHEN
-        await sut.handleAction(.appStore, presenter: mockPresenter)
+        await sut.handleAction(.appStore, context: .init(presenter: mockPresenter))
 
         // THEN
         #expect(mockURLOpener.didCallCanOpenURL)
@@ -120,7 +120,7 @@ struct RemoteMessagingActionHandlerTests {
         let sut = RemoteMessagingActionHandler(urlOpener: mockURLOpener)
 
         // WHEN
-        await sut.handleAction(.appStore, presenter: mockPresenter)
+        await sut.handleAction(.appStore, context: .init(presenter: mockPresenter))
 
         // THEN
         #expect(mockURLOpener.didCallCanOpenURL)
@@ -140,7 +140,7 @@ struct RemoteMessagingActionHandlerTests {
         let surveyAction = RemoteAction.survey(value: "https://survey.example.com?param=value")
 
         // WHEN
-        await sut.handleAction(surveyAction, presenter: mockPresenter)
+        await sut.handleAction(surveyAction, context: .init(presenter: mockPresenter))
 
         // THEN
         #expect(mockLastSearchStateRefresher.didCallRefreshLastSearchState)
@@ -168,7 +168,7 @@ struct RemoteMessagingActionHandlerTests {
         sut.messageNavigator = mockNavigator
 
         // WHEN
-        await sut.handleAction(.navigation(value: navigationTarget), presenter: mockPresenter)
+        await sut.handleAction(.navigation(value: navigationTarget), context: .init(presenter: mockPresenter))
 
         // THEN
         #expect(mockNavigator.didCallNavigateToNavigationTarget)
@@ -189,7 +189,7 @@ struct RemoteMessagingActionHandlerTests {
         )
 
         // WHEN
-        await sut.handleAction(.dismiss, presenter: mockPresenter)
+        await sut.handleAction(.dismiss, context: .init(presenter: mockPresenter))
 
         // THEN
         #expect(!mockRefresher.didCallRefreshLastSearchState)
@@ -199,5 +199,12 @@ struct RemoteMessagingActionHandlerTests {
         #expect(!mockURLOpener.didCallOpenURL)
         #expect(mockURLOpener.capturedURL == nil)
         #expect(mockTabOpener.openedURL == nil)
+    }
+}
+
+private extension PresentationContext {
+
+    init(presenter: RemoteMessagingPresenter) {
+        self.init(presenter: presenter, presentationStyle: .dismissModalsAndPresentFromRoot)
     }
 }

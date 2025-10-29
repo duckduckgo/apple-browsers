@@ -25,10 +25,11 @@ final class MockRemoteMessagingActionHandler: RemoteMessagingActionHandling {
     private(set) var didCallHandleAction = false
     private(set) var capturedRemoteAction: RemoteAction?
     private(set) var capturedPresenter: RemoteMessagingPresenter?
+    private(set) var capturedPresentationContext: PresentationContext?
 
-    func handleAction(_ remoteAction: RemoteAction, presenter: RemoteMessagingPresenter) async {
+    func handleAction(_ remoteAction: RemoteAction, context: PresentationContext) async {
         didCallHandleAction = true
         capturedRemoteAction = remoteAction
-        capturedPresenter = presenter
+        capturedPresentationContext = context
     }
 }

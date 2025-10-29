@@ -185,4 +185,36 @@ struct WhatsNewCoordinatorActionHandlingTests {
         #expect(lastViewController.url == testURL)
     }
 
+    @Test(
+        "Check Handle Action Always Passes Within Current Context Presentation Style",
+        arguments: [
+            .share(value: "Test Value", title: "Test Title"),
+            .url(value: "https://example.com"),
+            .urlInContext(value: "https://example.com"),
+            .survey(value: "Test"),
+            .navigation(value: .duckAISettings),
+            .appStore,
+            .dismiss
+        ] as [RemoteAction]
+    )
+    func handleActionAlwaysPassesWithinCurrentContextPresentationStyle(action: RemoteAction) async throws {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage()
+        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockHandler = MockRemoteMessagingActionHandler()
+
+        let coordinator = WhatsNewCoordinator(
+            remoteMessageStore: mockStore,
+            remoteMessageActionHandler: mockHandler
+        )
+
+        // WHEN
+        await coordinator.handleAction(action)
+
+        // THEN
+        #expect(mockHandler.didCallHandleAction)
+        #expect(mockHandler.capturedPresentationContext?.presentationStyle == .withinCurrentContext)
+        #expect(mockHandler.capturedPresentationContext?.presenter != nil)
+    }
+
 }

@@ -26,6 +26,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Combine
 import DDGSync
+import AuthenticationServices
 
 protocol AutofillSettingsViewModelDelegate: AnyObject {
     func navigateToPasswords(viewModel: AutofillSettingsViewModel)
@@ -45,6 +46,7 @@ final class AutofillSettingsViewModel: ObservableObject {
     private let source: AutofillSettingsSource
     private let featureFlagger: FeatureFlagger
     private var syncCancellables = Set<AnyCancellable>()
+    private let credentialStore: ASCredentialIdentityStoring
 
     enum AutofillType {
         case passwords
@@ -104,6 +106,8 @@ final class AutofillSettingsViewModel: ObservableObject {
             }
         )
     }
+    @Published var showExtensionSettings = false
+    @Published var isExtensionEnabled: Bool = false
 
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          keyValueStore: KeyValueStoringDictionaryRepresentable = UserDefaults.standard,
@@ -112,13 +116,15 @@ final class AutofillSettingsViewModel: ObservableObject {
          source: AutofillSettingsSource,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          syncService: DDGSyncing,
-         syncDataProviders: SyncDataProviders) {
+         syncDataProviders: SyncDataProviders,
+         credentialStore: ASCredentialIdentityStoring = ASCredentialIdentityStore.shared) {
         self.autofillNeverPromptWebsitesManager = autofillNeverPromptWebsitesManager
         self.appSettings = appSettings
         self.keyValueStore = keyValueStore
         self.secureVault = secureVault
         self.source = source
         self.featureFlagger = featureFlagger
+        self.credentialStore = credentialStore
 
         savePasswordsEnabled = appSettings.autofillCredentialsEnabled
         updatePasswordsCount()
@@ -139,7 +145,12 @@ final class AutofillSettingsViewModel: ObservableObject {
                 }
                 .store(in: &syncCancellables)
         }
-
+        if #available(iOS 18, *) {
+            showExtensionSettings = featureFlagger.isFeatureOn(.autofillExtensionSettings)
+            Task {
+                await updateExtensionStatus()
+            }
+        }
         syncService.scheduler.requestSyncImmediately()
     }
 
@@ -152,11 +163,16 @@ final class AutofillSettingsViewModel: ObservableObject {
             }
         }
     }
-    
-    func refreshCounts() {
+
+    func refreshData() {
         updatePasswordsCount()
         if showCreditCards {
             updateCreditCardsCount()
+        }
+        if showExtensionSettings {
+            Task {
+                await updateExtensionStatus()
+            }
         }
     }
 
@@ -187,6 +203,17 @@ final class AutofillSettingsViewModel: ObservableObject {
             creditCardsCount = try vault.creditCardsCount()
         } catch {
             creditCardsCount = nil
+        }
+    }
+
+    func updateExtensionStatus() async {
+        guard showExtensionSettings else {
+            return
+        }
+
+        let state = await credentialStore.state()
+        await MainActor.run {
+            isExtensionEnabled = state.isEnabled
         }
     }
 
@@ -224,7 +251,11 @@ final class AutofillSettingsViewModel: ObservableObject {
     func shouldShowNeverPromptReset() -> Bool {
         !autofillNeverPromptWebsitesManager.neverPromptWebsites.isEmpty
     }
-    
+
+    func navigateToExtensionManagement() {
+        // TODO
+    }
+
     // MARK: - Reset Excluded Sites
     
     func resetExcludedSites() {

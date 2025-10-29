@@ -272,10 +272,8 @@ final class RollingEightDaysIntTests: XCTestCase {
 
         // Verify the structure contains unknowns
         var unknownCount = 0
-        for value in rollingInt.values {
-            if value == .unknown {
-                unknownCount += 1
-            }
+        for value in rollingInt.values where value == .unknown {
+            unknownCount += 1
         }
         XCTAssertEqual(unknownCount, 6) // 5 missing days + initial 1 unknown slot from initialization, then rolling happened
     }

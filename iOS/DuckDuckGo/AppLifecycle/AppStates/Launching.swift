@@ -19,7 +19,7 @@
 
 import Core
 import UIKit
-
+import PixelKit
 import BrowserServicesKit
 import Subscription
 
@@ -83,7 +83,12 @@ struct Launching: LaunchingHandling {
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService()
         let statisticsService = StatisticsService()
-        let reportingService = ReportingService(fireproofing: fireproofing, featureFlagging: featureFlagger)
+        let reportingService = ReportingService(fireproofing: fireproofing,
+                                                featureFlagging: featureFlagger,
+                                                userDefaults: UserDefaults.app,
+                                                pixelKit: PixelKit.shared!,
+                                                privacyConfig: privacyConfigurationManager.privacyConfig,
+                                                subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!)
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         reportingService.syncService = syncService
@@ -137,7 +142,7 @@ struct Launching: LaunchingHandling {
             isOnboardingCompletedProvider: { !daxDialogs.isEnabled }
         )
 
-        // Has to be intialised after configuration.start in case values need to be migrated
+        // Has to be initialised after configuration.start in case values need to be migrated
         aiChatSettings = AIChatSettings()
 
         // MARK: - Main Coordinator Setup

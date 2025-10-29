@@ -21,13 +21,26 @@ import Foundation
 import Core
 import WidgetKit
 import BrowserServicesKit
+import AttributedMetric
+import PixelKit
+import Subscription
+import Combine
+import AIChat
+import SetDefaultBrowserCore
 
+/// Reporting service for various metrics:
+/// - AttributedMetric: https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
+/// -
 final class ReportingService {
 
     let marketplaceAdPostbackManager = MarketplaceAdPostbackManager()
     let onboardingPixelReporter = OnboardingPixelReporter()
     let subscriptionDataReporter: SubscriptionDataReporting
     let featureFlagging: FeatureFlagger
+    let attributedMetricManager: AttributedMetricManager
+    let workQueue = DispatchQueue(label: "com.duckduckgo.ReportingService", qos: .background)
+    
+    private var cancellables = Set<AnyCancellable>()
 
     var syncService: SyncService? {
         didSet {
@@ -36,9 +49,32 @@ final class ReportingService {
         }
     }
 
-    init(fireproofing: Fireproofing, featureFlagging: FeatureFlagger) {
+    init(fireproofing: Fireproofing,
+         featureFlagging: FeatureFlagger,
+         userDefaults: UserDefaults,
+         pixelKit: PixelKit,
+         privacyConfig: PrivacyConfiguration,
+         subscriptionManager: SubscriptionManagerV2) {
         self.featureFlagging = featureFlagging
-        subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)
+        self.subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)
+
+        // AttributedMetric initialisation
+        let errorHandler = AttributedMetricErrorHandler(pixelKit: pixelKit)
+        let attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: userDefaults, errorHandler: errorHandler)
+        let bucketsSettingsProvider = DefaultBucketsSettingsProvider(privacyConfig: privacyConfig) //ContentBlocking.shared.privacyConfigurationManager
+        let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: subscriptionManager)
+        let defaultBrowserProvider = AttributedMetricDefaultBrowserProvider()
+        self.attributedMetricManager = AttributedMetricManager(pixelKit: pixelKit,
+                                                               dataStoring: attributedMetricDataStorage,
+                                                               featureFlagger: featureFlagging,
+                                                               originProvider: nil,
+                                                               defaultBrowserProviding: defaultBrowserProvider,
+                                                               subscriptionStateProvider: subscriptionStateProvider,
+                                                               bucketsSettingsProvider: bucketsSettingsProvider)
+        addNotificationsObserver()
+    }
+
+    private func addNotificationsObserver() {
         NotificationCenter.default.addObserver(forName: .didFetchConfigurationOnForeground,
                                                object: nil,
                                                queue: .main) { _ in
@@ -49,6 +85,56 @@ final class ReportingService {
                                                queue: .main) { _ in
             self.onStatisticsLoaded()
         }
+
+        // Register for standard notifications or specific ones coming from frameworks like Subscription and relaunch them to AttributedMetric
+
+        // App start
+        NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
+            .receive(on: workQueue)
+            .sink { [weak self] notification in
+                self?.attributedMetricManager.process(trigger: .appDidStart)
+            }
+            .store(in: &cancellables)
+
+        // Search
+
+        NotificationCenter.default.publisher(for: .userDidPerformDDGSearch)
+            .receive(on: workQueue)
+            .sink { [weak self] notification in
+                self?.attributedMetricManager.process(trigger: .userDidSearch)
+            }
+            .store(in: &cancellables)
+
+        // AD click
+
+        NotificationCenter.default.publisher(for: .userDidSelectDDGAD)
+            .receive(on: workQueue)
+            .sink { [weak self] notification in
+                self?.attributedMetricManager.process(trigger: .userDidSelectAD)
+            }
+            .store(in: &cancellables)
+
+        // New AI chat message sent
+
+        NotificationCenter.default.publisher(for: .aiChatUserDidSubmitPrompt)
+            .receive(on: workQueue)
+            .sink { [weak self] notification in
+                self?.attributedMetricManager.process(trigger: .userDidDuckAIChat)
+            }
+            .store(in: &cancellables)
+
+        // User purchased subscription
+
+        NotificationCenter.default.publisher(for: .userDidPurchaseSubscription)
+            .receive(on: workQueue)
+            .sink { [weak self] notification in
+                self?.attributedMetricManager.process(trigger: .userDidSubscribe)
+            }
+            .store(in: &cancellables)
+
+        // Device sync
+
+        
     }
 
     private func sendAppLaunchPostback(marketplaceAdPostbackManager: MarketplaceAdPostbackManaging) {
@@ -138,5 +224,45 @@ private extension ReportingService {
                 store.cleanup()
             }
         }
+    }
+}
+
+struct DefaultBucketsSettingsProvider: BucketsSettingsProviding {
+    let privacyConfig: PrivacyConfiguration
+
+    var bucketsSettings: [String : Any] {
+        privacyConfig.settings(for: .attributedMetrics)
+    }
+}
+
+struct AttributedMetricDefaultBrowserProvider: AttributedMetricDefaultBrowserProviding {
+
+    let defaultBrowserService = SystemCheckDefaultBrowserService(application: UIApplication.shared)
+
+    var isDefaultBrowser: Bool {
+        let result = defaultBrowserService.isDefaultWebBrowser()
+        switch result {
+        case .success:
+            return true
+        case .failure:
+            return false
+        }
+    }
+}
+
+struct DefaultSubscriptionStateProvider: SubscriptionStateProviding {
+
+    let subscriptionManager: SubscriptionManagerV2
+
+    func isFreeTrial() async -> Bool {
+        (try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).hasActiveTrialOffer) ?? false
+    }
+    
+    var isActive: Bool {
+        subscriptionManager.isUserAuthenticated
+    }
+    
+    func subscriptionDate() async -> Date? {
+        (try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst))?.startedAt
     }
 }

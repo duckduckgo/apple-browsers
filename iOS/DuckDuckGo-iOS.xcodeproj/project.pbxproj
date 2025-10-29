@@ -1801,6 +1801,7 @@
 		F1970B5C2DF1F356008F18BC /* AdAttributionFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1970B552DF1F356008F18BC /* AdAttributionFetcher.swift */; };
 		F1970B5D2DF1F356008F18BC /* AdAttributionPixelReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1970B562DF1F356008F18BC /* AdAttributionPixelReporter.swift */; };
 		F198D78E1E39762C0088DA8A /* StringExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F198D78D1E39762C0088DA8A /* StringExtensionTests.swift */; };
+		F19B98672EAFA799000FF209 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F19B98662EAFA799000FF209 /* AttributedMetric */; };
 		F1A83D862E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A83D852E0AB27E00054B03 /* MockFeatureFlagger.swift */; };
 		F1A83D872E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A83D852E0AB27E00054B03 /* MockFeatureFlagger.swift */; };
 		F1A83D882E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A83D852E0AB27E00054B03 /* MockFeatureFlagger.swift */; };
@@ -4190,6 +4191,7 @@
 				F1D43AFA2B99C1D300BAB743 /* BareBonesBrowserKit in Frameworks */,
 				BBD9C3972E9D73610060A6E8 /* SERPSettings in Frameworks */,
 				7B2CCBA52D11ABBA00FE5852 /* VPNWidgetSupport in Frameworks */,
+				F19B98672EAFA799000FF209 /* AttributedMetric in Frameworks */,
 				4BC5E8632E174D5400391C19 /* DesignResourcesKit in Frameworks */,
 				9D6891E72DAD2DF800819662 /* DataBrokerProtection-iOS in Frameworks */,
 				9F82BC1E2E20A51200943D44 /* MetricBuilder in Frameworks */,
@@ -9213,6 +9215,7 @@
 				9F0727872E2F2967005894C8 /* SystemSettingsPiPTutorial */,
 				9F82BC1D2E20A51200943D44 /* MetricBuilder */,
 				9F5003262E8D1B61002F98D1 /* FoundationExtensions */,
+				F19B98662EAFA799000FF209 /* AttributedMetric */,
 				BBD9C3962E9D73610060A6E8 /* SERPSettings */,
 			);
 			productName = DuckDuckGo;
@@ -15223,6 +15226,10 @@
 			productName = AttributedMetric;
 		};
 		F11595D82E8570B500CC0481 /* AttributedMetric */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AttributedMetric;
+		};
+		F19B98662EAFA799000FF209 /* AttributedMetric */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AttributedMetric;
 		};

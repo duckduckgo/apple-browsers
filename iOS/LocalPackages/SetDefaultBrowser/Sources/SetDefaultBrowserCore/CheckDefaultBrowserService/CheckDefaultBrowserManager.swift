@@ -37,7 +37,7 @@ public final class DefaultBrowserManager: DefaultBrowserManaging {
     public init(
         defaultBrowserInfoStore: DefaultBrowserContextStorage,
         defaultBrowserEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserManagerDebugEvent>,
-        defaultBrowserChecker: CheckDefaultBrowserService = SystemCheckDefaultBrowserService(),
+        defaultBrowserChecker: CheckDefaultBrowserService = SystemCheckDefaultBrowserService(application: UIApplication.shared),
         dateProvider: @escaping () -> Date = Date.init
     ) {
         self.defaultBrowserChecker = defaultBrowserChecker

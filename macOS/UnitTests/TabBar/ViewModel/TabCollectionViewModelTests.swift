@@ -551,7 +551,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenInvokingRemoveAllMatching_AllTabsWithTrueConditionAreREmoved() {
+    func testWhenInvokingRemoveAllMatching_AllTabsWithTrueConditionAreRemoved() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let removalTabContent: TabContent = .url(.duckDuckGo, source: .link)
         let persistentTabContent: TabContent = .url(.appStore, source: .link)

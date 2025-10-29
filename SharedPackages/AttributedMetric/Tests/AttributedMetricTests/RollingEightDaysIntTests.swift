@@ -103,6 +103,16 @@ final class RollingEightDaysIntTests: XCTestCase {
         XCTAssertEqual(rollingInt.past7DaysAverage, 0)
     }
 
+    func testPast7DaysAverageSingleValue() {
+        // Add only one value (today)
+        rollingInt.append(10)
+
+        // With only one value, past7DaysAverage should return 0 (no past days to average)
+        // This tests the guard clause that prevents division by zero
+        XCTAssertEqual(rollingInt.past7DaysAverage, 0)
+        XCTAssertEqual(rollingInt.count, 1)
+    }
+
     func testPast7DaysAverageWithValues() {
         // Add values to fill some slots (including today)
         for i in 1...8 {

@@ -123,18 +123,24 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
     }
 
     /// Calculates the rounded average of the past 7 days, excluding today and unknown values.
-    /// WARNING: still pending logic decision: https://app.asana.com/1/137249556945/task/1211313432282643/comment/1211464184465774?focus=true
     public var past7DaysAverage: Int {
         var sum = 0
+        var notUnknownValues = 0
         for value in values.dropLast() {
             switch value {
             case .unknown:
                 break
             case .value(let intValue):
+                notUnknownValues += 1
                 sum += intValue
             }
         }
-        return Int((Float(sum) / Float(count - 1)).rounded(.toNearestOrAwayFromZero)) // E.g. 6.4 = 6, 6.5 = 7, 6.6 = 7
+
+        if notUnknownValues > 0 {
+            return Int((Float(sum) / Float(notUnknownValues)).rounded(.toNearestOrAwayFromZero)) // E.g. 6.4 = 6, 6.5 = 7, 6.6 = 7
+        } else {
+            return 0
+        }
     }
 
     /// Counts non-unknown values in the past 7 days, excluding today.
@@ -164,4 +170,3 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
         return "RollingEightDaysInt(lastDay: \(dateString), values: [\(valuesDescription)], past7DaysAverage: \(past7DaysAverage), countPast7Days: \(countPast7Days))"
     }
 }
-

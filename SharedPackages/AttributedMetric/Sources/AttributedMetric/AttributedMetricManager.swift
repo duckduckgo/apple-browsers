@@ -203,7 +203,7 @@ public final class AttributedMetricManager {
         }
 
         switch timePastFromInstall {
-        case .none: 
+        case .none:
             Logger.attributedMetric.debug("Less than a week from installation")
         case .weeks(let week):
             Logger.attributedMetric.debug("\(week) week(s) from installation")
@@ -397,7 +397,7 @@ public final class AttributedMetricManager {
                   false, // is not free trial anymore
                   true, // is subscribed
                   _):
-                //At each app startup, check the subscription state. If the a month=0 pixel was sent, the user is no longer on a free trial, and the state is autoRenewable or notAutoRenewable, send this pixel with month=1.
+                // At each app startup, check the subscription state. If the a month=0 pixel was sent, the user is no longer on a free trial, and the state is autoRenewable or notAutoRenewable, send this pixel with month=1.
                 guard let bucket = try? bucketModifier.bucket(value: 1, pixelName: .userSubscribed) else {
                     Logger.attributedMetric.error("Failed to bucket length value")
                     return
@@ -411,7 +411,7 @@ public final class AttributedMetricManager {
                   true, // is subscribed
                   true // 1 month pixel sent
             ):
-                //At each app startup, check the subscription state. If the a month=1 pixel was sent, the state is autoRenewable or notAutoRenewable, and the subscription has been active for more than a month, send this pixel with month=2+.
+                // At each app startup, check the subscription state. If the a month=1 pixel was sent, the state is autoRenewable or notAutoRenewable, and the subscription has been active for more than a month, send this pixel with month=2+.
                 guard let bucket = try? bucketModifier.bucket(value: 2, pixelName: .userSubscribed) else {
                     Logger.attributedMetric.error("Failed to bucket length value")
                     return
@@ -445,4 +445,3 @@ public final class AttributedMetricManager {
         pixelKit.fire(AttributedMetricPixel.userSyncedDevice(origin: originOrInstall.origin, installDate: originOrInstall.installDate, devices: bucket.value, bucketVersion: bucket.version), frequency: .standard)
     }
 }
-

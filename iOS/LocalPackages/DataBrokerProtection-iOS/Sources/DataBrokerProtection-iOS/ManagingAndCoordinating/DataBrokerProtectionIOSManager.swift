@@ -28,7 +28,6 @@ import UserNotifications
 import DataBrokerProtectionCore
 import WebKit
 import BackgroundTasks
-import Freemium
 import SwiftUI
 
 /*
@@ -152,7 +151,6 @@ public final class DataBrokerProtectionIOSManager {
     private let settings: DataBrokerProtectionSettings
     private let subscriptionManager: DataBrokerProtectionSubscriptionManaging
     private let wideEventSweeper: DBPWideEventSweeper?
-    private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager?
     private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
             directoryName: DatabaseConstants.directoryName,
@@ -198,7 +196,6 @@ public final class DataBrokerProtectionIOSManager {
          minBackgroundTaskWaitTime: TimeInterval = Constants.defaultMinBackgroundTaskWaitTime,
          feedbackViewCreator: @escaping () -> (any View),
          featureFlagger: DBPFeatureFlagging,
-         freemiumDBPUserStateManager: FreemiumDBPUserStateManager? = DefaultFreemiumDBPUserStateManager(userDefaults: .standard),
          settings: DataBrokerProtectionSettings,
          subscriptionManager: DataBrokerProtectionSubscriptionManaging,
          wideEvent: WideEventManaging?,
@@ -218,7 +215,6 @@ public final class DataBrokerProtectionIOSManager {
         self.maxBackgroundTaskWaitTime = maxBackgroundTaskWaitTime
         self.minBackgroundTaskWaitTime = minBackgroundTaskWaitTime
         self.featureFlagger = featureFlagger
-        self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.settings = settings
         self.subscriptionManager = subscriptionManager
         self.wideEventSweeper = wideEvent.map { DBPWideEventSweeper(wideEvent: $0) }
@@ -472,8 +468,6 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.PixelsDelegate {
     }
 
     func tryToFireCustomStatsPixels() {
-        // If a user upgraded from Freemium, don't send 24-hour opt-out submit pixels
-        guard let freemiumDBPUserStateManager, !freemiumDBPUserStateManager.didActivate else { return }
         statsPixels.fireCustomStatsPixelsIfNeeded()
     }
 }

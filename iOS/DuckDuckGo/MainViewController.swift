@@ -3822,9 +3822,7 @@ extension MainViewController {
     }
 
     func applyCustomizationState() {
-        let state = mobileCustomization.state
-        guard state.isEnabled else { return }
-        applyCustomizationForToolbar(state)
+        applyCustomizationForToolbar(mobileCustomization.state)
         // coming later - address bar
     }
 

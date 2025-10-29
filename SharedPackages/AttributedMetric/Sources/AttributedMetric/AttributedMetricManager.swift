@@ -170,6 +170,7 @@ public final class AttributedMetricManager {
         case .appDidStart:
             processRetention()
             processActiveSearchDays()
+            processSubscriptionCheck()
         case .userDidSearch:
             recordActiveSearchDay()
             processAverageSearchCount()

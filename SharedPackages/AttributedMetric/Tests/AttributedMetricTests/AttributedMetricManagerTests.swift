@@ -742,6 +742,123 @@ final class AttributedMetricManagerTests: XCTestCase {
         XCTAssertTrue(fixture.dataStorage.subscriptionMonth1Fired, "Should mark month 1 as fired")
     }
 
+    /// Tests that processSubscriptionCheck sends month 1 pixel on app start after free trial ends
+    ///
+    /// ## Input → Output Mapping
+    ///
+    /// | Condition | Free Trial Pixel Sent | Is Free Trial | Is Active | Month 1 Pixel Sent | Result |
+    /// |-----------|----------------------|---------------|-----------|-------------------|--------|
+    /// | App Start | true                 | false         | true      | false             | Send month=1 pixel |
+    ///
+    /// ## Bucket Configuration
+    /// - user_subscribed: [0, 1] → 1 maps to index 1
+    ///
+    /// ## Test Validation
+    /// - processSubscriptionCheck() is called on .appDidStart
+    /// - Month 1 pixel fires when free trial has ended but subscription is still active
+    /// - Bucketed length is 1
+    /// - Trigger: .appDidStart calls processSubscriptionCheck()
+    /// - Async test due to await subscriptionStateProvider.isFreeTrial()
+    func testProcessSubscriptionCheckMonth1() async {
+        let pixelExpectation = XCTestExpectation(description: "Month 1 subscription pixel fired")
+        var capturedLength: Int?
+
+        let fixture = createTestFixture(
+            pixelHandler: { pixelName, _, parameters, _, _, _ in
+                switch pixelName {
+                case "m_mac_user_subscribed":
+                    capturedLength = self.extractIntParameter(parameters, key: "length")
+                    if capturedLength == nil {
+                        XCTFail("Missing or invalid length parameter")
+                        return
+                    }
+                    pixelExpectation.fulfill()
+                case "m_mac_attributed_metric_data_store_error":
+                    break
+                default:
+                    break // Ignore other pixels that might fire on app start
+                }
+            },
+            subscriptionStateProvider: SubscriptionStateProviderMock(isFreeTrial: false, isActive: true)
+        )
+        defer { fixture.cleanup() }
+
+        // Set install date
+        fixture.dataStorage.installDate = fixture.timeMachine.now()
+
+        // Set subscription date
+        fixture.dataStorage.subscriptionDate = fixture.timeMachine.now()
+
+        // Simulate that free trial pixel was already sent
+        fixture.dataStorage.subscriptionFreeTrialFired = true
+
+        // Test: Process app start (should trigger processSubscriptionCheck)
+        fixture.attributionManager.process(trigger: .appDidStart)
+
+        await fulfillment(of: [pixelExpectation], timeout: 2.0)
+        XCTAssertEqual(capturedLength, 1, "Should send bucketed length 1 for month 1")
+    }
+
+    /// Tests that processSubscriptionCheck sends month 2+ pixel on app start after one month
+    ///
+    /// ## Input → Output Mapping
+    ///
+    /// | Condition | Free Trial Pixel Sent | Month 1 Pixel Sent | Is Active | Days Since Subscribe | Result |
+    /// |-----------|----------------------|-------------------|-----------|---------------------|--------|
+    /// | App Start | any                  | true              | true      | ≥30                 | Send month=2+ pixel |
+    ///
+    /// ## Bucket Configuration
+    /// - user_subscribed: [0, 1] → 2 maps to index 2 (exceeds all thresholds)
+    ///
+    /// ## Test Validation
+    /// - processSubscriptionCheck() is called on .appDidStart
+    /// - Month 2+ pixel fires when subscription has been active for ≥30 days
+    /// - Bucketed length is 2
+    /// - Trigger: .appDidStart calls processSubscriptionCheck()
+    /// - Async test due to await subscriptionStateProvider.isFreeTrial()
+    func testProcessSubscriptionCheckMonth2Plus() async {
+        let pixelExpectation = XCTestExpectation(description: "Month 2+ subscription pixel fired")
+        var capturedLength: Int?
+
+        let fixture = createTestFixture(
+            pixelHandler: { pixelName, _, parameters, _, _, _ in
+                switch pixelName {
+                case "m_mac_user_subscribed":
+                    capturedLength = self.extractIntParameter(parameters, key: "length")
+                    if capturedLength == nil {
+                        XCTFail("Missing or invalid length parameter")
+                        return
+                    }
+                    pixelExpectation.fulfill()
+                case "m_mac_attributed_metric_data_store_error":
+                    break
+                default:
+                    break // Ignore other pixels that might fire on app start
+                }
+            },
+            subscriptionStateProvider: SubscriptionStateProviderMock(isFreeTrial: false, isActive: true)
+        )
+        defer { fixture.cleanup() }
+
+        // Set install date
+        fixture.dataStorage.installDate = fixture.timeMachine.now()
+
+        // Set subscription date
+        fixture.dataStorage.subscriptionDate = fixture.timeMachine.now()
+
+        // Travel forward 31 days
+        fixture.timeMachine.travel(by: .day, value: 31)
+
+        // Simulate that month 1 pixel was already sent
+        fixture.dataStorage.subscriptionMonth1Fired = true
+
+        // Test: Process app start (should trigger processSubscriptionCheck)
+        fixture.attributionManager.process(trigger: .appDidStart)
+
+        await fulfillment(of: [pixelExpectation], timeout: 2.0)
+        XCTAssertEqual(capturedLength, 2, "Should send bucketed length 2 for month 2+")
+    }
+
     // MARK: - Sync Tests
 
     /// Tests sync pixel for valid device counts (< 3 devices)

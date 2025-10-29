@@ -163,7 +163,7 @@ final class RemoteMessagingDebugMenu: NSMenu {
 
     private func setRemoteMessagingConfigurationUrl(_ configurationUrl: URL?) async throws {
         try configurationURLProvider.setCustomURL(configurationUrl, for: .remoteMessagingConfig)
-        NSApp.delegateTyped.remoteMessagingClient.refreshRemoteMessages()
+        await NSApp.delegateTyped.remoteMessagingClient.refreshRemoteMessages()
         if let configurationUrl {
             Logger.config.debug("New Remote Messaging configuration URL set to \(configurationUrl.absoluteString)")
         } else {

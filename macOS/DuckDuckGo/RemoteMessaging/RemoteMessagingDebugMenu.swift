@@ -144,7 +144,7 @@ final class RemoteMessagingDebugMenu: NSMenu {
             Task { @MainActor in
                 do {
                     try await setRemoteMessagingConfigurationUrl(newConfigurationUrl)
-                } catch let error {
+                } catch {
                     showErrorAlert(message: error.localizedDescription)
                 }
             }
@@ -155,7 +155,7 @@ final class RemoteMessagingDebugMenu: NSMenu {
         Task { @MainActor in
             do {
                 try await setRemoteMessagingConfigurationUrl(nil)
-            } catch let error {
+            } catch {
                 showErrorAlert(message: error.localizedDescription)
             }
         }

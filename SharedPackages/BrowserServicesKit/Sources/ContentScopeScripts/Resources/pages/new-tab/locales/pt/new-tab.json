@@ -296,6 +296,18 @@
     "title" : "Afixado na barra de tarefas!",
     "note" : "Button text after clicking on the Next Steps card for adding DDG app to OS dock"
   },
+  "nextSteps_subscription_title" : {
+    "title" : "Desbloqueia a tua avaliação gratuita",
+    "note" : "Title of the Next Steps card for unlocking your free trial of DuckDuckGo subscription"
+  },
+  "nextSteps_subscription_summary" : {
+    "title" : "Experimenta a nossa subscrição com uma VPN + 3 funcionalidades premium adicionais.",
+    "note" : "Summary of the Next Steps card about the DuckDuckGo subscription"
+  },
+  "nextSteps_subscription_actionText" : {
+    "title" : "Experimentar grátis durante 7 dias",
+    "note" : "Button text of the Next Steps card for trying the DuckDuckGo subscription"
+  },
   "favorites_show_less" : {
     "title" : "Mostrar menos",
     "note" : "Button label to display fewer items"

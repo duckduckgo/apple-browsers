@@ -264,6 +264,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportNewSafariFilePicker,
                 .fireDialog,
                 .fireDialogIndividualSitesLink,
+                .historyViewSitesSection,
                 .blurryAddressBarTahoeFix:
             true
         default:

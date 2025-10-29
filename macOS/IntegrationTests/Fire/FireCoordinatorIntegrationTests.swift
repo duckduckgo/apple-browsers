@@ -1464,7 +1464,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - burnAll
      */
     func testFireButton_AllData_TabsAndHistory() async throws {
-        FireDialogViewModel.lastSelectedClearingOption = .allData
+        let settings = MockFireDialogViewSettings(lastSelectedClearingOption: .allData)
         let expectedVisits = await mockHistoryProvider.visits(matching: .rangeFilter(.all))
 
         dialogExpectedInput = DialogExpectedInput(
@@ -1494,7 +1494,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedVisits: nil,
                                        isToday: false)
 
-        let response = await coordinator.presentFireDialog(mode: .fireButton, in: window)
+        let response = await coordinator.presentFireDialog(mode: .fireButton, in: window, settings: settings)
         if case .burn(let opts?) = response { XCTAssertTrue(opts.includeHistory); XCTAssertTrue(opts.includeTabsAndWindows) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
         _ = try XCTUnwrap(fire.burnAllCalls.onlyValue)
     }
@@ -1528,7 +1528,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - burnAll
      */
     func testFireButton_AllData_TabsAndHistoryAndChats() async throws {
-        FireDialogViewModel.lastSelectedClearingOption = .allData
+        let settings = MockFireDialogViewSettings(lastSelectedClearingOption: .allData)
         let expectedVisits = await mockHistoryProvider.visits(matching: .rangeFilter(.all))
 
         dialogExpectedInput = DialogExpectedInput(
@@ -1558,7 +1558,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedVisits: nil,
                                        isToday: false)
 
-        let response = await coordinator.presentFireDialog(mode: .fireButton, in: window)
+        let response = await coordinator.presentFireDialog(mode: .fireButton, in: window, settings: settings)
         if case .burn(let opts?) = response { XCTAssertTrue(opts.includeHistory); XCTAssertTrue(opts.includeTabsAndWindows) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
         _ = try XCTUnwrap(fire.burnAllCalls.onlyValue)
     }
@@ -1592,7 +1592,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      */
     func testFireButton_AllData_NoTabs_NoHistory_CookieOnly() async throws {
         // Test specifically for no history scenario - configure empty state
-        FireDialogViewModel.lastSelectedClearingOption = .allData
+        let settings = MockFireDialogViewSettings(lastSelectedClearingOption: .allData)
         mockHistoryProvider.configure(visits: [], cookieDomains: [])
 
         dialogExpectedInput = DialogExpectedInput(
@@ -1619,7 +1619,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedCookieDomains: ["cook.ie"],
                                        selectedVisits: nil,
                                        isToday: false)
-        let responseCookieOnly = await coordinator.presentFireDialog(mode: .fireButton, in: window)
+        let responseCookieOnly = await coordinator.presentFireDialog(mode: .fireButton, in: window, settings: settings)
         if case .burn(let opts?) = responseCookieOnly { XCTAssertNotNil(opts) } else { XCTFail("Expected burn response, got \(String(describing: responseCookieOnly))") }
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .allWindows(_, selectedDomains, customURLToOpen, close) = call.entity {
@@ -1659,7 +1659,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      */
     func testFireButton_AllData_NoTabs_NoHistory_NoCookies_ChatsOnly() async throws {
         // Test specifically for no history scenario - configure empty state
-        FireDialogViewModel.lastSelectedClearingOption = .allData
+        let settings = MockFireDialogViewSettings(lastSelectedClearingOption: .allData)
         mockHistoryProvider.configure(visits: [], cookieDomains: [])
 
         dialogExpectedInput = DialogExpectedInput(
@@ -1686,7 +1686,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedCookieDomains: nil,
                                        selectedVisits: nil,
                                        isToday: false)
-        let responseChatsOnly = await coordinator.presentFireDialog(mode: .fireButton, in: window)
+        let responseChatsOnly = await coordinator.presentFireDialog(mode: .fireButton, in: window, settings: settings)
         if case .burn(let opts?) = responseChatsOnly { XCTAssertNotNil(opts) } else { XCTFail("Expected burn response, got \(String(describing: responseChatsOnly))") }
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .allWindows(_, selectedDomains, customURLToOpen, close) = call.entity {
@@ -1725,7 +1725,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - presenter receives window; coordinator propagates to burn path
      */
     func testFireButton_PresenterReceivesWindowAndOnConfirmPropagatesResult() async throws {
-        FireDialogViewModel.lastSelectedClearingOption = .allData
+        let settings = MockFireDialogViewSettings(lastSelectedClearingOption: .allData)
         var capturedWindow: NSWindow?
         let fire = FireMock()
         let coordinator = makeCoordinator(with: fire) { window, completion in
@@ -1742,7 +1742,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        isToday: false)
 
         let window = MockWindow()
-        let response = await coordinator.presentFireDialog(mode: .fireButton, in: window)
+        let response = await coordinator.presentFireDialog(mode: .fireButton, in: window, settings: settings)
         if case .burn(let opts?) = response { XCTAssertNotNil(opts) } else { XCTFail("Expected burn response, got \(String(describing: response))") }
         XCTAssertNotNil(capturedWindow)
         _ = try XCTUnwrap(fire.burnAllCalls.onlyValue)
@@ -1776,7 +1776,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - coordinator merges VM selection domains into burnEntity(allWindows)
      */
     func testFireButton_AllData_NoDomainsProvided_MergesFromViewModelSelection() async throws {
-        FireDialogViewModel.lastSelectedClearingOption = .allData
+        let settings = MockFireDialogViewSettings(lastSelectedClearingOption: .allData)
         let expectedVisits = await mockHistoryProvider.visits(matching: .rangeFilter(.all))
 
         dialogExpectedInput = DialogExpectedInput(
@@ -1807,7 +1807,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        isToday: false)
 
         // Don't pass scopeVisits - let coordinator fetch all visits automatically for fireButton mode
-        let responseVMSelect = await coordinator.presentFireDialog(mode: .fireButton, in: window)
+        let responseVMSelect = await coordinator.presentFireDialog(mode: .fireButton, in: window, settings: settings)
         if case .burn(let opts?) = responseVMSelect { XCTAssertNotNil(opts) } else { XCTFail("Expected burn response, got \(String(describing: responseVMSelect))") }
 
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
@@ -1851,7 +1851,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - burnAll
      */
     func testMainMenuAll_AllData_WithTabsAndHistory() async throws {
-        FireDialogViewModel.lastSelectedClearingOption = .allData
+        let settings = MockFireDialogViewSettings(lastSelectedClearingOption: .allData)
         let expectedVisits = await mockHistoryProvider.visits(matching: .rangeFilter(.all))
 
         dialogExpectedInput = DialogExpectedInput(
@@ -1881,7 +1881,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedVisits: nil,
                                        isToday: false)
 
-        _ = await coordinator.presentFireDialog(mode: .mainMenuAll, in: window)
+        _ = await coordinator.presentFireDialog(mode: .mainMenuAll, in: window, settings: settings)
         _ = try XCTUnwrap(fire.burnAllCalls.onlyValue)
     }
 
@@ -1915,7 +1915,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - burnAll
      */
     func testMainMenuAll_AllData_WithTabsAndHistoryAndChats() async throws {
-        FireDialogViewModel.lastSelectedClearingOption = .allData
+        let settings = MockFireDialogViewSettings(lastSelectedClearingOption: .allData)
         let expectedVisits = await mockHistoryProvider.visits(matching: .rangeFilter(.all))
 
         dialogExpectedInput = DialogExpectedInput(
@@ -1945,7 +1945,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedVisits: nil,
                                        isToday: false)
 
-        _ = await coordinator.presentFireDialog(mode: .mainMenuAll, in: window)
+        _ = await coordinator.presentFireDialog(mode: .mainMenuAll, in: window, settings: settings)
         _ = try XCTUnwrap(fire.burnAllCalls.onlyValue)
     }
 
@@ -1977,7 +1977,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - burnAll
      */
     func testMainMenuAll_AllData_WithTabsAndHistory_SingleWindow() async throws {
-        FireDialogViewModel.lastSelectedClearingOption = .allData
+        let settings = MockFireDialogViewSettings(lastSelectedClearingOption: .allData)
         let expectedVisits = await mockHistoryProvider.visits(matching: .rangeFilter(.all))
 
         dialogExpectedInput = DialogExpectedInput(
@@ -1998,7 +1998,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedHistoryVisits: expectedVisits
         )
         dialogConfirmedOptions = .init(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, includeChatHistory: false, selectedCookieDomains: nil, selectedVisits: nil, isToday: false)
-        _ = await coordinator.presentFireDialog(mode: .mainMenuAll, in: window)
+        _ = await coordinator.presentFireDialog(mode: .mainMenuAll, in: window, settings: settings)
         _ = try XCTUnwrap(fire.burnAllCalls.onlyValue)
     }
 
@@ -2031,7 +2031,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - burnAll
      */
     func testMainMenuAll_AllData_WithTabsAndHistory_MultipleWindows() async throws {
-        FireDialogViewModel.lastSelectedClearingOption = .allData
+        let settings = MockFireDialogViewSettings(lastSelectedClearingOption: .allData)
         let expectedVisits = await mockHistoryProvider.visits(matching: .rangeFilter(.all))
 
         dialogExpectedInput = DialogExpectedInput(
@@ -2052,7 +2052,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedHistoryVisits: expectedVisits
         )
         dialogConfirmedOptions = .init(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, includeChatHistory: false, selectedCookieDomains: nil, selectedVisits: nil, isToday: false)
-        _ = await coordinator.presentFireDialog(mode: .mainMenuAll, in: window)
+        _ = await coordinator.presentFireDialog(mode: .mainMenuAll, in: window, settings: settings)
         _ = try XCTUnwrap(fire.burnAllCalls.onlyValue)
     }
 
@@ -2083,7 +2083,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - burnAll
      */
     func testMainMenuAll_AllData_NoWindows() async throws {
-        FireDialogViewModel.lastSelectedClearingOption = .allData
+        let settings = MockFireDialogViewSettings(lastSelectedClearingOption: .allData)
         let expectedVisits = await mockHistoryProvider.visits(matching: .rangeFilter(.all))
 
         dialogExpectedInput = DialogExpectedInput(
@@ -2104,7 +2104,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
             expectedHistoryVisits: expectedVisits
         )
         dialogConfirmedOptions = .init(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, includeChatHistory: false, selectedCookieDomains: nil, selectedVisits: nil, isToday: false)
-        _ = await coordinator.presentFireDialog(mode: .mainMenuAll, in: window)
+        _ = await coordinator.presentFireDialog(mode: .mainMenuAll, in: window, settings: settings)
         _ = try XCTUnwrap(fire.burnAllCalls.onlyValue)
     }
 
@@ -2137,7 +2137,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
      - burnEntity(allWindows, selectedDomains=[], close=false), includingHistory=false
      */
     func testMainMenuAll_AllData_NoTabs_CookiesOnly() async throws {
-        FireDialogViewModel.lastSelectedClearingOption = .allData
+        let settings = MockFireDialogViewSettings(lastSelectedClearingOption: .allData)
         let expectedVisits = await mockHistoryProvider.visits(matching: .rangeFilter(.all))
 
         dialogExpectedInput = DialogExpectedInput(
@@ -2167,7 +2167,7 @@ final class FireCoordinatorIntegrationTests: XCTestCase {
                                        selectedVisits: nil,
                                        isToday: false)
 
-        _ = await coordinator.presentFireDialog(mode: .mainMenuAll, in: window)
+        _ = await coordinator.presentFireDialog(mode: .mainMenuAll, in: window, settings: settings)
         let call = try XCTUnwrap(fire.burnEntityCalls.onlyValue)
         if case let .allWindows(_, selectedDomains, _, close) = call.entity {
             XCTAssertEqual(selectedDomains, ["a.com", "b.com"])
@@ -2328,5 +2328,20 @@ private extension Array {
 private extension FireDialogResult {
     init(clearingOption: FireDialogViewModel.ClearingOption, includeHistory: Bool, includeTabsAndWindows: Bool, includeCookiesAndSiteData: Bool, includeChatHistory: Bool, isToday: Bool) {
         self.init(clearingOption: clearingOption, includeHistory: includeHistory, includeTabsAndWindows: includeTabsAndWindows, includeCookiesAndSiteData: includeCookiesAndSiteData, includeChatHistory: includeChatHistory, selectedCookieDomains: nil, selectedVisits: nil, isToday: isToday)
+    }
+}
+class MockFireDialogViewSettings: FireDialogViewSettings {
+    var lastSelectedClearingOption: FireDialogViewModel.ClearingOption?
+    var lastIncludeTabsAndWindowsState: Bool?
+    var lastIncludeHistoryState: Bool?
+    var lastIncludeCookiesAndSiteDataState: Bool?
+    var lastIncludeChatHistoryState: Bool?
+
+    init(lastSelectedClearingOption: FireDialogViewModel.ClearingOption? = nil, lastIncludeTabsAndWindowsState: Bool? = nil, lastIncludeHistoryState: Bool? = nil, lastIncludeCookiesAndSiteDataState: Bool? = nil, lastIncludeChatHistoryState: Bool? = nil) {
+        self.lastSelectedClearingOption = lastSelectedClearingOption
+        self.lastIncludeTabsAndWindowsState = lastIncludeTabsAndWindowsState
+        self.lastIncludeHistoryState = lastIncludeHistoryState
+        self.lastIncludeCookiesAndSiteDataState = lastIncludeCookiesAndSiteDataState
+        self.lastIncludeChatHistoryState = lastIncludeChatHistoryState
     }
 }

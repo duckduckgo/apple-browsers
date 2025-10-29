@@ -24,6 +24,7 @@ import Core
 import CoreData
 import Combine
 import Persistence
+import OSLog
 
 class RemoteMessagingDebugViewController: UIHostingController<RemoteMessagingDebugRootView> {
 
@@ -39,8 +40,31 @@ struct RemoteMessagingDebugRootView: View {
 
     var body: some View {
         List {
-            if !model.messages.isEmpty {
-                Section {
+            Section {
+                if let configInfo = model.configInfo {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Version: \(configInfo.version)")
+                            .font(.system(size: 15))
+                        Text("Last Processed: \(configInfo.lastProcessedFormatted)")
+                            .font(.system(size: 15))
+                        if configInfo.invalidate {
+                            Text("Status: Invalidated")
+                                .font(.system(size: 15))
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                }
+                Button("Refresh Config", action: model.refreshConfig)
+            } header: {
+                Text("Configuration")
+            }
+
+            Section {
+                if model.messages.isEmpty {
+                    Text("No messages")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color(baseColor: .gray70))
+                } else {
                     ForEach(model.messages, id: \.id) { message in
                         VStack(alignment: .leading, spacing: 6) {
                             Text("ID: \(message.id) | \(message.shown) | \(message.status)")
@@ -50,19 +74,78 @@ struct RemoteMessagingDebugRootView: View {
                                 .foregroundStyle(Color(baseColor: .gray70))
                         }
                     }
+                }
+            } header: {
+                Text("Messages")
+            } footer: {
+                Text("This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet.")
+            }
+
+            if !model.recentLogs.isEmpty || model.isLoadingLogs {
+                Section {
+                    if model.isLoadingLogs {
+                        HStack {
+                            Spacer()
+                            SwiftUI.ProgressView()
+                            Spacer()
+                        }
+                    } else {
+                        ForEach(model.recentLogs.indices, id: \.self) { index in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(model.recentLogs[index].timestamp)
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(Color(baseColor: .gray50))
+                                Text(model.recentLogs[index].message)
+                                    .font(.system(size: 12, design: .monospaced))
+                            }
+                            .padding(.vertical, 2)
+                        }
+                    }
+                } header: {
+                    HStack {
+                        Text("Recent Processing Logs")
+                        Spacer()
+                        Button("Refresh") {
+                            Task {
+                                await model.fetchLogs()
+                            }
+                        }
+                        .font(.system(size: 14))
+                        .disabled(model.isLoadingLogs)
+                    }
                 } footer: {
-                    Text("This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet.")
+                    Text("Shows debug and error logs from the last 5 minutes.")
                 }
             }
-            Section {
-                Button("Refresh Config", action: model.refreshConfig)
-            }
         }
-        .navigationTitle("\(model.messages.count) Remote Message(s)")
+        .navigationTitle("Remote Messaging Debug")
         .toolbar {
             Button("Delete All", role: .destructive, action: model.deleteAll)
-                .disabled(model.messages.isEmpty)
+                .disabled(model.messages.isEmpty && model.configInfo == nil)
         }
+    }
+}
+
+struct ConfigDebugModel {
+    var version: Int64
+    var lastProcessed: Date
+    var invalidate: Bool
+
+    var lastProcessedFormatted: String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .short
+        dateFormatter.timeStyle = .short
+        return dateFormatter.string(from: lastProcessed)
+    }
+
+    init?(_ config: RemoteMessagingConfigManagedObject) {
+        guard let version = config.version?.int64Value,
+              let evaluationTimestamp = config.evaluationTimestamp else {
+            return nil
+        }
+        self.version = version
+        self.lastProcessed = evaluationTimestamp
+        self.invalidate = config.invalidate?.boolValue ?? false
     }
 }
 
@@ -94,20 +177,36 @@ struct MessageDebugModel {
     }
 }
 
+struct LogEntry {
+    let timestamp: String
+    let message: String
+}
+
 class RemoteMessagingDebugViewModel: ObservableObject {
 
     @Published var messages: [MessageDebugModel] = []
+    @Published var configInfo: ConfigDebugModel?
+    @Published var recentLogs: [LogEntry] = []
+    @Published var isLoadingLogs: Bool = false
 
     let database: CoreDataDatabase
 
     init() {
         database = Database.shared
         fetchMessages()
+        fetchConfigInfo()
+        Task {
+            await fetchLogs()
+        }
 
         notificationCancellable = NotificationCenter.default.publisher(for: RemoteMessagingStore.Notifications.remoteMessagesDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.fetchMessages()
+                self?.fetchConfigInfo()
+                Task {
+                    await self?.fetchLogs()
+                }
             }
     }
 
@@ -125,6 +224,7 @@ class RemoteMessagingDebugViewModel: ObservableObject {
             assertionFailure("Failed to save after delete all")
         }
         fetchMessages()
+        fetchConfigInfo()
     }
 
     func refreshConfig() {
@@ -137,6 +237,66 @@ class RemoteMessagingDebugViewModel: ObservableObject {
         let fetchRequest = RemoteMessageManagedObject.fetchRequest()
         fetchRequest.returnsObjectsAsFaults = false
         messages = ((try? context.fetch(fetchRequest)) ?? []).map(MessageDebugModel.init)
+    }
+
+    func fetchConfigInfo() {
+        let context = database.makeContext(concurrencyType: .mainQueueConcurrencyType)
+        context.refreshAllObjects()
+        let fetchRequest = RemoteMessagingConfigManagedObject.fetchRequest()
+        fetchRequest.fetchLimit = 1
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "version", ascending: false)]
+        fetchRequest.returnsObjectsAsFaults = false
+
+        guard let configs = try? context.fetch(fetchRequest),
+              let latestConfig = configs.first else {
+            configInfo = nil
+            return
+        }
+
+        configInfo = ConfigDebugModel(latestConfig)
+    }
+
+    @MainActor
+    func fetchLogs() async {
+        guard #available(iOS 15.0, *) else {
+            recentLogs = []
+            return
+        }
+
+        isLoadingLogs = true
+
+        let logs = await Task.detached {
+            do {
+                let logStore = try OSLogStore(scope: .currentProcessIdentifier)
+                let timeInterval: TimeInterval = -(TimeInterval.minutes(5))
+                let startDate = Date().addingTimeInterval(timeInterval)
+
+                let predicate = NSPredicate(format: "subsystem == 'Remote Messaging'")
+
+                let entries = try logStore.getEntries(at: logStore.position(date: startDate), matching: predicate)
+
+                let formatter = DateFormatter()
+                formatter.dateFormat = "HH:mm:ss"
+
+                var logs: [LogEntry] = []
+                for entry in entries {
+                    if let logEntry = entry as? OSLogEntryLog {
+                        if logEntry.level != .debug {
+                            let timestamp = formatter.string(from: logEntry.date)
+                            logs.append(LogEntry(timestamp: timestamp, message: logEntry.composedMessage))
+                        }
+                    }
+                }
+
+                // Take the most recent 50 entries and reverse so newest is at top
+                return Array(logs.suffix(50).reversed())
+            } catch {
+                return []
+            }
+        }.value
+
+        recentLogs = logs
+        isLoadingLogs = false
     }
 
     private var notificationCancellable: AnyCancellable?

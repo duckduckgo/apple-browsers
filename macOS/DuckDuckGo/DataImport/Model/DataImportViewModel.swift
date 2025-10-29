@@ -479,7 +479,7 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
                             faviconManager: NSApp.delegateTyped.faviconManager,
                             featureFlagger: Application.appDelegate.featureFlagger)
     case .safari, .safariTechnologyPreview:
-        if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker), !source.archiveImportSupportedFiles.isEmpty {
+        if #available(macOS 15.2, *), !source.archiveImportSupportedFiles.isEmpty {
             SafariArchiveImporter(archiveURL: url,
                                   bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
                                   loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
@@ -668,8 +668,10 @@ extension DataImportViewModel {
                                     /* dataType: */ nil,
                                     /* profileURL: */ $0.profileURL,
                                     /* primaryPassword: */ nil)
-            }),
-                  selectedDataTypes.intersects(importer.importableTypes) else {
+            }), selectedDataTypes.intersects(importer.importableTypes) else {
+                if #available(macOS 15.2, *), .safari == importSource {
+                    return .next(.archiveImport(dataTypes: importSource.supportedDataTypes))
+                }
                 // no profiles found
                 // or selected data type not supported by selected browser data importer
                 guard let type = DataType.allCases.filter(selectedDataTypes.contains).first else {

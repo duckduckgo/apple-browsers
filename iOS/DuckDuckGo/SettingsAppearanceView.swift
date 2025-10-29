@@ -81,7 +81,6 @@ struct SettingsAppearanceView: View {
 
             showReloadButtonSetting()
 
-            addressBarButtonSetting()
         } header: {
             Text(UserText.addressBar)
         } footer: {
@@ -89,9 +88,10 @@ struct SettingsAppearanceView: View {
         }
 
         Section {
+            addressBarButtonSetting()
             toolbarButtonSetting()
         } header: {
-            Text(verbatim: "Toolbar")
+            Text(verbatim: "Customizable Buttons")
         }
     }
 
@@ -105,7 +105,7 @@ struct SettingsAppearanceView: View {
 
         SettingsPickerCellView(
             useImprovedPicker: true,
-            label: "Customizable Button",
+            label: "Address Bar",
             options: MobileCustomization.addressBarButtons,
             selectedOption: viewModel.selectedAddressBarButton,
             iconProvider: buttonIconProvider)
@@ -117,7 +117,7 @@ struct SettingsAppearanceView: View {
 
         SettingsPickerCellView(            
             useImprovedPicker: true,
-            label: "Customizable Button",
+            label: "Toolbar",
             options: MobileCustomization.toolbarButtons,
             selectedOption: viewModel.selectedToolbarButton,
             iconProvider: buttonIconProvider)

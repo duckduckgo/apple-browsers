@@ -29,7 +29,7 @@ protocol DataImportSummaryViewModelDelegate: AnyObject {
 
 final class DataImportSummaryViewModel: ObservableObject {
 
-    enum SecondaryAction {
+    enum Footer {
         case syncButton(title: String)
         case message(body: String)
     }
@@ -44,9 +44,9 @@ final class DataImportSummaryViewModel: ObservableObject {
     private let syncService: DDGSyncing
 
 
-    var secondaryAction: SecondaryAction? {
+    var footer: Footer? {
         if importScreen == .whatsNew {
-            return .message(body: "Visit Settings to securely sync bookmarks and passwords between your devices.")
+            return .message(body: UserText.dataImportSummaryVisitSyncSettings)
         } else if !syncIsActive {
             return .syncButton(title: syncButtonTitle)
         } else {

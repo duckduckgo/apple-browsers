@@ -101,7 +101,7 @@ struct DataImportSummaryView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle())
 
-                switch viewModel.secondaryAction {
+                switch viewModel.footer {
                 case .syncButton(let title):
                     syncButton(title: title)
                 case .message(let body):

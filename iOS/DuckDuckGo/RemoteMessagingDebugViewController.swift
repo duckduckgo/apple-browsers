@@ -114,7 +114,7 @@ struct RemoteMessagingDebugRootView: View {
                         .disabled(model.isLoadingLogs)
                     }
                 } footer: {
-                    Text("Shows debug and error logs from the last 5 minutes.")
+                    Text("Shows debug and error logs from the last minute, to help diagnose issues immediately after a refresh.")
                 }
             }
         }
@@ -267,12 +267,13 @@ class RemoteMessagingDebugViewModel: ObservableObject {
 
         let logs = await Task.detached {
             do {
+                // Only pull the last minute of logs, since the idea is to refresh the config from the menu and see
+                // the logs from that refresh - if you want to check logs further back then you can use the dedicated
+                // Log Viewer debug menu.
                 let logStore = try OSLogStore(scope: .currentProcessIdentifier)
-                let timeInterval: TimeInterval = -(TimeInterval.minutes(5))
+                let timeInterval: TimeInterval = -(TimeInterval.minutes(1))
                 let startDate = Date().addingTimeInterval(timeInterval)
-
                 let predicate = NSPredicate(format: "subsystem == 'Remote Messaging'")
-
                 let entries = try logStore.getEntries(at: logStore.position(date: startDate), matching: predicate)
 
                 let formatter = DateFormatter()
@@ -288,8 +289,7 @@ class RemoteMessagingDebugViewModel: ObservableObject {
                     }
                 }
 
-                // Take the most recent 50 entries and reverse so newest is at top
-                return Array(logs.suffix(50).reversed())
+                return Array(logs.reversed())
             } catch {
                 return []
             }

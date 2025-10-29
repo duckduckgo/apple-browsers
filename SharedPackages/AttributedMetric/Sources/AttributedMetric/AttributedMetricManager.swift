@@ -181,7 +181,6 @@ public final class AttributedMetricManager {
             processAverageDuckAIChat()
         case .userDidSubscribe:
             processSubscriptionDay()
-            processSubscriptionDay()
         case .userDidSync(devicesCount: let devicesCount):
             processSyncCheck(devices: devicesCount)
         }

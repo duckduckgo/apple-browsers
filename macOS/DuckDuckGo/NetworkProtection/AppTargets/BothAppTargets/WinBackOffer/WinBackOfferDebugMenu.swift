@@ -100,6 +100,7 @@ final class WinBackOfferDebugMenu: NSMenuItem {
         winbackOfferStore.storeChurnDate(Date(timeIntervalSince1970: 0))
         winbackOfferStore.setHasRedeemedOffer(false)
         winbackOfferStore.firstDayModalShown = false
+        winbackOfferStore.didDismissUrgencyMessage = false
         updateMenuItemsState()
     }
 

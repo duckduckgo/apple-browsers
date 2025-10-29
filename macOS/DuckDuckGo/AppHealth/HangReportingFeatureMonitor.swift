@@ -29,7 +29,7 @@ final class HangReportingFeatureMonitor {
     private let featureFlagger: FeatureFlagger
     private let watchdog: Watchdog
     private var cancellable: AnyCancellable?
-    
+
     /// - Parameters:
     ///   - privacyConfigurationManager: The privacy configuration manager to monitor for updates
     ///   - featureFlagger: The feature flagger to check the hangReporting feature flag state.
@@ -41,7 +41,7 @@ final class HangReportingFeatureMonitor {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.featureFlagger = featureFlagger
         self.watchdog = watchdog
-        
+
         // Subscribe to privacy configuration updates to respond to remote config changes.
         // Map to the feature flag state and remove duplicates to avoid redundant start/stop calls
         // when the config reloads multiple times but the value doesn't actually change.
@@ -53,20 +53,17 @@ final class HangReportingFeatureMonitor {
             .sink { [weak self] isEnabled in
                 guard let self = self else { return }
 
-                Task { [weak watchdog = self.watchdog] in
-                    guard let watchdog = watchdog else { return }
-                    
+                Task {
                     if isEnabled {
-                        await watchdog.start()
+                        await self.watchdog.start()
                     } else {
-                        await watchdog.stop()
+                        await self.watchdog.stop()
                     }
                 }
             }
     }
-    
+
     deinit {
         cancellable?.cancel()
     }
 }
-

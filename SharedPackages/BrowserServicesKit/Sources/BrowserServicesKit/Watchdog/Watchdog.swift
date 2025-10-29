@@ -111,7 +111,7 @@ public final actor Watchdog {
     ///   - crashOnTimeout: Whether the watchdog should kill the app once the maximum hang duration has been reached (used for debugging purposes)
     ///   - killAppFunction: A closure to be executed when the maximum hang duration has been reached (used for testing purposes)
     ///
-    public init(minimumHangDuration: TimeInterval = 2.0, maximumHangDuration: TimeInterval = 5.0, checkInterval: TimeInterval = 0.5, requiredRecoveryHeartbeats: Int = 4,  eventMapper: EventMapping<Watchdog.Event>? = nil, crashOnTimeout: Bool = false, killAppFunction: ((TimeInterval) -> Void)? = nil) {
+    public init(minimumHangDuration: TimeInterval = 2.0, maximumHangDuration: TimeInterval = 5.0, checkInterval: TimeInterval = 0.5, requiredRecoveryHeartbeats: Int = 4, eventMapper: EventMapping<Watchdog.Event>? = nil, crashOnTimeout: Bool = false, killAppFunction: ((TimeInterval) -> Void)? = nil) {
 
         assert(checkInterval > 0, "checkInterval must be greater than 0")
         assert(minimumHangDuration >= 0, "minimumHangDuration must be greater than or equal to 0")
@@ -144,7 +144,7 @@ public final actor Watchdog {
     public func start() async {
         let isCurrentlyRunning = await isRunning
         guard !isCurrentlyRunning else { return }
-        
+
         cancelAndClearTasks()
         resetHangState()
         isPaused = false
@@ -163,7 +163,7 @@ public final actor Watchdog {
     public func stop() async {
         let isCurrentlyRunning = await isRunning
         guard isCurrentlyRunning else { return }
-        
+
         cancelAndClearTasks()
 
         Self.logger.info("Watchdog stopped monitoring")
@@ -183,7 +183,7 @@ public final actor Watchdog {
     ///
     public func pause() async {
         guard await isRunning else { return }
-        
+
         Self.logger.info("Watchdog paused")
         isPaused = true
         await stop()
@@ -193,7 +193,7 @@ public final actor Watchdog {
     ///
     public func resume() async {
         guard isPaused else { return }
-        
+
         Self.logger.info("Watchdog resumed")
 
         // Reset the heartbeat and state to start fresh after resume
@@ -311,7 +311,7 @@ public final actor Watchdog {
 
     private func handleRecoveryDetection(at time: Date, timeSinceLastHeartbeat: TimeInterval) {
         recoveryState.recordHeartbeat(at: time)
-        
+
         if recoveryState.isRecovered {
             transition(from: hangState, to: .responsive, at: time, timeSinceLastHeartbeat: timeSinceLastHeartbeat)
         }
@@ -330,7 +330,7 @@ public final actor Watchdog {
 
     private func currentHangDuration(currentTime: Date) -> TimeInterval {
         guard let hangStartTime = hangStartTime else { return 0 }
-    
+
         let hangEndTime = recoveryState.hangEndTime ?? currentTime
         return hangEndTime.timeIntervalSince(hangStartTime)
     }
@@ -356,27 +356,27 @@ private final class RecoveryState {
     let requiredHeartbeats: Int
     private(set) var detectedResponsiveHeartbeats: Int = 0
     private(set) var firstHeartbeatResponseTime: Date?
-    
+
     init(requiredHeartbeats: Int) {
         self.requiredHeartbeats = requiredHeartbeats
     }
-    
+
     func recordHeartbeat(at time: Date) {
         if detectedResponsiveHeartbeats == 0 {
             firstHeartbeatResponseTime = time
         }
         detectedResponsiveHeartbeats += 1
     }
-    
+
     var isRecovered: Bool {
         detectedResponsiveHeartbeats >= requiredHeartbeats
     }
-    
+
     func reset() {
         detectedResponsiveHeartbeats = 0
         firstHeartbeatResponseTime = nil
     }
-    
+
     var hangEndTime: Date? {
         firstHeartbeatResponseTime
     }

@@ -48,7 +48,7 @@ class MainViewCoordinator {
     var toolbarBookmarksButton: UIBarButtonItem { toolbarHandler.bookmarkButton }
 
     let constraints = Constraints()
-    var toolbarHandler: ToolbarHandler!
+    var toolbarHandler: ToolbarStateHandling!
 
     // The default after creating the hiearchy is top
     var addressBarPosition: AddressBarPosition = .top

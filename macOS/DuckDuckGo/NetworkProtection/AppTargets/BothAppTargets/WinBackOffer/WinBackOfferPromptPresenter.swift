@@ -25,9 +25,17 @@ protocol WinBackOfferPromptPresenting {
 
 final class WinBackOfferPromptPresenter: WinBackOfferPromptPresenting {
     private let visibilityManager: WinBackOfferVisibilityManaging
+    private let urlOpener: @MainActor (URL) -> Void
+    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
 
-    init(visibilityManager: WinBackOfferVisibilityManaging) {
+    init(visibilityManager: WinBackOfferVisibilityManaging,
+         urlOpener: @escaping @MainActor (URL) -> Void = { @MainActor url in
+            Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
+         },
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
         self.visibilityManager = visibilityManager
+        self.urlOpener = urlOpener
+        self.subscriptionManager = subscriptionManager
     }
 
     func tryToShowPrompt(in window: NSWindow?) {
@@ -39,7 +47,9 @@ final class WinBackOfferPromptPresenter: WinBackOfferPromptPresenting {
     private func showPrompt(in window: NSWindow?) {
         let viewModel = WinBackOfferPromptViewModel(
             confirmAction: { [weak self] in
-                self?.handleSeeOffer()
+                Task { @MainActor in
+                    self?.handleSeeOffer()
+                }
             }
         )
 
@@ -49,7 +59,16 @@ final class WinBackOfferPromptPresenter: WinBackOfferPromptPresenting {
         }
     }
 
-    private func handleSeeOffer() {
-        // Open landing page
+    @MainActor
+    func handleSeeOffer() {
+        guard let components = SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: SubscriptionFunnelOrigin.winBackLaunch.rawValue, featurePage: SubscriptionURL.FeaturePage.winback),
+              let url = components.url else {
+            // Fallback to original URL
+            let url = subscriptionManager.url(for: .purchase)
+            urlOpener(url)
+            return
+        }
+
+        urlOpener(url)
     }
 }

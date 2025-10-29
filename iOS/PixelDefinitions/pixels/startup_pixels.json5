@@ -118,5 +118,20 @@
             }
         ],
         "expires": "2025-11-08"
+    },
+    "m_d_app_delegate_init_to_launch_time": {
+        "description": "Time between AppDelegate init and didFinishLaunching to detect iOS prewarming",
+        "owners": ["jaceklyp"],
+        "triggers": ["startup"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "time_diff",
+                "description": "Time difference between AppDelegate init and didFinishLaunching",
+                "type": "number"
+            }
+        ],
+        "expires": "2025-12-08"
     }
 }

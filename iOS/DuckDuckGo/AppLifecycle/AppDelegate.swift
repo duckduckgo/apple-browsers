@@ -23,11 +23,15 @@ import Core
 @UIApplicationMain class AppDelegate: UIResponder, UIApplicationDelegate {
 
     private let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
+    private let initTime = CFAbsoluteTimeGetCurrent()
 
     var window: UIWindow?
 
     /// See: `Launching.swift`
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        let timeDiff = CFAbsoluteTimeGetCurrent() - initTime
+        Pixel.fire(pixel: .debugAppDelegateInitToLaunchTime, withAdditionalParameters: ["time_diff": String(timeDiff)])
+
         let isTesting: Bool = ProcessInfo().arguments.contains("testing")
         appStateMachine.handle(.didFinishLaunching(isTesting: isTesting))
         return true

@@ -1,4 +1,4 @@
-/*! © DuckDuckGo ContentScopeScripts protections https://github.com/duckduckgo/content-scope-scripts/ */
+/*! © DuckDuckGo ContentScopeScripts apple https://github.com/duckduckgo/content-scope-scripts/ */
 "use strict";
 (() => {
   var __create = Object.create;
@@ -824,6 +824,10 @@
     TypeError: () => TypeError2,
     URL: () => URL2,
     addEventListener: () => addEventListener,
+    console: () => console2,
+    consoleError: () => consoleError,
+    consoleLog: () => consoleLog,
+    consoleWarn: () => consoleWarn,
     customElementsDefine: () => customElementsDefine,
     customElementsGet: () => customElementsGet,
     dispatchEvent: () => dispatchEvent,
@@ -864,6 +868,10 @@
   var Map2 = globalThis.Map;
   var Error2 = globalThis.Error;
   var randomUUID = globalThis.crypto?.randomUUID?.bind(globalThis.crypto);
+  var console2 = globalThis.console;
+  var consoleLog = console2.log.bind(console2);
+  var consoleWarn = console2.warn.bind(console2);
+  var consoleError = console2.error.bind(console2);
 
   // src/utils.js
   var globalObj = typeof window === "undefined" ? globalThis : window;
@@ -1329,7 +1337,7 @@
   function isDuckAi() {
     const tabUrl = getTabUrl();
     const domains = ["duckduckgo.com", "duck.ai", "duck.co"];
-    if (tabUrl?.hostname && domains.includes(tabUrl?.hostname)) {
+    if (tabUrl?.hostname && domains.some((domain) => matchHostname(tabUrl?.hostname, domain))) {
       const url = new URL(tabUrl?.href);
       return url.searchParams.has("duckai") || url.searchParams.get("ia") === "chat";
     }
@@ -4020,6 +4028,7 @@
        *   platform: import('./utils.js').Platform,
        *   desktopModeEnabled?: boolean,
        *   forcedZoomEnabled?: boolean,
+       *   isDdgWebView?: boolean,
        *   featureSettings?: Record<string, unknown>,
        *   assets?: import('./content-feature.js').AssetConfig | undefined,
        *   site: import('./content-feature.js').Site,
@@ -4444,21 +4453,21 @@
             return () => {
             };
           }
-          return console.log.bind(console, prefix);
+          return consoleLog.bind(console, prefix);
         },
         get warn() {
           if (!shouldLog) {
             return () => {
             };
           }
-          return console.warn.bind(console, prefix);
+          return consoleWarn.bind(console, prefix);
         },
         get error() {
           if (!shouldLog) {
             return () => {
             };
           }
-          return console.error.bind(console, prefix);
+          return consoleError.bind(console, prefix);
         }
       };
     }
@@ -6979,7 +6988,7 @@ ul.messages {
           break;
         case "UNKNOWN":
         default:
-          console.warn("No known pageType");
+          logger.log("No known pageType");
       }
       if (this.currentPage) {
         this.currentPage.destroy();
@@ -8413,7 +8422,7 @@ ul.messages {
   // src/features/message-bridge/create-page-world-bridge.js
   var captured = captured_globals_exports;
   var ERROR_MSG = "Did not install Message Bridge";
-  function createPageWorldBridge(featureName, token) {
+  function createPageWorldBridge(featureName, token, context) {
     if (typeof featureName !== "string" || !token) {
       throw new captured.Error(ERROR_MSG);
     }
@@ -8444,19 +8453,20 @@ ul.messages {
     if (!installed) {
       throw new captured.Error(ERROR_MSG);
     }
-    return createMessagingInterface(featureName, send, appendToken);
+    return createMessagingInterface(featureName, send, appendToken, context);
   }
   function random() {
     if (typeof captured.randomUUID !== "function") throw new Error("unreachable");
     return captured.randomUUID();
   }
-  function createMessagingInterface(featureName, send, appendToken) {
+  function createMessagingInterface(featureName, send, appendToken, context) {
     return {
       /**
        * @param {string} method
        * @param {Record<string, any>} params
        */
       notify(method, params) {
+        context?.log.info("sending notify", method, params);
         send(
           new ProxyNotification({
             method,
@@ -8471,6 +8481,7 @@ ul.messages {
        * @returns {Promise<any>}
        */
       request(method, params) {
+        context?.log.info("sending request", method, params);
         const id = random();
         send(
           new ProxyRequest({
@@ -8483,6 +8494,7 @@ ul.messages {
         return new Promise((resolve, reject) => {
           const responseName = appendToken(ProxyResponse.NAME + "-" + id);
           const handler = (e) => {
+            context?.log.info("received response", e.detail);
             const response = ProxyResponse.create(e.detail);
             if (response && response.id === id) {
               if ("error" in response && response.error) {
@@ -8503,6 +8515,7 @@ ul.messages {
        */
       subscribe(name, callback) {
         const id = random();
+        context?.log.info("subscribing", name);
         send(
           new SubscriptionRequest({
             subscriptionName: name,
@@ -8511,6 +8524,7 @@ ul.messages {
           })
         );
         const handler = (e) => {
+          context?.log.info("received subscription response", e.detail);
           const subscriptionEvent = SubscriptionResponse.create(e.detail);
           if (subscriptionEvent) {
             const { id: eventId, params } = subscriptionEvent;
@@ -8549,6 +8563,7 @@ ul.messages {
         if (!args.platform || !args.platform.name) {
           return;
         }
+        const context = this;
         this.defineProperty(Navigator.prototype, "duckduckgo", {
           value: {
             platform: args.platform.name,
@@ -8564,7 +8579,7 @@ ul.messages {
             createMessageBridge(featureName) {
               const existingBridge = store[featureName];
               if (existingBridge) return existingBridge;
-              const bridge = createPageWorldBridge(featureName, args.messageSecret);
+              const bridge = createPageWorldBridge(featureName, args.messageSecret, context);
               store[featureName] = bridge;
               return bridge;
             }
@@ -10254,6 +10269,20 @@ ${truncatedWarning}
     return node.nodeType === Node.ELEMENT_NODE;
   }
   function getSameOriginIframeDocument(iframe) {
+    const src = iframe.src;
+    if (iframe.hasAttribute("sandbox") && !iframe.sandbox.contains("allow-scripts")) {
+      return null;
+    }
+    if (src && src !== "about:blank" && src !== "") {
+      try {
+        const iframeUrl = new URL(src, window.location.href);
+        if (iframeUrl.origin !== window.location.origin) {
+          return null;
+        }
+      } catch (e) {
+        return null;
+      }
+    }
     try {
       const doc = iframe.contentDocument;
       if (doc && doc.documentElement) {
@@ -10289,7 +10318,7 @@ ${truncatedWarning}
     if (!isHtmlElement(node)) {
       return "";
     }
-    if (!checkNodeIsVisible(node) || node.matches(settings.excludeSelectors)) {
+    if (!checkNodeIsVisible(node) || settings.excludeSelectors && node.matches(settings.excludeSelectors)) {
       return "";
     }
     const tag = node.tagName.toLowerCase();
@@ -10322,16 +10351,21 @@ ${truncatedWarning}
       case "br":
         return `
 `;
+      case "img":
+        return `
+![${getAttributeOrBlank(node, "alt")}](${getAttributeOrBlank(node, "src")})
+`;
       case "ul":
+      case "ol":
         return `
 ${children}
 `;
       case "li":
         return `
-- ${children.trim()}
+- ${collapseAndTrim(children)}
 `;
       case "a":
-        return getLinkText(node);
+        return getLinkText(node, children, settings);
       case "iframe": {
         if (!settings.includeIframes) {
           return children;
@@ -10356,12 +10390,20 @@ ${iframeContent}
         return children;
     }
   }
+  function getAttributeOrBlank(node, attr) {
+    const attrValue = node.getAttribute(attr) ?? "";
+    return attrValue.trim();
+  }
   function collapseAndTrim(str) {
     return collapseWhitespace(str).trim();
   }
-  function getLinkText(node) {
+  function getLinkText(node, children, settings) {
     const href = node.getAttribute("href");
-    return href ? `[${collapseAndTrim(node.textContent)}](${href})` : collapseWhitespace(node.textContent);
+    const trimmedContent = collapseAndTrim(children);
+    if (settings.trimBlankLinks && trimmedContent.length === 0) {
+      return "";
+    }
+    return href ? `[${trimmedContent}](${href})` : collapseWhitespace(children);
   }
   var _cachedContent, _cachedTimestamp, _delayedRecheckTimer;
   var PageContext = class extends ContentFeature {
@@ -10560,17 +10602,25 @@ ${iframeContent}
       const content = {
         favicon: getFaviconList(),
         title: this.getPageTitle(),
-        metaDescription: this.getMetaDescription(),
         content: mainContent,
         truncated,
         fullContentLength: this.fullContentLength,
         // Include full content length before truncation
-        headings: this.getHeadings(),
-        links: this.getLinks(),
-        images: this.getImages(),
         timestamp: Date.now(),
         url: window.location.href
       };
+      if (this.getFeatureSettingEnabled("includeMetaDescription", "disabled")) {
+        content.metaDescription = this.getMetaDescription();
+      }
+      if (this.getFeatureSettingEnabled("includeHeadings", "disabled")) {
+        content.headings = this.getHeadings();
+      }
+      if (this.getFeatureSettingEnabled("includeLinks", "disabled")) {
+        content.links = this.getLinks();
+      }
+      if (this.getFeatureSettingEnabled("includeImages", "disabled")) {
+        content.images = this.getImages();
+      }
       this.cachedContent = content;
       return content;
     }
@@ -10592,6 +10642,8 @@ ${iframeContent}
       const maxDepth = this.getFeatureSetting("maxDepth") || 5e3;
       let excludeSelectors = this.getFeatureSetting("excludeSelectors") || [".ad", ".sidebar", ".footer", ".nav", ".header"];
       const excludedInertElements = this.getFeatureSetting("excludedInertElements") || [
+        "img",
+        // Note we're currently disabling images which we're handling in domToMarkdown (this can be per-site enabled in the config if needed).
         "script",
         "style",
         "link",
@@ -10609,18 +10661,26 @@ ${iframeContent}
       if (mainContent && mainContent.innerHTML.trim().length <= mainContentLength) {
         mainContent = null;
       }
-      const contentRoot = mainContent || document.body;
-      if (contentRoot) {
-        this.log.info("Getting main content", contentRoot);
-        content += domToMarkdown(contentRoot, {
+      let contentRoot = mainContent || document.body;
+      const extractContent = (root) => {
+        this.log.info("Getting content", root);
+        const result = domToMarkdown(root, {
           maxLength: upperLimit,
           maxDepth,
           includeIframes: this.getFeatureSettingEnabled("includeIframes", "enabled"),
-          excludeSelectors: excludeSelectorsString
-        });
-        this.log.info("Content markdown", content, contentRoot);
+          excludeSelectors: excludeSelectorsString,
+          trimBlankLinks: this.getFeatureSettingEnabled("trimBlankLinks", "enabled")
+        }).trim();
+        this.log.info("Content markdown", result, root);
+        return result;
+      };
+      if (contentRoot) {
+        content += extractContent(contentRoot);
       }
-      content = content.trim();
+      if (content.length === 0 && contentRoot !== document.body && this.getFeatureSettingEnabled("bodyFallback", "enabled")) {
+        contentRoot = document.body;
+        content += extractContent(contentRoot);
+      }
       this.fullContentLength = content.length;
       if (content.length > maxLength) {
         this.log.info("Truncating content", {

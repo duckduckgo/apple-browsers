@@ -88,9 +88,8 @@ public final actor Watchdog {
         crashOnTimeout = state
     }
 
-    private let recoveryRequiredHeartbeats: Int
-    private var recoveryFirstHeartbeatResponseTime: Date?
-    private var recoveryDetectedResponsiveHeartbeats: Int = 0
+    /// Encapsulates recovery detection state and logic
+    private var recoveryState: RecoveryState
 
     @MainActor
     public private(set) var isRunning: Bool = false
@@ -122,7 +121,7 @@ public final actor Watchdog {
         self.minimumHangDuration = minimumHangDuration
         self.maximumHangDuration = maximumHangDuration
         self.checkInterval = checkInterval
-        self.recoveryRequiredHeartbeats = requiredRecoveryHeartbeats
+        self.recoveryState = RecoveryState(requiredHeartbeats: requiredRecoveryHeartbeats)
         self.eventMapper = eventMapper
         self.crashOnTimeout = crashOnTimeout
         self.killAppFunction = killAppFunction
@@ -201,8 +200,7 @@ public final actor Watchdog {
     private func resetHangState() {
         hangState = .responsive
         hangStartTime = nil
-        recoveryFirstHeartbeatResponseTime = nil
-        recoveryDetectedResponsiveHeartbeats = 0
+        recoveryState.reset()
     }
 
     // MARK: - Monitoring
@@ -306,15 +304,9 @@ public final actor Watchdog {
     }
 
     private func handleRecoveryDetection(at time: Date, timeSinceLastHeartbeat: TimeInterval) {
-        if recoveryDetectedResponsiveHeartbeats == 0 {
-            recoveryFirstHeartbeatResponseTime = time
-            Self.logger.info("Recovery detected! First heartbeat response time: \(self.recoveryFirstHeartbeatResponseTime!)")
-        }
-
-        recoveryDetectedResponsiveHeartbeats += 1
-        Self.logger.info("Responsive heartbeats for recovery: \(self.recoveryDetectedResponsiveHeartbeats)")
-
-        if recoveryDetectedResponsiveHeartbeats >= recoveryRequiredHeartbeats {
+        recoveryState.recordHeartbeat(at: time)
+        
+        if recoveryState.isRecovered {
             transition(from: hangState, to: .responsive, at: time, timeSinceLastHeartbeat: timeSinceLastHeartbeat)
         }
     }
@@ -333,13 +325,8 @@ public final actor Watchdog {
     private func currentHangDuration(currentTime: Date) -> TimeInterval {
         guard let hangStartTime = hangStartTime else { return 0 }
     
-        // If we're still in recovery phase, hang ended when recovery started
-        if let recoveryFirstHeartbeatResponseTime = recoveryFirstHeartbeatResponseTime {
-            return recoveryFirstHeartbeatResponseTime.timeIntervalSince(hangStartTime)
-        }
-        
-        // If no recovery detected yet, hang is still ongoing
-        return currentTime.timeIntervalSince(hangStartTime)
+        let hangEndTime = recoveryState.hangEndTime ?? currentTime
+        return hangEndTime.timeIntervalSince(hangStartTime)
     }
 
     private func hangDurationToNearestSecond(duration: TimeInterval) -> Int {
@@ -355,6 +342,37 @@ public final actor Watchdog {
 
         let hangDuration = currentHangDuration(currentTime: currentTime)
         Self.logger.info("\(message) Duration: \(self.formattedHangDuration(duration: hangDuration))s")
+    }
+}
+
+/// Encapsulates recovery detection state and logic
+private final class RecoveryState {
+    let requiredHeartbeats: Int
+    private(set) var detectedResponsiveHeartbeats: Int = 0
+    private(set) var firstHeartbeatResponseTime: Date?
+    
+    init(requiredHeartbeats: Int) {
+        self.requiredHeartbeats = requiredHeartbeats
+    }
+    
+    func recordHeartbeat(at time: Date) {
+        if detectedResponsiveHeartbeats == 0 {
+            firstHeartbeatResponseTime = time
+        }
+        detectedResponsiveHeartbeats += 1
+    }
+    
+    var isRecovered: Bool {
+        detectedResponsiveHeartbeats >= requiredHeartbeats
+    }
+    
+    func reset() {
+        detectedResponsiveHeartbeats = 0
+        firstHeartbeatResponseTime = nil
+    }
+    
+    var hangEndTime: Date? {
+        firstHeartbeatResponseTime
     }
 }
 

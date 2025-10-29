@@ -50,7 +50,8 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
 
     public enum UserEvent {
         case didClickIHaveASubscription,
-             openURL(SubscriptionURL)
+             openURL(SubscriptionURL),
+             openWinBackOfferLandingPage
     }
 
     public init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
@@ -77,7 +78,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     @MainActor
     func purchaseAction() {
         if winBackOfferVisibilityManager.isOfferAvailable {
-
+            userEventHandler(.openWinBackOfferLandingPage)
         } else {
             userEventHandler(.openURL(.purchase))
         }

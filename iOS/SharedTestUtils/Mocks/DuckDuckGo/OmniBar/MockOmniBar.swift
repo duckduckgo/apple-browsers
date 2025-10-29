@@ -90,7 +90,7 @@ final class MockOmniBar: OmniBar {
         var settingsButton: UIButton! = UIButton()
         var cancelButton: UIButton! = UIButton()
         var bookmarksButton: UIButton! = UIButton()
-        var accessoryButton: UIButton! = UIButton()
+        var aiChatButton: UIButton! = UIButton()
         var menuButton: UIButton! = UIButton()
         var refreshButton: UIButton! = UIButton()
         var leftIconContainerView: UIView! = UIView()
@@ -142,7 +142,7 @@ final class MockOmniBar: OmniBar {
         var isBackButtonHidden: Bool = true
         var isForwardButtonHidden: Bool = true
         var isBookmarksButtonHidden: Bool = true
-        var isAccessoryButtonHidden: Bool = true
+        var isAIChatButtonHidden: Bool = true
         var isSearchLoupeHidden: Bool = true
         var isDismissButtonHidden: Bool = true
         var isShareButtonHidden: Bool = true

@@ -219,12 +219,6 @@ class MainViewController: UIViewController {
         return manager
     }()
 
-    private lazy var omnibarAccessoryHandler: OmnibarAccessoryHandler = {
-        let settings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
-
-        return OmnibarAccessoryHandler(settings: settings)
-    }()
-
     let isAuthV2Enabled: Bool
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
@@ -534,8 +528,7 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
                                                     appSettings: appSettings,
-                                                    omnibarDependencies: omnibarDependencies,
-                                                    omnibarAccessoryHandler: omnibarAccessoryHandler) { [weak self] in
+                                                    omnibarDependencies: omnibarDependencies) { [weak self] in
 
             guard $0 != self?.tabManager.model.currentIndex else { return }
             
@@ -1459,7 +1452,6 @@ class MainViewController: UIViewController {
 
     private func refreshOmniBar() {
         updateOmniBarLoadingState()
-        viewCoordinator.omniBar.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: currentTab?.url))
 
         guard let tab = currentTab, tab.link != nil else {
             viewCoordinator.omniBar.stopBrowsing()
@@ -2764,13 +2756,9 @@ extension MainViewController: OmniBarDelegate {
         hideNotificationBarIfBrokenSitePromptShown(afterRefresh: true)
     }
 
-    func onAccessoryPressed(accessoryType: OmniBarAccessoryType) {
+    func onAIChatPressed() {
         hideSuggestionTray()
-
-        switch accessoryType {
-        case .chat:
-            openAIChatFromAddressBar()
-        }
+        openAIChatFromAddressBar()
     }
 
     private func shareCurrentURLFromAddressBar() {
@@ -2816,15 +2804,8 @@ extension MainViewController: OmniBarDelegate {
         handleVoiceSearchOpenRequest(preferredTarget: preferredTarget)
     }
 
-    /// We always want to show the AI Chat button if the keyboard is on focus
-    func onDidBeginEditing() {
-        omniBar.updateAccessoryType(.chat)
-    }
-
-    /// When the keyboard is dismissed we'll apply the previous rule to define the accessory button back to whatever it was
-    func onDidEndEditing() {
-        omniBar.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: currentTab?.url))
-    }
+    func onDidBeginEditing() { }
+    func onDidEndEditing() { }
 
     // MARK: - Experimental Address Bar (pixels only)
     func onExperimentalAddressBarTapped() {

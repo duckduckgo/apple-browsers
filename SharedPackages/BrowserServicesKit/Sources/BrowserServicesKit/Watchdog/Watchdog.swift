@@ -142,6 +142,9 @@ public final actor Watchdog {
     /// Starts the watchdog running.
     ///
     public func start() async {
+        let isCurrentlyRunning = await isRunning
+        guard !isCurrentlyRunning else { return }
+        
         cancelAndClearTasks()
         resetHangState()
         isPaused = false
@@ -158,6 +161,9 @@ public final actor Watchdog {
     /// Stops the watchdog entirely.
     ///
     public func stop() async {
+        let isCurrentlyRunning = await isRunning
+        guard isCurrentlyRunning else { return }
+        
         cancelAndClearTasks()
 
         Self.logger.info("Watchdog stopped monitoring")

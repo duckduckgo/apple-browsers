@@ -74,4 +74,76 @@ enum UniversalOmniBarState {
             Self.init(baseState: baseState, dependencies: dependencies, isLoading: false)
         }
     }
+
+    /// OmniBarState used when a displaying AI Chat in 'full mode' (i.e in a tab)
+    struct AIChatModeState: OmniBarState {
+        let baseState: OmniBarState
+
+        var hasLargeWidth: Bool { baseState.hasLargeWidth }
+        let showBackButton = false
+        let showForwardButton = false
+        let showBookmarksButton = false
+        let showAccessoryButton = false
+        let clearTextOnStart = false
+        let allowsTrackersAnimation = false
+        let showSearchLoupe = false
+        let showPrivacyIcon = true
+        let showBackground = false
+        let showClear = false
+        let showAbort = false
+        let showRefresh = true
+        let showShare = false
+        let showMenu = false
+        let showSettings = false
+        let showCancel = false
+        let showDismiss = false
+        let showVoiceSearch = false
+        let isBrowsing = false
+        let showAIChatSearch = true
+
+        var name: String { Type.name(self) }
+
+        var onEditingStartedState: any OmniBarState {
+            baseState.hasLargeWidth
+                ? LargeOmniBarState.HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading)
+                : SmallOmniBarState.HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading)
+        }
+        var onEditingStoppedState: any OmniBarState { self }
+        var onTextClearedState: any OmniBarState {
+            baseState.hasLargeWidth
+                ? LargeOmniBarState.HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading)
+                : SmallOmniBarState.HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading)
+        }
+        var onTextEnteredState: any OmniBarState {
+            baseState.hasLargeWidth
+                ? LargeOmniBarState.HomeTextEditingState(dependencies: dependencies, isLoading: isLoading)
+                : SmallOmniBarState.HomeTextEditingState(dependencies: dependencies, isLoading: isLoading)
+        }
+        var onBrowsingStartedState: any OmniBarState {
+            baseState.hasLargeWidth
+                ? LargeOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading)
+                : SmallOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading)
+        }
+        var onBrowsingStoppedState: any OmniBarState { self }
+        var onEnterPadState: any OmniBarState {
+            let largeBase = LargeOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
+            return baseState.hasLargeWidth ? self : UniversalOmniBarState.AIChatModeState(baseState: largeBase, dependencies: dependencies, isLoading: isLoading)
+        }
+        var onEnterPhoneState: any OmniBarState {
+            let smallBase = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
+            return baseState.hasLargeWidth ? UniversalOmniBarState.AIChatModeState(baseState: smallBase, dependencies: dependencies, isLoading: isLoading) : self
+        }
+        var onReloadState: any OmniBarState { self }
+
+        let dependencies: OmnibarDependencyProvider
+        let isLoading: Bool
+
+        func withLoading() -> UniversalOmniBarState.AIChatModeState {
+            Self.init(baseState: baseState, dependencies: dependencies, isLoading: true)
+        }
+
+        func withoutLoading() -> UniversalOmniBarState.AIChatModeState {
+            Self.init(baseState: baseState, dependencies: dependencies, isLoading: false)
+        }
+    }
 }

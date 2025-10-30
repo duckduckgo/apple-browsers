@@ -1397,6 +1397,7 @@
 		C128BA252DF0847900ADDC5F /* SettingsCompleteSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C128BA242DF0847900ADDC5F /* SettingsCompleteSetupView.swift */; };
 		C13830FC2DCD3F1400A29B3C /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13830FB2DCD3F1400A29B3C /* WebView.swift */; };
 		C13830FE2DCD3FFC00A29B3C /* CreditCardInputAccessoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13830FD2DCD3FFC00A29B3C /* CreditCardInputAccessoryView.swift */; };
+		C13A463D2EB39C9200BF7762 /* UniversalOmniBarStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13A463C2EB39C9200BF7762 /* UniversalOmniBarStateTests.swift */; };
 		C13B32D22A0E750700A59236 /* AutofillSettingStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13B32D12A0E750700A59236 /* AutofillSettingStatus.swift */; };
 		C13C076C2D00A6B7006386CF /* VaultCredentialManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13C076B2D00A6B7006386CF /* VaultCredentialManager.swift */; };
 		C13C54A12E74728C003451F5 /* SyncCreditCardsAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13C54A02E74728C003451F5 /* SyncCreditCardsAdapter.swift */; };
@@ -3607,6 +3608,7 @@
 		C132F5A42D0862B8000C81D0 /* fi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fi; path = fi.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C13830FB2DCD3F1400A29B3C /* WebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebView.swift; sourceTree = "<group>"; };
 		C13830FD2DCD3FFC00A29B3C /* CreditCardInputAccessoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCardInputAccessoryView.swift; sourceTree = "<group>"; };
+		C13A463C2EB39C9200BF7762 /* UniversalOmniBarStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UniversalOmniBarStateTests.swift; sourceTree = "<group>"; };
 		C13B32D12A0E750700A59236 /* AutofillSettingStatus.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutofillSettingStatus.swift; sourceTree = "<group>"; };
 		C13C076B2D00A6B7006386CF /* VaultCredentialManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultCredentialManager.swift; sourceTree = "<group>"; };
 		C13C54A02E74728C003451F5 /* SyncCreditCardsAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCreditCardsAdapter.swift; sourceTree = "<group>"; };
@@ -8940,6 +8942,7 @@
 				85F20005221702F7006BB258 /* AddressDisplayHelperTests.swift */,
 				F1D477C81F2139410031ED49 /* SmallOmniBarStateTests.swift */,
 				1E8146A628C8AAF500D1AF63 /* PrivacyIconAndTrackers */,
+				C13A463C2EB39C9200BF7762 /* UniversalOmniBarStateTests.swift */,
 			);
 			name = OmniBar;
 			sourceTree = "<group>";
@@ -11049,6 +11052,7 @@
 				6FF9AD412CE6610F00C5A406 /* TabSwitcherOpenDailyPixelTests.swift in Sources */,
 				569437342BE4E41500C0881B /* SyncErrorHandlerSyncErrorsAlertsTests.swift in Sources */,
 				CBC88EE32C7F8B1700F0F8C5 /* SSLErrorPageNavigationHandlerTests.swift in Sources */,
+				C13A463D2EB39C9200BF7762 /* UniversalOmniBarStateTests.swift in Sources */,
 				85C11E4120904BBE00BFFEB4 /* VariantManagerTests.swift in Sources */,
 				563A3D032D37C363001966FD /* AppConfigurationURLProviderTests.swift in Sources */,
 				9F254AD52CF5E5B10063B308 /* MockMaliciousSiteProtectionNavigationHandler.swift in Sources */,

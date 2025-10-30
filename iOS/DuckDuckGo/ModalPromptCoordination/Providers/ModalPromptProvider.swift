@@ -22,28 +22,17 @@ import UIKit
 /// Represent the Configuration for presenting a modal prompt.
 struct ModalPromptConfiguration {
     /// The view controller to present.
+    /// The provider is responsible for configuring the view controller's presentation properties
+    /// (modalPresentationStyle, modalTransitionStyle, isModalInPresentation) before returning it.
     let viewController: UIViewController
-    /// Modal presentation styles available when presenting view controllers.
-    let presentationStyle: UIModalPresentationStyle
-    /// Transition styles available when presenting view controllers. The default value of this property is `.coverVertical`.
-    let transitionStyle: UIModalTransitionStyle
-    /// A Boolean value indicating whether the view controller enforces a modal behavior.
-    /// The default value of this property is `false`. When you set it to true, UIKit ignores events outside the view controller’s bounds and prevents the interactive dismissal of the view controller while it is onscreen.
-    let shouldDisablePullDownToDismiss: Bool
     /// Whether the presentation should be animated or not. The default value of this property is `true`.
     let animated: Bool
 
     init(
         viewController: UIViewController,
-        presentationStyle: UIModalPresentationStyle,
-        transitionStyle: UIModalTransitionStyle = .coverVertical,
-        shouldDisablePullDownToDismiss: Bool = false,
         animated: Bool = true
     ) {
         self.viewController = viewController
-        self.presentationStyle = presentationStyle
-        self.transitionStyle = transitionStyle
-        self.shouldDisablePullDownToDismiss = shouldDisablePullDownToDismiss
         self.animated = animated
     }
 }

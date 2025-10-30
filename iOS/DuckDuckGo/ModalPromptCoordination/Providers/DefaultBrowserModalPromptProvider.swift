@@ -32,9 +32,6 @@ final class DefaultBrowserModalPromptProvider: ModalPromptProvider {
 
         return ModalPromptConfiguration(
             viewController: defaultBrowserPromptVC,
-            presentationStyle: defaultBrowserPromptVC.modalPresentationStyle,
-            transitionStyle: defaultBrowserPromptVC.modalTransitionStyle,
-            shouldDisablePullDownToDismiss: false,
             animated: true
         )
     }

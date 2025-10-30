@@ -205,16 +205,17 @@ final class ModalPromptCoordinationManagerTests {
 
     // MARK: - Presentation Tests
 
-    @Test("Check Modal Configuration Is Applied To View Controller")
-    func whenPresentingModalThenConfigurationIsApplied() {
+    @Test("Check View Controller From Provider Is Presented")
+    func whenPresentingModalThenViewControllerFromProviderIsPresented() {
         // GIVEN
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
+        let viewController = UIViewController()
+        viewController.modalPresentationStyle = .pageSheet
+        viewController.modalTransitionStyle = .coverVertical
+        viewController.isModalInPresentation = true
         provider.modalConfigurationToReturn = ModalPromptConfiguration(
-            viewController: UIViewController(),
-            presentationStyle: .pageSheet,
-            transitionStyle: .coverVertical,
-            shouldDisablePullDownToDismiss: true,
+            viewController: viewController,
             animated: true
         )
         sut = ModalPromptCoordinationManager(
@@ -229,106 +230,11 @@ final class ModalPromptCoordinationManagerTests {
 
         // THEN
         let presentedVC = presenterMock.capturedViewController
+        #expect(presenterMock.capturedViewController === presentedVC)
         #expect(presentedVC?.modalPresentationStyle == .pageSheet)
         #expect(presentedVC?.modalTransitionStyle == .coverVertical)
         #expect(presentedVC?.isModalInPresentation == true)
         #expect(presenterMock.capturedAnimated == true)
-    }
-
-    @Test(
-        "Check Different Presentation Styles Are Applied Correctly",
-        arguments: [
-            UIModalPresentationStyle.pageSheet,
-            .formSheet,
-            .overFullScreen,
-            .fullScreen
-        ]
-    )
-    func whenDifferentPresentationStylesThenStyleIsAppliedCorrectly(presentationStyle: UIModalPresentationStyle) {
-        // GIVEN
-        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
-        let provider = MockModalPromptProvider()
-        provider.modalConfigurationToReturn = ModalPromptConfiguration(
-            viewController: UIViewController(),
-            presentationStyle: presentationStyle,
-            transitionStyle: .coverVertical,
-            shouldDisablePullDownToDismiss: false,
-            animated: true
-        )
-        sut = ModalPromptCoordinationManager(
-            providers: [provider],
-            cooldownManager: cooldownManagerMock,
-            modalPromptScheduling: schedulerMock
-        )
-
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-        schedulerMock.executeScheduledBlock()
-
-        // THEN
-        #expect(presenterMock.capturedViewController?.modalPresentationStyle == presentationStyle)
-    }
-
-    @Test(
-        "Check Different Transition Styles Are Applied Correctly",
-        arguments: [
-            UIModalTransitionStyle.coverVertical,
-            .crossDissolve,
-            .flipHorizontal
-        ]
-    )
-    func whenDifferentTransitionStylesThenStyleIsAppliedCorrectly(transitionStyle: UIModalTransitionStyle) {
-        // GIVEN
-        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
-        let provider = MockModalPromptProvider()
-        provider.modalConfigurationToReturn = ModalPromptConfiguration(
-            viewController: UIViewController(),
-            presentationStyle: .pageSheet,
-            transitionStyle: transitionStyle,
-            shouldDisablePullDownToDismiss: false,
-            animated: true
-        )
-        sut = ModalPromptCoordinationManager(
-            providers: [provider],
-            cooldownManager: cooldownManagerMock,
-            modalPromptScheduling: schedulerMock
-        )
-
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-        schedulerMock.executeScheduledBlock()
-
-        // THEN
-        #expect(presenterMock.capturedViewController?.modalTransitionStyle == transitionStyle)
-    }
-
-    @Test(
-        "Check shouldDisablePullDownToDismiss Flag Is Applied Correctly",
-        arguments: [true, false]
-    )
-    func whenDifferentPullDownSettingsThenIsModalInPresentationIsSetCorrectly(shouldDisable: Bool) {
-        // GIVEN
-        cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
-        let provider = MockModalPromptProvider()
-        provider.modalConfigurationToReturn = ModalPromptConfiguration(
-            viewController: UIViewController(),
-            presentationStyle: .pageSheet,
-            transitionStyle: .coverVertical,
-            shouldDisablePullDownToDismiss: shouldDisable,
-            animated: true
-        )
-        sut = ModalPromptCoordinationManager(
-            providers: [provider],
-            cooldownManager: cooldownManagerMock,
-            modalPromptScheduling: schedulerMock
-        )
-
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-        schedulerMock.executeScheduledBlock()
-
-        // THEN
-        #expect(presenterMock.capturedViewController?.isModalInPresentation == shouldDisable)
     }
 
     @Test(
@@ -341,9 +247,6 @@ final class ModalPromptCoordinationManagerTests {
         let provider = MockModalPromptProvider()
         provider.modalConfigurationToReturn = ModalPromptConfiguration(
             viewController: UIViewController(),
-            presentationStyle: .pageSheet,
-            transitionStyle: .coverVertical,
-            shouldDisablePullDownToDismiss: false,
             animated: animated
         )
         sut = ModalPromptCoordinationManager(

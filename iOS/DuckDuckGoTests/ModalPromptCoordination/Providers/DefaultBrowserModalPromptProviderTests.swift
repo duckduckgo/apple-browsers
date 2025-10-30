@@ -56,8 +56,8 @@ final class DefaultBrowserModalPromptProviderTests {
         #expect(presenter.didCallMakePresentDefaultModalPrompt)
     }
 
-    @Test("Check Configuration Uses View Controller's Modal Presentation Style")
-    func whenPresenterReturnsViewControllerThenConfigurationUsesItsModalPresentationStyle() {
+    @Test("Check View Controller Preserves Modal Presentation Style")
+    func whenPresenterReturnsViewControllerThenModalPresentationStyleIsPreserved() {
         // GIVEN
         let mockViewController = UIViewController()
         mockViewController.modalPresentationStyle = .fullScreen
@@ -68,11 +68,11 @@ final class DefaultBrowserModalPromptProviderTests {
         let configuration = sut.provideModalPrompt()
 
         // THEN
-        #expect(configuration?.presentationStyle == .fullScreen)
+        #expect(configuration?.viewController.modalPresentationStyle == .fullScreen)
     }
 
     @Test(
-        "Check Configuration Respects Different Presentation Styles",
+        "Check View Controller Preserves Different Presentation Styles",
         arguments: [
             UIModalPresentationStyle.fullScreen,
             .pageSheet,
@@ -81,7 +81,7 @@ final class DefaultBrowserModalPromptProviderTests {
             .popover
         ]
     )
-    func whenViewControllerHasDifferentPresentationStylesThenConfigurationRespectsIt(style: UIModalPresentationStyle) {
+    func whenViewControllerHasDifferentPresentationStylesThenTheyArePreserved(style: UIModalPresentationStyle) {
         // GIVEN
         let mockViewController = UIViewController()
         mockViewController.modalPresentationStyle = style
@@ -92,11 +92,11 @@ final class DefaultBrowserModalPromptProviderTests {
         let configuration = sut.provideModalPrompt()
 
         // THEN
-        #expect(configuration?.presentationStyle == style)
+        #expect(configuration?.viewController.modalPresentationStyle == style)
     }
 
     @Test(
-        "Check Configuration Respects Different Transition Styles",
+        "Check View Controller Preserves Different Transition Styles",
         arguments: [
             UIModalTransitionStyle.coverVertical,
             .flipHorizontal,
@@ -104,7 +104,7 @@ final class DefaultBrowserModalPromptProviderTests {
             .partialCurl
         ]
     )
-    func whenViewControllerHasDifferentTransitionStylesThenConfigurationRespectsIt(style: UIModalTransitionStyle) {
+    func whenViewControllerHasDifferentTransitionStylesThenTheyArePreserved(style: UIModalTransitionStyle) {
         // GIVEN
         let mockViewController = UIViewController()
         mockViewController.modalTransitionStyle = style
@@ -115,13 +115,14 @@ final class DefaultBrowserModalPromptProviderTests {
         let configuration = sut.provideModalPrompt()
 
         // THEN
-        #expect(configuration?.transitionStyle == style)
+        #expect(configuration?.viewController.modalTransitionStyle == style)
     }
 
-    @Test("Check Configuration Sets Should Disable Pull Down To Dismiss To False")
-    func whenProvideModalPromptCalledThenConfigurationSetsShouldDisablePullDownToDismissToFalse() {
+    @Test("Check View Controller Preserves isModalInPresentation Property")
+    func whenViewControllerHasIsModalInPresentationSetThenItIsPreserved() {
         // GIVEN
         let mockViewController = UIViewController()
+        mockViewController.isModalInPresentation = false
         let presenter = MockDefaultBrowserPromptPresenter(viewControllerToReturn: mockViewController)
         let sut = DefaultBrowserModalPromptProvider(presenter: presenter)
 
@@ -129,7 +130,7 @@ final class DefaultBrowserModalPromptProviderTests {
         let configuration = sut.provideModalPrompt()
 
         // THEN
-        #expect(configuration?.shouldDisablePullDownToDismiss == false)
+        #expect(configuration?.viewController.isModalInPresentation == false)
     }
 
     @Test("Check Configuration Sets Animated To True")

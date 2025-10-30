@@ -1665,17 +1665,31 @@ class MainViewController: UIViewController {
         }
     }
 
+    private func makeDataImportViewController(
+          source: DataImportViewModel.ImportScreen,
+          onFinished: (() -> Void)? = nil,
+          onCancelled: (() -> Void)? = nil
+      ) -> DataImportViewController {
+          let dataImportManager = DataImportManager(
+            reporter: SecureVaultReporter(),
+            bookmarksDatabase: self.bookmarksDatabase,
+            favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
+            tld: AppDependencyProvider.shared.storageCache.tld
+          )
+
+          return DataImportViewController(
+            importManager: dataImportManager,
+            importScreen: source,
+            syncService: syncService,
+            keyValueStore: keyValueStore,
+            onFinished: onFinished,
+            onCancelled: onCancelled
+          )
+      }
+
+
     func launchDataImport(source: DataImportViewModel.ImportScreen, onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
-        let dataImportManager = DataImportManager(reporter: SecureVaultReporter(),
-                                                  bookmarksDatabase: self.bookmarksDatabase,
-                                                  favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
-                                                  tld: AppDependencyProvider.shared.storageCache.tld)
-        let dataImportViewController = DataImportViewController(importManager: dataImportManager,
-                                                                importScreen: source,
-                                                                syncService: syncService,
-                                                                keyValueStore: keyValueStore,
-                                                                onFinished: onFinished,
-                                                                onCancelled: onCancelled)
+        let dataImportViewController = makeDataImportViewController(source: source, onFinished: onFinished, onCancelled: onCancelled)
 
         let navigationController = UINavigationController(rootViewController: dataImportViewController)
         dataImportViewController.navigationItem.leftBarButtonItem = UIBarButtonItem(title: UserText.autofillNavigationButtonItemTitleClose,
@@ -3847,7 +3861,59 @@ private extension UIBarButtonItem {
 }
 
 /// This extension allows delegating from the RMF action button when the action type is 'navigation'.  It shadows existing functions.
-extension MainViewController: MessageNavigationDelegate { }
+extension MainViewController: MessageNavigationDelegate {
+
+    func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, presentationStyle: PresentationContext.Style) {
+        switch presentationStyle {
+        case .dismissModalsAndPresentFromRoot:
+            segueToSettingsAIChat(openedFromSERPSettingsButton: openedFromSERPSettingsButton)
+        case .withinCurrentContext:
+            assertionFailure("Not implemented yet.")
+        }
+    }
+    
+    func segueToSettings(presentationStyle: PresentationContext.Style) {
+        switch presentationStyle {
+        case .dismissModalsAndPresentFromRoot:
+            segueToSettings()
+        case .withinCurrentContext:
+            assertionFailure("Not implemented yet.")
+        }
+    }
+    
+    func segueToFeedback(presentationStyle: PresentationContext.Style) {
+        switch presentationStyle {
+        case .dismissModalsAndPresentFromRoot:
+            segueToFeedback()
+        case .withinCurrentContext:
+            assertionFailure("Not implemented yet.")
+        }
+    }
+    
+    func segueToSettingsSync(with source: String?, pairingInfo: PairingInfo?, presentationStyle: PresentationContext.Style) {
+        switch presentationStyle {
+        case .dismissModalsAndPresentFromRoot:
+            segueToSettingsSync(with: source, pairingInfo: pairingInfo)
+        case .withinCurrentContext:
+            assertionFailure("Not implemented yet.")
+        }
+    }
+    
+    func segueToImportPasswords(presentationStyle: PresentationContext.Style) {
+        switch presentationStyle {
+        case .dismissModalsAndPresentFromRoot:
+            assertionFailure("Not implemented yet.")
+        case .withinCurrentContext:
+            let dataImportVC = makeDataImportViewController(source: .whatsNew)
+            guard let viewController = presentedViewController else {
+                assertionFailure("No ViewController presented.")
+                return
+            }
+            viewController.show(dataImportVC, sender: nil)
+        }
+    }
+
+}
 
 extension MainViewController: MainViewEditingStateTransitioning {
 

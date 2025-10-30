@@ -114,7 +114,7 @@ final class WhatsNewCoordinatorTests {
     }
 
     @Test("Check Message Is Marked As Shown When Modal Is Presented")
-    func whenModalIsProvidedThenCurrentMessageIdIsStored() async {
+    func whenModalIsPresentedThenUpdateRemoteMessageWithCorrectIdIsCalled() async {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "specific-message-id")
         let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
@@ -133,6 +133,27 @@ final class WhatsNewCoordinatorTests {
         await Task.yield()
         #expect(mockStore.updateRemoteMessageCalls == 1)
         #expect(mockStore.shownRemoteMessagesIDs.contains("specific-message-id"))
+    }
+
+    @Test("Check Message Is Marked Dismissed When Modal Is Presented")
+    func whenModalIsPresentedThenDismissMessageIsCalled() async {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage(id: "specific-message-id")
+        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let coordinator = WhatsNewCoordinator(
+            remoteMessageStore: mockStore,
+            remoteMessageActionHandler: mockHandler
+        )
+        _ = coordinator.provideModalPrompt()
+
+        // WHEN
+        coordinator.didPresentModal()
+
+        // THEN - verify the correct message ID was used
+        // Yield to let the unstructured Task execute (mock is sync, completes instantly)
+        await Task.yield()
+        #expect(mockStore.dismissRemoteMessageCalls == 1)
     }
 
     @Test("Check Message Is Not Marked As Shown When No Current Message ID")
@@ -183,6 +204,38 @@ struct WhatsNewCoordinatorActionHandlingTests {
         let lastViewController = try #require(navController.viewControllers.last as? EmbeddedWebViewController)
         #expect(navController.viewControllers.count == 2)
         #expect(lastViewController.url == testURL)
+    }
+
+    @Test(
+        "Check Handle Action Always Passes Within Current Context Presentation Style",
+        arguments: [
+            .share(value: "Test Value", title: "Test Title"),
+            .url(value: "https://example.com"),
+            .urlInContext(value: "https://example.com"),
+            .survey(value: "Test"),
+            .navigation(value: .duckAISettings),
+            .appStore,
+            .dismiss
+        ] as [RemoteAction]
+    )
+    func handleActionAlwaysPassesWithinCurrentContextPresentationStyle(action: RemoteAction) async throws {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage()
+        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockHandler = MockRemoteMessagingActionHandler()
+
+        let coordinator = WhatsNewCoordinator(
+            remoteMessageStore: mockStore,
+            remoteMessageActionHandler: mockHandler
+        )
+
+        // WHEN
+        await coordinator.handleAction(action)
+
+        // THEN
+        #expect(mockHandler.didCallHandleAction)
+        #expect(mockHandler.capturedPresentationContext?.presentationStyle == .withinCurrentContext)
+        #expect(mockHandler.capturedPresentationContext?.presenter != nil)
     }
 
 }

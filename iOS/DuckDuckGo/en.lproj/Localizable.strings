@@ -2446,12 +2446,6 @@ https://duckduckgo.com/mac";
 /* Deactivate button */
 "pm.deactivate" = "Deactivate";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "Email (optional)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "name@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Please give us your feedback…";
 
@@ -2485,8 +2479,11 @@ https://duckduckgo.com/mac";
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "Select a category";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Found an issue not covered in our [help center](duck://)? We definitely want to know about it.\n\nProvide an email if you’d like us to contact you about this issue (we may not be able to respond to all issues):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Need help? [Contact support.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Found an issue not covered in our [help center](duck://)? We definitely want to know about it.\n\nTell us what's going on:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "In addition to the details entered above, we send some anonymized info with your feedback:";

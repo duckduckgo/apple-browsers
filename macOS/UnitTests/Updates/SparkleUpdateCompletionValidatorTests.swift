@@ -70,6 +70,23 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
         return pixel.parameters
     }
 
+    private func assertDailyAndCountPixelsFired(baseName: String, file: StaticString = #file, line: UInt = #line) -> [String: String]? {
+        let dailyPixelName = baseName + "_daily"
+        let countPixelName = baseName + "_count"
+
+        guard firedPixels.contains(where: { $0.name == dailyPixelName }) else {
+            XCTFail("Expected pixel '\(dailyPixelName)' was not fired", file: file, line: line)
+            return nil
+        }
+
+        guard let countPixel = firedPixels.first(where: { $0.name == countPixelName }) else {
+            XCTFail("Expected pixel '\(countPixelName)' was not fired", file: file, line: line)
+            return nil
+        }
+
+        return countPixel.parameters
+    }
+
     private func assertNoPixelFired(file: StaticString = #file, line: UInt = #line) {
         XCTAssertTrue(firedPixels.isEmpty, "Expected no pixels to fire, but \(firedPixels.count) were fired", file: file, line: line)
     }
@@ -95,7 +112,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
         )
 
         // Then: Pixel should be fired with correct parameters
-        let parameters = assertPixelFired(named: "m_mac_update_application_success")
+        let parameters = assertDailyAndCountPixelsFired(baseName: "m_mac_update_application_success")
         XCTAssertEqual(parameters?["sourceVersion"], "1.100.0")
         XCTAssertEqual(parameters?["sourceBuild"], "123456")
         XCTAssertEqual(parameters?["targetVersion"], "1.101.0")
@@ -124,7 +141,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
         )
 
         // Then: Failure pixel should be fired
-        let parameters = assertPixelFired(named: "m_mac_update_application_failure")
+        let parameters = assertDailyAndCountPixelsFired(baseName: "m_mac_update_application_failure")
         XCTAssertEqual(parameters?["sourceVersion"], "1.100.0")
         XCTAssertEqual(parameters?["sourceBuild"], "123456")
         XCTAssertEqual(parameters?["expectedVersion"], "1.101.0")
@@ -164,7 +181,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
         )
 
         // Then: Failure pixel should be fired
-        let parameters = assertPixelFired(named: "m_mac_update_application_failure")
+        let parameters = assertDailyAndCountPixelsFired(baseName: "m_mac_update_application_failure")
         XCTAssertEqual(parameters?["sourceVersion"], "1.100.0")
         XCTAssertEqual(parameters?["sourceBuild"], "123456")
         XCTAssertEqual(parameters?["expectedVersion"], "1.101.0")
@@ -196,7 +213,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
         )
 
         // Then: Unexpected pixel should be fired
-        let parameters = assertPixelFired(named: "m_mac_update_application_unexpected")
+        let parameters = assertDailyAndCountPixelsFired(baseName: "m_mac_update_application_unexpected")
         XCTAssertEqual(parameters?["targetVersion"], "1.101.0")
         XCTAssertEqual(parameters?["targetBuild"], "123457")
         XCTAssertNotNil(parameters?["osVersion"])
@@ -221,7 +238,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
         )
 
         // Then: Verify initiationType is automatic
-        let parameters = assertPixelFired(named: "m_mac_update_application_success")
+        let parameters = assertDailyAndCountPixelsFired(baseName: "m_mac_update_application_success")
         XCTAssertEqual(parameters?["initiationType"], "automatic")
     }
 
@@ -244,7 +261,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
         )
 
         // Then: Verify updateConfiguration is manual
-        let parameters = assertPixelFired(named: "m_mac_update_application_success")
+        let parameters = assertDailyAndCountPixelsFired(baseName: "m_mac_update_application_success")
         XCTAssertEqual(parameters?["updateConfiguration"], "manual")
     }
 
@@ -267,7 +284,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
         )
 
         // Then: First call should fire success pixel (Sparkle-initiated)
-        let firstCallParams = assertPixelFired(named: "m_mac_update_application_success")
+        let firstCallParams = assertDailyAndCountPixelsFired(baseName: "m_mac_update_application_success")
         XCTAssertEqual(firstCallParams?["sourceVersion"], "1.100.0")
 
         // Clear the fired pixels array
@@ -281,7 +298,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
         )
 
         // Then: Second call should fire unexpected pixel (metadata was cleared)
-        let secondCallParams = assertPixelFired(named: "m_mac_update_application_unexpected")
+        let secondCallParams = assertDailyAndCountPixelsFired(baseName: "m_mac_update_application_unexpected")
         XCTAssertEqual(secondCallParams?["targetVersion"], "1.101.0")
         XCTAssertEqual(secondCallParams?["targetBuild"], "123457")
         XCTAssertNotNil(secondCallParams?["osVersion"])
@@ -306,7 +323,7 @@ final class SparkleUpdateCompletionValidatorTests: XCTestCase {
         )
 
         // Then: OS version should be present and formatted correctly
-        let parameters = assertPixelFired(named: "m_mac_update_application_success")
+        let parameters = assertDailyAndCountPixelsFired(baseName: "m_mac_update_application_success")
         let osVersion = parameters?["osVersion"]
         XCTAssertNotNil(osVersion)
         // Should be in format "14.2.1" (major.minor.patch)

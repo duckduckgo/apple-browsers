@@ -233,6 +233,10 @@ extension URL {
         return navigationalScheme == .duck && host == URL.history.host
     }
 
+    var isNTP: Bool {
+        return navigationalScheme == .duck && host == URL.newtab.host
+    }
+
 #endif
 
     enum Invalid {

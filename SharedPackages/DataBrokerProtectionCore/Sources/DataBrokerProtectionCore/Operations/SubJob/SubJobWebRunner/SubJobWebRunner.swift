@@ -76,7 +76,11 @@ public extension SubJobWebRunning {
     // MARK: - Shared functions
 
     func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
-        false
+        if !stageCalculator.isRetrying {
+            retriesCountOnError = 3
+        }
+
+        return false
     }
 
     func runNextAction(_ action: Action) async {

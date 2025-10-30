@@ -20,7 +20,6 @@
 
 import XCTest
 import Persistence
-import SecureStorage
 
 public class MockThrowingKeyValueStore: ThrowingKeyValueStoring {
     private var storage: [String: Any] = [:]

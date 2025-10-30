@@ -93472,6 +93472,18 @@
         }
       }
     },
+    "vpn.uninstalled" : {
+      "comment" : "Notification that the DuckDuckGo VPN was uninstalled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo VPN was uninstalled"
+          }
+        }
+      }
+    },
     "warn.before.quit" : {
       "comment" : "Label after the checkbox in Settings which configures a warning before clearing data on the application termination.",
       "extractionState" : "extracted_with_value",

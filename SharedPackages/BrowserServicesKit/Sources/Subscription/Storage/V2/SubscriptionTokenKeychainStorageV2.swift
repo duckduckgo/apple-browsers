@@ -108,4 +108,8 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
             throw error
         }
     }
+
+    public func isTokenContainerPersistedInKeychain() -> Bool {
+        return keychainManager.isPersistedInKeychain(forKey: SubscriptionKeychainField.tokenContainer.keyValue)
+    }
 }

@@ -61,6 +61,15 @@ public protocol KeychainManaging {
     /// - Parameter key: The unique identifier for the keychain item to delete
     /// - Throws: `AccountKeychainAccessError` if deletion fails
     func deleteItem(forKey key: String) throws
+
+    /// Checks if data is actually persisted in the keychain (not just in the writing backlog).
+    ///
+    /// This method verifies that data has been successfully written to the keychain and is not
+    /// just queued in the writing backlog waiting for keychain availability.
+    ///
+    /// - Parameter key: The unique identifier for the keychain item
+    /// - Returns: `true` if the item exists in the keychain, `false` if it only exists in backlog or doesn't exist
+    func isPersistedInKeychain(forKey key: String) -> Bool
 }
 
 /// A thread-safe keychain manager that handles secure storage operations with automatic retry capabilities.
@@ -188,6 +197,24 @@ public final class KeychainManager: KeychainManaging {
                 Logger.keychainManager.error("Failed to delete keychain item: \(status.humanReadableDescription)")
                 throw AccountKeychainAccessError.keychainDeleteFailure(status)
             }
+        }
+    }
+
+    public func isPersistedInKeychain(forKey key: String) -> Bool {
+        return accessQueue.sync {
+            // Only check keychain, explicitly ignore backlog
+            var query = attributes
+            query[kSecAttrService] = key
+            query[kSecMatchLimit] = kSecMatchLimitOne
+            query[kSecReturnData] = false // We only need to know if it exists
+
+            var item: CFTypeRef?
+            let status = keychainOperations.copyMatching(query as CFDictionary, &item)
+
+            let isPersisted = status == errSecSuccess
+            Logger.keychainManager.debug("Keychain persistence check for \(key): \(isPersisted ? "persisted" : "not persisted or in backlog")")
+
+            return isPersisted
         }
     }
 

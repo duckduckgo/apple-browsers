@@ -214,6 +214,16 @@ public final class NetworkProtectionKeychainTokenStoreV2: AuthTokenStoring {
         }
     }
 
+    public func isTokenContainerPersistedInKeychain() -> Bool {
+        do {
+            // Check if the token exists in the keychain
+            return try keychainStore.readData(named: Defaults.tokenStoreName) != nil
+        } catch {
+            // If there's an error reading, consider it as not persisted
+            return false
+        }
+    }
+
     // MARK: - EventMapping
 
     private func handle(_ error: Error) {

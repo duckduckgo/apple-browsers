@@ -34,4 +34,9 @@ public class MockTokenStorage: AuthTokenStoring {
     public func saveTokenContainer(_ tokenContainer: Networking.TokenContainer?) throws {
         self.tokenContainer = tokenContainer
     }
+
+    public func isTokenContainerPersistedInKeychain() -> Bool {
+        // For testing purposes, return true if we have a token container
+        return tokenContainer != nil
+    }
 }

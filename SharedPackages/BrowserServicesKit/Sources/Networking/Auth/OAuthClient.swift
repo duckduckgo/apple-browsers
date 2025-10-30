@@ -69,6 +69,7 @@ public enum OAuthClientError: DDGError {
 public protocol AuthTokenStoring {
     func getTokenContainer() throws -> TokenContainer?
     func saveTokenContainer(_ tokenContainer: TokenContainer?) throws
+    func isTokenContainerPersistedInKeychain() -> Bool
 }
 
 /// Provides the legacy AuthToken V1
@@ -404,8 +405,13 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             try await exchange(accessTokenV1: legacyToken)
             Logger.OAuthClient.log("Tokens migrated successfully")
 
-            // After releasing Auth V2 at 100% we are now deleting the Auth V1 token.
-            legacyTokenStorage.token = nil
+            // Verify that the token was actually persisted to keychain, not just queued in backlog
+            if tokenStorage.isTokenContainerPersistedInKeychain() {
+                // Deleting the Auth V1 token.
+                legacyTokenStorage.token = nil
+            } else {
+                Logger.OAuthClient.error("V2 token not persisted to keychain")
+            }
         }
 
         migrationOngoingTask = task

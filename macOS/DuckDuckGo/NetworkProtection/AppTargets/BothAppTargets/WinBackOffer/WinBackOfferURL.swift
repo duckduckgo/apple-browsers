@@ -1,7 +1,7 @@
 //
-//  NativeMessagingHandlerFactory.swift
+//  WinBackOfferURL.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,14 +17,12 @@
 //
 
 import Foundation
+import BrowserServicesKit
+import Subscription
 
-@available(macOS 15.4, *)
-final class NativeMessagingHandlerFactory {
-
-    static func makeHandler(for extensionIdentifier: WebExtensionIdentifier) -> NativeMessagingHandling? {
-        switch extensionIdentifier {
-        case .bitwarden:
-            return BitwardenNativeMessagingHandler()
-        }
+enum WinBackOfferURL {
+    static func subscriptionURL(for origin: SubscriptionFunnelOrigin) -> URL? {
+        let subscriptionURL = SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: origin.rawValue, featurePage: SubscriptionURL.FeaturePage.winback)
+        return subscriptionURL?.url
     }
 }

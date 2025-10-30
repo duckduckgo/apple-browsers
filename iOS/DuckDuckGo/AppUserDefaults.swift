@@ -37,6 +37,7 @@ public class AppUserDefaults: AppSettings {
         public static let inspectableWebViewsToggled = Notification.Name("com.duckduckgo.app.DidToggleInspectableWebViews")
         public static let addressBarPositionChanged = Notification.Name("com.duckduckgo.app.AddressBarPositionChanged")
         public static let refreshButtonSettingsChanged = Notification.Name("com.duckduckgo.refreshButton.settings.changed")
+        public static let customizationSettingsChanged = Notification.Name("com.duckduckgo.customization.settings.changed")
         public static let showsFullURLAddressSettingChanged = Notification.Name("com.duckduckgo.app.ShowsFullURLAddressSettingChanged")
         public static let autofillDebugScriptToggled = Notification.Name("com.duckduckgo.app.DidToggleAutofillDebugScript")
         public static let contentScopeDebugStateToggled = Notification.Name("com.duckduckgo.app.DidToggleContentScopeDebugState")
@@ -99,6 +100,7 @@ public class AppUserDefaults: AppSettings {
         static let duckPlayerControlsVisible = "com.duckduckgo.ios.duckPlayerControlsVisible"
         static let duckPlayerNativeUIWasUsed = "com.duckduckgo.ios.duckPlayerNativeUIWasUsed"
         static let duckPlayerNativeUISettingsMapped = "com.duckduckgo.ios.duckPlayerNativeUISettingsMapped"
+        static let autoClearAIChatHistory = "com.duckduckgo.ios.autoClearAIChatHistory"
     }
 
     private struct DebugKeys {
@@ -623,6 +625,9 @@ public class AppUserDefaults: AppSettings {
 
     @UserDefaultsWrapper(key: .duckPlayerControlsVisible, defaultValue: true)
     var duckPlayerControlsVisible: Bool
+
+    @UserDefaultsWrapper(key: .autoClearAIChatHistory, defaultValue: false)
+    var autoClearAIChatHistory: Bool
 }
 
 extension AppUserDefaults: AppConfigurationFetchStatistics {

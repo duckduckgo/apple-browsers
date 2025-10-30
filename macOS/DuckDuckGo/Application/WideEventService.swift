@@ -149,4 +149,5 @@ final class WideEventService {
             _ = try? await wideEvent.completeFlow(data, status: .unknown(reason: SubscriptionRestoreWideEventData.StatusReason.timeout.rawValue))
         }
     }
+
 }

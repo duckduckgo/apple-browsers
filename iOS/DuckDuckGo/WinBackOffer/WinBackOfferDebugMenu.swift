@@ -167,31 +167,41 @@ struct WinBackOfferDebugView: View {
 
     var body: some View {
         List {
-            Section(header: Text("Debug Controls")) {
-                Button("Simulate Churn") {
+            Section(header: Text(verbatim: "Debug Controls")) {
+                Button(action: {
                     viewModel.simulateChurn()
+                }) {
+                    Text(verbatim: "Simulate Churn")
                 }
 
-                Button("Override Today's Date") {
+                Button(action: {
                     showingDatePicker = true
+                }) {
+                    Text(verbatim: "Override Today's Date")
                 }
 
-                Button("Reset Win-back Offer") {
+                Button(action: {
                     viewModel.resetWinBackOffer()
+                }) {
+                    Text(verbatim: "Reset Win-back Offer")
                 }
             }
 
-            Section(header: Text("Quick Test Scenarios")) {
-                Button("Jump to First Day (3 days after churn)") {
+            Section(header: Text(verbatim: "Quick Test Scenarios")) {
+                Button(action: {
                     viewModel.jumpToFirstDay()
+                }) {
+                    Text(verbatim: "Jump to First Day (3 days after churn)")
                 }
 
-                Button("Jump to Last Day (offer ending)") {
+                Button(action: {
                     viewModel.jumpToLastDay()
+                }) {
+                    Text(verbatim: "Jump to Last Day (offer ending)")
                 }
             }
 
-            Section(header: Text("Current State")) {
+            Section(header: Text(verbatim: "Current State")) {
                 LabeledRow(label: "Today's Date", value: Self.dateFormatter.string(from: viewModel.simulatedToday))
 
                 if let churnDate = viewModel.churnDate {
@@ -212,12 +222,12 @@ struct WinBackOfferDebugView: View {
                     LabeledRow(label: "Redeemed", value: viewModel.hasRedeemed ? "Yes" : "No")
                     LabeledRow(label: "Modal Shown", value: viewModel.modalShown ? "Yes" : "No")
                 } else {
-                    Text("No churn simulated")
+                    Text(verbatim: "No churn simulated")
                         .foregroundColor(.secondary)
                 }
             }
         }
-        .navigationTitle("Win-back Offer")
+        .navigationTitle(Text(verbatim: "Win-back Offer"))
         .sheet(isPresented: $showingDatePicker) {
             DatePickerView(date: $viewModel.simulatedToday) {
                 viewModel.overrideTodaysDate(viewModel.simulatedToday)
@@ -234,9 +244,9 @@ private struct LabeledRow: View {
 
     var body: some View {
         HStack {
-            Text(label)
+            Text(verbatim: label)
             Spacer()
-            Text(value)
+            Text(verbatim: value)
                 .foregroundColor(.secondary)
         }
     }
@@ -251,24 +261,29 @@ private struct DatePickerView: View {
         NavigationView {
             Form {
                 DatePicker(
-                    "Select Date",
                     selection: $date,
                     displayedComponents: [.date]
-                )
+                ) {
+                    Text(verbatim: "Select Date")
+                }
                 .datePickerStyle(.graphical)
             }
-            .navigationTitle("Simulate Today's Date")
+            .navigationTitle(Text(verbatim: "Simulate Today's Date"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button(action: {
                         dismiss()
+                    }) {
+                        Text(verbatim: "Cancel")
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button(action: {
                         onSave()
                         dismiss()
+                    }) {
+                        Text(verbatim: "Save")
                     }
                 }
             }

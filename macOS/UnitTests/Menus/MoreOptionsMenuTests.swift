@@ -342,6 +342,22 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.overFlowResults)
     }
 
+    @MainActor
+    func testWhenClickingWinBackOfferPurchasePageThenActionDelegateIsCalled() throws {
+        // Given
+        mockWinBackOfferVisibilityManager.isOfferAvailable = true
+        subscriptionManager.canPurchase = true
+        setupMoreOptionsMenu()
+
+        let subscriptionItemIndex = try XCTUnwrap(moreOptionsMenu.indexOfItem(with: #selector(MoreOptionsMenu.openWinBackOfferPurchasePage(_:))))
+
+        // When
+        moreOptionsMenu.performActionForItem(at: subscriptionItemIndex)
+
+        // Then
+        XCTAssertTrue(capturingActionDelegate.optionsButtonMenuRequestedWinBackOfferPurchasePageCalled)
+    }
+
     // MARK: - Paid AI Chat
 
     @MainActor
@@ -856,7 +872,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
         // When
         let subscriptionItem = moreOptionsMenu.items.first {
-            $0.action == #selector(MoreOptionsMenu.openSubscriptionPurchasePage(_:))
+            $0.action == #selector(MoreOptionsMenu.openWinBackOfferPurchasePage(_:))
         }
 
         // Then

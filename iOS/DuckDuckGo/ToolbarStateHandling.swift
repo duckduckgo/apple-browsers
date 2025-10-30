@@ -40,7 +40,18 @@ enum ToolbarContentState: Equatable {
 }
 
 protocol ToolbarStateHandling {
+
+    var backButton: UIBarButtonItem { get }
+    var fireBarButtonItem: UIBarButtonItem { get }
+    var forwardButton: UIBarButtonItem { get }
+    var tabSwitcherButton: UIBarButtonItem { get }
+    var bookmarkButton: UIBarButtonItem { get }
+
+    var passwordsButton: UIBarButtonItem { get }
+    var browserMenuButton: UIBarButtonItem { get }
+
     func updateToolbarWithState(_ state: ToolbarContentState)
+
 }
 
 final class ToolbarHandler: ToolbarStateHandling {

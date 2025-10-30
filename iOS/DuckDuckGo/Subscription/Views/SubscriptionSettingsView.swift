@@ -320,7 +320,6 @@ struct SubscriptionSettingsView: View {
         }.hidden()
 
         NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-                                                                                                    apiService: DefaultAPIService(),
                                                                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(),
                                                                                                     dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                                                                     isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
@@ -776,7 +775,6 @@ struct SubscriptionSettingsViewV2: View {
         }.hidden()
         
         NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-                                                                                                    apiService: DefaultAPIService(),
                                                                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(), dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                                                                     isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
                                                                                                     source: .ppro)),

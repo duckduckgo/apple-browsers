@@ -65,6 +65,7 @@ final class SettingsViewModel: ObservableObject {
     private let urlOpener: URLOpener
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
+    let mobileCustomization: MobileCustomization
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -160,6 +161,10 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.embeddedSERPSettings)
     }
 
+    var isDuckAiDataClearingEnabled: Bool {
+        featureFlagger.isFeatureOn(.duckAiDataClearing)
+    }
+
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false
 
@@ -185,8 +190,9 @@ final class SettingsViewModel: ObservableObject {
                 self.state.mobileCustomization.currentToolbarButton
             },
             set: {
-                self.objectWillChange.send()
+                guard $0 != self.state.mobileCustomization.currentToolbarButton else { return }
                 self.state.mobileCustomization.currentToolbarButton = $0
+                self.mobileCustomization.persist(self.state.mobileCustomization)
             }
         )
     }
@@ -197,8 +203,9 @@ final class SettingsViewModel: ObservableObject {
                 self.state.mobileCustomization.currentAddressBarButton
             },
             set: {
-                self.objectWillChange.send()
+                guard $0 != self.state.mobileCustomization.currentAddressBarButton else { return }
                 self.state.mobileCustomization.currentAddressBarButton = $0
+                self.mobileCustomization.persist(self.state.mobileCustomization)
             }
         )
     }
@@ -545,6 +552,22 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var autoClearAIChatHistoryBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                if self.featureFlagger.isFeatureOn(.duckAiDataClearing) {
+                    return self.state.autoClearAIChatHistory
+                } else {
+                    return false
+                }
+            },
+            set: {
+                self.appSettings.autoClearAIChatHistory = $0
+                self.state.autoClearAIChatHistory = $0
+            }
+        )
+    }
+
     var cookiePopUpProtectionStatus: StatusIndicator {
         return appSettings.autoconsentEnabled ? .on : .off
     }
@@ -570,7 +593,6 @@ final class SettingsViewModel: ObservableObject {
     var isAIChatEnabled: Bool {
         aiChatSettings.isAIChatEnabled
     }
-    
 
     // MARK: Default Init
     init(state: SettingsState? = nil,
@@ -601,7 +623,8 @@ final class SettingsViewModel: ObservableObject {
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
-         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
+         mobileCustomization: MobileCustomization
     ) {
 
         self.state = SettingsState.defaults
@@ -632,6 +655,7 @@ final class SettingsViewModel: ObservableObject {
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+        self.mobileCustomization = mobileCustomization
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -663,10 +687,11 @@ extension SettingsViewModel {
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
-            mobileCustomization: MobileCustomization.load(featureFlagger: featureFlagger, keyValueStore: keyValueStore),
+            mobileCustomization: mobileCustomization.state,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
+            autoClearAIChatHistory: appSettings.autoClearAIChatHistory,
             applicationLock: privacyStore.authenticationEnabled,
             autocomplete: appSettings.autocomplete,
             recentlyVisitedSites: appSettings.recentlyVisitedSites,

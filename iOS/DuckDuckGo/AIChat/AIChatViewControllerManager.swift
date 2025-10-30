@@ -80,6 +80,12 @@ final class AIChatViewControllerManager {
     // MARK: - Public Methods
 
     @MainActor
+    func killSessionAndResetTimer() async {
+        stopSessionTimer()
+        await cleanUpSession()
+    }
+
+    @MainActor
     func openAIChat(_ query: String? = nil,
                     payload: Any? = nil,
                     autoSend: Bool = false,

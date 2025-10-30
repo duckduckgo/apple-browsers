@@ -269,7 +269,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     lazy var winBackOfferPromptPresenter: WinBackOfferPromptPresenting = {
-        return WinBackOfferPromptPresenter(visibilityManager: winBackOfferVisibilityManager)
+        return WinBackOfferPromptPresenter(visibilityManager: winBackOfferVisibilityManager,
+                                          subscriptionManager: subscriptionAuthV1toV2Bridge)
     }()
 
     lazy var winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator = {
@@ -909,7 +910,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 #elseif SPARKLE
         if AppVersion.runType != .uiTests {
-            let updateController = SparkleUpdateController(internalUserDecider: internalUserDecider)
+            let updateController = SparkleUpdateController(
+                internalUserDecider: internalUserDecider
+            )
             self.updateController = updateController
             stateRestorationManager.subscribeToAutomaticAppRelaunching(using: updateController.willRelaunchAppPublisher)
         }
@@ -1195,6 +1198,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             FileDownloadManager.shared.cancelAll(waitUntilDone: true)
             DownloadListCoordinator.shared.sync()
         }
+
+        // Cancel any active update tracking flow
+        updateController?.handleAppTermination()
+
         stateRestorationManager?.applicationWillTerminate()
 
         // Handling of "Burn on quit"

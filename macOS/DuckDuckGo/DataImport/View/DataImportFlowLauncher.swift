@@ -69,7 +69,6 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
         title: String,
         isDataTypePickerExpanded: Bool
     ) {
-        let featureFlagger = NSApp.delegateTyped.featureFlagger
         DataImportView(
             model: model,
             importFlowLauncher: self,
@@ -85,7 +84,6 @@ final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportF
         title: String,
         isDataTypePickerExpanded: Bool
     ) {
-        let featureFlagger = NSApp.delegateTyped.featureFlagger
         LegacyDataImportView(
             model: model,
             importFlowLauncher: self,

@@ -43,10 +43,30 @@ struct RemoteMessagingActionHandlerIntegrationTests {
         sut.messageNavigator = DefaultMessageNavigator(delegate: mockMessageNavigationDelegate)
         #expect(!mockMessageNavigationDelegate[keyPath: keyPath])
         // WHEN
-        await sut.handleAction(.navigation(value: navigationTarget), presenter: mockPresenter)
+        await sut.handleAction(.navigation(value: navigationTarget), context: .init(presenter: mockPresenter, presentationStyle: .dismissModalsAndPresentFromRoot))
 
         // THEN
         #expect(mockMessageNavigationDelegate[keyPath: keyPath])
+    }
+
+    @Test(
+        "Check Navigation Passes Presentation Style To Delegate",
+        arguments:
+            [.sync, .settings, .duckAISettings, .feedback, .importPasswords] as [NavigationTarget],
+            [.dismissModalsAndPresentFromRoot, .withinCurrentContext] as [PresentationContext.Style]
+    )
+    func navigationActionPassesPresentationStyleToDelegate(navigationTarget: NavigationTarget, presentationStyle: PresentationContext.Style) async throws {
+        // GIVEN
+        let mockMessageNavigationDelegate = MockMessageNavigationDelegate()
+        let mockPresenter = MockRemoteMessagingPresenter()
+        let sut = RemoteMessagingActionHandler()
+        sut.messageNavigator = DefaultMessageNavigator(delegate: mockMessageNavigationDelegate)
+
+        // WHEN
+        await sut.handleAction(.navigation(value: navigationTarget), context: .init(presenter: mockPresenter, presentationStyle: presentationStyle))
+
+        // THEN
+        #expect(mockMessageNavigationDelegate.capturedPresentationStyle == presentationStyle)
     }
 
 }

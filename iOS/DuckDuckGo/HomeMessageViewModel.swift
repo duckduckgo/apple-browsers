@@ -142,7 +142,7 @@ struct HomeMessageViewModel {
         onDidClose: @escaping (HomeMessageViewModel.ButtonAction?) async -> Void
     ) -> (_ presenter: RemoteMessagingPresenter) async -> Void {
         return { @MainActor presenter in
-            await self.messageActionHandler.handleAction(remoteAction, presenter: presenter)
+            await self.messageActionHandler.handleAction(remoteAction, context: PresentationContext(presenter: presenter, presentationStyle: .dismissModalsAndPresentFromRoot))
             await onDidClose(buttonAction)
         }
     }

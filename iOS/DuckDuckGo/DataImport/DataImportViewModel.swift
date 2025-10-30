@@ -39,10 +39,11 @@ final class DataImportViewModel: ObservableObject {
         case settings
         case promo
         case inBrowserPromo = "in_browser_promo"
+        case whatsNew
 
         var documentTypes: [UTType] {
             switch self {
-            case .passwords, .settings, .promo, .inBrowserPromo: return [.zip, .commaSeparatedText]
+            case .passwords, .settings, .promo, .inBrowserPromo, .whatsNew: return [.zip, .commaSeparatedText]
             case .bookmarks: return [.zip, .html]
             }
         }

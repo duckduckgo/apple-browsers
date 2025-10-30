@@ -271,6 +271,8 @@ public final actor Watchdog {
             } else if currentHangDuration(currentTime: now) > maximumHangDuration && crashOnTimeout {
                 logHangDuration(message: "Main thread hang timeout reached. Crashing app.", currentTime: now)
                 killAppFunction?(maximumHangDuration) ?? killApp(timeout: maximumHangDuration)
+            } else {
+                recoveryState.reset()
             }
         }
     }

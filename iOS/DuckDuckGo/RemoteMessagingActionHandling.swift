@@ -22,13 +22,25 @@ import Core
 import RemoteMessaging
 import class UIKit.UIApplication
 
+struct PresentationContext {
+    enum Style {
+        /// Dismiss any visible modals and present the screen
+        case dismissModalsAndPresentFromRoot
+        /// Present from the current presented screen.
+        case withinCurrentContext
+    }
+
+    let presenter: RemoteMessagingPresenter
+    let presentationStyle: Style
+}
+
 protocol RemoteMessagingPresenter {
     func presentActivitySheet(value: String, title: String?) async
     func presentEmbeddedWebView(url: URL) async
 }
 
 protocol RemoteMessagingActionHandling {
-    func handleAction(_ remoteAction: RemoteAction, presenter: RemoteMessagingPresenter) async
+    func handleAction(_ remoteAction: RemoteAction, context: PresentationContext) async
 }
 
 final class RemoteMessagingActionHandler: RemoteMessagingActionHandling {
@@ -49,15 +61,15 @@ final class RemoteMessagingActionHandler: RemoteMessagingActionHandling {
     }
 
     @MainActor
-    func handleAction(_ remoteAction: RemoteAction, presenter: RemoteMessagingPresenter) async {
+    func handleAction(_ remoteAction: RemoteAction, context: PresentationContext) async {
         switch remoteAction {
         case .share(let value, let title):
-            await presenter.presentActivitySheet(value: value, title: title)
+            await context.presenter.presentActivitySheet(value: value, title: title)
         case .url(let value):
             browserTabUrlOpener(value)
         case .urlInContext(let value):
             guard let url = URL.webUrl(from: value) else { return }
-            await presenter.presentEmbeddedWebView(url: url)
+            await context.presenter.presentEmbeddedWebView(url: url)
         case .appStore:
             let url = URL.appStore
             if urlOpener.canOpenURL(url) {
@@ -67,7 +79,7 @@ final class RemoteMessagingActionHandler: RemoteMessagingActionHandling {
             let refreshedURL = lastSearchStateRefresher.refreshLastSearchState(forURLPath: value)
             browserTabUrlOpener(refreshedURL)
         case .navigation(let target):
-            messageNavigator?.navigateTo(target)
+            messageNavigator?.navigateTo(target, presentationStyle: context.presentationStyle)
         case .dismiss:
             break
         }

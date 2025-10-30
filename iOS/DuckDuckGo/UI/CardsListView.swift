@@ -81,6 +81,7 @@ extension RemoteMessagingUI {
                 }
             }
             .padding(.horizontal, Metrics.CardsList.contentHorizontalPadding)
+            .background(Color(singleUseColor: .whatsNewBackground))
             .onFirstAppear {
                 displayModel.onAppear?()
             }

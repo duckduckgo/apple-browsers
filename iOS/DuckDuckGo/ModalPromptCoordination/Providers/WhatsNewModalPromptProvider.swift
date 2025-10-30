@@ -140,18 +140,27 @@ private extension WhatsNewCoordinator {
             return
         }
 
+        // Mark message seen (needed to send the right pixel. E.g. first vs subsequent time)
         await remoteMessageStore.updateRemoteMessage(withID: messageId, asShown: true)
+        // Mark the messages "seen" and avoid showing it again
+        await remoteMessageStore.dismissRemoteMessage(withID: messageId)
         Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Marked message as shown: \(messageId, privacy: .public)")
-    }
-
-    func handleAction(_ action: RemoteAction) async {
-        await remoteMessageActionHandler.handleAction(action, presenter: self)
     }
 
     func dismiss(source: DismissSource) {
         Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Dismissed From source: \(source.debugDescription, privacy: .public)")
         navigationController?.dismiss(animated: true)
     }
+}
+
+// MARK: - Action Handling
+
+extension WhatsNewCoordinator {
+
+    func handleAction(_ action: RemoteAction) async {
+        await remoteMessageActionHandler.handleAction(action, context: .init(presenter: self, presentationStyle: .withinCurrentContext))
+    }
+    
 }
 
 private extension WhatsNewCoordinator {

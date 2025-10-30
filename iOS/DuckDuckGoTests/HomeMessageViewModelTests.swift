@@ -188,4 +188,34 @@ struct HomeMessageViewModelTests {
         // THEN
         #expect(subtitle == expectedSubtitle)
     }
+
+    @Test(
+        "Check Mapped Action Always Passes Dismiss Modals Presentation Style",
+        arguments: [
+            .share(value: "Test Value", title: "Test Title"),
+            .url(value: "https://example.com"),
+            .urlInContext(value: "https://example.com"),
+            .survey(value: "Test"),
+            .navigation(value: .duckAISettings),
+            .appStore,
+            .dismiss
+        ] as [RemoteAction]
+    )
+    func mapActionToViewModelAlwaysPassesDismissModalsPresentationStyle(remoteAction: RemoteAction) async throws {
+        // GIVEN
+        let sut = makeSUT()
+        let buttonAction = HomeMessageViewModel.ButtonAction.primaryAction(isShare: false)
+
+        // WHEN
+        let viewModelAction = sut.mapActionToViewModel(
+            remoteAction: remoteAction,
+            buttonAction: buttonAction,
+            onDidClose: sut.onDidClose
+        )
+        await viewModelAction(mockPresenter)
+
+        // THEN
+        #expect(mockActionHandler.capturedPresentationContext?.presentationStyle == .dismissModalsAndPresentFromRoot)
+        #expect(mockActionHandler.capturedPresentationContext?.presenter != nil)
+    }
 }

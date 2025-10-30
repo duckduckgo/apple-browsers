@@ -18,13 +18,13 @@
 
 import Foundation
 
-struct StalledOperationCalculator {
+public struct StalledOperationCalculator {
     let isStartEvent: (HistoryEvent) -> Bool
     let isCompletionEvent: (HistoryEvent) -> Bool
     let extractEvents: (BrokerProfileQueryData) -> [[HistoryEvent]]
     let dateRange: Range<Date>
 
-    func calculate(
+    public func calculate(
         from profileQueryData: [BrokerProfileQueryData]
     ) -> (total: Int, stalled: Int, totalByBroker: [String: Int], stalledByBroker: [String: Int]) {
         var totalOperations = 0
@@ -79,7 +79,7 @@ struct StalledOperationCalculator {
 }
 
 extension StalledOperationCalculator {
-    static let scan = StalledOperationCalculator(
+    public static let scan = StalledOperationCalculator(
         isStartEvent: { event in
             if case .scanStarted = event.type {
                 return true
@@ -98,7 +98,7 @@ extension StalledOperationCalculator {
         dateRange: Date.daysAgo(7)..<Date().addingTimeInterval(-BrokerJobExecutionConfig().scanJobTimeout)
     )
 
-    static let optOut = StalledOperationCalculator(
+    public static let optOut = StalledOperationCalculator(
         isStartEvent: { event in
             if case .optOutStarted = event.type {
                 return true

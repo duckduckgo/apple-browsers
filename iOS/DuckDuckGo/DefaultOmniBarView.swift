@@ -472,8 +472,8 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         settingsButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Settings"
         settingsButtonView.accessibilityTraits = .button
 
-        aiChatButton.accessibilityLabel = "AI Chat"
-        aiChatButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AI Chat"
+        aiChatButton.accessibilityLabel = UserText.duckAiFeatureName
+        aiChatButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
         aiChatButton.accessibilityTraits = .button
 
         // This is for compatibility purposes with old OmniBar

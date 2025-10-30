@@ -239,7 +239,7 @@ public final class KeychainManager: KeychainManaging {
     }
 
     private func removeFromWritingBacklog(forKey key: String) {
-        Logger.keychainManager.log("Removing data to writing backlog")
+        Logger.keychainManager.log("Removing data from writing backlog")
         writingBacklog[key] = nil
     }
 

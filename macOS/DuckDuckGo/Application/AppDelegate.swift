@@ -566,7 +566,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if self.isUsingAuthV2 {
             // MARK: V2
-            Logger.general.log("Configuring Subscription V2")
+            Logger.subscription.log("Configuring Subscription V2")
             var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
             let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
                                                                                    baseURL: subscriptionEnvironment.serviceEnvironment.url)
@@ -633,7 +633,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionManagerV1 = nil
             subscriptionAuthV1toV2Bridge = subscriptionManager
         } else {
-            Logger.general.log("Configuring Subscription V1")
+            Logger.subscription.log("Configuring Subscription V1")
             let subscriptionManager = DefaultSubscriptionManager(featureFlagger: featureFlagger, pixelHandlingSource: .mainApp)
             subscriptionManagerV1 = subscriptionManager
             subscriptionManagerV2 = nil

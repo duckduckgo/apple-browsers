@@ -190,7 +190,7 @@ final class AppDependencyProvider: DependencyProvider {
         dbpSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 
         if isUsingAuthV2 {
-            Logger.subscription.debug("Configuring Subscription V2")
+            Logger.subscription.log("Configuring Subscription V2")
 
             var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
             let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
@@ -243,7 +243,7 @@ final class AppDependencyProvider: DependencyProvider {
             authenticationStateProvider = subscriptionManager
             subscriptionAuthV1toV2Bridge = subscriptionManager
         } else {
-            Logger.subscription.debug("Configuring Subscription V1")
+            Logger.subscription.log("Configuring Subscription V1")
             let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: subscriptionUserDefaults,
                                                                      key: UserDefaultsCacheKey.subscriptionEntitlements,
                                                                      settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))

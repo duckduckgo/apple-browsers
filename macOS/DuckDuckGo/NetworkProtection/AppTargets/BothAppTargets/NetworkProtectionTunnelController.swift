@@ -676,11 +676,11 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         options[NetworkProtectionOptionKey.activationAttemptId] = UUID().uuidString as NSString
         options[NetworkProtectionOptionKey.isAuthV2Enabled] = NSNumber(value: vpnAppState.isAuthV2Enabled)
         if !vpnAppState.isAuthV2Enabled {
-            Logger.networkProtection.log("Using Auth V1")
+            Logger.networkProtection.info("Using Auth V1")
             let authToken = try fetchAuthToken()
             options[NetworkProtectionOptionKey.authToken] = authToken
         } else {
-            Logger.networkProtection.log("Using Auth V2")
+            Logger.networkProtection.info("Using Auth V2")
             let tokenContainer = try await fetchTokenContainer()
             options[NetworkProtectionOptionKey.tokenContainer] = tokenContainer.data
 

@@ -94,10 +94,10 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
 
         // Configure Subscription
         if !settings.isAuthV2Enabled {
-            Logger.dbpBackgroundAgent.log("Configuring subscription V1")
+            Logger.subscription.log("Configuring subscription V1")
             subscriptionManager = DefaultSubscriptionManager(pixelHandlingSource: .dbp)
         } else {
-            Logger.dbpBackgroundAgent.log("Configuring subscription V2")
+            Logger.subscription.log("Configuring subscription V2")
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
             let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)

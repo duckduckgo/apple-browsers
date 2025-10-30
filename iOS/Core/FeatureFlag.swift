@@ -202,6 +202,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210927932064918?focus=true
     case duckAiDataClearing
+
+    /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709099?focus=true
+    case onboardingSearchExperience
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -283,6 +286,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .unifiedURLPredictor,
              .mobileCustomization,
              .vpnMenuItem,
+             .onboardingSearchExperience,
              .duckAiDataClearing:
             return true
         case .showSettingsCompleteSetupSection:
@@ -491,6 +495,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnMenuItem))
         case .duckAiDataClearing:
             return .remoteReleasable(.feature(.duckAiDataClearing))
+        case .onboardingSearchExperience:
+            return .internalOnly()
         }
     }
 }

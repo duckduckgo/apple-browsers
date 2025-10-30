@@ -2781,6 +2781,16 @@ extension MainViewController: OmniBarDelegate {
         currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.barView.customizableButton)
     }
 
+    private func shareCurrentURLFromToolbar() {
+        guard let targetView = viewCoordinator.toolbarFireBarButtonItem.customView else {
+            assertionFailure("Expected custom view on toolbar fire button")
+            return
+        }
+        // Pixels coming later.
+        guard let link = currentTab?.link else { return }
+        currentTab?.onShareAction(forLink: link, fromView: targetView)
+    }
+
     private func openAIChatFromAddressBar() {
 
         let isEditing = omniBar.isTextFieldEditing
@@ -3886,7 +3896,7 @@ extension MainViewController {
             self.presentNetworkProtectionStatusSettingsModal()
 
         case .share:
-            self.onCustomizableButtonPressed()
+            self.shareCurrentURLFromToolbar()
 
         case .downloads:
             self.segueToDownloads()

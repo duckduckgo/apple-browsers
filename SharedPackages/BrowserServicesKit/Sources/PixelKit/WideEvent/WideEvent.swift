@@ -225,10 +225,6 @@ public final class WideEvent: WideEventManaging {
             break
         }
 
-        if case let .success(reason) = status, let successReason = reason {
-            parameters[WideEventParameter.Feature.statusReason] = successReason
-        }
-
         return parameters
     }
 

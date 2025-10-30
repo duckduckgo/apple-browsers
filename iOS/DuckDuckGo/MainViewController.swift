@@ -1350,6 +1350,7 @@ class MainViewController: UIViewController {
     }
     
     private func prepareTabForRequest(request: () -> Void) {
+        currentTab?.prepareUIForWebModeIfModeIsAI()
         viewCoordinator.navigationBarContainer.alpha = 1
         allowContentUnderflow = false
 
@@ -1485,7 +1486,11 @@ class MainViewController: UIViewController {
         Logger.daxEasterEgg.debug("RefreshOmniBar - Stored Logo: \(tab.tabModel.daxEasterEggLogoURL ?? "nil")")
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(tab.tabModel.daxEasterEggLogoURL)
 
-        viewCoordinator.omniBar.startBrowsing()
+        if tab.tabModel.isAITab {
+            viewCoordinator.omniBar.enterAIChatMode()
+        } else {
+            viewCoordinator.omniBar.startBrowsing()
+        }
     }
 
     private func updateOmniBarLoadingState() {

@@ -3941,6 +3941,14 @@ extension TabViewController {
 
         updateContainerVisibility()
     }
+    
+    /// Exits AI Chat mode and switches back to web browsing.
+    func prepareUIForWebModeIfModeIsAI() {
+        guard tabModel.isAITab else { return }
+        tabModel.type = .web
+        updateContainerVisibility()
+        view.layoutIfNeeded()
+    }
 
     // MARK: Private API
 

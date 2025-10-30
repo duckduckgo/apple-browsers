@@ -701,8 +701,8 @@ class MainViewController: UIViewController {
 
     func presentNetworkProtectionStatusSettingsModal() {
         Task {
-            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection), canShowVPNInUI {
+            if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
+               canShowVPNInUI {
                 segueToVPN()
             } else {
                 segueToDuckDuckGoSubscription()
@@ -3876,7 +3876,7 @@ extension MainViewController {
             self.launchAutofillLogins(with: currentTab?.url, currentTabUid: currentTab?.tabModel.uid, source: .customizedToolbarButton, selectedAccount: nil)
 
         case .vpn:
-            self.segueToVPN()
+            self.presentNetworkProtectionStatusSettingsModal()
 
         case .share:
             self.onCustomizableButtonPressed()

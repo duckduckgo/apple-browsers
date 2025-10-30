@@ -541,7 +541,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dataImportNewExperience:
             return .disabled
         case .pinnedTabsViewRewrite:
-            return .disabled
+            return .internalOnly()
         }
     }
 }

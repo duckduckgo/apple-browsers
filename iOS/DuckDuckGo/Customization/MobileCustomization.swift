@@ -43,9 +43,9 @@ class MobileCustomization {
             switch self {
             case .share:
                 "Share"
-            case .addRemoveBookmark:
+            case .addEditBookmark:
                 "Add Bookmark"
-            case .addRemoveFavorite:
+            case .addEditFavorite:
                 "Add Favorite"
             case .zoom:
                 "Zoom"
@@ -76,9 +76,9 @@ class MobileCustomization {
             switch self {
             case .share:
                 DesignSystemImages.Glyphs.Size24.shareApple
-            case .addRemoveBookmark:
+            case .addEditBookmark:
                 DesignSystemImages.Glyphs.Size24.bookmark
-            case .addRemoveFavorite:
+            case .addEditFavorite:
                 DesignSystemImages.Glyphs.Size24.favorite
             case .zoom:
                 DesignSystemImages.Glyphs.Size24.typeSize
@@ -109,9 +109,9 @@ class MobileCustomization {
             switch self {
             case .share:
                 DesignSystemImages.Glyphs.Size16.shareApple
-            case .addRemoveBookmark:
+            case .addEditBookmark:
                 DesignSystemImages.Glyphs.Size16.bookmark
-            case .addRemoveFavorite:
+            case .addEditFavorite:
                 DesignSystemImages.Glyphs.Size16.favorite
             case .zoom:
                 DesignSystemImages.Glyphs.Size16.typeSize
@@ -151,8 +151,8 @@ class MobileCustomization {
 
         // Generally address bar specific
         case share
-        case addRemoveBookmark
-        case addRemoveFavorite
+        case addEditBookmark
+        case addEditFavorite
         case voiceSearch
         case zoom
         case none
@@ -175,8 +175,8 @@ class MobileCustomization {
 
     static let addressBarButtons: [Button?] = {
         let sortedButtons: [Button] = [
-            .addRemoveBookmark,
-            .addRemoveFavorite,
+            .addEditBookmark,
+            .addEditFavorite,
             .fire,
             .vpn,
             .zoom,

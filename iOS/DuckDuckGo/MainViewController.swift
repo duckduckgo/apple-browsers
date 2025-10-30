@@ -2521,7 +2521,7 @@ extension MainViewController: OmniBarDelegate {
             return
         }
 
-        // TODO perform selected action
+        handleCustomizableAddressBarButtonPressed()
     }
 
     func selectedSuggestion() -> Suggestion? {
@@ -3907,6 +3907,60 @@ extension MainViewController {
 
         if !isNewTabPageVisible && state.isEnabled {
             browserChrome.setImage(state.currentToolbarButton.largeIcon)
+        }
+    }
+
+    private func handleCustomizableAddressBarButtonPressed() {
+        let button = mobileCustomization.state.currentAddressBarButton
+        switch button {
+        case .share:
+            shareCurrentURLFromAddressBar()
+
+        case .addEditBookmark:
+            addOrEditBookmarkForCurrentTab(favorite: true)
+
+        case .addEditFavorite:
+            addOrEditBookmarkForCurrentTab(favorite: false)
+
+        case .fire:
+            onFirePressed()
+
+        case .vpn:
+            presentNetworkProtectionStatusSettingsModal()
+
+        case .zoom:
+            showTextZoomEditorIfPossible()
+
+        default:
+            assertionFailure("Unexpected case: \(button)")
+            return
+        }
+
+    }
+
+    private func addOrEditBookmarkForCurrentTab(favorite: Bool) {
+        guard let webView = currentTab?.webView,
+              let url = webView.url else {
+            assertionFailure("Expecting current tab with web view")
+            return
+        }
+        if let bookmark = menuBookmarksViewModel.bookmark(for: url) {
+            segueToEditBookmark(bookmark)
+        } else {
+            currentTab?.saveAsBookmark(favorite: favorite, viewModel: menuBookmarksViewModel)
+        }
+    }
+
+    private func addOrEditFavoriteForCurrentTab() {
+    }
+
+    private func showTextZoomEditorIfPossible() {
+        guard let webView = currentTab?.webView else {
+            assertionFailure("Expecting current tab with web view")
+            return
+        }
+        Task { @MainActor in
+            await textZoomCoordinator.showTextZoomEditor(inController: self, forWebView: webView)
         }
     }
 

@@ -132,7 +132,7 @@ struct AutofillSettingsView: View {
             viewModel.refreshData()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
-           viewModel.refreshData()
+            viewModel.refreshData()
         }
     }
 

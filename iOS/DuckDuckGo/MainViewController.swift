@@ -2871,6 +2871,19 @@ extension MainViewController: OmniBarDelegate {
                                  serp: .addressBarCancelPressedOnSERP,
                                  website: .addressBarCancelPressedOnWebsite)
     }
+
+    /// Delegate method called when the AI Chat left button is tapped
+    func onAIChatLeftButtonPressed() {
+    }
+
+    /// Delegate method called when the AI Chat right button is tapped
+    func onAIChatRightButtonPressed() {
+    }
+
+    /// Delegate method called when the omnibar search area is tapped while in AI Chat mode. Enters search editing mode.
+    func onAIChatOmnibarPressed() {
+        viewCoordinator.omniBar.beginEditing(animated: true)
+    }
 }
 
 // MARK: - AutocompleteViewControllerDelegate Methods

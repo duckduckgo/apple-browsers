@@ -26,6 +26,7 @@ import UIComponents
 public enum OmniBarIcon {
     case duckPlayer
     case specialError
+    case aiChat
 
     var image: UIImage {
         switch self {
@@ -33,6 +34,8 @@ public enum OmniBarIcon {
             return UIImage(resource: .duckPlayerURLIcon)
         case .specialError:
             return DesignSystemImages.Glyphs.Size24.globe
+        case .aiChat:
+            return DesignSystemImages.Color.Size24.daxAI
         }
     }
 }
@@ -676,8 +679,21 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         onAIChatPressed?()
     }
 
+    /// Handles tap gestures on the search area. Shows trackers view in browse mode, triggers AI Chat callback in AI Chat mode.
     @objc private func searchAreaPressed() {
-        onTrackersViewPressed?()
+        if isFullAIChatHidden {
+            onTrackersViewPressed?()
+        } else {
+            onAIChatOmnibarPressed?()
+        }
+    }
+
+    @objc private func aiChatLeftButtonTap() {
+        onAIChatLeftButtonPressed?()
+    }
+
+    @objc private func aiChatRightButtonTap() {
+        onAIChatRightButtonPressed?()
     }
 
     @objc private func aiChatLeftButtonTap() {
@@ -765,6 +781,7 @@ extension DefaultOmniBarView {
     private func showAIChatOmnibar() {
         aiChatBrandingView?.isHidden = false
         searchAreaView.textField.isHidden = true
+        searchAreaView.textField.text = UserText.omnibarFullAIChatModeDisplayTitle
         aiChatLeadingSpacingConstraint?.isActive = true
         aiChatTrailingSpacingConstraint?.isActive = true
         aiChatLeftButton.isHidden = false

@@ -63,7 +63,7 @@ protocol OmniBarDelegate: AnyObject {
     
     func onForwardPressed()
     
-    func onAccessoryPressed(accessoryType: OmniBarAccessoryType)
+    func onAIChatPressed()
 
     func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool)
 
@@ -134,7 +134,7 @@ extension OmniBarDelegate {
     
     }
 
-    func onAccessoryPressed(accessoryType: OmniBarAccessoryType) {
+    func onAIChatPressed() {
     }
 
     func onBackPressed() {

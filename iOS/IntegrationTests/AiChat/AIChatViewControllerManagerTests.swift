@@ -21,6 +21,7 @@ import Testing
 import Foundation
 import Combine
 import BrowserServicesKit
+import BrowserServicesKitTestsUtils
 import Subscription
 @testable import DuckDuckGo
 import UIKit
@@ -36,6 +37,7 @@ struct AIChatViewControllerManagerTests {
             userAgentManager: MockUserAgentManager(privacyConfig: MockPrivacyConfiguration()),
             experimentalAIChatManager: ExperimentalAIChatManager(),
             featureFlagger: MockFeatureFlagger(),
+            featureDiscovery: MockFeatureDiscovery(),
             aiChatSettings: MockAIChatSettingsProvider()
         )
 

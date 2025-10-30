@@ -629,6 +629,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                   stageCalculator: calculator,
                                                   database: mockDatabase,
                                                   schedulingConfig: .default,
+                                                  scanWideEventRecorder: nil,
                                                   handleError: { _, _, _, _, _, _, _ in
             handleErrorCalled = true
         })
@@ -655,6 +656,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                   stageCalculator: calculator,
                                   database: mockDatabase,
                                   schedulingConfig: .default,
+                                  scanWideEventRecorder: nil,
                                   handleError: { origin, _, _, _, _, _, _ in
             capturedOrigin = origin
         })
@@ -680,6 +682,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                   stageCalculator: calculator,
                                   database: mockDatabase,
                                   schedulingConfig: .default,
+                                  scanWideEventRecorder: nil,
                                   handleError: { _, _, _, extractedProfileId, _, _, _ in
             capturedExtractedProfileId = extractedProfileId
         })
@@ -704,6 +707,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
                                                   stageCalculator: calculator,
                                                   database: mockDatabase,
                                                   schedulingConfig: .default,
+                                                  scanWideEventRecorder: nil,
                                                   handleError: { _, _, _, _, _, _, _ in })
 
         if case .actionFailed(let actionID, let message) = returnedError as? DataBrokerProtectionError {

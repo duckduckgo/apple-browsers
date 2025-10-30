@@ -12,7 +12,13 @@
             {
                 "key": "pixelName",
                 "description": "The name of the pixel that failed to save",
-                "enum": ["subscription_purchase", "pir_opt_out_submission", "pir_opt_out_confirmation", "sparkle_update_cycle"]
+                "enum": [
+                    "subscription_purchase",
+                    "pir_opt_out_submission",
+                    "pir_opt_out_confirmation",
+                    "pir_scan_attempt",
+                    "sparkle_update_cycle"
+                ]
             }
         ]
     },
@@ -29,7 +35,13 @@
             {
                 "key": "pixelName",
                 "description": "The name of the pixel that failed to update",
-                "enum": ["subscription_purchase", "pir_opt_out_submission", "pir_opt_out_confirmation", "sparkle_update_cycle"]
+                "enum": [
+                    "subscription_purchase",
+                    "pir_opt_out_submission",
+                    "pir_opt_out_confirmation",
+                    "pir_scan_attempt",
+                    "sparkle_update_cycle"
+                ]
             }
         ]
     },
@@ -46,7 +58,13 @@
             {
                 "key": "pixelName",
                 "description": "The name of the pixel that failed to load",
-                "enum": ["subscription_purchase", "pir_opt_out_submission", "pir_opt_out_confirmation", "sparkle_update_cycle"]
+                "enum": [
+                    "subscription_purchase",
+                    "pir_opt_out_submission",
+                    "pir_opt_out_confirmation",
+                    "pir_scan_attempt",
+                    "sparkle_update_cycle"
+                ]
             }
         ]
     },
@@ -63,7 +81,13 @@
             {
                 "key": "pixelName",
                 "description": "The name of the pixel that failed to complete",
-                "enum": ["subscription_purchase", "pir_opt_out_submission", "pir_opt_out_confirmation", "sparkle_update_cycle"]
+                "enum": [
+                    "subscription_purchase",
+                    "pir_opt_out_submission",
+                    "pir_opt_out_confirmation",
+                    "pir_scan_attempt",
+                    "sparkle_update_cycle"
+                ]
             }
         ]
     },

@@ -1,8 +1,7 @@
 //
-//  OmnibarAccessoryHandling.swift
-//  DuckDuckGo
+//  SyncFeatureVisibility.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,18 +16,16 @@
 //  limitations under the License.
 //
 
-import Foundation
-import AIChat
-import BrowserServicesKit
+enum SyncFeatureVisibility {
+    case show(syncLauncher: SyncDeviceFlowLaunching)
+    case hide
 
-protocol OmnibarAccessoryHandling {
-    func omnibarAccessory(for url: URL?) -> OmniBarAccessoryType
-}
-
-struct OmnibarAccessoryHandler: OmnibarAccessoryHandling {
-    let settings: AIChatSettingsProvider
-
-    func omnibarAccessory(for url: URL?) -> OmniBarAccessoryType {
-        .chat
+    var shouldShowSyncFeature: Bool {
+        switch self {
+        case .show:
+            return true
+        case .hide:
+            return false
+        }
     }
 }

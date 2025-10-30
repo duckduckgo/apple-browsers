@@ -23,7 +23,7 @@ import SwiftUI
 
 protocol AutocompleteViewModelDelegate: NSObjectProtocol {
 
-    func onSuggestionSelected(_ suggestion: Suggestion)
+    func onSuggestionSelected(_ suggestion: Suggestion, ddgSuggestionIndex: Int?)
     func onSuggestionHighlighted(_ suggestion: Suggestion, forQuery query: String)
     func onTapAhead(_ suggestion: Suggestion)
     func onMessageDismissed()
@@ -90,7 +90,8 @@ class AutocompleteViewModel: ObservableObject {
     }
 
     func onSuggestionSelected(_ model: SuggestionModel) {
-        delegate?.onSuggestionSelected(model.suggestion)
+        let index = ddgSuggestions.firstIndex(of: model)
+        delegate?.onSuggestionSelected(model.suggestion, ddgSuggestionIndex: index)
     }
 
     func onTapAhead(_ model: SuggestionModel) {

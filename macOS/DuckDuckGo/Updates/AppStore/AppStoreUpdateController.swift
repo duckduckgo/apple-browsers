@@ -210,6 +210,10 @@ final class AppStoreUpdateController: NSObject, UpdateController {
         appStoreOpener.openAppStore()
     }
 
+    func handleAppTermination() {
+        // Intentional no-op
+    }
+
     // MARK: - Private Methods
 
     private func getCurrentAppVersion() -> String? {

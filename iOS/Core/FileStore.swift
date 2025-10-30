@@ -80,14 +80,15 @@ public class FileStore {
             } catch {
                 let nserror = error as NSError
                 if nserror.domain != NSCocoaErrorDomain || nserror.code != NSFileReadNoSuchFileError {
+                    let pixel = Pixel.Event.couldNotLoadConfiguration(configuration: configuration, target: .app)
+
                     if configuration == .trackerDataSet, let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
-                        let parameters = [
+                        DailyPixel.fireDailyAndCount(pixel, error: error, withAdditionalParameters: [
                             "experimentName": experimentName,
                             "etag": UserDefaultsETagStorage().loadEtag(for: .trackerDataSet) ?? ""
-                        ]
-                        Pixel.fire(pixel: .trackerDataCouldNotBeLoaded, error: error, withAdditionalParameters: parameters)
+                        ])
                     } else {
-                        Pixel.fire(pixel: .trackerDataCouldNotBeLoaded, error: error)
+                        DailyPixel.fireDailyAndCount(pixel: pixel, error: error)
                     }
                 }
             }

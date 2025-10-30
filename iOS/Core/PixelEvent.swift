@@ -681,6 +681,10 @@ extension Pixel {
 
         case networkProtectionConfigurationInvalidPayload(configuration: Configuration)
 
+        case networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure
+        case networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess
+        case networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure
+
         // MARK: - VPN Tips
 
         case networkProtectionGeoswitchingTipShown
@@ -726,19 +730,17 @@ extension Pixel {
         case dbLocalAuthenticationError
         
         case configurationFetchInfo
-        
-        case trackerDataParseFailed
+        case couldNotLoadConfiguration(configuration: Configuration, target: Pixel.BuildTarget)
+        case couldNotParseConfiguration(configuration: Configuration, target: Pixel.BuildTarget)
+
         case trackerDataReloadFailed
-        case trackerDataCouldNotBeLoaded
         case fileStoreWriteFailed
         case fileStoreCoordinatorFailed
         case privacyConfigurationReloadFailed
-        case privacyConfigurationParseFailed
-        case privacyConfigurationCouldNotBeLoaded
         
         case contentBlockingCompilationFailed(listType: CompileRulesListType,
                                               component: ContentBlockerDebugEvents.Component)
-        
+
         case contentBlockingLookupRulesSucceeded
         case contentBlockingFetchLRCSucceeded
         case contentBlockingNoMatchInLRC
@@ -746,7 +748,7 @@ extension Pixel {
         
         case contentBlockingCompilationTaskPerformance(iterationCount: Int, timeBucketAggregation: CompileTimeBucketAggregation)
         case ampBlockingRulesCompilationFailed
-        
+
         case webKitDidTerminate
         case webKitTerminationDidReloadCurrentTab
         case webKitDidTerminateDuringWarmup
@@ -789,6 +791,8 @@ extension Pixel {
         case debugBookmarksInitialStructureQueryFailed
         case debugBookmarksDatabaseFileMissing
         case debugBookmarksStructureLost
+        
+        case debugAppDelegateInitToLaunchTime
         case debugBookmarksStructureNotRecovered
         case debugBookmarksInvalidRoots
         case debugBookmarksValidationFailed
@@ -1359,6 +1363,10 @@ extension Pixel {
         case aiChatLegacyOmnibarQuerySubmitted
         case aiChatLegacyOmnibarAichatButtonPressed
         case aiChatLegacyOmnibarBackButtonPressed
+        
+        // MARK: AI Chat History Deletion
+        case aiChatHistoryDeleteSuccessful
+        case aiChatHistoryDeleteFailed
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -2005,6 +2013,10 @@ extension Pixel.Event {
 
         case .networkProtectionConfigurationInvalidPayload(let config): return "m_netp_vpn_configuration_\(config.rawValue)_invalid_payload"
 
+        case .networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure: return "m_netp_adapter_end_temporary_shutdown_state_attempt_failure"
+        case .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess: return "m_netp_adapter_end_temporary_shutdown_state_recovery_success"
+        case .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure: return "m_netp_adapter_end_temporary_shutdown_state_recovery_failure"
+
             // MARK: VPN tips
 
         case .networkProtectionGeoswitchingTipShown: return "m_vpn_tip_geoswitching_shown"
@@ -2061,19 +2073,25 @@ extension Pixel.Event {
         case .debugBookmarksMigratedMoreThanOnce: return "m_debug_bookmarks_migrated-more-than-once"
             
         case .configurationFetchInfo: return "m_d_cfgfetch"
+        case .couldNotLoadConfiguration(let configuration, let target):
+            switch target {
+            case .app: return "m_debug_\(configuration.rawValue)_load_failed".lowercased()
+            case .vpn: return "m_debug_\(configuration.rawValue)_load_failed_\(target.rawValue)".lowercased()
+            }
             
-        case .trackerDataParseFailed: return "m_d_tracker_data_parse_failed"
+        case .couldNotParseConfiguration(let configuration, let target):
+            switch target {
+            case .app: return "m_debug_\(configuration.rawValue)_parse_failed".lowercased()
+            case .vpn: return "m_debug_\(configuration.rawValue)_parse_failed_\(target.rawValue)".lowercased()
+            }
+
         case .trackerDataReloadFailed: return "m_d_tds_r"
-        case .trackerDataCouldNotBeLoaded: return "m_d_tracker_data_could_not_be_loaded"
         case .fileStoreWriteFailed: return "m_d_fswf"
         case .fileStoreCoordinatorFailed: return "m_d_configuration_file_coordinator_error"
         case .privacyConfigurationReloadFailed: return "m_d_pc_r"
-        case .privacyConfigurationParseFailed: return "m_d_pc_p"
-        case .privacyConfigurationCouldNotBeLoaded: return "m_d_pc_l"
             
         case .contentBlockingCompilationFailed(let listType, let component):
             return "m_d_content_blocking_\(listType)_\(component)_compilation_failed"
-            
             
         case .contentBlockingLookupRulesSucceeded: return "m_content_blocking_lookup_rules_succeeded"
         case .contentBlockingFetchLRCSucceeded: return "m_content_blocking_fetch_lrc_succeeded"
@@ -2083,7 +2101,7 @@ extension Pixel.Event {
         case .contentBlockingCompilationTaskPerformance(let iterationCount, let timeBucketAggregation):
             return "m_content_blocking_compilation_loops_\(iterationCount)_time_\(timeBucketAggregation)"
         case .ampBlockingRulesCompilationFailed: return "m_debug_amp_rules_compilation_failed"
-            
+
         case .webKitDidTerminate: return "m_d_wkt"
         case .webKitDidTerminateDuringWarmup: return "m_d_webkit-terminated-during-warmup"
         case .webKitTerminationDidReloadCurrentTab: return "m_d_wktct"
@@ -2119,6 +2137,7 @@ extension Pixel.Event {
         case .debugBookmarksInitialStructureQueryFailed: return "m_d_bookmarks-initial-structure-query-failed"
         case .debugBookmarksDatabaseFileMissing: return "m_d_bookmarks_database_file_missing"
         case .debugBookmarksStructureLost: return "m_d_bookmarks_structure_lost"
+        case .debugAppDelegateInitToLaunchTime: return "m_d_app_delegate_init_to_launch_time"
         case .debugBookmarksStructureNotRecovered: return "m_d_bookmarks_structure_not_recovered"
         case .debugBookmarksInvalidRoots: return "m_d_bookmarks_invalid_roots"
         case .debugBookmarksValidationFailed: return "m_d_bookmarks_validation_failed"
@@ -2665,6 +2684,10 @@ extension Pixel.Event {
         case .aiChatLegacyOmnibarQuerySubmitted: return "m_aichat_legacy_omnibar_query_submitted"
         case .aiChatLegacyOmnibarAichatButtonPressed: return "m_aichat_legacy_omnibar_aichat_button_pressed"
         case .aiChatLegacyOmnibarBackButtonPressed: return "m_aichat_legacy_omnibar_back_button_pressed"
+        
+        // MARK: AI Chat History Deletion
+        case .aiChatHistoryDeleteSuccessful: return "m_ios_aichat_history_delete_successful"
+        case .aiChatHistoryDeleteFailed: return "m_ios_aichat_history_delete_failed"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

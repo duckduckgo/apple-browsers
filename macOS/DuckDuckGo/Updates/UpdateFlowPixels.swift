@@ -67,6 +67,50 @@ enum UpdateFlowPixels: PixelKitEvent {
      */
     case releaseMetadataFetchFailed(error: Error)
 
+    /**
+     * Event Trigger: Application update completed successfully
+     *
+     * Fired once after the app restarts following a successful update.
+     * Tracks version changes and update metadata.
+     *
+     * Parameters:
+     * - sourceVersion: App version before update
+     * - sourceBuild: Build number before update
+     * - targetVersion: App version after update
+     * - targetBuild: Build number after update
+     * - initiationType: How update was initiated (automatic, manual)
+     * - updateConfiguration: User's automatic update setting (automatic, manual)
+     * - osVersion: macOS version
+     */
+    case updateApplicationSuccess(
+        sourceVersion: String,
+        sourceBuild: String,
+        targetVersion: String,
+        targetBuild: String,
+        initiationType: String,
+        updateConfiguration: String,
+        osVersion: String
+    )
+
+    case updateApplicationFailure(
+        sourceVersion: String,
+        sourceBuild: String,
+        expectedVersion: String,
+        expectedBuild: String,
+        actualVersion: String,
+        actualBuild: String,
+        failureStatus: String,
+        initiationType: String,
+        updateConfiguration: String,
+        osVersion: String
+    )
+
+    case updateApplicationUnexpected(
+        targetVersion: String,
+        targetBuild: String,
+        osVersion: String
+    )
+
     var name: String {
         switch self {
         case .checkForUpdate:
@@ -79,6 +123,12 @@ enum UpdateFlowPixels: PixelKitEvent {
             return "m_mac_update_duckduckgo_button_tapped"
         case .releaseMetadataFetchFailed:
             return "m_mac_release_metadata_fetch_failed"
+        case .updateApplicationSuccess:
+            return "m_mac_update_application_success"
+        case .updateApplicationFailure:
+            return "m_mac_update_application_failure"
+        case .updateApplicationUnexpected:
+            return "m_mac_update_application_unexpected"
         }
     }
 
@@ -86,6 +136,40 @@ enum UpdateFlowPixels: PixelKitEvent {
         switch self {
         case .checkForUpdate(let source):
             return ["source": source.rawValue]
+        case .updateApplicationSuccess(let sourceVersion, let sourceBuild, let targetVersion,
+                                        let targetBuild, let initiationType, let updateConfiguration,
+                                        let osVersion):
+            return [
+                "sourceVersion": sourceVersion,
+                "sourceBuild": sourceBuild,
+                "targetVersion": targetVersion,
+                "targetBuild": targetBuild,
+                "initiationType": initiationType,
+                "updateConfiguration": updateConfiguration,
+                "osVersion": osVersion
+            ]
+        case .updateApplicationFailure(let sourceVersion, let sourceBuild, let expectedVersion,
+                                        let expectedBuild, let actualVersion, let actualBuild,
+                                        let failureStatus, let initiationType, let updateConfiguration,
+                                        let osVersion):
+            return [
+                "sourceVersion": sourceVersion,
+                "sourceBuild": sourceBuild,
+                "expectedVersion": expectedVersion,
+                "expectedBuild": expectedBuild,
+                "actualVersion": actualVersion,
+                "actualBuild": actualBuild,
+                "failureStatus": failureStatus,
+                "initiationType": initiationType,
+                "updateConfiguration": updateConfiguration,
+                "osVersion": osVersion
+            ]
+        case .updateApplicationUnexpected(let targetVersion, let targetBuild, let osVersion):
+            return [
+                "targetVersion": targetVersion,
+                "targetBuild": targetBuild,
+                "osVersion": osVersion
+            ]
         case .updateNotificationShown, .updateNotificationTapped, .updateDuckDuckGoButtonTapped, .releaseMetadataFetchFailed:
             return nil
         }

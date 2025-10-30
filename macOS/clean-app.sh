@@ -3,18 +3,30 @@
 delete_data() {
     bundle_id="$1"
 
-    printf '%s' "Deleting data for ${bundle_id}..."
+    echo "Deleting data for ${bundle_id}"
 
     if defaults read "${bundle_id}" &>/dev/null; then
         defaults delete "${bundle_id}"
     fi
 
     data_path="${HOME}/Library/Containers/${bundle_id}/Data"
-    if [ -d "${data_path}" ]; then
-        rm -r "${data_path}" || { echo "Failed to delete ${data_path}"; exit 1; }
-        echo " Done."
+    if [[ -d "${data_path}" ]]; then
+        printf '%s' "    Deleting ${data_path} ... "
+        rm -r "${data_path}" || { echo "❌"; exit 1; }
+        echo "✅"
     else
-        printf '\nNothing to do for %s\n' "${data_path}"
+        echo "    Nothing to do for ${data_path}"
+    fi
+
+    if [[ -n "${clear_webkit_dir}" ]]; then
+        webkit_dir="${HOME}/Library/WebKit/${bundle_id}"
+        if [[ -d "${webkit_dir}" ]]; then
+            printf '%s' "    Deleting ${webkit_dir} ... "
+            rm -r "${webkit_dir}" || { echo "❌"; exit 1; }
+            echo "✅"
+        else
+            echo "    Nothing to do for ${webkit_dir}"
+        fi
     fi
 }
 
@@ -26,16 +38,19 @@ case "$1" in
         bundle_id="com.duckduckgo.macos.browser.debug"
         config_ids="*com.duckduckgo.macos.browser.app-configuration.debug"
         netp_bundle_ids_glob="*com.duckduckgo.macos.browser.network-protection*debug"
+        clear_webkit_dir=1
         ;;
     review)
         bundle_id="com.duckduckgo.macos.browser.review"
         config_ids="*com.duckduckgo.macos.browser.app-configuration.review"
         netp_bundle_ids_glob="*com.duckduckgo.macos.browser.network-protection*review"
+        clear_webkit_dir=1
         ;;
     alpha)
         bundle_id="com.duckduckgo.macos.browser.alpha"
         config_ids="*com.duckduckgo.macos.browser.app-configuration.alpha"
         netp_bundle_ids_glob="*com.duckduckgo.macos.browser.network-protection*alpha"
+        clear_webkit_dir=1
         ;;
     debug-appstore)
         bundle_id="com.duckduckgo.mobile.ios.debug"
@@ -66,13 +81,14 @@ read -r -a config_bundle_ids <<< $(
         -exec basename {} \;
 )
 for config_id in "${config_bundle_ids[@]}"; do
+    echo "Deleting config data for ${config_id}"
     path="${HOME}/Library/Group Containers/${config_id}"
-    printf '%s' "Deleting data at ${path}... "
-    if [ -d "${path}" ]; then
-        rm -r "${path}" || { echo "Failed to delete ${path}"; exit 1; }
-        echo "Done."
+    if [[ -d "${path}" ]]; then
+        printf '%s' "    Deleting ${path} ... "
+        rm -r "${path}" || { echo "❌"; exit 1; }
+        echo "✅"
     else
-        printf '\nNothing to do for %s\n' "${path}"
+        echo "    Nothing to do for ${path}"
     fi
 
 done

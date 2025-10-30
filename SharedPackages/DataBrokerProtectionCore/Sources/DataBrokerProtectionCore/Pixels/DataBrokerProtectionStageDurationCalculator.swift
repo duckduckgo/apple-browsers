@@ -242,7 +242,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     }
 
     func fireOptOutSubmitSuccess(tries: Int) {
-        let now = Date()
         let totalDuration = durationSinceStartTime()
         handler.fire(.optOutSubmitSuccess(dataBroker: dataBrokerURL,
                                           attemptId: attemptId,

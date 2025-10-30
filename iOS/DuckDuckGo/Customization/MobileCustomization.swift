@@ -18,30 +18,244 @@
 //
 
 import BrowserServicesKit
+import Persistence
+import DesignResourcesKitIcons
+import UIKit
 
-// This may change to a class, but is just to get the feature flag in and testable for now.
-struct MobileCustomization {
+/// Handles logic and persistence of customization options.
+class MobileCustomization {
 
-    let isEnabled: Bool
+    struct State {
 
-}
+        var isEnabled: Bool
+        var currentToolbarButton: MobileCustomization.Button
+        var currentAddressBarButton: MobileCustomization.Button
 
-// Using FeatureFlagger
-extension MobileCustomization {
+        static let `default` = State(isEnabled: false,
+                                     currentToolbarButton: MobileCustomization.toolbarDefault,
+                                     currentAddressBarButton: MobileCustomization.addressBarDefault)
 
-    static func load(featureFlagger: FeatureFlagger) -> MobileCustomization {
-        return MobileCustomization(isEnabled: featureFlagger.isFeatureOn(.mobileCustomization))
     }
 
-}
+    enum Button: String, CustomStringConvertible {
 
-// For SettingsState defaults
-extension MobileCustomization {
+        var description: String {
+            switch self {
+            case .share:
+                "Share"
+            case .addRemoveBookmark:
+                "Add Bookmark"
+            case .addRemoveFavorite:
+                "Add Favorite"
+            case .zoom:
+                "Zoom"
+            case .none:
+                "None"
+            case .home:
+                "Home"
+            case .newTab:
+                "New Tab"
+            case .bookmarks:
+                "Bookmarks"
+            case .duckAi:
+                "Duck.ai"
+            case .fire:
+                "Clear Tabs and Data"
+            case .vpn:
+                "VPN"
+            case .passwords:
+                "Passwords"
+            case .voiceSearch:
+                "Voice Search"
+            case .downloads:
+                "Downloads"
+            }
+        }
 
-    static var defaults: MobileCustomization {
-        MobileCustomization(
-            isEnabled: false
-        )
+        var largeIcon: UIImage? {
+            switch self {
+            case .share:
+                DesignSystemImages.Glyphs.Size24.shareApple
+            case .addRemoveBookmark:
+                DesignSystemImages.Glyphs.Size24.bookmark
+            case .addRemoveFavorite:
+                DesignSystemImages.Glyphs.Size24.favorite
+            case .zoom:
+                DesignSystemImages.Glyphs.Size24.typeSize
+            case .none:
+                nil
+            case .home:
+                DesignSystemImages.Glyphs.Size24.home
+            case .newTab:
+                DesignSystemImages.Glyphs.Size24.add
+            case .bookmarks:
+                DesignSystemImages.Glyphs.Size24.bookmarks
+            case .duckAi:
+                DesignSystemImages.Glyphs.Size24.aiChat
+            case .fire:
+                DesignSystemImages.Glyphs.Size24.fireSolid
+            case .vpn:
+                DesignSystemImages.Glyphs.Size24.vpn
+            case .passwords:
+                DesignSystemImages.Glyphs.Size24.key
+            case .voiceSearch:
+                DesignSystemImages.Glyphs.Size24.microphone
+            case .downloads:
+                DesignSystemImages.Glyphs.Size24.downloads
+            }
+        }
+
+        var smallIcon: UIImage? {
+            switch self {
+            case .share:
+                DesignSystemImages.Glyphs.Size16.shareApple
+            case .addRemoveBookmark:
+                DesignSystemImages.Glyphs.Size16.bookmark
+            case .addRemoveFavorite:
+                DesignSystemImages.Glyphs.Size16.favorite
+            case .zoom:
+                DesignSystemImages.Glyphs.Size16.typeSize
+            case .none:
+                nil
+            case .home:
+                DesignSystemImages.Glyphs.Size16.home
+            case .newTab:
+                DesignSystemImages.Glyphs.Size16.add
+            case .bookmarks:
+                DesignSystemImages.Glyphs.Size16.bookmarks
+            case .duckAi:
+                DesignSystemImages.Glyphs.Size16.aiChat
+            case .fire:
+                DesignSystemImages.Glyphs.Size16.fireSolid
+            case .vpn:
+                DesignSystemImages.Glyphs.Size16.vpnOn
+            case .passwords:
+                DesignSystemImages.Glyphs.Size16.keyLogin
+            case .voiceSearch:
+                DesignSystemImages.Glyphs.Size16.microphone
+            case .downloads:
+                DesignSystemImages.Glyphs.Size16.downloads
+            }
+        }
+
+        // BRINDY TODO
+        var enabledOnNewTabPage: Bool {
+            switch self {
+            case .share:
+                return false
+
+            default:
+                return true
+            }
+        }
+
+        // Generally address bar specific
+        case share
+        case addRemoveBookmark
+        case addRemoveFavorite
+        case voiceSearch
+        case zoom
+        case none
+
+        // Generally toolbar specific
+        case home
+        case newTab
+        case bookmarks
+        case duckAi
+        case downloads
+
+        // Shared
+        case fire
+        case vpn
+        case passwords
+    }
+
+    static let addressBarDefault: Button = .share
+    static let toolbarDefault: Button = .fire
+
+    static let addressBarButtons: [Button?] = {
+        let sortedButtons: [Button] = [
+            .addRemoveBookmark,
+            .addRemoveFavorite,
+            .fire,
+            .vpn,
+            .zoom,
+        ].sorted(by: descriptionComparison)
+
+        return [.share] // default
+            + sortedButtons
+            + [nil, Button.none] // none is at the end after the divider
+    } ()
+
+    static let toolbarButtons: [Button] = {
+        let sortedButtons: [Button] = [
+            .bookmarks,
+            .duckAi,
+            .home,
+            .newTab,
+            .passwords,
+            .share,
+            .vpn,
+            .downloads,
+        ].sorted(by: descriptionComparison)
+
+        return [.fire] // default
+            + sortedButtons
+
+    }()
+
+    var state: State {
+        State(isEnabled: featureFlagger.isFeatureOn(.mobileCustomization),
+              currentToolbarButton: current(forKey: .toolbarButton, Self.toolbarDefault),
+              currentAddressBarButton: current(forKey: .addressBarButton, Self.addressBarDefault))
+    }
+
+    private let featureFlagger: FeatureFlagger
+    private let keyValueStore: ThrowingKeyValueStoring
+    private let postChangeNotification: (State) -> Void
+
+    static func descriptionComparison(lhs: CustomStringConvertible, rhs: CustomStringConvertible) -> Bool {
+        lhs.description.localizedCaseInsensitiveCompare(rhs.description) == .orderedAscending
+    }
+
+    enum StorageKeys: String {
+
+        case toolbarButton = "mobileCustomizationToolbarButton"
+        case addressBarButton = "mobileCustomizationAddressBarButton"
+
+    }
+
+    init(featureFlagger: FeatureFlagger,
+         keyValueStore: ThrowingKeyValueStoring,
+         postChangeNotification: @escaping ((State) -> Void) = {
+            NotificationCenter.default.post(name: AppUserDefaults.Notifications.customizationSettingsChanged, object: $0)
+        }
+    ) {
+        self.featureFlagger = featureFlagger
+        self.keyValueStore = keyValueStore
+        self.postChangeNotification = postChangeNotification
+    }
+
+    private func current(forKey key: StorageKeys, _ defaultButton: Button) -> Button {
+        if let value = try? keyValueStore.object(forKey: key.rawValue) as? String {
+            Button(rawValue: value) ?? defaultButton
+        } else {
+            defaultButton
+        }
+    }
+
+    func persist(_ state: State) {
+        setCurrentToolbarButton(state.currentToolbarButton)
+        setCurrentAddressBarButton(state.currentAddressBarButton)
+        postChangeNotification(state)
+    }
+
+    private func setCurrentToolbarButton(_ button: Button) {
+        try? keyValueStore.set(button.rawValue, forKey: StorageKeys.toolbarButton.rawValue)
+    }
+
+    private func setCurrentAddressBarButton(_ button: Button) {
+        try? keyValueStore.set(button.rawValue, forKey: StorageKeys.addressBarButton.rawValue)
     }
 
 }

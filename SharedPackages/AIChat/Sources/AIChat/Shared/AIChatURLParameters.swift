@@ -1,7 +1,7 @@
 //
-//  NativeMessagingHandling.swift
+//  AIChatURLParameters.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,11 +16,8 @@
 //  limitations under the License.
 //
 
-import Foundation
-import WebKit
-
-@available(macOS 15.4, *)
-protocol NativeMessagingHandling {
-    func handleMessage(_ message: Any, to applicationIdentifier: String?, for extensionContext: WKWebExtensionContext) async throws -> Any?
-    func handleConnection(using port: WKWebExtension.MessagePort, for extensionContext: WKWebExtensionContext) throws
+public enum AIChatURLParameters {
+    public static let promptQueryName = "q"
+    public static let autoSubmitPromptQueryName = "prompt"
+    public static let autoSubmitPromptQueryValue = "1"
 }

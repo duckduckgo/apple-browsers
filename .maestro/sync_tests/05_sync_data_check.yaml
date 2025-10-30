@@ -48,6 +48,10 @@ name: 05_sync_data_check
 - runFlow:
     file: ../shared/sync_verify_unified_favorites.yaml
 
+# Ensure the keyboard is dismissed before continuing
+- tapOn:
+    id: "Browser.OmniBar.Button.Dismiss"
+
 # Verify logins
 - tapOn: Browsing menu
 - tapOn: Settings

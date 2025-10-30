@@ -245,8 +245,6 @@ final class RecordFoundDateResolverTests: XCTestCase {
     func testReturnsNilWhenNoDataAvailable() {
         mockDatabase.optOutToReturn = nil
 
-        let fallback = Date(timeIntervalSince1970: 99_999)
-
         let result = RecordFoundDateResolver.resolve(repository: mockDatabase,
                                                      brokerId: 1,
                                                      profileQueryId: 2,

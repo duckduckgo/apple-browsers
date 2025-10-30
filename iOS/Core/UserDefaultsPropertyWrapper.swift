@@ -187,6 +187,9 @@ public struct UserDefaultsWrapper<T> {
         case duckPlayerNativeUIWasUsed = "com.duckduckgo.ios.duckPlayerNativeUIWasUsed"
         case duckPlayerNativeUISettingsMapped = "com.duckduckgo.ios.duckPlayerNativeUISettingsMapped"
 
+        // AI Chat
+        case autoClearAIChatHistory = "com.duckduckgo.ios.autoClearAIChatHistory"
+
         // Debug keys
         case debugOnboardingHighlightsEnabledKey = "com.duckduckgo.ios.debug.onboardingHighlightsEnabled"
         case debugWebViewStateRestorationEnabledKey = "com.duckduckgo.ios.debug.webViewStateRestorationEnabled"

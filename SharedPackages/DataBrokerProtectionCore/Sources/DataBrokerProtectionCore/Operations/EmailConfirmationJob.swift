@@ -129,6 +129,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
         let extractedProfile = extractedProfileData.profile
 
         let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
+            attemptId: UUID(uuidString: jobData.attemptID) ?? UUID(),
             dataBrokerURL: broker.url,
             dataBrokerVersion: broker.version,
             handler: jobDependencies.pixelHandler,

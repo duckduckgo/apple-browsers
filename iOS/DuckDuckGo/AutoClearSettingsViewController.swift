@@ -134,6 +134,10 @@ class AutoClearSettingsViewController: UITableViewController {
         // Checkmark color
         cell.tintColor = theme.buttonTintColor
         
+        if indexPath.section == Sections.action.rawValue && indexPath.row == 0 {
+            cell.textLabel?.text = shouldShowAIChatInLabels() ? UserText.settingsAutoClearTabsAndDataWithAIChat : UserText.settingsAutoClearTabsAndData
+        }
+        
         if let settings = clearDataSettings,
             indexPathOf(action: settings.action) == indexPath || indexPathOf(timing: settings.timing) == indexPath {
             cell.accessoryType = .checkmark
@@ -186,5 +190,9 @@ extension AutoClearSettingsViewController {
         tableView.separatorColor = theme.tableCellSeparatorColor
         
         tableView.reloadData()
+    }
+    
+    private func shouldShowAIChatInLabels() -> Bool {
+        return appSettings.autoClearAIChatHistory
     }
 }

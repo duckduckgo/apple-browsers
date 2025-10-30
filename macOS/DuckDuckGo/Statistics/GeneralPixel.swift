@@ -263,6 +263,12 @@ enum GeneralPixel: PixelKitEvent {
     case userAddedToDockFromDefaultBrowserSection
     case serpAddedToDock
 
+    // SERP Settings
+    // See macOS/PixelDefinitions/pixels/serp_settings_pixels.json5
+    case serpSettingsSerializationFailed
+    case serpSettingsKeyValueStoreReadError
+    case serpSettingsKeyValueStoreWriteError
+
     case protectionToggledOffBreakageReport
     case debugBreakageExperiment
 
@@ -344,13 +350,12 @@ enum GeneralPixel: PixelKitEvent {
 
     case configurationFetchError(error: Error)
 
-    case trackerDataParseFailed
-    case trackerDataReloadFailed
-    case trackerDataCouldNotBeLoaded
+    case couldNotLoadConfiguration(configuration: Configuration)
+    case couldNotParseConfiguration(configuration: Configuration)
 
-    case privacyConfigurationParseFailed
+    case trackerDataReloadFailed
+
     case privacyConfigurationReloadFailed
-    case privacyConfigurationCouldNotBeLoaded
 
     case configurationFileCoordinatorError
 
@@ -932,6 +937,10 @@ enum GeneralPixel: PixelKitEvent {
         case .userAddedToDockFromDefaultBrowserSection: return "m_mac_user_added_to_dock_from_default_browser_section"
         case .serpAddedToDock: return "m_mac_serp_added_to_dock"
 
+        case .serpSettingsSerializationFailed: return "m_mac_serp_settings_serialization_failed"
+        case .serpSettingsKeyValueStoreReadError: return "m_mac_serp_settings_keyvalue_store_read_error"
+        case .serpSettingsKeyValueStoreWriteError: return "m_mac_serp_settings_keyvalue_store_write_error"
+
         case .protectionToggledOffBreakageReport: return "m_mac_protection-toggled-off-breakage-report"
         case .debugBreakageExperiment: return "m_mac_debug_breakage_experiment_u"
 
@@ -982,19 +991,17 @@ enum GeneralPixel: PixelKitEvent {
         case .configurationFetchError:
             return "cfgfetch"
 
-        case .trackerDataParseFailed:
-            return "tracker_data_parse_failed"
+        case .couldNotLoadConfiguration(let configuration):
+            return "\(configuration)_load_failed".lowercased()
+
+        case .couldNotParseConfiguration(let configuration):
+            return "\(configuration)_parse_failed".lowercased()
+
         case .trackerDataReloadFailed:
             return "tds_r"
-        case .trackerDataCouldNotBeLoaded:
-            return "tracker_data_could_not_be_loaded"
 
-        case .privacyConfigurationParseFailed:
-            return "pcf_p"
         case .privacyConfigurationReloadFailed:
             return "pcf_r"
-        case .privacyConfigurationCouldNotBeLoaded:
-            return "pcf_l"
 
         case .configurationFileCoordinatorError:
             return "configuration_file_coordinator_error"

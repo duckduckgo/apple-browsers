@@ -48,16 +48,19 @@ protocol WinBackOfferCoordinating: AnyObject {
 
 final class WinBackOfferCoordinator {
     private let visibilityManager: WinBackOfferVisibilityManaging
+    private let pixelHandler: (Pixel.Event) -> Void
     private let isOnboardingCompleted: () -> Bool
     
     weak var urlHandler: URLHandling?
 
     init(
         visibilityManager: WinBackOfferVisibilityManaging,
+        pixelHandler: @escaping (Pixel.Event) -> Void = { Pixel.fire(pixel: $0) },
         isOnboardingCompleted: @escaping () -> Bool
     ) {
         self.visibilityManager = visibilityManager
         self.isOnboardingCompleted = isOnboardingCompleted
+        self.pixelHandler = pixelHandler
     }
 }
 
@@ -86,12 +89,12 @@ extension WinBackOfferCoordinator: WinBackOfferCoordinating {
     func markLaunchPromptPresented() {
         visibilityManager.setLaunchMessagePresented(true)
         Logger.subscription.debug("[Win-Back Offer] Launch message marked as presented.")
-        Pixel.fire(pixel: .subscriptionWinBackOfferLaunchPromptShown)
+        pixelHandler(.subscriptionWinBackOfferLaunchPromptShown)
     }
 
     func handleCTAAction() {
         Logger.subscription.debug("[Win-Back Offer] CTA action triggered.")
-        Pixel.fire(pixel: .subscriptionWinBackOfferLaunchPromptCTAClicked)
+        pixelHandler(.subscriptionWinBackOfferLaunchPromptCTAClicked)
 
         let comps = SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(
             origin: SubscriptionFunnelOrigin.winBackLaunch.rawValue,
@@ -103,6 +106,6 @@ extension WinBackOfferCoordinator: WinBackOfferCoordinating {
 
     func handleDismissAction() {
         Logger.subscription.debug("[Win-Back Offer] Dismiss action triggered.")
-        Pixel.fire(pixel: .subscriptionWinBackOfferLaunchPromptDismissed)
+        pixelHandler(.subscriptionWinBackOfferLaunchPromptDismissed)
     }
 }

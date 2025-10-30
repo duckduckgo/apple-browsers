@@ -430,7 +430,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     @objc func openWinBackOfferPurchasePage(_ sender: NSMenuItem) {
-        #warning("TODO: Pixel")
+        PixelKit.fire(SubscriptionPixel.subscriptionWinBackOfferMainMenuClicked)
         actionDelegate?.optionsButtonMenuRequestedWinBackOfferPurchasePage(self)
     }
 
@@ -624,6 +624,9 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
             // Check if user is eligible for Win-back Offer
             if winBackOfferVisibilityManager.isOfferAvailable {
+                // Fire pixel for tracking Main Menu badge impression
+                PixelKit.fire(SubscriptionPixel.subscriptionWinBackOfferMainMenuShown)
+
                 subscriptionItem = NSMenuItem.createMenuItemWithBadge(
                     title: UserText.subscriptionOptionsMenuItem,
                     badgeText: UserText.winBackCampaignMenuBadgeText,

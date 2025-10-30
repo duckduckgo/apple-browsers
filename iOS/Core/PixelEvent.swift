@@ -1149,13 +1149,13 @@ extension Pixel {
         case subscriptionWinBackOfferLaunchPromptShown
         case subscriptionWinBackOfferLaunchPromptCTAClicked
         case subscriptionWinBackOfferLaunchPromptDismissed
+
         case subscriptionWinBackOfferSettingsLoggedOutOfferShown
         case subscriptionWinBackOfferSettingsLoggedOutOfferCTAClicked
         case subscriptionWinBackOfferSettingsLoggedInOfferShown
+
         case subscriptionWinBackOfferSubscriptionSettingsShown
         case subscriptionWinBackOfferSubscriptionSettingsCTAClicked
-        case subscriptionWinBackOfferNewTabPageShown
-        case subscriptionWinBackOfferNewTabPageClicked
 
         // MARK: Pixel Experiment
         case pixelExperimentEnrollment
@@ -2481,8 +2481,6 @@ extension Pixel.Event {
         case .subscriptionWinBackOfferSettingsLoggedInOfferShown: return "m_privacy-pro_winback_settings_logged_in_offer_shown"
         case .subscriptionWinBackOfferSubscriptionSettingsShown: return "m_privacy-pro_winback_subscription_settings_shown"
         case .subscriptionWinBackOfferSubscriptionSettingsCTAClicked: return "m_privacy-pro_winback_subscription_settings_clicked"
-        case .subscriptionWinBackOfferNewTabPageShown: return "m_privacy-pro_winback_new_tab_page_shown"
-        case .subscriptionWinBackOfferNewTabPageClicked: return "m_privacy-pro_winback_new_tab_page_clicked"
 
         // MARK: Pixel Experiment
         case .pixelExperimentEnrollment: return "pixel_experiment_enrollment"

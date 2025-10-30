@@ -365,7 +365,7 @@ final class BucketModifierTests: XCTestCase {
             ]
         ]
         let modifier = DefaultBucketModifier()
-        try! modifier.parseConfigurations(from: settings)
+        try? modifier.parseConfigurations(from: settings)
         return modifier
     }
 }

@@ -55,8 +55,10 @@ public class RollingEightDays<T: Codable & Equatable>: RollingArray<T> {
 public class RollingEightDaysBool: RollingEightDays<Bool> {
 
     /// Sets the last value to `true` if in the same day, creates a new one otherwise.
-    public func setTodayToTrue() {
-        let now = Date()
+    ///
+    /// - Parameter dateProvider: The date provider to use for getting the current date.
+    public func setTodayToTrue(dateProvider: DateProviding) {
+        let now = dateProvider.now()
 
         if lastDay == nil {
             lastDay = now
@@ -80,6 +82,8 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
     /// If `lastDay` is not today, appends `.unknown` for each missing day between `lastDay`
     /// and today, then appends `1` for today.
     ///
+    /// - Parameter dateProvider: The date provider to use for getting the current date.
+    ///
     /// ## Example:
     /// ```swift
     /// // Day 1: First increment
@@ -91,8 +95,8 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
     /// // Day 4: Missing days 2 and 3
     /// rolling.increment() // [2, unknown, unknown, 1]
     /// ```
-    public func increment() {
-        let now = Date()
+    public func increment(dateProvider: DateProviding) {
+        let now = dateProvider.now()
 
         // First time initialization
         if lastDay == nil {

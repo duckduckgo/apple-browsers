@@ -170,6 +170,7 @@ public final class AttributedMetricManager {
         case .appDidStart:
             processRetention()
             processActiveSearchDays()
+            processSubscriptionCheck()
         case .userDidSearch:
             recordActiveSearchDay()
             processAverageSearchCount()
@@ -229,7 +230,7 @@ public final class AttributedMetricManager {
 
     func recordActiveSearchDay() {
         let search8Days = dataStorage.search8Days
-        search8Days.increment()
+        search8Days.increment(dateProvider: dateProvider)
         dataStorage.search8Days = search8Days
     }
 
@@ -278,7 +279,6 @@ public final class AttributedMetricManager {
             pixelKit.fire(AttributedMetricPixel.userAverageSearchesPastWeekFirstMonth(origin: originOrInstall.origin,
                                                                                       installDate: originOrInstall.installDate,
                                                                                       count: bucket.value,
-                                                                                      dayAverage: search8Days.count,
                                                                                       bucketVersion: bucket.version),
                           frequency: .legacyDailyNoSuffix)
         } else {
@@ -300,7 +300,7 @@ public final class AttributedMetricManager {
 
     func recordAdClick() {
         let adClick8Days = dataStorage.adClick8Days
-        adClick8Days.increment()
+        adClick8Days.increment(dateProvider: dateProvider)
         dataStorage.adClick8Days = adClick8Days
     }
 
@@ -327,7 +327,7 @@ public final class AttributedMetricManager {
 
     func recordDuckAIChat() {
         let duckAIChat8Days = dataStorage.duckAIChat8Days
-        duckAIChat8Days.increment()
+        duckAIChat8Days.increment(dateProvider: dateProvider)
         dataStorage.duckAIChat8Days = duckAIChat8Days
     }
 

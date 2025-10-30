@@ -78,7 +78,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public let featureFlagger: DBPFeatureFlagging
     private let actionsHandlerMode: ActionsHandlerMode
 
-    public var retriesCountOnError: Int = 3
+    public var retriesCountOnError: Int = 0
 
     public init(privacyConfig: PrivacyConfigurationManaging,
                 prefs: ContentScopeProperties,

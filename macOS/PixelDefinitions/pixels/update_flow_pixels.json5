@@ -184,6 +184,7 @@
         "description": "Fired once after successful app update on first launch",
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
+        "suffixes": ["daily", "count"],
         "parameters": [
             {
                 "key": "sourceVersion",
@@ -230,6 +231,7 @@
         "description": "Fired when expected Sparkle update fails to complete",
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
+        "suffixes": ["daily", "count"],
         "parameters": [
             {
                 "key": "sourceVersion",
@@ -292,6 +294,7 @@
         "description": "Fired when app update is detected outside Sparkle flow (not initiated by our update mechanism)",
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
+        "suffixes": ["daily", "count"],
         "parameters": [
             {
                 "key": "targetVersion",

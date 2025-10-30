@@ -1,5 +1,5 @@
 //
-//  DataImportSummaryView.swift
+//  LegacyDataImportSummaryView.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -19,19 +19,19 @@
 import SwiftUI
 import BrowserServicesKit
 
-struct DataImportSummaryView: View {
+struct LegacyDataImportSummaryView: View {
 
     typealias DataType = DataImport.DataType
     typealias Summary = DataImport.DataTypeSummary
-    typealias DataTypeImportResult = DataImportViewModel.DataTypeImportResult
+    typealias DataTypeImportResult = LegacyDataImportViewModel.DataTypeImportResult
 
-    let model: DataImportSummaryViewModel
+    let model: LegacyDataImportSummaryViewModel
 
-    init(_ importViewModel: DataImportViewModel, dataTypes: Set<DataType>? = nil, isFileImport: Bool = false) {
+    init(_ importViewModel: LegacyDataImportViewModel, dataTypes: Set<DataType>? = nil, isFileImport: Bool = false) {
         self.init(model: .init(source: importViewModel.importSource, isFileImport: isFileImport, results: importViewModel.summary, dataTypes: dataTypes))
     }
 
-    init(model: DataImportSummaryViewModel) {
+    init(model: LegacyDataImportSummaryViewModel) {
         self.model = model
     }
 
@@ -249,15 +249,15 @@ private extension View {
 #Preview {
     VStack {
         HStack {
-            DataImportSummaryView(model: .init(source: .chrome, results: [
+            LegacyDataImportSummaryView(model: .init(source: .chrome, results: [
                 .init(.bookmarks, .success(.init(successful: 123, duplicate: 456, failed: 7890))),
-                //                .init(.passwords, .success(.init(successful: 123, duplicate: 456, failed: 7890))),
-                //                .init(.bookmarks, .failure(DataImportViewModel.TestImportError(action: .bookmarks, errorType: .dataCorrupted))),
-                //                .init(.bookmarks, .failure(DataImportViewModel.TestImportError(action: .passwords, errorType: .keychainError))),
-                //                .init(.passwords, .failure(DataImportViewModel.TestImportError(action: .passwords, errorType: .keychainError))),
-                //                .init(.passwords, .failure(DataImportViewModel.TestImportError(action: .passwords, errorType: .keychainError))),
-                //                .init(.passwords, .success(.init(successful: 100, duplicate: 0, failed: 0)))
-                    .init(.passwords, .success(.init(successful: 100, duplicate: 30, failed: 40)))
+                .init(.passwords, .success(.init(successful: 123, duplicate: 456, failed: 7890))),
+                .init(.bookmarks, .failure(LegacyDataImportViewModel.TestImportError(action: .bookmarks, errorType: .dataCorrupted))),
+                .init(.bookmarks, .failure(LegacyDataImportViewModel.TestImportError(action: .passwords, errorType: .keychainError))),
+                .init(.passwords, .failure(LegacyDataImportViewModel.TestImportError(action: .passwords, errorType: .keychainError))),
+                .init(.passwords, .failure(LegacyDataImportViewModel.TestImportError(action: .passwords, errorType: .keychainError))),
+                .init(.passwords, .success(.init(successful: 100, duplicate: 0, failed: 0))),
+                .init(.passwords, .success(.init(successful: 100, duplicate: 30, failed: 40)))
             ]))
             .padding(EdgeInsets(top: 20, leading: 20, bottom: 16, trailing: 20))
             Spacer()

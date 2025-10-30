@@ -104,14 +104,14 @@ final class SparkleUpdateCompletionValidator {
                     initiationType: initiationType,
                     updateConfiguration: updateConfiguration,
                     osVersion: osVersionString
-                ))
+                ), frequency: .dailyAndCount)
             } else {
                 // Unexpected - update detected outside Sparkle flow
                 PixelKit.fire(UpdateFlowPixels.updateApplicationUnexpected(
                     targetVersion: currentVersion,
                     targetBuild: currentBuild,
                     osVersion: osVersionString
-                ))
+                ), frequency: .dailyAndCount)
             }
 
         default:
@@ -131,7 +131,7 @@ final class SparkleUpdateCompletionValidator {
                 initiationType: initiationType,
                 updateConfiguration: updateConfiguration,
                 osVersion: osVersionString
-            ))
+            ), frequency: .dailyAndCount)
         }
     }
 

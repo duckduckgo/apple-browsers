@@ -429,7 +429,6 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
 extension ContentOverlayViewController: AutofillCredentialsImportPresentationDelegate {
     public func autofillDidRequestCredentialsImportFlow(onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
-        let viewModel = DataImportViewModel(onFinished: onFinished, onCancelled: onCancelled)
-        DataImportFlowLauncher().launchDataImport(model: viewModel, isDataTypePickerExpanded: true)
+        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true, onFinished: onFinished, onCancelled: onCancelled)
     }
 }

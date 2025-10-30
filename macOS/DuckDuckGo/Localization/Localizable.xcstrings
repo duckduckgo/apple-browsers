@@ -68481,7 +68481,7 @@
     },
     "ppro.feedback-form.email.label" : {
       "comment" : "Label for the email field of the PPro feedback form",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -68541,7 +68541,7 @@
     },
     "ppro.feedback-form.email.placeholder" : {
       "comment" : "Placeholder for the email field of the PPro feedback form",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -68895,6 +68895,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Спасибо!"
+          }
+        }
+      }
+    },
+    "ppro.feedback-form.support.text" : {
+      "comment" : "Support link text displayed beneath the feedback form description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Need help? [Contact support.](https://duckduckgo.com/subscription-support)"
           }
         }
       }

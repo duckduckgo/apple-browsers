@@ -77,6 +77,9 @@ protocol OmniBar: AnyObject {
 
     func cancelAllAnimations()
     func completeAnimationForDaxDialog()
+
+    /// Enters AI Chat full mode, showing AI Chat-specific UI in the omnibar
+    func enterAIChatMode()
 }
 
 extension OmniBar {

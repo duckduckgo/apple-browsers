@@ -150,15 +150,6 @@ final class FireDialogViewModel: ObservableObject {
     /// Remember last selected scope
     private var settings: FireDialogViewSettings
 
-    /// Reset persisted UI defaults - used for tests
-    static func resetPersistedDefaults() {
-        UserDefaultsWrapper.clear(.selectedClearingOption)
-        UserDefaultsWrapper.clear(.includeTabsAndWindowsState)
-        UserDefaultsWrapper.clear(.includeHistoryState)
-        UserDefaultsWrapper.clear(.includeCookiesAndSiteDataState)
-        UserDefaultsWrapper.clear(.includeChatHistoryState)
-    }
-
     init(fireViewModel: FireViewModel,
          tabCollectionViewModel: TabCollectionViewModel,
          historyCoordinating: HistoryCoordinating,

@@ -64,7 +64,8 @@ final class MockOmniBar: OmniBar {
     func cancelAllAnimations() { }
     func completeAnimationForDaxDialog() { }
     func setDaxEasterEggLogoURL(_ logoURL: String?) { }
-    
+    func enterAIChatMode() { }
+
     final class MockOmniBarView: UIView, OmniBarView {
         required init?(coder: NSCoder) {
             fatalError("init(coder:) has not been implemented")
@@ -123,6 +124,9 @@ final class MockOmniBar: OmniBar {
         var onDismissPressed: (() -> Void)?
         var onSettingsLongPress: (() -> Void)?
         var onSharePressed: (() -> Void)?
+        var onAIChatLeftButtonPressed: (() -> Void)?
+        var onAIChatRightButtonPressed: (() -> Void)?
+        var onAIChatOmnibarPressed: (() -> Void)?
 
         static func create() -> Self {
             Self.init()
@@ -143,6 +147,7 @@ final class MockOmniBar: OmniBar {
         var isSearchLoupeHidden: Bool = true
         var isDismissButtonHidden: Bool = true
         var isShareButtonHidden: Bool = true
+        var isFullAIChatHidden: Bool = true
 
     }
 }

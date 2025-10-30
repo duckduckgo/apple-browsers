@@ -81,41 +81,43 @@ struct RemoteMessagingDebugRootView: View {
                 Text("This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet.")
             }
 
-            if !model.recentLogs.isEmpty || model.isLoadingLogs {
-                Section {
-                    if model.isLoadingLogs {
-                        HStack {
-                            Spacer()
-                            SwiftUI.ProgressView()
-                            Spacer()
-                        }
-                    } else {
-                        ForEach(model.recentLogs.indices, id: \.self) { index in
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(model.recentLogs[index].timestamp)
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(Color(baseColor: .gray50))
-                                Text(model.recentLogs[index].message)
-                                    .font(.system(size: 12, design: .monospaced))
-                            }
-                            .padding(.vertical, 2)
-                        }
-                    }
-                } header: {
+            Section {
+                if model.isLoadingLogs {
                     HStack {
-                        Text("Recent Processing Logs")
                         Spacer()
-                        Button("Refresh") {
-                            Task {
-                                await model.fetchLogs()
-                            }
-                        }
-                        .font(.system(size: 14))
-                        .disabled(model.isLoadingLogs)
+                        SwiftUI.ProgressView()
+                        Spacer()
                     }
-                } footer: {
-                    Text("Shows debug and error logs from the last minute, to help diagnose issues immediately after a refresh.")
+                } else if model.recentLogs.isEmpty {
+                    Text("No Logs")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color(baseColor: .gray70))
+                } else {
+                    ForEach(model.recentLogs.indices, id: \.self) { index in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(model.recentLogs[index].timestamp)
+                                .font(.system(size: 10))
+                                .foregroundStyle(Color(baseColor: .gray50))
+                            Text(model.recentLogs[index].message)
+                                .font(.system(size: 12, design: .monospaced))
+                        }
+                        .padding(.vertical, 2)
+                    }
                 }
+            } header: {
+                HStack {
+                    Text("Recent Processing Logs")
+                    Spacer()
+                    Button("Refresh") {
+                        Task {
+                            await model.fetchLogs()
+                        }
+                    }
+                    .font(.system(size: 14))
+                    .disabled(model.isLoadingLogs)
+                }
+            } footer: {
+                Text("Shows debug and error logs from the last minute, to help diagnose issues immediately after a refresh.")
             }
         }
         .navigationTitle("Remote Messaging Debug")
@@ -271,7 +273,7 @@ class RemoteMessagingDebugViewModel: ObservableObject {
                 // the logs from that refresh - if you want to check logs further back then you can use the dedicated
                 // Log Viewer debug menu.
                 let logStore = try OSLogStore(scope: .currentProcessIdentifier)
-                let timeInterval: TimeInterval = -(TimeInterval.minutes(1))
+                let timeInterval = -TimeInterval.minutes(1)
                 let startDate = Date().addingTimeInterval(timeInterval)
                 let predicate = NSPredicate(format: "subsystem == 'Remote Messaging'")
                 let entries = try logStore.getEntries(at: logStore.position(date: startDate), matching: predicate)
@@ -281,11 +283,9 @@ class RemoteMessagingDebugViewModel: ObservableObject {
 
                 var logs: [LogEntry] = []
                 for entry in entries {
-                    if let logEntry = entry as? OSLogEntryLog {
-                        if logEntry.level != .debug {
-                            let timestamp = formatter.string(from: logEntry.date)
-                            logs.append(LogEntry(timestamp: timestamp, message: logEntry.composedMessage))
-                        }
+                    if let logEntry = entry as? OSLogEntryLog, logEntry.level != .debug {
+                        let timestamp = formatter.string(from: logEntry.date)
+                        logs.append(LogEntry(timestamp: timestamp, message: logEntry.composedMessage))
                     }
                 }
 

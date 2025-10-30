@@ -60,27 +60,38 @@ final class UserAgentTests: XCTestCase {
     
     private struct ExpectedAgent {
 
+        static let osVersion = ProcessInfo.processInfo.operatingSystemVersion
+
+        static func backwardsCompatibleVersionComponent(_ fallback: String) -> String {
+            osVersion.majorVersion < 26 ? fallback : "\(osVersion.majorVersion).\(osVersion.minorVersion)"
+        }
+
         // Based on DefaultAgent values
-        static let mobile = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.4 Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
-        static let tablet = "Mozilla/5.0 (iPad; CPU OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.4 Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
-        static let desktop = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.4 DuckDuckGo/7 Safari/605.1.15"
-        static let oldWebkitVersionMobile = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.14 (KHTML, like Gecko) Version/12.4 Mobile/15E148 DuckDuckGo/7 Safari/605.1.14"
-        static let newWebkitVersionMobile = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.4 Mobile/15E148 DuckDuckGo/7 Safari/604.1"
-        static let sameWebkitVersionMobile = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.4 Mobile/15E148 DuckDuckGo/7 Safari/604.1"
+        static let mobile = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
+        static let tablet = "Mozilla/5.0 (iPad; CPU OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
+        static let desktop = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) DuckDuckGo/7 Safari/605.1.15"
+        static let oldWebkitVersionMobile = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.14 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/605.1.14"
+        static let newWebkitVersionMobile = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/604.1"
+        static let sameWebkitVersionMobile = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/604.1"
 
-        static let mobileNoApplication = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.4 Mobile/15E148 Safari/605.1.15"
-        
+        static let mobileNoApplication = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 Safari/605.1.15"
+
         // Based on fallback constants in UserAgent
-        static let mobileFallback = "Mozilla/5.0 (iPhone; CPU iPhone OS 13_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.5 Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
-        static let desktopFallback = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.5 DuckDuckGo/7 Safari/605.1.15"
+        static let mobileFallback = "Mozilla/5.0 (iPhone; CPU iPhone OS 13_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("13.5")) Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
+        static let desktopFallback = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("13.5")) DuckDuckGo/7 Safari/605.1.15"
 
-        static let mobileFixed = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.4 Mobile/15E148 DuckDuckGo/7 Safari/604.1"
-        static let tabletFixed = "Mozilla/5.0 (iPad; CPU OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.4 Mobile/15E148 DuckDuckGo/7 Safari/604.1"
-        static let desktopFixed = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 DuckDuckGo/7 Safari/605.1.15"
+        static let mobileFixed = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/604.1"
+        static let tabletFixed = "Mozilla/5.0 (iPad; CPU OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 DuckDuckGo/7 Safari/604.1"
+        static let desktopFixed = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("18.3")) DuckDuckGo/7 Safari/605.1.15"
 
-        static let mobileClosest = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.4 Mobile/15E148 Safari/604.1"
-        static let tabletClosest = "Mozilla/5.0 (iPad; CPU OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.4 Mobile/15E148 Safari/604.1"
-        static let desktopClosest = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 Safari/605.1.15"
+        static let mobileClosest = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 Safari/604.1"
+        static let tabletClosest = "Mozilla/5.0 (iPad; CPU OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("12.4")) Mobile/15E148 Safari/604.1"
+        static let desktopClosest = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(backwardsCompatibleVersionComponent("18.3")) Safari/605.1.15"
+
+        static let mobileMappedPre26 = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.4 Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
+        static let mobileMapped2600 = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
+        static let mobileMapped2601 = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
+        static let mobileMappedPost26 = "Mozilla/5.0 (iPhone; CPU iPhone OS 12_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 DuckDuckGo/7 Safari/605.1.15"
     }
     
     private struct Constants {
@@ -97,6 +108,8 @@ final class UserAgentTests: XCTestCase {
             "customUserAgent": {
                 "state": "enabled",
                 "settings": {
+                    "useUpdatedSafariVersions": true,
+                    "safariVersionMappings": {},
                     "omitApplicationSites": [
                         {
                             "domain": "cvs.com",
@@ -129,42 +142,42 @@ final class UserAgentTests: XCTestCase {
     }
     
     func testWhenMobileUaAndDektopFalseThenMobileAgentCreatedWithApplicationAndSafariSuffix() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: privacyConfig)
         XCTAssertEqual(ExpectedAgent.mobile, testee.agent(forUrl: Constants.url, isDesktop: false, privacyConfig: privacyConfig))
     }
     
     func testWhenMobileUaAndDektopTrueThenDesktopAgentCreatedWithApplicationAndSafariSuffix() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: privacyConfig)
         XCTAssertEqual(ExpectedAgent.desktop, testee.agent(forUrl: Constants.url, isDesktop: true, privacyConfig: privacyConfig))
     }
     
     func testWhenTabletUaAndDektopFalseThenTabletAgentCreatedWithApplicationAndSafariSuffix() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.tablet)
+        let testee = UserAgent(defaultAgent: DefaultAgent.tablet, privacyConfig: privacyConfig)
         XCTAssertEqual(ExpectedAgent.tablet, testee.agent(forUrl: Constants.url, isDesktop: false, privacyConfig: privacyConfig))
     }
     
     func testWhenTabletUaAndDektopTrueThenDesktopAgentCreatedWithApplicationAndSafariSuffix() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.tablet)
+        let testee = UserAgent(defaultAgent: DefaultAgent.tablet, privacyConfig: privacyConfig)
         XCTAssertEqual(ExpectedAgent.desktop, testee.agent(forUrl: Constants.url, isDesktop: true, privacyConfig: privacyConfig))
     }
     
     func testWhenNoUaAndDesktopFalseThenFallbackMobileAgentIsUsed() {
-        let testee = UserAgent()
+        let testee = UserAgent(privacyConfig: privacyConfig)
         XCTAssertEqual(ExpectedAgent.mobileFallback, testee.agent(forUrl: Constants.url, isDesktop: false, privacyConfig: privacyConfig))
     }
     
     func testWhenNoUaAndDesktopTrueThenFallbackDesktopAgentIsUsed() {
-        let testee = UserAgent()
+        let testee = UserAgent(privacyConfig: privacyConfig)
         XCTAssertEqual(ExpectedAgent.desktopFallback, testee.agent(forUrl: Constants.url, isDesktop: true, privacyConfig: privacyConfig))
     }
     
     func testWhenDomainDoesNotSupportApplicationComponentThenApplicationIsOmittedFromUa() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: privacyConfig)
         XCTAssertEqual(ExpectedAgent.mobileNoApplication, testee.agent(forUrl: Constants.noAppUrl, isDesktop: false, privacyConfig: privacyConfig))
     }
     
     func testWhenSubdomainDoesNotSupportApplicationComponentThenApplicationIsOmittedFromUa() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: privacyConfig)
         XCTAssertEqual(ExpectedAgent.mobileNoApplication,
                        testee.agent(forUrl: Constants.noAppSubdomainUrl, isDesktop: false, privacyConfig: privacyConfig))
     }
@@ -176,6 +189,8 @@ final class UserAgentTests: XCTestCase {
                 "customUserAgent": {
                     "state": "disabled",
                     "settings": {
+                    "useUpdatedSafariVersions": true,
+                    "safariVersionMappings": {},
                         "omitApplicationSites": [
                             {
                                 "domain": "cvs.com",
@@ -199,7 +214,7 @@ final class UserAgentTests: XCTestCase {
                                                   localProtection: mockProtectionStore,
                                                   internalUserDecider: MockInternalUserDecider())
 
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: privacyConfig)
         XCTAssertEqual(ExpectedAgent.mobileNoApplication, testee.agent(forUrl: Constants.url, isDesktop: false,
                                                                        privacyConfig: manager.privacyConfig))
     }
@@ -225,6 +240,8 @@ final class UserAgentTests: XCTestCase {
                 "defaultPolicy": "ddg",
                 "state": "enabled",
                 "settings": {
+                    "useUpdatedSafariVersions": true,
+                    "safariVersionMappings": {},
                     "omitApplicationSites": [
                         {
                             "domain": "cvs.com",
@@ -245,26 +262,30 @@ final class UserAgentTests: XCTestCase {
     """.data(using: .utf8)!
 
     func testWhenMobileUaAndDesktopFalseAndDomainSupportsFixedUAThenFixedMobileAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile)
         let config = makePrivacyConfig(from: ddgConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.mobileFixed, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, privacyConfig: config))
     }
 
     func testWhenMobileUaAndDesktopTrueAndDomainSupportsFixedUAThenFixedMobileAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile)
         let config = makePrivacyConfig(from: ddgConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.desktopFixed, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: true, privacyConfig: config))
     }
 
     func testWhenTabletUaAndDesktopFalseAndDomainSupportsFixedUAThenFixedMobileAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.tablet)
         let config = makePrivacyConfig(from: ddgConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.tablet, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.tabletFixed, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, privacyConfig: config))
     }
 
     func testWhenTabletUaAndDesktopTrueAndDomainSupportsFixedUAThenFixedMobileAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.tablet)
         let config = makePrivacyConfig(from: ddgConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.tablet, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.desktopFixed, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: true, privacyConfig: config))
     }
 
@@ -275,6 +296,8 @@ final class UserAgentTests: XCTestCase {
                 "state": "enabled",
                 "settings": {
                     "defaultPolicy": "ddgFixed",
+                    "useUpdatedSafariVersions": true,
+                    "safariVersionMappings": {},
                     "omitApplicationSites": [
                         {
                             "domain": "cvs.com",
@@ -295,32 +318,37 @@ final class UserAgentTests: XCTestCase {
     """.data(using: .utf8)!
 
     func testWhenMobileUaAndDesktopFalseAndDefaultPolicyFixedThenFixedMobileAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile)
         let config = makePrivacyConfig(from: ddgFixedConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.mobileFixed, testee.agent(forUrl: Constants.url, isDesktop: false, privacyConfig: config))
     }
 
     func testWhenMobileUaAndDesktopTrueAndDefaultPolicyFixedThenFixedMobileAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile)
         let config = makePrivacyConfig(from: ddgFixedConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.desktopFixed, testee.agent(forUrl: Constants.url, isDesktop: true, privacyConfig: config))
     }
 
     func testWhenTabletUaAndDesktopFalseAndDefaultPolicyFixedThenFixedMobileAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.tablet)
         let config = makePrivacyConfig(from: ddgFixedConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.tablet, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.tabletFixed, testee.agent(forUrl: Constants.url, isDesktop: false, privacyConfig: config))
     }
 
     func testWhenTabletUaAndDesktopTrueAndDefaultPolicyFixedThenFixedMobileAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.tablet)
         let config = makePrivacyConfig(from: ddgFixedConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.tablet, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.desktopFixed, testee.agent(forUrl: Constants.url, isDesktop: true, privacyConfig: config))
     }
 
     func testWhenDefaultPolicyFixedAndDomainIsOnDefaultListThenDefaultAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile)
         let config = makePrivacyConfig(from: ddgFixedConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.mobile, testee.agent(forUrl: Constants.ddgDefaultUrl, isDesktop: false, privacyConfig: config))
     }
 
@@ -331,6 +359,8 @@ final class UserAgentTests: XCTestCase {
                 "state": "enabled",
                 "settings": {
                     "defaultPolicy": "closest",
+                    "useUpdatedSafariVersions": true,
+                    "safariVersionMappings": {},
                     "omitApplicationSites": [
                         {
                             "domain": "cvs.com",
@@ -356,38 +386,44 @@ final class UserAgentTests: XCTestCase {
     """.data(using: .utf8)!
 
     func testWhenMobileUaAndDesktopFalseAndDefaultPolicyClosestThenClosestMobileAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile)
         let config = makePrivacyConfig(from: closestConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.mobileClosest, testee.agent(forUrl: Constants.url, isDesktop: false, privacyConfig: config))
     }
 
     func testWhenMobileUaAndDesktopTrueAndDefaultPolicyClosestThenFixedMobileAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile)
         let config = makePrivacyConfig(from: closestConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.desktopClosest, testee.agent(forUrl: Constants.url, isDesktop: true, privacyConfig: config))
     }
 
     func testWhenTabletUaAndDesktopFalseAndDefaultPolicyClosestThenFixedMobileAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.tablet)
         let config = makePrivacyConfig(from: closestConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.tablet, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.tabletClosest, testee.agent(forUrl: Constants.url, isDesktop: false, privacyConfig: config))
     }
 
     func testWhenTabletUaAndDesktopTrueAndDefaultPolicyClosestThenFixedMobileAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.tablet)
         let config = makePrivacyConfig(from: closestConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.tablet, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.desktopClosest, testee.agent(forUrl: Constants.url, isDesktop: true, privacyConfig: config))
     }
 
     func testWhenDefaultPolicyClosestAndDomainIsOnDefaultListThenDefaultAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile)
         let config = makePrivacyConfig(from: closestConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.mobile, testee.agent(forUrl: Constants.ddgDefaultUrl, isDesktop: false, privacyConfig: config))
     }
 
     func testWhenDefaultPolicyClosestAndDomainIsOnFixedListThenFixedAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile)
         let config = makePrivacyConfig(from: closestConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.mobileFixed, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, privacyConfig: config))
     }
 
@@ -398,6 +434,8 @@ final class UserAgentTests: XCTestCase {
                 "state": "enabled",
                 "settings": {
                     "defaultPolicy": "ddg",
+                    "useUpdatedSafariVersions": true,
+                    "safariVersionMappings": {},
                     "omitApplicationSites": [
                         {
                             "domain": "cvs.com",
@@ -421,51 +459,123 @@ final class UserAgentTests: XCTestCase {
     func testWhenAtbDoesNotMatchVersionFromConfigThenDefaultUAIsUsed() {
         let statisticsStore = MockStatisticsStore()
         statisticsStore.atb = "v300-1"
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, statistics: statisticsStore)
         let config = makePrivacyConfig(from: configWithVersions)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, statistics: statisticsStore, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.mobile, testee.agent(forUrl: Constants.url, isDesktop: false, privacyConfig: config))
     }
 
     func testWhenAtbMatchesVersionInClosestUserAgentThenClosestUAIsUsed() {
         let statisticsStore = MockStatisticsStore()
         statisticsStore.atb = "v360-1"
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, statistics: statisticsStore)
         let config = makePrivacyConfig(from: configWithVersions)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, statistics: statisticsStore, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.mobileClosest, testee.agent(forUrl: Constants.url, isDesktop: false, privacyConfig: config))
     }
 
     func testWhenAtbMatchesVersionInDDGFixedUserAgentThenDDGFixedUAIsUsed() {
         let statisticsStore = MockStatisticsStore()
         statisticsStore.atb = "v361-1"
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, statistics: statisticsStore)
         let config = makePrivacyConfig(from: configWithVersions)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, statistics: statisticsStore, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.mobileFixed, testee.agent(forUrl: Constants.url, isDesktop: false, privacyConfig: config))
     }
 
     func testWhenAtbWithoutDayComponentMatchesVersionInDDGFixedUserAgentThenDDGFixedUAIsUsed() {
         let statisticsStore = MockStatisticsStore()
         statisticsStore.atb = "v361"
-        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, statistics: statisticsStore)
         let config = makePrivacyConfig(from: configWithVersions)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, statistics: statisticsStore, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.mobileFixed, testee.agent(forUrl: Constants.url, isDesktop: false, privacyConfig: config))
     }
 
     func testWhenOldWebKitVersionThenDefaultMobileAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.oldWebkitVersionMobile)
         let config = makePrivacyConfig(from: ddgFixedConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.oldWebkitVersionMobile, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.oldWebkitVersionMobile, testee.agent(forUrl: Constants.url, isDesktop: false, privacyConfig: config))
     }
 
     func testWhenNewerWebKitVersionThenFixedAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.newWebkitVersionMobile)
         let config = makePrivacyConfig(from: ddgFixedConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.newWebkitVersionMobile, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.newWebkitVersionMobile, testee.agent(forUrl: Constants.url, isDesktop: false, privacyConfig: config))
     }
 
     func testWhenSameWebKitVersionThenFixedAgentUsed() {
-        let testee = UserAgent(defaultAgent: DefaultAgent.sameWebkitVersionMobile)
         let config = makePrivacyConfig(from: ddgFixedConfig)
+        let testee = UserAgent(defaultAgent: DefaultAgent.sameWebkitVersionMobile, privacyConfig: config)
+
         XCTAssertEqual(ExpectedAgent.sameWebkitVersionMobile, testee.agent(forUrl: Constants.url, isDesktop: false, privacyConfig: config))
     }
 
+    let testConfigWithMapping = """
+    {
+        "features": {
+            "customUserAgent": {
+                "state": "enabled",
+                "settings": {
+                    "useUpdatedSafariVersions": true,
+                    "safariVersionMappings": {
+                        "26": "18_6",
+                        "26.0": "18_6",
+                        "26.0.1": "18_7"
+                    },
+                    "omitApplicationSites": [
+                        {
+                            "domain": "cvs.com",
+                            "reason": "Site reports browser not supported"
+                        }
+                    ]
+                },
+                "exceptions": []
+            }
+        },
+        "unprotectedTemporary": []
+    }
+    """.data(using: .utf8)!
+
+    func testWhenOnIOS26_0_0AndMappingMatchesThenItIsUsed() {
+        let config = makePrivacyConfig(from: testConfigWithMapping)
+        let version = OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 0)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config, deviceVersion: version)
+
+        XCTAssertEqual(ExpectedAgent.mobileMapped2600, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, deviceVersion: version, privacyConfig: config))
+    }
+
+    func testWhenOnIOS26_0_1AndMappingMatchesThenItIsUsed() {
+        let config = makePrivacyConfig(from: testConfigWithMapping)
+        let version = OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 1)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config, deviceVersion: version)
+
+        XCTAssertEqual(ExpectedAgent.mobileMapped2601, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, deviceVersion: version, privacyConfig: config))
+    }
+
+    func testWhenOnIOS26AndMappingDoesNotMatchThenMostGenericIsUsed() {
+        let config = makePrivacyConfig(from: testConfigWithMapping)
+        let version = OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 1000)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config, deviceVersion: version)
+
+        XCTAssertEqual(ExpectedAgent.mobileMapped2600, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, deviceVersion: version, privacyConfig: config))
+    }
+
+    func testWhenOnIOS27AndMappingDoesNotMatchThenItIsIgnored() {
+        let config = makePrivacyConfig(from: testConfigWithMapping)
+        let version = OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config, deviceVersion: version)
+
+        XCTAssertEqual(ExpectedAgent.mobileMappedPost26, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, deviceVersion: version, privacyConfig: config))
+    }
+
+    func testWhenNotOnIOS26ThenMappingIsNotUsed() {
+        let config = makePrivacyConfig(from: testConfigWithMapping)
+        let version = OperatingSystemVersion(majorVersion: 18, minorVersion: 7, patchVersion: 0)
+        let testee = UserAgent(defaultAgent: DefaultAgent.mobile, privacyConfig: config, deviceVersion: version)
+
+        XCTAssertEqual(ExpectedAgent.mobileMappedPre26, testee.agent(forUrl: Constants.ddgFixedUrl, isDesktop: false, deviceVersion: version, privacyConfig: config))
+    }
 }

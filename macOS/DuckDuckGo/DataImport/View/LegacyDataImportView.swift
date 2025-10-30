@@ -1,5 +1,5 @@
 //
-//  DataImportView.swift
+//  LegacyDataImportView.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -24,21 +24,21 @@ import DesignResourcesKitIcons
 import UniformTypeIdentifiers
 
 @MainActor
-struct DataImportView: ModalView {
+struct LegacyDataImportView: ModalView {
     private let isDataTypePickerExpanded: Bool
     @Environment(\.dismiss) private var dismiss
 
-    @State var model: DataImportViewModel
+    @State var model: LegacyDataImportViewModel
     let title: String
 
-    let importFlowLauncher: DataImportFlowRelaunching
+    let importFlowLauncher: LegacyDataImportFlowRelaunching
 
     @State private var isInternalUser = false
     let internalUserDecider: InternalUserDecider = Application.appDelegate.internalUserDecider
 
     private let syncFeatureVisibility: SyncFeatureVisibility
 
-    init(model: DataImportViewModel = DataImportViewModel(), importFlowLauncher: DataImportFlowRelaunching, title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool, syncFeatureVisibility: SyncFeatureVisibility) {
+    init(model: LegacyDataImportViewModel = LegacyDataImportViewModel(), importFlowLauncher: LegacyDataImportFlowRelaunching, title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool, syncFeatureVisibility: SyncFeatureVisibility) {
         self._model = State(initialValue: model)
         self.importFlowLauncher = importFlowLauncher
         self.title = title
@@ -180,7 +180,7 @@ struct DataImportView: ModalView {
             case .archiveImport:
                 multifileImportBody(fileTypes: model.importSource.archiveImportSupportedFiles)
             case .summary(let dataTypes, let previousScreen):
-                DataImportSummaryView(model, dataTypes: dataTypes, isFileImport: previousScreen.isFileImport)
+                LegacyDataImportSummaryView(model, dataTypes: dataTypes, isFileImport: previousScreen.isFileImport)
             case .feedback:
                 feedbackBody
             case .shortcuts(let dataTypes):
@@ -202,7 +202,7 @@ struct DataImportView: ModalView {
                     .disabled(model.isImportSourcePickerDisabled)
                 }
 
-                DataImportTypePicker(viewModel: $model, isDataTypePickerExpanded: isDataTypePickerExpanded)
+                LegacyDataImportTypePicker(viewModel: $model, isDataTypePickerExpanded: isDataTypePickerExpanded)
                     .disabled(model.isImportSourcePickerDisabled)
                 .padding(.top, 8)
             }
@@ -237,7 +237,7 @@ struct DataImportView: ModalView {
     private var feedbackBody: some View {
         importSourceDataTitle
         VStack(alignment: .leading, spacing: 0) {
-            DataImportSummaryView(model)
+            LegacyDataImportSummaryView(model)
                 .padding(.bottom, 20)
             ReportFeedbackView(model: $model.reportModel)
         }
@@ -257,7 +257,7 @@ struct DataImportView: ModalView {
         importPickerPanel {
             VStack(alignment: .leading, spacing: 0) {
                 if !summaryTypes.isEmpty {
-                    DataImportSummaryView(model, dataTypes: summaryTypes)
+                    LegacyDataImportSummaryView(model, dataTypes: summaryTypes)
                         .padding(.bottom, 24)
                 }
 
@@ -332,7 +332,7 @@ struct DataImportView: ModalView {
         Text(UserText.importDataSourceTitle)
     }
 
-    private func progressView(_ progress: TaskProgress<DataImportViewModel, Never, DataImportProgressEvent>) -> some View {
+    private func progressView(_ progress: TaskProgress<LegacyDataImportViewModel, Never, DataImportProgressEvent>) -> some View {
         // Progress bar with label: Importing [bookmarks|passwords]…
         ProgressView(value: self.progress?.fraction) {
             Text(self.progress?.text ?? "")
@@ -387,7 +387,7 @@ struct DataImportView: ModalView {
         }
     }
 
-    private func handleImportProgress(_ progress: TaskProgress<DataImportViewModel, Never, DataImportProgressEvent>) async {
+    private func handleImportProgress(_ progress: TaskProgress<LegacyDataImportViewModel, Never, DataImportProgressEvent>) async {
         // receive import progress update events
         // the loop is completed on the import task
         // cancellation/completion or on did disappear
@@ -484,7 +484,7 @@ struct DataImportView: ModalView {
             case zeroSuccess: model.testImportResults[dataType] = .success(.empty)
             default:
                 let errorType = DataImport.ErrorType(rawValue: reason)!
-                let error = DataImportViewModel.TestImportError(action: dataType.importAction, errorType: errorType)
+                let error = LegacyDataImportViewModel.TestImportError(action: dataType.importAction, errorType: errorType)
                 model.testImportResults[dataType] = .failure(error)
             }
         }) {
@@ -504,41 +504,7 @@ struct DataImportView: ModalView {
 
 }
 
-extension DataImportProgressEvent {
-
-    var fraction: Double? {
-        switch self {
-        case .initial:
-            nil
-        case .importingBookmarks(numberOfBookmarks: _, fraction: let fraction):
-            fraction
-        case .importingPasswords(numberOfPasswords: _, fraction: let fraction):
-            fraction
-        case .importingCreditCards(numberOfCreditCards: _, fraction: let fraction):
-            fraction
-        case .done:
-            nil
-        }
-    }
-
-    var description: String? {
-        switch self {
-        case .initial:
-            nil
-        case .importingBookmarks(numberOfBookmarks: let num, fraction: _):
-            UserText.importingBookmarks(num)
-        case .importingPasswords(numberOfPasswords: let num, fraction: _):
-            UserText.importingPasswords(num)
-        case .importingCreditCards(numberOfCreditCards: let num, fraction: _):
-            UserText.importingCreditCards(num)
-        case .done:
-            nil
-        }
-    }
-
-}
-
-extension DataImportViewModel.ButtonType {
+extension LegacyDataImportViewModel.ButtonType {
 
     var shortcut: KeyboardShortcut? {
         switch self {
@@ -554,7 +520,7 @@ extension DataImportViewModel.ButtonType {
 
 }
 
-extension DataImportViewModel.ButtonType {
+extension LegacyDataImportViewModel.ButtonType {
 
     func title(dataType: DataImport.DataType?) -> String {
         switch self {

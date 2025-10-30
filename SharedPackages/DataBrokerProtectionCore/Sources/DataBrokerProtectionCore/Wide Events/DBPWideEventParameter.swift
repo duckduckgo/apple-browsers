@@ -31,4 +31,12 @@ enum DBPWideEventParameter {
         static let dataBrokerVersion = "feature.data.ext.data_broker_version"
         static let confirmationLatency = "feature.data.ext.confirmation_latency_ms"
     }
+
+    enum ScanFeature {
+        static let dataBrokerURL = "feature.data.ext.data_broker"
+        static let dataBrokerVersion = "feature.data.ext.data_broker_version"
+        static let attemptType = "feature.data.ext.scan.attempt_type"
+        static let attemptNumber = "feature.data.ext.scan.attempt_number"
+        static let scanLatency = "feature.data.ext.scan.latency_ms"
+    }
 }

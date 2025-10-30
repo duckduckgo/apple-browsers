@@ -93,7 +93,7 @@ protocol OmniBarStatusUpdateable: AnyObject {
     var isSettingsButtonHidden: Bool { get set }
     var isCancelButtonHidden: Bool { get set }
     var isRefreshButtonHidden: Bool { get set }
-    var isShareButtonHidden: Bool { get set }
+    var isCustomizableButtonHidden: Bool { get set }
     var isVoiceSearchButtonHidden: Bool { get set }
     var isAbortButtonHidden: Bool { get set }
     var isBackButtonHidden: Bool { get set }

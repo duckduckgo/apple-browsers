@@ -18,6 +18,7 @@
 
 import XCTest
 import Persistence
+import PersistenceTestingUtils
 import SecureStorage
 @testable import Subscription
 
@@ -218,21 +219,5 @@ class MockKeychainService: KeychainService {
         }
 
         return errSecItemNotFound
-    }
-}
-
-class MockThrowingKeyValueStore: ThrowingKeyValueStoring {
-    private var storage: [String: Any] = [:]
-
-    func object(forKey defaultName: String) throws -> Any? {
-        return storage[defaultName]
-    }
-
-    func set(_ value: Any?, forKey defaultName: String) throws {
-        storage[defaultName] = value
-    }
-
-    func removeObject(forKey defaultName: String) throws {
-        storage.removeValue(forKey: defaultName)
     }
 }

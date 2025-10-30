@@ -21,6 +21,7 @@ import UIKit
 import PrivacyDashboard
 import Core
 import Kingfisher
+import DesignResourcesKitIcons
 
 class OmniBarViewController: UIViewController, OmniBar {
 
@@ -378,6 +379,10 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
     }
 
+    func reapplyState() {
+        refreshState(state, force: true)
+    }
+
     func hidePrivacyIcon() {
         barView.privacyInfoContainer.privacyIcon.isHidden = true
     }
@@ -425,12 +430,12 @@ class OmniBarViewController: UIViewController, OmniBar {
         cancelAllAnimations()
     }
 
-    private func refreshState(_ newState: any OmniBarState) {
+    private func refreshState(_ newState: any OmniBarState, force: Bool = false) {
         let oldState: OmniBarState = self.state
-        if state.requiresUpdate(transitioningInto: newState) {
+        if force || state.requiresUpdate(transitioningInto: newState) {
             Logger.general.debug("OmniBar entering \(newState.description) from \(self.state.description)")
 
-            if state.isDifferentState(than: newState) {
+            if force || state.isDifferentState(than: newState) {
                 if newState.clearTextOnStart {
                     clear()
                 }
@@ -455,7 +460,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isSettingsButtonHidden = !state.showSettings
         barView.isCancelButtonHidden = !state.showCancel
         barView.isRefreshButtonHidden = !state.showRefresh
-        barView.isShareButtonHidden = !state.showCustomizableButton
+        barView.isCustomizableButtonHidden = !state.showCustomizableButton
         barView.isVoiceSearchButtonHidden = !state.showVoiceSearch
         barView.isAbortButtonHidden = !state.showAbort
         barView.isBackButtonHidden = !state.showBackButton
@@ -463,6 +468,16 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isBookmarksButtonHidden = !state.showBookmarksButton
         barView.isAIChatButtonHidden = !state.showAIChatButton
 
+        applyCustomization()
+    }
+
+    private func applyCustomization() {
+        guard dependencies.mobileCustomization.state.isEnabled else {
+            barView.customizableButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple, for: .normal)
+            return
+        }
+
+        barView.customizableButton.setImage(dependencies.mobileCustomization.state.currentAddressBarButton.largeIcon, for: .normal)
     }
 
     func onQuerySubmitted() {

@@ -3839,7 +3839,12 @@ extension MainViewController {
 
     func applyCustomizationState() {
         applyCustomizationForToolbar(mobileCustomization.state)
-        // coming later - address bar
+        applyCustomizationForAddressBar(mobileCustomization.state)
+    }
+
+    func applyCustomizationForAddressBar(_ state: MobileCustomization.State) {
+        omniBar.reapplyState()
+        // TODO apply icon
     }
 
     @objc private func performCustomizationActionForToolbar() {
@@ -3855,7 +3860,8 @@ extension MainViewController {
             return
         }
 
-        switch mobileCustomization.state.currentToolbarButton {
+        let button = mobileCustomization.state.currentToolbarButton
+        switch button {
         case .home:
             guard let tab = self.currentTab?.tabModel else { return }
             self.closeTab(tab, andOpenEmptyOneAtSamePosition: true)
@@ -3885,7 +3891,7 @@ extension MainViewController {
             self.segueToDownloads()
 
         default:
-            // Eventually this will be an extensive list with no default block
+            assertionFailure("Unexpected case \(button)")
             break
         }
     }

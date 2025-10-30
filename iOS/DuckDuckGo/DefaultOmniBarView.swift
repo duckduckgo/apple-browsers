@@ -117,7 +117,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         set { searchAreaView.reloadButton.isHidden = newValue }
     }
 
-    var isShareButtonHidden: Bool {
+    var isCustomizableButtonHidden: Bool {
         get { searchAreaView.customizableButton.isHidden }
         set { searchAreaView.customizableButton.isHidden = newValue }
     }

@@ -86,13 +86,14 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
     public func saveTokenContainer(_ tokenContainer: TokenContainer?) throws {
         do {
             guard let tokenContainer else {
-                Logger.subscriptionKeychain.debug("Remove TokenContainer")
+                Logger.subscriptionKeychain.log("Remove TokenContainer")
                 try keychainManager.deleteItem(forKey: SubscriptionKeychainField.tokenContainer.keyValue)
                 return
             }
 
             guard let data = CodableHelper.encode(tokenContainer) else {
-                throw AccountKeychainAccessError.failedToEncodeKeychainData // Fixed error name
+                Logger.subscriptionKeychain.fault("Failed to encode the token")
+                throw AccountKeychainAccessError.failedToEncodeKeychainData
             }
 
             try keychainManager.store(data: data, forKey: SubscriptionKeychainField.tokenContainer.keyValue)

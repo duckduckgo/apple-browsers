@@ -83,6 +83,7 @@ enum UniversalOmniBarState {
         let showBackButton = false
         let showForwardButton = false
         let showBookmarksButton = false
+        let showAIChatButton = false
         let showAccessoryButton = false
         let clearTextOnStart = false
         let allowsTrackersAnimation = false

@@ -21,15 +21,15 @@ import PixelKit
 import Common
 
 enum AttributedMetricPixelName: String {
-    case userRetentionWeek = "user_retention_week"
-    case userRetentionMonth = "user_retention_month"
-    case userActivePastWeek = "user_active_past_week"
-    case userAverageSearchesPastWeekFirstMonth = "user_average_searches_past_week_first_month"
-    case userAverageSearchesPastWeek = "user_average_searches_past_week"
-    case userAverageAdClicksPastWeek = "user_average_ad_clicks_past_week"
-    case userAverageDuckAiUsagePastWeek = "user_average_duck_ai_usage_past_week"
-    case userSubscribed = "user_subscribed"
-    case userSyncedDevice = "user_synced_device"
+    case userRetentionWeek = "attributed_metric_retention_week"
+    case userRetentionMonth = "attributed_metric_retention_month"
+    case userActivePastWeek = "attributed_metric_active_past_week"
+    case userAverageSearchesPastWeekFirstMonth = "attributed_metric_average_searches_past_week_first_month"
+    case userAverageSearchesPastWeek = "attributed_metric_average_searches_past_week"
+    case userAverageAdClicksPastWeek = "attributed_metric_average_ad_clicks_past_week"
+    case userAverageDuckAiUsagePastWeek = "attributed_metric_average_duck_ai_usage_past_week"
+    case userSubscribed = "attributed_metric_subscribed"
+    case userSyncedDevice = "attributed_metric_synced_device"
     case dataStoreError = "attributed_metric_data_store_error"
 }
 

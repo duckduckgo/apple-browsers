@@ -27,10 +27,10 @@ import Subscription
 import Combine
 import AIChat
 import SetDefaultBrowserCore
+import ContentBlocking
 
 /// Reporting service for various metrics:
 /// - AttributedMetric: https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
-/// -
 final class ReportingService {
 
     let marketplaceAdPostbackManager = MarketplaceAdPostbackManager()
@@ -260,9 +260,5 @@ struct DefaultSubscriptionStateProvider: SubscriptionStateProviding {
     
     var isActive: Bool {
         subscriptionManager.isUserAuthenticated
-    }
-    
-    func subscriptionDate() async -> Date? {
-        (try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst))?.startedAt
     }
 }

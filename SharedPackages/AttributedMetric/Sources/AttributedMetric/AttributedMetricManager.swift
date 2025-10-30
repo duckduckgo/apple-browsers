@@ -32,7 +32,6 @@ public protocol AttributedMetricDefaultBrowserProviding {
 public protocol SubscriptionStateProviding {
     func isFreeTrial() async -> Bool
     var isActive: Bool { get }
-    func subscriptionDate() async -> Date?
 }
 
 public protocol DateProviding {

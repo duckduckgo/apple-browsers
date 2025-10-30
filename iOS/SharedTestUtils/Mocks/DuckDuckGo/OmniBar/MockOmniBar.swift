@@ -94,7 +94,7 @@ final class MockOmniBar: OmniBar {
         var leftIconContainerView: UIView! = UIView()
         var customIconView: UIImageView = UIImageView()
         var clearButton: UIButton! = UIButton()
-        var shareButton: UIButton! = UIButton()
+        var customizableButton: UIButton! = UIButton()
 
         func showSeparator() { }
         func hideSeparator() { }
@@ -122,7 +122,7 @@ final class MockOmniBar: OmniBar {
         var onAIChatPressed: (() -> Void)?
         var onDismissPressed: (() -> Void)?
         var onSettingsLongPress: (() -> Void)?
-        var onSharePressed: (() -> Void)?
+        var onCustomizableButtonPressed: (() -> Void)?
 
         static func create() -> Self {
             Self.init()

@@ -31,6 +31,7 @@ protocol OmnibarDependencyProvider {
     var suggestionTrayDependencies: SuggestionTrayDependencies? { get }
     var appSettings: AppSettings { get }
     var daxEasterEggPresenter: DaxEasterEggPresenting { get }
+    var mobileCustomization: MobileCustomization { get }
 }
 
 struct OmnibarDependencies: OmnibarDependencyProvider {
@@ -40,4 +41,5 @@ struct OmnibarDependencies: OmnibarDependencyProvider {
     var suggestionTrayDependencies: SuggestionTrayDependencies?
     let appSettings: any AppSettings
     let daxEasterEggPresenter: DaxEasterEggPresenting
+    let mobileCustomization: MobileCustomization
 }

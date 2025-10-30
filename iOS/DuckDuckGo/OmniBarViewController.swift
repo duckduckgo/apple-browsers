@@ -119,7 +119,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.aiChatButton.isPointerInteractionEnabled = true
         barView.menuButton.isPointerInteractionEnabled = true
         barView.refreshButton.isPointerInteractionEnabled = true
-        barView.shareButton.isPointerInteractionEnabled = true
+        barView.customizableButton.isPointerInteractionEnabled = true
         barView.clearButton.isPointerInteractionEnabled = true
     }
 
@@ -189,8 +189,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onRefreshPressed = { [weak self] in
             self?.onRefreshPressed()
         }
-        barView.onSharePressed = { [weak self] in
-            self?.onSharePressed()
+        barView.onCustomizableButtonPressed = { [weak self] in
+            self?.onCustomizableButtonPressed()
         }
         barView.onBackPressed = { [weak self] in
             self?.onBackPressed()
@@ -455,7 +455,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isSettingsButtonHidden = !state.showSettings
         barView.isCancelButtonHidden = !state.showCancel
         barView.isRefreshButtonHidden = !state.showRefresh
-        barView.isShareButtonHidden = !state.showShare
+        barView.isShareButtonHidden = !state.showCustomizableButton
         barView.isVoiceSearchButtonHidden = !state.showVoiceSearch
         barView.isAbortButtonHidden = !state.showAbort
         barView.isBackButtonHidden = !state.showBackButton
@@ -613,8 +613,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         omniDelegate?.onRefreshPressed()
     }
 
-    private func onSharePressed() {
-        omniDelegate?.onSharePressed()
+    private func onCustomizableButtonPressed() {
+        omniDelegate?.onCustomizableButtonPressed()
     }
 
     private func onBackPressed() {

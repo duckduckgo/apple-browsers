@@ -22,7 +22,7 @@ import Persistence
 import DesignResourcesKitIcons
 import UIKit
 
-/// Handles logic and persistence of customization options.
+/// Handles logic and persistence of customization options.  iPad is not supported so this returns false for `isEnabled` on iPad.
 class MobileCustomization {
 
     struct State {
@@ -205,13 +205,14 @@ class MobileCustomization {
     }()
 
     var state: State {
-        State(isEnabled: featureFlagger.isFeatureOn(.mobileCustomization),
+        State(isEnabled: featureFlagger.isFeatureOn(.mobileCustomization) && !isPad,
               currentToolbarButton: current(forKey: .toolbarButton, Self.toolbarDefault),
               currentAddressBarButton: current(forKey: .addressBarButton, Self.addressBarDefault))
     }
 
     private let featureFlagger: FeatureFlagger
     private let keyValueStore: ThrowingKeyValueStoring
+    private let isPad: Bool
     private let postChangeNotification: (State) -> Void
 
     static func descriptionComparison(lhs: CustomStringConvertible, rhs: CustomStringConvertible) -> Bool {
@@ -227,12 +228,14 @@ class MobileCustomization {
 
     init(featureFlagger: FeatureFlagger,
          keyValueStore: ThrowingKeyValueStoring,
+         isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
          postChangeNotification: @escaping ((State) -> Void) = {
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.customizationSettingsChanged, object: $0)
         }
     ) {
         self.featureFlagger = featureFlagger
         self.keyValueStore = keyValueStore
+        self.isPad = isPad
         self.postChangeNotification = postChangeNotification
     }
 

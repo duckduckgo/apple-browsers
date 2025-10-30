@@ -39,7 +39,7 @@ enum UniversalOmniBarState {
         var showDismiss: Bool { baseState.showDismiss }
         var showAbort: Bool { baseState.showAbort }
         var showRefresh: Bool { baseState.showRefresh }
-        var showShare: Bool { baseState.showShare }
+        var showCustomizableButton: Bool { baseState.showCustomizableButton }
         var showMenu: Bool { baseState.showMenu }
         var showSettings: Bool { baseState.showSettings }
         var showVoiceSearch: Bool { baseState.showVoiceSearch }

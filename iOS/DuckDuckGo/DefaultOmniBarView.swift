@@ -56,7 +56,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var aiChatButton: UIButton! { searchAreaView.aiChatButton }
     var menuButton: UIButton! { menuButtonView }
     var refreshButton: UIButton! { searchAreaView.reloadButton }
-    var shareButton: UIButton! { searchAreaView.shareButton }
+    var customizableButton: UIButton! { searchAreaView.customizableButton }
     var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }
     var searchContainer: UIView! { searchAreaContainerView }
     let expectedHeight: CGFloat = DefaultOmniBarView.expectedHeight
@@ -118,8 +118,8 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     }
 
     var isShareButtonHidden: Bool {
-        get { searchAreaView.shareButton.isHidden }
-        set { searchAreaView.shareButton.isHidden = newValue }
+        get { searchAreaView.customizableButton.isHidden }
+        set { searchAreaView.customizableButton.isHidden = newValue }
     }
 
     var isVoiceSearchButtonHidden: Bool {
@@ -191,7 +191,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var onSettingsButtonPressed: (() -> Void)?
     var onCancelPressed: (() -> Void)?
     var onRefreshPressed: (() -> Void)?
-    var onSharePressed: (() -> Void)?
+    var onCustomizableButtonPressed: (() -> Void)?
     var onBackPressed: (() -> Void)?
     var onForwardPressed: (() -> Void)?
     var onBookmarksPressed: (() -> Void)?
@@ -424,7 +424,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         searchAreaView.voiceSearchButton.addTarget(self, action: #selector(voiceSearchButtonTap), for: .touchUpInside)
         searchAreaView.reloadButton.addTarget(self, action: #selector(reloadButtonTap), for: .touchUpInside)
         searchAreaView.clearButton.addTarget(self, action: #selector(clearButtonTap), for: .touchUpInside)
-        searchAreaView.shareButton.addTarget(self, action: #selector(shareButtonTap), for: .touchUpInside)
+        searchAreaView.customizableButton.addTarget(self, action: #selector(customizableButtonTap), for: .touchUpInside)
         searchAreaView.cancelButton.addTarget(self, action: #selector(cancelButtonTap), for: .touchUpInside)
         searchAreaView.aiChatButton.addTarget(self, action: #selector(aiChatButtonTap), for: .touchUpInside)
 
@@ -581,8 +581,8 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         onClearButtonPressed?()
     }
 
-    @objc private func shareButtonTap() {
-        onSharePressed?()
+    @objc private func customizableButtonTap() {
+        onCustomizableButtonPressed?()
     }
 
     @objc private func cancelButtonTap() {

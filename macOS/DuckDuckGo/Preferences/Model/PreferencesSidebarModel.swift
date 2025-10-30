@@ -174,7 +174,7 @@ final class PreferencesSidebarModel: ObservableObject {
         guard winBackOfferVisibilityManager.isOfferAvailable else {
             return
         }
-        
+
         pixelFiring?.fire(SubscriptionPixel.subscriptionWinBackOfferSettingsSidebarBadgeShown)
     }
 

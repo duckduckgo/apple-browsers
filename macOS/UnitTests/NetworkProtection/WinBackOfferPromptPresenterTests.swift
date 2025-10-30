@@ -66,17 +66,17 @@ final class WinBackOfferPromptPresenterTests: XCTestCase {
         XCTAssertEqual(originQueryItem.value, SubscriptionFunnelOrigin.winBackLaunch.rawValue)
         XCTAssertEqual(featurePageQueryItem.value, SubscriptionURL.FeaturePage.winback)
     }
-    
+
     // MARK: - Pixels
-    
+
     func testWhenLaunchPromptIsPresented_ItFiresPixel() {
         // Given
         mockVisibilityManager.shouldShowLaunchMessage = true
         XCTAssertEqual(capturedPixels.count, 0, "Should not have fired any pixels yet")
-        
+
         // When
         sut.tryToShowPrompt(in: MockWindow())
-        
+
         // Then
         XCTAssertEqual(capturedPixels.count, 1, "Should have fired exactly one pixel")
         if case .subscriptionWinBackOfferLaunchPromptShown = capturedPixels.first! {
@@ -85,12 +85,12 @@ final class WinBackOfferPromptPresenterTests: XCTestCase {
             XCTFail("Should fire subscriptionWinBackOfferLaunchPromptShown pixel")
         }
     }
-    
+
     @MainActor
     func testWhenLaunchPromptCTAIsClicked_ItFiresPixel() {
         // When
         sut.handleSeeOffer()
-        
+
         // Then
         XCTAssertEqual(capturedPixels.count, 1, "Should have fired exactly one pixel")
         if case .subscriptionWinBackOfferLaunchPromptCTAClicked = capturedPixels.first! {
@@ -99,12 +99,12 @@ final class WinBackOfferPromptPresenterTests: XCTestCase {
             XCTFail("Should fire subscriptionWinBackOfferLaunchPromptCTAClicked pixel")
         }
     }
-    
+
     @MainActor
     func testWhenLaunchPromptIsDismissed_ItFiresPixel() {
         // When
         sut.handleDismiss()
-        
+
         // Then
         XCTAssertEqual(capturedPixels.count, 1, "Should have fired exactly one pixel")
         if case .subscriptionWinBackOfferLaunchPromptDismissed = capturedPixels.first {

@@ -84,7 +84,7 @@ final class WinBackOfferPromptPresenter: WinBackOfferPromptPresenting {
 
         urlOpener(url)
     }
-    
+
     @MainActor
     func handleDismiss() {
         pixelHandler(.subscriptionWinBackOfferLaunchPromptDismissed)

@@ -82,7 +82,8 @@ struct HealthOverviewMetrics {
     let scanWeeklySummary: OperationSummary
     let optOutAttemptsCount: Int
     let optOutAttemptsBreakdown: String?
-    let backgroundTaskEvents: BackgroundTaskSessionMetrics
+    let backgroundTaskSessionMetrics: BackgroundTaskSessionMetrics
+    let backgroundTaskLastSession: BackgroundTaskSessionMetrics.Session?
 }
 
 final class HealthOverviewSectionPresenter {
@@ -190,20 +191,17 @@ final class HealthOverviewSectionPresenter {
                                            accessoryText: "\(metrics.optOutAttemptsCount)")
             )
 
+            let backgroundTaskSessionMetrics = metrics.backgroundTaskSessionMetrics
             let backgroundTaskSummary = """
-Completed: \(metrics.backgroundTaskEvents.completed)
-Orphaned: \(metrics.backgroundTaskEvents.orphaned)
-Terminated: \(metrics.backgroundTaskEvents.terminated)
-Duration min: \(formattedDuration(metrics.backgroundTaskEvents.durationMinMs))
-Duration median: \(formattedDuration(metrics.backgroundTaskEvents.durationMedianMs))
-Duration max: \(formattedDuration(metrics.backgroundTaskEvents.durationMaxMs))
+Completed: \(backgroundTaskSessionMetrics.completed) · Orphaned: \(backgroundTaskSessionMetrics.orphaned) · Terminated: \(backgroundTaskSessionMetrics.terminated)
+Duration: \(formattedDuration(backgroundTaskSessionMetrics.durationMinMs)) (min) · \(formattedDuration(backgroundTaskSessionMetrics.durationMedianMs)) (median) · \(formattedDuration(backgroundTaskSessionMetrics.durationMaxMs)) (max)
+Last background task: \(formattedSession(metrics.backgroundTaskLastSession))
 """
-
             rows.append(
                 HealthOverviewRowViewModel(title: "Background Task Events (last 7 days)",
                                            subtitle: backgroundTaskSummary,
                                            style: .subtitle,
-                                           accessoryText: "\(metrics.backgroundTaskEvents.started)")
+                                           accessoryText: "\(backgroundTaskSessionMetrics.started)")
             )
 
             return rows
@@ -234,6 +232,8 @@ Duration max: \(formattedDuration(metrics.backgroundTaskEvents.durationMaxMs))
         let scanJobs = activeBrokerData.map { $0.scanJobData }
         let optOutJobs = activeBrokerData.flatMap { $0.optOutJobData }
         let recentOptOutAttempts = (try? databaseDelegate?.getAllAttempts().filter { $0.lastStageDate >= Self.cutOff }) ?? []
+        let recentBackgroundTaskEvents: [BackgroundTaskEvent] = (try? databaseDelegate?.getBackgroundTaskEvents(since: Self.cutOff)) ?? []
+        let allBackgroundTaskEvents: [BackgroundTaskEvent] = (try? databaseDelegate?.getBackgroundTaskEvents(since: .distantPast)) ?? []
 
         return HealthOverviewMetrics(
             backgroundTaskStatus: .init(isScheduled: hasScheduledBackgroundTask,
@@ -246,11 +246,12 @@ Duration max: \(formattedDuration(metrics.backgroundTaskEvents.durationMaxMs))
             scanWeeklySummary: StalledOperationCalculator.scan.calculate(from: activeBrokerData),
             optOutAttemptsCount: recentOptOutAttempts.count,
             optOutAttemptsBreakdown: recentOptOutAttempts.displayString(),
-            backgroundTaskEvents: BackgroundTaskEvent.calculateSessionMetrics(
-                from: (try? databaseDelegate?.getBackgroundTaskEvents(since: Self.cutOff)) ?? [],
+            backgroundTaskSessionMetrics: BackgroundTaskEvent.calculateSessionMetrics(
+                from: recentBackgroundTaskEvents,
                 orphanedThreshold: DataBrokerProtectionEventPixels.Consts.orphanedSessionThreshold,
                 durationRange: DataBrokerProtectionEventPixels.Consts.minimumValidDurationMs...DataBrokerProtectionEventPixels.Consts.maximumValidDurationMs
-            )
+            ),
+            backgroundTaskLastSession: BackgroundTaskSessionMetrics.lastBackgroundTaskSession(from: allBackgroundTaskEvents)
         )
     }
 
@@ -263,6 +264,24 @@ Duration max: \(formattedDuration(metrics.backgroundTaskEvents.durationMaxMs))
         guard milliseconds > 0 else { return "-" }
         let seconds = milliseconds / 1000.0
         return String(format: "%.1fs", seconds)
+    }
+
+    private func formattedSession(_ session: BackgroundTaskSessionMetrics.Session?) -> String {
+        guard let session else { return "-" }
+
+        let startString = formattedDate(session.start.timestamp)
+        let durationMs = formattedDuration(session.durationMs ?? 0)
+        let status: String
+
+        if session.isCompleted {
+            status = "Completed (\(durationMs))"
+        } else if session.isTerminated {
+            status = "Terminated (\(durationMs))"
+        } else {
+            status = "Not yet completed"
+        }
+
+        return "\(startString) · \(status)"
     }
 
     private func subtitle(lastRun: Date?, upcoming: Date?, count: Int) -> String {
@@ -291,7 +310,7 @@ private extension [AttemptInformation] {
             partialResult[attempt.dataBroker, default: 0] += 1
         }
 
-        return counts.displayString()
+        return HealthOverviewSectionPresenter.string(from: counts)
     }
 }
 
@@ -303,14 +322,15 @@ private extension [BrokerProfileQueryData] {
             partialResult[brokerData.dataBroker.name, default: 0] += count
         }
 
-        return counts.displayString()
+        return HealthOverviewSectionPresenter.string(from: counts)
     }
 }
 
-private extension [String: Int] {
-    func displayString() -> String {
-        guard !isEmpty else { return "-" }
-        return sorted { ($0.value == $1.value) ? ($0.key < $1.key) : ($0.value > $1.value) }
+extension HealthOverviewSectionPresenter {
+    static func string(from breakdown: [String: Int]) -> String {
+        guard !breakdown.isEmpty else { return "-" }
+        return breakdown
+            .sorted { ($0.value == $1.value) ? ($0.key < $1.key) : ($0.value > $1.value) }
             .map { "\($0.key) (\($0.value))" }
             .joined(separator: " · ")
     }

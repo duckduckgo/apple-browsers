@@ -127,6 +127,47 @@ public struct BackgroundTaskSessionMetrics: Sendable {
     }
 }
 
+extension BackgroundTaskSessionMetrics {
+    public struct Session: Sendable {
+        public let start: BackgroundTaskEvent
+        public let end: BackgroundTaskEvent?
+
+        public init(start: BackgroundTaskEvent, end: BackgroundTaskEvent?) {
+            self.start = start
+            self.end = end
+        }
+
+        public var isCompleted: Bool {
+            end?.eventType == .completed
+        }
+
+        public var isTerminated: Bool {
+            end?.eventType == .terminated
+        }
+
+        public var isInProgress: Bool {
+            end == nil
+        }
+
+        public var durationMs: Double? {
+            end?.metadata?.duration
+        }
+    }
+
+    public static func lastBackgroundTaskSession(from events: [BackgroundTaskEvent]) -> Session? {
+        guard !events.isEmpty,
+              let lastStart = events.filter({ $0.eventType == .started }).max(by: { $0.timestamp < $1.timestamp }) else {
+            return nil
+        }
+
+        let sessionEnd = events
+            .filter { $0.sessionId == lastStart.sessionId && ($0.eventType == .completed || $0.eventType == .terminated) }
+            .max(by: { $0.timestamp < $1.timestamp })
+
+        return Session(start: lastStart, end: sessionEnd)
+    }
+}
+
 extension Array where Element == BackgroundTaskEvent {
     public subscript(_ eventType: BackgroundTaskEvent.EventType) -> Element? {
         first { $0.eventType == eventType }

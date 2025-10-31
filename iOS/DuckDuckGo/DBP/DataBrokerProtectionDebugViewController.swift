@@ -359,9 +359,9 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 
         return PendingJobCounts(
             pendingScans: pendingScanEntries.count,
-            pendingScansDetails: pendingScansDetails.displayString(),
+            pendingScansDetails: HealthOverviewSectionPresenter.string(from: pendingScansDetails),
             pendingOptOuts: pendingOptOutEntries.count,
-            pendingOptOutsDetails: pendingOptOutsDetails.displayString()
+            pendingOptOutsDetails: HealthOverviewSectionPresenter.string(from: pendingOptOutsDetails)
         )
     }
 
@@ -1019,14 +1019,5 @@ class PIRDebugWebViewWindowHelper {
                 break
             }
         }
-    }
-}
-
-private extension [String: Int] {
-    func displayString() -> String {
-        guard !isEmpty else { return "-" }
-        return sorted { ($0.value == $1.value) ? ($0.key < $1.key) : ($0.value > $1.value) }
-            .map { "\($0.key) (\($0.value))" }
-            .joined(separator: " · ")
     }
 }

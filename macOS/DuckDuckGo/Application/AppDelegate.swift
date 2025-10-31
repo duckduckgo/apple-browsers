@@ -918,7 +918,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 #endif
 
-        appIconChanger = AppIconChanger(internalUserDecider: internalUserDecider)
+        appIconChanger = AppIconChanger(internalUserDecider: internalUserDecider, appearancePreferences: appearancePreferences)
 
         // Configure Event handlers
         let tunnelController = NetworkProtectionIPCTunnelController(ipcClient: vpnXPCClient)

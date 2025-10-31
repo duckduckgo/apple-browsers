@@ -89,7 +89,7 @@ public struct RemoteMessagingConfigMatcher {
             for attribute in matchingRule.attributes {
                 result = evaluateAttribute(matchingAttribute: attribute)
                 if result == .fail || result == .nextMessage {
-                    Logger.remoteMessaging.error("First failing matching attribute for \(messageID, privacy: .public): \(String(describing: attribute), privacy: .public)")
+                    Logger.remoteMessaging.info("First failing matching attribute for \(messageID, privacy: .public): \(String(describing: attribute), privacy: .public)")
                     break
                 }
             }
@@ -113,7 +113,7 @@ public struct RemoteMessagingConfigMatcher {
                 let userPercentile = percentileStore.percentile(forMessageId: messageID)
 
                 if userPercentile > messagePercentile {
-                    Logger.remoteMessaging.error("Exclusion rule percentile check failed for message with ID \(messageID, privacy: .public)")
+                    Logger.remoteMessaging.info("Exclusion rule percentile check failed for message with ID \(messageID, privacy: .public)")
                     return .fail
                 }
             }
@@ -123,7 +123,7 @@ public struct RemoteMessagingConfigMatcher {
             for attribute in matchingRule.attributes {
                 result = evaluateAttribute(matchingAttribute: attribute)
                 if result == .fail || result == .nextMessage {
-                    Logger.remoteMessaging.error("First failing exclusion attribute for \(messageID, privacy: .public): \(String(describing: attribute), privacy: .public)")
+                    Logger.remoteMessaging.info("First failing exclusion attribute for \(messageID, privacy: .public): \(String(describing: attribute), privacy: .public)")
                     break
                 }
             }

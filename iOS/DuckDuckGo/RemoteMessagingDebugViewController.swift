@@ -124,7 +124,7 @@ struct RemoteMessagingDebugRootView: View {
                     .disabled(model.isLoadingLogs)
                 }
             } footer: {
-                Text("Shows debug and error logs from the last minute, to help diagnose issues immediately after a refresh.")
+                Text("Shows logs from the last minute, to help diagnose issues immediately after a refresh.")
             }
         }
         .navigationTitle("Remote Messaging Debug")

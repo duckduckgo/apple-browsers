@@ -137,6 +137,13 @@ struct SettingsAIFeaturesView: View {
                                              image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist))
                         }
                         .listRowBackground(Color(designSystemColor: .surface))
+
+                        NavigationLink(destination: SERPSettingsView(page: .searchAssist).environmentObject(viewModel)) {
+                            SettingsCellView(label: "Hide AI-Generated Images",
+                                             subtitle: "Filters out AI-Generated images from image search results",
+                                             image: Image(uiImage: DesignSystemImages.Glyphs.Size24.imageAIHide))
+                        }
+                        .listRowBackground(Color(designSystemColor: .surface))
                     } else {
                         SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
                                          subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,

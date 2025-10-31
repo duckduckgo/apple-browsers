@@ -120,17 +120,18 @@ public extension SERPSettingsProviding {
     /// This default implementation:
     /// 1. Attempts to read data from the key-value store
     /// 2. Reports any errors through the event mapper
-    /// 3. Returns data wrapped in a JSONBlob if successful
+    /// 3. Returns the stored data as an encoded dictionary if successful
     ///
     /// - Returns: Encoded settings blob, or an empty JSON object if no data exists, or `nil` if an error occurs
     func getSERPSettings() -> Encodable? {
         do {
-            if let data = try keyValueStore?.object(forKey: SERPSettingsConstants.serpSettingsStorage) as? Data {
-                return JSONBlob(data: data)
+            if let stringData = try keyValueStore?.object(forKey: SERPSettingsConstants.serpSettingsStorage) as? String,
+                let data = stringData.data(using: .utf8) {
+                let dict = try JSONDecoder().decode([String:String].self, from: data)
+                return dict
             } else {
                 // First-time access: return empty JSON object
-                let emptyJSON = try JSONSerialization.data(withJSONObject: [:], options: [])
-                return JSONBlob(data: emptyJSON)
+                return EmptyPayload()
             }
         } catch {
             eventMapper?.fire(.keyValueStoreReadError, error: error)
@@ -142,7 +143,7 @@ public extension SERPSettingsProviding {
     /// Stores SERP settings in a thread-safe manner.
     ///
     /// This default implementation:
-    /// 1. Converts the settings dictionary to JSON data
+    /// 1. Converts the settings dictionary to JSON string
     /// 2. Writes the data to the key-value store
     /// 3. Reports any errors through the event mapper
     ///
@@ -158,27 +159,15 @@ public extension SERPSettingsProviding {
     func storeSERPSettings(settings: [String: Any]) {
         do {
             let data = try JSONSerialization.data(withJSONObject: settings, options: [])
+            let stringData = String(data: data, encoding: .utf8)
             do {
-                try keyValueStore?.set(data, forKey: SERPSettingsConstants.serpSettingsStorage)
+                try keyValueStore?.set(stringData, forKey: SERPSettingsConstants.serpSettingsStorage)
             } catch {
                 eventMapper?.fire(.keyValueStoreWriteError, error: error)
             }
         } catch {
             eventMapper?.fire(.serializationFailed, error: error)
         }
-    }
-
-    /// Helper method to convert a dictionary to encodable JSON.
-    ///
-    /// - Parameter dict: Dictionary to convert
-    /// - Returns: JSONBlob if conversion succeeds, `nil` otherwise
-    private func asEncodableJSON(_ dict: [String: Any]?) -> Encodable? {
-        guard
-            let dict,
-            JSONSerialization.isValidJSONObject(dict),
-            let data = try? JSONSerialization.data(withJSONObject: dict, options: [])
-        else { return nil }
-        return JSONBlob(data: data)
     }
 
 #if os(iOS)
@@ -192,15 +181,4 @@ public extension SERPSettingsProviding {
 #endif
 }
 
-/// Internal JSON blob encoder for settings data.
-///
-/// This struct wraps raw JSON data and implements Encodable to allow
-/// the data to be returned through the UserScript messaging system.
-struct JSONBlob: Encodable {
-    let data: Data
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(data)
-    }
-}
+private struct EmptyPayload: Codable {}

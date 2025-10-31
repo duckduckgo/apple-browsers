@@ -547,7 +547,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .scheduledDefaultBrowserAndDockPromptsInactiveUser:
             return .remoteDevelopment(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
         case .pinnedTabsViewRewrite:
-            return .disabled
+            return .internalOnly()
         }
     }
 }

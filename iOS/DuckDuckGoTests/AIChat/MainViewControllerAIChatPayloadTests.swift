@@ -38,9 +38,11 @@ import AIChat
 
 private class TestableMainViewController: MainViewController {
     var capturedOpenAIChatCalls: [(query: String?, autoSend: Bool, payload: Any?)] = []
+    var openAIChatExpectation: XCTestExpectation?
     
     override func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
         capturedOpenAIChatCalls.append((query: query, autoSend: autoSend, payload: payload))
+        openAIChatExpectation?.fulfill()
     }
 }
 
@@ -173,6 +175,8 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        sut?.capturedOpenAIChatCalls.removeAll()
+        sut?.openAIChatExpectation = nil
         sut = nil
         keyValueStore = nil
         try super.tearDownWithError()
@@ -182,13 +186,7 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
         // GIVEN
         let testExpectation = expectation(description: "openAIChat should be called with payload")
         let expectedPayload: AIChatPayload = ["testKey": "testValue", "anotherKey": 123]
-        
-        // Observe when openAIChat is called
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            if !self.sut.capturedOpenAIChatCalls.isEmpty {
-                testExpectation.fulfill()
-            }
-        }
+        sut.openAIChatExpectation = testExpectation
         
         // WHEN
         NotificationCenter.default.post(
@@ -200,8 +198,11 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
         // THEN
         wait(for: [testExpectation], timeout: 1.0)
         
-        XCTAssertEqual(sut.capturedOpenAIChatCalls.count, 1)
-        let call = sut.capturedOpenAIChatCalls.first!
+        XCTAssertEqual(sut.capturedOpenAIChatCalls.count, 1, "openAIChat should be called exactly once")
+        guard let call = sut.capturedOpenAIChatCalls.first else {
+            XCTFail("openAIChat was not called")
+            return
+        }
         XCTAssertNil(call.query)
         XCTAssertFalse(call.autoSend)
         
@@ -218,6 +219,7 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
         let testExpectation = expectation(description: "openAIChat should be called with payload and query")
         let expectedPayload: AIChatPayload = ["testKey": "testValue"]
         let expectedQuery = "test query"
+        sut.openAIChatExpectation = testExpectation
         
         // Create URL with query parameters
         var components = URLComponents(string: "https://duckduckgo.com")
@@ -226,13 +228,6 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
             URLQueryItem(name: AIChatURLParameters.autoSubmitPromptQueryName, value: AIChatURLParameters.autoSubmitPromptQueryValue)
         ]
         let interceptedURL = components?.url
-        
-        // Observe when openAIChat is called
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            if !self.sut.capturedOpenAIChatCalls.isEmpty {
-                testExpectation.fulfill()
-            }
-        }
         
         // WHEN
         NotificationCenter.default.post(
@@ -244,8 +239,11 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
         // THEN
         wait(for: [testExpectation], timeout: 1.0)
         
-        XCTAssertEqual(sut.capturedOpenAIChatCalls.count, 1)
-        let call = sut.capturedOpenAIChatCalls.first!
+        XCTAssertEqual(sut.capturedOpenAIChatCalls.count, 1, "openAIChat should be called exactly once")
+        guard let call = sut.capturedOpenAIChatCalls.first else {
+            XCTFail("openAIChat was not called")
+            return
+        }
         XCTAssertEqual(call.query, expectedQuery)
         XCTAssertTrue(call.autoSend)
         
@@ -259,13 +257,7 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
     func testWhenUrlInterceptAIChatNotificationPostedWithoutPayload_ThenOpenAIChatIsCalledWithoutPayload() {
         // GIVEN
         let testExpectation = expectation(description: "openAIChat should be called without payload")
-        
-        // Observe when openAIChat is called
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            if !self.sut.capturedOpenAIChatCalls.isEmpty {
-                testExpectation.fulfill()
-            }
-        }
+        sut.openAIChatExpectation = testExpectation
         
         // WHEN
         NotificationCenter.default.post(
@@ -277,8 +269,11 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
         // THEN
         wait(for: [testExpectation], timeout: 1.0)
         
-        XCTAssertEqual(sut.capturedOpenAIChatCalls.count, 1)
-        let call = sut.capturedOpenAIChatCalls.first!
+        XCTAssertEqual(sut.capturedOpenAIChatCalls.count, 1, "openAIChat should be called exactly once")
+        guard let call = sut.capturedOpenAIChatCalls.first else {
+            XCTFail("openAIChat was not called")
+            return
+        }
         XCTAssertNil(call.query)
         XCTAssertFalse(call.autoSend)
         XCTAssertNil(call.payload)

@@ -88,6 +88,8 @@ struct OnboardingView: View {
                                 appIconPickerView
                             case .chooseAddressBarPositionDialog:
                                 addressBarPreferenceSelectionView
+                            case .chooseSearchExperienceDialog:
+                                searchExperienceSelectionView
                             }
                         }
                     }
@@ -198,6 +200,17 @@ struct OnboardingView: View {
         .onboardingDaxDialogStyle()
     }
 
+#warning("TOOD: pass proper params to animateTitle & showContent")
+    private var searchExperienceSelectionView: some View {
+        SearchExperienceContent(
+//            animateTitle: true,
+//            showContent: true,
+            isSkipped: $model.isSkipped,
+            action: model.selectSearchExperienceAction
+        )
+        .onboardingDaxDialogStyle()
+    }
+
     private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {
         // Hide content of Intro dialog before animating
         model.introState.showIntroViewContent = false
@@ -263,6 +276,7 @@ extension OnboardingView.ViewState.Intro {
         case addToDockPromoDialog
         case chooseAppIconDialog
         case chooseAddressBarPositionDialog
+        case chooseSearchExperienceDialog
     }
 
     struct StepInfo: Equatable {
@@ -318,7 +332,8 @@ struct OnboardingView_Previews: PreviewProvider {
                         videoPlayer: VideoPlayerCoordinator(configuration: VideoPlayerConfiguration()),
                         eventMapper: SystemSettingsPiPTutorialPixelHandler(),
                     ),
-                    daxDialogsManager: MockDaxDialogDisabling()
+                    daxDialogsManager: MockDaxDialogDisabling(),
+                    aiChatSettingsProvider: AIChatSettings()
                 )
             )
             .preferredColorScheme($0)

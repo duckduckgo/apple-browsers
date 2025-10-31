@@ -19,13 +19,22 @@
 
 import SwiftUI
 import SystemSettingsPiPTutorial
+import AIChat
 
 final class OnboardingIntroViewController: UIHostingController<OnboardingView>, Onboarding {
     weak var delegate: OnboardingDelegate?
     private let viewModel: OnboardingIntroViewModel
 
-    init(onboardingPixelReporter: OnboardingPixelReporting, systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging, daxDialogsManager: ContextualDaxDialogDisabling) {
-        viewModel = OnboardingIntroViewModel(pixelReporter: onboardingPixelReporter, systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager, daxDialogsManager: daxDialogsManager)
+    init(onboardingPixelReporter: OnboardingPixelReporting,
+         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
+         daxDialogsManager: ContextualDaxDialogDisabling,
+         aiChatSettings: AIChatSettingsProvider) {
+        viewModel = OnboardingIntroViewModel(
+            pixelReporter: onboardingPixelReporter,
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+            daxDialogsManager: daxDialogsManager,
+            aiChatSettingsProvider: aiChatSettings
+        )
         let rootView = OnboardingView(model: viewModel)
         super.init(rootView: rootView)
         

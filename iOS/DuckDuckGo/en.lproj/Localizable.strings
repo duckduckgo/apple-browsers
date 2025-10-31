@@ -2353,6 +2353,9 @@ https://duckduckgo.com/mac";
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Hi there.\n\nReady for a faster browser that keeps you protected?";
 
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Choose your search experience";
+
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Let’s do it!";
 

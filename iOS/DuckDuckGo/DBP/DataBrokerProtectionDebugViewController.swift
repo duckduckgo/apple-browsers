@@ -477,11 +477,13 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             let row = DebugActionRows(rawValue: indexPath.row)
             cell.textLabel?.text = row?.title
 
+            // Show job execution state for pending job actions
             if let row = row, isJobExecutionAction(row) {
                 let hasJobs = hasJobsForAction(row)
 
                 switch jobExecutionState {
                 case .idle:
+                    // Disable cell if no jobs available
                     if !hasJobs {
                         cell.textLabel?.textColor = .systemGray3
                         cell.detailTextLabel?.text = nil
@@ -492,6 +494,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                         cell.selectionStyle = .default
                     }
                 case .running:
+                    // Disable all job action rows while running
                     cell.textLabel?.textColor = .systemGray
                     cell.detailTextLabel?.text = "Running..."
                     cell.selectionStyle = .none
@@ -519,14 +522,16 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             case .webURL:
                 let urlType = webUISettings.selectedURLType
                 let customURL = webUISettings.customURL
+                var detailText = ""
 
                 if urlType == .production {
-                    cell.detailTextLabel?.text = "Production: \(webUISettings.productionURL)"
+                    detailText = "Production: \(webUISettings.productionURL)"
                 } else if urlType == .custom, let customURL {
-                    cell.detailTextLabel?.text = "Custom: \(customURL)"
+                    detailText = "Custom: \(customURL)"
                 } else {
-                    cell.detailTextLabel?.text = "Unsupported URL type: \(urlType)"
+                    detailText = "Unsupported URL type: \(urlType)"
                 }
+                cell.detailTextLabel?.text = detailText
             case .none:
                 break
             }

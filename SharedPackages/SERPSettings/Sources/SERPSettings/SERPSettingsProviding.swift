@@ -181,4 +181,5 @@ public extension SERPSettingsProviding {
 #endif
 }
 
-private struct EmptyPayload: Codable {}
+/// Internal for testing purposes
+struct EmptyPayload: Codable {}

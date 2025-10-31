@@ -85,13 +85,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         let result = try await handler([:], WKScriptMessage())
 
-        // Then - Should return empty JSON object because no data is stored
-        let emptyJSON = try JSONSerialization.data(withJSONObject: [:], options: [])
-        if let result = result as? JSONBlob {
-            XCTAssertEqual(result.data, emptyJSON)
-        } else {
-            XCTFail("The result should be a JSONBlob")
-        }
+        XCTAssertTrue(result is EmptyPayload, "Result should be an empty payload, not any other object.")
     }
 
     func testGetNativeSettingsReturnsPersistedSettings_whenSettingsArePersistedInNative() async throws {

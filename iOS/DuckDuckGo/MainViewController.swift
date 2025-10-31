@@ -1918,6 +1918,7 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
                 let interceptedURL = notification.userInfo?[TabURLInterceptorParameter.interceptedURL] as? URL
+                let payload = notification.object as? AIChatPayload
                 
                 var query: String?
                 var shouldAutoSend = false
@@ -1929,9 +1930,9 @@ class MainViewController: UIViewController {
                 }
                 
                 if let query = query {
-                    self?.openAIChat(query, autoSend: shouldAutoSend)
+                    self?.openAIChat(query, autoSend: shouldAutoSend, payload: payload)
                 } else {
-                    self?.openAIChat()
+                    self?.openAIChat(payload: payload)
                 }
             }
             .store(in: &urlInterceptorCancellables)

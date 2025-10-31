@@ -68,6 +68,7 @@ struct HealthOverviewMetrics {
 
     struct OperationMetrics {
         let count: Int
+        let recentCount: Int
         let lastRunDate: Date?
         let upcomingRunDate: Date?
     }
@@ -160,7 +161,8 @@ final class HealthOverviewSectionPresenter {
             rows.append(
                 HealthOverviewRowViewModel(title: "Scan Operations",
                                            subtitle: subtitle(lastRun: metrics.scanOperations.lastRunDate,
-                                                              upcoming: metrics.scanOperations.upcomingRunDate),
+                                                              upcoming: metrics.scanOperations.upcomingRunDate,
+                                                              count: metrics.scanOperations.recentCount),
                                            style: .subtitle,
                                            accessoryText: "\(metrics.scanOperations.count)")
             )
@@ -175,7 +177,8 @@ final class HealthOverviewSectionPresenter {
             rows.append(
                 HealthOverviewRowViewModel(title: "Opt-Out Operations",
                                            subtitle: subtitle(lastRun: metrics.optOutOperations.lastRunDate,
-                                                              upcoming: metrics.optOutOperations.upcomingRunDate),
+                                                              upcoming: metrics.optOutOperations.upcomingRunDate,
+                                                              count: metrics.optOutOperations.recentCount),
                                            style: .subtitle,
                                            accessoryText: "\(metrics.optOutOperations.count)")
             )
@@ -237,9 +240,9 @@ Duration max: \(formattedDuration(metrics.backgroundTaskEvents.durationMaxMs))
                                         earliestRunDate: hasScheduledBackgroundTask ? earliestRunDate : nil),
             extractedProfilesCount: extractedProfilesCount,
             extractedProfilesBreakdown: activeBrokerData.displayString(),
-            optOutOperations: optOutJobs.operationMetrics(),
+            optOutOperations: optOutJobs.operationMetrics(from: activeBrokerData, using: .optOut),
             optOutWeeklySummary: StalledOperationCalculator.optOut.calculate(from: activeBrokerData),
-            scanOperations: scanJobs.operationMetrics(),
+            scanOperations: scanJobs.operationMetrics(from: activeBrokerData, using: .scan),
             scanWeeklySummary: StalledOperationCalculator.scan.calculate(from: activeBrokerData),
             optOutAttemptsCount: recentOptOutAttempts.count,
             optOutAttemptsBreakdown: recentOptOutAttempts.displayString(),
@@ -262,10 +265,11 @@ Duration max: \(formattedDuration(metrics.backgroundTaskEvents.durationMaxMs))
         return String(format: "%.1fs", seconds)
     }
 
-    private func subtitle(lastRun: Date?, upcoming: Date?) -> String {
+    private func subtitle(lastRun: Date?, upcoming: Date?, count: Int) -> String {
         return """
 Last run: \(formattedDate(lastRun))            
 Upcoming: \(formattedDate(upcoming))
+Last 7 days: \(count) operations
 """
     }
 }
@@ -311,10 +315,11 @@ private extension [String: Int] {
 }
 
 private extension Array where Element: BrokerJobData {
-    func operationMetrics() -> HealthOverviewMetrics.OperationMetrics {
+    func operationMetrics(from profileQueryData: [BrokerProfileQueryData], using calculator: StalledOperationCalculator) -> HealthOverviewMetrics.OperationMetrics {
         let activeJobs = filter { !$0.isRemovedByUser }
         return HealthOverviewMetrics.OperationMetrics(
             count: activeJobs.count,
+            recentCount: calculator.calculate(from: profileQueryData).total,
             lastRunDate: compactMap { $0.lastRunDate }.max(),
             upcomingRunDate: activeJobs.compactMap { $0.preferredRunDate }.min()
         )

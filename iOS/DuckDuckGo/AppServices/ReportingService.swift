@@ -237,15 +237,23 @@ struct DefaultBucketsSettingsProvider: BucketsSettingsProviding {
 
 struct AttributedMetricDefaultBrowserProvider: AttributedMetricDefaultBrowserProviding {
 
-    let defaultBrowserService = SystemCheckDefaultBrowserService(application: UIApplication.shared)
+    let defaultBrowserManager = DefaultBrowserManager(defaultBrowserInfoStore: DefaultBrowserInfoStore(),
+                                                      defaultBrowserEventMapper: DefaultBrowserPromptManagerDebugPixelHandler(), defaultBrowserChecker: SystemCheckDefaultBrowserService(application: UIApplication.shared))
 
     var isDefaultBrowser: Bool {
-        let result = defaultBrowserService.isDefaultWebBrowser()
+        let result = defaultBrowserManager.defaultBrowserInfo()
         switch result {
-        case .success:
-            return true
-        case .failure:
-            return false
+        case .failure(let error):
+            switch error {
+            case .notSupportedOnCurrentOSVersion:
+                return false
+            case .unknownError:
+                return false
+            case .rateLimitReached(let updatedStoredInfo):
+                return updatedStoredInfo?.isDefaultBrowser ?? false
+            }
+        case .success(newInfo: let newInfo):
+            return newInfo.isDefaultBrowser
         }
     }
 }

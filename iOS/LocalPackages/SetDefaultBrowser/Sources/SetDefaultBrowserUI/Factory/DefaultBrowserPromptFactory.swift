@@ -19,6 +19,7 @@
 
 import Foundation
 import SetDefaultBrowserCore
+import UIKit
 
 @MainActor
 public enum DefaultBrowserPromptFactory {
@@ -46,8 +47,8 @@ public enum DefaultBrowserPromptFactory {
 
         let defaultBrowserManager = DefaultBrowserManager(
             defaultBrowserInfoStore: checkDefaultBrowserContextStorage,
-            defaultBrowserEventMapper: checkDefaultBrowserDebugEventMapper
-        )
+            defaultBrowserEventMapper: checkDefaultBrowserDebugEventMapper,
+            defaultBrowserChecker: SystemCheckDefaultBrowserService(application: UIApplication.shared))
 
         let promptTypeDecider = DefaultBrowserPromptTypeDecider(
             featureFlagger: featureFlagger,

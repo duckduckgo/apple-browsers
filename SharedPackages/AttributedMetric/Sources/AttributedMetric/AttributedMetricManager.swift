@@ -107,17 +107,17 @@ public final class AttributedMetricManager {
         return Int(dateProvider.now().timeIntervalSince(installDate) / .day)
     }
 
-    lazy var originOrInstall: (origin: String?, installDate: String?) = {
+    var originOrInstall: (origin: String?, installDate: String?) {
         if let origin = originProvider?.origin {
             return (origin, nil)
         } else {
-            guard var installDate = dataStorage.installDate else {
+            guard let installDate = dataStorage.installDate else {
                 assertionFailure("Missing install date")
                 return (nil, nil)
             }
             return (nil, installDate.ISO8601ETFormat())
         }
-    }()
+    }
 
     var isDefaultBrowser: Bool { defaultBrowserProvider.isDefaultBrowser }
 
@@ -211,7 +211,12 @@ public final class AttributedMetricManager {
                 Logger.attributedMetric.error("Failed to bucket week value")
                 return
             }
-            pixelKit.fire(AttributedMetricPixel.userRetentionWeek(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucket.value, bucketVersion: bucket.version), frequency: .legacyDailyNoSuffix)
+            pixelKit.fire(AttributedMetricPixel.userRetentionWeek(origin: originOrInstall.origin,
+                                                                  installDate: originOrInstall.installDate,
+                                                                  defaultBrowser: isDefaultBrowser,
+                                                                  count: bucket.value,
+                                                                  bucketVersion: bucket.version),
+                          frequency: .legacyDailyNoSuffix)
             dataStorage.lastRetentionThreshold = timePastFromInstall
         case .months(let month):
             Logger.attributedMetric.debug("\(month) month(s) from installation")
@@ -219,7 +224,12 @@ public final class AttributedMetricManager {
                 Logger.attributedMetric.error("Failed to bucket month value")
                 return
             }
-            pixelKit.fire(AttributedMetricPixel.userRetentionMonth(origin: originOrInstall.origin, installDate: originOrInstall.installDate, defaultBrowser: isDefaultBrowser, count: bucket.value, bucketVersion: bucket.version), frequency: .legacyDailyNoSuffix)
+            pixelKit.fire(AttributedMetricPixel.userRetentionMonth(origin: originOrInstall.origin,
+                                                                   installDate: originOrInstall.installDate,
+                                                                   defaultBrowser: isDefaultBrowser,
+                                                                   count: bucket.value,
+                                                                   bucketVersion: bucket.version),
+                          frequency: .legacyDailyNoSuffix)
             dataStorage.lastRetentionThreshold = timePastFromInstall
         }
     }
@@ -444,3 +454,4 @@ public final class AttributedMetricManager {
         pixelKit.fire(AttributedMetricPixel.userSyncedDevice(origin: originOrInstall.origin, installDate: originOrInstall.installDate, devices: bucket.value, bucketVersion: bucket.version), frequency: .standard)
     }
 }
+

@@ -40,7 +40,7 @@ extension TabViewController {
                 let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
                 ActionMessageView.present(
                     message: UserText.webSaveFavoriteDone,
-                    actionTitle:  UserText.actionGenericEdit,
+                    actionTitle: UserText.actionGenericEdit,
                     presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
                     onAction: {
                         self.delegate?.tabDidRequestEditBookmark(tab: self)

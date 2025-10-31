@@ -50,7 +50,7 @@ final class AIChatFullModeOmniBrandingView: UIView {
     private func setupViews() {
         backgroundColor = .clear
 
-        containerView.backgroundColor = .white
+        containerView.backgroundColor = .clear
         containerView.layer.cornerRadius = 8
         containerView.clipsToBounds = true
         addSubview(containerView)

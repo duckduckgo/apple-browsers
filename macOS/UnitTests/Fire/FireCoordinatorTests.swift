@@ -19,25 +19,41 @@
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
 import PixelKitTestingUtilities
-import History
+import Common
 
 @MainActor
 struct FireCoordinatorTests {
 
     let pixelFiring = PixelKitMock()
     let tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
+    let tld = TLD()
+    let historyCoordinator = HistoryCoordinatingMock()
+    let windowControllersManager = MockWindowControllerManager()
+    let faviconManagement = FaviconManagerMock()
 
     private func makeCoordinator() -> FireCoordinator {
-        return FireCoordinator(tld: Application.appDelegate.tld,
+        let fire = Fire(cacheManager: WebCacheManagerMock(),
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: PermissionManagerMock(),
+                        windowControllersManager: windowControllersManager,
+                        faviconManagement: faviconManagement,
+                        tld: tld,
+                        isAppActiveProvider: { true })
+
+        let fireViewModel = FireViewModel(fire: fire)
+        return FireCoordinator(tld: tld,
                                featureFlagger: MockFeatureFlagger(),
-                               historyCoordinating: Application.appDelegate.historyCoordinator,
+                               historyCoordinating: historyCoordinator,
                                visualizeFireAnimationDecider: nil,
                                onboardingContextualDialogsManager: nil,
                                fireproofDomains: MockFireproofDomains(),
-                               faviconManagement: FaviconManagerMock(),
-                               windowControllersManager: MockWindowControllerManager(),
+                               faviconManagement: faviconManagement,
+                               windowControllersManager: windowControllersManager,
                                pixelFiring: pixelFiring,
-                               tabViewModelGetter: ({ _ in tabCollectionViewModel }))
+                               historyProvider: MockHistoryViewDataProvider(),
+                               fireViewModel: fireViewModel,
+                               tabViewModelGetter: ({ _ in tabCollectionViewModel }),
+                               fireDialogViewFactory: { _ in TestPresenter() })
     }
 
     @Test func testHandleDialogResult_FiresExpectedPixels_ForCurrentTab_IncludingChatHistory() async throws {
@@ -145,4 +161,8 @@ struct FireCoordinatorTests {
         #expect(pixelFiring.actualFireCalls == pixelFiring.expectedFireCalls)
     }
 
+}
+
+private final class TestPresenter: FireDialogViewPresenting {
+    func present(in window: NSWindow, completion: (() -> Void)?) { }
 }

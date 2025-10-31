@@ -24,10 +24,12 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     private let bannerWillShowDateMenuItem = NSMenuItem(title: "")
     private let promptPermanentlyDismissedMenuItem = NSMenuItem(title: "")
     private let numberOfBannersShownMenuItem = NSMenuItem(title: "")
+    private let inactiveDaysMenuItem = NSMenuItem(title: "")
     private let store = NSApp.delegateTyped.defaultBrowserAndDockPromptService.store
     private let debugStore = DefaultBrowserAndDockPromptDebugStore()
     private let defaultBrowserAndDockPromptFeatureFlagger = NSApp.delegateTyped.defaultBrowserAndDockPromptService.featureFlagger
     private let localStatisticsStore = LocalStatisticsStore()
+    private let userActivityManager = NSApp.delegateTyped.defaultBrowserAndDockPromptService.userActivityManager
 
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -40,7 +42,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     init() {
         super.init(title: "")
 
-        guard defaultBrowserAndDockPromptFeatureFlagger.isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled else { return }
+        guard defaultBrowserAndDockPromptFeatureFlagger.isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled || defaultBrowserAndDockPromptFeatureFlagger.isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled else { return }
 
         buildItems {
             NSMenuItem(title: "Override Today's Date", action: #selector(simulateCurrentDate))
@@ -52,6 +54,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
             bannerWillShowDateMenuItem
             numberOfBannersShownMenuItem
             promptPermanentlyDismissedMenuItem
+            inactiveDaysMenuItem
         }
     }
 
@@ -124,6 +127,11 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
             }
         }
 
+        func updateInactiveUserModalMenuInfo() {
+            let inactiveDays = userActivityManager.numberOfInactiveDays()
+            inactiveDaysMenuItem.title = "Number of inactive days: \(inactiveDays)"
+        }
+
         simulatedTodayDateMenuItem.title = "Today's Date: \(Self.dateFormatter.string(from: debugStore.simulatedTodayDate))"
 
         // Update Popover Menu Info
@@ -131,6 +139,9 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
 
         // Update Banner Info
         updateBannerMenuInfo()
+
+        // Update Inactive User Modal Info
+        updateInactiveUserModalMenuInfo()
     }
 
     func showDatePickerAlert(onValueChange: (Date?) -> Void) {

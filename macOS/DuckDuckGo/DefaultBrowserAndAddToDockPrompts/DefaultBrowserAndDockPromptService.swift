@@ -24,7 +24,7 @@ final class DefaultBrowserAndDockPromptService {
     let presenter: DefaultBrowserAndDockPromptPresenting
     let featureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let store: DefaultBrowserAndDockPromptKeyValueStore
-    private let userActivityManager: DefaultBrowserAndDockPromptUserActivityManager
+    let userActivityManager: DefaultBrowserAndDockPromptUserActivityManager
 
     init(
         featureFlagger: FeatureFlagger,

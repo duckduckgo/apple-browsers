@@ -29,7 +29,7 @@ protocol DefaultBrowserAndDockPromptUserActivityStorage: AnyObject {
 
     /// Retrieves the currently stored user activity data.
     ///
-    /// - Returns: The current user activity data. If no activity has been saved, return an empty `DefaultBrowserPromptUserActivity`.
+    /// - Returns: The current user activity data. If no activity has been saved, return an empty `DefaultBrowserAndDockPromptUserActivity`.
     func currentActivity() -> DefaultBrowserAndDockPromptUserActivity
 }
 

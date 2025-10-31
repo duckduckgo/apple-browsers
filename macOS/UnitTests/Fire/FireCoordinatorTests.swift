@@ -19,6 +19,7 @@
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
 import PixelKitTestingUtilities
+import History
 
 @MainActor
 struct FireCoordinatorTests {
@@ -35,14 +36,15 @@ struct FireCoordinatorTests {
                                fireproofDomains: MockFireproofDomains(),
                                faviconManagement: FaviconManagerMock(),
                                windowControllersManager: MockWindowControllerManager(),
-                               pixelFiring: pixelFiring)
+                               pixelFiring: pixelFiring,
+                               tabViewModelGetter: ({ _ in tabCollectionViewModel }))
     }
 
     @Test func testHandleDialogResult_FiresExpectedPixels_ForCurrentTab_IncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
         pixelFiring.expectedFireCalls = [
-            .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
             .init(pixel: AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount),
+            .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
             .init(pixel: GeneralPixel.fireButton(option: .tab), frequency: .standard)
         ]
 
@@ -76,8 +78,8 @@ struct FireCoordinatorTests {
     @Test func testHandleDialogResult_FiresExpectedPixels_ForCurrentWindow_IncludingChatHistory() async throws {
         let coordinator = makeCoordinator()
         pixelFiring.expectedFireCalls = [
-            .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
             .init(pixel: AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount),
+            .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
             .init(pixel: GeneralPixel.fireButton(option: .window), frequency: .standard)
         ]
 
@@ -108,11 +110,11 @@ struct FireCoordinatorTests {
         #expect(pixelFiring.actualFireCalls == pixelFiring.expectedFireCalls)
     }
 
-    @Test func testHandleDialogResult_FiresExpectedPixels_ForAllData_IncludingChatHistory() async throws {
+    @Test func testHandleDialogResult_FiresExpectedPixels_ForAllData_IncludingChatHistory_WhenAllHistoryIsSelected() async throws {
         let coordinator = makeCoordinator()
         pixelFiring.expectedFireCalls = [
-            .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
             .init(pixel: AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount),
+            .init(pixel: GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix),
             .init(pixel: GeneralPixel.fireButton(option: .allSites), frequency: .standard)
         ]
 

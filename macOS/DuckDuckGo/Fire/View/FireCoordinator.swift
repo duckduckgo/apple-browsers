@@ -246,7 +246,9 @@ extension FireCoordinator {
 
     @MainActor
     func handleDialogResult(_ result: FireDialogResult, tabCollectionViewModel: TabCollectionViewModel?, isAllHistorySelected: Bool) async {
-
+        if result.includeChatHistory {
+            pixelFiring?.fire(AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount)
+        }
         // If specific visits are provided (e.g., deleting for a day or a selection), burn only those visits
         if result.clearingOption == .allData /* not Current Tab or Window */,
            result.includeHistory, !isAllHistorySelected,
@@ -262,9 +264,6 @@ extension FireCoordinator {
             return
         }
         pixelFiring?.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
-        if result.includeChatHistory {
-            pixelFiring?.fire(AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount)
-        }
         switch result.clearingOption {
         case .currentTab:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .tab))

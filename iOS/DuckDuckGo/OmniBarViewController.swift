@@ -379,8 +379,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
     }
 
-    func reapplyState() {
-        refreshState(state, force: true)
+    func refreshCustomizableButton() {
+        applyCustomization()
     }
 
     func hidePrivacyIcon() {
@@ -430,12 +430,12 @@ class OmniBarViewController: UIViewController, OmniBar {
         cancelAllAnimations()
     }
 
-    private func refreshState(_ newState: any OmniBarState, force: Bool = false) {
+    private func refreshState(_ newState: any OmniBarState) {
         let oldState: OmniBarState = self.state
-        if force || state.requiresUpdate(transitioningInto: newState) {
+        if state.requiresUpdate(transitioningInto: newState) {
             Logger.general.debug("OmniBar entering \(newState.description) from \(self.state.description)")
 
-            if force || state.isDifferentState(than: newState) {
+            if state.isDifferentState(than: newState) {
                 if newState.clearTextOnStart {
                     clear()
                 }

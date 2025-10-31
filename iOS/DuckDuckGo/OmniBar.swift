@@ -68,8 +68,7 @@ protocol OmniBar: AnyObject {
     func hidePrivacyIcon()
     func resetPrivacyIcon(for url: URL?)
 
-    /// Reapplies the current state explicitly, for example in case customization has changed it.
-    func reapplyState()
+    func refreshCustomizableButton()
 
     /// Sets the dynamic Dax Easter Egg logo URL for display in the omnibar privacy icon.
     /// When a URL is provided, the privacy icon will load and display the dynamic logo image.

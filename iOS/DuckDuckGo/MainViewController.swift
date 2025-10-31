@@ -1695,6 +1695,7 @@ class MainViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         ViewHighlighter.updatePositions()
+        omniBar.refreshCustomizableButton()
     }
 
     private func showNotification(title: String, message: String, dismissHandler: @escaping NotificationView.DismissHandler) {
@@ -3867,7 +3868,7 @@ extension MainViewController {
     }
 
     func applyCustomizationForAddressBar(_ state: MobileCustomization.State) {
-        omniBar.reapplyState()
+        omniBar.refreshCustomizableButton()
     }
 
     @objc private func performCustomizationActionForToolbar() {
@@ -3941,11 +3942,11 @@ extension MainViewController {
 
         case .addEditBookmark:
             addOrEditBookmarkForCurrentTab()
-            omniBar.reapplyState()
+            omniBar.refreshCustomizableButton()
 
         case .addEditFavorite:
             addOrEditFavoriteForCurrentTab()
-            omniBar.reapplyState()
+            omniBar.refreshCustomizableButton()
 
         case .fire:
             onFirePressed()

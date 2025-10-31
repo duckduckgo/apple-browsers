@@ -64,7 +64,7 @@ final class MockOmniBar: OmniBar {
     func cancelAllAnimations() { }
     func completeAnimationForDaxDialog() { }
     func setDaxEasterEggLogoURL(_ logoURL: String?) { }
-    func reapplyState() {}
+    func refreshCustomizableButton() {}
 
     final class MockOmniBarView: UIView, OmniBarView {
         required init?(coder: NSCoder) {

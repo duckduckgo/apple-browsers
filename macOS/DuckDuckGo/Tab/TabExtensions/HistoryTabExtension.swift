@@ -201,6 +201,26 @@ extension HistoryCoordinating {
 
 extension HistoryTabExtension: NavigationResponder {
 
+    func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
+        let unknownSource = !navigationAction.sourceFrame.url.isDuckURLScheme && !navigationAction.sourceFrame.url.isEmpty
+        let isSpecialURL = navigationAction.url.isHistory || navigationAction.url.isNTP
+        let isAllowedNavigationType: Bool = {
+            switch navigationAction.navigationType {
+            case .backForward, .custom:
+                return true
+            default:
+                return false
+            }
+        }()
+        let shouldBeCancelled = !isAllowedNavigationType && isSpecialURL && unknownSource
+
+        if shouldBeCancelled {
+            return .cancel
+        }
+
+        return .next
+    }
+
     @MainActor
     func didCommit(_ navigation: Navigation) {
         guard navigation.url == self.url,

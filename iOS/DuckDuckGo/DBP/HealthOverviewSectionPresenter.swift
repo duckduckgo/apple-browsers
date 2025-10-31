@@ -310,7 +310,9 @@ private extension [BrokerProfileQueryData] {
 private extension [String: Int] {
     func displayString() -> String {
         guard !isEmpty else { return "-" }
-        return map { "\($0.key) (\($0.value))" }.joined(separator: " · ")
+        return sorted { ($0.value == $1.value) ? ($0.key < $1.key) : ($0.value > $1.value) }
+            .map { "\($0.key) (\($0.value))" }
+            .joined(separator: " · ")
     }
 }
 

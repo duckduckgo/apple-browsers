@@ -36,7 +36,8 @@ final class WhatsNewCoordinatorTests {
         let mockHandler = MockRemoteMessagingActionHandler()
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
-            remoteMessageActionHandler: mockHandler
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false
         )
 
         // WHEN
@@ -48,24 +49,46 @@ final class WhatsNewCoordinatorTests {
         #expect(mockStore.capturedSurfaces == .modal)
     }
 
-    @Test("Check Modal Configuration Has Correct Properties")
-    func whenModalIsProvidedThenConfigurationHasCorrectProperties() {
+    @Test("Check View Controller Sets Page Sheet Presentation Style On iPhone")
+    func whenIsIPadFalseThenViewControllerUsesPageSheetPresentationStyle() {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage()
         let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
         let mockHandler = MockRemoteMessagingActionHandler()
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
-            remoteMessageActionHandler: mockHandler
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false
         )
 
         // WHEN
         let configuration = coordinator.provideModalPrompt()
 
         // THEN
-        #expect(configuration?.presentationStyle == .pageSheet)
-        #expect(configuration?.transitionStyle == .coverVertical)
-        #expect(configuration?.shouldDisablePullDownToDismiss == false)
+        #expect(configuration?.viewController.modalPresentationStyle == .pageSheet)
+        #expect(configuration?.viewController.modalTransitionStyle == .coverVertical)
+        #expect(configuration?.animated == true)
+        #expect(configuration?.viewController is WhatsNewViewController)
+    }
+
+    @Test("Check View Controller Sets Form Sheet Presentation Style On iPad")
+    func whenIsIPadTrueThenViewControllerUsesFormSheetPresentationStyle() {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage()
+        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let coordinator = WhatsNewCoordinator(
+            remoteMessageStore: mockStore,
+            remoteMessageActionHandler: mockHandler,
+            isIPad: true
+        )
+
+        // WHEN
+        let configuration = coordinator.provideModalPrompt()
+
+        // THEN
+        #expect(configuration?.viewController.modalPresentationStyle == .formSheet)
+        #expect(configuration?.viewController.modalTransitionStyle == .coverVertical)
         #expect(configuration?.animated == true)
         #expect(configuration?.viewController is WhatsNewViewController)
     }
@@ -77,7 +100,8 @@ final class WhatsNewCoordinatorTests {
         let mockHandler = MockRemoteMessagingActionHandler()
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
-            remoteMessageActionHandler: mockHandler
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false
         )
 
         // WHEN
@@ -103,7 +127,8 @@ final class WhatsNewCoordinatorTests {
         let mockHandler = MockRemoteMessagingActionHandler()
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
-            remoteMessageActionHandler: mockHandler
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false
         )
 
         // WHEN
@@ -121,7 +146,8 @@ final class WhatsNewCoordinatorTests {
         let mockHandler = MockRemoteMessagingActionHandler()
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
-            remoteMessageActionHandler: mockHandler
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false
         )
         _ = coordinator.provideModalPrompt()
 
@@ -143,7 +169,8 @@ final class WhatsNewCoordinatorTests {
         let mockHandler = MockRemoteMessagingActionHandler()
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
-            remoteMessageActionHandler: mockHandler
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false
         )
         _ = coordinator.provideModalPrompt()
 
@@ -163,7 +190,8 @@ final class WhatsNewCoordinatorTests {
         let mockHandler = MockRemoteMessagingActionHandler()
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
-            remoteMessageActionHandler: mockHandler
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false
         )
 
         // WHEN - Call didPresentModal without calling provideModalPrompt first
@@ -191,7 +219,8 @@ struct WhatsNewCoordinatorActionHandlingTests {
 
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
-            remoteMessageActionHandler: mockHandler
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false
         )
 
         let configuration = try #require(coordinator.provideModalPrompt())
@@ -226,7 +255,8 @@ struct WhatsNewCoordinatorActionHandlingTests {
 
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
-            remoteMessageActionHandler: mockHandler
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false
         )
 
         // WHEN

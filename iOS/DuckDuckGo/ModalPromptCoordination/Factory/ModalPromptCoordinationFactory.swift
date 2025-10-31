@@ -34,10 +34,12 @@ enum ModalPromptCoordinationFactory {
         dependency: Dependency
     ) -> ModalPromptCoordinationService {
 
-        let newAddressBarPickerModalPromptProvider = makeNewAddressBarPickerModalPromptProvider(dependency: dependency)
+        let isIPad = DevicePlatform.isIpad
+
+        let newAddressBarPickerModalPromptProvider = makeNewAddressBarPickerModalPromptProvider(dependency: dependency, isIPad: isIPad)
         let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: dependency.defaultBrowserPromptPresenter)
         let winBackOfferModalPromptProvider = WinBackOfferModalPromptProvider()
-        let whatsNewModalPromptProvider = WhatsNewCoordinator(remoteMessageStore: dependency.remoteMessagingStore, remoteMessageActionHandler: dependency.remoteMessagingActionHandler)
+        let whatsNewModalPromptProvider = WhatsNewCoordinator(remoteMessageStore: dependency.remoteMessagingStore, remoteMessageActionHandler: dependency.remoteMessagingActionHandler, isIPad: isIPad)
 
         return ModalPromptCoordinationService(
             launchSourceManager: dependency.launchSourceManager,
@@ -59,7 +61,7 @@ enum ModalPromptCoordinationFactory {
 
 private extension ModalPromptCoordinationFactory {
 
-    static func makeNewAddressBarPickerModalPromptProvider(dependency: Dependency) -> NewAddressBarPickerModalPromptProvider {
+    static func makeNewAddressBarPickerModalPromptProvider(dependency: Dependency, isIPad: Bool) -> NewAddressBarPickerModalPromptProvider {
 
         let store = NewAddressBarPickerStore()
         let aiChatSettings = dependency.aiChatSettings
@@ -76,7 +78,7 @@ private extension ModalPromptCoordinationFactory {
             validator: validator,
             store: store,
             aiChatSettings: aiChatSettings,
-            isIPad: DevicePlatform.isIpad
+            isIPad: isIPad
         )
     }
 

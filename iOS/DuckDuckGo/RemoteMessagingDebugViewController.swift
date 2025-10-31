@@ -37,6 +37,7 @@ class RemoteMessagingDebugViewController: UIHostingController<RemoteMessagingDeb
 struct RemoteMessagingDebugRootView: View {
 
     @ObservedObject var model = RemoteMessagingDebugViewModel()
+    @State private var shareItem: ShareItem?
 
     var body: some View {
         List {
@@ -108,6 +109,12 @@ struct RemoteMessagingDebugRootView: View {
                 HStack {
                     Text("Recent Processing Logs")
                     Spacer()
+                    Button("Export") {
+                        shareItem = ShareItem(logs: model.getLogsText())
+                    }
+                    .font(.system(size: 14))
+                    .disabled(model.recentLogs.isEmpty || model.isLoadingLogs)
+
                     Button("Refresh") {
                         Task {
                             await model.fetchLogs()
@@ -125,7 +132,38 @@ struct RemoteMessagingDebugRootView: View {
             Button("Delete All", role: .destructive, action: model.deleteAll)
                 .disabled(model.messages.isEmpty && model.configInfo == nil)
         }
+        .sheet(item: $shareItem) { item in
+            ShareSheet(activityItems: [item.fileURL])
+        }
     }
+}
+
+struct ShareItem: Identifiable {
+    let id = UUID()
+    let fileURL: URL
+
+    init(logs: String) {
+        let fileName = "remote-messaging-logs-\(Date().timeIntervalSince1970).txt"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+
+        do {
+            try logs.write(to: tempURL, atomically: true, encoding: .utf8)
+            self.fileURL = tempURL
+        } catch {
+            // Fallback to a minimal file if writing fails
+            self.fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("error.txt")
+        }
+    }
+}
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 struct ConfigDebugModel {
@@ -273,10 +311,11 @@ class RemoteMessagingDebugViewModel: ObservableObject {
                 // the logs from that refresh - if you want to check logs further back then you can use the dedicated
                 // Log Viewer debug menu.
                 let logStore = try OSLogStore(scope: .currentProcessIdentifier)
-                let timeInterval = -TimeInterval.minutes(1)
-                let startDate = Date().addingTimeInterval(timeInterval)
                 let predicate = NSPredicate(format: "subsystem == 'Remote Messaging'")
-                let entries = try logStore.getEntries(at: logStore.position(date: startDate), matching: predicate)
+
+                let startDate = Date().addingTimeInterval(-TimeInterval.minutes(1))
+                let position = logStore.position(date: startDate)
+                let entries = try logStore.getEntries(at: position, matching: predicate)
 
                 let formatter = DateFormatter()
                 formatter.dateFormat = "HH:mm:ss"
@@ -297,6 +336,23 @@ class RemoteMessagingDebugViewModel: ObservableObject {
 
         recentLogs = logs
         isLoadingLogs = false
+    }
+
+    func getLogsText() -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .short
+        dateFormatter.timeStyle = .short
+        let exportDate = dateFormatter.string(from: Date())
+
+        var output = "Remote Messaging Debug Logs\n"
+        output += "Exported: \(exportDate)\n"
+        output += String(repeating: "=", count: 50) + "\n\n"
+
+        for log in recentLogs {
+            output += "[\(log.timestamp)] \(log.message)\n"
+        }
+
+        return output
     }
 
     private var notificationCancellable: AnyCancellable?

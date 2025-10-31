@@ -99,8 +99,8 @@ extension DataBrokerProtectionError: LocalizedError {
             return "Malformed URL"
         case .noActionFound:
             return "No action found"
-        case .actionFailed(_, let message):
-            return "Action failed: \(message)"
+        case .actionFailed(let actionID, let message):
+            return "Action failed: [\(actionID)] \(message)"
         case .parsingErrorObjectFailed:
             return "Parsing error object failed"
         case .unknown(let message):

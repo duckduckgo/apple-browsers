@@ -123,6 +123,16 @@ private struct FeedbackFormBodyView: View {
     }
 
     @ViewBuilder
+    func supportLink() -> some View {
+        Text(.init(UserText.pproFeedbackFormSupportText))
+            .onURLTap { _ in
+                Task {
+                    await viewModel.process(action: .contactSupportClick)
+                }
+            }
+    }
+
+    @ViewBuilder
     func issueDescriptionView() -> some View {
         FeedbackFormIssueDescriptionView {
             Text(LocalizedStringKey(UserText.pproFeedbackFormText1))
@@ -133,12 +143,7 @@ private struct FeedbackFormBodyView: View {
                     }
                 }
         } content: {
-            Text(UserText.pproFeedbackFormEmailLabel)
-                .multilineTextAlignment(.leading)
-                .lineLimit(nil)
-                .fixedSize(horizontal: false, vertical: true)
-            TextField(UserText.pproFeedbackFormEmailPlaceholder, text: $viewModel.userEmail)
-                .textFieldStyle(.roundedBorder)
+            supportLink()
         } footer: {
             Text(UserText.pproFeedbackFormText2)
             VStack(alignment: .leading) {

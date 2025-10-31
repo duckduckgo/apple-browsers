@@ -70,7 +70,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     // MARK: - Constraints
 
     private var trailingConstraintValueForSmallWidth: CGFloat {
-        if state.showAccessoryButton || state.showSettings {
+        if state.showAIChatButton || state.showSettings {
             return 14
         } else {
             return 4
@@ -116,7 +116,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.settingsButton.isPointerInteractionEnabled = true
         barView.cancelButton.isPointerInteractionEnabled = true
         barView.bookmarksButton.isPointerInteractionEnabled = true
-        barView.accessoryButton.isPointerInteractionEnabled = true
+        barView.aiChatButton.isPointerInteractionEnabled = true
         barView.menuButton.isPointerInteractionEnabled = true
         barView.refreshButton.isPointerInteractionEnabled = true
         barView.shareButton.isPointerInteractionEnabled = true
@@ -201,8 +201,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onBookmarksPressed = { [weak self] in
             self?.onBookmarksPressed()
         }
-        barView.onAccessoryPressed = { [weak self] in
-            self?.onAccessoryPressed()
+        barView.onAIChatPressed = { [weak self] in
+            self?.onAIChatPressed()
         }
         barView.onDismissPressed = { [weak self] in
             self?.onDismissPressed()
@@ -307,12 +307,6 @@ class OmniBarViewController: UIViewController, OmniBar {
     func selectTextToEnd(_ offset: Int) {
         guard let fromPosition = textField.position(from: textField.beginningOfDocument, offset: offset) else { return }
         textField.selectedTextRange = textField.textRange(from: fromPosition, to: textField.endOfDocument)
-    }
-
-    func updateAccessoryType(_ type: OmniBarAccessoryType) {
-        DispatchQueue.main.async {
-            self.barView.accessoryType = type
-        }
     }
 
     func showOrScheduleCookiesManagedNotification(isCosmetic: Bool) {
@@ -467,7 +461,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isBackButtonHidden = !state.showBackButton
         barView.isForwardButtonHidden = !state.showForwardButton
         barView.isBookmarksButtonHidden = !state.showBookmarksButton
-        barView.isAccessoryButtonHidden = !state.showAccessoryButton
+        barView.isAIChatButtonHidden = !state.showAIChatButton
 
     }
 
@@ -637,8 +631,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         omniDelegate?.onBookmarksPressed()
     }
 
-    private func onAccessoryPressed() {
-        omniDelegate?.onAccessoryPressed(accessoryType: barView.accessoryType)
+    private func onAIChatPressed() {
+        omniDelegate?.onAIChatPressed()
     }
 
     private func onDismissPressed() {

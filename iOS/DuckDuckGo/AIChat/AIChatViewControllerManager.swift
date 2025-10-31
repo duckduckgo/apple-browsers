@@ -52,6 +52,7 @@ final class AIChatViewControllerManager {
     private let downloadsDirectoryHandler: DownloadsDirectoryHandling
     private let userAgentManager: AIChatUserAgentProviding
     private let featureFlagger: FeatureFlagger
+    private let featureDiscovery: FeatureDiscovery
     private let experimentalAIChatManager: ExperimentalAIChatManager
     private let aiChatSettings: AIChatSettingsProvider
     private var cancellables = Set<AnyCancellable>()
@@ -65,6 +66,7 @@ final class AIChatViewControllerManager {
          userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
          experimentalAIChatManager: ExperimentalAIChatManager,
          featureFlagger: FeatureFlagger,
+         featureDiscovery: FeatureDiscovery,
          aiChatSettings: AIChatSettingsProvider,
          subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler()) {
 
@@ -73,11 +75,18 @@ final class AIChatViewControllerManager {
         self.userAgentManager = AIChatUserAgentHandler(userAgentManager: userAgentManager)
         self.experimentalAIChatManager = experimentalAIChatManager
         self.featureFlagger = featureFlagger
+        self.featureDiscovery = featureDiscovery
         self.aiChatSettings = aiChatSettings
         self.subscriptionAIChatStateHandler = subscriptionAIChatStateHandler
     }
 
     // MARK: - Public Methods
+
+    @MainActor
+    func killSessionAndResetTimer() async {
+        stopSessionTimer()
+        await cleanUpSession()
+    }
 
     @MainActor
     func openAIChat(_ query: String? = nil,
@@ -94,6 +103,7 @@ final class AIChatViewControllerManager {
 
         pixelMetricHandler = AIChatPixelMetricHandler(timeElapsedInMinutes: sessionTimer?.timeElapsedInMinutes())
         pixelMetricHandler?.fireOpenAIChat()
+        featureDiscovery.setWasUsedBefore(.aiChat)
 
         /// If we have a query or payload, let's clean the previous session and start fresh
         if query != nil || payload != nil || subscriptionAIChatStateHandler.shouldForceAIChatRefresh {

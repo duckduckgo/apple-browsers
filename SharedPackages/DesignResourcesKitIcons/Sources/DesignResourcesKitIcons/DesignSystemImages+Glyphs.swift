@@ -397,6 +397,7 @@ public extension DesignSystemImages {
             public static var goTo: DesignSystemImage { .init(resource: .goTo24) }
             public static var help: DesignSystemImage { .init(resource: .help24) }
             public static var history: DesignSystemImage { .init(resource: .history24) }
+            public static var home: DesignSystemImage { .init(resource: .home24) }
             public static var identityTheftRestoration: DesignSystemImage { .init(resource: .identityTheftRestoration24) }
             public static var image: DesignSystemImage { .init(resource: .image24) }
             public static var info: DesignSystemImage { .init(resource: .info24) }

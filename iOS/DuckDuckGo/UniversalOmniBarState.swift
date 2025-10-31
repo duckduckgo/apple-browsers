@@ -29,7 +29,7 @@ enum UniversalOmniBarState {
         var showBackButton: Bool { baseState.showBackButton }
         var showForwardButton: Bool { baseState.showForwardButton }
         var showBookmarksButton: Bool { baseState.showBookmarksButton }
-        var showAccessoryButton: Bool { baseState.showAccessoryButton }
+        var showAIChatButton: Bool { baseState.showAIChatButton }
         var clearTextOnStart: Bool { baseState.clearTextOnStart }
         var allowsTrackersAnimation: Bool { baseState.allowsTrackersAnimation }
         var showSearchLoupe: Bool { baseState.showSearchLoupe }

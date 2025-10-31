@@ -56,12 +56,26 @@ final class WinBackOfferPromotionViewCoordinator: ObservableObject {
 }
 
 private extension WinBackOfferPromotionViewCoordinator {
+    /// Action to be executed when the user proceeds with the promotion (e.g., opens win-back offer)
     var proceedAction: () async -> Void {
-        { }
+        { @MainActor [weak self] in
+            guard let self else { return }
+
+            // Open the win-back offer subscription page with proper attribution
+            guard let url = WinBackOfferURL.subscriptionURL(for: .winBackNewTabPage) else { return }
+            Application.appDelegate.windowControllersManager.showTab(with: .subscription(url))
+
+            // Dismiss the promotion after action
+            dismissHomePagePromotion()
+        }
     }
 
+    /// Action to be executed when the user closes the promotion
     var closeAction: () -> Void {
-        { }
+        { [weak self] in
+            guard let self else { return }
+            dismissHomePagePromotion()
+        }
     }
 
     /// Dismisses the home page promotion and updates the user state to reflect this.

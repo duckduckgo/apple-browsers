@@ -3783,13 +3783,6 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
     }
 }
 
-// MARK: AutoClear Action Delegate
-extension MainViewController: SettingsAutoClearActionDelegate {
-    func performDataClearing() {
-        forgetAllWithAnimation()
-    }
-}
-
 private extension UIBarButtonItem {
     func setCustomItemAction(on target: Any?, action: Selector) {
         if let customControl = customView as? UIControl {
@@ -3840,6 +3833,13 @@ extension MainViewController: MainViewEditingStateTransitioning {
         omniBar.barView.layer.sublayerTransform = CATransform3DIdentity
         additionalSafeAreaInsets.top = 0
         omniBar.barView.revealButtons()
+    }
+}
+
+// MARK: AutoClear Action Delegate
+extension MainViewController: SettingsAutoClearActionDelegate {
+    func performDataClearing() {
+        forgetAllWithAnimation()
     }
 }
 

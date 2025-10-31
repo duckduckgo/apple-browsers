@@ -369,7 +369,8 @@ struct SettingsSubscriptionView: View {
 
             let destination: LazyView<AnyView> = {
                 if settingsViewModel.isPIREnabled, let vcProvider = settingsViewModel.dataBrokerProtectionViewControllerProvider {
-                    return LazyView(AnyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)))
+                    return LazyView(AnyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
+                        .edgesIgnoringSafeArea(.bottom)))
                 } else {
                     statusIndicator = .on
                     return LazyView(AnyView(SubscriptionPIRMoveToDesktopView()))

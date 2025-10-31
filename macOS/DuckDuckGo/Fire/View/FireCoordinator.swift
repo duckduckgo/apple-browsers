@@ -149,7 +149,7 @@ extension FireCoordinator {
 
     /// Unified Fire dialog presenter for all entry points
     @MainActor
-    func presentFireDialog(mode: FireDialogViewModel.Mode, in window: NSWindow? = nil, scopeVisits providedVisits: [Visit]? = nil) async -> FireDialogView.Response {
+    func presentFireDialog(mode: FireDialogViewModel.Mode, in window: NSWindow? = nil, scopeVisits providedVisits: [Visit]? = nil, settings: FireDialogViewSettings? = nil) async -> FireDialogView.Response {
         let targetWindow = window ?? windowControllersManager.lastKeyMainWindowController?.window
         guard let parentWindow = targetWindow,
               let tabCollectionViewModel = tabViewModelGetter(parentWindow) else { return .noAction }
@@ -191,6 +191,7 @@ extension FireCoordinator {
             includeTabsAndWindows: mode.shouldShowCloseTabsToggle ? nil /* last selected */ : false,
             includeChatHistory: mode.shouldShowChatHistoryToggle ? nil /* last selected */ : false,
             mode: mode,
+            settings: settings,
             scopeCookieDomains: scopeCookieDomains,
             scopeVisits: scopeVisits,
             tld: tld
@@ -246,7 +247,9 @@ extension FireCoordinator {
 
     @MainActor
     func handleDialogResult(_ result: FireDialogResult, tabCollectionViewModel: TabCollectionViewModel?, isAllHistorySelected: Bool) async {
-
+        if result.includeChatHistory {
+            pixelFiring?.fire(AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount)
+        }
         // If specific visits are provided (e.g., deleting for a day or a selection), burn only those visits
         if result.clearingOption == .allData /* not Current Tab or Window */,
            result.includeHistory, !isAllHistorySelected,
@@ -295,9 +298,6 @@ extension FireCoordinator {
 
         case .allData:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
-            if result.includeChatHistory {
-                pixelFiring?.fire(AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount)
-            }
             // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
             if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory {
                 await fireViewModel.fire.burnAll(isBurnOnExit: false,

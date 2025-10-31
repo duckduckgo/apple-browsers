@@ -232,6 +232,28 @@ extension Preferences {
                         .buttonStyle(.plain)
                     }
                 }
+
+                PreferencePaneSection {
+                    VStack(alignment: .leading) {
+                        TextAndImageMenuItemHeader("Hide AI-Generated Images",
+                                                   image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
+                                                   bottomPadding: 2)
+
+                        TextMenuItemCaption("Filter out AI-generated images from image search results")
+                            .padding(.bottom, 6)
+                        Button {
+                            model.openSearchAssistSettings()
+                        } label: {
+                            HStack {
+                                Text(UserText.searchAssistSettingsLink)
+                                Image(.externalAppScheme)
+                            }
+                            .foregroundColor(Color.linkBlue)
+                            .cursor(.pointingHand)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
             .sheet(isPresented: $isShowingDisableAIChatDialog) {
                 removeConfirmationDialog

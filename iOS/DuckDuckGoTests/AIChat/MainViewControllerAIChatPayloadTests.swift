@@ -47,12 +47,14 @@ private class TestableMainViewController: MainViewController {
 @MainActor
 final class MainViewControllerAIChatPayloadTests: XCTestCase {
     private var sut: TestableMainViewController!
+    private var keyValueStore: ThrowingKeyValueStoring!
     
     let mockWebsiteDataManager = MockWebsiteDataManager()
-    let keyValueStore: ThrowingKeyValueStoring = try! MockKeyValueFileStore()
 
     override func setUpWithError() throws {
         try super.setUpWithError()
+        
+        keyValueStore = try MockKeyValueFileStore()
         
         let db = CoreDataDatabase.bookmarksMock
         let bookmarkDatabaseCleaner = BookmarkDatabaseCleaner(bookmarkDatabase: db, errorEvents: nil)
@@ -118,7 +120,7 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
                                     maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
                                     maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                                     featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
-                                    keyValueStore: try! MockKeyValueFileStore(),
+                                    keyValueStore: keyValueStore,
                                     daxDialogsManager: DummyDaxDialogsManager()
         )
         
@@ -172,6 +174,7 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
 
     override func tearDownWithError() throws {
         sut = nil
+        keyValueStore = nil
         try super.tearDownWithError()
     }
     
@@ -281,4 +284,3 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
         XCTAssertNil(call.payload)
     }
 }
-

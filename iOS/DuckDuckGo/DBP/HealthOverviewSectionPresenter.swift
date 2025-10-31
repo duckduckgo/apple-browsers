@@ -286,7 +286,7 @@ Last background task: \(formattedSession(metrics.backgroundTaskLastSession))
 
     private func subtitle(lastRun: Date?, upcoming: Date?, count: Int) -> String {
         return """
-Last run: \(formattedDate(lastRun))            
+Last run: \(formattedDate(lastRun))
 Upcoming: \(formattedDate(upcoming))
 Last 7 days: \(count) operations
 """

@@ -857,7 +857,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self, weak alert] _ in
             guard let textField = alert?.textFields?.first,
                   let value = textField.text,
-                  let _ = URL(string: value) else {
+                  URL(string: value) != nil else {
                 return
             }
             self?.webUISettings.setCustomURL(value)

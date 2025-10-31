@@ -167,15 +167,15 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     
     private struct PendingJobCounts {
         let pendingScans: Int
-        let pendingScansBreakdown: String?
+        let pendingScansDetails: String?
         let pendingOptOuts: Int
-        let pendingOptOutsBreakdown: String?
+        let pendingOptOutsDetails: String?
     }
 
     @MainActor private var jobCounts: PendingJobCounts = PendingJobCounts(pendingScans: 0,
-                                                                          pendingScansBreakdown: nil,
+                                                                          pendingScansDetails: nil,
                                                                           pendingOptOuts: 0,
-                                                                          pendingOptOutsBreakdown: nil) {
+                                                                          pendingOptOutsDetails: nil) {
         didSet {
             tableView.reloadData()
         }
@@ -320,47 +320,48 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         guard let allData = try? databaseDelegate?.getAllBrokerProfileQueryData() else {
             assertionFailure("Failed to fetch broker profile query data")
             return PendingJobCounts(pendingScans: 0,
-                                    pendingScansBreakdown: nil,
+                                    pendingScansDetails: nil,
                                     pendingOptOuts: 0,
-                                    pendingOptOutsBreakdown: nil)
+                                    pendingOptOutsDetails: nil)
         }
-        
+
         let currentDate = Date()
-        let activeData = allData.filter { !$0.profileQuery.deprecated }
+        let scanEntries = allData
+            .filter { $0.profileQuery.deprecated == false }
+            .map { ($0.dataBroker.name, $0.scanJobData) }
 
-        var pendingScanCount = 0
-        var pendingScanBreakdown: [String: Int] = [:]
-
-        for brokerData in activeData {
-            let job = brokerData.scanJobData
-            guard !job.isRemovedByUser else { continue }
-            guard let preferredRunDate = job.preferredRunDate, preferredRunDate <= currentDate else { continue }
-
-            pendingScanCount += 1
-            pendingScanBreakdown[brokerData.dataBroker.name, default: 0] += 1
+        let optOutEntries = allData.flatMap { data in
+            data.optOutJobData.map { (data.dataBroker.name, $0) }
         }
 
-        var pendingOptOutCount = 0
-        var pendingOptOutBreakdown: [String: Int] = [:]
+        let pendingScanEntries = scanEntries.filter { _, job in
+            guard !job.isRemovedByUser else { return false }
 
-        for brokerData in activeData {
-            for job in brokerData.optOutJobData {
-                guard !job.isRemovedByUser else { continue }
-
-                if let preferredRunDate = job.preferredRunDate, preferredRunDate > currentDate {
-                    continue
-                }
-
-                pendingOptOutCount += 1
-                pendingOptOutBreakdown[brokerData.dataBroker.name, default: 0] += 1
+            if let preferredRunDate = job.preferredRunDate {
+                return preferredRunDate <= currentDate
             }
+
+            return false
         }
-        
+
+        let pendingOptOutEntries = optOutEntries.filter { _, job in
+            guard !job.isRemovedByUser else { return false }
+
+            if let preferredRunDate = job.preferredRunDate {
+                return preferredRunDate <= currentDate
+            }
+
+            return true
+        }
+
+        let pendingScansDetails = pendingScanEntries.reduce(into: [String: Int]()) { $0[$1.0, default: 0] += 1 }
+        let pendingOptOutsDetails = pendingOptOutEntries.reduce(into: [String: Int]()) { $0[$1.0, default: 0] += 1 }
+
         return PendingJobCounts(
-            pendingScans: pendingScanCount,
-            pendingScansBreakdown: pendingScanBreakdown.displayString(),
-            pendingOptOuts: pendingOptOutCount,
-            pendingOptOutsBreakdown: pendingOptOutBreakdown.displayString()
+            pendingScans: pendingScanEntries.count,
+            pendingScansDetails: pendingScansDetails.displayString(),
+            pendingOptOuts: pendingOptOutEntries.count,
+            pendingOptOutsDetails: pendingOptOutsDetails.displayString()
         )
     }
 
@@ -390,18 +391,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             fatalError("Failed to create a Section from index '\(indexPath.section)'")
         }
 
-        func configureBase(_ cell: UITableViewCell) {
-            cell.textLabel?.font = .daxBodyRegular()
-            cell.textLabel?.textColor = nil
-            cell.textLabel?.numberOfLines = 1
-            cell.detailTextLabel?.font = .daxBodyRegular()
-            cell.detailTextLabel?.textColor = .secondaryLabel
-            cell.detailTextLabel?.text = nil
-            cell.detailTextLabel?.numberOfLines = 1
-            cell.accessoryType = .none
-            cell.accessoryView = nil
-        }
-
         func accessoryLabel(for text: String) -> UILabel {
             let label = UILabel()
             label.font = .daxBodyRegular()
@@ -413,7 +402,15 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 
         func dequeueCell(style: CellType) -> UITableViewCell {
             let cell = tableView.dequeueReusableCell(withIdentifier: style.rawValue, for: indexPath)
-            configureBase(cell)
+            cell.textLabel?.font = .daxBodyRegular()
+            cell.textLabel?.textColor = nil
+            cell.textLabel?.numberOfLines = 1
+            cell.detailTextLabel?.font = .daxBodyRegular()
+            cell.detailTextLabel?.textColor = .secondaryLabel
+            cell.detailTextLabel?.text = nil
+            cell.detailTextLabel?.numberOfLines = 1
+            cell.accessoryType = .none
+            cell.accessoryView = nil
             return cell
         }
 
@@ -449,21 +446,19 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case .database:
             let cell = dequeueCell(style: section.cellType(for: indexPath.row))
 
-            guard let row = DatabaseRows(rawValue: indexPath.row) else {
-                return cell
-            }
+            let row = DatabaseRows(rawValue: indexPath.row)
 
-            cell.textLabel?.text = row.title
+            cell.textLabel?.text = row?.title
             cell.textLabel?.numberOfLines = 1
 
             switch row {
             case .pendingScanJobs:
                 cell.detailTextLabel?.numberOfLines = 0
-                cell.detailTextLabel?.text = jobCounts.pendingScansBreakdown ?? "No pending scans"
+                cell.detailTextLabel?.text = jobCounts.pendingScansDetails
                 cell.accessoryView = accessoryLabel(for: "\(jobCounts.pendingScans)")
             case .pendingOptOutJobs:
                 cell.detailTextLabel?.numberOfLines = 0
-                cell.detailTextLabel?.text = jobCounts.pendingOptOutsBreakdown ?? "No pending opt outs"
+                cell.detailTextLabel?.text = jobCounts.pendingOptOutsDetails
                 cell.accessoryView = accessoryLabel(for: "\(jobCounts.pendingOptOuts)")
             case .databaseBrowser, .saveProfile:
                 cell.detailTextLabel?.text = nil
@@ -472,6 +467,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 cell.textLabel?.textColor = .systemRed
                 cell.detailTextLabel?.text = nil
                 cell.accessoryView = nil
+            case nil:
+                break
             }
 
             return cell
@@ -1031,4 +1028,3 @@ private extension [String: Int] {
         return map { "\($0.key) (\($0.value))" }.joined(separator: " · ")
     }
 }
-

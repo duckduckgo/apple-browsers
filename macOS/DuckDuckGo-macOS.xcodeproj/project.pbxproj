@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 60;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -6159,6 +6159,10 @@
 		FD23FD2C2886A81D007F6985 /* AutoconsentManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentManagement.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		CC951AAE2EB5176B0047E245 /* UserActivity */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = UserActivity; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		3706FCA6293F65D500E42796 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -11254,6 +11258,7 @@
 		BBDE001A2D6DE66100109F88 /* DefaultBrowserAndAddToDockPrompts */ = {
 			isa = PBXGroup;
 			children = (
+				CC951AAE2EB5176B0047E245 /* UserActivity */,
 				9FCB94662DE05A3600BC662B /* SharedInterfaces */,
 				9F5D4EC42DED3F9D00B16D98 /* DefaultBrowserAndDockPromptPixelEvent.swift */,
 				9FFBEE622DDD7A040058B11A /* DefaultBrowserAndDockPromptDebugEventMapper.swift */,
@@ -11721,6 +11726,9 @@
 				4BBA2D2B2B6AD01E00F6A470 /* PBXTargetDependency */,
 				4BBA2D292B6ACD4D00F6A470 /* PBXTargetDependency */,
 				4B5F14FE2A1529230060320F /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				CC951AAE2EB5176B0047E245 /* UserActivity */,
 			);
 			name = "DuckDuckGo Privacy Browser App Store";
 			packageProductDependencies = (
@@ -12245,6 +12253,9 @@
 				8417B7CF2D958D5E00C0A379 /* PBXTargetDependency */,
 				7BC3E42F2D6DF1F6009787CD /* PBXTargetDependency */,
 				31C6E9AD2B0C07BA0086DC30 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				CC951AAE2EB5176B0047E245 /* UserActivity */,
 			);
 			name = "DuckDuckGo Privacy Browser";
 			packageProductDependencies = (
@@ -13687,7 +13698,6 @@
 				379858142D730EFB008773F6 /* DefaultHistoryViewDialogPresenter.swift in Sources */,
 				F17E7DDF2C7C83E500907A84 /* Logger+FileDownload.swift in Sources */,
 				9F56CFAA2B82DC4300BB7F11 /* AddEditBookmarkFolderView.swift in Sources */,
-				CC8499A52E955C8700409E18 /* AIChatDataClearingUserScript.swift in Sources */,
 				567A23D82C8871290010F66C /* OnboardingFireButtonDialogViewModel.swift in Sources */,
 				37FD78122A29EBD100B36DB1 /* SyncErrorHandler.swift in Sources */,
 				1D4B03D62CA4432000224E99 /* BookmarkUrlExtension.swift in Sources */,

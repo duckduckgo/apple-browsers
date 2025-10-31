@@ -3923,7 +3923,6 @@ extension MainViewController {
 
         default:
             assertionFailure("Unexpected case \(button)")
-            break
         }
     }
 

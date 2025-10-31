@@ -38,12 +38,13 @@ extension TabViewController {
 
             DispatchQueue.main.async {
                 let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
-                ActionMessageView.present(message: UserText.webSaveFavoriteDone,
-                                          actionTitle:  UserText.actionGenericEdit,
-                                          presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
-                                          onAction: {
-                    self.delegate?.tabDidRequestEditBookmark(tab: self)
-                })
+                ActionMessageView.present(
+                    message: UserText.webSaveFavoriteDone,
+                    actionTitle:  UserText.actionGenericEdit,
+                    presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
+                    onAction: {
+                        self.delegate?.tabDidRequestEditBookmark(tab: self)
+                    })
             }
         } else if nil == viewModel.bookmark(for: link.url) {
             viewModel.createBookmark(title: link.displayTitle, url: link.url)
@@ -51,20 +52,24 @@ extension TabViewController {
 
             DispatchQueue.main.async {
                 let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
-                ActionMessageView.present(message: UserText.webSaveBookmarkDone,
-                                          actionTitle: UserText.actionGenericEdit,
-                                          presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),                                          onAction: {
-                    self.delegate?.tabDidRequestEditBookmark(tab: self)
-                })
+                ActionMessageView.present(
+                    message: UserText.webSaveBookmarkDone,
+                    actionTitle: UserText.actionGenericEdit,
+                    presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
+                    onAction: {
+                        self.delegate?.tabDidRequestEditBookmark(tab: self)
+                    })
             }
         } else {
             DispatchQueue.main.async {
                 let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
-                ActionMessageView.present(message: UserText.webBookmarkAlreadySaved,
-                                          actionTitle: UserText.actionGenericEdit,
-                                          presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),                                          onAction: {
-                    self.delegate?.tabDidRequestEditBookmark(tab: self)
-                })
+                ActionMessageView.present(
+                    message: UserText.webBookmarkAlreadySaved,
+                    actionTitle: UserText.actionGenericEdit,
+                    presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
+                    onAction: {
+                        self.delegate?.tabDidRequestEditBookmark(tab: self)
+                    })
             }
         }
     }

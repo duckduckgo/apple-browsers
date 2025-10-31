@@ -3783,6 +3783,13 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
     }
 }
 
+// MARK: AutoClear Action Delegate
+extension MainViewController: SettingsAutoClearActionDelegate {
+    func performDataClearing() {
+        forgetAllWithAnimation()
+    }
+}
+
 private extension UIBarButtonItem {
     func setCustomItemAction(on target: Any?, action: Selector) {
         if let customControl = customView as? UIControl {

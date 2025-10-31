@@ -24,6 +24,33 @@ import History
 import HistoryView
 import PixelKit
 
+extension UserDefaultsWrapperKey {
+    static let selectedClearingOption = Self(rawValue: "fire-dialog_selectedClearingOption")
+    static let includeTabsAndWindowsState = Self(rawValue: "fire-dialog_includeTabsAndWindowsState")
+    static let includeHistoryState = Self(rawValue: "fire-dialog_includeHistoryState")
+    static let includeCookiesAndSiteDataState = Self(rawValue: "fire-dialog_includeCookiesAndSiteDataState")
+    static let includeChatHistoryState = Self(rawValue: "fire-dialog_includeChatHistoryState")
+}
+protocol FireDialogViewSettings {
+    var lastSelectedClearingOption: FireDialogViewModel.ClearingOption? { get set }
+    var lastIncludeTabsAndWindowsState: Bool? { get set }
+    var lastIncludeHistoryState: Bool? { get set }
+    var lastIncludeCookiesAndSiteDataState: Bool? { get set }
+    var lastIncludeChatHistoryState: Bool? { get set }
+}
+struct DefaultsFireDialogViewSettings: FireDialogViewSettings {
+    @UserDefaultsWrapper(key: .selectedClearingOption)
+    var lastSelectedClearingOption: FireDialogViewModel.ClearingOption?
+    @UserDefaultsWrapper(key: .includeTabsAndWindowsState)
+    var lastIncludeTabsAndWindowsState: Bool?
+    @UserDefaultsWrapper(key: .includeHistoryState)
+    var lastIncludeHistoryState: Bool?
+    @UserDefaultsWrapper(key: .includeCookiesAndSiteDataState)
+    var lastIncludeCookiesAndSiteDataState: Bool?
+    @UserDefaultsWrapper(key: .includeChatHistoryState)
+    var lastIncludeChatHistoryState: Bool?
+}
+
 @MainActor
 final class FireDialogViewModel: ObservableObject {
 
@@ -121,20 +148,7 @@ final class FireDialogViewModel: ObservableObject {
     }
 
     /// Remember last selected scope
-    static var lastSelectedClearingOption: ClearingOption = .currentTab
-    static var lastIncludeTabsAndWindowsState: Bool = true
-    static var lastIncludeHistoryState: Bool = true
-    static var lastIncludeCookiesAndSiteDataState: Bool = true
-    static var lastIncludeChatHistoryState: Bool = false
-
-    /// Reset persisted UI defaults - used for tests
-    static func resetPersistedDefaults() {
-        lastSelectedClearingOption = .currentTab
-        lastIncludeTabsAndWindowsState = true
-        lastIncludeHistoryState = true
-        lastIncludeCookiesAndSiteDataState = true
-        lastIncludeChatHistoryState = false
-    }
+    private var settings: FireDialogViewSettings
 
     init(fireViewModel: FireViewModel,
          tabCollectionViewModel: TabCollectionViewModel,
@@ -148,6 +162,7 @@ final class FireDialogViewModel: ObservableObject {
          includeCookiesAndSiteData: Bool? = nil,
          includeChatHistory: Bool? = nil,
          mode: Mode = .fireButton,
+         settings: FireDialogViewSettings? = nil,
          scopeCookieDomains: Set<String>? = nil,
          scopeVisits: [Visit]? = nil,
          tld: TLD) {
@@ -158,11 +173,6 @@ final class FireDialogViewModel: ObservableObject {
         self.faviconManagement = faviconManagement
         self.historyCoordinating = historyCoordinating
         self.aiChatHistoryCleaner = aiChatHistoryCleaner
-        self.clearingOption = clearingOption ?? Self.lastSelectedClearingOption
-        self.includeTabsAndWindows = includeTabsAndWindows ?? Self.lastIncludeTabsAndWindowsState
-        self.includeHistory = includeHistory ?? Self.lastIncludeHistoryState
-        self.includeCookiesAndSiteData = includeCookiesAndSiteData ?? Self.lastIncludeCookiesAndSiteDataState
-        self.includeChatHistorySetting = includeChatHistory ?? Self.lastIncludeChatHistoryState
 
         self.tld = tld
         self.mode = mode
@@ -170,6 +180,13 @@ final class FireDialogViewModel: ObservableObject {
 
         // Apply provided scope domains BEFORE computing lists to avoid any flash
         self.scopeCookieDomains = scopeCookieDomains
+
+        self.settings = settings ?? DefaultsFireDialogViewSettings()
+        self.clearingOption = clearingOption ?? self.settings.lastSelectedClearingOption ?? .currentTab
+        self.includeTabsAndWindows = includeTabsAndWindows ?? self.settings.lastIncludeTabsAndWindowsState ?? true
+        self.includeHistory = includeHistory ?? self.settings.lastIncludeHistoryState ?? true
+        self.includeCookiesAndSiteData = includeCookiesAndSiteData ?? self.settings.lastIncludeCookiesAndSiteDataState ?? true
+        self.includeChatHistorySetting = includeChatHistory ?? self.settings.lastIncludeChatHistoryState ?? false
 
         // Initialize selectable/fireproofed lists so counts are available immediately
         updateItems(for: self.clearingOption)
@@ -199,26 +216,26 @@ final class FireDialogViewModel: ObservableObject {
     var clearingOption: ClearingOption {
         didSet {
             updateItems(for: clearingOption)
-            Self.lastSelectedClearingOption = clearingOption
+            settings.lastSelectedClearingOption = clearingOption
         }
     }
 
     /// when true, selected tabs/windows are closed; when false, tabs remain open, but their history/session state is cleared if includeHistory is true.
     @Published var includeTabsAndWindows: Bool {
         didSet {
-            Self.lastIncludeTabsAndWindowsState = includeTabsAndWindows
+            settings.lastIncludeTabsAndWindowsState = includeTabsAndWindows
         }
     }
     /// when true, history is cleared for the selected scope.
     @Published var includeHistory: Bool {
         didSet {
-            Self.lastIncludeHistoryState = includeHistory
+            settings.lastIncludeHistoryState = includeHistory
         }
     }
     /// when true, cookies/site data are cleared for the selected (non-fireproof) domains in scope.
     @Published var includeCookiesAndSiteData: Bool {
         didSet {
-            Self.lastIncludeCookiesAndSiteDataState = includeCookiesAndSiteData
+            settings.lastIncludeCookiesAndSiteDataState = includeCookiesAndSiteData
         }
     }
     /// When true, all Duck.ai chat history is cleared.
@@ -230,7 +247,7 @@ final class FireDialogViewModel: ObservableObject {
     /// Do not use this property directly to perform the data clearing; use `includeChatHistory` instead.
     @Published var includeChatHistorySetting: Bool {
         didSet {
-            Self.lastIncludeChatHistoryState = includeChatHistorySetting
+            settings.lastIncludeChatHistoryState = includeChatHistorySetting
         }
     }
 

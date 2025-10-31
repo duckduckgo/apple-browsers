@@ -1,5 +1,6 @@
 //
-//  MockDefaultBrowserAndDockPromptFeatureFlagger.swift
+//  SettingsAutoClearActionDelegate.swift
+//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,15 +18,7 @@
 //
 
 import Foundation
-@testable import DuckDuckGo_Privacy_Browser
 
-final class MockDefaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger {
-    var isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled = true
-    var isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled = true
-
-    var firstPopoverDelayDays = 14
-    var bannerAfterPopoverDelayDays = 14
-    var bannerRepeatIntervalDays = 14
-    var inactiveModalNumberOfDaysSinceInstall = 28
-    var inactiveModalNumberOfInactiveDays = 7
+protocol SettingsAutoClearActionDelegate: AnyObject {
+    func performDataClearing()
 }

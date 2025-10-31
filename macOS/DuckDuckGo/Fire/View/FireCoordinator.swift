@@ -262,6 +262,9 @@ extension FireCoordinator {
             return
         }
         pixelFiring?.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
+        if result.includeChatHistory {
+            pixelFiring?.fire(AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount)
+        }
         switch result.clearingOption {
         case .currentTab:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .tab))
@@ -295,9 +298,6 @@ extension FireCoordinator {
 
         case .allData:
             pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
-            if result.includeChatHistory {
-                pixelFiring?.fire(AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount)
-            }
             // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
             if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory {
                 await fireViewModel.fire.burnAll(isBurnOnExit: false,

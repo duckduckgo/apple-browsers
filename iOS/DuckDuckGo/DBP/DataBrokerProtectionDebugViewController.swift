@@ -391,6 +391,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             fatalError("Failed to create a Section from index '\(indexPath.section)'")
         }
 
+        let identifier = section.cellType(for: indexPath.row).rawValue
+
         func accessoryLabel(for text: String) -> UILabel {
             let label = UILabel()
             label.font = .daxBodyRegular()
@@ -400,8 +402,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             return label
         }
 
-        func dequeueCell(style: CellType) -> UITableViewCell {
-            let cell = tableView.dequeueReusableCell(withIdentifier: style.rawValue, for: indexPath)
+        func dequeueCell(identifier: String, style: CellType) -> UITableViewCell {
+            let cell = tableView.dequeueReusableCell(withIdentifier: identifier, for: indexPath)
             cell.textLabel?.font = .daxBodyRegular()
             cell.textLabel?.textColor = nil
             cell.textLabel?.numberOfLines = 1
@@ -417,12 +419,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         switch section {
         case .healthOverview:
             let rows = healthOverviewRows
-            guard indexPath.row < rows.count else {
-                fatalError("Index \(indexPath.row) out of bounds for health overview rows")
-            }
-
             let rowViewModel = rows[indexPath.row]
-            let cell = dequeueCell(style: rowViewModel.style)
+            let cell = dequeueCell(identifier: identifier, style: rowViewModel.style)
 
             cell.textLabel?.text = rowViewModel.title
             cell.textLabel?.textColor = rowViewModel.textColor
@@ -444,7 +442,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             return cell
 
         case .database:
-            let cell = dequeueCell(style: section.cellType(for: indexPath.row))
+            let cell = dequeueCell(identifier: identifier, style: section.cellType(for: indexPath.row))
 
             let row = DatabaseRows(rawValue: indexPath.row)
 
@@ -474,7 +472,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             return cell
 
         case .debugActions:
-            let cell = dequeueCell(style: section.cellType(for: indexPath.row))
+            let cell = dequeueCell(identifier: identifier, style: section.cellType(for: indexPath.row))
 
             let row = DebugActionRows(rawValue: indexPath.row)
             cell.textLabel?.text = row?.title
@@ -508,7 +506,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             return cell
 
         case .environment:
-            let cell = dequeueCell(style: section.cellType(for: indexPath.row))
+            let cell = dequeueCell(identifier: identifier, style: section.cellType(for: indexPath.row))
 
             let row = EnvironmentRows(rawValue: indexPath.row)
             cell.textLabel?.text = row?.title
@@ -537,7 +535,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             return cell
 
         case .dbpMetadata:
-            let cell = dequeueCell(style: section.cellType(for: indexPath.row))
+            let cell = dequeueCell(identifier: identifier, style: section.cellType(for: indexPath.row))
 
             guard let row = DBPMetadataRows(rawValue: indexPath.row) else { return cell }
             switch row {

@@ -244,6 +244,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211757211733009?focus=true
     case dataImportNewExperience
+
+    /// https://app.asana.com/1/137249556945/project/492600419927320/task/1210863200265479?focus=true
+    case scheduledDefaultBrowserAndDockPromptsInactiveUser
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -365,7 +368,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .credentialsImportPromotionForExistingUsers,
                 .scheduledSetDefaultBrowserAndAddToDockPrompts,
                 .cpmCountPixel,
-                .fireDialogIndividualSitesLink:
+                .fireDialogIndividualSitesLink,
+                .scheduledDefaultBrowserAndDockPromptsInactiveUser:
             return false
         }
     }
@@ -536,6 +540,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .dataImportNewExperience:
             return .disabled
+        case .scheduledDefaultBrowserAndDockPromptsInactiveUser:
+            return .remoteDevelopment(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
         }
     }
 }

@@ -54,6 +54,7 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertEqual(model.homePageCustomBackground, .gradient(.gradient01))
         XCTAssertTrue(model.centerAlignedBookmarksBarBool)
         XCTAssertFalse(model.showTabsAndBookmarksBarOnFullScreen)
+        XCTAssertFalse(model.syncAppIconWithTheme)
 
         model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(
@@ -68,7 +69,8 @@ final class AppearancePreferencesTests: XCTestCase {
                 homeButtonPosition: .left,
                 homePageCustomBackground: CustomBackground.gradient(.gradient05).description,
                 centerAlignedBookmarksBar: false,
-                showTabsAndBookmarksBarOnFullScreen: true
+                showTabsAndBookmarksBarOnFullScreen: true,
+                syncAppIconWithTheme: true
             ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger()
@@ -84,6 +86,7 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertEqual(model.homePageCustomBackground, .gradient(.gradient05))
         XCTAssertFalse(model.centerAlignedBookmarksBarBool)
         XCTAssertTrue(model.showTabsAndBookmarksBarOnFullScreen)
+        XCTAssertTrue(model.syncAppIconWithTheme)
     }
 
     func testWhenInitializedWithGarbageThenThemeAppearanceIsSetToSystemDefault() throws {
@@ -143,6 +146,8 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertEqual(model.isProtectionsReportVisible, true)
         model.isContinueSetUpVisible = true
         XCTAssertEqual(model.isContinueSetUpVisible, true)
+        model.syncAppIconWithTheme = true
+        XCTAssertEqual(model.syncAppIconWithTheme, true)
 
         model.isFavoriteVisible = false
         XCTAssertEqual(model.isFavoriteVisible, false)
@@ -150,6 +155,8 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertEqual(model.isProtectionsReportVisible, false)
         model.isContinueSetUpVisible = false
         XCTAssertEqual(model.isContinueSetUpVisible, false)
+        model.syncAppIconWithTheme = false
+        XCTAssertEqual(model.syncAppIconWithTheme, false)
     }
 
     func testPersisterReturnsValuesFromDisk() throws {
@@ -164,10 +171,13 @@ final class AppearancePreferencesTests: XCTestCase {
         persister1.isProtectionsReportVisible = true
         persister2.isContinueSetUpVisible = false
         persister1.isContinueSetUpVisible = true
+        persister2.syncAppIconWithTheme = false
+        persister1.syncAppIconWithTheme = true
 
         XCTAssertTrue(persister2.isFavoriteVisible)
         XCTAssertTrue(persister2.isProtectionsReportVisible)
         XCTAssertTrue(persister2.isContinueSetUpVisible)
+        XCTAssertTrue(persister2.syncAppIconWithTheme)
     }
 
     func testContinueSetUpIsNotDismissedAfterSeveralDemonstrationsWithinSeveralDays() {
@@ -286,6 +296,26 @@ final class AppearancePreferencesTests: XCTestCase {
         pixelFiringMock.expectedFireCalls = [
             .init(pixel: SettingsPixel.showFullURLSettingToggled, frequency: .uniqueByName),
             .init(pixel: SettingsPixel.showFullURLSettingToggled, frequency: .uniqueByName)
+        ]
+
+        pixelFiringMock.verifyExpectations()
+    }
+
+    func testWhenSyncAppIconWithThemeIsUpdatedThenPixelIsFired() {
+        let pixelFiringMock = PixelKitMock()
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            pixelFiring: pixelFiringMock,
+            featureFlagger: MockFeatureFlagger()
+        )
+
+        model.syncAppIconWithTheme = true
+        model.syncAppIconWithTheme = false
+
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: SettingsPixel.syncAppIconWithThemeTurnedOn, frequency: .dailyAndCount),
+            .init(pixel: SettingsPixel.syncAppIconWithThemeTurnedOff, frequency: .dailyAndCount)
         ]
 
         pixelFiringMock.verifyExpectations()

@@ -21,7 +21,6 @@ import Foundation
 @testable import DuckDuckGo_Privacy_Browser
 
 struct AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
-
     var isFavoriteVisible: Bool
     var isContinueSetUpVisible: Bool
     var continueSetUpCardsLastDemonstrated: Date?
@@ -41,6 +40,7 @@ struct AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
     var centerAlignedBookmarksBar: Bool
     var didDismissHomePagePromotion: Bool
     var showTabsAndBookmarksBarOnFullScreen: Bool
+    var syncAppIconWithTheme: Bool
 
     init(
         showFullURL: Bool = false,
@@ -61,7 +61,8 @@ struct AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
         homePageCustomBackground: String? = nil,
         centerAlignedBookmarksBar: Bool = true,
         didDismissHomePagePromotion: Bool = true,
-        showTabsAndBookmarksBarOnFullScreen: Bool = false
+        showTabsAndBookmarksBarOnFullScreen: Bool = false,
+        syncAppIconWithTheme: Bool = false
     ) {
         self.showFullURL = showFullURL
         self.themeAppearance = themeAppearance
@@ -82,5 +83,6 @@ struct AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
         self.centerAlignedBookmarksBar = centerAlignedBookmarksBar
         self.didDismissHomePagePromotion = didDismissHomePagePromotion
         self.showTabsAndBookmarksBarOnFullScreen = showTabsAndBookmarksBarOnFullScreen
+        self.syncAppIconWithTheme = syncAppIconWithTheme
     }
 }

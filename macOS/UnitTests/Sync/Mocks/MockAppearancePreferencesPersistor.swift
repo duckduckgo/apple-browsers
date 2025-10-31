@@ -61,4 +61,6 @@ class MockAppearancePreferencesPersistor: AppearancePreferencesPersistor {
     var didDismissHomePagePromotion = true
 
     var showTabsAndBookmarksBarOnFullScreen: Bool = false
+
+    var syncAppIconWithTheme: Bool = false
 }

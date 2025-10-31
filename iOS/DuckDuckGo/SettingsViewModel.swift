@@ -65,6 +65,7 @@ final class SettingsViewModel: ObservableObject {
     private let urlOpener: URLOpener
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
+    weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
 
     // Subscription Dependencies
@@ -125,6 +126,10 @@ final class SettingsViewModel: ObservableObject {
     // When true, indicates the AI Features settings was opened from the SERP settings button
     // This affects UI: shows Done button and hides Search Assist link
     var openedFromSERPSettingsButton: Bool = false
+
+    var isForgetAllInSettingsEnabled: Bool {
+        featureFlagger.isFeatureOn(.forgetAllInSettings)
+    }
 
     // Indicates if the Paid AI Chat feature flag is enabled for the current user/session.
     var isPaidAIChatEnabled: Bool {
@@ -1256,6 +1261,10 @@ extension SettingsViewModel {
                 }
             }
         }
+    }
+
+    func forgetAll() {
+        autoClearActionDelegate?.performDataClearing()
     }
 
     func restoreAccountPurchase() async {

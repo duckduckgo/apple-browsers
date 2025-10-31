@@ -345,6 +345,8 @@ extension MainViewController {
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization)
+
+        settingsViewModel.autoClearActionDelegate = self
         Pixel.fire(pixel: .settingsPresented)
 
         func doLaunch() {

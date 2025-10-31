@@ -1,0 +1,17 @@
+// See https://app.asana.com/0/72649045549333/1208001118995887/f.
+{
+    "settings_sync_app_icon_with_theme_turned_on": {
+        "description": "Fired when the user turns on the setting to sync the app icon with the selected theme",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "settings_sync_app_icon_with_theme_turned_off": {
+        "description": "Fired when the user turns off the setting to sync the app icon with the selected theme",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    }
+}

@@ -62,13 +62,13 @@
 "action.title.enable.protection" = "Enable Privacy Protection";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Close Tabs and Clear Data";
+"action.title.forgetAll" = "Clear Tabs and Data";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Tabs and data cleared";
 
 /* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Close Tabs, Data and Duck.ai Chats";
+"action.title.forgetAllWithAIChat" = "Clear Tabs, Data, and Duck.ai Chats";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Open in Background";
@@ -2775,6 +2775,12 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings title for the customize section */
 "settings.customize" = "Customize";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Clears all tabs, Duck.ai chats, and data for any sites you haven't fireproofed.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Clears all tabs and data for any sites you haven't fireproofed.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Data Clearing";

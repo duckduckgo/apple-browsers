@@ -149,7 +149,7 @@ extension FireCoordinator {
 
     /// Unified Fire dialog presenter for all entry points
     @MainActor
-    func presentFireDialog(mode: FireDialogViewModel.Mode, in window: NSWindow? = nil, scopeVisits providedVisits: [Visit]? = nil) async -> FireDialogView.Response {
+    func presentFireDialog(mode: FireDialogViewModel.Mode, in window: NSWindow? = nil, scopeVisits providedVisits: [Visit]? = nil, settings: FireDialogViewSettings? = nil) async -> FireDialogView.Response {
         let targetWindow = window ?? windowControllersManager.lastKeyMainWindowController?.window
         guard let parentWindow = targetWindow,
               let tabCollectionViewModel = tabViewModelGetter(parentWindow) else { return .noAction }
@@ -191,6 +191,7 @@ extension FireCoordinator {
             includeTabsAndWindows: mode.shouldShowCloseTabsToggle ? nil /* last selected */ : false,
             includeChatHistory: mode.shouldShowChatHistoryToggle ? nil /* last selected */ : false,
             mode: mode,
+            settings: settings,
             scopeCookieDomains: scopeCookieDomains,
             scopeVisits: scopeVisits,
             tld: tld

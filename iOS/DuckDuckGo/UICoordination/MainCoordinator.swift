@@ -122,7 +122,8 @@ final class MainCoordinator {
                                 maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                 featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
                                 keyValueStore: keyValueStore,
-                                daxDialogsManager: daxDialogsManager)
+                                daxDialogsManager: daxDialogsManager,
+                                aiChatSettings: aiChatSettings)
         controller = MainViewController(bookmarksDatabase: bookmarksDatabase,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         historyManager: historyManager,

@@ -200,6 +200,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211677325883310?focus=true
     case vpnMenuItem
 
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211660503405838?focus=true
+    case forgetAllInSettings
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210927932064918?focus=true
     case duckAiDataClearing
 
@@ -225,7 +228,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .authV2WideEventEnabled,
              .embeddedSERPSettings,
              .syncCreditCards,
-             .unifiedURLPredictor:
+             .unifiedURLPredictor,
+             .forgetAllInSettings:
             true
         default:
             false
@@ -286,6 +290,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .unifiedURLPredictor,
              .mobileCustomization,
              .vpnMenuItem,
+             .forgetAllInSettings,
              .onboardingSearchExperience,
              .duckAiDataClearing:
             return true
@@ -493,6 +498,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.customization))
         case .vpnMenuItem:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnMenuItem))
+        case .forgetAllInSettings:
+            return
+                .internalOnly()
+            // Will update after translations are done
+            // https://app.asana.com/1/137249556945/project/1206226850447395/task/1211803893845698
+                // .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.forgetAllInSettings))
         case .duckAiDataClearing:
             return .remoteReleasable(.feature(.duckAiDataClearing))
         case .onboardingSearchExperience:

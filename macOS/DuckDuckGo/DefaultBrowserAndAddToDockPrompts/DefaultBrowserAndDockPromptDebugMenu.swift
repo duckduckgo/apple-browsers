@@ -40,7 +40,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     init() {
         super.init(title: "")
 
-        guard defaultBrowserAndDockPromptFeatureFlagger.isDefaultBrowserAndDockPromptFeatureEnabled else { return }
+        guard defaultBrowserAndDockPromptFeatureFlagger.isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled else { return }
 
         buildItems {
             NSMenuItem(title: "Override Today's Date", action: #selector(simulateCurrentDate))

@@ -29,7 +29,7 @@ protocol OmniBarState: CustomStringConvertible {
     var showBackButton: Bool { get }
     var showForwardButton: Bool { get }
     var showBookmarksButton: Bool { get }
-    var showAccessoryButton: Bool { get }
+    var showAIChatButton: Bool { get }
 
     var clearTextOnStart: Bool { get }
     var allowsTrackersAnimation: Bool { get }

@@ -1,8 +1,8 @@
 //
-//  OmnibarAccessoryHandling.swift
+//  SettingsAutoClearActionDelegate.swift
 //  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,17 +18,7 @@
 //
 
 import Foundation
-import AIChat
-import BrowserServicesKit
 
-protocol OmnibarAccessoryHandling {
-    func omnibarAccessory(for url: URL?) -> OmniBarAccessoryType
-}
-
-struct OmnibarAccessoryHandler: OmnibarAccessoryHandling {
-    let settings: AIChatSettingsProvider
-
-    func omnibarAccessory(for url: URL?) -> OmniBarAccessoryType {
-        .chat
-    }
+protocol SettingsAutoClearActionDelegate: AnyObject {
+    func performDataClearing()
 }

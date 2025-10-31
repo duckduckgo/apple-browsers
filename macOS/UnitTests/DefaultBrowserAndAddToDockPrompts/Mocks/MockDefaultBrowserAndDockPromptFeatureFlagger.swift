@@ -20,9 +20,12 @@ import Foundation
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockDefaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger {
-    var isDefaultBrowserAndDockPromptFeatureEnabled = true
+    var isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled = true
+    var isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled = true
 
     var firstPopoverDelayDays = 14
     var bannerAfterPopoverDelayDays = 14
     var bannerRepeatIntervalDays = 14
+    var inactiveModalNumberOfDaysSinceInstall = 28
+    var inactiveModalNumberOfInactiveDays = 7
 }

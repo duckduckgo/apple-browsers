@@ -27,7 +27,7 @@ struct LargeOmniBarState {
         let showBackButton = true
         let showForwardButton = true
         let showBookmarksButton = true
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = true
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -72,7 +72,7 @@ struct LargeOmniBarState {
         let showBackButton = true
         let showForwardButton = true
         let showBookmarksButton = true
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -109,7 +109,7 @@ struct LargeOmniBarState {
         let showBackButton = true
         let showForwardButton = true
         let showBookmarksButton = true
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = true
         let allowsTrackersAnimation = false
         let showSearchLoupe = true
@@ -146,7 +146,7 @@ struct LargeOmniBarState {
         let showBackButton = true
         let showForwardButton = true
         let showBookmarksButton = true
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = true
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -183,7 +183,7 @@ struct LargeOmniBarState {
         let showBackButton = true
         let showForwardButton = true
         let showBookmarksButton = true
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -220,7 +220,7 @@ struct LargeOmniBarState {
         let showBackButton = true
         let showForwardButton = true
         let showBookmarksButton = true
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = true
         let showSearchLoupe = false

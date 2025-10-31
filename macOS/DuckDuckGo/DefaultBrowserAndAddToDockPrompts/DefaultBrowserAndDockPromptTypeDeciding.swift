@@ -42,7 +42,7 @@ final class DefaultBrowserAndDockPromptTypeDecider: DefaultBrowserAndDockPromptT
 
     func promptType() -> DefaultBrowserAndDockPromptPresentationType? {
         // If Feature is disabled return nil
-        guard featureFlagger.isDefaultBrowserAndDockPromptFeatureEnabled else { return nil }
+        guard featureFlagger.isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled else { return nil }
 
         // If user has permanently disabled prompt return nil
         guard !store.isBannerPermanentlyDismissed else { return nil }

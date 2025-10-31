@@ -20,7 +20,6 @@ import Foundation
 import Combine
 
 /// A type that records the user activity information for SAD & ATD prompt decisions.
-@MainActor
 protocol DefaultBrowserAndDockPromptUserActivityRecorder {
     func recordActivity()
 }
@@ -29,7 +28,6 @@ protocol DefaultBrowserAndDockPromptUserActivityRecorder {
 ///
 /// This class observes application lifecycle events to automatically measure when users
 /// are active and stores this information to the provided store.
-@MainActor
 final class DefaultBrowserAndDockPromptUserActivityManager: DefaultBrowserAndDockPromptUserActivityRecorder, DefaultBrowserAndDockPromptUserActivityProvider {
     private let store: DefaultBrowserAndDockPromptUserActivityStorage
     private let dateProvider: () -> Date

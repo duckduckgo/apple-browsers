@@ -24,9 +24,9 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     private let bannerWillShowDateMenuItem = NSMenuItem(title: "")
     private let promptPermanentlyDismissedMenuItem = NSMenuItem(title: "")
     private let numberOfBannersShownMenuItem = NSMenuItem(title: "")
-    private let store = NSApp.delegateTyped.defaultBrowserAndDockPromptKeyValueStore
+    private let store = NSApp.delegateTyped.defaultBrowserAndDockPromptService.store
     private let debugStore = DefaultBrowserAndDockPromptDebugStore()
-    private let defaultBrowserAndDockPromptFeatureFlagger = NSApp.delegateTyped.defaultBrowserAndDockPromptFeatureFlagger
+    private let defaultBrowserAndDockPromptFeatureFlagger = NSApp.delegateTyped.defaultBrowserAndDockPromptService.featureFlagger
     private let localStatisticsStore = LocalStatisticsStore()
 
     private static let dateFormatter: DateFormatter = {

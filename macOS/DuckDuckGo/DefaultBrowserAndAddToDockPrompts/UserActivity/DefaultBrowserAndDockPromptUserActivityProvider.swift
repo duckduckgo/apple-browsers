@@ -19,7 +19,6 @@
 import Foundation
 
 /// A type that provides the user activity information for SAD & ATD prompt decisions.
-@MainActor
 public protocol DefaultBrowserAndDockPromptUserActivityProvider {
     /// Returns the number of consecutive days the user has been inactive in the app.
     ///

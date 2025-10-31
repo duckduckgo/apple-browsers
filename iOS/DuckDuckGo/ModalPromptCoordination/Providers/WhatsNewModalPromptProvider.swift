@@ -49,6 +49,8 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
             Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Could not render message \(message.id, privacy: .public)")
             return nil
         }
+        viewController.modalPresentationStyle = .pageSheet
+        viewController.modalTransitionStyle = .coverVertical
         self.navigationController = viewController
         
         // Store the message ID to mark it as shown later
@@ -58,9 +60,6 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
 
         return ModalPromptConfiguration(
             viewController: viewController,
-            presentationStyle: .pageSheet,
-            transitionStyle: .coverVertical,
-            shouldDisablePullDownToDismiss: false,
             animated: true
         )
     }

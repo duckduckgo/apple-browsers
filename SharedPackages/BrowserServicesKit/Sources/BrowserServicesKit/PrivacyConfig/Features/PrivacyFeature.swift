@@ -270,6 +270,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Allows user to clear AI Chat history with the fire button or auto-clear
     case clearAIChatHistory
+
+    /// Signals that the iOS app should display duck.ai chats in "full mode" i.e in a tab, not a sheet
+    case fullDuckAIMode
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

@@ -1465,7 +1465,7 @@ class MainViewController: UIViewController {
     private func refreshOmniBar() {
         updateOmniBarLoadingState()
 
-        guard let tab = currentTab, tab.link != nil else {
+        guard let tab = currentTab, (tab.link != nil || tab.tabModel.isAITab) else {
             viewCoordinator.omniBar.stopBrowsing()
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
@@ -2885,8 +2885,8 @@ extension MainViewController: OmniBarDelegate {
     func onAIChatRightButtonPressed() {
     }
 
-    /// Delegate method called when the omnibar search area is tapped while in AI Chat mode. Enters search editing mode.
-    func onAIChatOmnibarPressed() {
+    /// Delegate method called when the omnibar branding area is tapped while in AI Chat mode.
+    func onAIChatBrandingPressed() {
         viewCoordinator.omniBar.beginEditing(animated: true)
     }
 }

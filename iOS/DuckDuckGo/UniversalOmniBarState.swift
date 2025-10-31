@@ -84,15 +84,14 @@ enum UniversalOmniBarState {
         let showForwardButton = false
         let showBookmarksButton = false
         let showAIChatButton = false
-        let showAccessoryButton = false
         let clearTextOnStart = false
         let allowsTrackersAnimation = false
         let showSearchLoupe = false
-        let showPrivacyIcon = true
+        let showPrivacyIcon = false
         let showBackground = false
         let showClear = false
         let showAbort = false
-        let showRefresh = true
+        let showRefresh = false
         let showShare = false
         let showMenu = false
         let showSettings = false
@@ -100,7 +99,7 @@ enum UniversalOmniBarState {
         let showDismiss = false
         let showVoiceSearch = false
         let isBrowsing = false
-        let showAIChatSearch = true
+        let showAIChatFullModeBranding = true
 
         var name: String { Type.name(self) }
 

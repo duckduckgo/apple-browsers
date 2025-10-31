@@ -71,8 +71,8 @@ protocol OmniBarDelegate: AnyObject {
     /// Called when the AI Chat right button is tapped
     func onAIChatRightButtonPressed()
 
-    /// Called when the omnibar search area is tapped while in AI Chat mode. Replaces previous branding tap behavior.
-    func onAIChatOmnibarPressed()
+    /// Called when the AI Chat full mode omnibar branding area is tapped.
+    func onAIChatBrandingPressed()
 
     func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool)
 
@@ -152,7 +152,7 @@ extension OmniBarDelegate {
     func onAIChatRightButtonPressed() {
     }
 
-    func onAIChatOmnibarPressed() {
+    func onAIChatBrandingPressed() {
     }
 
     func onBackPressed() {

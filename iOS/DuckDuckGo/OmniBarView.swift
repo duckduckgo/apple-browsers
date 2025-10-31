@@ -85,8 +85,8 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     /// Callback triggered when the AI Chat right button is tapped
     var onAIChatRightButtonPressed: (() -> Void)? { get set }
 
-    /// Callback triggered when the omnibar search area is tapped while in AI Chat mode
-    var onAIChatOmnibarPressed: (() -> Void)? { get set }
+    /// Callback triggered when the omnibar branding area is tapped while in AI Chat mode
+    var onAIChatBrandingPressed: (() -> Void)? { get set }
 
     // static function is needed to allow creation of DefaultOmniBarView from xib
     static func create() -> Self

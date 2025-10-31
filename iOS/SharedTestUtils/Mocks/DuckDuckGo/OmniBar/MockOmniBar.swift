@@ -126,7 +126,7 @@ final class MockOmniBar: OmniBar {
         var onSharePressed: (() -> Void)?
         var onAIChatLeftButtonPressed: (() -> Void)?
         var onAIChatRightButtonPressed: (() -> Void)?
-        var onAIChatOmnibarPressed: (() -> Void)?
+        var onAIChatBrandingPressed: (() -> Void)?
 
         static func create() -> Self {
             Self.init()

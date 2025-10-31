@@ -213,8 +213,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onAIChatRightButtonPressed = { [weak self] in
             self?.onAIChatRightButtonPressed()
         }
-        barView.onAIChatOmnibarPressed = { [weak self] in
-            self?.onAIChatOmnibarPressed()
+        barView.onAIChatBrandingPressed = { [weak self] in
+            self?.onAIChatBrandingPressed()
         }
     }
 
@@ -472,13 +472,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isBookmarksButtonHidden = !state.showBookmarksButton
         barView.isAIChatButtonHidden = !state.showAIChatButton
 
-        let shouldShowAIChat = state.showAIChatSearch
+        let shouldShowAIChat = state.showAIChatFullModeBranding
         barView.isFullAIChatHidden = !shouldShowAIChat
-        if shouldShowAIChat {
-            showCustomIcon(icon: .aiChat)
-        } else {
-            barView.customIconView.isHidden = true
-        }
     }
 
     func onQuerySubmitted() {
@@ -665,8 +660,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         omniDelegate?.onAIChatRightButtonPressed()
     }
 
-    private func onAIChatOmnibarPressed() {
-        omniDelegate?.onAIChatOmnibarPressed()
+    private func onAIChatBrandingPressed() {
+        omniDelegate?.onAIChatBrandingPressed()
     }
 }
 

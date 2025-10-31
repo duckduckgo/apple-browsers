@@ -48,7 +48,7 @@ final class UniversalOmniBarStateTests: XCTestCase {
         let sut = UniversalOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: false)
 
         // Then
-        XCTAssertTrue(sut.showAIChatSearch)
+        XCTAssertTrue(sut.showAIChatFullModeBranding)
         XCTAssertFalse(sut.showBackButton)
         XCTAssertFalse(sut.showForwardButton)
         XCTAssertFalse(sut.showBookmarksButton)
@@ -59,35 +59,10 @@ final class UniversalOmniBarStateTests: XCTestCase {
         XCTAssertFalse(sut.showDismiss)
         XCTAssertFalse(sut.showSearchLoupe)
         XCTAssertFalse(sut.showVoiceSearch)
-        XCTAssertTrue(sut.showRefresh)
+        XCTAssertFalse(sut.showRefresh)
         XCTAssertFalse(sut.showAbort)
         XCTAssertFalse(sut.showShare)
         XCTAssertFalse(sut.isBrowsing)
-    }
-
-    func testWhenInAIChatModeStateThenAccessoryButtonIsHidden() {
-        // Given
-        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
-        let baseState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-
-        // When
-        let sut = UniversalOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: false)
-
-        // Then
-        XCTAssertFalse(sut.showAccessoryButton)
-    }
-
-    // Privacy icon container is used to display custom icons (duck.ai, duckplayer,etc.)
-    func testWhenInAIChatModeThenPrivacyIconIsShown() {
-        // Given
-        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
-        let baseState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-
-        // When
-        let sut = UniversalOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: false)
-
-        // Then
-        XCTAssertTrue(sut.showPrivacyIcon)
     }
 
     func testWhenInAIChatModeThenTextIsNotCleared() {

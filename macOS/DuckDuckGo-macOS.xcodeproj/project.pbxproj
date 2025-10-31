@@ -3725,6 +3725,8 @@
 		CC87770A2E1FF39B00113863 /* FirefoxHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */; };
 		CC87770C2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */; };
 		CC87770D2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */; };
+		CC951AC42EB51FE90047E245 /* DefaultBrowserAndDockPromptUserActivityStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC951AC32EB51FE90047E245 /* DefaultBrowserAndDockPromptUserActivityStoreTests.swift */; };
+		CC951AC52EB51FE90047E245 /* DefaultBrowserAndDockPromptUserActivityStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC951AC32EB51FE90047E245 /* DefaultBrowserAndDockPromptUserActivityStoreTests.swift */; };
 		CC9B678C2E607AD9003353C3 /* SessionRestorePromptPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC9B678B2E607AD1003353C3 /* SessionRestorePromptPixel.swift */; };
 		CC9B678D2E607AD9003353C3 /* SessionRestorePromptPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC9B678B2E607AD1003353C3 /* SessionRestorePromptPixel.swift */; };
 		CCA584A32E9D6B1000C36B4D /* AIChatHistoryCleanerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC19E9F22E82E3E60043F931 /* AIChatHistoryCleanerMock.swift */; };
@@ -6029,6 +6031,7 @@
 		CC7582C22EA15CFB0062BFCE /* StateRestorationPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateRestorationPromptTests.swift; sourceTree = "<group>"; };
 		CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxHistoryReader.swift; sourceTree = "<group>"; };
 		CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxHistoryReaderTests.swift; sourceTree = "<group>"; };
+		CC951AC32EB51FE90047E245 /* DefaultBrowserAndDockPromptUserActivityStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptUserActivityStoreTests.swift; sourceTree = "<group>"; };
 		CC9B678B2E607AD1003353C3 /* SessionRestorePromptPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromptPixel.swift; sourceTree = "<group>"; };
 		CCB36B122E56382E00DBFE3A /* UserScriptError+Pixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserScriptError+Pixel.swift"; sourceTree = "<group>"; };
 		CCC87D6C2E1412D00091344D /* ChromiumTopSitesReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumTopSitesReader.swift; sourceTree = "<group>"; };
@@ -11212,6 +11215,7 @@
 				9FFBEE7F2DDF0AC60058B11A /* DefaultBrowserAndDockPromptStatusUpdateNotifierTests.swift */,
 				9F97B31E2DE8310C00653C0D /* DefaultBrowserAndDockPromptFeatureFlaggerTests.swift */,
 				9FB4AF522DED8BFF00BE416F /* DefaultBrowserAndDockPromptPixelEventTests.swift */,
+				CC951AC32EB51FE90047E245 /* DefaultBrowserAndDockPromptUserActivityStoreTests.swift */,
 			);
 			path = DefaultBrowserAndAddToDockPrompts;
 			sourceTree = "<group>";
@@ -14354,6 +14358,7 @@
 				3706FDE1293F661700E42796 /* AdjacentItemEnumeratorTests.swift in Sources */,
 				4B9DB0572A983B55000927DB /* MockNotificationService.swift in Sources */,
 				3706FDE4293F661700E42796 /* TabLazyLoaderTests.swift in Sources */,
+				CC951AC42EB51FE90047E245 /* DefaultBrowserAndDockPromptUserActivityStoreTests.swift in Sources */,
 				84AECC512DFBFADC00438ACC /* AutoClearHandlerTests.swift in Sources */,
 				3706FDE5293F661700E42796 /* URLEventHandlerTests.swift in Sources */,
 				BB9851932E3102ED00FED56A /* NetworkProtectionNavBarButtonModelTests.swift in Sources */,
@@ -16823,6 +16828,7 @@
 				56BC8F022D312B320046059D /* ConfigurationManagerTests.swift in Sources */,
 				56A214AF2CB583BF00E5BC0E /* TrackerMessageProviderTests.swift in Sources */,
 				CC6E89802E5F0DE100F6BED0 /* SessionRestorePromptCoordinatorMock.swift in Sources */,
+				CC951AC52EB51FE90047E245 /* DefaultBrowserAndDockPromptUserActivityStoreTests.swift in Sources */,
 				37AA017C2E2100DA00844427 /* CrashPixelAppIdentifierTests.swift in Sources */,
 				37CD54B927F1F8AC00F1F7B9 /* AppearancePreferencesTests.swift in Sources */,
 				EEF53E182950CED5002D78F4 /* JSAlertViewModelTests.swift in Sources */,

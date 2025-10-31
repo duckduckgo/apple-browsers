@@ -246,11 +246,9 @@ final class AIChatViewControllerManager {
                                 autoSend: autoSend,
                                 tools: tools)
 
-        // Add as child view controller to the parent
         parentViewController.addChild(aiChatViewController)
         containerView.addSubview(aiChatViewController.view)
 
-        // Set up constraints to fill the container
         aiChatViewController.view.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             aiChatViewController.view.topAnchor.constraint(equalTo: containerView.topAnchor),

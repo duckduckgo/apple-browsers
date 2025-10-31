@@ -513,7 +513,6 @@ class TabViewController: UIViewController {
         }
         
         self.aiChatSettings = aiChatSettings
-        // Create AI Chat View Controller Manager for this tab
         self.aiChatViewControllerManager = AIChatViewControllerManager(
             experimentalAIChatManager: .init(featureFlagger: featureFlagger),
             featureFlagger: featureFlagger,

@@ -114,7 +114,6 @@ extension AIChatViewController {
         super.viewDidLoad()
         self.view.backgroundColor = .black
 
-        // Show title bar in modal and contextual presentation modes
         if presentationMode == .modal {
             setupTitleBar()
         }
@@ -168,7 +167,6 @@ extension AIChatViewController {
         view.addSubview(viewController.view)
         viewController.view.translatesAutoresizingMaskIntoConstraints = false
 
-        // Constrain based on presentation mode
         let topAnchor: NSLayoutYAxisAnchor
         switch presentationMode {
         case .modal:

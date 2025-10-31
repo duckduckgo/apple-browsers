@@ -241,6 +241,8 @@ class MainViewController: UIViewController {
     
     let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     let mobileCustomization: MobileCustomization
+    
+    private let aichatFullModeFeature: AIChatFullModeFeatureProviding
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -278,7 +280,8 @@ class MainViewController: UIViewController {
         daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(),
         dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
         launchSourceManager: LaunchSourceManaging,
-        winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+        winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
+        aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -320,6 +323,7 @@ class MainViewController: UIViewController {
         self.launchSourceManager = launchSourceManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = MobileCustomization(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
+        self.aichatFullModeFeature = aichatFullModeFeature
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -1383,7 +1387,7 @@ class MainViewController: UIViewController {
 
     fileprivate func select(tab: TabViewController) {
         hideNotificationBarIfBrokenSitePromptShown()
-        if tab.link == nil {
+        if tab.link == nil && tab.tabModel.isWebTab {
             attachHomeScreen()
         } else {
             attachTab(tab: tab)
@@ -1914,6 +1918,7 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
                 let interceptedURL = notification.userInfo?[TabURLInterceptorParameter.interceptedURL] as? URL
+                let payload = notification.object as? AIChatPayload
                 
                 var query: String?
                 var shouldAutoSend = false
@@ -1925,9 +1930,9 @@ class MainViewController: UIViewController {
                 }
                 
                 if let query = query {
-                    self?.openAIChat(query, autoSend: shouldAutoSend)
+                    self?.openAIChat(query, autoSend: shouldAutoSend, payload: payload)
                 } else {
-                    self?.openAIChat()
+                    self?.openAIChat(payload: payload)
                 }
             }
             .store(in: &urlInterceptorCancellables)
@@ -2281,7 +2286,42 @@ class MainViewController: UIViewController {
     }
 
     func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
-        aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, tools: tools, on: self)
+        
+        if aichatFullModeFeature.isAvailable {
+            openAIChatInTab(query, autoSend: autoSend, payload: payload, tools: tools)
+        } else {
+            aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, tools: tools, on: self)
+        }
+    }
+    
+    /// Loads AI Chat into the current tab, creating one if needed. Selects the tab when done.
+    ///
+    /// - Parameters:
+    ///   - query: Optional initial query to send to AI Chat
+    ///   - autoSend: Whether to automatically send the query
+    ///   - payload: Optional payload data for AI Chat
+    ///   - tools: Optional RAG tools available in AI Chat
+    private func openAIChatInTab(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
+        // Ensure we have a current tab, creating one if needed
+        if currentTab == nil {
+            if tabManager.current(createIfNeeded: true) == nil {
+                fatalError("failed to create tab")
+            }
+        }
+
+        guard let currentTab = currentTab else { fatalError("no tab") }
+
+        currentTab.loadAIChat(
+            
+            query: query,
+            payload: payload,
+            autoSend: autoSend,
+            tools: tools
+        ) { [weak self] in
+            guard let self else { return }
+            
+            select(tab: currentTab)
+        }
     }
 }
 
@@ -3819,9 +3859,15 @@ extension MainViewController: MainViewEditingStateTransitioning {
     }
 }
 
+extension MainViewController: SettingsAutoClearActionDelegate {
+    func performDataClearing() {
+        forgetAllWithAnimation()
+    }
+}
+
 // MARK: Customization support
 extension MainViewController {
-
+    
     private func subscribeToCustomizationSettingsEvents() {
         NotificationCenter.default.publisher(for: AppUserDefaults.Notifications.customizationSettingsChanged)
             .receive(on: DispatchQueue.main)
@@ -3830,72 +3876,71 @@ extension MainViewController {
             }
             .store(in: &settingsCancellables)
     }
-
+    
     func applyCustomizationState() {
         applyCustomizationForToolbar(mobileCustomization.state)
         // coming later - address bar
     }
-
+    
     @objc private func performCustomizationActionForToolbar() {
         // On NTP the default is fire button
         if isNewTabPageVisible {
             self.onFirePressed()
             return
         }
-
+        
         // Will be removed when feature flag is removed
         guard mobileCustomization.state.isEnabled else {
             self.onFirePressed()
             return
         }
-
+        
         switch mobileCustomization.state.currentToolbarButton {
         case .home:
             guard let tab = self.currentTab?.tabModel else { return }
             self.closeTab(tab, andOpenEmptyOneAtSamePosition: true)
-
+            
         case .newTab:
             self.newTab()
-
+            
         case .fire:
             self.onFirePressed()
-
+            
         case .bookmarks:
             self.segueToBookmarks()
-
+            
         case .duckAi:
             self.openAIChat()
-
+            
         case .passwords:
             self.launchAutofillLogins(with: currentTab?.url, currentTabUid: currentTab?.tabModel.uid, source: .customizedToolbarButton, selectedAccount: nil)
-
+            
         case .vpn:
             self.segueToVPN()
-
+            
         case .share:
             self.onSharePressed()
-
+            
         case .downloads:
             self.segueToDownloads()
-
+            
         default:
             // Eventually this will be an extensive list with no default block
             break
         }
     }
-
+    
     /// Applies customization if enabled, ensures default otherwise.
     private func applyCustomizationForToolbar(_ state: MobileCustomization.State) {
         guard let browserChrome = viewCoordinator.toolbarFireBarButtonItem.customView as? BrowserChromeButton else {
             assertionFailure("Expected BrowserChromeButton")
             return
         }
-
+        
         browserChrome.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
-
+        
         if !isNewTabPageVisible && state.isEnabled {
             browserChrome.setImage(state.currentToolbarButton.largeIcon)
         }
     }
-
 }

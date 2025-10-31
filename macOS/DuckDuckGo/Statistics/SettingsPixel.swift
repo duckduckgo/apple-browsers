@@ -94,6 +94,9 @@ enum SettingsPixel: PixelKitEvent {
      */
     case dataClearingSettingToggled
 
+    case syncAppIconWithThemeTurnedOn
+    case syncAppIconWithThemeTurnedOff
+
     // MARK: -
 
     var name: String {
@@ -130,6 +133,8 @@ enum SettingsPixel: PixelKitEvent {
         case .themeSettingChanged: return "settings_theme_changed_u"
         case .websiteZoomSettingChanged: return "settings_zoom_changed_u"
         case .dataClearingSettingToggled: return "settings_auto_clear_toggled_u"
+        case .syncAppIconWithThemeTurnedOn: return "settings_sync_app_icon_with_theme_turned_on"
+        case .syncAppIconWithThemeTurnedOff: return "settings_sync_app_icon_with_theme_turned_off"
         }
     }
 

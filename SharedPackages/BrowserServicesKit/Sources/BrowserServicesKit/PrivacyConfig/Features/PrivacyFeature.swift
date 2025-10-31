@@ -174,6 +174,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210869716452614?focus=true
     case customization
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211660503405838?focus=true
+    case forgetAllInSettings
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -267,6 +270,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Allows user to clear AI Chat history with the fire button or auto-clear
     case clearAIChatHistory
+
+    /// Signals that the iOS app should display duck.ai chats in "full mode" i.e in a tab, not a sheet
+    case fullDuckAIMode
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -449,6 +455,9 @@ public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
 
     // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210225579353384?focus=true
     case scheduledDefaultBrowserAndDockPrompts // macOS
+
+    // https://app.asana.com/1/137249556945/project/492600419927320/task/1210863200265479?focus=true
+    case scheduledDefaultBrowserAndDockPromptsInactiveUser // macOS
 
     // https://app.asana.com/1/137249556945/project/1206329551987282/task/1209304767941984?focus=true
     case scheduledDefaultBrowserPrompts // iOS

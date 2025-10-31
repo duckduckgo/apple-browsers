@@ -25,6 +25,11 @@ import UIKit
 /// Handles logic and persistence of customization options.  iPad is not supported so this returns false for `isEnabled` on iPad.
 class MobileCustomization {
 
+    protocol Delegate: AnyObject {
+        func canEditBookmark() -> Bool
+        func canEditFavorite() -> Bool
+    }
+
     struct State {
 
         var isEnabled: Bool
@@ -69,6 +74,14 @@ class MobileCustomization {
                 "Voice Search"
             case .downloads:
                 "Downloads"
+            }
+        }
+
+        var altLargeIcon: UIImage? {
+            switch self {
+            case .addEditBookmark: DesignSystemImages.Glyphs.Size24.bookmarkSolid
+            case .addEditFavorite: DesignSystemImages.Glyphs.Size24.favoriteSolid
+            default: nil
             }
         }
 
@@ -138,17 +151,6 @@ class MobileCustomization {
             }
         }
 
-        // BRINDY TODO
-        var enabledOnNewTabPage: Bool {
-            switch self {
-            case .share:
-                return false
-
-            default:
-                return true
-            }
-        }
-
         // Generally address bar specific
         case share
         case addEditBookmark
@@ -215,6 +217,8 @@ class MobileCustomization {
     private let isPad: Bool
     private let postChangeNotification: (State) -> Void
 
+    public weak var delegate: Delegate?
+
     static func descriptionComparison(lhs: CustomStringConvertible, rhs: CustomStringConvertible) -> Bool {
         lhs.description.localizedCaseInsensitiveCompare(rhs.description) == .orderedAscending
     }
@@ -259,6 +263,21 @@ class MobileCustomization {
 
     private func setCurrentAddressBarButton(_ button: Button) {
         try? keyValueStore.set(button.rawValue, forKey: StorageKeys.addressBarButton.rawValue)
+    }
+
+    func largeIconForButton(_ button: Button) -> UIImage? {
+
+        switch button {
+        case .addEditBookmark:
+            return delegate?.canEditBookmark() == true ? button.altLargeIcon : button.largeIcon
+
+        case .addEditFavorite:
+            return delegate?.canEditFavorite() == true ? button.altLargeIcon : button.largeIcon
+
+        default:
+            return button.largeIcon
+        }
+
     }
 
 }

@@ -448,6 +448,8 @@ class MainViewController: UIViewController {
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         applyCustomizationState()
         subscribeToCustomizationFeatureFlagChanges()
+
+        mobileCustomization.delegate = self
     }
 
     @MainActor
@@ -492,9 +494,6 @@ class MainViewController: UIViewController {
         if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
-
-       presentSyncRecoveryPromptIfNeeded()
-
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {
@@ -3837,6 +3836,20 @@ extension MainViewController: MainViewEditingStateTransitioning {
 }
 
 // MARK: Customization support
+extension MainViewController: MobileCustomization.Delegate {
+
+    func canEditBookmark() -> Bool {
+        guard let url = currentTab?.url else { return false }
+        return menuBookmarksViewModel.bookmark(for: url) != nil
+    }
+    
+    func canEditFavorite() -> Bool {
+        guard let url = currentTab?.url, let bookmark = menuBookmarksViewModel.bookmark(for: url) else { return false }
+        return bookmark.isFavorite(on: .mobile)
+    }
+
+}
+
 extension MainViewController {
 
     private func subscribeToCustomizationSettingsEvents() {
@@ -3855,7 +3868,6 @@ extension MainViewController {
 
     func applyCustomizationForAddressBar(_ state: MobileCustomization.State) {
         omniBar.reapplyState()
-        // TODO apply icon
     }
 
     @objc private func performCustomizationActionForToolbar() {
@@ -3928,10 +3940,12 @@ extension MainViewController {
             shareCurrentURLFromAddressBar()
 
         case .addEditBookmark:
-            addOrEditBookmarkForCurrentTab(favorite: true)
+            addOrEditBookmarkForCurrentTab()
+            omniBar.reapplyState()
 
         case .addEditFavorite:
-            addOrEditBookmarkForCurrentTab(favorite: false)
+            addOrEditFavoriteForCurrentTab()
+            omniBar.reapplyState()
 
         case .fire:
             onFirePressed()
@@ -3949,7 +3963,7 @@ extension MainViewController {
 
     }
 
-    private func addOrEditBookmarkForCurrentTab(favorite: Bool) {
+    private func addOrEditBookmarkForCurrentTab() {
         guard let webView = currentTab?.webView,
               let url = webView.url else {
             assertionFailure("Expecting current tab with web view")
@@ -3958,11 +3972,23 @@ extension MainViewController {
         if let bookmark = menuBookmarksViewModel.bookmark(for: url) {
             segueToEditBookmark(bookmark)
         } else {
-            currentTab?.saveAsBookmark(favorite: favorite, viewModel: menuBookmarksViewModel)
+            currentTab?.saveAsBookmark(favorite: false, viewModel: menuBookmarksViewModel)
         }
     }
 
     private func addOrEditFavoriteForCurrentTab() {
+        guard let webView = currentTab?.webView,
+              let url = webView.url else {
+            assertionFailure("Expecting current tab with web view")
+            return
+        }
+
+        let bookmark = menuBookmarksViewModel.bookmark(for: url)
+        if bookmark?.isFavorite(on: .mobile) == true {
+            segueToEditBookmark(bookmark!)
+        } else {
+            currentTab?.saveAsBookmark(favorite: true, viewModel: menuBookmarksViewModel)
+        }
     }
 
     private func showTextZoomEditorIfPossible() {

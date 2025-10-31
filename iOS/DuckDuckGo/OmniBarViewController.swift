@@ -472,12 +472,14 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     private func applyCustomization() {
-        guard dependencies.mobileCustomization.state.isEnabled else {
+        let state = dependencies.mobileCustomization.state
+        guard state.isEnabled else {
             barView.customizableButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple, for: .normal)
             return
         }
 
-        barView.customizableButton.setImage(dependencies.mobileCustomization.state.currentAddressBarButton.largeIcon, for: .normal)
+        let largeIcon = dependencies.mobileCustomization.largeIconForButton(state.currentAddressBarButton)
+        barView.customizableButton.setImage(largeIcon, for: .normal)
     }
 
     func onQuerySubmitted() {

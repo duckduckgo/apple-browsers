@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Persistence
 
 public class MockThrowingKeyValueStore: ThrowingKeyValueStoring {

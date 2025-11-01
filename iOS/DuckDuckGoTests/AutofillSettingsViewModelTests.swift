@@ -368,6 +368,15 @@ final class AutofillSettingsViewModelTests: XCTestCase {
         XCTAssertTrue(mockDelegate.navigateToImportViaSyncCalled)
         XCTAssertTrue(mockDelegate.navigateToImportViaSyncViewModel === viewModel)
     }
+
+    func testNavigateToExtensionManagement() {
+        // When
+        viewModel.navigateToExtensionManagement()
+
+        // Then
+        XCTAssertTrue(mockDelegate.navigateToExtensionManagementCalled)
+        XCTAssertTrue(mockDelegate.navigateToExtensionManagementViewModel === viewModel)
+    }
     
     // MARK: - Excluded Sites Tests
     
@@ -558,6 +567,9 @@ private class MockAutofillSettingsViewModelDelegate: AutofillSettingsViewModelDe
     var navigateToImportViaSyncCalled = false
     var navigateToImportViaSyncViewModel: AutofillSettingsViewModel?
     
+    var navigateToExtensionManagementCalled = false
+    var navigateToExtensionManagementViewModel: AutofillSettingsViewModel?
+
     func navigateToPasswords(viewModel: AutofillSettingsViewModel) {
         navigateToPasswordsCalled = true
         navigateToPasswordsViewModel = viewModel
@@ -572,9 +584,14 @@ private class MockAutofillSettingsViewModelDelegate: AutofillSettingsViewModelDe
         navigateToFileImportCalled = true
         navigateToFileImportViewModel = viewModel
     }
-    
+
     func navigateToImportViaSync(viewModel: AutofillSettingsViewModel) {
         navigateToImportViaSyncCalled = true
         navigateToImportViaSyncViewModel = viewModel
+    }
+    
+    func navigateToExtensionManagement(viewModel: AutofillSettingsViewModel) {
+        navigateToExtensionManagementCalled = true
+        navigateToExtensionManagementViewModel = viewModel
     }
 }

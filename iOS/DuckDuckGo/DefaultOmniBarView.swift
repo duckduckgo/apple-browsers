@@ -685,7 +685,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     }
 
     @objc private func aiChatRightButtonTap() {
-        onAIChatBrandingPressed?()
+        onAIChatRightButtonPressed?()
     }
 
     @objc private func aiChatBrandingViewTapped() {

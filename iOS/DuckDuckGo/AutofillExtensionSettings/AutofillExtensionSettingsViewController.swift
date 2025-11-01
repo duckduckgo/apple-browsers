@@ -45,6 +45,9 @@ class AutofillExtensionSettingsViewController: UIViewController {
     }
 
     private func setupView() {
+        let controller = UIHostingController(rootView: AutofillExtensionSettingsView(viewModel: AutofillExtensionSettingsViewModel()))
+        controller.view.backgroundColor = .clear
+        installChildViewController(controller)
     }
 
 }

@@ -1394,6 +1394,8 @@
 		C12726F02A5FF89900215B02 /* EmailSignupPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12726EF2A5FF89900215B02 /* EmailSignupPromptViewModel.swift */; };
 		C12726F22A5FF8CB00215B02 /* EmailSignupPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12726F12A5FF8CB00215B02 /* EmailSignupPromptViewController.swift */; };
 		C128BA252DF0847900ADDC5F /* SettingsCompleteSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C128BA242DF0847900ADDC5F /* SettingsCompleteSetupView.swift */; };
+		C138286D2EB57712001AE344 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = C138286C2EB57712001AE344 /* Lottie */; };
+		C138286F2EB57757001AE344 /* confirmation-prompt-128.json in Resources */ = {isa = PBXBuildFile; fileRef = C138286E2EB57757001AE344 /* confirmation-prompt-128.json */; };
 		C13830FC2DCD3F1400A29B3C /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13830FB2DCD3F1400A29B3C /* WebView.swift */; };
 		C13830FE2DCD3FFC00A29B3C /* CreditCardInputAccessoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13830FD2DCD3FFC00A29B3C /* CreditCardInputAccessoryView.swift */; };
 		C13B32D22A0E750700A59236 /* AutofillSettingStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13B32D12A0E750700A59236 /* AutofillSettingStatus.swift */; };
@@ -4364,6 +4366,7 @@
 				856086612DE47E5600AA3DC7 /* DesignResourcesKitIcons in Frameworks */,
 				4BC5E8672E174D6A00391C19 /* DesignResourcesKit in Frameworks */,
 				C1CAAA7B2CF8C8ED00C37EE6 /* Core.framework in Frameworks */,
+				C138286D2EB57712001AE344 /* Lottie in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7678,6 +7681,7 @@
 		C1CAAA742CF8BDC400C37EE6 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				C138286E2EB57757001AE344 /* confirmation-prompt-128.json */,
 				C1CAAA772CF8BDF200C37EE6 /* UserText.swift */,
 				C1CAAA792CF8BE0200C37EE6 /* Assets.xcassets */,
 			);
@@ -9953,6 +9957,7 @@
 				C1C1FF502D085AD70017ACCE /* ActionMessageView.xib in Resources */,
 				C1E4E9A92D0861AD00AA39AF /* Localizable.strings in Resources */,
 				C1E4E9A62D0861AD00AA39AF /* InfoPlist.strings in Resources */,
+				C138286F2EB57757001AE344 /* confirmation-prompt-128.json in Resources */,
 				C1CAAA7A2CF8BE0200C37EE6 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -15248,6 +15253,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 854007E52B57FB020001BD98 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
 			productName = ZIPFoundation;
+		};
+		C138286C2EB57712001AE344 /* Lottie */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9F8FE9472BAE50E50071E372 /* XCRemoteSwiftPackageReference "lottie-spm" */;
+			productName = Lottie;
 		};
 		C14882EC27F211A000D59F0C /* SwiftSoup */ = {
 			isa = XCSwiftPackageProductDependency;

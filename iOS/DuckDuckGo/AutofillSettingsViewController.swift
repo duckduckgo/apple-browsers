@@ -183,6 +183,13 @@ final class AutofillSettingsViewController: UIViewController {
             }
         }
     }
+
+    private func segueToExtensionManagement() {
+        if #available(iOS 18, *) {
+            let autofillExtensionSettingsViewController = AutofillExtensionSettingsViewController(source: .autofillSettings)
+            navigationController?.pushViewController(autofillExtensionSettingsViewController, animated: true)
+        }
+    }
 }
 
 // MARK: AutofillSettingsViewModelDelegate
@@ -204,7 +211,11 @@ extension AutofillSettingsViewController: AutofillSettingsViewModelDelegate {
     func navigateToCreditCards(viewModel: AutofillSettingsViewModel) {
         segueToCreditCards()
     }
-    
+
+    func navigateToExtensionManagement(viewModel: AutofillSettingsViewModel) {
+        segueToExtensionManagement()
+    }
+
 }
 
 // MARK: DataImportViewControllerDelegate

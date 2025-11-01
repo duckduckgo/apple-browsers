@@ -33,6 +33,7 @@ protocol AutofillSettingsViewModelDelegate: AnyObject {
     func navigateToCreditCards(viewModel: AutofillSettingsViewModel)
     func navigateToFileImport(viewModel: AutofillSettingsViewModel)
     func navigateToImportViaSync(viewModel: AutofillSettingsViewModel)
+    func navigateToExtensionManagement(viewModel: AutofillSettingsViewModel)
 }
 
 final class AutofillSettingsViewModel: ObservableObject {
@@ -253,7 +254,7 @@ final class AutofillSettingsViewModel: ObservableObject {
     }
 
     func navigateToExtensionManagement() {
-        // TODO
+        delegate?.navigateToExtensionManagement(viewModel: self)
     }
 
     // MARK: - Reset Excluded Sites

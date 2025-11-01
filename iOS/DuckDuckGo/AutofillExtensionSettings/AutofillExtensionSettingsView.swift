@@ -58,6 +58,7 @@ struct AutofillExtensionSettingsView: View {
         }
         .applyInsetGroupedListStyle()
         .sheet(isPresented: $viewModel.isShowingActivationView) {
+            AutofillExtensionSettingsActivationView()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
             Task { await viewModel.updateExtensionStatus() }

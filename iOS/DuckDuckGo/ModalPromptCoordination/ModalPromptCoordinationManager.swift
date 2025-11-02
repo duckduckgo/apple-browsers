@@ -91,10 +91,6 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
 private extension ModalPromptCoordinationManager {
 
     func presentModalPrompt(modalPromptConfiguration: ModalPromptConfiguration, from presenter: ModalPromptPresenter, completion: @escaping (() -> Void)) {
-        let viewControllerToPresent = modalPromptConfiguration.viewController
-        viewControllerToPresent.modalPresentationStyle = modalPromptConfiguration.presentationStyle
-        viewControllerToPresent.modalTransitionStyle = modalPromptConfiguration.transitionStyle
-        viewControllerToPresent.isModalInPresentation = modalPromptConfiguration.shouldDisablePullDownToDismiss
         scheduler.schedule(after: 0.1) {
             presenter.present(modalPromptConfiguration.viewController, animated: modalPromptConfiguration.animated, completion: completion)
         }

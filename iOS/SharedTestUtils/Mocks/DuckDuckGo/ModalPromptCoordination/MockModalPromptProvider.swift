@@ -31,9 +31,6 @@ final class MockModalPromptProvider: ModalPromptProvider {
         if shouldReturnPrompt {
             modalConfigurationToReturn = ModalPromptConfiguration(
                 viewController: UIViewController(),
-                presentationStyle: .pageSheet,
-                transitionStyle: .coverVertical,
-                shouldDisablePullDownToDismiss: false,
                 animated: true
             )
         }

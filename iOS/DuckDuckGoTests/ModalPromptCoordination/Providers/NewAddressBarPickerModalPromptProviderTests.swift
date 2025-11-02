@@ -98,7 +98,7 @@ final class NewAddressBarPickerModalPromptProviderTests {
     }
 
 
-    @Test("Check Configuration Sets Cover Vertical Transition Style")
+    @Test("Check View Controller Sets Cover Vertical Transition Style")
     func whenProvideModalPromptCalledThenSetsCoverVerticalTransitionStyle() {
         // GIVEN
         let validator = MockNewAddressBarPickerDisplayValidator(shouldDisplayPicker: true)
@@ -115,11 +115,11 @@ final class NewAddressBarPickerModalPromptProviderTests {
         let configuration = sut.provideModalPrompt()
 
         // THEN
-        #expect(configuration?.transitionStyle == .coverVertical)
+        #expect(configuration?.viewController.modalTransitionStyle == .coverVertical)
     }
 
-    @Test("Check Configuration Sets Should Disable Pull Down To Dismiss True")
-    func whenProvideModalPromptCalledThenSetsShouldDisablePullDownToDismissToTrue() {
+    @Test("Check View Controller Sets Is Modal In Presentation To True")
+    func whenProvideModalPromptCalledThenSetsIsModalInPresentationToTrue() {
         // GIVEN
         let validator = MockNewAddressBarPickerDisplayValidator(shouldDisplayPicker: true)
         let store = MockNewAddressBarPickerStorage()
@@ -135,7 +135,7 @@ final class NewAddressBarPickerModalPromptProviderTests {
         let configuration = sut.provideModalPrompt()
 
         // THEN
-        #expect(configuration?.shouldDisablePullDownToDismiss == true)
+        #expect(configuration?.viewController.isModalInPresentation == true)
     }
 
     @Test("Check Configuration Sets Animated To True")
@@ -158,7 +158,7 @@ final class NewAddressBarPickerModalPromptProviderTests {
         #expect(configuration?.animated == true)
     }
 
-    @Test("Check Configuration Sets Page Sheet Presentation Style On iPhone")
+    @Test("Check View Controller Sets Page Sheet Presentation Style On iPhone")
     func whenIsIPadFalseThenUsesPageSheetPresentationStyle() {
         // GIVEN
         let validator = MockNewAddressBarPickerDisplayValidator(shouldDisplayPicker: true)
@@ -175,10 +175,10 @@ final class NewAddressBarPickerModalPromptProviderTests {
         let configuration = sut.provideModalPrompt()
 
         // THEN
-        #expect(configuration?.presentationStyle == .pageSheet)
+        #expect(configuration?.viewController.modalPresentationStyle == .pageSheet)
     }
 
-    @Test("Check Configuration Sets Page Sheet Presentation Style on iPad iOS < 26", .disabled(if: Self.isOS26))
+    @Test("Check View Controller Sets Page Sheet Presentation Style on iPad iOS < 26", .disabled(if: Self.isOS26))
     func whenIsIPadTrueAndIOSBelow26ThenUsesPageSheetPresentationStyle() {
         // GIVEN
         let validator = MockNewAddressBarPickerDisplayValidator(shouldDisplayPicker: true)
@@ -195,11 +195,11 @@ final class NewAddressBarPickerModalPromptProviderTests {
         let configuration = sut.provideModalPrompt()
 
         // THEN
-        #expect(configuration?.presentationStyle == .pageSheet)
+        #expect(configuration?.viewController.modalPresentationStyle == .pageSheet)
     }
 
     @available(iOS 26.0, *)
-    @Test("Check Configuration Sets Form Sheet Presentation Style on iPad iOS 26+")
+    @Test("Check View Controller Sets Form Sheet Presentation Style on iPad iOS 26+")
     func whenIsIPadTrueAndIOS26OrAboveThenUsesFormSheetPresentationStyle() {
         // GIVEN
         let validator = MockNewAddressBarPickerDisplayValidator(shouldDisplayPicker: true)
@@ -216,7 +216,7 @@ final class NewAddressBarPickerModalPromptProviderTests {
         let configuration = sut.provideModalPrompt()
 
         // THEN
-        #expect(configuration?.presentationStyle == .formSheet)
+        #expect(configuration?.viewController.modalPresentationStyle == .formSheet)
     }
 
     @Test("Check Did Present Modal Calls Mark As Shown On The Store When Modal Is Presented")

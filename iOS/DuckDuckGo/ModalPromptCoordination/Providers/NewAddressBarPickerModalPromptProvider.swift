@@ -46,19 +46,18 @@ final class NewAddressBarPickerModalPromptProvider: ModalPromptProvider {
         }
 
         let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: aiChatSettings)
-        let modalPresentationStyle: UIModalPresentationStyle
 
+        // Configure presentation properties on the view controller
         if #available(iOS 26.0, *), isIPad {
-            modalPresentationStyle = .formSheet
+            pickerViewController.modalPresentationStyle = .formSheet
         } else {
-            modalPresentationStyle = .pageSheet
+            pickerViewController.modalPresentationStyle = .pageSheet
         }
+        pickerViewController.modalTransitionStyle = .coverVertical
+        pickerViewController.isModalInPresentation = true
 
         return ModalPromptConfiguration(
             viewController: pickerViewController,
-            presentationStyle: modalPresentationStyle,
-            transitionStyle: .coverVertical,
-            shouldDisablePullDownToDismiss: true,
             animated: true
         )
     }

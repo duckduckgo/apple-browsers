@@ -2334,7 +2334,8 @@ class MainViewController: UIViewController {
             tools: tools
         ) { [weak self] in
             guard let self else { return }
-            
+
+            self.themeColorManager.resetThemeColor()
             select(tab: currentTab)
         }
     }

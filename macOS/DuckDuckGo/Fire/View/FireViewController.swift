@@ -105,15 +105,12 @@ final class FireViewController: NSViewController {
     }
 
     override func viewWillAppear() {
-        super.viewWillAppear()
-
         subscribeToFireAnimationEvents()
         progressIndicator.startAnimation(self)
+        progressIndicatorWrapperBG.applyDropShadow()
     }
 
     override func viewDidDisappear() {
-        super.viewDidDisappear()
-
         progressIndicator.stopAnimation(self)
     }
 
@@ -238,7 +235,6 @@ final class FireViewController: NSViewController {
                     // Waits until windows are closed in Fire.swift
                     DispatchQueue.main.async {
                         self.progressIndicatorWrapper.isHidden = false
-                        self.progressIndicatorWrapperBG.applyDropShadow()
                     }
                 }
             }
@@ -253,8 +249,13 @@ final class FireViewController: NSViewController {
 
     @MainActor
     private func closeAllChildWindows() {
-        view.window?.childWindows?.forEach { $0.close() }
+        guard let mainWindow = view.window else { return }
+        for window in mainWindow.childWindows ?? [] {
+            guard !(window === mainWindow.titlebarView?.window /* fullscreen titlebar owning window */) else { continue }
+            window.close()
+        }
     }
+
 }
 
 /**

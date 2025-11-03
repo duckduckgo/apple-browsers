@@ -278,7 +278,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 guard let self else { return }
 
                 if tabCollectionViewModel.allTabsCount == 0 {
-                    view.window?.performClose(self)
+                    view.window?.close()
                     return
                 }
 
@@ -912,8 +912,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         // hide Tab Preview when a non-Tab Preview child window is shown (Suggestions, Bookmarks etc…)
         window.publisher(for: \.childWindows)
             .debounce(for: 0.05, scheduler: DispatchQueue.main)
-            .sink { [weak self] childWindows in
-                guard let self, let childWindows, childWindows.contains(where: { !($0.windowController is TabPreviewWindowController) }) else { return }
+            .sink { [weak self] childWindows in // TODO: fullscreen window
+                guard let self, let childWindows, childWindows.contains(where: {
+                    !(
+                        $0.windowController is TabPreviewWindowController
+                        || $0 === self.view.window?.titlebarView?.window // fullscreen titlebar owning window
+                    )
+                }) else { return }
 
                 hideTabPreview()
             }

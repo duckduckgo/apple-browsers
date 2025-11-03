@@ -134,6 +134,9 @@ extension DebugScreensViewModel {
             .view(title: "Modal Prompt Coordination", { d in
                 ModalPromptCoordinationDebugView(keyValueStore: d.keyValueStore)
             }),
+            .view(title: "What's New", { d in
+                WhatsNewDebugView(keyValueStore: d.keyValueStore)
+            }),
 
             // MARK: Controllers
             .controller(title: "Image Cache", { d in

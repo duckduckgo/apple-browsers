@@ -26,15 +26,18 @@ import RemoteMessaging
 final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
     private let remoteMessageStore: RemoteMessagingStoring
     private let remoteMessageActionHandler: RemoteMessagingActionHandling
+    private let isIPad: Bool
     private weak var navigationController: UINavigationController?
     private var currentMessageId: String?
 
     init(
         remoteMessageStore: RemoteMessagingStoring,
-        remoteMessageActionHandler: RemoteMessagingActionHandling
+        remoteMessageActionHandler: RemoteMessagingActionHandling,
+        isIPad: Bool
     ) {
         self.remoteMessageStore = remoteMessageStore
         self.remoteMessageActionHandler = remoteMessageActionHandler
+        self.isIPad = isIPad
     }
 
     // MARK: - ModalPromptProvider
@@ -49,10 +52,8 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
             Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Could not render message \(message.id, privacy: .public)")
             return nil
         }
-        viewController.modalPresentationStyle = .pageSheet
-        viewController.modalTransitionStyle = .coverVertical
         self.navigationController = viewController
-        
+
         // Store the message ID to mark it as shown later
         self.currentMessageId = message.id
 
@@ -128,6 +129,8 @@ private extension WhatsNewCoordinator {
             self?.dismiss(source: .closeButton)
         }
         let viewController = WhatsNewViewController(displayModel: displayModel, onCloseButton: closeButtonDismissAction)
+        viewController.modalPresentationStyle = isIPad ? .formSheet : .pageSheet
+        viewController.modalTransitionStyle = .coverVertical
         viewController.presentationController?.delegate = self
 
         return viewController

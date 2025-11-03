@@ -27,67 +27,68 @@ import Configuration
 
 /// The view mode for the debug view.  You shouldn't have to add or change anything here.
 ///  Please add new views/controllers to DebugScreensViewModel+Screens.swift.
-class DebugScreensViewModel: ObservableObject {
+public class DebugScreensViewModel: ObservableObject {
 
-    @Published var isInternalUser = false {
+    @Published public var isInternalUser = false {
         didSet {
             persisteInternalUserState()
         }
     }
 
-    @Published var isInspectibleWebViewsEnabled = false {
+    @Published public var isInspectibleWebViewsEnabled = false {
         didSet {
             persistInspectibleWebViewsState()
         }
     }
 
-    @Published var filter = "" {
+    @Published public var filter = "" {
         didSet {
             refreshFilter()
         }
     }
 
-    @Published var pinnedScreens: [DebugScreen] = []
-    @Published var unpinnedScreens: [DebugScreen] = []
-    @Published var actions: [DebugScreen] = []
-    @Published var filtered: [DebugScreen] = []
+    @Published public var pinnedScreens: [DebugScreen] = []
+    @Published public var unpinnedScreens: [DebugScreen] = []
+    @Published public var actions: [DebugScreen] = []
+    @Published public var filtered: [DebugScreen] = []
 
     @UserDefaultsWrapper(key: .debugPinnedScreens, defaultValue: [])
     var pinnedTitles: [String]
 
-    let dependencies: DebugScreen.Dependencies
+    var dependencies: AnyDebugDependencies
+    var screens: [DebugScreen]
 
-    var pushController: ((UIViewController) -> Void)?
+    public var pushController: ((UIViewController) -> Void)?
 
     var cancellables = Set<AnyCancellable>()
 
-    init(dependencies: DebugScreen.Dependencies) {
+    public init(dependencies: AnyDebugDependencies, screens: [DebugScreen] = []) {
         self.dependencies = dependencies
+        self.screens = screens
         refreshFilter()
         refreshToggles()
     }
 
-    func persisteInternalUserState() {
+    public func persisteInternalUserState() {
         (dependencies.internalUserDecider as? DefaultInternalUserDecider)?
             .debugSetInternalUserState(isInternalUser)
     }
 
-    func persistInspectibleWebViewsState() {
-        let defaults = AppUserDefaults()
-        let oldValue = defaults.inspectableWebViewEnabled
-        defaults.inspectableWebViewEnabled = isInspectibleWebViewsEnabled
+    public func persistInspectibleWebViewsState() {
+        let oldValue = dependencies.inspectableWebViewEnabled
+        dependencies.inspectableWebViewEnabled = isInspectibleWebViewsEnabled
 
         if oldValue != isInspectibleWebViewsEnabled {
-            NotificationCenter.default.post(Notification(name: AppUserDefaults.Notifications.inspectableWebViewsToggled))
+            dependencies.postinspectableWebViewsToggled()
         }
     }
 
-    func refreshToggles() {
+    public func refreshToggles() {
         self.isInternalUser = dependencies.internalUserDecider.isInternalUser
-        self.isInspectibleWebViewsEnabled = AppUserDefaults().inspectableWebViewEnabled
+        self.isInspectibleWebViewsEnabled = dependencies.inspectableWebViewEnabled
     }
 
-    func refreshFilter() {
+    public func refreshFilter() {
         func sorter(screen1: DebugScreen, screen2: DebugScreen) -> Bool {
             screen1.title < screen2.title
         }
@@ -105,18 +106,18 @@ class DebugScreensViewModel: ObservableObject {
         }
     }
 
-    func executeAction(_ screen: DebugScreen) {
+    public func executeAction(_ screen: DebugScreen) {
         switch screen {
         case .action(_, let action):
             action(self.dependencies)
-            ActionMessageView.present(message: "\(screen.title) - DONE")
+            DebugMessageView.present(message: "\(screen.title) - DONE")
 
         case .view, .controller:
             assertionFailure("Should not be pushing SwiftUI view as controller")
         }
     }
 
-    func navigateToController(_ screen: DebugScreen) {
+    public func navigateToController(_ screen: DebugScreen) {
         switch screen {
         case .controller(_, let controllerBuilder):
             pushController?(controllerBuilder(self.dependencies))
@@ -125,7 +126,7 @@ class DebugScreensViewModel: ObservableObject {
         }
     }
 
-    func buildView(_ screen: DebugScreen) -> AnyView {
+    public func buildView(_ screen: DebugScreen) -> AnyView {
         switch screen {
         case .controller, .action:
             return AnyView(FailedAssertionView("Unexpected view creation"))
@@ -135,11 +136,11 @@ class DebugScreensViewModel: ObservableObject {
         }
     }
 
-    func isPinned(_ screen: DebugScreen) -> Bool {
+    public func isPinned(_ screen: DebugScreen) -> Bool {
         return Set<String>(pinnedTitles).contains(screen.title)
     }
 
-    func togglePin(_ screen: DebugScreen) {
+    public func togglePin(_ screen: DebugScreen) {
         if isPinned(screen) {
             var set = Set<String>(pinnedTitles)
             set.remove(screen.title)
@@ -154,7 +155,7 @@ class DebugScreensViewModel: ObservableObject {
         do {
             try dependencies.customConfigurationURLProvider.setCustomURL(url, for: configuration)
         } catch {
-            ActionMessageView.present(message: "Failed to set custom URL: \(error.localizedDescription)")
+            DebugMessageView.present(message: "Failed to set custom URL: \(error.localizedDescription)")
         }
     }
 
@@ -218,26 +219,11 @@ class DebugScreensViewModel: ObservableObject {
     }
 
     func fetchPrivacyConfiguration(completion: @escaping (Bool) -> Void) {
-        AppConfigurationFetch().start(isDebug: true, forceRefresh: true) { [weak self] result in
-            switch result {
-            case .assetsUpdated(let protectionsUpdated):
-                if protectionsUpdated {
-                    ContentBlocking.shared.contentBlockingManager.scheduleCompilation()
-                    self?.lastConfigurationUpdateDate = Date()
-                }
-                DispatchQueue.main.async {
-                    completion(true)
-                }
-            case .noData:
-                DispatchQueue.main.async {
-                    completion(false)
-                }
-            }
-        }
+        dependencies.fetchPrivacyConfiguration(completion)
     }
 
     func fetchRemoteMessagingConfiguration() {
-        (UIApplication.shared.delegate as? AppDelegate)?.debugRefreshRemoteMessages()
+        dependencies.fetchRemoteMessagingConfiguration()
     }
 
     func fetchConfiguration(for configuration: Configuration, completion: @escaping (Bool) -> Void = { _ in }) {

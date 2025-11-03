@@ -28,6 +28,7 @@ import Subscription
 import DDGSync
 import os.log
 import DataBrokerProtection_iOS
+import Debug
 
 extension MainViewController {
 
@@ -383,21 +384,22 @@ extension MainViewController {
 
     private func launchDebugSettings(completion: ((DebugScreensViewController) -> Void)? = nil) {
         Logger.lifecycle.debug(#function)
-
-        let debug = DebugScreensViewController(dependencies: .init(
-            syncService: self.syncService,
-            bookmarksDatabase: self.bookmarksDatabase,
-            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-            tabManager: self.tabManager,
-            tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
-            fireproofing: self.fireproofing,
-            customConfigurationURLProvider: customConfigurationURLProvider,
-            keyValueStore: self.keyValueStore,
-            systemSettingsPiPTutorialManager: self.systemSettingsPiPTutorialManager,
-            daxDialogManager: self.daxDialogsManager,
-            databaseDelegate: self.dbpIOSPublicInterface,
-            debuggingDelegate: self.dbpIOSPublicInterface,
-            runPrequisitesDelegate: self.dbpIOSPublicInterface))
+        let debug = DebugScreensViewController(dependencies: AnyDebugDependencies(
+            DebugDependencies(
+                syncService: self.syncService,
+                bookmarksDatabase: self.bookmarksDatabase,
+                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                tabManager: self.tabManager,
+                tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
+                fireproofing: self.fireproofing,
+                customConfigurationURLProvider: customConfigurationURLProvider,
+                keyValueStore: self.keyValueStore,
+                systemSettingsPiPTutorialManager: self.systemSettingsPiPTutorialManager,
+                daxDialogManager: self.daxDialogsManager,
+                databaseDelegate: self.dbpIOSPublicInterface,
+                debuggingDelegate: self.dbpIOSPublicInterface,
+                runPrequisitesDelegate: self.dbpIOSPublicInterface)
+        ))
 
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic

@@ -25,12 +25,13 @@ import BareBonesBrowserKit
 import Core
 import DataBrokerProtection_iOS
 import AIChat
+import Debug
 
 extension DebugScreensViewModel {
 
     /// Just add your view or debug building logic to this array. In the UI this will be ordered by the title.
     /// Note that the storyboard is not passed to the controller builder - ideally we'll mirgate away from that to SwiftUI entirely
-    var screens: [DebugScreen] {
+    var screens: [AppDebugScreen] {
         return [
             // MARK: Actions
             .action(title: "Reset Autoconsent Prompt", { _ in
@@ -237,7 +238,7 @@ extension DebugScreensViewModel {
         ].compactMap { $0 }
     }
     
-    private func showNewAddressBarModal(_ dependencies: DebugScreen.Dependencies) {
+    private func showNewAddressBarModal(_ dependencies: DebugDependencies) {
         guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
         
         let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: AIChatSettings())
@@ -248,7 +249,7 @@ extension DebugScreensViewModel {
         controller.present(pickerViewController, animated: true)
     }
     
-    private func resetNewAddressBarPickerData(_ dependencies: DebugScreen.Dependencies) {
+    private func resetNewAddressBarPickerData(_ dependencies: DebugDependencies) {
         let pickerStorage = NewAddressBarPickerStorage()
         pickerStorage.reset()
         

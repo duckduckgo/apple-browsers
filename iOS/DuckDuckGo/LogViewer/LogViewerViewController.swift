@@ -20,6 +20,7 @@
 import UIKit
 import OSLog
 import Core
+import Debug
 
 final class LogViewerViewController: UIViewController {
 
@@ -88,9 +89,9 @@ final class LogViewerViewController: UIViewController {
     private let dataSource = LogViewerDataSource()
     private var filteredEntries: [FormattedLogEntry] = []
     private var isLoading = false
-    private let dependencies: DebugScreen.Dependencies
+    private let dependencies: DebugDependencies
     
-    init(dependencies: DebugScreen.Dependencies) {
+    init(dependencies: DebugDependencies) {
         self.dependencies = dependencies
         super.init(nibName: nil, bundle: nil)
     }

@@ -28,6 +28,7 @@ import Common
 import Configuration
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
+import Debug
 
 class SettingsLegacyViewProvider: ObservableObject {
 
@@ -122,20 +123,22 @@ class SettingsLegacyViewProvider: ObservableObject {
     }
 
     private func instantiateDebugController() -> UIViewController {
-        return DebugScreensViewController(dependencies: .init(
-            syncService: self.syncService,
-            bookmarksDatabase: self.bookmarksDatabase,
-            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-            tabManager: self.tabManager,
-            tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
-            fireproofing: self.fireproofing,
-            customConfigurationURLProvider: self.customConfigurationURLProvider,
-            keyValueStore: self.keyValueStore,
-            systemSettingsPiPTutorialManager: self.systemSettingsPiPTutorialManager,
-            daxDialogManager: self.daxDialogsManager,
-            databaseDelegate: self.dbpIOSPublicInterface,
-            debuggingDelegate: self.dbpIOSPublicInterface,
-            runPrequisitesDelegate: self.dbpIOSPublicInterface))
+        return DebugScreensViewController(dependencies: AnyDebugDependencies(
+            DebugDependencies(
+                syncService: self.syncService,
+                bookmarksDatabase: self.bookmarksDatabase,
+                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                tabManager: self.tabManager,
+                tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
+                fireproofing: self.fireproofing,
+                customConfigurationURLProvider: customConfigurationURLProvider,
+                keyValueStore: self.keyValueStore,
+                systemSettingsPiPTutorialManager: self.systemSettingsPiPTutorialManager,
+                daxDialogManager: self.daxDialogsManager,
+                databaseDelegate: self.dbpIOSPublicInterface,
+                debuggingDelegate: self.dbpIOSPublicInterface,
+                runPrequisitesDelegate: self.dbpIOSPublicInterface)
+        ))
     }
 
     // Legacy UIKit Views (Pushed unmodified)

@@ -24,7 +24,8 @@ final class MockParameterRandomiser {
     private(set) var didCallMergeRandomizedParameters = false
     private(set) var capturedUseCase: SubscriptionDataReportingUseCase?
     private(set) var capturedParameters: [String: String] = [:]
-    private(set) var parametersToReturn: [String: String] = [:]
+
+    var parametersToReturn: [String: String] = [:]
 
     func mergeRandomizedParameters(for useCase: SubscriptionDataReportingUseCase, with parameters: [String: String]) -> [String: String] {
         didCallMergeRandomizedParameters = true

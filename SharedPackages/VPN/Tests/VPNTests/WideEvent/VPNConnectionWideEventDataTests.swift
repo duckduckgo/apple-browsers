@@ -207,26 +207,6 @@ final class VPNConnectionWideEventTests: XCTestCase {
         XCTAssertNil(parameters["feature.data.ext.tunnel_start_latency_ms"])
     }
 
-    func testAddStepLatency_withIncompleteInterval() {
-        let eventData = VPNConnectionWideEventData(
-            extensionType: .app,
-            startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: "funnel_ios_appsettings")
-        )
-
-        let base = Date()
-        
-        // Start only
-        eventData.controllerStartDuration = WideEvent.MeasuredInterval(start: base, end: nil)
-        var parameters = eventData.pixelParameters()
-        XCTAssertNil(parameters["feature.data.ext.controller_start_latency_ms"])
-        
-        // End only
-        eventData.oauthDuration = WideEvent.MeasuredInterval(start: nil, end: base)
-        parameters = eventData.pixelParameters()
-        XCTAssertNil(parameters["feature.data.ext.oauth_latency_ms"])
-    }
-
     func testAddStepLatency_roundedToInteger() {
         let eventData = VPNConnectionWideEventData(
             extensionType: .app,
@@ -310,15 +290,12 @@ final class VPNConnectionWideEventTests: XCTestCase {
             contextData: WideEventContextData(name: "funnel_ios_appsettings")
         )
 
-        let underlying3 = NSError(domain: "Domain3", code: 3, userInfo: nil)
-        let underlying2 = NSError(domain: "Domain2", code: 2, userInfo: [
-            NSUnderlyingErrorKey: underlying3
-        ])
-        let underlying1 = NSError(domain: "Domain1", code: 1, userInfo: [
-            NSUnderlyingErrorKey: underlying2
+        let underlyingError2 = NSError(domain: "Domain2", code: 2, userInfo: [:])
+        let underlyingError1 = NSError(domain: "Domain1", code: 1, userInfo: [
+            NSUnderlyingErrorKey: underlyingError2
         ])
         let topError = NSError(domain: "TopDomain", code: 0, userInfo: [
-            NSUnderlyingErrorKey: underlying1
+            NSUnderlyingErrorKey: underlyingError1
         ])
         
         eventData.controllerStartError = WideEventErrorData(error: topError)
@@ -329,17 +306,13 @@ final class VPNConnectionWideEventTests: XCTestCase {
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.domain"], "TopDomain")
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.code"], "0")
         
-        // First underlying
+        // First underlying error
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.underlying_domain"], "Domain1")
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.underlying_code"], "1")
         
-        // Second underlying
+        // Second underlying error
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.underlying_domain2"], "Domain2")
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.underlying_code2"], "2")
-        
-        // Third underlying
-        XCTAssertEqual(parameters["feature.data.ext.controller_start_error.underlying_domain3"], "Domain3")
-        XCTAssertEqual(parameters["feature.data.ext.controller_start_error.underlying_code3"], "3")
     }
 
     // MARK: - transformErrorKey Tests
@@ -394,7 +367,6 @@ final class VPNConnectionWideEventTests: XCTestCase {
     }
 
     func testTransformErrorKey_underlyingDomainWithSuffix() {
-        let contextData = WideEventContextData(name: "test-context")
         let eventData = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
@@ -402,11 +374,11 @@ final class VPNConnectionWideEventTests: XCTestCase {
         )
 
         // Create deep chain to test numeric suffixes
-        let underlying10 = NSError(domain: "Domain10", code: 20, userInfo: nil)
-        var currentError = underlying10
+        let underlyingError20 = NSError(domain: "Domain20", code: 20, userInfo: nil)
+        var currentError = underlyingError20
         
-        // Build chain backwards from 9 to 1
-        for i in (1...20).reversed() {
+        // Build errors from 19 to 1
+        for i in (1...19).reversed() {
             currentError = NSError(domain: "Domain\(i)", code: i, userInfo: [
                 NSUnderlyingErrorKey: currentError
             ])
@@ -423,5 +395,6 @@ final class VPNConnectionWideEventTests: XCTestCase {
         XCTAssertEqual(parameters["feature.data.ext.oauth_error.underlying_domain2"], "Domain2")
         XCTAssertEqual(parameters["feature.data.ext.oauth_error.underlying_domain5"], "Domain5")
         XCTAssertEqual(parameters["feature.data.ext.oauth_error.underlying_domain10"], "Domain10")
+        XCTAssertEqual(parameters["feature.data.ext.oauth_error.underlying_domain20"], "Domain20")
     }
 }

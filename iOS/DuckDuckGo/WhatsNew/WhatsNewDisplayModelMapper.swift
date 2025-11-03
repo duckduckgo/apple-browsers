@@ -41,7 +41,7 @@ struct WhatsNewDisplayModelMapper {
 
         guard
             let contentType = message.content,
-            case let .cardsList(mainTitleText, items, primaryActionText, primaryAction) = contentType
+            case let .cardsList(mainTitleText, placeholder, items, primaryActionText, primaryAction) = contentType
         else {
             return nil
         }
@@ -51,7 +51,7 @@ struct WhatsNewDisplayModelMapper {
             let disclosureIcon = remoteListItem.action != nil ? Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronRightSmall) : nil
 
             return RemoteMessagingUI.CardsListDisplayModel.Item(
-                icon: Image(remoteListItem.placeholderImage.rawValue),
+                icon: remoteListItem.placeholderImage.rawValue,
                 title: remoteListItem.titleText,
                 description: remoteListItem.descriptionText,
                 disclosureIcon: disclosureIcon,
@@ -63,6 +63,7 @@ struct WhatsNewDisplayModelMapper {
 
         return RemoteMessagingUI.CardsListDisplayModel(
             screenTitle: mainTitleText,
+            icon: placeholder?.rawValue,
             items: promoItems,
             onAppear: nil,
             primaryAction: (

@@ -91,8 +91,8 @@ public struct RemoteMessageModel: Equatable, Codable {
                                             actionText: translation.primaryActionText ?? actionText,
                                             action: action)
 
-        case .cardsList(let titleText, let items, let primaryActionText, let primaryAction):
-            self.content = .cardsList(titleText: titleText, items: items, primaryActionText: primaryActionText, primaryAction: primaryAction)
+        case .cardsList(let titleText, let placeholder, let items, let primaryActionText, let primaryAction):
+            self.content = .cardsList(titleText: titleText, placeholder: placeholder, items: items, primaryActionText: primaryActionText, primaryAction: primaryAction)
         }
     }
 }
@@ -124,7 +124,7 @@ public enum RemoteMessageModelType: Codable, Equatable {
                       secondaryAction: RemoteAction)
     case promoSingleAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
                            actionText: String, action: RemoteAction)
-    case cardsList(titleText: String, items: [ListItem], primaryActionText: String, primaryAction: RemoteAction)
+    case cardsList(titleText: String, placeholder: RemotePlaceholder?, items: [ListItem], primaryActionText: String, primaryAction: RemoteAction)
 }
 
 extension RemoteMessageModelType {
@@ -133,7 +133,7 @@ extension RemoteMessageModelType {
         switch self {
         case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
             return nil
-        case let .cardsList(_, items, _, _):
+        case let .cardsList(_, _, items, _, _):
             return items
         }
     }

@@ -51,6 +51,7 @@ final class TabDragAndDropManager {
     @discardableResult
     func performDragAndDropIfNeeded() -> Bool {
         if let sourceUnit = sourceUnit,
+           sourceUnit.index.isPinnedTab == false,
            let destinationUnit = destinationUnit,
            sourceUnit.tabCollectionViewModel !== destinationUnit.tabCollectionViewModel,
            sourceUnit.tabCollectionViewModel?.isBurner == destinationUnit.tabCollectionViewModel?.isBurner {

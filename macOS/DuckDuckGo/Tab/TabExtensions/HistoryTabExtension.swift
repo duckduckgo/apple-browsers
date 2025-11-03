@@ -149,13 +149,13 @@ final class HistoryTabExtension: NSObject {
     }
 
     func clearNavigationHistory(keepingCurrent: Bool) {
-        var indices = localHistory.indices
+        var indicesToRemove = localHistory.indices
         if keepingCurrent,
            let lastVisit = localHistory.last, lastVisit.historyEntry?.url == self.url {
-            indices.removeLast()
+            indicesToRemove.removeLast()
         }
-        if !indices.isEmpty {
-            localHistory.removeSubrange(indices)
+        if !indicesToRemove.isEmpty {
+            localHistory.removeSubrange(indicesToRemove)
         }
     }
 

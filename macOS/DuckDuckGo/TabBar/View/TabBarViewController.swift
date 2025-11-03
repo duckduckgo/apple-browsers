@@ -912,7 +912,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         // hide Tab Preview when a non-Tab Preview child window is shown (Suggestions, Bookmarks etc…)
         window.publisher(for: \.childWindows)
             .debounce(for: 0.05, scheduler: DispatchQueue.main)
-            .sink { [weak self] childWindows in // TODO: fullscreen window
+            .sink { [weak self] childWindows in
                 guard let self, let childWindows, childWindows.contains(where: {
                     !(
                         $0.windowController is TabPreviewWindowController

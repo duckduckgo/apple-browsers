@@ -227,7 +227,7 @@ final class FireViewController: NSViewController {
                 fireViewModel.isAnimationPlaying = false
                 fireViewModel.fire.fireAnimationDidFinish()
 
-                guard let self = self else { return }
+                guard let self else { return }
 
                 // If not finished yet, present the progress indicator
                 if self.fireViewModel.isBurning {

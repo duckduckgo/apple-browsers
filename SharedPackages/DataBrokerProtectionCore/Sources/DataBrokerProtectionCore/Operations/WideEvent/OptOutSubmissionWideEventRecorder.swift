@@ -34,7 +34,7 @@ final class OptOutSubmissionWideEventRecorder: OptOutWideEventRecording {
                                identifier: OptOutWideEventIdentifier,
                                dataBrokerURL: String,
                                dataBrokerVersion: String?,
-                               recordFoundDate: Date) -> OptOutSubmissionWideEventRecorder? {
+                               recordFoundDate: Date?) -> OptOutSubmissionWideEventRecorder? {
         guard let recorder = WideEventRecorder<OptOutSubmissionWideEventData>.makeIfPossible(
             wideEvent: wideEvent,
             identifier: identifier.toGlobalId,
@@ -70,12 +70,12 @@ final class OptOutSubmissionWideEventRecorder: OptOutWideEventRecording {
                                 identifier: OptOutWideEventIdentifier,
                                 dataBrokerURL: String,
                                 dataBrokerVersion: String?,
-                                recordFoundDateProvider: () -> Date?) -> OptOutSubmissionWideEventRecorder? {
+                                recordFoundDate: Date?) -> OptOutSubmissionWideEventRecorder? {
         guard let recorder = WideEventRecorder<OptOutSubmissionWideEventData>.startIfPossible(
             wideEvent: wideEvent,
             identifier: identifier.toGlobalId,
             sampleRate: sampleRate,
-            intervalStartProvider: recordFoundDateProvider,
+            intervalStart: recordFoundDate,
             makeData: { global, interval in
                 OptOutSubmissionWideEventData(globalData: global,
                                                dataBrokerURL: dataBrokerURL,

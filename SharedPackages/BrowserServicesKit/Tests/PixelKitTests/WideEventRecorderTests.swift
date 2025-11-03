@@ -42,7 +42,7 @@ final class WideEventRecorderTests: XCTestCase {
             wideEvent: wideEventMock,
             identifier: identifier,
             sampleRate: 0.25,
-            intervalStartProvider: { startDate },
+            intervalStart: startDate,
             makeData: { global, interval in
                 WideEventDataMeasuringMock(globalData: global, measuredInterval: interval)
             }

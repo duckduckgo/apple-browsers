@@ -108,31 +108,29 @@ final class WinbackOfferStoreTests: XCTestCase {
 
     // MARK: - First day modal
 
-    func testWhenFirstDayModalShownIsNotSet_ItReturnsFalse() {
-        // When
-        let shown = store.firstDayModalShown
-
+    func testInitiallyLaunchPresentationDateIsNil() {
         // Then
-        XCTAssertFalse(shown)
+        XCTAssertNil(store.getOfferPresentationDate)
     }
 
-    func testWhenSettingFirstDayModalShownToTrue_ItReturnsTrue() {
+    func testSettingTheLaunchPresentationDate() {
         // When
-        store.firstDayModalShown = true
+        let date = Date()
+        store.storeOfferPresentationDate(date)
 
         // Then
-        XCTAssertTrue(store.firstDayModalShown)
+        XCTAssertEqual(store.getOfferPresentationDate(), date)
     }
 
-    func testWhenSettingFirstDayModalShownToFalse_ItReturnsFalse() {
+    func testClearingTheLaunchpresentationDate() {
         // Given
-        store.firstDayModalShown = true
+        store.storeOfferPresentationDate(Date())
 
         // When
-        store.firstDayModalShown = false
+        store.storeOfferPresentationDate(nil)
 
         // Then
-        XCTAssertFalse(store.firstDayModalShown)
+        XCTAssertNil(store.getOfferPresentationDate)
     }
 
     // MARK: - Integration
@@ -140,16 +138,17 @@ final class WinbackOfferStoreTests: XCTestCase {
     func testItCanStoreAndRetrieveMultipleValues() {
         // Given
         let churnDate = Date(timeIntervalSince1970: 1704067200)
+        let launchPromptDate = Date()
 
         // When
         store.storeChurnDate(churnDate)
         store.setHasRedeemedOffer(true)
-        store.firstDayModalShown = true
+        store.storeOfferPresentationDate(launchPromptDate)
 
         // Then
         XCTAssertEqual(store.getChurnDate()!.timeIntervalSince1970, churnDate.timeIntervalSince1970, accuracy: 1.0)
         XCTAssertTrue(store.hasRedeemedOffer())
-        XCTAssertTrue(store.firstDayModalShown)
+        XCTAssertEqual(store.getOfferPresentationDate(), launchPromptDate)
     }
 }
 

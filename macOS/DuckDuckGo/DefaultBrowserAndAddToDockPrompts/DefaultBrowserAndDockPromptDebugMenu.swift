@@ -30,6 +30,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     private let defaultBrowserAndDockPromptFeatureFlagger = NSApp.delegateTyped.defaultBrowserAndDockPromptService.featureFlagger
     private let localStatisticsStore = LocalStatisticsStore()
     private let userActivityManager = NSApp.delegateTyped.defaultBrowserAndDockPromptService.userActivityManager
+    private let userActivityStore = NSApp.delegateTyped.defaultBrowserAndDockPromptService.userActivityManager.store
 
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -72,6 +73,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
         showDatePickerAlert { [weak self] date in
             guard let self, let date else { return }
             debugStore.simulatedTodayDate = date
+            userActivityManager.recordActivity()
         }
     }
 
@@ -80,6 +82,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
         store.popoverShownDate = nil
         store.bannerShownDate = nil
         store.isBannerPermanentlyDismissed = false
+        userActivityStore.save(DefaultBrowserAndDockPromptUserActivity(lastActiveDate: Date()))
         updateMenuItemsState()
     }
 
@@ -128,6 +131,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
         }
 
         func updateInactiveUserModalMenuInfo() {
+            userActivityManager.recordActivity()
             let inactiveDays = userActivityManager.numberOfInactiveDays()
             inactiveDaysMenuItem.title = "Number of inactive days: \(inactiveDays)"
         }

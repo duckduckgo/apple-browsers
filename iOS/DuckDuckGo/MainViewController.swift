@@ -1465,7 +1465,8 @@ class MainViewController: UIViewController {
     private func refreshOmniBar() {
         updateOmniBarLoadingState()
 
-        guard let tab = currentTab, tab.link != nil || tab.tabModel.isAITab else {
+        let hasContent = tab.link != nil || tab.tabModel.isAITab
+        guard let tab = currentTab, hasContent else {
             viewCoordinator.omniBar.stopBrowsing()
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)

@@ -143,8 +143,7 @@ struct BrokerProfileOptOutSubJob {
                                                     profileQueryId: identifiers.profileQueryId,
                                                     extractedProfileId: identifiers.extractedProfileId)
         let recordFoundDateProvider = {
-            RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
-                                            repository: repository,
+            RecordFoundDateResolver.resolve(repository: repository,
                                             brokerId: identifiers.brokerId,
                                             profileQueryId: identifiers.profileQueryId,
                                             extractedProfileId: identifiers.extractedProfileId)
@@ -337,8 +336,7 @@ struct BrokerProfileOptOutSubJob {
                                                   profileQueryId: Int64,
                                                   extractedProfileId: Int64) {
         let recordFoundDateProvider = {
-            RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
-                                            repository: database,
+            RecordFoundDateResolver.resolve(repository: database,
                                             brokerId: brokerId,
                                             profileQueryId: profileQueryId,
                                             extractedProfileId: extractedProfileId)

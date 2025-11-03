@@ -528,8 +528,7 @@ struct BrokerProfileScanSubJob {
                                                     profileQueryId: Int64,
                                                     extractedProfileId: Int64) {
         let recordFoundDateProvider = {
-            RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
-                                            repository: database,
+            RecordFoundDateResolver.resolve(repository: database,
                                             brokerId: brokerId,
                                             profileQueryId: profileQueryId,
                                             extractedProfileId: extractedProfileId)

@@ -80,7 +80,6 @@ public enum PrivacyFeature: String {
     case tabCrashRecovery
     case delayedWebviewPresentation
     case disableFireAnimation
-    case feedbackForm
     case htmlNewTabPage
     case daxEasterEggLogos
     case openFireWindowByDefault

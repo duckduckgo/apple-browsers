@@ -275,11 +275,7 @@ extension AppDelegate {
             if self.internalUserDecider.isInternalUser {
                 Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
             } else {
-                if self.featureFlagger.isFeatureOn(.newFeedbackForm) {
-                    Application.appDelegate.openRequestANewFeature(nil)
-                } else {
-                    FeedbackPresenter.presentFeedbackForm()
-                }
+                Application.appDelegate.openRequestANewFeature(nil)
             }
         }
     }

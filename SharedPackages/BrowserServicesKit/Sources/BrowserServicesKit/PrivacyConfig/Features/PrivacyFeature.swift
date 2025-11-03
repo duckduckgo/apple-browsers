@@ -284,6 +284,8 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Allows to present Search Experience choice screen during onboarding
     case onboardingSearchExperience
+    /// Enables the omnibar toggle for AI Chat
+    case omnibarToggle
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

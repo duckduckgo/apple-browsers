@@ -21,8 +21,17 @@ import SwiftUI
 import DesignResourcesKitIcons
 import RemoteMessaging
 
-@MainActor
-struct WhatsNewDisplayModelMapper {
+protocol WhatsNewDisplayModelMapping {
+    func makeDisplayModel(
+        from message: RemoteMessageModel,
+        onItemAppear: @escaping (_ itemId: String) -> Void,
+        onItemAction: @escaping (_ action: RemoteAction, _ itemId: String) async -> Void,
+        onPrimaryAction: @escaping (RemoteAction) async -> Void,
+        onDismiss: @escaping () -> Void
+    ) -> RemoteMessagingUI.CardsListDisplayModel?
+}
+
+struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
 
     /// Maps a RemoteMessageModel to CardsListDisplayModel
     /// Returns nil if message is not a cardsList type
@@ -32,9 +41,10 @@ struct WhatsNewDisplayModelMapper {
     ///   - onPrimaryAction: Closure called when the primary action is tapped
     ///   - onDismiss: Closure called after primary action completes
     /// - Returns: CardsListDisplayModel if message is cardsList, nil otherwise
-    static func makeDisplayModel(
+    func makeDisplayModel(
         from message: RemoteMessageModel,
-        onItemAction: @escaping (RemoteAction) async -> Void,
+        onItemAppear: @escaping (_ itemId: String) -> Void,
+        onItemAction: @escaping (_ action: RemoteAction, _ itemId: String) async -> Void,
         onPrimaryAction: @escaping (RemoteAction) async -> Void,
         onDismiss: @escaping () -> Void
     ) -> RemoteMessagingUI.CardsListDisplayModel? {
@@ -55,8 +65,11 @@ struct WhatsNewDisplayModelMapper {
                 title: remoteListItem.titleText,
                 description: remoteListItem.descriptionText,
                 disclosureIcon: disclosureIcon,
+                onAppear: {
+                    onItemAppear(remoteListItem.id)
+                },
                 onTapAction: remoteListItem.action.map { action in
-                    makeAction(for: action, handler: onItemAction)
+                    makeAction(for: action, itemId: remoteListItem.id, handler: onItemAction)
                 }
             )
         }
@@ -65,7 +78,6 @@ struct WhatsNewDisplayModelMapper {
             screenTitle: mainTitleText,
             icon: placeholder?.rawValue,
             items: promoItems,
-            onAppear: nil,
             primaryAction: (
                 title: primaryActionText,
                 action: makeAction(for: primaryAction, handler: onPrimaryAction, andDismiss: onDismiss)
@@ -75,13 +87,8 @@ struct WhatsNewDisplayModelMapper {
 
     // MARK: - Private
 
-    /// Creates an action closure for a RemoteAction
-    /// - Parameters:
-    ///   - remoteAction: The remote action to wrap
-    ///   - handler: The async handler to call with the action
-    ///   - dismissAction: Optional dismiss closure to call after handler completes
-    /// - Returns: A synchronous closure that triggers async action handling
-    private static func makeAction(
+    // For actions without ID (primary action)
+    private func makeAction(
         for remoteAction: RemoteAction,
         handler: @escaping (RemoteAction) async -> Void,
         andDismiss dismissAction: (() -> Void)? = nil
@@ -93,4 +100,18 @@ struct WhatsNewDisplayModelMapper {
             }
         }
     }
+
+    // For actions with ID (item actions)
+    private func makeAction(
+        for remoteAction: RemoteAction,
+        itemId: String,
+        handler: @escaping (RemoteAction, String) async -> Void
+    ) -> () -> Void {
+        return {
+            Task { @MainActor in
+                await handler(remoteAction, itemId)
+            }
+        }
+    }
+
 }

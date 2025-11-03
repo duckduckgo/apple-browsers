@@ -23,9 +23,9 @@ import RemoteMessaging
 import RemoteMessagingTestsUtils
 @testable import DuckDuckGo
 
-@MainActor
 @Suite("What's New - Display Model Mapper")
 final class WhatsNewDisplayModelMapperTests {
+    private let sut = WhatsNewDisplayModelMapper()
 
     @Test("Check Mapper Creates Display Model From Cards List Message")
     func whenCardsListMessageThenDisplayModelIsCreated() throws {
@@ -44,9 +44,10 @@ final class WhatsNewDisplayModelMapperTests {
 
         // WHEN
         let displayModel = try #require(
-            WhatsNewDisplayModelMapper.makeDisplayModel(
+            sut.makeDisplayModel(
                 from: message,
-                onItemAction: { _ in },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
                 onPrimaryAction: { _ in },
                 onDismiss: { }
             )
@@ -71,9 +72,10 @@ final class WhatsNewDisplayModelMapperTests {
         )
 
         // WHEN
-        let displayModel = WhatsNewDisplayModelMapper.makeDisplayModel(
+        let displayModel = sut.makeDisplayModel(
             from: message,
-            onItemAction: { _ in },
+            onItemAppear: { _ in },
+            onItemAction: { _, _ in },
             onPrimaryAction: { _ in },
             onDismiss: { }
         )
@@ -99,9 +101,10 @@ final class WhatsNewDisplayModelMapperTests {
 
         // WHEN
         let displayModel = try #require(
-            WhatsNewDisplayModelMapper.makeDisplayModel(
+            sut.makeDisplayModel(
                 from: message,
-                onItemAction: { _ in },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
                 onPrimaryAction: { _ in },
                 onDismiss: { }
             )
@@ -126,9 +129,10 @@ final class WhatsNewDisplayModelMapperTests {
 
         // WHEN
         let displayModel = try #require(
-            WhatsNewDisplayModelMapper.makeDisplayModel(
+            sut.makeDisplayModel(
                 from: message,
-                onItemAction: { _ in },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
                 onPrimaryAction: { _ in },
                 onDismiss: { }
             )
@@ -158,9 +162,10 @@ final class WhatsNewDisplayModelMapperTests {
 
         // WHEN
         let displayModel = try #require(
-            WhatsNewDisplayModelMapper.makeDisplayModel(
+            sut.makeDisplayModel(
                 from: message,
-                onItemAction: { _ in },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
                 onPrimaryAction: { _ in },
                 onDismiss: { }
             )
@@ -178,6 +183,7 @@ final class WhatsNewDisplayModelMapperTests {
 @MainActor
 @Suite("What's New - Modal Mapper Action Handling Tests")
 struct WhatsNewDisplayModelActionHandlingTests {
+    private let sut = WhatsNewDisplayModelMapper()
 
     @Test("Check Primary Action Invokes Correct Callbacks")
     func whenPrimaryActionInvokedThenCallbacksAreCalled() async throws {
@@ -190,9 +196,10 @@ struct WhatsNewDisplayModelActionHandlingTests {
         var dismissCalled = false
 
         let displayModel = try #require(
-            WhatsNewDisplayModelMapper.makeDisplayModel(
+            sut.makeDisplayModel(
                 from: message,
-                onItemAction: { _ in },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
                 onPrimaryAction: { action in
                     primaryActionCalled = true
                     capturedAction = action
@@ -213,6 +220,42 @@ struct WhatsNewDisplayModelActionHandlingTests {
         #expect(dismissCalled)
     }
 
+    @Test("Check Item Appear Invokes Callback With Correct Item ID")
+    func whenItemAppearsCallbackInvokedThenItemIdIsPassed() throws {
+        // GIVEN
+        let items = [
+            RemoteMessageModelType.ListItem.makeListItem(id: "item-1"),
+            RemoteMessageModelType.ListItem.makeListItem(id: "item-2"),
+            RemoteMessageModelType.ListItem.makeListItem(id: "item-3")
+        ]
+        let message = RemoteMessageModel.makeCardsListMessage(items: items)
+
+        var itemAppearedCalls: [String] = []
+
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onItemAppear: { itemId in
+                    itemAppearedCalls.append(itemId)
+                },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        // WHEN - Invoke onAppear for each item
+        displayModel.items[safe: 0]?.onAppear?()
+        displayModel.items[safe: 1]?.onAppear?()
+        displayModel.items[safe: 2]?.onAppear?()
+
+        // THEN
+        #expect(itemAppearedCalls.count == 3)
+        #expect(itemAppearedCalls[0] == "item-1")
+        #expect(itemAppearedCalls[1] == "item-2")
+        #expect(itemAppearedCalls[2] == "item-3")
+    }
+
     @Test("Check Item Action Invokes Item Callback")
     func whenItemActionInvokedThenItemCallbackIsCalled() async throws {
         // GIVEN
@@ -224,9 +267,10 @@ struct WhatsNewDisplayModelActionHandlingTests {
         var capturedAction: RemoteAction?
 
         let displayModel = try #require(
-            WhatsNewDisplayModelMapper.makeDisplayModel(
+            sut.makeDisplayModel(
                 from: message,
-                onItemAction: { action in
+                onItemAppear: { _ in },
+                onItemAction: { action, itemId in
                     itemActionCalled = true
                     capturedAction = action
                 },
@@ -254,9 +298,10 @@ struct WhatsNewDisplayModelActionHandlingTests {
         var dismissCalled = false
 
         let displayModel = try #require(
-            WhatsNewDisplayModelMapper.makeDisplayModel(
+            sut.makeDisplayModel(
                 from: message,
-                onItemAction: { _ in
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in
                     itemActionCalled = true
                 },
                 onPrimaryAction: { _ in },
@@ -294,9 +339,10 @@ struct WhatsNewDisplayModelActionHandlingTests {
         var capturedAction: RemoteAction?
 
         let displayModel = try #require(
-            WhatsNewDisplayModelMapper.makeDisplayModel(
+            sut.makeDisplayModel(
                 from: message,
-                onItemAction: { _ in },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
                 onPrimaryAction: { action in
                     capturedAction = action
                 },
@@ -320,9 +366,10 @@ struct WhatsNewDisplayModelActionHandlingTests {
 
         var callCount = 0
 
-        let displayModel = try #require(WhatsNewDisplayModelMapper.makeDisplayModel(
+        let displayModel = try #require(sut.makeDisplayModel(
             from: message,
-            onItemAction: { _ in
+            onItemAppear: { _ in },
+            onItemAction: { _, _ in
                 callCount += 1
             },
             onPrimaryAction: { _ in },

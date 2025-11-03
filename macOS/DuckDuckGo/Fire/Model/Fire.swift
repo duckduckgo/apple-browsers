@@ -623,10 +623,12 @@ final class Fire: FireProtocol {
         historyCoordinating.burnVisits(visits, completion: completion)
     }
 
+    @MainActor
     private func burnHistory(of baseDomains: Set<String>, completion: @escaping @MainActor (Set<URL>) -> Void) {
         historyCoordinating.burnDomains(baseDomains, tld: tld, completion: completion)
     }
 
+    @MainActor
     private func burnAllHistory(completion: @escaping @MainActor () -> Void) {
         historyCoordinating.burnAll(completion: completion)
     }

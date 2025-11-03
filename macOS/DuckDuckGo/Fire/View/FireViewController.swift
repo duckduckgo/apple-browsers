@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Cocoa
-import Lottie
 import Combine
 import Common
-import BrowserServicesKit
 import FeatureFlags
+import Lottie
+import OSLog
 
 @MainActor
 final class FireViewController: NSViewController {
@@ -117,6 +118,7 @@ final class FireViewController: NSViewController {
     private var fireAnimationEventsCancellable: AnyCancellable?
     private func subscribeToFireAnimationEvents() {
         fireAnimationEventsCancellable = fireViewModel.isFirePresentationInProgress
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] shouldShowFirePresentation in
                 self?.fireIndicatorVisibilityManager.updateVisibility(shouldShowFirePresentation)
             }
@@ -304,6 +306,7 @@ final class FireIndicatorVisibilityManager {
 
     func updateVisibility(_ shouldShow: Bool) {
         if shouldShow {
+            Logger.general.error("\(String(describing: self.view() ??? "<nil>")): updateVisibility: false")
             fireIndicatorDialogPresentedAt = Date()
             timer?.invalidate()
             view()?.isHidden = false
@@ -311,7 +314,7 @@ final class FireIndicatorVisibilityManager {
             if let fireIndicatorDialogPresentedAt {
                 let presentationDuration = Date().timeIntervalSince(fireIndicatorDialogPresentedAt)
                 self.fireIndicatorDialogPresentedAt = nil
-                if presentationDuration > Self.fireIndicatorPresentationDuration {
+                if presentationDuration >= Self.fireIndicatorPresentationDuration {
                     view()?.isHidden = true
                 } else {
                     let remainingPresentationTime = Self.fireIndicatorPresentationDuration - presentationDuration

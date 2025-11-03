@@ -32,37 +32,37 @@ public protocol HistoryCoordinatingDebuggingSupport {
      *
      * > This function shouldn't be used in production code. Instead, `addVisit(of: URL)` should be used.
      */
-    @discardableResult func addVisit(of url: URL, at date: Date) -> Visit?
+    @discardableResult @MainActor func addVisit(of url: URL, at date: Date) -> Visit?
 }
 
 public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupport {
 
-    func loadHistory(onCleanFinished: @escaping () -> Void)
+    @MainActor func loadHistory(onCleanFinished: @escaping () -> Void)
 
-    var history: BrowsingHistory? { get }
-    var allHistoryVisits: [Visit]? { get }
-    var historyDictionary: [URL: HistoryEntry]? { get }
+    @MainActor var history: BrowsingHistory? { get }
+    @MainActor var allHistoryVisits: [Visit]? { get }
+    @MainActor var historyDictionary: [URL: HistoryEntry]? { get }
     var historyDictionaryPublisher: Published<[URL: HistoryEntry]?>.Publisher { get }
 
-    @discardableResult func addVisit(of url: URL) -> Visit?
-    func addBlockedTracker(entityName: String, on url: URL)
-    func trackerFound(on: URL)
-    func updateTitleIfNeeded(title: String, url: URL)
-    func markFailedToLoadUrl(_ url: URL)
-    func commitChanges(url: URL)
+    @discardableResult @MainActor func addVisit(of url: URL) -> Visit?
+    @MainActor func addBlockedTracker(entityName: String, on url: URL)
+    @MainActor func trackerFound(on: URL)
+    @MainActor func updateTitleIfNeeded(title: String, url: URL)
+    @MainActor func markFailedToLoadUrl(_ url: URL)
+    @MainActor func commitChanges(url: URL)
 
-    func title(for url: URL) -> String?
+    @MainActor func title(for url: URL) -> String?
 
-    func burnAll(completion: @escaping @MainActor () -> Void)
-    func burnDomains(_ baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Set<URL>) -> Void)
-    func burnVisits(_ visits: [Visit], completion: @escaping @MainActor () -> Void)
+    @MainActor func burnAll(completion: @escaping @MainActor () -> Void)
+    @MainActor func burnDomains(_ baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Set<URL>) -> Void)
+    @MainActor func burnVisits(_ visits: [Visit], completion: @escaping @MainActor () -> Void)
 
     @MainActor func removeUrlEntry(_ url: URL, completion: (@MainActor (Error?) -> Void)?)
 }
 
 extension HistoryCoordinating {
     @discardableResult
-    public func addVisit(of url: URL) -> Visit? {
+    @MainActor public func addVisit(of url: URL) -> Visit? {
         addVisit(of: url, at: Date())
     }
 }
@@ -76,6 +76,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
         self.historyStoringProvider = historyStoring
     }
 
+    @MainActor
     public func loadHistory(onCleanFinished: @escaping () -> Void) {
         historyDictionary = [:]
         cleanOldAndLoad(onCleanFinished: onCleanFinished)
@@ -92,16 +93,19 @@ final public class HistoryCoordinator: HistoryCoordinating {
     public var historyDictionaryPublisher: Published<[URL: HistoryEntry]?>.Publisher { $historyDictionary }
 
     // Output
+    @MainActor
     public var history: BrowsingHistory? {
         guard let historyDictionary else { return nil }
 
         return makeHistory(from: historyDictionary)
     }
 
+    @MainActor
     public var allHistoryVisits: [Visit]? {
         history?.flatMap { $0.visits }
     }
 
+    @MainActor
     @discardableResult public func addVisit(of url: URL, at date: Date) -> Visit? {
         guard let historyDictionary else {
             Logger.history.debug("Visit of \(url.absoluteString) ignored")
@@ -176,6 +180,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
         return historyEntry.title
     }
 
+    @MainActor
     public func burnAll(completion: @escaping @MainActor () -> Void) {
         Logger.history.debug("HistoryCoordinator: burnAll")
         self.historyDictionary = [:]
@@ -185,6 +190,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
         }
     }
 
+    @MainActor
     public func burnDomains(_ baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Set<URL>) -> Void) {
         guard let historyDictionary else { return }
 
@@ -201,6 +207,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
         })
     }
 
+    @MainActor
     public func burnVisits(_ visits: [Visit], completion: @escaping @MainActor () -> Void) {
         removeVisits(visits) { _ in
             completion()
@@ -251,6 +258,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
         }
     }
 
+    @MainActor
     private func removeEntries(_ entries: some Sequence<HistoryEntry>, completionHandler: (@MainActor (Error?) -> Void)? = nil) {
         // Remove from the local memory
         entries.forEach { entry in
@@ -275,6 +283,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
         }
     }
 
+    @MainActor
     private func removeVisits(_ visits: [Visit],
                               completionHandler: (@MainActor (Error?) -> Void)? = nil) {
         var entriesToRemove = Set<HistoryEntry>()
@@ -376,6 +385,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
 
     /// Sets boolean value for the keyPath in HistroryEntry for the specified url
     /// Does the same for the root URL if it has no visits
+    @MainActor
     private func mark(url: URL, keyPath: WritableKeyPath<HistoryEntry, Bool>, value: Bool) {
         guard let historyDictionary, var entry = historyDictionary[url] else {
             Logger.history.debug("Marking of \(url.absoluteString) not saved. History not loaded yet or entry doesn't exist")

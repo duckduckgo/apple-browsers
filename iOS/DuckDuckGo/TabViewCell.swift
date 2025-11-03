@@ -389,6 +389,8 @@ final class TabViewCell: UICollectionViewCell {
             title.accessibilityLabel = UserText.openTab(withTitle: aiChatTitle, atAddress: "")
             title.text = aiChatTitle
             favicon.image = DesignSystemImages.Color.Size24.aiChatGradient
+            
+            link?.isHidden = true
 
             if let preview = preview {
                 self.updatePreviewToDisplay(image: preview)
@@ -405,6 +407,7 @@ final class TabViewCell: UICollectionViewCell {
             self.preview?.image = Self.logoImage
             self.preview?.contentMode = .center
 
+            link?.isHidden = false
             link?.text = UserText.homeTabSearchAndFavorites
             title.text = UserText.homeTabTitle
             favicon.image = UIImage(resource: .logo)
@@ -415,6 +418,7 @@ final class TabViewCell: UICollectionViewCell {
             removeButton.isHidden = !tab.viewed
 
         } else {
+            link?.isHidden = false
             link?.text = tab.link?.url.absoluteString ?? ""
 
             // Duck Player videos

@@ -29,16 +29,19 @@ struct Background: BackgroundHandling {
 
     private let lastBackgroundDate: Date = Date()
     private let appDependencies: AppDependencies
+    private let sceneDependencies: SceneDependencies
     private let didTransitionFromLaunching: Bool
     private var services: AppServices { appDependencies.services }
 
-    init(stateContext: Launching.StateContext) {
+    init(stateContext: Connected.StateContext) {
         appDependencies = stateContext.appDependencies
+        sceneDependencies = stateContext.sceneDependencies
         didTransitionFromLaunching = true
     }
 
     init(stateContext: Foreground.StateContext) {
         appDependencies = stateContext.appDependencies
+        sceneDependencies = stateContext.sceneDependencies
         didTransitionFromLaunching = false
     }
 
@@ -49,8 +52,8 @@ struct Background: BackgroundHandling {
         services.dbpService.onBackground()
         services.vpnService.suspend()
         services.aiChatService.suspend()
-        services.authenticationService.suspend()
-        services.autoClearService.suspend()
+        sceneDependencies.authenticationService.suspend()
+        sceneDependencies.autoClearService.suspend()
         services.autofillService.suspend()
         services.syncService.suspend()
         services.reportingService.suspend()
@@ -85,7 +88,7 @@ extension Background {
     func willLeave() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
         ThemeManager.shared.updateUserInterfaceStyle()
-        services.autoClearService.resume()
+        sceneDependencies.autoClearService.resume()
         services.systemSettingsPiPTutorialService.resume()
     }
 
@@ -106,6 +109,7 @@ extension Background {
 
         let lastBackgroundDate: Date
         let appDependencies: AppDependencies
+        let sceneDependencies: SceneDependencies
         let didTransitionFromLaunching: Bool
 
     }
@@ -113,6 +117,7 @@ extension Background {
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
         Foreground(stateContext: StateContext(lastBackgroundDate: lastBackgroundDate,
                                               appDependencies: appDependencies,
+                                              sceneDependencies: sceneDependencies,
                                               didTransitionFromLaunching: didTransitionFromLaunching),
                    actionToHandle: actionToHandle)
     }

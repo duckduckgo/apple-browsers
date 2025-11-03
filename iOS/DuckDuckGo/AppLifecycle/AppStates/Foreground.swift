@@ -33,6 +33,7 @@ private extension BoolFileMarker.Name {
 struct Foreground: ForegroundHandling {
 
     private let appDependencies: AppDependencies
+    private let sceneDependencies: SceneDependencies
     var services: AppServices { appDependencies.services }
 
     /// Indicates whether this is the app's first transition to the foreground after launch.
@@ -43,9 +44,10 @@ struct Foreground: ForegroundHandling {
     private let launchActionHandler: LaunchActionHandler
     private let interactionManager: UIInteractionManager
 
-    init(stateContext: Launching.StateContext, actionToHandle: AppAction?) {
+    init(stateContext: Connected.StateContext, actionToHandle: AppAction?) {
         self.init(
             appDependencies: stateContext.appDependencies,
+            sceneDependencies: stateContext.sceneDependencies,
             lastBackgroundDate: nil,
             isFirstForeground: true,
             actionToHandle: actionToHandle
@@ -55,6 +57,7 @@ struct Foreground: ForegroundHandling {
     init(stateContext: Background.StateContext, actionToHandle: AppAction?) {
         self.init(
             appDependencies: stateContext.appDependencies,
+            sceneDependencies: stateContext.sceneDependencies,
             lastBackgroundDate: stateContext.lastBackgroundDate,
             isFirstForeground: stateContext.didTransitionFromLaunching,
             actionToHandle: actionToHandle
@@ -62,10 +65,12 @@ struct Foreground: ForegroundHandling {
     }
 
     private init(appDependencies: AppDependencies,
+                 sceneDependencies: SceneDependencies,
                  lastBackgroundDate: Date?,
                  isFirstForeground: Bool,
                  actionToHandle: AppAction?) {
         self.appDependencies = appDependencies
+        self.sceneDependencies = sceneDependencies
         self.isFirstForeground = isFirstForeground
         launchAction = LaunchAction(actionToHandle: actionToHandle,
                                     lastBackgroundDate: lastBackgroundDate)
@@ -77,8 +82,8 @@ struct Foreground: ForegroundHandling {
             newAddressBarPickerPresenter: NewAddressBarPickerPresenter(mainViewController: appDependencies.mainCoordinator.controller)
         )
         interactionManager = UIInteractionManager(
-            authenticationService: appDependencies.services.authenticationService,
-            autoClearService: appDependencies.services.autoClearService,
+            authenticationService: sceneDependencies.authenticationService,
+            autoClearService: sceneDependencies.autoClearService,
             launchActionHandler: launchActionHandler
         )
     }
@@ -191,11 +196,13 @@ extension Foreground {
     struct StateContext {
 
         let appDependencies: AppDependencies
+        let sceneDependencies: SceneDependencies
 
     }
 
     func makeBackgroundState() -> any BackgroundHandling {
-        Background(stateContext: StateContext(appDependencies: appDependencies))
+        Background(stateContext: StateContext(appDependencies: appDependencies,
+                                              sceneDependencies: sceneDependencies))
     }
 
 }

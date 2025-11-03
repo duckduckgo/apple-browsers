@@ -17,14 +17,71 @@
 //  limitations under the License.
 //
 
-import Foundation
+import UIKit
 
-struct Connected {
+@MainActor
+struct Connected: ConnectedHandling {
+    typealias Dependencies = SceneDependencies
 
-    init(stateContext: Launching.StateContext, actionToHandle: AppAction?) throws {
+    let launchingContext: Launching.StateContext
+    let sceneDependencies: SceneDependencies
 
-        
+    init(stateContext: Launching.StateContext, actionToHandle: AppAction?, window: UIWindow) {
+        self.launchingContext = stateContext
+        let appDependencies = launchingContext.appDependencies
+        let mainCoordinator = appDependencies.mainCoordinator
+        let overlayWindowManager = OverlayWindowManager(window: window,
+                                                        appSettings: appDependencies.appSettings,
+                                                        voiceSearchHelper: appDependencies.voiceSearchHelper,
+                                                        featureFlagger: appDependencies.featureFlagger,
+                                                        aiChatSettings: appDependencies.aiChatSettings)
+        let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
+        let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
+        let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
 
+        let launchTaskManager = launchingContext.appDependencies.launchTaskManager
+        launchTaskManager.register(task: ClearInteractionStateTask(autoClearService: autoClearService,
+                                                                   interactionStateSource: mainCoordinator.interactionStateSource,
+                                                                   tabManager: mainCoordinator.tabManager))
+        sceneDependencies = SceneDependencies(screenshotService: screenshotService,
+                                              authenticationService: authenticationService,
+                                              autoClearService: autoClearService)
+
+        configure(window, with: mainCoordinator)
+    }
+
+    private func configure(_ window: UIWindow, with mainCoordinator: MainCoordinator) { ThemeManager.shared.updateUserInterfaceStyle(window: window)
+        window.rootViewController = mainCoordinator.controller
+        UIApplication.shared.setWindow(window)
+        window.makeKeyAndVisible()
+        mainCoordinator.start()
+    }
+
+}
+
+extension Connected {
+
+    struct StateContext {
+
+        let didFinishLaunchingStartTime: CFAbsoluteTime
+        let appDependencies: AppDependencies
+        let sceneDependencies: SceneDependencies
+
+    }
+
+    func makeStateContext(sceneDependencies: SceneDependencies) -> StateContext {
+        .init(didFinishLaunchingStartTime: launchingContext.didFinishLaunchingStartTime,
+              appDependencies: launchingContext.appDependencies,
+              sceneDependencies: sceneDependencies)
+    }
+
+    func makeBackgroundState() -> any BackgroundHandling {
+        Background(stateContext: makeStateContext(sceneDependencies: sceneDependencies))
+    }
+
+    func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
+        Foreground(stateContext: makeStateContext(sceneDependencies: sceneDependencies),
+                   actionToHandle: actionToHandle)
     }
 
 }

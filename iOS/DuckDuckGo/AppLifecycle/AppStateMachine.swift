@@ -42,6 +42,7 @@ enum AppState {
 
     case initializing(InitializingHandling)
     case launching(LaunchingHandling)
+    case connected(any ConnectedHandling)
     case foreground(ForegroundHandling)
     case background(BackgroundHandling)
     case terminating(TerminatingHandling)
@@ -53,6 +54,8 @@ enum AppState {
             return "initializing"
         case .launching:
             return "launching"
+        case .connected:
+            return "connected"
         case .foreground:
             return "foreground"
         case .background:
@@ -80,9 +83,16 @@ protocol LaunchingHandling {
 
     init() throws
 
+    func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling
+
+}
+
+@MainActor
+protocol ConnectedHandling {
+
+    associatedtype Dependencies
     func makeBackgroundState() -> any BackgroundHandling
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling
-    func setupWindow(_ window: UIWindow)
 
 }
 
@@ -137,6 +147,8 @@ final class AppStateMachine {
             respond(to: event, in: initializing)
         case .launching(let launching):
             respond(to: event, in: launching)
+        case .connected(let connected):
+            respond(to: event, in: connected)
         case .foreground(let foreground):
             respond(to: event, in: foreground)
         case .background(let background):
@@ -170,13 +182,30 @@ final class AppStateMachine {
     private func respond(to event: AppEvent, in launching: LaunchingHandling) {
         switch event {
         case .didBecomeActive:
-            let foreground = launching.makeForegroundState(actionToHandle: actionToHandle)
+            break //todo remove
+        case .didEnterBackground:
+            break //todo remove
+        case .willEnterForeground:
+            break //todo remove
+        case .willConnectToScene(let windowScene):
+            let connected = launching.makeConnectedState(window: UIWindow(windowScene: windowScene),
+                                                         actionToHandle: actionToHandle)
+            currentState = .connected(connected)
+        default:
+            handleUnexpectedEvent(event, for: .launching(launching))
+        }
+    }
+
+    private func respond(to event: AppEvent, in connected: any ConnectedHandling) {
+        switch event {
+        case .didBecomeActive:
+            let foreground = connected.makeForegroundState(actionToHandle: actionToHandle)
             foreground.onTransition()
             foreground.didReturn()
             actionToHandle = nil
             currentState = .foreground(foreground)
         case .didEnterBackground:
-            let background = launching.makeBackgroundState()
+            let background = connected.makeBackgroundState()
             background.onTransition()
             background.didReturn()
             actionToHandle = nil
@@ -187,10 +216,8 @@ final class AppStateMachine {
             // We don’t support this transition and instead stay in Launching.
             // From here, we can move to Foreground or Background, where resuming/suspension is handled properly.
             break
-        case .willConnectToScene(let windowScene):
-            launching.setupWindow(UIWindow(windowScene: windowScene))
         default:
-            handleUnexpectedEvent(event, for: .launching(launching))
+            handleUnexpectedEvent(event, for: .connected(connected))
         }
     }
 

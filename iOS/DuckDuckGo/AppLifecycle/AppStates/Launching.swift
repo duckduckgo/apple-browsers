@@ -49,7 +49,7 @@ struct Launching: LaunchingHandling {
 
     private let didFinishLaunchingStartTime = CFAbsoluteTimeGetCurrent()
     private let isAppLaunchedInBackground = UIApplication.shared.applicationState == .background
-    private let window: UIWindow = UIWindow(frame: UIScreen.main.bounds)
+    //private let window: UIWindow = UIWindow(frame: UIScreen.main.bounds)
 
     private let configuration: AppConfiguration
     private let services: AppServices
@@ -176,14 +176,7 @@ struct Launching: LaunchingHandling {
         let notificationServiceManager = NotificationServiceManager(mainCoordinator: mainCoordinator)
         
         let vpnService = VPNService(mainCoordinator: mainCoordinator, notificationServiceManager: notificationServiceManager)
-        let overlayWindowManager = OverlayWindowManager(window: window,
-                                                        appSettings: appSettings,
-                                                        voiceSearchHelper: voiceSearchHelper,
-                                                        featureFlagger: featureFlagger,
-                                                        aiChatSettings: aiChatSettings)
-        let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
-        let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
-        let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
+        
         let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
             featureFlagger: featureFlagger,
             notificationServiceManager: notificationServiceManager,
@@ -198,15 +191,12 @@ struct Launching: LaunchingHandling {
         // 2. Persist throughout the app's runtime
         // 3. Provide core functionality across different parts of the app
 
-        services = AppServices(screenshotService: screenshotService,
-                               authenticationService: authenticationService,
-                               syncService: syncService,
+        services = AppServices(syncService: syncService,
                                vpnService: vpnService,
                                dbpService: dbpService,
                                autofillService: autofillService,
                                remoteMessagingService: remoteMessagingService,
                                configurationService: configurationService,
-                               autoClearService: autoClearService,
                                reportingService: reportingService,
                                subscriptionService: subscriptionService,
                                crashCollectionService: crashCollectionService,
@@ -221,10 +211,6 @@ struct Launching: LaunchingHandling {
                                aiChatService: AIChatService(aiChatSettings: aiChatSettings)
         )
 
-        // Register background tasks that run after app is ready
-        launchTaskManager.register(task: ClearInteractionStateTask(autoClearService: autoClearService,
-                                                                   interactionStateSource: mainCoordinator.interactionStateSource,
-                                                                   tabManager: mainCoordinator.tabManager))
         
         // Clean up wide event data at launch
         launchTaskManager.register(task: WideEventLaunchCleanupTask(wideEventService: wideEventService))
@@ -249,14 +235,6 @@ struct Launching: LaunchingHandling {
         // For a broader overview: https://app.asana.com/0/1202500774821704/1209445353536490/f
     }
 
-    func setupWindow(_ window: UIWindow) {
-        ThemeManager.shared.updateUserInterfaceStyle(window: window)
-        window.rootViewController = mainCoordinator.controller
-        UIApplication.shared.setWindow(window)
-        window.makeKeyAndVisible()
-        mainCoordinator.start()
-    }
-
     // MARK: -
 
     private var appDependencies: AppDependencies {
@@ -265,7 +243,10 @@ struct Launching: LaunchingHandling {
             services: services,
             launchTaskManager: launchTaskManager,
             launchSourceManager: launchSourceManager,
-            aiChatSettings: aiChatSettings
+            aiChatSettings: aiChatSettings,
+            featureFlagger: featureFlagger,
+            voiceSearchHelper: voiceSearchHelper,
+            appSettings: appSettings
         )
     }
     
@@ -296,12 +277,8 @@ extension Launching {
               appDependencies: appDependencies)
     }
 
-    func makeBackgroundState() -> any BackgroundHandling {
-        Background(stateContext: makeStateContext())
-    }
-
-    func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
-        Foreground(stateContext: makeStateContext(), actionToHandle: actionToHandle)
+    func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling {
+        Connected(stateContext: makeStateContext(), actionToHandle: actionToHandle, window: window)
     }
 
 }

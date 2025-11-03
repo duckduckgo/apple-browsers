@@ -44,7 +44,7 @@
                 "key": "feature.name",
                 "type": "string",
                 "description": "Feature identifier for this wide pixel",
-                "enum": ["vpn_connection"]
+                "enum": ["vpn-connection"]
             },
             {
                 "key": "feature.status_reason",

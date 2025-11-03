@@ -44,8 +44,15 @@ protocol DefaultBrowserAndDockPromptPresenting {
 }
 
 enum DefaultBrowserAndDockPromptPresentationType: Equatable {
-    case banner
-    case popover
+    case active(ActiveUserPrompt)
+    case inactive
+}
+
+extension DefaultBrowserAndDockPromptPresentationType {
+    enum ActiveUserPrompt {
+        case banner
+        case popover
+    }
 }
 
 final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenting {
@@ -74,15 +81,19 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         guard let type = coordinator.getPromptType() else { return }
 
         switch type {
-        case .banner:
+        case .active(.banner):
             guard let banner = getBanner() else { return }
             // Ensure that only one prompt is displayed at a time. Dismiss the popover if the banner is about to be shown to the user.
             popover?.close()
             bannerViewHandler(banner)
-        case .popover:
+        case .active(.popover):
             guard let view = popoverAnchorProvider() else { return }
 
             showPopover(below: view)
+        case .inactive:
+            // https://app.asana.com/1/137249556945/project/1209825025475019/task/1210864105873351?focus=true
+            // Show new inactive user prompt.
+            return
         }
 
         // Keep track of what type of prompt is shown.
@@ -139,19 +150,19 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             primaryAction: .init(
                 title: content.primaryButtonTitle,
                 action: {
-                    self.coordinator.confirmAction(for: .banner)
+                    self.coordinator.confirmAction(for: .active(.banner))
                     self.dismissBanner()
                 }
             ),
             secondaryAction: .init(
                 title: content.secondaryButtonTitle,
                 action: {
-                    self.coordinator.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: true))
+                    self.coordinator.dismissAction(.userInput(prompt: .active(.banner), shouldHidePermanently: true))
                     self.dismissBanner()
                 }
             ),
             closeAction: {
-                self.coordinator.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: false))
+                self.coordinator.dismissAction(.userInput(prompt: .active(.banner), shouldHidePermanently: false))
                 self.dismissBanner()
             })
     }
@@ -165,13 +176,13 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             buttonText: content.primaryButtonTitle,
             buttonAction: {
                 self.clearStatusUpdateData()
-                self.coordinator.confirmAction(for: .popover)
+                self.coordinator.confirmAction(for: .active(.popover))
                 self.popover?.close()
             },
             secondaryButtonText: content.secondaryButtonTitle,
             secondaryButtonAction: {
                 self.clearStatusUpdateData()
-                self.coordinator.dismissAction(.userInput(prompt: .popover, shouldHidePermanently: false))
+                self.coordinator.dismissAction(.userInput(prompt: .active(.popover), shouldHidePermanently: false))
                 self.popover?.close()
             })
 

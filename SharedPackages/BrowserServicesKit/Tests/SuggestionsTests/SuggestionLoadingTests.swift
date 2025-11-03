@@ -158,7 +158,7 @@ final class SuggestionLoadingTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
-    @MainActor 
+    @MainActor
     func testWhenDataSourceProvidesAllData_ThenResultAndNoErrorIsReturned() {
         let dataSource = SuggestionLoadingDataSourceMock(data: Data.anAPIResultData,
                                                          platform: .desktop,

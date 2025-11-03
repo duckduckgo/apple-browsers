@@ -692,18 +692,6 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         onAIChatBrandingPressed?()
     }
 
-    @objc private func aiChatLeftButtonTap() {
-        onAIChatLeftButtonPressed?()
-    }
-
-    @objc private func aiChatRightButtonTap() {
-        onAIChatRightButtonPressed?()
-    }
-
-    @objc private func aiChatBrandingViewTapped() {
-        onAIChatBrandingPressed?()
-    }
-
     private struct Metrics {
         static let itemSize: CGFloat = 44
         static let height: CGFloat = 60

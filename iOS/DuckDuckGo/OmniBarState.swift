@@ -45,6 +45,7 @@ protocol OmniBarState: CustomStringConvertible {
     var showVoiceSearch: Bool { get }
     var showAbort: Bool { get }
     var showDismiss: Bool { get } // < button inside the address bar
+    var showAIChatFullModeBranding: Bool { get } // Unique omnibar view displayed with in full duck.ai mode
 
     var onEditingStoppedState: OmniBarState { get }
     var onEditingSuspendedState: OmniBarState { get }
@@ -89,6 +90,9 @@ extension OmniBarState {
                                                     dependencies: dependencies,
                                                     isLoading: isLoading)
     }
+    
+    // Default to false
+    var showAIChatFullModeBranding: Bool { false }
 }
 
 protocol OmniBarLoadingBearerStateCreating {

@@ -77,6 +77,15 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     var onBookmarksPressed: (() -> Void)? { get set }
     var onAIChatPressed: (() -> Void)? { get set }
     var onDismissPressed: (() -> Void)? { get set }
+    
+    /// Callback triggered when the AI Chat left button is tapped
+    var onAIChatLeftButtonPressed: (() -> Void)? { get set }
+
+    /// Callback triggered when the AI Chat right button is tapped
+    var onAIChatRightButtonPressed: (() -> Void)? { get set }
+
+    /// Callback triggered when the omnibar branding area is tapped while in AI Chat mode
+    var onAIChatBrandingPressed: (() -> Void)? { get set }
 
     // static function is needed to allow creation of DefaultOmniBarView from xib
     static func create() -> Self
@@ -102,4 +111,5 @@ protocol OmniBarStatusUpdateable: AnyObject {
     var isAIChatButtonHidden: Bool { get set }
     var isSearchLoupeHidden: Bool { get set }
     var isDismissButtonHidden: Bool { get set }
+    var isFullAIChatHidden: Bool { get set }
 }

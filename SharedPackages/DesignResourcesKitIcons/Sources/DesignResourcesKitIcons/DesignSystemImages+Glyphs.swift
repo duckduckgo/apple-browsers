@@ -314,7 +314,9 @@ public extension DesignSystemImages {
             public static var add: DesignSystemImage { .init(resource: .add24) }
             public static var addition: DesignSystemImage { .init(resource: .addition24) }
             public static var aiChat: DesignSystemImage { .init(resource: .aiChat24) }
+            public static var aiChatAdd: DesignSystemImage { .init(resource: .aiChatAdd24) }
             public static var aiChatAddSolid: DesignSystemImage { .init(resource: .aiChatAddSolid24) }
+            public static var aiChatBack: DesignSystemImage { .init(resource: .aiChatBack24) }
             public static var alertRecolorable: DesignSystemImage { .init(resource: .alertRecolorable24) }
             public static var arrowCircleUpLeft: DesignSystemImage { .init(resource: .arrowCircleUpLeft24) }
             public static var arrowDown: DesignSystemImage { .init(resource: .arrowDown24) }

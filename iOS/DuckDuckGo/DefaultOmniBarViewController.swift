@@ -216,7 +216,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
                                                 storage: UserDefaults.standard, aiChatSettings: aiChatSettings,
                                                 sessionStateMetrics: sessionStateMetrics)
 
-        guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty else {
+        guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty, omniBarView.isFullAIChatHidden else {
             return switchBarHandler
         }
 

@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Activar la protección de privacidad";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Cerrar pestañas y borrar datos";
+"action.title.forgetAll" = "Borrar datos y pestañas";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Pestañas y datos borrados";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Borrar pestañas, datos y chats de Duck.ai";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Abrir en segundo plano";
@@ -2827,6 +2830,12 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Desactivar para evitar que los enlaces se abran automáticamente en otras aplicaciones instaladas.";
 
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Borrar datos y pestañas";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Borra pestañas, datos y chats de Duck.ai";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sugerencias de búsqueda";
 
@@ -2871,6 +2880,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Personalizar";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Borra todas las pestañas, los chats de Duck.ai y los datos de los sitios que no hayas protegido con Fireproof.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Borrar todas las pestañas y los datos de los sitios no protegidos con Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Eliminación de datos";

@@ -499,11 +499,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .vpnMenuItem:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnMenuItem))
         case .forgetAllInSettings:
-            return
-                .internalOnly()
-            // Will update after translations are done
-            // https://app.asana.com/1/137249556945/project/1206226850447395/task/1211803893845698
-                // .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.forgetAllInSettings))
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.forgetAllInSettings))
         case .duckAiDataClearing:
             return .remoteReleasable(.feature(.duckAiDataClearing))
         case .fullDuckAIMode:

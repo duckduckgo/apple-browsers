@@ -29,6 +29,7 @@ struct OtherTabBarViewItemsState {
 
 protocol TabBarViewModel {
     var tabContent: Tab.TabContent { get }
+    var isPinned: Bool { get }
     var title: String { get }
     var titlePublisher: Published<String>.Publisher { get }
     var faviconPublisher: Published<NSImage?>.Publisher { get }
@@ -41,6 +42,10 @@ protocol TabBarViewModel {
 
 }
 extension TabViewModel: TabBarViewModel {
+    var isPinned: Bool {
+        tab.isPinned
+    }
+
     var titlePublisher: Published<String>.Publisher { $title }
     var faviconPublisher: Published<NSImage?>.Publisher { $favicon }
     var tabContentPublisher: AnyPublisher<Tab.TabContent, Never> { tab.$content.eraseToAnyPublisher() }
@@ -60,6 +65,7 @@ protocol TabBarViewItemDelegate: AnyObject {
     @MainActor func tabBarViewItemCanBePinned(_: TabBarViewItem) -> Bool
     @MainActor func tabBarViewItemCanBeBookmarked(_: TabBarViewItem) -> Bool
     @MainActor func tabBarViewItemIsAlreadyBookmarked(_: TabBarViewItem) -> Bool
+    @MainActor func tabBarViewItemShouldHideSeparator(_: TabBarViewItem) -> Bool
     @MainActor func tabBarViewAllItemsCanBeBookmarked(_: TabBarViewItem) -> Bool
 
     @MainActor func tabBarViewItemWillOpenContextMenu(_: TabBarViewItem)
@@ -93,10 +99,11 @@ final class TabBarItemCellView: NSView {
         case full
         case withoutCloseButton
         case withoutTitle
+        case pinned
 
-        var isTitleHidden: Bool { self == .withoutTitle }
+        var isTitleHidden: Bool { self == .withoutTitle || self == .pinned }
         var isCloseButtonHidden: Bool { self != .full }
-        var isFaviconCentered: Bool { !isTitleHidden }
+        var isFaviconCentered: Bool { !isTitleHidden || self == .pinned }
 
         init(width: CGFloat) {
             switch width {
@@ -130,6 +137,8 @@ final class TabBarItemCellView: NSView {
         faviconImageView.imageScaling = .scaleProportionallyDown
         return faviconImageView
     }()
+
+    fileprivate let faviconPlaceholderView = LetterView()
 
     fileprivate let crashIndicatorButton = {
         let crashIndicatorButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.crashButtonAction))
@@ -295,6 +304,7 @@ final class TabBarItemCellView: NSView {
         }
 
         faviconImageView.setAccessibilityIdentifier("TabBarViewItem.favicon")
+        faviconPlaceholderView.setAccessibilityIdentifier("TabBarViewItem.faviconPlaceholder")
         titleTextField.setAccessibilityIdentifier("TabBarViewItem.title")
 
         closeButton.toolTip = UserText.closeTab
@@ -317,6 +327,7 @@ final class TabBarItemCellView: NSView {
         crashIndicatorButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsCornerRadius
 
         addSubview(faviconImageView)
+        addSubview(faviconPlaceholderView)
         addSubview(crashIndicatorButton)
         addSubview(audioButton)
         addSubview(titleTextField)
@@ -367,6 +378,8 @@ final class TabBarItemCellView: NSView {
             layoutForNormalMode()
         case .withoutTitle:
             layoutForCompactMode()
+        case .pinned:
+            layoutForPinnedMode()
         }
 
         let separatorHeight = theme.tabStyleProvider.separatorHeight
@@ -450,6 +463,32 @@ final class TabBarItemCellView: NSView {
             // close button appears in place of favicon in compact mode
             closeButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
             x = closeButton.frame.maxX + spacing
+        }
+    }
+
+    private func layoutForPinnedMode() {
+        assert(closeButton.isHidden)
+        assert(permissionButton.isHidden)
+        assert(titleTextField.isHidden)
+
+        let elementWidth: CGFloat = 16
+        let x = (bounds.width - elementWidth) / 2
+        let faviconFrame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
+        if faviconImageView.isShown {
+            faviconImageView.frame = faviconFrame
+        } else if faviconPlaceholderView.isShown {
+            faviconPlaceholderView.frame = faviconFrame
+        }
+        if crashIndicatorButton.isShown {
+            crashIndicatorButton.frame = faviconFrame.offsetBy(dx: 8, dy: 8)
+            crashIndicatorButton.cornerRadius = faviconFrame.height/2
+            crashIndicatorButton.backgroundColor = .pinnedTabMuteStateCircle
+            crashIndicatorButton.mouseOverColor = nil
+        } else if audioButton.isShown {
+            audioButton.frame = faviconFrame.offsetBy(dx: 8, dy: 8)
+            audioButton.cornerRadius = faviconFrame.height/2
+            audioButton.backgroundColor = .pinnedTabMuteStateCircle
+            audioButton.mouseOverColor = nil
         }
     }
 
@@ -584,6 +623,9 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
 
     private var widthStage: TabBarItemCellView.WidthStage {
+        if isPinned {
+            return .pinned
+        }
         if isSelected || isDragged {
             return .full
         } else {
@@ -609,6 +651,10 @@ final class TabBarViewItem: NSCollectionViewItem {
         didSet {
             updateSubviews()
         }
+    }
+
+    var isPinned: Bool {
+        tabViewModel?.isPinned == true
     }
 
     weak var fireproofDomains: FireproofDomains?
@@ -856,6 +902,7 @@ final class TabBarViewItem: NSCollectionViewItem {
     func clear() {
         clearSubscriptions()
         usedPermissions = Permissions()
+        isLeftToSelected = false
         cell.faviconImageView.image = nil
         cell.titleTextField.stringValue = ""
     }
@@ -908,11 +955,19 @@ final class TabBarViewItem: NSCollectionViewItem {
             }
         }
 
-        let showCloseButton = (isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected
-        cell.closeButton.isShown = showCloseButton
-        cell.faviconImageView.isShown = (cell.faviconImageView.image != nil) && (widthStage != .withoutTitle || !showCloseButton)
+        if isPinned {
+            cell.closeButton.isShown = false
+            cell.faviconImageView.isShown = cell.faviconImageView.image != nil
+            cell.faviconPlaceholderView.isShown = !cell.faviconImageView.isShown
+            cell.titleTextField.isShown = false
+        } else {
+            let showCloseButton = (isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected
+            cell.closeButton.isShown = showCloseButton
+            cell.faviconImageView.isShown = (cell.faviconImageView.image != nil) && (widthStage != .withoutTitle || !showCloseButton)
+            cell.faviconPlaceholderView.isShown = false
+            cell.titleTextField.isShown = !widthStage.isTitleHidden || (cell.faviconImageView.image == nil && !showCloseButton)
+        }
         updateSeparatorView()
-        cell.titleTextField.isShown = !widthStage.isTitleHidden || (cell.faviconImageView.image == nil && !showCloseButton)
 
         // Adjust colors for burner window
         if isBurner && cell.titleTextField.stringValue == UserText.burnerTabHomeTitle {
@@ -952,6 +1007,11 @@ final class TabBarViewItem: NSCollectionViewItem {
             return
         }
 
+        guard isPinned else {
+            cell.permissionButton.isHidden = true
+            return
+        }
+
         let toolTip = String(format: isActive ? UserText.permissionMuteFormat : UserText.permissionUnmuteFormat, permission.localizedDescription.lowercased(), currentURL?.host ?? "")
         cell.permissionButton.toolTip = toolTip
         cell.permissionButton.setAccessibilityTitle(toolTip)
@@ -961,20 +1021,9 @@ final class TabBarViewItem: NSCollectionViewItem {
 
     private func updateSeparatorView() {
         let shouldHideForHover = theme.tabStyleProvider.isRoundedBackgroundPresentOnHover && isMouseOver
-        let rightItemIsHovered: Bool = {
-            guard theme.tabStyleProvider.isRoundedBackgroundPresentOnHover,
-                  let indexPath = collectionView?.indexPath(for: self),
-                  let rightItem = collectionView?.item(at: IndexPath(item: indexPath.item + 1, section: indexPath.section)) as? TabBarViewItem
-            else { return false }
-            return rightItem.isMouseOver
-        }()
+        let rightItemIsHighlighted = delegate?.tabBarViewItemShouldHideSeparator(self) ?? false
 
-        if shouldHideForHover || rightItemIsHovered {
-            cell.rightSeparatorView.isHidden = true
-            return
-        }
-
-        let newIsHidden = isSelected || isDragged || isLeftToSelected
+        let newIsHidden = shouldHideForHover || rightItemIsHighlighted || isSelected || isDragged || isLeftToSelected
         if cell.rightSeparatorView.isHidden != newIsHidden {
             cell.rightSeparatorView.isHidden = newIsHidden
         }
@@ -991,6 +1040,12 @@ final class TabBarViewItem: NSCollectionViewItem {
         cell.needsLayout = true
         cell.faviconImageView.isHidden = (favicon == nil)
         cell.faviconImageView.image = favicon
+        if isPinned && cell.faviconImageView.isHidden {
+            cell.faviconPlaceholderView.isHidden = false
+            cell.faviconPlaceholderView.displayURL(tabViewModel?.tabContent.urlForWebView)
+        } else {
+            cell.faviconPlaceholderView.isHidden = true
+        }
     }
 
     private func updateAudioPlayState(_ audioState: WKWebView.AudioState) {
@@ -1056,15 +1111,19 @@ extension TabBarViewItem: NSMenuDelegate {
         }
         menu.addItem(.separator())
 
-        // Bookmark All Section
-        addBookmarkAllTabsMenuItem(to: menu)
-        menu.addItem(.separator())
+        if !isPinned {
+            // Bookmark All Section
+            addBookmarkAllTabsMenuItem(to: menu)
+            menu.addItem(.separator())
+        }
 
         // Close Section
         addCloseMenuItem(to: menu)
-        addCloseOtherSubmenu(to: menu, tabBarItemState: otherItemsState)
-        if !isBurner {
-            addMoveToNewWindowMenuItem(to: menu, areThereOtherTabs: areThereOtherTabs)
+        if !isPinned {
+            addCloseOtherSubmenu(to: menu, tabBarItemState: otherItemsState)
+            if !isBurner {
+                addMoveToNewWindowMenuItem(to: menu, areThereOtherTabs: areThereOtherTabs)
+            }
         }
 
         if tabViewModel?.canKillWebContentProcess == true {
@@ -1102,9 +1161,11 @@ extension TabBarViewItem: NSMenuDelegate {
     }
 
     private func addPinMenuItem(to menu: NSMenu) {
-        let pinMenuItem = NSMenuItem(title: UserText.pinTab, action: #selector(pinAction(_:)), keyEquivalent: "")
+        let pinMenuItem = NSMenuItem(title: isPinned ? UserText.unpinTab : UserText.pinTab, action: #selector(pinAction(_:)), keyEquivalent: "")
         pinMenuItem.target = self
-        pinMenuItem.isEnabled = delegate?.tabBarViewItemCanBePinned(self) ?? false
+        if !isPinned {
+            pinMenuItem.isEnabled = delegate?.tabBarViewItemCanBePinned(self) ?? false
+        }
         menu.addItem(pinMenuItem)
     }
 
@@ -1382,6 +1443,7 @@ extension TabBarViewItem {
             var titlePublisher: Published<String>.Publisher { $title }
             @Published var favicon: NSImage?
             var faviconPublisher: Published<NSImage?>.Publisher { $favicon }
+            var isPinned: Bool
             @Published var tabContent: Tab.TabContent = .none
             var tabContentPublisher: AnyPublisher<Tab.TabContent, Never> { $tabContent.eraseToAnyPublisher() }
             @Published var usedPermissions = Permissions()
@@ -1392,11 +1454,12 @@ extension TabBarViewItem {
             }
             let crashIndicatorModel: TabCrashIndicatorModel = TabCrashIndicatorModel()
             var canKillWebContentProcess: Bool = false
-            init(width: CGFloat, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false) {
+            init(width: CGFloat, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, isPinned: Bool = false, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false) {
                 self.width = width
                 self.title = title
                 self.favicon = favicon
                 self.tabContent = tabContent
+                self.isPinned = isPinned
                 self.usedPermissions = usedPermissions
                 self.audioState = audioState ?? .unmuted(isPlayingAudio: false)
                 self.isSelected = selected
@@ -1494,6 +1557,7 @@ extension TabBarViewItem {
         func tabBarViewItemCanBeBookmarked(_: TabBarViewItem) -> Bool { false }
         func tabBarViewItemIsAlreadyBookmarked(_: TabBarViewItem) -> Bool { false }
         func tabBarViewAllItemsCanBeBookmarked(_: TabBarViewItem) -> Bool { false }
+        func tabBarViewItemShouldHideSeparator(_: TabBarViewItem) -> Bool { false }
         func tabBarViewItemWillOpenContextMenu(_: TabBarViewItem) {}
         func tabBarViewItemCloseAction(_: TabBarViewItem) {}
         func tabBarViewItemTogglePermissionAction(_ item: TabBarViewItem) {

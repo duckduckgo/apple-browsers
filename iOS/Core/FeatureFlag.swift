@@ -208,6 +208,9 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1211652685709096?focus=true
     case fullDuckAIMode
+    
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211388368219934?focus=true
+    case vpnConnectionWidePixelMeasurement
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -229,7 +232,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .embeddedSERPSettings,
              .syncCreditCards,
              .unifiedURLPredictor,
-             .forgetAllInSettings:
+             .forgetAllInSettings,
+             .vpnConnectionWidePixelMeasurement:
             true
         default:
             false
@@ -292,7 +296,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .vpnMenuItem,
              .forgetAllInSettings,
              .duckAiDataClearing,
-             .fullDuckAIMode:
+             .fullDuckAIMode,
+             .vpnConnectionWidePixelMeasurement:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -508,6 +513,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.duckAiDataClearing))
         case .fullDuckAIMode:
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
+        case .vpnConnectionWidePixelMeasurement:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
         }
     }
 }

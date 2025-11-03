@@ -412,11 +412,11 @@ final class TabViewModelTests: XCTestCase {
     @MainActor
     func testDisplayedFaviconForDuckAIURL() {
         let mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatSidebar]
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatSidebar, .standaloneMigration]
         let duckAIURL = URL(string: "https://duck.ai/chat")!
         let tabViewModel = TabViewModel.forTabWithURL(duckAIURL, featureFlagger: mockFeatureFlagger)
 
-        XCTAssertNil(tabViewModel.favicon) // not an actual ai chat url: loaded by the Tab
+        XCTAssertImagesEqual(tabViewModel.favicon, .aiChatPreferences)
     }
 
     @MainActor

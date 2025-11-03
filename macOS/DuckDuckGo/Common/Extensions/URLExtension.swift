@@ -454,6 +454,11 @@ extension URL {
         return URL(string: duckDuckGoUrlString)!
     }
 
+    static var duckAi: URL {
+        let duckAiString = "https://duck.ai/"
+        return URL(string: duckAiString)!
+    }
+
     static var duckDuckGoAutocomplete: URL {
         duckDuckGo.appendingPathComponent("ac/")
     }

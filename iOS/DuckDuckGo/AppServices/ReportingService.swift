@@ -61,7 +61,7 @@ final class ReportingService {
         // AttributedMetric initialisation
         let errorHandler = AttributedMetricErrorHandler(pixelKit: pixelKit)
         let attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: userDefaults, errorHandler: errorHandler)
-        let bucketsSettingsProvider = DefaultBucketsSettingsProvider(privacyConfig: privacyConfig) //ContentBlocking.shared.privacyConfigurationManager
+        let bucketsSettingsProvider = DefaultBucketsSettingsProvider(privacyConfig: privacyConfig)
         let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: subscriptionManager)
         let defaultBrowserProvider = AttributedMetricDefaultBrowserProvider()
         self.attributedMetricManager = AttributedMetricManager(pixelKit: pixelKit,
@@ -91,7 +91,7 @@ final class ReportingService {
         // App start
         NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
             .receive(on: workQueue)
-            .sink { [weak self] notification in
+            .sink { [weak self] _ in
                 self?.attributedMetricManager.process(trigger: .appDidStart)
             }
             .store(in: &cancellables)
@@ -100,7 +100,7 @@ final class ReportingService {
 
         NotificationCenter.default.publisher(for: .userDidPerformDDGSearch)
             .receive(on: workQueue)
-            .sink { [weak self] notification in
+            .sink { [weak self] _ in
                 self?.attributedMetricManager.process(trigger: .userDidSearch)
             }
             .store(in: &cancellables)
@@ -109,7 +109,7 @@ final class ReportingService {
 
         NotificationCenter.default.publisher(for: .userDidSelectDDGAD)
             .receive(on: workQueue)
-            .sink { [weak self] notification in
+            .sink { [weak self] _ in
                 self?.attributedMetricManager.process(trigger: .userDidSelectAD)
             }
             .store(in: &cancellables)
@@ -118,7 +118,7 @@ final class ReportingService {
 
         NotificationCenter.default.publisher(for: .aiChatUserDidSubmitPrompt)
             .receive(on: workQueue)
-            .sink { [weak self] notification in
+            .sink { [weak self] _ in
                 self?.attributedMetricManager.process(trigger: .userDidDuckAIChat)
             }
             .store(in: &cancellables)
@@ -127,7 +127,7 @@ final class ReportingService {
 
         NotificationCenter.default.publisher(for: .userDidPurchaseSubscription)
             .receive(on: workQueue)
-            .sink { [weak self] notification in
+            .sink { [weak self] _ in
                 self?.attributedMetricManager.process(trigger: .userDidSubscribe)
             }
             .store(in: &cancellables)
@@ -239,7 +239,7 @@ private extension ReportingService {
 struct DefaultBucketsSettingsProvider: BucketsSettingsProviding {
     let privacyConfig: PrivacyConfiguration
 
-    var bucketsSettings: [String : Any] {
+    var bucketsSettings: [String: Any] {
         privacyConfig.settings(for: .attributedMetrics)
     }
 }

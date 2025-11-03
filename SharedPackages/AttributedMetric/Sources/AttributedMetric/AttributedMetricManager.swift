@@ -111,11 +111,8 @@ public final class AttributedMetricManager {
         if let origin = originProvider?.origin {
             return (origin, nil)
         } else {
-            guard let installDate = dataStorage.installDate else {
-                assertionFailure("Missing install date")
-                return (nil, nil)
-            }
-            return (nil, installDate.ISO8601ETFormat())
+            let installDate = dataStorage.installDate
+            return (nil, installDate?.ISO8601ETFormat())
         }
     }
 

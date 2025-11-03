@@ -61,7 +61,7 @@ final class UniversalOmniBarStateTests: XCTestCase {
         XCTAssertFalse(sut.showVoiceSearch)
         XCTAssertFalse(sut.showRefresh)
         XCTAssertFalse(sut.showAbort)
-        XCTAssertFalse(sut.showShare)
+        XCTAssertFalse(sut.showCustomizableButton)
         XCTAssertFalse(sut.isBrowsing)
     }
 

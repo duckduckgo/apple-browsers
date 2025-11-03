@@ -351,7 +351,9 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             // Strong reference while we use the omnibar
             let tab = tabsModel.safeGetTabAt(indexPath.row)
             let url = tab?.link?.url
-            let controller = tab == nil ? OmniBarFactory.createOmniBarViewController(with: omnibarDependencies) : (cell.controller ?? OmniBarFactory.createOmniBarViewController(with: omnibarDependencies))
+            
+            let existingController = cell.controller ?? OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
+            let controller = tab == nil ? OmniBarFactory.createOmniBarViewController(with: omnibarDependencies) : existingController
 
             coordinator.parentController?.addChild(controller)
 

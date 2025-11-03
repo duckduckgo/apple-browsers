@@ -34,7 +34,6 @@ import PixelExperimentKit
 import Networking
 import Configuration
 import Network
-import Persistence
 
 protocol DependencyProvider {
 

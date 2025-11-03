@@ -116,7 +116,7 @@ struct DefaultBrowserAndDockPromptUserActivityManagerTests {
         let result = sut.numberOfInactiveDays()
 
         // THEN
-        #expect(result == 15)
+        #expect(result == 14)
     }
 
 }

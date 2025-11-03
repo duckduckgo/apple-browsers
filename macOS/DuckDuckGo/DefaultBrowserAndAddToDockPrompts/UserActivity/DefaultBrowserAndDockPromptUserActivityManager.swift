@@ -29,7 +29,7 @@ protocol DefaultBrowserAndDockPromptUserActivityRecorder {
 /// This class observes application lifecycle events to automatically measure when users
 /// are active and stores this information to the provided store.
 final class DefaultBrowserAndDockPromptUserActivityManager: DefaultBrowserAndDockPromptUserActivityRecorder, DefaultBrowserAndDockPromptUserActivityProvider {
-    private let store: DefaultBrowserAndDockPromptUserActivityStorage
+    let store: DefaultBrowserAndDockPromptUserActivityStorage
     private let dateProvider: () -> Date
     private let calendar: Calendar
 
@@ -73,6 +73,7 @@ final class DefaultBrowserAndDockPromptUserActivityManager: DefaultBrowserAndDoc
     func numberOfInactiveDays() -> Int {
         let currentActivity = store.currentActivity()
         guard let lastActiveDate = currentActivity.lastActiveDate, let secondLastActiveDate = currentActivity.secondLastActiveDate else { return 0 }
-        return calendar.numberOfDaysBetween(secondLastActiveDate, and: lastActiveDate) ?? 0
+        let daysSincePreviouslyActive = calendar.numberOfDaysBetween(calendar.startOfDay(for: secondLastActiveDate), and: calendar.startOfDay(for: lastActiveDate)) ?? 0
+        return max(0, daysSincePreviouslyActive - 1) // Exclude the current and previous active days
     }
 }

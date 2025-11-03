@@ -190,51 +190,60 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         self.tabBarRemoteMessageViewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: tabBarActiveRemoteMessageModel,
                                                                          isFireWindow: tabCollectionViewModel.isBurner)
         self.themeManager = themeManager
-        if !tabCollectionViewModel.isBurner, let pinnedTabCollection = tabCollectionViewModel.pinnedTabsManager?.tabCollection {
-            let pinnedTabsViewModel = PinnedTabsViewModel(collection: pinnedTabCollection, fireproofDomains: fireproofDomains, bookmarkManager: bookmarkManager)
-            let pinnedTabsView = PinnedTabsView(model: pinnedTabsViewModel, themeManager: themeManager)
-
-            if featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) {
-                self.pinnedTabsViewModel = nil
-                self.pinnedTabsView = nil
-                self.pinnedTabsHostingView = nil
-                pinnedTabsCollectionView = PinnedTabsCollectionView(frame: .zero)
-                pinnedTabsCollectionView?.isSelectable = true
-                pinnedTabsCollectionView?.backgroundColors = [.clear]
-
-                let layout = NSCollectionViewFlowLayout()
-                layout.scrollDirection = .horizontal
-                layout.itemSize = NSSize(width: 120, height: 32)
-                layout.sectionInset = NSEdgeInsets(top: 2, left: 0, bottom: 0, right: 0)
-                layout.minimumInteritemSpacing = 0
-                layout.minimumLineSpacing = 0
-
-                pinnedTabsCollectionView?.collectionViewLayout = layout
-
-                pinnedTabsCollectionView?.register(TabBarViewItem.self, forItemWithIdentifier: TabBarViewItem.identifier)
-                pinnedTabsCollectionView?.register(NSView.self, forSupplementaryViewOfKind: NSCollectionView.elementKindSectionFooter, withIdentifier: TabBarFooter.identifier)
-
-                // Register for the dropped object types we can accept.
-                pinnedTabsCollectionView?.registerForDraggedTypes([.URL, .fileURL, TabBarViewItemPasteboardWriter.utiInternalType, .string])
-                // Enable dragging items within and into our CollectionView.
-                pinnedTabsCollectionView?.setDraggingSourceOperationMask([.private], forLocal: true)
-
-            } else {
-                self.pinnedTabsViewModel = pinnedTabsViewModel
-                self.pinnedTabsView = pinnedTabsView
-                self.pinnedTabsHostingView = PinnedTabsHostingView(rootView: pinnedTabsView)
-            }
-        } else {
-            self.pinnedTabsViewModel = nil
-            self.pinnedTabsView = nil
-            self.pinnedTabsHostingView = nil
-        }
 
         standardTabHeight = themeManager.theme.tabStyleProvider.standardTabHeight
         pinnedTabHeight = themeManager.theme.tabStyleProvider.pinnedTabHeight
         pinnedTabWidth = themeManager.theme.tabStyleProvider.pinnedTabWidth
 
         super.init(coder: coder)
+
+        initializePinnedTabs(themeManager: themeManager)
+    }
+
+    private func initializePinnedTabs(themeManager: ThemeManager) {
+        guard !tabCollectionViewModel.isBurner, let pinnedTabCollection = tabCollectionViewModel.pinnedTabsManager?.tabCollection else {
+            return
+        }
+
+        guard featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) else {
+            initializePinnedTabsLegacyView(pinnedTabCollection: pinnedTabCollection, themeManager: themeManager)
+            return
+        }
+
+        initializePinnedTabsAppKitView()
+    }
+
+    private func initializePinnedTabsLegacyView(pinnedTabCollection: TabCollection, themeManager: ThemeManager) {
+        let pinnedTabsViewModel = PinnedTabsViewModel(collection: pinnedTabCollection, fireproofDomains: fireproofDomains, bookmarkManager: bookmarkManager)
+        let pinnedTabsView = PinnedTabsView(model: pinnedTabsViewModel, themeManager: themeManager)
+        let pinnedTabsHostingView = PinnedTabsHostingView(rootView: pinnedTabsView)
+
+        self.pinnedTabsViewModel = pinnedTabsViewModel
+        self.pinnedTabsView = pinnedTabsView
+        self.pinnedTabsHostingView = pinnedTabsHostingView
+    }
+
+    private func initializePinnedTabsAppKitView() {
+        pinnedTabsCollectionView = PinnedTabsCollectionView(frame: .zero)
+        pinnedTabsCollectionView?.isSelectable = true
+        pinnedTabsCollectionView?.backgroundColors = [.clear]
+
+        let layout = NSCollectionViewFlowLayout()
+        layout.scrollDirection = .horizontal
+        layout.itemSize = NSSize(width: 120, height: 32)
+        layout.sectionInset = NSEdgeInsets(top: 2, left: 0, bottom: 0, right: 0)
+        layout.minimumInteritemSpacing = 0
+        layout.minimumLineSpacing = 0
+
+        pinnedTabsCollectionView?.collectionViewLayout = layout
+
+        pinnedTabsCollectionView?.register(TabBarViewItem.self, forItemWithIdentifier: TabBarViewItem.identifier)
+        pinnedTabsCollectionView?.register(NSView.self, forSupplementaryViewOfKind: NSCollectionView.elementKindSectionFooter, withIdentifier: TabBarFooter.identifier)
+
+        // Register for the dropped object types we can accept.
+        pinnedTabsCollectionView?.registerForDraggedTypes([.URL, .fileURL, TabBarViewItemPasteboardWriter.utiInternalType, .string])
+        // Enable dragging items within and into our CollectionView.
+        pinnedTabsCollectionView?.setDraggingSourceOperationMask([.private], forLocal: true)
     }
 
     override func viewDidLoad() {

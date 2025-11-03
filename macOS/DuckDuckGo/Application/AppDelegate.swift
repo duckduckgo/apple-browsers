@@ -136,6 +136,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let fireCoordinator: FireCoordinator
     let permissionManager: PermissionManager
 
+    let autoconsentManagement = AutoconsentManagement()
+
     private var updateProgressCancellable: AnyCancellable?
 
     @MainActor
@@ -728,6 +730,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 fireproofDomains: fireproofDomains,
                 fireCoordinator: fireCoordinator,
                 tld: tld,
+                autoconsentManagement: autoconsentManagement,
                 contentScopePreferences: contentScopePreferences
             )
             privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)

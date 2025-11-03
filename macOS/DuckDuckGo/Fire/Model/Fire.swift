@@ -280,7 +280,7 @@ final class Fire: FireProtocol {
         self.tld = tld
         self.getPrivacyStats = getPrivacyStats ?? { NSApp.delegateTyped.privacyStats }
         self.getVisitedLinkStore = getVisitedLinkStore ?? { WKWebViewConfiguration.sharedVisitedLinkStore }
-        self.autoconsentManagement = autoconsentManagement ?? AutoconsentManagement.shared
+        self.autoconsentManagement = autoconsentManagement ?? NSApp.delegateTyped.autoconsentManagement
         self.visualizeFireAnimationDecider = visualizeFireAnimationDecider ?? NSApp.delegateTyped.visualizeFireSettingsDecider
         self.isAppActiveProvider = isAppActiveProvider
         if let stateRestorationManager = stateRestorationManager {

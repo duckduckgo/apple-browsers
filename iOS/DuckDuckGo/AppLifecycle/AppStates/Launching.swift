@@ -118,7 +118,8 @@ struct Launching: LaunchingHandling {
                                                             privacyConfigurationManager: privacyConfigurationManager,
                                                             configurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
                                                             syncService: syncService.sync,
-                                                            winBackOfferService: winBackOfferService)
+                                                            winBackOfferService: winBackOfferService,
+                                                            subscriptionDataReporter: reportingService.subscriptionDataReporter)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
@@ -149,6 +150,7 @@ struct Launching: LaunchingHandling {
                 featureFlagger: featureFlagger,
                 remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                 remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
+                remoteMessagingPixelReporter: remoteMessagingService.pixelReporter,
                 appSettings: appSettings,
                 aiChatSettings: aiChatSettings,
                 experimentalAIChatManager: ExperimentalAIChatManager(),

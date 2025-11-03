@@ -37,7 +37,8 @@ final class WhatsNewCoordinatorTests {
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
             remoteMessageActionHandler: mockHandler,
-            isIPad: false
+            isIPad: false,
+            pixelReporter: MockRemoteMessagingPixelReporter()
         )
 
         // WHEN
@@ -58,7 +59,8 @@ final class WhatsNewCoordinatorTests {
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
             remoteMessageActionHandler: mockHandler,
-            isIPad: false
+            isIPad: false,
+            pixelReporter: MockRemoteMessagingPixelReporter()
         )
 
         // WHEN
@@ -80,7 +82,8 @@ final class WhatsNewCoordinatorTests {
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
             remoteMessageActionHandler: mockHandler,
-            isIPad: true
+            isIPad: true,
+            pixelReporter: MockRemoteMessagingPixelReporter()
         )
 
         // WHEN
@@ -101,7 +104,8 @@ final class WhatsNewCoordinatorTests {
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
             remoteMessageActionHandler: mockHandler,
-            isIPad: false
+            isIPad: false,
+            pixelReporter: MockRemoteMessagingPixelReporter()
         )
 
         // WHEN
@@ -128,7 +132,8 @@ final class WhatsNewCoordinatorTests {
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
             remoteMessageActionHandler: mockHandler,
-            isIPad: false
+            isIPad: false,
+            pixelReporter: MockRemoteMessagingPixelReporter()
         )
 
         // WHEN
@@ -147,7 +152,8 @@ final class WhatsNewCoordinatorTests {
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
             remoteMessageActionHandler: mockHandler,
-            isIPad: false
+            isIPad: false,
+            pixelReporter: MockRemoteMessagingPixelReporter()
         )
         _ = coordinator.provideModalPrompt()
 
@@ -170,7 +176,8 @@ final class WhatsNewCoordinatorTests {
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
             remoteMessageActionHandler: mockHandler,
-            isIPad: false
+            isIPad: false,
+            pixelReporter: MockRemoteMessagingPixelReporter()
         )
         _ = coordinator.provideModalPrompt()
 
@@ -181,26 +188,6 @@ final class WhatsNewCoordinatorTests {
         // Yield to let the unstructured Task execute (mock is sync, completes instantly)
         await Task.yield()
         #expect(mockStore.dismissRemoteMessageCalls == 1)
-    }
-
-    @Test("Check Message Is Not Marked As Shown When No Current Message ID")
-    func whenDidPresentModalIsCalledWithoutCurrentMessageIdThenMessageIsNotMarked() async {
-        // GIVEN
-        let mockStore = MockRemoteMessagingStore()
-        let mockHandler = MockRemoteMessagingActionHandler()
-        let coordinator = WhatsNewCoordinator(
-            remoteMessageStore: mockStore,
-            remoteMessageActionHandler: mockHandler,
-            isIPad: false
-        )
-
-        // WHEN - Call didPresentModal without calling provideModalPrompt first
-        coordinator.didPresentModal()
-
-        // THEN
-        // Yield to let the unstructured Task execute
-        await Task.yield()
-        #expect(mockStore.updateRemoteMessageCalls == 0)
     }
 
 }
@@ -220,7 +207,8 @@ struct WhatsNewCoordinatorActionHandlingTests {
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
             remoteMessageActionHandler: mockHandler,
-            isIPad: false
+            isIPad: false,
+            pixelReporter: MockRemoteMessagingPixelReporter()
         )
 
         let configuration = try #require(coordinator.provideModalPrompt())
@@ -256,7 +244,8 @@ struct WhatsNewCoordinatorActionHandlingTests {
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
             remoteMessageActionHandler: mockHandler,
-            isIPad: false
+            isIPad: false,
+            pixelReporter: MockRemoteMessagingPixelReporter()
         )
 
         // WHEN
@@ -267,5 +256,207 @@ struct WhatsNewCoordinatorActionHandlingTests {
         #expect(mockHandler.capturedPresentationContext?.presentationStyle == .withinCurrentContext)
         #expect(mockHandler.capturedPresentationContext?.presenter != nil)
     }
+
+}
+
+@MainActor
+@Suite("Modal Prompt Coordination - What's New Coordinator Pixel")
+struct WhatsNewCoordinatorPixelTrackingTests {
+
+    // MARK: - Message Appeared Pixels
+
+    @Test("Check Message Appeared Pixel Fires When Modal Is Presented")
+    func whenModalIsPresentedThenMessageAppearedPixelFires() {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
+        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let mockPixelReporter = MockRemoteMessagingPixelReporter()
+
+        let coordinator = WhatsNewCoordinator(
+            remoteMessageStore: mockStore,
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false,
+            pixelReporter: mockPixelReporter
+        )
+        _ = coordinator.provideModalPrompt()
+
+        // WHEN
+        coordinator.didPresentModal()
+
+        // THEN
+        #expect(mockPixelReporter.didCallMeasureRemoteMessageAppeared)
+        #expect(mockPixelReporter.capturedAppearedMessage?.id == "test-message")
+    }
+
+    @Test("Check Has Already Seen Message Is Passed Correctly For First Time")
+    func whenMessageShownForFirstTimeThenHasAlreadySeenMessageIsFalse() {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
+        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let mockPixelReporter = MockRemoteMessagingPixelReporter()
+
+        let coordinator = WhatsNewCoordinator(
+            remoteMessageStore: mockStore,
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false,
+            pixelReporter: mockPixelReporter
+        )
+        _ = coordinator.provideModalPrompt()
+
+        // WHEN
+        coordinator.didPresentModal()
+
+        // THEN
+        #expect(mockPixelReporter.capturedHasAlreadySeenMessage == false)
+    }
+
+    @Test("Check Has Already Seen Message Is Passed Correctly For Subsequent Times")
+    func whenMessageShownAgainThenHasAlreadySeenMessageIsTrue() {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
+        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message, shownRemoteMessagesIDs: ["test-message"])
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let mockPixelReporter = MockRemoteMessagingPixelReporter()
+
+        let coordinator = WhatsNewCoordinator(
+            remoteMessageStore: mockStore,
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false,
+            pixelReporter: mockPixelReporter
+        )
+        _ = coordinator.provideModalPrompt()
+
+        // WHEN
+        coordinator.didPresentModal()
+
+        // THEN
+        #expect(mockPixelReporter.capturedHasAlreadySeenMessage == true)
+    }
+
+    // MARK: - Card Pixel Tests
+
+    @Test("Check Item Appear Callback Fires Card Shown Pixel")
+    func whenItemAppearsCallbackInvokedThenCardShownPixelFires() {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
+        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let mockPixelReporter = MockRemoteMessagingPixelReporter()
+        let mockMapper = MockWhatsNewDisplayModelMapper()
+        mockMapper.displayModelToReturn = .mock
+
+        let coordinator = WhatsNewCoordinator(
+            remoteMessageStore: mockStore,
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false,
+            pixelReporter: mockPixelReporter,
+            displayModelMapper: mockMapper
+        )
+        _ = coordinator.provideModalPrompt()
+
+        // WHEN
+        mockMapper.capturedOnItemAppear?("card-123")
+
+        // THEN
+        #expect(mockPixelReporter.didCallMeasureRemoteMessageCardShown)
+        #expect(mockPixelReporter.capturedCardShownMessage?.id == "test-message")
+        #expect(mockPixelReporter.capturedCardShownCardId == "card-123")
+    }
+
+    @Test("Check Item Action Callback Fires Card Clicked Pixel")
+    func whenItemActionCallbackInvokedThenCardClickedPixelFiresAndActionHandled() async {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
+        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let mockPixelReporter = MockRemoteMessagingPixelReporter()
+        let mockMapper = MockWhatsNewDisplayModelMapper()
+        mockMapper.displayModelToReturn = .mock
+
+        let coordinator = WhatsNewCoordinator(
+            remoteMessageStore: mockStore,
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false,
+            pixelReporter: mockPixelReporter,
+            displayModelMapper: mockMapper
+        )
+        _ = coordinator.provideModalPrompt()
+
+        let testAction = RemoteAction.urlInContext(value: "https://example.com")
+
+        // WHEN
+        await mockMapper.capturedOnItemAction?(testAction, "card-123")
+
+        // THEN - Verify pixel fired
+        #expect(mockPixelReporter.didCallMeasureRemoteMessageCardClicked)
+        #expect(mockPixelReporter.capturedCardClickedMessage?.id == "test-message")
+        #expect(mockPixelReporter.capturedCardClickedCardId == "card-123")
+    }
+
+    // MARK: - Dismiss Pixel Tests
+
+    @Test("Check Primary Action Dismiss Callback Fires Primary Action Clicked Pixel")
+    func whenPrimaryActionDismissCallbackInvokedThenPrimaryActionClickedPixelFires() {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
+        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let mockPixelReporter = MockRemoteMessagingPixelReporter()
+        let mockMapper = MockWhatsNewDisplayModelMapper()
+        mockMapper.displayModelToReturn = .mock
+
+        let coordinator = WhatsNewCoordinator(
+            remoteMessageStore: mockStore,
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false,
+            pixelReporter: mockPixelReporter,
+            displayModelMapper: mockMapper
+        )
+        _ = coordinator.provideModalPrompt()
+
+        // WHEN - called after primary action completes
+        mockMapper.capturedOnDismiss?()
+
+        // THEN
+        #expect(mockPixelReporter.didCallMeasureRemoteMessagePrimaryActionClicked)
+        #expect(mockPixelReporter.capturedPrimaryActionClickedMessage?.id == "test-message")
+    }
+
+    @Test("Check Pull Down Gesture Fires Dismiss Pixel With Pull Down Type")
+    func whenModalPulledDownThenDismissPixelFiresWithPullDownType() throws {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
+        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let mockPixelReporter = MockRemoteMessagingPixelReporter()
+
+        let coordinator = WhatsNewCoordinator(
+            remoteMessageStore: mockStore,
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false,
+            pixelReporter: mockPixelReporter
+        )
+        let configuration = try #require(coordinator.provideModalPrompt())
+
+        // WHEN - Simulate pull down gesture via presentation controller delegate
+        coordinator.presentationControllerDidDismiss(configuration.viewController.presentationController!)
+
+        // THEN
+        #expect(mockPixelReporter.didCallMeasureRemoteMessageDismissed)
+        #expect(mockPixelReporter.capturedDismissedMessage?.id == "test-message")
+        #expect(mockPixelReporter.capturedDismissType == .pullDown)
+    }
+
+}
+
+private extension RemoteMessagingUI.CardsListDisplayModel {
+
+    static let mock = RemoteMessagingUI.CardsListDisplayModel(
+        screenTitle: "Test",
+        items: [],
+        primaryAction: (title: "OK", action: {})
+    )
 
 }

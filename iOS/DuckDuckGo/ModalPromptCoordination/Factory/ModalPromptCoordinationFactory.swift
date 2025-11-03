@@ -39,7 +39,12 @@ enum ModalPromptCoordinationFactory {
         let newAddressBarPickerModalPromptProvider = makeNewAddressBarPickerModalPromptProvider(dependency: dependency, isIPad: isIPad)
         let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: dependency.defaultBrowserPromptPresenter)
         let winBackOfferModalPromptProvider = WinBackOfferModalPromptProvider(presenter: dependency.winBackOfferPresenter, coordinator: dependency.winBackOfferCoordinator)
-        let whatsNewModalPromptProvider = WhatsNewCoordinator(remoteMessageStore: dependency.remoteMessagingStore, remoteMessageActionHandler: dependency.remoteMessagingActionHandler, isIPad: isIPad)
+        let whatsNewModalPromptProvider = WhatsNewCoordinator(
+            remoteMessageStore: dependency.remoteMessagingStore,
+            remoteMessageActionHandler: dependency.remoteMessagingActionHandler,
+            isIPad: isIPad,
+            pixelReporter: dependency.remoteMessagingPixelReporter
+        )
 
         return ModalPromptCoordinationService(
             launchSourceManager: dependency.launchSourceManager,
@@ -96,6 +101,7 @@ extension ModalPromptCoordinationFactory {
         let featureFlagger: FeatureFlagger
         let remoteMessagingStore: RemoteMessagingStoring
         let remoteMessagingActionHandler: RemoteMessagingActionHandling
+        let remoteMessagingPixelReporter: RemoteMessagingPixelReporting
         let appSettings: AppSettings
         let aiChatSettings: AIChatSettingsProvider
         let experimentalAIChatManager: ExperimentalAIChatManager

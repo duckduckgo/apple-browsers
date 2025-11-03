@@ -30,6 +30,7 @@ final class RemoteMessagingService {
 
     let remoteMessagingClient: RemoteMessagingClient
     let remoteMessagingActionHandler: RemoteMessagingActionHandler
+    let pixelReporter: RemoteMessagingPixelReporting
 
     var messageNavigator: MessageNavigator? {
         didSet {
@@ -45,10 +46,15 @@ final class RemoteMessagingService {
          privacyConfigurationManager: PrivacyConfigurationManaging,
          configurationURLProvider: ConfigurationURLProviding,
          syncService: DDGSyncing,
-         winBackOfferService: WinBackOfferService
+         winBackOfferService: WinBackOfferService,
+         subscriptionDataReporter: SubscriptionDataReporting
     ) {
         remoteMessagingActionHandler = RemoteMessagingActionHandler(
             lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher()
+        )
+
+        pixelReporter = RemoteMessagePixelReporter(
+            parameterRandomiser: subscriptionDataReporter.mergeRandomizedParameters(for:with:)
         )
 
         remoteMessagingClient = RemoteMessagingClient(

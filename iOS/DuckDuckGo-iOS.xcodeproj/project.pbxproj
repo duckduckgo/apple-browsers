@@ -1336,6 +1336,10 @@
 		9FA0AF1B2EB4855000713387 /* MockRemoteMessagingPixelReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA0AF182EB4855000713387 /* MockRemoteMessagingPixelReporter.swift */; };
 		9FA0AF1C2EB4855000713387 /* MockRemoteMessagingPixelReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA0AF182EB4855000713387 /* MockRemoteMessagingPixelReporter.swift */; };
 		9FA0AF1E2EB4894A00713387 /* RemoteMessagingPixelReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA0AF1D2EB4894A00713387 /* RemoteMessagingPixelReporterTests.swift */; };
+		9FA0AF212EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA0AF202EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift */; };
+		9FA0AF222EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA0AF202EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift */; };
+		9FA0AF232EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA0AF202EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift */; };
+		9FA0AF242EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA0AF202EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift */; };
 		9FA0AF262EB844C800713387 /* MockParameterRandomiser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA0AF252EB844BE00713387 /* MockParameterRandomiser.swift */; };
 		9FA0AF272EB844C800713387 /* MockParameterRandomiser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA0AF252EB844BE00713387 /* MockParameterRandomiser.swift */; };
 		9FA0AF282EB844C800713387 /* MockParameterRandomiser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA0AF252EB844BE00713387 /* MockParameterRandomiser.swift */; };
@@ -3624,6 +3628,7 @@
 		9FA09DAE2EA84F5200E26F3F /* ModalPromptScheduling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptScheduling.swift; sourceTree = "<group>"; };
 		9FA0AF182EB4855000713387 /* MockRemoteMessagingPixelReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRemoteMessagingPixelReporter.swift; sourceTree = "<group>"; };
 		9FA0AF1D2EB4894A00713387 /* RemoteMessagingPixelReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingPixelReporterTests.swift; sourceTree = "<group>"; };
+		9FA0AF202EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockWhatsNewDisplayModelMapper.swift; sourceTree = "<group>"; };
 		9FA0AF252EB844BE00713387 /* MockParameterRandomiser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockParameterRandomiser.swift; sourceTree = "<group>"; };
 		9FA5E44A2BF1AF3400BDEF02 /* SubscriptionContainerViewFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionContainerViewFactory.swift; sourceTree = "<group>"; };
 		9FAB4B6E2E98C00E00D8298A /* RemoteMessagingActionHandlerIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingActionHandlerIntegrationTests.swift; sourceTree = "<group>"; };
@@ -5257,6 +5262,7 @@
 				9F60CBB12E989E90004D2367 /* RemoteMessaging */,
 				362E3EC82E7185A900E4C762 /* Tabs */,
 				362E3EC62E71859800E4C762 /* Tutorials */,
+				9FA0AF1F2EB8355E00713387 /* WhatsNew */,
 				9876DF2A2DEEE21700E30713 /* MockThemeManager.swift */,
 				98E563B42DE8B32D00E6E75F /* MockVoiceSearchHelper.swift */,
 				98E563AD2DE8B32D00E6E75F /* MockTextZoomCoordinator.swift */,
@@ -7287,6 +7293,14 @@
 				9FA09DAE2EA84F5200E26F3F /* ModalPromptScheduling.swift */,
 			);
 			path = Helpers;
+			sourceTree = "<group>";
+		};
+		9FA0AF1F2EB8355E00713387 /* WhatsNew */ = {
+			isa = PBXGroup;
+			children = (
+				9FA0AF202EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift */,
+			);
+			path = WhatsNew;
 			sourceTree = "<group>";
 		};
 		9FAD6C012E41D97200C19EEA /* UIProviders */ = {
@@ -11503,6 +11517,7 @@
 				C1E0D8692DD496A700D5DF25 /* SubscriptionFreeTrialsHelperTests.swift in Sources */,
 				31C138AC27A403CB00FFD4B2 /* DownloadManagerTests.swift in Sources */,
 				BDE219EA2C457B46005D5884 /* SubscriptionDataReporterTests.swift in Sources */,
+				9FA0AF232EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift in Sources */,
 				EEFE9C732A603CE9005B0A26 /* NetworkProtectionStatusViewModelTests.swift in Sources */,
 				F13B4BF91F18CA0600814661 /* TabsModelTests.swift in Sources */,
 				F1BDDBFD2C340D9C00459306 /* SubscriptionContainerViewModelTests.swift in Sources */,
@@ -11923,6 +11938,7 @@
 				98E5642C2DE8B32D00E6E75F /* MockDDGSyncing.swift in Sources */,
 				98E564AC2DE8EDF000E6E75F /* CapturingAdapterErrorHandler.swift in Sources */,
 				98E5642D2DE8B32D00E6E75F /* MockPersistentPixel.swift in Sources */,
+				9FA0AF212EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift in Sources */,
 				98E5642E2DE8B32D00E6E75F /* MockTabDelegate.swift in Sources */,
 				9F387DF92EA8BF4F006861F8 /* MockLaunchSourceManager.swift in Sources */,
 				98E5642F2DE8B32D00E6E75F /* MockTutorialSettings.swift in Sources */,
@@ -11998,6 +12014,7 @@
 				98E564A02DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift in Sources */,
 				9F387DFC2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */,
 				98E563472DE8B04D00E6E75F /* TestDataLoader.swift in Sources */,
+				9FA0AF242EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift in Sources */,
 				9876DF2B2DEEE21700E30713 /* MockThemeManager.swift in Sources */,
 				98E563482DE8B04D00E6E75F /* WebViewWarmupHelper.swift in Sources */,
 				98E563492DE8B04D00E6E75F /* InitHelpers.swift in Sources */,
@@ -12100,6 +12117,7 @@
 				98E564AA2DE8EDF000E6E75F /* CapturingAdapterErrorHandler.swift in Sources */,
 				9F387DFF2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */,
 				9876DF2C2DEEE21700E30713 /* MockThemeManager.swift in Sources */,
+				9FA0AF222EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift in Sources */,
 				98E564522DE8DDDC00E6E75F /* OnboardingFirePixelMock.swift in Sources */,
 				986CD5402DE8FA1400AFA98A /* ConfigurationMocks.swift in Sources */,
 				98E564532DE8DDDC00E6E75F /* MockPersistentPixel.swift in Sources */,

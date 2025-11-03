@@ -238,7 +238,8 @@ struct Launching: LaunchingHandling {
             launchTaskManager: launchTaskManager
         )
 
-        setupWindow()
+        // TODO add if here
+//        setupWindow()
         logAppLaunchTime()
 
         // Keep this init method minimal and think twice before adding anything here.
@@ -248,7 +249,7 @@ struct Launching: LaunchingHandling {
         // For a broader overview: https://app.asana.com/0/1202500774821704/1209445353536490/f
     }
 
-    private func setupWindow() {
+    func setupWindow(_ window: UIWindow) {
         ThemeManager.shared.updateUserInterfaceStyle(window: window)
         window.rootViewController = mainCoordinator.controller
         UIApplication.shared.setWindow(window)

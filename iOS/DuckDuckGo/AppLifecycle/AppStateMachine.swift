@@ -27,6 +27,7 @@ enum AppEvent {
     case didEnterBackground
     case willResignActive
     case willEnterForeground
+    case willConnectToScene(windowScene: UIWindowScene)
 
 }
 
@@ -81,6 +82,7 @@ protocol LaunchingHandling {
 
     func makeBackgroundState() -> any BackgroundHandling
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling
+    func setupWindow(_ window: UIWindow)
 
 }
 
@@ -185,6 +187,8 @@ final class AppStateMachine {
             // We don’t support this transition and instead stay in Launching.
             // From here, we can move to Foreground or Background, where resuming/suspension is handled properly.
             break
+        case .willConnectToScene(let windowScene):
+            launching.setupWindow(UIWindow(windowScene: windowScene))
         default:
             handleUnexpectedEvent(event, for: .launching(launching))
         }

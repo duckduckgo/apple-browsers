@@ -31,7 +31,7 @@ final class PixelConfiguration {
     static func configure(with featureFlagger: FeatureFlagger) {
 
 #if DEBUG
-        Pixel.isDryRun = true
+        Pixel.isDryRun = false
 #else
         Pixel.isDryRun = false
 #endif

@@ -55,6 +55,9 @@ final class OverlayWindowManager: OverlayWindowManaging {
          voiceSearchHelper: VoiceSearchHelperProtocol,
          featureFlagger: FeatureFlagger,
          aiChatSettings: AIChatSettings) {
+
+        let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
+
         self.window = window
         self.appSettings = appSettings
         self.voiceSearchHelper = voiceSearchHelper

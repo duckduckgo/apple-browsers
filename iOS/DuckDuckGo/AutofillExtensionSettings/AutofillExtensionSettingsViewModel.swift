@@ -61,9 +61,7 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
     }
 
     func enableExtension() async {
-        let result = await settingsHelper.requestToTurnOnCredentialProviderExtension()
-        Logger.autofill.debug("Extension enabled result: \(result)")
-        isShowingActivationView = result
+        isShowingActivationView = await settingsHelper.requestToTurnOnCredentialProviderExtension()
         await updateExtensionStatus()
     }
 

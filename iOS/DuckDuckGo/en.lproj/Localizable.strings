@@ -472,6 +472,9 @@
 /* Header text shown when the autofill extension is enabled */
 "autofill.extension.header.enabled" = "Autofill in Other Apps Enabled";
 
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Autofill Passwords in Other Apps";
+
 /* Status text when autofill extension is disabled */
 "autofill.extension.status.off" = "Off";
 
@@ -484,7 +487,7 @@
 /* Button title that opens system settings to turn off the autofill extension */
 "autofill.extension.turn.off.button.title" = "Turn Off in System Settings...";
 
-/* Button title that opens system settings to turn on the autofill extension */
+/* Button title that triggers system prompt to turn on the autofill extension */
 "autofill.extension.turn.on.button.title" = "Turn On...";
 
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */

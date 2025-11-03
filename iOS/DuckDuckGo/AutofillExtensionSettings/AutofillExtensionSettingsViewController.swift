@@ -42,6 +42,8 @@ class AutofillExtensionSettingsViewController: UIViewController {
         super.viewDidLoad()
 
         setupView()
+
+        title = UserText.autofillExtensionScreenTitle
     }
 
     private func setupView() {

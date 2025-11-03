@@ -127,7 +127,7 @@ class TabSwitcherViewController: UIViewController {
     private var tabObserverCancellable: AnyCancellable?
     private let appSettings: AppSettings
     
-    private (set) var aichatFullModeFeature: AIChatFullModeFeatureProviding
+    private(set) var aichatFullModeFeature: AIChatFullModeFeatureProviding
 
     required init?(coder: NSCoder,
                    bookmarksDatabase: CoreDataDatabase,

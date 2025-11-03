@@ -1697,7 +1697,7 @@ extension TabViewController: WKNavigationDelegate {
                   container.bounds.height > 0 && container.bounds.width > 0 else { completion(nil); return }
 
             let renderer = UIGraphicsImageRenderer(size: container.bounds.size)
-            let image = renderer.image { context in
+            let image = renderer.image { _ in
                 container.drawHierarchy(in: container.bounds, afterScreenUpdates: true)
             }
 

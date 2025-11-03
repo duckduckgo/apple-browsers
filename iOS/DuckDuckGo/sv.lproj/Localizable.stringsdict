@@ -121,9 +121,41 @@ Jag blockerade dem!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%1$d spårare blockerades</string>
+			<string>%1$d spårare blockerades från att läsas in</string>
 			<key>other</key>
-			<string>%1$d spårare blockerades</string>
+			<string>%1$d spårare blockerades från att läsas in</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d annan domän lästes in</string>
+			<key>other</key>
+			<string>%1$d andra domäner lästes in</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d spårare ägd av denna webbplats (lästes in)</string>
+			<key>other</key>
+			<string>%1$d spårare ägda av denna webbplats (lästes in)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

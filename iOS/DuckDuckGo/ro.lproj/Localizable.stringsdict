@@ -139,11 +139,47 @@ I-am blocat!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%1$d Urmăritor Blocat</string>
+			<string>%1$d instrument de urmărire a cărui încărcare este blocată</string>
 			<key>few</key>
-			<string>%1$d Urmăritori Blocați</string>
+			<string>%1$d %%d instrumente de urmărire a căror încărcare a fost blocată</string>
 			<key>other</key>
-			<string>%1$d Urmăritori Blocați</string>
+			<string>%1$d %%d instrumente de urmărire a căror încărcare a fost blocată</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d alt domeniu încărcat</string>
+			<key>few</key>
+			<string>%1$d alte domenii încărcate</string>
+			<key>other</key>
+			<string>%1$d de alte domenii încărcate</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d instrument de urmărire deținut de acest site (încărcat)</string>
+			<key>few</key>
+			<string>%1$d instrumente de urmărire deținute de acest site (încărcate)</string>
+			<key>other</key>
+			<string>%1$d de instrumente de urmărire deținute de acest site (încărcate)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

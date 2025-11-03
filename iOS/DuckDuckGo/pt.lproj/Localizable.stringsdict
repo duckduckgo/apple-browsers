@@ -121,9 +121,41 @@ Bloqueei-os!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%1$d rastreador bloqueado</string>
+			<string>%1$d rastreador impedido de carregar</string>
 			<key>other</key>
-			<string>%1$d rastreadores bloqueados</string>
+			<string>%1$d rastreadores impedidos de carregar</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d outro domínio carregado</string>
+			<key>other</key>
+			<string>%1$d outros domínios carregados</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d rastreador pertencente a este site (carregado)</string>
+			<key>other</key>
+			<string>%1$d rastreadores pertencentes a este site (carregados)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

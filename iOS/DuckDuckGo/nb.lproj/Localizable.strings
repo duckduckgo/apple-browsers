@@ -73,6 +73,9 @@
 /* Confirmation message */
 "action.title.forgetAllDone" = "Faner lukket og data slettet";
 
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Fjern faner, data og Duck.ai-chatter";
+
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Åpne i bakgrunnen";
 
@@ -2518,12 +2521,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Deaktiver";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "E-postadresse (valgfritt)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "navn@e-post.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Gi oss gjerne en tilbakemelding …";
 
@@ -2557,8 +2554,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "VELG EN KATEGORI";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Har du funnet et problem som ikke er dekket i [hjelpesenteret](duck://)? Da vil vi svært gjerne høre om det.\n\nOppgi en e-postadresse hvis du vil at vi skal kontakte deg om dette problemet (det er ikke sikkert vi kan svare på alle henvendelser):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Need help? [Contact support.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Found an issue not covered in our [help center](duck://)? We definitely want to know about it.\n\nTell us what's going on:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "I tillegg til detaljene ovenfor sender vi noe anonymisert informasjon sammen med tilbakemeldingen din:";
@@ -2827,6 +2827,12 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Deaktiver for å forhindre at lenker automatisk åpnes i andre installerte apper.";
 
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Lukk faner og slett data";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Fjern faner, data og Duck.ai-chatter";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Søkeforslag";
 
@@ -2871,6 +2877,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Tilpass";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Fjerner alle faner, Duck.ai-chatter og data for nettsteder du ikke har brukt Fireproof på.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Fjerner alle faner og data for nettsteder du ikke har brukt Fireproof på.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Sletting av data";

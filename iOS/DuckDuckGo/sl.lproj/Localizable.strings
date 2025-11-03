@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Omogoči zaščito zasebnosti";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Zapri zavihke in izbriši podatke";
+"action.title.forgetAll" = "Počisti zavihke in podatke";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Zavihki in podatki so izbrisani";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Počisti zavihke, podatke in klepete Duck.ai";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Odpri v ozadju";
@@ -2518,12 +2521,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Deaktiviraj";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "E-naslov (neobvezno)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "ime@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Pošljite nam povratne informacije ...";
 
@@ -2557,8 +2554,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "IZBERITE KATEGORIJO";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Ste našli težavo, ki ni obravnavana v našem [središču za pomoč](duck://)? Vsekakor želimo vedeti o tem.\n\nNavedite e-poštni naslov, če želite, da vas kontaktiramo glede te težave (morda ne bomo mogli odgovoriti na vse težave):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Need help? [Contact support.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Found an issue not covered in our [help center](duck://)? We definitely want to know about it.\n\nTell us what's going on:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Poleg zgoraj vnesenih podatkov pošljemo nekaj anonimnih informacij z vašimi povratnimi informacijami:";
@@ -2827,6 +2827,12 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Onemogoči, da preprečiš samodejno odpiranje povezav v drugih nameščenih aplikacijah.";
 
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Počisti zavihke in podatke";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Počisti zavihke, podatke in klepete Duck.ai";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Predlogi za iskanje";
 
@@ -2871,6 +2877,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Prilagodi";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Počisti vse zavihke, klepete Duck.ai in podatke za vsa spletna mesta, ki jih niste zaščitili s funkcijo Fireproof.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Počisti vse zavihke in podatke za vsa spletna mesta, ki jih niste zaščitili s funkcijo Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Počiščenje podatkov";

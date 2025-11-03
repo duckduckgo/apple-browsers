@@ -121,9 +121,41 @@ Blokeerisin nad!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%1$d jälgija on blokeeritud</string>
+			<string>%1$d jälguri laadimine blokeeriti</string>
 			<key>other</key>
-			<string>%1$d jälgijat on blokeeritud</string>
+			<string>%1$d jälgurite laadimine blokeeriti</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d muu domeeni laaditud</string>
+			<key>other</key>
+			<string>%1$d muud domeeni laaditud</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Sellele saidile kuuluv jälgur (laaditud)</string>
+			<key>other</key>
+			<string>%1$d Sellele saidile kuuluvad jälgurid (laaditud)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

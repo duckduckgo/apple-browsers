@@ -121,9 +121,41 @@ Blokkoltam őket!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%1$d nyomkövető letiltva</string>
+			<string>%1$d nyomkövető betöltése blokkolva</string>
 			<key>other</key>
-			<string>%1$d nyomkövető letiltva</string>
+			<string>%1$d nyomkövető betöltése blokkolva</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d további tartomány betöltve</string>
+			<key>other</key>
+			<string>%1$d további tartomány betöltve</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>E webhely tulajdonában álló %1$d nyomkövető (betöltve)</string>
+			<key>other</key>
+			<string>E webhely tulajdonában álló %1$d nyomkövető (betöltve)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

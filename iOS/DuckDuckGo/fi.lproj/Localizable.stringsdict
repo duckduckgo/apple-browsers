@@ -121,9 +121,41 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%1$d seurantapalvelin estetty</string>
+			<string>%1$d seurantalaite estetty lataamasta</string>
 			<key>other</key>
-			<string>%1$d seurantapalvelinta estetty</string>
+			<string>%1$d seurantalaitetta estetty lataamasta</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d muu verkkotunnus ladattu</string>
+			<key>other</key>
+			<string>%1$d muuta verkkotunnusta ladattu</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d tämän sivuston omistama seurantalaite (ladattu)</string>
+			<key>other</key>
+			<string>%1$d tämän sivuston omistamaa seurantalaitetta (ladattu)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

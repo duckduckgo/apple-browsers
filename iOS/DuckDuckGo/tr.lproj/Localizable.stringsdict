@@ -121,9 +121,41 @@ Onları engelledim!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%1$d İzleyici Engellendi</string>
+			<string>%1$d İzleyicinin Yüklenmesi Engellendi</string>
 			<key>other</key>
-			<string>%1$d İzleyici Engellendi</string>
+			<string>%1$d İzleyicinin Yüklenmesi Engellendi</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Diğer Alan Adı Yüklendi</string>
+			<key>other</key>
+			<string>%1$d Diğer Alan Adı Yüklendi</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Bu Siteye Ait %1$d İzleyici (Yüklendi)</string>
+			<key>other</key>
+			<string>Bu Siteye Ait %1$d İzleyici (Yüklendi)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

@@ -287,7 +287,7 @@
 "sync.with.another.device.footer" = "Τα δεδομένα σας είναι κρυπτογραφημένα από άκρο σε άκρο και το DuckDuckGo δεν έχει πρόσβαση στο κλειδί κρυπτογράφησης.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Συγχρονίστε με ασφάλεια σελιδοδείκτες και δεδομένα αυτόματης συμπλήρωσης μεταξύ των συσκευών σας.";
+"sync.with.another.device.message" = "Συγχρονίστε με ασφάλεια σελιδοδείκτες και κωδικούς πρόσβασης μεταξύ των συσκευών σας.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Έναρξη συγχρονισμού";

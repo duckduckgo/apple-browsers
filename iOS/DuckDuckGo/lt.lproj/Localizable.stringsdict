@@ -157,13 +157,53 @@ Užblokavau juos!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Užblokuota %1$d stebėjimo priemonė</string>
+			<string>%1$d stebėjimo priemonė užblokuota būti įkeltai</string>
 			<key>few</key>
-			<string>Užblokuotos %1$d stebėjimo priemonės</string>
+			<string>%1$d %%d stebėjimo priemonės užblokuotos būti įkeltoms</string>
 			<key>many</key>
-			<string>Užblokuota %1$d stebėjimo priemonė</string>
+			<string>%1$d %%d stebėjimo priemonės užblokuotos būti įkeltai</string>
 			<key>other</key>
-			<string>Užblokuota %1$d stebėjimo priemonių</string>
+			<string>%1$d %%d stebėjimo priemonės užblokuotos būti įkeltoms</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d kitas įkeltas domenas</string>
+			<key>few</key>
+			<string>%1$d kiti įkelti domenai</string>
+			<key>many</key>
+			<string>%1$d kito įkelto domeno</string>
+			<key>other</key>
+			<string>%1$d kitų įkeltų domenų</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d stebėjimo priemonė priklauso šiai svetainei (įkelta)</string>
+			<key>few</key>
+			<string>%1$d stebėjimo priemonės priklauso šiai svetainei (įkelta)</string>
+			<key>many</key>
+			<string>%1$d stebėjimo priemonės priklauso šiai svetainei (įkelta)</string>
+			<key>other</key>
+			<string>%1$d stebėjimo priemonių priklauso šiai svetainei (įkelta)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

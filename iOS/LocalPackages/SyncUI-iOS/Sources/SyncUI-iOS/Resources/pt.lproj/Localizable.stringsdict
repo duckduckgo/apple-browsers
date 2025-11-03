@@ -41,7 +41,7 @@
 	<key>creditcards.invalid.objects.present.description</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@cards@</string>
+		<string>%#@cartões@</string>
 		<key>cards</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>

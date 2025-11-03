@@ -157,13 +157,53 @@ Blokiral sem jih!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Blokiran %1$d sledilnik</string>
+			<string>Nalaganje %1$d sledilnika je blokirano</string>
 			<key>two</key>
-			<string>Blokirana %1$d sledilnika</string>
+			<string>Nalaganje %1$d sledilnikov je blokirano</string>
 			<key>few</key>
-			<string>Blokiranih %1$d sledilnikov</string>
+			<string>Nalaganje %1$d sledilnikov je blokirano</string>
 			<key>other</key>
-			<string>Blokiranih %1$d sledilnikov</string>
+			<string>Nalaganje %1$d sledilnikov je blokirano</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d druga domena je naložena</string>
+			<key>two</key>
+			<string>%1$d drugi domeni sta naloženi</string>
+			<key>few</key>
+			<string>%1$d druge domene so naložene</string>
+			<key>other</key>
+			<string>%1$d drugih domen je naloženih</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d sledilnik v lasti tega mesta (naloženo)</string>
+			<key>two</key>
+			<string>%1$d sledilnika v lasti tega mesta (naloženo)</string>
+			<key>few</key>
+			<string>%1$d sledilniki v lasti tega mesta (naloženo)</string>
+			<key>other</key>
+			<string>%1$d sledilnikov v lasti tega mesta (naloženo)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

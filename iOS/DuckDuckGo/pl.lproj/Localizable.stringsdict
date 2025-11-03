@@ -157,13 +157,53 @@ Zablokowałem ich!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Zablokowano %1$d skrypt śledzący</string>
+			<string>%1$d śledzący zablokowany przed ładowaniem</string>
 			<key>few</key>
-			<string>Zablokowano %1$d skrypty śledzące</string>
+			<string>%1$d śledzących zablokowanych przed ładowaniem</string>
 			<key>many</key>
-			<string>Zablokowano %1$d skryptów śledzących</string>
+			<string>%1$d śledzących zablokowanych przed ładowaniem</string>
 			<key>other</key>
-			<string>Zablokowano %1$d skryptu śledzącego</string>
+			<string>%1$d śledzących zablokowanych przed ładowaniem</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Inna domena załadowana</string>
+			<key>few</key>
+			<string>%1$d Inne domeny załadowane</string>
+			<key>many</key>
+			<string>%1$d Innych domen załadowanych</string>
+			<key>other</key>
+			<string>%1$d Innych domen załadowanych</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d %%d śledzący należący do tej witryny (załadowany)</string>
+			<key>few</key>
+			<string>%1$d %%d śledzących należących do tej witryny (załadowanych)</string>
+			<key>many</key>
+			<string>%1$d %%d śledzących należących do tej witryny (załadowanych)</string>
+			<key>other</key>
+			<string>%1$d %%d śledzących należących do tej witryny (załadowanych)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

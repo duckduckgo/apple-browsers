@@ -121,9 +121,41 @@ Ich habe sie blockiert!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%1$d Tracker blockiert</string>
+			<string>%1$d Tracker wurde blockiert</string>
 			<key>other</key>
-			<string>%1$d Tracker blockiert</string>
+			<string>%1$d Tracker wurden blockiert</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d weitere Domain geladen</string>
+			<key>other</key>
+			<string>%1$d weitere Domains geladen</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Tracker, der dieser Website gehört (geladen)</string>
+			<key>other</key>
+			<string>%1$d Tracker, die dieser Website gehören (geladen)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

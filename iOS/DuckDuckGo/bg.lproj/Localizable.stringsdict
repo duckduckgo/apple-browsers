@@ -121,9 +121,41 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%1$d блокирано проследяващо устройство</string>
+			<string>Блокирано зареждане на %1$d тракер</string>
 			<key>other</key>
-			<string>%1$d блокирани проследяващи устройства</string>
+			<string>Блокирано зареждане на %1$d тракера</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Зареден %1$d друг домейн</string>
+			<key>other</key>
+			<string>Заредени %1$d други домейна</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d тракер, собственост на този сайт (зареден)</string>
+			<key>other</key>
+			<string>%1$d тракера, собственост на този сайт (заредени)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

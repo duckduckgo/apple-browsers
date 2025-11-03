@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Activar la protección de privacidad";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Cerrar pestañas y borrar datos";
+"action.title.forgetAll" = "Borrar datos y pestañas";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Pestañas y datos borrados";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Borrar pestañas, datos y chats de Duck.ai";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Abrir en segundo plano";
@@ -2518,12 +2521,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Desactivar";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "Correo electrónico (opcional)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "nombre@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Danos tu opinión…";
 
@@ -2557,8 +2554,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "SELECCIONA UNA CATEGORÍA";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "¿Has encontrado una incidencia que no aparece en nuestro [centro de ayuda] (duck://)? Nos interesa mucho saberlo.\n\nIndica una dirección de correo electrónico si quieres que nos pongamos en contacto contigo en relación con esta incidencia (es posible que no podamos responder a todas las incidencias):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "¿Necesitas ayuda? [Contacta con el servicio de soporte.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "¿Has encontrado una incidencia que no aparece en nuestro [centro de ayuda] (duck://)? Nos interesa mucho saberlo.\n\nCuéntanos qué está pasando:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Además de los detalles introducidos anteriormente, enviamos información anónima con tus comentarios:";
@@ -2827,6 +2827,12 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Desactivar para evitar que los enlaces se abran automáticamente en otras aplicaciones instaladas.";
 
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Borrar datos y pestañas";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Borra pestañas, datos y chats de Duck.ai";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sugerencias de búsqueda";
 
@@ -2871,6 +2877,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Personalizar";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Borra todas las pestañas, los chats de Duck.ai y los datos de los sitios que no hayas protegido con Fireproof.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Borrar todas las pestañas y los datos de los sitios no protegidos con Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Eliminación de datos";

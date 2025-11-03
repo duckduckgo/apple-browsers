@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Privacybescherming inschakelen";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Tabbladen sluiten en gegevens wissen";
+"action.title.forgetAll" = "Tabbladen en gegevens wissen";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Tabbladen en gegevens gewist";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Tabbladen, gegevens en Duck.ai-chats wissen";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Openen op de achtergrond";
@@ -2518,12 +2521,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Deactiveren";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "E-mailadres (optioneel)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "name@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Deel je feedback met ons …";
 
@@ -2557,8 +2554,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "SELECTEER EEN CATEGORIE";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Heb je een probleem gevonden dat niet in ons [helpcentrum](duck://) wordt besproken? We willen er zeker meer over weten.\n\nGeef een e-mailadres op als je wilt dat we contact met je opnemen over dit probleem (het is mogelijk dat we niet op alle problemen kunnen reageren):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Hulp nodig? [Neem contact op met support.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Heb je een probleem gevonden dat niet in ons [helpcentrum](duck://) wordt besproken? We willen er zeker meer over weten.\n\nVertel ons wat er aan de hand is:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Naast de gegevens die je hierboven invult, sturen we ook geanonimiseerde informatie mee met je feedback:";
@@ -2827,6 +2827,12 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Uitschakelen om te voorkomen dat links automatisch geopend worden in andere geïnstalleerde apps.";
 
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Tabbladen en gegevens wissen";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Tabbladen, gegevens en Duck.ai-chats wissen";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Zoeksuggesties";
 
@@ -2871,6 +2877,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Aanpassen";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Sluit alle tabbladen, Duck.ai-chats en wist gegevens van sites die je niet Fireproof hebt gemaakt.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Wist alle tabbladen en gegevens van sites die je niet Fireproof hebt gemaakt.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Gegevens wissen";

@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Activează protecția confidențialității";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Închide filele și șterge datele";
+"action.title.forgetAll" = "Șterge filele și datele";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "File și date șterse";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Șterge filele, datele și chaturile Duck.ai";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Deschide în fundal";
@@ -2518,12 +2521,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Dezactivează";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "E-mail (opțional)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "name@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Te rugăm să ne comunici feedbackul tău...";
 
@@ -2557,8 +2554,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "SELECTEAZĂ O CATEGORIE";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Ai găsit o problemă care nu este acoperită în [centrul nostru de ajutor](duck://)? Ne dorim foarte mult să știm acest lucru.Furnizează o adresă de e-mail dacă dorești să te contactăm cu privire la această problemă (este posibil să nu putem răspunde la toate problemele):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Ai nevoie de ajutor? [Contactează serviciul de asistență.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Ai găsit o problemă care nu este prezentată în [centrul nostru de ajutor](duck://)? Ne dorim foarte mult să știm acest lucru.Spune-ne ce se întâmplă:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Pe lângă detaliile menționate mai sus, trimitem câteva informații anonimizate împreună cu feedbackul tău:";
@@ -2827,6 +2827,12 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Dezactivează pentru a preveni deschiderea automată a linkurilor în alte aplicații instalate.";
 
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Șterge filele și datele";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Șterge filele, datele și chaturile Duck.ai";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sugestii de căutare";
 
@@ -2871,6 +2877,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Personalizare";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Șterge toate filele, conversațiile Duck.ai și datele pentru site-urile pe care nu le-ai protejat cu Fireproof.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Șterge toate filele și datele pentru site-urile pe care nu le-ai protejat cu Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Ștergerea datelor";

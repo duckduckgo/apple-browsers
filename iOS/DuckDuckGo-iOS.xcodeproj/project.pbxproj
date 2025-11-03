@@ -1399,6 +1399,7 @@
 		BB77957D2E9D4B0B00CF58F4 /* WinBackOfferPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7795792E9D4B0B00CF58F4 /* WinBackOfferPresenter.swift */; };
 		BB77957F2E9D4B4D00CF58F4 /* WinBackOfferService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB77957E2E9D4B4D00CF58F4 /* WinBackOfferService.swift */; };
 		BB7795812E9D532100CF58F4 /* WinBackOfferFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7795802E9D532100CF58F4 /* WinBackOfferFeatureFlagger.swift */; };
+		BB8126B72EB8DC7900360AAF /* WinBackOfferModalPromptProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB8126B62EB8DC7900360AAF /* WinBackOfferModalPromptProviderTests.swift */; };
 		BBD9C3972E9D73610060A6E8 /* SERPSettings in Frameworks */ = {isa = PBXBuildFile; productRef = BBD9C3962E9D73610060A6E8 /* SERPSettings */; };
 		BBF1BDED2EA631AD00358243 /* WinBackOfferCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBF1BDEB2EA631AD00358243 /* WinBackOfferCoordinatorTests.swift */; };
 		BBF1BDF02EA6333000358243 /* MockWinBackOfferService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBF1BDEF2EA6333000358243 /* MockWinBackOfferService.swift */; };
@@ -3637,6 +3638,7 @@
 		BB7795792E9D4B0B00CF58F4 /* WinBackOfferPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferPresenter.swift; sourceTree = "<group>"; };
 		BB77957E2E9D4B4D00CF58F4 /* WinBackOfferService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferService.swift; sourceTree = "<group>"; };
 		BB7795802E9D532100CF58F4 /* WinBackOfferFeatureFlagger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferFeatureFlagger.swift; sourceTree = "<group>"; };
+		BB8126B62EB8DC7900360AAF /* WinBackOfferModalPromptProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferModalPromptProviderTests.swift; sourceTree = "<group>"; };
 		BBD9C3942E9D71F50060A6E8 /* SERPSettings */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SERPSettings; path = ../SharedPackages/SERPSettings; sourceTree = SOURCE_ROOT; };
 		BBF1BDEB2EA631AD00358243 /* WinBackOfferCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferCoordinatorTests.swift; sourceTree = "<group>"; };
 		BBF1BDEF2EA6333000358243 /* MockWinBackOfferService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockWinBackOfferService.swift; sourceTree = "<group>"; };
@@ -6919,6 +6921,7 @@
 			isa = PBXGroup;
 			children = (
 				9F2D99E32EA9F9EE003950CC /* DefaultBrowserModalPromptProviderTests.swift */,
+				BB8126B62EB8DC7900360AAF /* WinBackOfferModalPromptProviderTests.swift */,
 				9F387E042EA9A1D8006861F8 /* NewAddressBarPickerModalPromptProviderTests.swift */,
 			);
 			path = Providers;
@@ -11204,6 +11207,7 @@
 				C10E0A382E5CB269009CAE1B /* URL+QueryParametersTests.swift in Sources */,
 				8528AE84212FF9A100D0BD74 /* AppRatingPromptStorageTests.swift in Sources */,
 				569437312BE3F64400C0881B /* SyncErrorHandlerSyncPausedAlertsTests.swift in Sources */,
+				BB8126B72EB8DC7900360AAF /* WinBackOfferModalPromptProviderTests.swift in Sources */,
 				563A3D012D37BF83001966FD /* ConfigurationManagerTests.swift in Sources */,
 				56B3310F2E0E92B200D4D3BA /* SubscriptionURLNavigationHandlerTests.swift in Sources */,
 				9F16230B2CA0F0190093C4FC /* DebouncerTests.swift in Sources */,

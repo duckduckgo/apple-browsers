@@ -39,7 +39,7 @@ enum ModalPromptCoordinationFactory {
 
         let newAddressBarPickerModalPromptProvider = makeNewAddressBarPickerModalPromptProvider(dependency: providersDependency.newAddressBarPicker)
         let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: providersDependency.defaultBrowserPrompt.presenter)
-        let winBackOfferModalPromptProvider = WinBackOfferModalPromptProvider()
+        let winBackOfferModalPromptProvider = WinBackOfferModalPromptProvider(presenter: providersDependency.winBackOffer.presenter, coordinator: providersDependency.winBackOffer.coordinator)
 
         return ModalPromptCoordinationService(
             launchSourceManager: launchSourceManager,
@@ -90,6 +90,7 @@ extension ModalPromptCoordinationFactory {
     struct ProvidersDependency {
         let newAddressBarPicker: NewAddressBarPickerDependency
         let defaultBrowserPrompt: DefaultBrowserDependency
+        let winBackOffer: WinBackOfferDependency
     }
 
 }
@@ -105,6 +106,11 @@ extension ModalPromptCoordinationFactory.ProvidersDependency {
 
     struct DefaultBrowserDependency {
         let presenter: DefaultBrowserPromptPresenting
+    }
+
+    struct WinBackOfferDependency {
+        let presenter: WinBackOfferPresenting
+        let coordinator: WinBackOfferCoordinating
     }
 
 }

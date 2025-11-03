@@ -57,7 +57,8 @@ final class MainCoordinator {
     private let winBackOfferPresenter: WinBackOfferPresenting
     private let launchSourceManager: LaunchSourceManaging
 
-    init(syncService: SyncService,
+    init(privacyConfigurationManager: PrivacyConfigurationManaging,
+         syncService: SyncService,
          bookmarksDatabase: CoreDataDatabase,
          remoteMessagingService: RemoteMessagingService,
          daxDialogs: DaxDialogs,
@@ -105,6 +106,7 @@ final class MainCoordinator {
                                 persistence: tabsPersistence,
                                 previewsSource: previewsSource,
                                 interactionStateSource: interactionStateSource,
+                                privacyConfigurationManager: privacyConfigurationManager,
                                 bookmarksDatabase: bookmarksDatabase,
                                 historyManager: historyManager,
                                 syncService: syncService.sync,
@@ -124,7 +126,8 @@ final class MainCoordinator {
                                 keyValueStore: keyValueStore,
                                 daxDialogsManager: daxDialogsManager,
                                 aiChatSettings: aiChatSettings)
-        controller = MainViewController(bookmarksDatabase: bookmarksDatabase,
+        controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
+                                        bookmarksDatabase: bookmarksDatabase,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         historyManager: historyManager,
                                         homePageConfiguration: homePageConfiguration,

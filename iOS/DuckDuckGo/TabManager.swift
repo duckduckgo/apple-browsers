@@ -35,6 +35,7 @@ class TabManager {
 
     private var tabControllerCache = [TabViewController]()
 
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let bookmarksDatabase: CoreDataDatabase
     private let historyManager: HistoryManaging
     private let syncService: DDGSyncing
@@ -68,6 +69,7 @@ class TabManager {
          persistence: TabsModelPersisting,
          previewsSource: TabPreviewsSource,
          interactionStateSource: TabInteractionStateSource?,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
          bookmarksDatabase: CoreDataDatabase,
          historyManager: HistoryManaging,
          syncService: DDGSyncing,
@@ -93,6 +95,7 @@ class TabManager {
         self.persistence = persistence
         self.previewsSource = previewsSource
         self.interactionStateSource = interactionStateSource
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
         self.syncService = syncService
@@ -136,6 +139,7 @@ class TabManager {
         )
 
         let controller = TabViewController.loadFromStoryboard(model: tab,
+                                                              privacyConfigurationManager: privacyConfigurationManager,
                                                               bookmarksDatabase: bookmarksDatabase,
                                                               historyManager: historyManager,
                                                               syncService: syncService,
@@ -231,6 +235,7 @@ class TabManager {
         )
 
         let controller = TabViewController.loadFromStoryboard(model: tab,
+                                                              privacyConfigurationManager: privacyConfigurationManager,
                                                               bookmarksDatabase: bookmarksDatabase,
                                                               historyManager: historyManager,
                                                               syncService: syncService,

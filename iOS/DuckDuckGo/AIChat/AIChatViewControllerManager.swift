@@ -61,7 +61,7 @@ final class AIChatViewControllerManager {
 
     // MARK: - Initialization
 
-    init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+    init(privacyConfigurationManager: PrivacyConfigurationManaging,
          downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler(),
          userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
          experimentalAIChatManager: ExperimentalAIChatManager,

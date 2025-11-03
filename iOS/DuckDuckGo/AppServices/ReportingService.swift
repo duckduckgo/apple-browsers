@@ -28,6 +28,7 @@ final class ReportingService {
     let onboardingPixelReporter = OnboardingPixelReporter()
     let subscriptionDataReporter: SubscriptionDataReporting
     let featureFlagging: FeatureFlagger
+    let adAttributionPixelReporter: AdAttributionPixelReporter
 
     var syncService: SyncService? {
         didSet {
@@ -36,8 +37,11 @@ final class ReportingService {
         }
     }
 
-    init(fireproofing: Fireproofing, featureFlagging: FeatureFlagger) {
+    init(fireproofing: Fireproofing,
+         featureFlagging: FeatureFlagger,
+         privacyConfigurationManager: PrivacyConfigurationManaging) {
         self.featureFlagging = featureFlagging
+        self.adAttributionPixelReporter = AdAttributionPixelReporter(privacyConfigurationManager: privacyConfigurationManager)
         subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)
         NotificationCenter.default.addObserver(forName: .didFetchConfigurationOnForeground,
                                                object: nil,
@@ -115,7 +119,7 @@ private extension ReportingService {
 
     func reportAdAttribution() {
         Task.detached(priority: .background) {
-            await AdAttributionPixelReporter.shared.reportAttributionIfNeeded()
+            await self.adAttributionPixelReporter.reportAttributionIfNeeded()
         }
     }
     

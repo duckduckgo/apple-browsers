@@ -354,24 +354,26 @@ extension SuggestionJsonScenarioTests {
             didSet {
                 // Convert test entries to History.HistoryEntry when assigned
                 if let entries = testHistoryEntries {
-                    history = entries.map { testEntry in
-                        // Initialize HistoryEntry with all required parameters based on how it's done in HistoryStoreTests
-                        return History.HistoryEntry(
-                            identifier: testEntry.identifier,
-                            url: testEntry.url,
-                            title: testEntry.title,
-                            failedToLoad: testEntry.failedToLoad,
-                            numberOfTotalVisits: testEntry.numberOfVisits,
-                            lastVisit: testEntry.lastVisit,
-                            visits: Set<History.Visit>(),
-                            numberOfTrackersBlocked: 0,
-                            blockedTrackingEntities: Set<String>(),
-                            trackersFound: false
-                        )
+                    MainActor.assumeMainThread {
+                        history = entries.map { testEntry in
+                            // Initialize HistoryEntry with all required parameters based on how it's done in HistoryStoreTests
+                            return History.HistoryEntry(
+                                identifier: testEntry.identifier,
+                                url: testEntry.url,
+                                title: testEntry.title,
+                                failedToLoad: testEntry.failedToLoad,
+                                numberOfTotalVisits: testEntry.numberOfVisits,
+                                lastVisit: testEntry.lastVisit,
+                                visits: Set<History.Visit>(),
+                                numberOfTrackersBlocked: 0,
+                                blockedTrackingEntities: Set<String>(),
+                                trackersFound: false
+                            )
+                        }
+                        
+                        // Update history dictionary
+                        historyDictionary = Dictionary(uniqueKeysWithValues: (history ?? []).map { ($0.url, $0) })
                     }
-                    
-                    // Update history dictionary
-                    historyDictionary = Dictionary(uniqueKeysWithValues: (history ?? []).map { ($0.url, $0) })
                 }
             }
         }

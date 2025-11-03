@@ -27,9 +27,8 @@ import PixelKit
 import Suggestions
 
 protocol SuggestionContainerProtocol {
-
+    @MainActor
     func getSuggestions(for query: String, useCachedData: Bool, completion: ((SuggestionResult?) -> Void)?)
-
 }
 
 struct SuggestionLoadingDecider {
@@ -64,6 +63,7 @@ final class SuggestionContainer: SuggestionContainerProtocol {
     private let openTabsProvider: OpenTabsProvider
 
     protocol HistoryProvider {
+        @MainActor
         func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion]
     }
     private let historyProvider: HistoryProvider
@@ -116,6 +116,7 @@ final class SuggestionContainer: SuggestionContainerProtocol {
         self.windowControllersManager = windowControllersManager
     }
 
+    @MainActor
     func getSuggestions(for query: String, useCachedData: Bool = false, completion: ((SuggestionResult?) -> Void)? = nil) {
         latestQuery = query
 
@@ -183,6 +184,7 @@ struct OpenTab: BrowserTab, Hashable {
 }
 
 extension HistoryCoordinator: SuggestionContainer.HistoryProvider {
+    @MainActor
     func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion] {
         history ?? []
     }
@@ -201,6 +203,7 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
         return .desktop
     }
 
+    @MainActor
     func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion] {
         return historyProvider.history(for: suggestionLoading)
     }

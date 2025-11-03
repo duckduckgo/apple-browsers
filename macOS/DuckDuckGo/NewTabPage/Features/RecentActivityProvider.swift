@@ -51,6 +51,7 @@ struct ContentBlockingPrevalenceComparator: TrackerEntityPrevalenceComparing {
 }
 
 final class RecentActivityProvider: NewTabPageRecentActivityProviding {
+    @MainActor
     func refreshActivity() -> [NewTabPageDataModel.DomainActivity] {
         Self.calculateRecentActivity(
             with: historyCoordinator.history ?? [],
@@ -85,7 +86,9 @@ final class RecentActivityProvider: NewTabPageRecentActivityProviding {
             }
             .receive(on: DispatchQueue.main)
             .compactMap { [weak historyCoordinator] _ -> BrowsingHistory? in
-                historyCoordinator?.history
+                MainActor.assumeMainThread {
+                    historyCoordinator?.history
+                }
             }
             .compactMap { [weak urlFavoriteStatusProvider] history -> [NewTabPageDataModel.DomainActivity]? in
                 guard let urlFavoriteStatusProvider else {

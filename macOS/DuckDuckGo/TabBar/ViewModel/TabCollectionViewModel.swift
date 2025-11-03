@@ -953,6 +953,18 @@ extension TabCollectionViewModel {
         return historyDomains
     }
 
+    func clearLocalHistory(keepingCurrent: Bool) {
+        for vm in tabViewModels.values {
+            vm.tab.clearNavigationHistory(keepingCurrent: keepingCurrent)
+        }
+        // also handle pinned tabs
+        pinnedTabsManager?.tabCollection.tabs.forEach {
+            $0.clearNavigationHistory(keepingCurrent: keepingCurrent)
+        }
+        tabCollection.localHistoryOfRemovedTabs.removeAll()
+        pinnedTabsManager?.tabCollection.localHistoryOfRemovedTabs.removeAll()
+    }
+
 }
 
 extension TabCollectionViewModel {

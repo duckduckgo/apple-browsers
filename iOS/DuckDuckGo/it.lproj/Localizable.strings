@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Attiva la tutela della privacy";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Chiudi le schede e cancella i dati";
+"action.title.forgetAll" = "Cancella tutte le schede e i dati";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Schede e dati cancellati";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Chiudi le schede e la chat di Duck.ai ed elimina i dati";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Apri in background";
@@ -2827,6 +2830,12 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Disattiva per impedire che i collegamenti si aprano automaticamente in altre app installate.";
 
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Cancella tutte le schede e i dati";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Chiudi le schede e la chat di Duck.ai ed elimina i dati";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Suggerimenti di ricerca";
 
@@ -2871,6 +2880,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Personalizza";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Cancella tutte le schede, le chat di Duck.ai e i dati per tutti i siti che non hai protetto con Fireproof.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Cancella tutte le schede e i dati per tutti i siti che non hai protetto con Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Cancellazione dati";

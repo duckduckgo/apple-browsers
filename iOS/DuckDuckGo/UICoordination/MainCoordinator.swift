@@ -213,14 +213,7 @@ final class MainCoordinator {
     }
 
     func presentNetworkProtectionStatusSettingsModal() {
-        Task {
-            if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
-               canShowVPNInUI {
-                controller.segueToVPN()
-            } else {
-                controller.segueToDuckDuckGoSubscription()
-            }
-        }
+        controller.presentNetworkProtectionStatusSettingsModal()
     }
 
     // MARK: App Lifecycle handling
@@ -347,7 +340,7 @@ extension MainCoordinator: ShortcutItemHandling {
         } else if item.type == ShortcutKey.passwords {
             handleSearchPassword()
         } else if item.type == ShortcutKey.openVPNSettings {
-            presentNetworkProtectionStatusSettingsModal()
+            controller.presentNetworkProtectionStatusSettingsModal()
         } else if item.type == ShortcutKey.aiChat {
             handleAIChatAppIconShortuct()
         } else if item.type == ShortcutKey.voiceSearch {

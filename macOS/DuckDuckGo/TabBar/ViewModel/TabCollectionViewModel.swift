@@ -26,16 +26,17 @@ import PixelKit
 import WebKit
 
 /**
- * The delegate callbacks are triggered for events related to unpinned tabs only.
+ * The delegate callbacks taking `Int` indexes are triggered for events related to unpinned tabs only.
+ * Callbacks taking `TabIndex` indexes are triggered for events related to both pinned and unpinned tabs.
  */
 protocol TabCollectionViewModelDelegate: AnyObject {
 
     func tabCollectionViewModelDidAppend(_ tabCollectionViewModel: TabCollectionViewModel, selected: Bool)
-    func tabCollectionViewModelDidInsert(_ tabCollectionViewModel: TabCollectionViewModel, at index: Int, selected: Bool)
+    func tabCollectionViewModelDidInsert(_ tabCollectionViewModel: TabCollectionViewModel, at index: TabIndex, selected: Bool)
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel,
                                 didRemoveTabAt removalIndex: Int,
                                 andSelectTabAt selectionIndex: Int?)
-    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: Int, to newIndex: Int)
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: TabIndex, to newIndex: TabIndex)
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didSelectAt selectionIndex: Int?)
     func tabCollectionViewModelDidMultipleChanges(_ tabCollectionViewModel: TabCollectionViewModel)
 
@@ -252,12 +253,7 @@ final class TabCollectionViewModel: NSObject {
 
     @discardableResult func select(at index: TabIndex, forceChange: Bool = false) -> Bool {
         shouldReturnToPreviousActiveTab = false
-        switch index {
-        case .unpinned(let i):
-            return selectUnpinnedTab(at: i, forceChange: forceChange)
-        case .pinned(let i):
-            return selectPinnedTab(at: i, forceChange: forceChange)
-        }
+        return selectWithoutResettingState(at: index, forceChange: forceChange)
     }
 
     @discardableResult func select(tab: Tab, forceChange: Bool = false) -> Bool {
@@ -315,6 +311,15 @@ final class TabCollectionViewModel: NSObject {
         select(at: newSelectionIndex)
         if newSelectionIndex.isUnpinnedTab {
             delegate?.tabCollectionViewModel(self, didSelectAt: newSelectionIndex.item)
+        }
+    }
+
+    @discardableResult private func selectWithoutResettingState(at index: TabIndex, forceChange: Bool = false) -> Bool {
+        switch index {
+        case .unpinned(let i):
+            return selectUnpinnedTab(at: i, forceChange: forceChange)
+        case .pinned(let i):
+            return selectPinnedTab(at: i, forceChange: forceChange)
         }
     }
 
@@ -430,9 +435,7 @@ final class TabCollectionViewModel: NSObject {
         if selected {
             select(at: index)
         }
-        if index.isUnpinnedTab {
-            delegate?.tabCollectionViewModelDidInsert(self, at: index.item, selected: selected)
-        }
+        delegate?.tabCollectionViewModelDidInsert(self, at: index, selected: selected)
     }
 
     func insert(_ tab: Tab, after parentTab: Tab?, selected: Bool) {
@@ -615,17 +618,29 @@ final class TabCollectionViewModel: NSObject {
     }
 
     func moveTab(at fromIndex: Int, to otherViewModel: TabCollectionViewModel, at toIndex: Int) {
+        moveTab(at: .unpinned(fromIndex), to: otherViewModel, at: .unpinned(toIndex))
+    }
+
+    func moveTab(at fromIndex: TabIndex, to otherViewModel: TabCollectionViewModel, at toIndex: TabIndex) {
         assert(self !== otherViewModel)
         guard changesEnabled else { return }
 
-        let movedTab = tabCollection.tabs[safe: fromIndex]
-        let parentTab = movedTab?.parentTab
+        guard let sourceCollection = tabCollection(for: fromIndex), let targetCollection = otherViewModel.tabCollection(for: toIndex) else {
+            return
+        }
 
-        guard tabCollection.moveTab(at: fromIndex, to: otherViewModel.tabCollection, at: toIndex) else { return }
+        guard let movedTab = sourceCollection.tabs[safe: fromIndex.item] else {
+            return
+        }
 
-        didRemoveTab(tab: movedTab!, at: .unpinned(fromIndex), withParent: parentTab)
+        let parentTab = movedTab.parentTab
+        guard sourceCollection.moveTab(at: fromIndex.item, to: targetCollection, at: toIndex.item) else {
+            return
+        }
 
-        otherViewModel.selectUnpinnedTab(at: toIndex)
+        didRemoveTab(tab: movedTab, at: fromIndex, withParent: parentTab)
+
+        otherViewModel.selectWithoutResettingState(at: toIndex)
         otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: true)
     }
 
@@ -670,40 +685,6 @@ final class TabCollectionViewModel: NSObject {
         delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }
 
-    func removeAllTabsAndAppendNew(forceChange: Bool = false) {
-        guard changesEnabled || forceChange else { return }
-
-        tabCollection.removeAll(andAppend: Tab(content: .newtab, burnerMode: burnerMode))
-        selectUnpinnedTab(at: 0, forceChange: forceChange)
-
-        delegate?.tabCollectionViewModelDidMultipleChanges(self)
-    }
-
-    func removeTabsAndAppendNew(at indexSet: IndexSet, forceChange: Bool = false) {
-        guard !indexSet.isEmpty, changesEnabled || forceChange else { return }
-        guard let selectionIndex = selectionIndex?.item else {
-            Logger.tabLazyLoading.error("TabCollection: No tab selected")
-            return
-        }
-
-        tabCollection.removeTabs(at: indexSet)
-        if tabCollection.tabs.isEmpty {
-            tabCollection.append(tab: Tab(content: .newtab, burnerMode: burnerMode))
-            selectUnpinnedTab(at: 0, forceChange: forceChange)
-        } else {
-            let selectionDiff = indexSet.reduce(0) { result, index in
-                if index < selectionIndex {
-                    return result + 1
-                } else {
-                    return result
-                }
-            }
-
-            selectUnpinnedTab(at: max(min(selectionIndex - selectionDiff, tabCollection.tabs.count - 1), 0), forceChange: forceChange)
-        }
-        delegate?.tabCollectionViewModelDidMultipleChanges(self)
-    }
-
     func removeSelected(forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
 
@@ -736,9 +717,7 @@ final class TabCollectionViewModel: NSObject {
         tabCollection(for: tabIndex)?.insert(tabCopy, at: newIndex.item)
         select(at: newIndex)
 
-        if newIndex.isUnpinnedTab {
-            delegate?.tabCollectionViewModelDidInsert(self, at: newIndex.item, selected: true)
-        }
+        delegate?.tabCollectionViewModelDidInsert(self, at: newIndex, selected: true)
     }
 
     func pinTab(at index: Int) {
@@ -786,11 +765,11 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
-    func moveTab(at index: Int, to newIndex: Int) {
-        guard changesEnabled else { return }
+    func moveTab(at index: TabIndex, to newIndex: TabIndex) {
+        guard changesEnabled, index.isInSameSection(as: newIndex), let tabCollection = tabCollection(for: index) else { return }
 
-        tabCollection.moveTab(at: index, to: newIndex)
-        selectUnpinnedTab(at: newIndex)
+        tabCollection.moveTab(at: index.item, to: newIndex.item)
+        selectWithoutResettingState(at: newIndex)
 
         delegate?.tabCollectionViewModel(self, didMoveTabAt: index, to: newIndex)
     }

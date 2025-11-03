@@ -40,6 +40,7 @@ extension DefaultBrowserAndDockPromptDebugEvent.Storage {
         case bannerShownDate(Error)
         case bannerShownOccurrences(Error)
         case permanentlyDismissPrompt(Error)
+        case inactiveUserModalShownDate(Error)
     }
 
 }
@@ -55,6 +56,10 @@ enum DefaultBrowserAndDockPromptDebugEventMapper {
             debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToRetrieveBannerSeenDate, error: error)
         case let .storage(.failedToRetrieveValue(.bannerShownOccurrences(error))):
             debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToRetrieveNumberOfBannerShown, error: error)
+        case let .storage(.failedToRetrieveValue(.inactiveUserModalShownDate(error))):
+            // https://app.asana.com/1/137249556945/task/1210864108653442
+            // Set debug pixel when fails to retrieve modal shown date
+            return
         case let .storage(.failedToSaveValue(.bannerShownOccurrences(error))):
             debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToSaveNumberOfBannerShown, error: error)
         case let .storage(.failedToRetrieveValue(.permanentlyDismissPrompt(error))):
@@ -65,6 +70,10 @@ enum DefaultBrowserAndDockPromptDebugEventMapper {
             debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToSaveBannerSeenDate, error: error)
         case let .storage(.failedToSaveValue(.permanentlyDismissPrompt(error))):
             debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToSaveBannerPermanentlyDismissedValue, error: error)
+        case let .storage(.failedToSaveValue(.inactiveUserModalShownDate(error))):
+            // https://app.asana.com/1/137249556945/task/1210864108653442
+            // Set debug pixel when fails to save modal shown date
+            return
         }
         PixelKit.fire(debugEvent, frequency: .dailyAndCount)
     }

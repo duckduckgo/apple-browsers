@@ -189,11 +189,11 @@ final class FireViewController: NSViewController {
         await withUnsafeContinuation { (continuation: UnsafeContinuation<Void, Never>) in
             progressIndicatorWrapper.isHidden = true
             fakeFireButton.isHidden = true
-            fireViewModel.isAnimationPlaying = true
+            fireViewModel.setAnimationPlaying(true, isFireWindow: true)
 
             fireAnimationView?.currentProgress = 0
             let completion = { [fireViewModel] in
-                fireViewModel.isAnimationPlaying = false
+                fireViewModel.setAnimationPlaying(false, isFireWindow: true)
                 continuation.resume()
             }
             fireAnimationView?.play(fromProgress: fireAnimationBeginning, toProgress: fireAnimationEnd) { [weak self] _ in
@@ -223,18 +223,19 @@ final class FireViewController: NSViewController {
             await waitForFireAnimationViewIfNeeded()
 
             progressIndicatorWrapper.isHidden = true
-            fireViewModel.isAnimationPlaying = true
+            fireViewModel.setAnimationPlaying(true, isFireWindow: false)
 
             fireAnimationView?.currentProgress = 0
-            
+
             fireAnimationView?.play(fromProgress: fireAnimationBeginning, toProgress: fireAnimationEnd) { [weak self, fireViewModel] _ in
                 Logger.general.debug("Fire animation did finish")
-                fireViewModel.isAnimationPlaying = false
+                fireViewModel.setAnimationPlaying(false, isFireWindow: false)
 
                 guard let self else { return }
 
                 // If not finished yet, present the progress indicator
                 if self.fireViewModel.isBurning {
+
                     // Waits until windows are closed in Fire.swift
                     DispatchQueue.main.async {
                         self.progressIndicatorWrapper.isHidden = false

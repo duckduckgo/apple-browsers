@@ -42,9 +42,13 @@ final class FireViewModel {
 
     let fire: FireProtocol
 
-    @Published var isAnimationPlaying = false {
-        didSet {
-            guard oldValue != isAnimationPlaying else { return }
+    @Published private(set) var isAnimationPlaying = false
+
+    func setAnimationPlaying(_ isAnimationPlaying: Bool, isFireWindow: Bool) {
+        guard self.isAnimationPlaying != isAnimationPlaying else { return }
+        self.isAnimationPlaying = isAnimationPlaying
+
+        if !isFireWindow {
             if isAnimationPlaying {
                 fire.fireAnimationDidStart()
             } else {

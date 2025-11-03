@@ -42,7 +42,16 @@ final class FireViewModel {
 
     let fire: FireProtocol
 
-    @Published var isAnimationPlaying = false
+    @Published var isAnimationPlaying = false {
+        didSet {
+            guard oldValue != isAnimationPlaying else { return }
+            if isAnimationPlaying {
+                fire.fireAnimationDidStart()
+            } else {
+                fire.fireAnimationDidFinish()
+            }
+        }
+    }
 
     /// Publisher that emits true if burning animation or burning process is in progress
     var isFirePresentationInProgress: AnyPublisher<Bool, Never> {

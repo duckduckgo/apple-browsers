@@ -106,9 +106,11 @@ final class FireViewController: NSViewController {
     }
 
     override func viewWillAppear() {
-        subscribeToFireAnimationEvents()
         progressIndicator.startAnimation(self)
         progressIndicatorWrapperBG.applyDropShadow()
+        fireIndicatorVisibilityManager.updateVisibility(false)
+
+        subscribeToFireAnimationEvents()
     }
 
     override func viewDidDisappear() {
@@ -223,21 +225,23 @@ final class FireViewController: NSViewController {
             progressIndicatorWrapper.isHidden = true
             fireViewModel.isAnimationPlaying = true
 
-            fireViewModel.fire.fireAnimationDidStart()
             fireAnimationView?.currentProgress = 0
+            
             fireAnimationView?.play(fromProgress: fireAnimationBeginning, toProgress: fireAnimationEnd) { [weak self, fireViewModel] _ in
+                Logger.general.debug("Fire animation did finish")
                 fireViewModel.isAnimationPlaying = false
-                fireViewModel.fire.fireAnimationDidFinish()
 
                 guard let self else { return }
 
                 // If not finished yet, present the progress indicator
                 if self.fireViewModel.isBurning {
-
                     // Waits until windows are closed in Fire.swift
                     DispatchQueue.main.async {
                         self.progressIndicatorWrapper.isHidden = false
+                        Logger.general.debug("Fire animation progress indicator hidden")
                     }
+                } else {
+                    Logger.general.debug("Fire animation did finish but is not burning")
                 }
             }
         }
@@ -306,7 +310,6 @@ final class FireIndicatorVisibilityManager {
 
     func updateVisibility(_ shouldShow: Bool) {
         if shouldShow {
-            Logger.general.error("\(String(describing: self.view() ??? "<nil>")): updateVisibility: false")
             fireIndicatorDialogPresentedAt = Date()
             timer?.invalidate()
             view()?.isHidden = false
@@ -317,12 +320,15 @@ final class FireIndicatorVisibilityManager {
                 if presentationDuration >= Self.fireIndicatorPresentationDuration {
                     view()?.isHidden = true
                 } else {
+                    Logger.general.debug("Fire animation starting Timer to hide")
                     let remainingPresentationTime = Self.fireIndicatorPresentationDuration - presentationDuration
                     timer = Timer.scheduledTimer(withTimeInterval: remainingPresentationTime, repeats: false) { [weak self] _ in
+                        Logger.general.debug("Fire animation hiding on Timer")
                         self?.view()?.isHidden = true
                     }
                 }
             } else {
+                Logger.general.debug("Fire animation hiding")
                 view()?.isHidden = true
             }
         }

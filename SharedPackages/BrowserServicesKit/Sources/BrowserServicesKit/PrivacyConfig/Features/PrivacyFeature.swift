@@ -84,7 +84,7 @@ public enum PrivacyFeature: String {
     case htmlNewTabPage
     case daxEasterEggLogos
     case openFireWindowByDefault
-    case behaviorMetrics
+    case attributedMetrics
     case dataImport
     case duckAiDataClearing
 }
@@ -478,10 +478,24 @@ public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {
     case visualUpdates // Rollout
 }
 
-public enum BehaviorMetricsSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .behaviorMetrics }
+public enum AttributedMetricsSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .attributedMetrics }
 
-    case behaviorMetricsEnabled
+    case emitAllMetrics
+    case retention
+    case canEmitRetention
+    case searchDaysAvg
+    case canEmitSearchDaysAvg
+    case searchCountAvg
+    case canEmitSearchCountAvg
+    case adClickCountAvg
+    case canEmitAdClickCountAvg
+    case aiUsageAvg
+    case canEmitAIUsageAvg
+    case subscriptionRetention
+    case canEmitSubscriptionRetention
+    case syncDevices
+    case canEmitSyncDevices
 }
 
 public enum DataImportSubfeature: String, PrivacySubfeature {

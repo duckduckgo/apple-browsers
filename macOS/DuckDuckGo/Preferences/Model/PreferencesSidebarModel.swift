@@ -48,6 +48,8 @@ final class PreferencesSidebarModel: ObservableObject {
             switch selectedPane {
             case .aiChat:
                 pixelFiring?.fire(AIChatPixel.aiChatSettingsDisplayed, frequency: .dailyAndCount)
+            case .subscription where winBackOfferVisibilityManager.isOfferAvailable:
+                pixelFiring?.fire(SubscriptionPixel.subscriptionWinBackOfferSettingsPageShown)
             default:
                 pixelFiring?.fire(SettingsPixel.settingsPaneOpened(selectedPane), frequency: .daily)
             }
@@ -168,6 +170,12 @@ final class PreferencesSidebarModel: ObservableObject {
 
     public func onAppear() {
         refreshSubscriptionStateAndSectionsIfNeeded()
+
+        guard winBackOfferVisibilityManager.isOfferAvailable else {
+            return
+        }
+
+        pixelFiring?.fire(SubscriptionPixel.subscriptionWinBackOfferSettingsSidebarBadgeShown)
     }
 
     // MARK: - Setup

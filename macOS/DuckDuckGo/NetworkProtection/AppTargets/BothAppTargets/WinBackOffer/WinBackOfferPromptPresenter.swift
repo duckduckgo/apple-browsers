@@ -18,6 +18,7 @@
 
 import AppKit
 import Subscription
+import PixelKit
 
 protocol WinBackOfferPromptPresenting {
     func tryToShowPrompt(in window: NSWindow?)
@@ -27,15 +28,18 @@ final class WinBackOfferPromptPresenter: WinBackOfferPromptPresenting {
     private let visibilityManager: WinBackOfferVisibilityManaging
     private let urlOpener: @MainActor (URL) -> Void
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let pixelHandler: (SubscriptionPixel) -> Void
 
     init(visibilityManager: WinBackOfferVisibilityManaging,
          urlOpener: @escaping @MainActor (URL) -> Void = { @MainActor url in
             Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
          },
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) }) {
         self.visibilityManager = visibilityManager
         self.urlOpener = urlOpener
         self.subscriptionManager = subscriptionManager
+        self.pixelHandler = pixelHandler
     }
 
     func tryToShowPrompt(in window: NSWindow?) {
@@ -45,10 +49,17 @@ final class WinBackOfferPromptPresenter: WinBackOfferPromptPresenting {
     }
 
     private func showPrompt(in window: NSWindow?) {
+        pixelHandler(.subscriptionWinBackOfferLaunchPromptShown)
+
         let viewModel = WinBackOfferPromptViewModel(
             confirmAction: { [weak self] in
                 Task { @MainActor in
                     self?.handleSeeOffer()
+                }
+            },
+            dismissAction: { [weak self] in
+                Task { @MainActor in
+                    self?.handleDismiss()
                 }
             }
         )
@@ -61,6 +72,8 @@ final class WinBackOfferPromptPresenter: WinBackOfferPromptPresenting {
 
     @MainActor
     func handleSeeOffer() {
+        pixelHandler(.subscriptionWinBackOfferLaunchPromptCTAClicked)
+
         guard let components = SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: SubscriptionFunnelOrigin.winBackLaunch.rawValue, featurePage: SubscriptionURL.FeaturePage.winback),
               let url = components.url else {
             // Fallback to original URL
@@ -70,5 +83,10 @@ final class WinBackOfferPromptPresenter: WinBackOfferPromptPresenting {
         }
 
         urlOpener(url)
+    }
+
+    @MainActor
+    func handleDismiss() {
+        pixelHandler(.subscriptionWinBackOfferLaunchPromptDismissed)
     }
 }

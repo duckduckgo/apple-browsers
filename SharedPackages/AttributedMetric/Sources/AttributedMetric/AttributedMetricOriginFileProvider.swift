@@ -24,6 +24,7 @@ public protocol AttributedMetricOriginProvider: AnyObject {
     var origin: String? { get }
 }
 
+#if os(macOS)
 public final class AttributedMetricOriginFileProvider: AttributedMetricOriginProvider {
     public let origin: String?
 
@@ -45,3 +46,4 @@ private extension String {
         return isEmpty ? nil : self
     }
 }
+#endif

@@ -142,4 +142,41 @@ final class RootViewV2Tests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testPurchaseSubscriptionViewModel_WinBackOfferPixel() throws {
+        // Given
+        let expectation = expectation(description: "Wait for pixel to be fired")
+        var capturedPixel: SubscriptionPixel?
+
+        mockWinBackOfferVisibilityManager.isOfferAvailable = true
+        let rootView = Preferences.RootViewV2(
+            model: sidebarModel,
+            subscriptionManager: subscriptionManager,
+            subscriptionUIHandler: subscriptionUIHandler,
+            featureFlagger: MockFeatureFlagger(),
+            aiChatURLSettings: MockRemoteAISettings(),
+            wideEvent: WideEventMock(),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
+            showTab: { _ in },
+            pixelHandler: { pixel, _ in
+                capturedPixel = pixel
+                expectation.fulfill()
+            }
+        )
+
+        let model = rootView.purchaseSubscriptionModel!
+
+        // When
+        model.purchaseAction()
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertNotNil(capturedPixel, "Should have fired a pixel")
+        if case .subscriptionWinBackOfferSettingsPageCTAClicked = capturedPixel! {
+            // Correct pixel fired
+        } else {
+            XCTFail("Should fire subscriptionWinBackOfferSettingsPageCTAClicked pixel")
+        }
+    }
+
 }

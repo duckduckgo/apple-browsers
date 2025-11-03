@@ -134,7 +134,16 @@ final class ReportingService {
 
         // Device sync
 
-        
+        NotificationCenter.default.publisher(for: .userDidSyncDevice)
+            .receive(on: workQueue)
+            .sink { [weak self] notification in
+                guard let deviceCount = notification.userInfo?[AttributedMetricNotificationParameter.syncCount.rawValue] as? Int else {
+                    assertionFailure("Missing \(AttributedMetricNotificationParameter.syncCount.rawValue)")
+                    return
+                }
+                self?.attributedMetricManager.process(trigger: .userDidSync(devicesCount: deviceCount))
+            }
+            .store(in: &cancellables)
     }
 
     private func sendAppLaunchPostback(marketplaceAdPostbackManager: MarketplaceAdPostbackManaging) {

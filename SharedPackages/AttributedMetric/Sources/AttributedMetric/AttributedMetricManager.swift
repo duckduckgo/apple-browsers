@@ -442,7 +442,10 @@ public final class AttributedMetricManager {
     // https://app.asana.com/1/137249556945/project/1113117197328546/task/1211301604929616?focus=true
 
     func processSyncCheck(devices: Int) {
-        guard devices < 3 else { return }
+        guard devices < 3 else {
+            Logger.attributedMetric.log("Devices count higher than 2")
+            return
+        }
 
         Logger.attributedMetric.debug("Device Sync")
         // specs not clear: https://app.asana.com/1/137249556945/task/1211301604929616/comment/1211362907479310?focus=true

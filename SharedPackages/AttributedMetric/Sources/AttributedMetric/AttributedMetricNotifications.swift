@@ -24,3 +24,7 @@ public extension NSNotification.Name {
     static let userDidSendDuckAIChatMessage = Notification.Name("\(Self.domain)userDidSendDuckAIChatMessage")
     static let userDidSyncDevice = Notification.Name("\(Self.domain)userDidSyncDevice")
 }
+
+public enum AttributedMetricNotificationParameter: String {
+    case syncCount
+}

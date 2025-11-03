@@ -81,9 +81,18 @@ public struct HistoryEvent: Identifiable, Sendable {
         }
     }
 
-    func isClearEvent() -> Bool {
+    func isOptOutClearEvent() -> Bool {
         switch type {
         case .optOutConfirmed, .matchRemovedByUser:
+            return true
+        default:
+            return false
+        }
+    }
+
+    func isScanSuccessEvent() -> Bool {
+        switch type {
+        case .matchesFound, .noMatchFound:
             return true
         default:
             return false

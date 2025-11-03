@@ -1,0 +1,158 @@
+{
+    // Privacy Pro Win-back Offer Pixels
+    // These pixels track user interactions with win-back offer touchpoints throughout the application
+
+    "m_mac_store_privacy-pro_winback_launch_prompt_shown": {
+        "description": "Fired when the win-back offer launch prompt is displayed to an expired subscriber",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_direct_privacy-pro_winback_launch_prompt_shown": {
+        "description": "Fired when the win-back offer launch prompt is displayed to an expired subscriber",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_store_privacy-pro_winback_launch_prompt_cta_clicked": {
+        "description": "Fired when the user clicks the CTA button in the win-back offer launch prompt",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_direct_privacy-pro_winback_launch_prompt_cta_clicked": {
+        "description": "Fired when the user clicks the CTA button in the win-back offer launch prompt",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_store_privacy-pro_winback_launch_prompt_dismissed": {
+        "description": "Fired when the user dismisses the win-back offer launch prompt",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_direct_privacy-pro_winback_launch_prompt_dismissed": {
+        "description": "Fired when the user dismisses the win-back offer launch prompt",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_store_privacy-pro_winback_main_menu_badge_shown": {
+        "description": "Fired when the win-back offer badge is displayed in the main menu",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_direct_privacy-pro_winback_main_menu_badge_shown": {
+        "description": "Fired when the win-back offer badge is displayed in the main menu",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_store_privacy-pro_winback_main_menu_clicked": {
+        "description": "Fired when the user clicks the subscription menu item with win-back offer badge",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_direct_privacy-pro_winback_main_menu_clicked": {
+        "description": "Fired when the user clicks the subscription menu item with win-back offer badge",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_store_privacy-pro_winback_settings_sidebar_badge_shown": {
+        "description": "Fired when the win-back offer badge is displayed in the settings sidebar",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_direct_privacy-pro_winback_settings_sidebar_badge_shown": {
+        "description": "Fired when the win-back offer badge is displayed in the settings sidebar",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_store_privacy-pro_winback_settings_page_shown": {
+        "description": "Fired when the win-back offer settings page is opened by the user",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_direct_privacy-pro_winback_settings_page_shown": {
+        "description": "Fired when the win-back offer settings page is opened by the user",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_store_privacy-pro_winback_settings_page_cta_clicked": {
+        "description": "Fired when the user clicks the 'Take Offer' CTA button in the subscription settings page",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_direct_privacy-pro_winback_settings_page_cta_clicked": {
+        "description": "Fired when the user clicks the 'Take Offer' CTA button in the subscription settings page",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_store_privacy-pro_winback_new_tab_page_shown": {
+        "description": "Fired when the win-back offer promotion is displayed on the New Tab Page",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_direct_privacy-pro_winback_new_tab_page_shown": {
+        "description": "Fired when the win-back offer promotion is displayed on the New Tab Page",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_store_privacy-pro_winback_new_tab_page_cta_clicked": {
+        "description": "Fired when the user clicks the CTA button in the win-back offer New Tab Page promotion",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_direct_privacy-pro_winback_new_tab_page_cta_clicked": {
+        "description": "Fired when the user clicks the CTA button in the win-back offer New Tab Page promotion",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_store_privacy-pro_winback_new_tab_page_dismissed": {
+        "description": "Fired when the user dismisses the win-back offer New Tab Page promotion",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    "m_mac_direct_privacy-pro_winback_new_tab_page_dismissed": {
+        "description": "Fired when the user dismisses the win-back offer New Tab Page promotion",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "parameters": ["appVersion", "pixelSource"]
+    }
+}

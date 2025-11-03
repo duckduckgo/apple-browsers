@@ -78,6 +78,7 @@ struct WinBackOfferPromptView: ModalView {
     private var actionButtons: some View {
         HStack(spacing: Constants.betweenButtonsSpacing) {
                 Button {
+                    viewModel.dismissAction()
                     dismiss()
                 } label: {
                     Text(UserText.winBackCampaignModalDismiss)

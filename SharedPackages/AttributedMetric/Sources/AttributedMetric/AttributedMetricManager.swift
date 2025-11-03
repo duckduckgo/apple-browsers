@@ -442,7 +442,6 @@ public final class AttributedMetricManager {
     // https://app.asana.com/1/137249556945/project/1113117197328546/task/1211301604929616?focus=true
 
     func processSyncCheck(devices: Int) {
-
         guard devices < 3 else { return }
 
         Logger.attributedMetric.debug("Device Sync")
@@ -454,4 +453,3 @@ public final class AttributedMetricManager {
         pixelKit.fire(AttributedMetricPixel.userSyncedDevice(origin: originOrInstall.origin, installDate: originOrInstall.installDate, devices: bucket.value, bucketVersion: bucket.version), frequency: .standard)
     }
 }
-

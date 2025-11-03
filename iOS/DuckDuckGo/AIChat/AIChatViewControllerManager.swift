@@ -52,6 +52,7 @@ final class AIChatViewControllerManager {
     private let downloadsDirectoryHandler: DownloadsDirectoryHandling
     private let userAgentManager: AIChatUserAgentProviding
     private let featureFlagger: FeatureFlagger
+    private let featureDiscovery: FeatureDiscovery
     private let experimentalAIChatManager: ExperimentalAIChatManager
     private let aiChatSettings: AIChatSettingsProvider
     private var cancellables = Set<AnyCancellable>()
@@ -65,6 +66,7 @@ final class AIChatViewControllerManager {
          userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
          experimentalAIChatManager: ExperimentalAIChatManager,
          featureFlagger: FeatureFlagger,
+         featureDiscovery: FeatureDiscovery,
          aiChatSettings: AIChatSettingsProvider,
          subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler()) {
 
@@ -73,12 +75,21 @@ final class AIChatViewControllerManager {
         self.userAgentManager = AIChatUserAgentHandler(userAgentManager: userAgentManager)
         self.experimentalAIChatManager = experimentalAIChatManager
         self.featureFlagger = featureFlagger
+        self.featureDiscovery = featureDiscovery
         self.aiChatSettings = aiChatSettings
         self.subscriptionAIChatStateHandler = subscriptionAIChatStateHandler
     }
 
     // MARK: - Public Methods
 
+    /// Opens AI Chat in a modal presentation (sheet).
+    ///
+    /// - Parameters:
+    ///   - query: Optional initial query to send to AI Chat
+    ///   - payload: Optional payload data for AI Chat
+    ///   - autoSend: Whether to automatically send the query
+    ///   - tools: Optional RAG tools available in AI Chat
+    ///   - viewController: View controller to present the modal on
     @MainActor
     func killSessionAndResetTimer() async {
         stopSessionTimer()
@@ -91,35 +102,119 @@ final class AIChatViewControllerManager {
                     autoSend: Bool = false,
                     tools: [AIChatRAGTool]? = nil,
                     on viewController: UIViewController) {
+        open(query, payload: payload, autoSend: autoSend, tools: tools,
+             presentationMode: .modal, viewController: viewController)
+    }
+
+    /// Opens AI Chat in a container view (no modal sheet).
+    ///
+    /// - Parameters:
+    ///   - query: Optional initial query to send to AI Chat
+    ///   - payload: Optional payload data for AI Chat
+    ///   - autoSend: Whether to automatically send the query
+    ///   - tools: Optional RAG tools available in AI Chat
+    ///   - containerView: View to embed AI Chat into
+    ///   - parentViewController: Parent view controller for managing the child
+    ///   - completion: Optional callback when setup is complete
+    @MainActor
+    func openAIChatInContainer(_ query: String? = nil,
+                               payload: Any? = nil,
+                               autoSend: Bool = false,
+                               tools: [AIChatRAGTool]? = nil,
+                               in containerView: UIView,
+                               parentViewController: UIViewController,
+                               completion: (() -> Void)? = nil) {
+        open(query, payload: payload, autoSend: autoSend, tools: tools,
+             presentationMode: .container, containerView: containerView,
+             viewController: parentViewController, completion: completion)
+    }
+
+    // MARK: - Private Setup Methods
+
+    /// Unified internal method handling both modal and container presentations.
+    ///
+    /// - Parameters:
+    ///   - query: Optional initial query
+    ///   - payload: Optional payload data
+    ///   - autoSend: Whether to auto-send query
+    ///   - tools: Optional RAG tools
+    ///   - presentationMode: `.modal` (fires pixels) or `.container` (no pixels)
+    ///   - containerView: Required for `.container` mode
+    ///   - viewController: Required for both modes
+    ///   - completion: Optional callback (used in container mode)
+    @MainActor
+    private func open(_ query: String? = nil,
+                      payload: Any? = nil,
+                      autoSend: Bool = false,
+                      tools: [AIChatRAGTool]? = nil,
+                      presentationMode: AIChatPresentationMode,
+                      containerView: UIView? = nil,
+                      viewController: UIViewController? = nil,
+                      completion: (() -> Void)? = nil) {
         downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
 
-        /// Reset the session timer if the subscription state has changed, as we will force a refresh on AI Chat
+        // Reset the session timer if the subscription state has changed
         if subscriptionAIChatStateHandler.shouldForceAIChatRefresh {
             stopSessionTimer()
         }
 
-        pixelMetricHandler = AIChatPixelMetricHandler(timeElapsedInMinutes: sessionTimer?.timeElapsedInMinutes())
-        pixelMetricHandler?.fireOpenAIChat()
+        // Only fire this pixel for modal presentations (new pixels for full mode coming soon)
+        if presentationMode == .modal {
+            pixelMetricHandler = AIChatPixelMetricHandler(timeElapsedInMinutes: sessionTimer?.timeElapsedInMinutes())
+            pixelMetricHandler?.fireOpenAIChat()
+            featureDiscovery.setWasUsedBefore(.aiChat)
+        }
 
-        /// If we have a query or payload, let's clean the previous session and start fresh
+        // If we have a query or payload, clean the previous session and start fresh
         if query != nil || payload != nil || subscriptionAIChatStateHandler.shouldForceAIChatRefresh {
             subscriptionAIChatStateHandler.reset()
             Task {
                 await cleanUpSession()
-                setupAndPresentAIChat(query, payload: payload, autoSend: autoSend, tools: tools, on: viewController)
+                self.performSetup(query, payload: payload, autoSend: autoSend, tools: tools,
+                                  presentationMode: presentationMode, containerView: containerView,
+                                  viewController: viewController, completion: completion)
             }
         } else {
-            setupAndPresentAIChat(query, payload: payload, autoSend: autoSend, tools: tools, on: viewController)
+            performSetup(query, payload: payload, autoSend: autoSend, tools: tools,
+                         presentationMode: presentationMode, containerView: containerView,
+                         viewController: viewController, completion: completion)
         }
     }
 
+    /// Routes to appropriate setup method based on presentation mode.
+    @MainActor
+    private func performSetup(_ query: String?,
+                              payload: Any?,
+                              autoSend: Bool,
+                              tools: [AIChatRAGTool]?,
+                              presentationMode: AIChatPresentationMode,
+                              containerView: UIView?,
+                              viewController: UIViewController?,
+                              completion: (() -> Void)?) {
+        switch presentationMode {
+        case .modal:
+            guard let viewController = viewController else { return }
+            setupAndPresentAIChat(query, payload: payload, autoSend: autoSend,
+                                  tools: tools, on: viewController)
+        case .container:
+            guard let containerView = containerView, let viewController = viewController else { return }
+            setupAndAddToContainer(query, payload: payload, autoSend: autoSend,
+                                   tools: tools, in: containerView,
+                                   parentViewController: viewController, completion: completion)
+        }
+    }
+
+    /// Creates and presents AI Chat in a modal sheet.
+    ///
+    /// Sets up the view controller with initial query/payload and presents
+    /// it wrapped in a `RoundedPageSheetContainerViewController`.
     @MainActor
     private func setupAndPresentAIChat(_ query: String?,
                                        payload: Any?,
                                        autoSend: Bool,
                                        tools: [AIChatRAGTool]?,
                                        on viewController: UIViewController) {
-        let aiChatViewController = createAIChatViewController()
+        let aiChatViewController = createAIChatViewController(presentationMode: .modal)
         setupChatViewController(aiChatViewController, query: query,
                                 payload: payload,
                                 autoSend: autoSend,
@@ -134,6 +229,40 @@ final class AIChatViewControllerManager {
         viewController.present(roundedPageSheet, animated: true)
         chatViewController = aiChatViewController
         stopSessionTimer()
+    }
+
+    /// Embeds AI Chat as a child view controller in a container.
+    @MainActor
+    private func setupAndAddToContainer(_ query: String?,
+                                        payload: Any?,
+                                        autoSend: Bool,
+                                        tools: [AIChatRAGTool]?,
+                                        in containerView: UIView,
+                                        parentViewController: UIViewController,
+                                        completion: (() -> Void)? = nil) {
+        let aiChatViewController = createAIChatViewController(presentationMode: .container)
+        setupChatViewController(aiChatViewController, query: query,
+                                payload: payload,
+                                autoSend: autoSend,
+                                tools: tools)
+
+        parentViewController.addChild(aiChatViewController)
+        containerView.addSubview(aiChatViewController.view)
+
+        aiChatViewController.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            aiChatViewController.view.topAnchor.constraint(equalTo: containerView.topAnchor),
+            aiChatViewController.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            aiChatViewController.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            aiChatViewController.view.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+        ])
+
+        aiChatViewController.didMove(toParent: parentViewController)
+
+        chatViewController = aiChatViewController
+        stopSessionTimer()
+
+        completion?()
     }
 
     // MARK: - Private Helper Methods
@@ -166,7 +295,7 @@ final class AIChatViewControllerManager {
     }
 
     @MainActor
-    private func createAIChatViewController() -> AIChatViewController {
+    private func createAIChatViewController(presentationMode: AIChatPresentationMode = .modal) -> AIChatViewController {
         if let chatViewController = chatViewController {
             return chatViewController
         }
@@ -179,7 +308,8 @@ final class AIChatViewControllerManager {
             requestAuthHandler: AIChatRequestAuthorizationHandler(debugSettings: AIChatDebugSettings()),
             inspectableWebView: inspectableWebView,
             downloadsPath: downloadsDirectoryHandler.downloadsDirectory,
-            userAgentManager: userAgentManager
+            userAgentManager: userAgentManager,
+            presentationMode: presentationMode
         )
 
         aiChatViewController.delegate = self

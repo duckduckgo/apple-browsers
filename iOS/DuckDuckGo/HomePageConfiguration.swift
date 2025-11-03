@@ -69,7 +69,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
 
     private func remoteMessageToShow() -> HomeMessage? {
         guard let remoteMessageToPresent = remoteMessagingClient.store.fetchScheduledRemoteMessage() else { return nil }
-        Logger.remoteMessaging.info("Remote message to show: \(remoteMessageToPresent.id)")
+        Logger.remoteMessaging.info("Remote message to show: \(remoteMessageToPresent.id, privacy: .public)")
         return .remoteMessage(remoteMessage: remoteMessageToPresent)
     }
 
@@ -91,14 +91,14 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     func didAppear(_ homeMessage: HomeMessage) {
         switch homeMessage {
         case .remoteMessage(let remoteMessage):
-            Logger.remoteMessaging.info("Remote message shown: \(remoteMessage.id)")
+            Logger.remoteMessaging.info("Remote message shown: \(remoteMessage.id, privacy: .public)")
             if remoteMessage.isMetricsEnabled {
                 Pixel.fire(pixel: .remoteMessageShown,
                            withAdditionalParameters: additionalParameters(for: remoteMessage.id))
             }
 
             if !remoteMessagingClient.store.hasShownRemoteMessage(withID: remoteMessage.id) {
-                Logger.remoteMessaging.info("Remote message shown for first time: \(remoteMessage.id)")
+                Logger.remoteMessaging.info("Remote message shown for first time: \(remoteMessage.id, privacy: .public)")
                 if remoteMessage.isMetricsEnabled {
                     Pixel.fire(pixel: .remoteMessageShownUnique,
                                withAdditionalParameters: additionalParameters(for: remoteMessage.id))

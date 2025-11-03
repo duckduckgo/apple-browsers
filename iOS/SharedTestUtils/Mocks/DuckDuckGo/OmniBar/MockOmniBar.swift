@@ -54,7 +54,6 @@ final class MockOmniBar: OmniBar {
     func cancel() { }
     func removeTextSelection() { }
     func selectTextToEnd(_ offset: Int) { }
-    func updateAccessoryType(_ type: DuckDuckGo.OmniBarAccessoryType) { }
     func showOrScheduleCookiesManagedNotification(isCosmetic: Bool) { }
     func showOrScheduleOnboardingPrivacyIconAnimation() { }
     func dismissOnboardingPrivacyIconAnimation() { }
@@ -79,7 +78,6 @@ final class MockOmniBar: OmniBar {
         static let expectedHeight: CGFloat = 52
         var expectedHeight: CGFloat = MockOmniBarView.expectedHeight
         var textField: DuckDuckGo.TextFieldWithInsets!
-        var accessoryType: DuckDuckGo.OmniBarAccessoryType = .chat
         var privacyInfoContainer: DuckDuckGo.PrivacyInfoContainerView!
         var notificationContainer: DuckDuckGo.OmniBarNotificationContainerView!
         var searchContainer: UIView! = UIView()
@@ -90,7 +88,7 @@ final class MockOmniBar: OmniBar {
         var settingsButton: UIButton! = UIButton()
         var cancelButton: UIButton! = UIButton()
         var bookmarksButton: UIButton! = UIButton()
-        var accessoryButton: UIButton! = UIButton()
+        var aiChatButton: UIButton! = UIButton()
         var menuButton: UIButton! = UIButton()
         var refreshButton: UIButton! = UIButton()
         var leftIconContainerView: UIView! = UIView()
@@ -121,10 +119,9 @@ final class MockOmniBar: OmniBar {
         var onBackPressed: (() -> Void)?
         var onForwardPressed: (() -> Void)?
         var onBookmarksPressed: (() -> Void)?
-        var onAccessoryPressed: (() -> Void)?
+        var onAIChatPressed: (() -> Void)?
         var onDismissPressed: (() -> Void)?
         var onSettingsLongPress: (() -> Void)?
-        var onAccessoryLongPress: (() -> Void)?
         var onSharePressed: (() -> Void)?
 
         static func create() -> Self {
@@ -142,7 +139,7 @@ final class MockOmniBar: OmniBar {
         var isBackButtonHidden: Bool = true
         var isForwardButtonHidden: Bool = true
         var isBookmarksButtonHidden: Bool = true
-        var isAccessoryButtonHidden: Bool = true
+        var isAIChatButtonHidden: Bool = true
         var isSearchLoupeHidden: Bool = true
         var isDismissButtonHidden: Bool = true
         var isShareButtonHidden: Bool = true

@@ -100,14 +100,14 @@ struct SettingsCellView: View, Identifiable {
     ///   - action: The closure to execute when the view is tapped. (If not embedded in a NavigationLink)
     ///   - customView: A closure that returns the custom view (`AnyView`) to be displayed in the cell.
     ///   - enabled: A Boolean value that determines whether the cell is enabled.
-    init(action: @escaping () -> Void = {}, @ViewBuilder customView: () -> AnyView, enabled: Bool = true) {
+    init(action: @escaping () -> Void = {}, @ViewBuilder customView: () -> AnyView, enabled: Bool = true, isButton: Bool = false) {
         self.label = "" // Not used for custom cell
         self.action = action
         self.enabled = enabled
         self.accessory = .custom(customView())
         self.disclosureIndicator = false
         self.webLinkIndicator = false
-        self.isButton = false
+        self.isButton = isButton
         self.isGreyedOut = false
         self.shouldShowWinBackOffer = false
     }

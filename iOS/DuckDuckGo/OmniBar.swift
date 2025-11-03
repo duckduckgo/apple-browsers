@@ -20,11 +20,6 @@
 import Foundation
 import PrivacyDashboard
 
-// We only support chat for now.  More options will be added in a future customization project.
-enum OmniBarAccessoryType {
-    case chat
-}
-
 protocol OmniBar: AnyObject {
     var barView: any OmniBarView { get }
 
@@ -62,8 +57,6 @@ protocol OmniBar: AnyObject {
 
     func removeTextSelection()
     func selectTextToEnd(_ offset: Int)
-
-    func updateAccessoryType(_ type: OmniBarAccessoryType)
 
     func showOrScheduleCookiesManagedNotification(isCosmetic: Bool)
 

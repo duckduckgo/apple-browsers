@@ -28,14 +28,19 @@ final class WinBackOfferCoordinatorTests: XCTestCase {
     private var sut: WinBackOfferCoordinator!
     private var mockVisibilityManager: MockWinBackOfferVisibilityManager!
     private var isOnboardingCompleted: Bool!
+    private var capturedPixels: [Pixel.Event]!
 
     override func setUp() {
         super.setUp()
         mockVisibilityManager = MockWinBackOfferVisibilityManager()
         isOnboardingCompleted = true
+        capturedPixels = []
 
         sut = WinBackOfferCoordinator(
             visibilityManager: mockVisibilityManager,
+            pixelHandler: { [weak self] pixel in
+                self?.capturedPixels.append(pixel)
+            },
             isOnboardingCompleted: { [weak self] in
                 self?.isOnboardingCompleted ?? false
             }
@@ -46,6 +51,7 @@ final class WinBackOfferCoordinatorTests: XCTestCase {
         sut = nil
         mockVisibilityManager = nil
         isOnboardingCompleted = nil
+        capturedPixels = nil
         super.tearDown()
     }
 
@@ -167,5 +173,34 @@ final class WinBackOfferCoordinatorTests: XCTestCase {
         } else {
             XCTFail("Deep link should be a subscriptionFlow")
         }
+    }
+    
+    // MARK: - Pixels
+    
+    func testWhenLaunchPromptIsPresented_ItFiresPixel() {
+        // When
+        sut.markLaunchPromptPresented()
+        
+        // Then
+        XCTAssertEqual(capturedPixels.count, 1, "Should have fired exactly one pixel")
+        XCTAssertEqual(capturedPixels.first, .subscriptionWinBackOfferLaunchPromptShown, "Should fire subscriptionWinBackOfferLaunchPromptShown pixel")
+    }
+    
+    func testWhenLaunchPromptCTAIsClicked_ItFiresPixel() {
+        // When
+        sut.handleCTAAction()
+        
+        // Then
+        XCTAssertEqual(capturedPixels.count, 1, "Should have fired exactly one pixel")
+        XCTAssertEqual(capturedPixels.first, .subscriptionWinBackOfferLaunchPromptCTAClicked, "Should fire subscriptionWinBackOfferLaunchPromptCTAClicked pixel")
+    }
+    
+    func testWhenLaunchPromptIsDismissed_ItFiresPixel() {
+        // When
+        sut.handleDismissAction()
+        
+        // Then
+        XCTAssertEqual(capturedPixels.count, 1, "Should have fired exactly one pixel")
+        XCTAssertEqual(capturedPixels.first, .subscriptionWinBackOfferLaunchPromptDismissed, "Should fire subscriptionWinBackOfferLaunchPromptDismissed pixel")
     }
 }

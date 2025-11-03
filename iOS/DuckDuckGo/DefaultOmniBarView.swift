@@ -53,7 +53,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var settingsButton: UIButton! { settingsButtonView }
     var cancelButton: UIButton! { searchAreaView.cancelButton }
     var bookmarksButton: UIButton! { bookmarksButtonView }
-    var accessoryButton: UIButton! { searchAreaView.accessoryButton }
+    var aiChatButton: UIButton! { searchAreaView.aiChatButton }
     var menuButton: UIButton! { menuButtonView }
     var refreshButton: UIButton! { searchAreaView.reloadButton }
     var shareButton: UIButton! { searchAreaView.shareButton }
@@ -61,17 +61,6 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var searchContainer: UIView! { searchAreaContainerView }
     let expectedHeight: CGFloat = DefaultOmniBarView.expectedHeight
     static let expectedHeight: CGFloat = Metrics.height
-
-    var accessoryType: OmniBarAccessoryType = .chat {
-        didSet {
-            switch accessoryType {
-            case .chat:
-                searchAreaView.accessoryButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat, for: .normal)
-                searchAreaView.accessoryButton.accessibilityLabel = UserText.duckAiFeatureName
-            }
-            updateAccessoryAccessibility()
-        }
-    }
 
     private var readableSearchAreaWidthConstraint: NSLayoutConstraint?
     private var largeSizeSpacingConstraint: NSLayoutConstraint?
@@ -147,9 +136,9 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         set { searchAreaView.cancelButton.isHidden = newValue }
     }
 
-    var isAccessoryButtonHidden: Bool {
-        get { searchAreaView.accessoryButton.isHidden }
-        set { searchAreaView.accessoryButton.isHidden = newValue }
+    var isAIChatButtonHidden: Bool {
+        get { searchAreaView.aiChatButton.isHidden }
+        set { searchAreaView.aiChatButton.isHidden = newValue }
     }
 
     var isSearchLoupeHidden: Bool {
@@ -206,7 +195,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var onBackPressed: (() -> Void)?
     var onForwardPressed: (() -> Void)?
     var onBookmarksPressed: (() -> Void)?
-    var onAccessoryPressed: (() -> Void)?
+    var onAIChatPressed: (() -> Void)?
     var onDismissPressed: (() -> Void)?
 
     // MARK: - Properties
@@ -437,7 +426,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         searchAreaView.clearButton.addTarget(self, action: #selector(clearButtonTap), for: .touchUpInside)
         searchAreaView.shareButton.addTarget(self, action: #selector(shareButtonTap), for: .touchUpInside)
         searchAreaView.cancelButton.addTarget(self, action: #selector(cancelButtonTap), for: .touchUpInside)
-        searchAreaView.accessoryButton.addTarget(self, action: #selector(accessoryButtonTap), for: .touchUpInside)
+        searchAreaView.aiChatButton.addTarget(self, action: #selector(aiChatButtonTap), for: .touchUpInside)
 
         forwardButtonView.addTarget(self, action: #selector(forwardButtonTap), for: .touchUpInside)
         backButtonView.addTarget(self, action: #selector(backButtonTap), for: .touchUpInside)
@@ -483,9 +472,9 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         settingsButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Settings"
         settingsButtonView.accessibilityTraits = .button
 
-        accessoryButton.accessibilityLabel = "AI Chat"
-        accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AI Chat"
-        accessoryButton.accessibilityTraits = .button
+        aiChatButton.accessibilityLabel = UserText.duckAiFeatureName
+        aiChatButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
+        aiChatButton.accessibilityTraits = .button
 
         // This is for compatibility purposes with old OmniBar
         searchAreaView.textField.accessibilityIdentifier = "searchEntry"
@@ -513,15 +502,6 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         searchAreaView.dismissButtonView.accessibilityLabel = "Cancel"
         searchAreaView.dismissButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Dismiss"
         searchAreaView.dismissButtonView.accessibilityTraits = .button
-    }
-
-    private func updateAccessoryAccessibility() {
-        switch accessoryType {
-        case .chat:
-            accessoryButton.accessibilityLabel = UserText.duckAiFeatureName
-            accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
-        }
-        accessoryButton.accessibilityTraits = .button
     }
 
     private func setUpInitialState() {
@@ -609,8 +589,8 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         onAbortButtonPressed?()
     }
 
-    @objc private func accessoryButtonTap() {
-        onAccessoryPressed?()
+    @objc private func aiChatButtonTap() {
+        onAIChatPressed?()
     }
 
     @objc private func searchAreaPressed() {

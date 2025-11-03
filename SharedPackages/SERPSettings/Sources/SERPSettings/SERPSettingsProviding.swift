@@ -127,7 +127,7 @@ public extension SERPSettingsProviding {
         do {
             if let stringData = try keyValueStore?.object(forKey: SERPSettingsConstants.serpSettingsStorage) as? String,
                 let data = stringData.data(using: .utf8) {
-                let dict = try JSONDecoder().decode([String:String].self, from: data)
+                let dict = try JSONDecoder().decode([String: String].self, from: data)
                 return dict
             } else {
                 // First-time access: return empty JSON object

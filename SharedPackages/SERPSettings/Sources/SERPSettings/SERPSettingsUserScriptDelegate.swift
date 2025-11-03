@@ -40,7 +40,6 @@
 /// ```
 public protocol SERPSettingsUserScriptDelegate: AnyObject {
 
-
     /// Requests closing the current tab.
     ///
     /// Called when the user clicks a "Save & Exit" link on the SERP (either on Privacy or AI settings) when coming from native Settings.

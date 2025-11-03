@@ -169,7 +169,6 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
         #endif
     }
 
-
 #if os(iOS)
     /// Sets the store where to save the SERP settings. This is used on `iOS only`.
     ///
@@ -364,13 +363,8 @@ public extension Notification.Name {
 }
 #endif
 
-
 /// Model that holds the state of the Duck.ai state
 /// Needed for sending/receiving between SERP and Native.
 struct NativeDuckAIState: Encodable {
     let enabled: Bool
-
-    init(enabled: Bool) {
-        self.enabled = enabled
-    }
 }

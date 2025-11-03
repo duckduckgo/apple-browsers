@@ -21,7 +21,6 @@ import Foundation
 
 final class MockSERPSettingsDelegate: SERPSettingsUserScriptDelegate {
 
-
     var closeTabCallCount = 0
     var openAIFeaturesSettingsCallCount = 0
 

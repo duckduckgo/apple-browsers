@@ -93,7 +93,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         case .inactive:
             // https://app.asana.com/1/137249556945/project/1209825025475019/task/1210864105873351?focus=true
             // Show new inactive user prompt.
-            return
+            break
         }
 
         // Keep track of what type of prompt is shown.

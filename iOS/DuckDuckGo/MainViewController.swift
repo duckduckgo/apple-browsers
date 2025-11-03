@@ -498,6 +498,9 @@ class MainViewController: UIViewController {
         if daxDialogsManager.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
+
+        presentSyncRecoveryPromptIfNeeded()
+
     }
 
     override func performSegue(withIdentifier identifier: String, sender: Any?) {

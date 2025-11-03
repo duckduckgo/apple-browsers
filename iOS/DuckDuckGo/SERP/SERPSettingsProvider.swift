@@ -50,6 +50,6 @@ final class SERPSettingsProvider: SERPSettingsProviding {
     }
 
     func isSERPSettingsFeatureOn() -> Bool {
-        return true
+        return featureFlagger.isFeatureOn(.storeSerpSettings)
     }
 }

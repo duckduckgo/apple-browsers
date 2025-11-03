@@ -205,6 +205,9 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1211652685709096?focus=true
     case fullDuckAIMode
+
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211708648644692
+    case storeSerpSettings
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -288,7 +291,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .vpnMenuItem,
              .forgetAllInSettings,
              .duckAiDataClearing,
-             .fullDuckAIMode:
+             .fullDuckAIMode,
+             .storeSerpSettings:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -498,6 +502,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.duckAiDataClearing))
         case .fullDuckAIMode:
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
+        case .storeSerpSettings:
+            return .remoteReleasable(.feature(.storeSerpSettings))
         }
     }
 }

@@ -755,6 +755,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fireproofDomains: fireproofDomains,
             fireCoordinator: fireCoordinator,
             tld: tld,
+            autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences
         )
         privacyFeatures = AppPrivacyFeatures(

@@ -342,7 +342,7 @@ final class WideEventTests: XCTestCase {
                 start: Date(timeIntervalSince1970: 1000),
                 end: Date(timeIntervalSince1970: 1002.5)
             ),
-            errorData: WideEventErrorData(error: testError),
+            errorData: WideEventErrorData(error: testError, description: "Test Error"),
             contextData: WideEventContextData(name: "test-funnel"),
             appData: WideEventAppData()
         )
@@ -371,6 +371,7 @@ final class WideEventTests: XCTestCase {
         // Error parameters
         XCTAssertEqual(parameters["feature.data.error.domain"], "TestErrorDomain")
         XCTAssertEqual(parameters["feature.data.error.code"], "12345")
+        XCTAssertEqual(parameters["feature.data.error.description"], "Test Error")
 
         // Context parameters
         XCTAssertEqual(parameters["context.name"], "test-funnel")
@@ -409,7 +410,7 @@ final class WideEventTests: XCTestCase {
     func testErrorDataCapturesUnderlyingErrors() {
         let deepError = NSError(domain: "DeepDomain", code: 3)
 
-        let deepErrorData = WideEventErrorData(error: deepError)
+        let deepErrorData = WideEventErrorData(error: deepError, description: "Test Deep Error")
 
         XCTAssertEqual(deepErrorData.domain, "DeepDomain")
         XCTAssertEqual(deepErrorData.code, 3)
@@ -422,6 +423,7 @@ final class WideEventTests: XCTestCase {
 
         XCTAssertEqual(errorData.domain, "RootDomain")
         XCTAssertEqual(errorData.code, 1)
+        XCTAssertEqual(errorData.description, "Test Deep Error")
 
         XCTAssertEqual(errorData.underlyingErrors.count, 2)
         XCTAssertEqual(errorData.underlyingErrors.first?.domain, "NestedDomain")

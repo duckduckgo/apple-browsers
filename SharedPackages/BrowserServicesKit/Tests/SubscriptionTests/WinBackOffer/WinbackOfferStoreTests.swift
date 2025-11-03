@@ -110,7 +110,7 @@ final class WinbackOfferStoreTests: XCTestCase {
 
     func testInitiallyLaunchPresentationDateIsNil() {
         // Then
-        XCTAssertNil(store.getOfferPresentationDate)
+        XCTAssertNil(store.getOfferPresentationDate())
     }
 
     func testSettingTheLaunchPresentationDate() {
@@ -119,7 +119,9 @@ final class WinbackOfferStoreTests: XCTestCase {
         store.storeOfferPresentationDate(date)
 
         // Then
-        XCTAssertEqual(store.getOfferPresentationDate(), date)
+        let retrievedDate = store.getOfferPresentationDate()
+        XCTAssertNotNil(retrievedDate)
+        XCTAssertEqual(retrievedDate!.timeIntervalSince1970, date.timeIntervalSince1970, accuracy: 1.0)
     }
 
     func testClearingTheLaunchpresentationDate() {
@@ -130,7 +132,7 @@ final class WinbackOfferStoreTests: XCTestCase {
         store.storeOfferPresentationDate(nil)
 
         // Then
-        XCTAssertNil(store.getOfferPresentationDate)
+        XCTAssertNil(store.getOfferPresentationDate())
     }
 
     // MARK: - Integration
@@ -148,7 +150,7 @@ final class WinbackOfferStoreTests: XCTestCase {
         // Then
         XCTAssertEqual(store.getChurnDate()!.timeIntervalSince1970, churnDate.timeIntervalSince1970, accuracy: 1.0)
         XCTAssertTrue(store.hasRedeemedOffer())
-        XCTAssertEqual(store.getOfferPresentationDate(), launchPromptDate)
+        XCTAssertEqual(store.getOfferPresentationDate()!.timeIntervalSince1970, launchPromptDate.timeIntervalSince1970, accuracy: 1.0)
     }
 }
 

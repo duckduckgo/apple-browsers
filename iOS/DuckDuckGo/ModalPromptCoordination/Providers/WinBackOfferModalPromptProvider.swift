@@ -19,13 +19,28 @@
 
 import Foundation
 
-// Will be implemented in https://app.asana.com/1/137249556945/task/1211703465383406
 final class WinBackOfferModalPromptProvider: ModalPromptProvider {
+    private let presenter: WinBackOfferPresenting
+    private let coordinator: WinBackOfferCoordinating
+
+    init(presenter: WinBackOfferPresenting, coordinator: WinBackOfferCoordinating) {
+        self.presenter = presenter
+        self.coordinator = coordinator
+    }
 
     func provideModalPrompt() -> ModalPromptConfiguration? {
-        return nil
+        guard coordinator.shouldPresentLaunchPrompt() else { return nil }
+        
+        let winBackOfferPrompt = presenter.makeWinBackOfferPrompt()
+
+        return ModalPromptConfiguration(
+            viewController: winBackOfferPrompt,
+            animated: true
+        )
     }
     
-    func didPresentModal() {}
+    func didPresentModal() {
+        coordinator.markLaunchPromptPresented()
+    }
     
 }

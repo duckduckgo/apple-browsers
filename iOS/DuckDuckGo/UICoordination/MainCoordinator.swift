@@ -53,7 +53,6 @@ final class MainCoordinator {
 
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let featureFlagger: FeatureFlagger
-    private let winBackOfferPresenter: WinBackOfferPresenting
     private let modalPromptCoordinationService: ModalPromptCoordinationService
     private let launchSourceManager: LaunchSourceManaging
 
@@ -83,7 +82,6 @@ final class MainCoordinator {
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
-        self.winBackOfferPresenter = winBackOfferService.presenter
         self.modalPromptCoordinationService = modalPromptCoordinationService
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
@@ -231,9 +229,6 @@ final class MainCoordinator {
     func onForeground() {
         controller.showBars()
         controller.onForeground()
-
-        // Present Win-Back Offer Prompt if user is eligible.
-        winBackOfferPresenter.tryPresentWinBackOfferPrompt(from: controller)
     }
 
     func onBackground() {

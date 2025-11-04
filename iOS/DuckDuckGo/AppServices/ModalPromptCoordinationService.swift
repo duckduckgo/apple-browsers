@@ -56,14 +56,14 @@ final class ModalPromptCoordinationService {
 
         // Providers are sort from highest to lowest priority, with item at index 0 being the highest priority.
         // Priority order:
+        // - WinBack Offer
         // - AddressBar Picker
         // - Set As Default Browser
-        // - WinBack Offer
         // - What's New
         let providers: [ModalPromptProvider] = [
+            providers.winBackOffer,
             providers.newAddressBarPicker,
-            providers.defaultBrowser,
-            providers.winBackOffer
+            providers.defaultBrowser
         ]
         
         let presentationStore = PromptCooldownKeyValueFilesStore(keyValueStore: keyValueStore, eventMapper: PromptCooldownStorePixelReporter())

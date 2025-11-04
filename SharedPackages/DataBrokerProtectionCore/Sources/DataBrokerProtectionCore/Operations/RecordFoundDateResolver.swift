@@ -24,33 +24,18 @@ enum RecordFoundDateResolver {
     ///
     /// - When no clear event exists, returns the earliest .matchesFound.
     /// - When a clear exists, returns the first .matchesFound that happens afterwards; if none exists, returns nil
-    static func resolve(brokerQueryProfileData: BrokerProfileQueryData? = nil,
-                        repository: DataBrokerProtectionRepository,
+    static func resolve(repository: DataBrokerProtectionRepository,
                         brokerId: Int64,
                         profileQueryId: Int64,
                         extractedProfileId: Int64) -> Date? {
-        let optOutJob: OptOutJobData?
-        if let brokerQueryProfileData {
-            optOutJob = brokerQueryProfileData.optOutJobDataMatching(extractedProfileId)
-        } else {
-            optOutJob = try? repository.fetchOptOut(brokerId: brokerId,
-                                                    profileQueryId: profileQueryId,
-                                                    extractedProfileId: extractedProfileId)
-        }
+        let scanHistory = (try? repository.fetchScanHistoryEvents(brokerId: brokerId,
+                                                                  profileQueryId: profileQueryId)) ?? []
+        let optOutHistory = (try? repository.fetchOptOutHistoryEvents(brokerId: brokerId,
+                                                                      profileQueryId: profileQueryId,
+                                                                      extractedProfileId: extractedProfileId)) ?? []
+        let mergedTimeline = scanHistory + optOutHistory
 
-        if let historyDate = resolvedFoundDate(from: optOutJob?.historyEvents) {
-            return historyDate
-        }
-
-        let repositoryEvents = try? repository.fetchOptOutHistoryEvents(brokerId: brokerId,
-                                                                        profileQueryId: profileQueryId,
-                                                                        extractedProfileId: extractedProfileId)
-
-        if let historyDate = resolvedFoundDate(from: repositoryEvents) {
-            return historyDate
-        }
-
-        return nil
+        return resolvedFoundDate(from: mergedTimeline)
     }
 
     /// We want to know how long an _active_ opt-out submission attempt has been running since the record was found

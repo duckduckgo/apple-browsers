@@ -54,6 +54,7 @@ class FavoritesViewModel: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
 
+    private let isFocussedState: Bool
     private let favoriteDataSource: NewTabPageFavoriteDataSource
     private let faviconsCache: FavoritesFaviconCaching
     private let pixelFiring: PixelFiring.Type
@@ -63,11 +64,13 @@ class FavoritesViewModel: ObservableObject {
         allFavorites.isEmpty
     }
 
-    init(favoriteDataSource: NewTabPageFavoriteDataSource,
+    init(isFocussedState: Bool,
+         favoriteDataSource: NewTabPageFavoriteDataSource,
          faviconLoader: FavoritesFaviconLoading,
          faviconsCache: FavoritesFaviconCaching = Favicons.shared,
          pixelFiring: PixelFiring.Type = Pixel.self,
          dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
+        self.isFocussedState = isFocussedState
         self.favoriteDataSource = favoriteDataSource
         self.pixelFiring = pixelFiring
         self.dailyPixelFiring = dailyPixelFiring
@@ -100,8 +103,12 @@ class FavoritesViewModel: ObservableObject {
     func favoriteSelected(_ favorite: Favorite) {
         guard let url = favorite.urlObject else { return }
 
-        pixelFiring.fire(.favoriteLaunchedNTP, withAdditionalParameters: [:])
-        dailyPixelFiring.fireDaily(.favoriteLaunchedNTPDaily)
+        if isFocussedState {
+            pixelFiring.fire(.favoriteLaunchedWebsite, withAdditionalParameters: [:])
+        } else {
+            pixelFiring.fire(.favoriteLaunchedNTP, withAdditionalParameters: [:])
+            dailyPixelFiring.fireDaily(.favoriteLaunchedNTPDaily)
+        }
         if let host = url.host {
             faviconsCache.populateFavicon(for: host, intoCache: .fireproof, fromCache: .tabs)
         }

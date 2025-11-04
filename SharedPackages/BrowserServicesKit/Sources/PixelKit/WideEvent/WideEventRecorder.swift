@@ -67,13 +67,11 @@ public final class WideEventRecorder<Data: WideEventDataMeasuringInterval> {
     public static func startIfPossible(wideEvent: WideEventManaging?,
                                        identifier: String,
                                        sampleRate: Float,
-                                       intervalStartProvider: () -> Date?,
+                                       intervalStart: Date?,
                                        makeData: (WideEventGlobalData, WideEvent.MeasuredInterval) -> Data) -> WideEventRecorder? {
         if let recorder = resumeIfPossible(wideEvent: wideEvent, identifier: identifier) {
             return recorder
         }
-
-        let intervalStart = intervalStartProvider()
 
         return makeIfPossible(wideEvent: wideEvent,
                               identifier: identifier,
@@ -96,7 +94,7 @@ public final class WideEventRecorder<Data: WideEventDataMeasuringInterval> {
             if self.wideEventData.measuredInterval == nil || self.wideEventData.measuredInterval?.start == nil {
                 self.completeInternal(status: .success(reason: invalidIntervalReason))
             } else {
-                self.wideEventData.measuredInterval?.end = date
+                self.wideEventData.measuredInterval?.complete(at: date)
                 self.wideEvent.updateFlow(self.wideEventData)
                 self.completeInternal(status: .success)
             }

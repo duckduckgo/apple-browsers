@@ -272,6 +272,7 @@ class SuggestionTrayViewController: UIViewController {
     private func installNewTabPage(animated: Bool, onInstall: @escaping () -> Void = {}) {
         let dependencies = newTabPageDependencies
         let controller = NewTabPageViewController(
+            isFocussedState: true,
             tab: Tab(),
             interactionModel: dependencies.favoritesModel,
             homePageMessagesConfiguration: dependencies.homePageMessagesConfiguration,

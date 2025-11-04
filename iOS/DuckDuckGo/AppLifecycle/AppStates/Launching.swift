@@ -180,7 +180,8 @@ struct Launching: LaunchingHandling {
                                                         appSettings: appSettings,
                                                         voiceSearchHelper: voiceSearchHelper,
                                                         featureFlagger: featureFlagger,
-                                                        aiChatSettings: aiChatSettings)
+                                                        aiChatSettings: aiChatSettings,
+                                                        mobileCustomization: mainCoordinator.controller.mobileCustomization)
         let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)

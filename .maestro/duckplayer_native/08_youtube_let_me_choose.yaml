@@ -87,9 +87,8 @@ tags:
     file: shared/close_player.yaml
 
 # Hit fire button
-- tapOn: ${output.closeTabsAndClearDataLabel}
-- tapOn:
-    id: alert.forget-data.confirm
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 
 # Load YouTube URL
 - runFlow: 

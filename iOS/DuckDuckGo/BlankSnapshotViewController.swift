@@ -44,6 +44,7 @@ class BlankSnapshotViewController: UIViewController {
     let aiChatSettings: AIChatSettings
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let appSettings: AppSettings
+    let mobileCustomization: MobileCustomization
 
     var viewCoordinator: MainViewCoordinator!
 
@@ -53,12 +54,14 @@ class BlankSnapshotViewController: UIViewController {
          aiChatSettings: AIChatSettings,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          featureFlagger: FeatureFlagger,
-         appSettings: AppSettings) {
+         appSettings: AppSettings,
+         mobileCustomization: MobileCustomization) {
         self.addressBarPosition = addressBarPosition
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.appSettings = appSettings
+        self.mobileCustomization = mobileCustomization
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -75,7 +78,8 @@ class BlankSnapshotViewController: UIViewController {
                                                               aiChatSettings: aiChatSettings,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger,
-                                                              appSettings: appSettings)
+                                                              appSettings: appSettings,
+                                                              mobileCustomization: mobileCustomization)
         if addressBarPosition.isBottom {
             viewCoordinator.moveAddressBarToPosition(.bottom)
             viewCoordinator.hideToolbarSeparator()

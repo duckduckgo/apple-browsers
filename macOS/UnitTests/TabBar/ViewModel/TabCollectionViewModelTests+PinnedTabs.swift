@@ -117,6 +117,22 @@ extension TabCollectionViewModelTests {
         XCTAssert(tabCollectionViewModel.selectedTabViewModel === tabCollectionViewModel.tabViewModel(at: 0))
     }
 
+    @MainActor
+    func test_WithPinnedTabs_WhenSelectIsInvokedWithUnpinnedTabThenSelectedTabIsUpdatedAccordingly() {
+        let demoTab0 = Tab(content: .url(.duckDuckGo, source: .link))
+        let demoTab1 = Tab(content: .url(.bookmarks, source: .link))
+
+        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
+        tabCollectionViewModel.insert(demoTab1)
+        tabCollectionViewModel.insert(demoTab0)
+
+        tabCollectionViewModel.select(at: .unpinned(2))
+        XCTAssertEqual(tabCollectionViewModel.selectedTab?.content, .newtab)
+
+        tabCollectionViewModel.select(tab: demoTab1)
+        XCTAssertEqual(tabCollectionViewModel.selectedTab, demoTab1)
+    }
+
     // MARK: - Insert
 
     @MainActor
@@ -356,6 +372,56 @@ extension TabCollectionViewModelTests {
         XCTAssertEqual(events.count, 1)
         XCTAssertIdentical(events[0], tabCollectionViewModel.selectedTabViewModel)
     }
+
+    // MARK: - Unpin
+
+    @MainActor
+    func test_WithPinnedTabs_WhenUnpinningTabThenNewUnpinnedTabIsInserted() {
+        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
+
+        let tabContent: TabContent = .url(.duckDuckGo, source: .link)
+        tabCollectionViewModel.appendPinnedTab(content: tabContent)
+
+        XCTAssertEqual(tabCollectionViewModel.pinnedTabs.count, 1)
+        XCTAssertEqual(tabCollectionViewModel.tabs.count, 1)
+
+        tabCollectionViewModel.unpinTab(at: 0)
+
+        XCTAssertEqual(tabCollectionViewModel.pinnedTabs.count, 0)
+        XCTAssertEqual(tabCollectionViewModel.tabs.count, 2)
+        XCTAssertEqual(tabCollectionViewModel.tabs.first?.content, tabContent)
+    }
+
+    // MARK: - Move
+
+    @MainActor
+    func test_WithPinnedTabs_WhenMovingPinnedTabsAcrossCollections_DestinationCollectionInsertsTheNewTabs() throws {
+        let sourceTabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
+        let destinationTabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
+
+        let sourceTabContent0: TabContent = .url(.duckDuckGo, source: .link)
+        let sourceTabContent1: TabContent = .url(.aboutDuckDuckGo, source: .link)
+
+        sourceTabCollectionViewModel.appendPinnedTab(content: sourceTabContent0)
+        sourceTabCollectionViewModel.appendPinnedTab(content: sourceTabContent1)
+
+        // Verify Initial Tabs Count: Account for the default `newtab`
+        XCTAssertEqual(sourceTabCollectionViewModel.allTabsCount, 3)
+        XCTAssertEqual(destinationTabCollectionViewModel.allTabsCount, 1)
+
+        // Move
+        sourceTabCollectionViewModel.moveTab(at: .pinned(0), to: destinationTabCollectionViewModel, at: .pinned(0))
+        sourceTabCollectionViewModel.moveTab(at: .pinned(0), to: destinationTabCollectionViewModel, at: .unpinned(0))
+
+        // Verify Final Tabs Count
+        XCTAssertEqual(sourceTabCollectionViewModel.allTabsCount, 1)
+        XCTAssertEqual(destinationTabCollectionViewModel.tabs.count, 2)
+        XCTAssertEqual(destinationTabCollectionViewModel.pinnedTabs.count, 1)
+
+        // Verify the new Tabs are at destination
+        XCTAssertEqual(destinationTabCollectionViewModel.pinnedTabs.first?.content, sourceTabContent0)
+        XCTAssertEqual(destinationTabCollectionViewModel.tabs.first?.content, sourceTabContent1)
+    }
 }
 
 fileprivate extension TabCollectionViewModel {
@@ -367,8 +433,10 @@ fileprivate extension TabCollectionViewModel {
         return vm
     }
 
-    func appendPinnedTab() {
-        pinnedTabsManager?.tabCollection.append(tab: .init(content: .url("https://duck.com".url!, source: .link), shouldLoadInBackground: false))
+    func appendPinnedTab(content: TabContent? = nil) {
+        let tabContent = content ?? .url("https://duck.com".url!, source: .link)
+        let tab = Tab(content: tabContent, shouldLoadInBackground: false)
+        pinnedTabsManager?.tabCollection.append(tab: tab)
     }
 }
 

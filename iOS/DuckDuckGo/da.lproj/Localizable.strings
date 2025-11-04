@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Aktiver Beskyttelse af privatlivet";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Luk faner og ryd data";
+"action.title.forgetAll" = "Ryd faner og data";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Faner og data ryddet";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Ryd faner, data og Duck.ai-chats";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Åbn i baggrunden";
@@ -2827,6 +2830,12 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Deaktiver for at forhindre, at links automatisk åbnes i andre installerede apps.";
 
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Ryd faner og data";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Ryd faner, data og Duck.ai-chats";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Søgeforslag";
 
@@ -2871,6 +2880,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Tilpas";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Rydder alle faner, Duck.ai-chats og data for websteder, du ikke har sikret med Fireproof.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Rydder alle faner og data for websteder, du ikke har sikret med Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datarydning";

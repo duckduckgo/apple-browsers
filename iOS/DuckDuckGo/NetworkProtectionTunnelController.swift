@@ -531,8 +531,6 @@ private extension NetworkProtectionTunnelController {
     }
     
     func resetControllerStartWideEventMeasurement() {
-        // Placeholder non-fatal error for retry
-        self.connectionWideEventData?.controllerStartError = .init(error: NSError(), description: "Invalid connection status")
         self.connectionWideEventData?.controllerStartDuration = nil
     }
     

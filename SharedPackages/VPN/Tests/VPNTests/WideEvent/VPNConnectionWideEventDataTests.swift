@@ -22,13 +22,13 @@ import PixelKit
 
 final class VPNConnectionWideEventTests: XCTestCase {
 
-    func testPixelParameters_withCompleteSuccessfulFlow() {
+    func testPixelParameters_setupWithCompleteSuccessfulFlow() {
         let eventData = VPNConnectionWideEventData(
             extensionType: .system,
             startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: "funnel_macos_appsettings")
+            contextData: WideEventContextData(name: "Test-Context")
         )
-        
+
         let base = Date()
         eventData.browserStartDuration = WideEvent.MeasuredInterval(
             start: base,
@@ -55,34 +55,34 @@ final class VPNConnectionWideEventTests: XCTestCase {
         XCTAssertEqual(parameters["feature.name"], "vpn-connection")
         XCTAssertEqual(parameters["feature.data.ext.extension_type"], "system")
         XCTAssertEqual(parameters["feature.data.ext.startup_method"], "manual_by_main_app")
-        
-        // Have all latencies
+
+        // Have all per step latencies
         XCTAssertEqual(parameters["feature.data.ext.latency_ms"], "10000")
         XCTAssertEqual(parameters["feature.data.ext.browser_start_latency_ms"], "1000")
         XCTAssertEqual(parameters["feature.data.ext.controller_start_latency_ms"], "2000")
         XCTAssertEqual(parameters["feature.data.ext.oauth_latency_ms"], "5000")
         XCTAssertEqual(parameters["feature.data.ext.tunnel_start_latency_ms"], "3000")
-        
-        // No errors
+
+        // No per step errors
         XCTAssertNil(parameters["feature.data.ext.browser_start_error.domain"])
         XCTAssertNil(parameters["feature.data.ext.controller_start_error.domain"])
         XCTAssertNil(parameters["feature.data.ext.oauth_error.domain"])
         XCTAssertNil(parameters["feature.data.ext.tunnel_start_error.domain"])
     }
 
-    func testPixelParameters_withFailedFlow() {
+    func testPixelParameters_setupWithFailedFlow() {
         let eventData = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: "funnel_ios_appsettings")
+            contextData: WideEventContextData(name: "Test-Context")
         )
-        
+
         let base = Date()
         eventData.controllerStartDuration = WideEvent.MeasuredInterval(
             start: base,
             end: base.addingTimeInterval(1.0)
         )
-        
+
         // Non-fatal OAuth failed error
         eventData.oauthDuration = WideEvent.MeasuredInterval(
             start: base,
@@ -91,7 +91,6 @@ final class VPNConnectionWideEventTests: XCTestCase {
         let oauthError = NSError(domain: "OAuthError", code: 100, userInfo: nil)
         eventData.oauthError = WideEventErrorData(error: oauthError, description: "OauthTokenExpired")
 
-        
         // Fatal tunnel start error
         let tunnelError = NSError(domain: "TunnelError", code: 200, userInfo: nil)
         eventData.tunnelStartError = WideEventErrorData(error: tunnelError, description: "TunnelStartFailed")
@@ -106,26 +105,25 @@ final class VPNConnectionWideEventTests: XCTestCase {
         XCTAssertEqual(parameters["feature.data.ext.oauth_latency_ms"], "500")
         XCTAssertNil(parameters["feature.data.ext.tunnel_start_latency_ms"])
         
-        // Have per step error data and overall error data
+        // Have per step error data
         XCTAssertEqual(parameters["feature.data.ext.oauth_error.domain"], "OAuthError")
         XCTAssertEqual(parameters["feature.data.ext.oauth_error.code"], "100")
         XCTAssertEqual(parameters["feature.data.ext.oauth_error.description"], "OauthTokenExpired")
-        
         XCTAssertEqual(parameters["feature.data.ext.tunnel_start_error.domain"], "TunnelError")
         XCTAssertEqual(parameters["feature.data.ext.tunnel_start_error.code"], "200")
         XCTAssertEqual(parameters["feature.data.ext.tunnel_start_error.description"], "TunnelStartFailed")
     }
 
-    // MARK: - Edge Cases
+    // MARK: - Abandoned and Delayed Flows
 
     func testPixelParameters_withAbandonedFlows() {
         let eventData = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: "funnel_ios_appsettings")
+            contextData: WideEventContextData(name: "Test-Context")
         )
         let base = Date()
-        // no started interval
+        // no start interval
         var parameters = eventData.pixelParameters()
         XCTAssertNil(parameters["feature.data.ext.latency_ms"])
 
@@ -141,7 +139,7 @@ final class VPNConnectionWideEventTests: XCTestCase {
         let eventData = VPNConnectionWideEventData(
             extensionType: .system,
             startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: "funnel_macos_appsettings")
+            contextData: WideEventContextData(name: "Test-Context")
         )
         let base = Date()
 
@@ -156,30 +154,34 @@ final class VPNConnectionWideEventTests: XCTestCase {
         XCTAssertNil(parameters["feature.data.ext.latency_ms"])
     }
 
-    // MARK: - addStepLatency Tests
+    // MARK: - addStepLatency
 
     func testAddStepLatency_withValidInterval() {
         let eventData = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: "funnel_ios_appsettings")
+            contextData: WideEventContextData(name: "Test-Context")
         )
 
         let base = Date()
-        
+        eventData.browserStartDuration = WideEvent.MeasuredInterval(
+            start: base,
+            end: base.addingTimeInterval(0.5)
+        )
+        var parameters = eventData.pixelParameters()
+        XCTAssertEqual(parameters["feature.data.ext.browser_start_latency_ms"], "500")
+
         eventData.controllerStartDuration = WideEvent.MeasuredInterval(
             start: base,
             end: base.addingTimeInterval(1.0)
         )
-        
-        var parameters = eventData.pixelParameters()
+        parameters = eventData.pixelParameters()
         XCTAssertEqual(parameters["feature.data.ext.controller_start_latency_ms"], "1000")
 
         eventData.oauthDuration = WideEvent.MeasuredInterval(
             start: base,
             end: base.addingTimeInterval(2.5)
         )
-        
         parameters = eventData.pixelParameters()
         XCTAssertEqual(parameters["feature.data.ext.oauth_latency_ms"], "2500")
         
@@ -187,7 +189,6 @@ final class VPNConnectionWideEventTests: XCTestCase {
             start: base,
             end: base.addingTimeInterval(1.5)
         )
-        
         parameters = eventData.pixelParameters()
         XCTAssertEqual(parameters["feature.data.ext.tunnel_start_latency_ms"], "1500")
     }
@@ -196,12 +197,13 @@ final class VPNConnectionWideEventTests: XCTestCase {
         let eventData = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: "funnel_ios_appsettings")
+            contextData: WideEventContextData(name: "Test-Context")
         )
 
         // All durations are nil
         let parameters = eventData.pixelParameters()
-        
+
+        XCTAssertNil(parameters["feature.data.ext.browser_start_latency_ms"])
         XCTAssertNil(parameters["feature.data.ext.controller_start_latency_ms"])
         XCTAssertNil(parameters["feature.data.ext.oauth_latency_ms"])
         XCTAssertNil(parameters["feature.data.ext.tunnel_start_latency_ms"])
@@ -211,49 +213,47 @@ final class VPNConnectionWideEventTests: XCTestCase {
         let eventData = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: "funnel_ios_appsettings")
+            contextData: WideEventContextData(name: "Test-Context")
         )
 
         let base = Date()
-        
         eventData.controllerStartDuration = WideEvent.MeasuredInterval(
             start: base,
             end: base.addingTimeInterval(1.9999999)
         )
-        
+
         let parameters = eventData.pixelParameters()
         XCTAssertEqual(parameters["feature.data.ext.controller_start_latency_ms"], "1999")
     }
 
-    // MARK: - addStepError Tests
+    // MARK: - addStepError
 
     func testAddStepError_withNilError() {
         let eventData = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: "funnel_ios_appsettings")
+            contextData: WideEventContextData(name: "Test-Context")
         )
 
         // All errors are nil
         let parameters = eventData.pixelParameters()
-        
+        XCTAssertNil(parameters["feature.data.ext.browser_start_error.domain"])
         XCTAssertNil(parameters["feature.data.ext.controller_start_error.domain"])
         XCTAssertNil(parameters["feature.data.ext.oauth_error.domain"])
         XCTAssertNil(parameters["feature.data.ext.tunnel_start_error.domain"])
     }
 
-    func testAddStepError_withError() {
+    func testAddStepError_withTopLevelError() {
         let eventData = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: "funnel_ios_appsettings")
+            contextData: WideEventContextData(name: "Test-Context")
         )
 
         let error = NSError(domain: "TestDomain", code: 42, userInfo: nil)
         eventData.controllerStartError = WideEventErrorData(error: error, description: "ControllerStartFailed")
 
         let parameters = eventData.pixelParameters()
-        
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.domain"], "TestDomain")
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.code"], "42")
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.description"], "ControllerStartFailed")
@@ -262,8 +262,8 @@ final class VPNConnectionWideEventTests: XCTestCase {
     func testAddStepError_withSingleUnderlyingError() {
         let eventData = VPNConnectionWideEventData(
             extensionType: .app,
-            startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: "funnel_ios_appsettings")
+            startupMethod: .manualByTheSystem,
+            contextData: WideEventContextData(name: "Test-Context")
         )
 
         let underlyingError = NSError(domain: "UnderlyingDomain", code: 100, userInfo: nil)
@@ -273,12 +273,11 @@ final class VPNConnectionWideEventTests: XCTestCase {
         eventData.tunnelStartError = WideEventErrorData(error: topError)
 
         let parameters = eventData.pixelParameters()
-        
         // Top error
         XCTAssertEqual(parameters["feature.data.ext.tunnel_start_error.domain"], "TopDomain")
         XCTAssertEqual(parameters["feature.data.ext.tunnel_start_error.code"], "200")
         
-        // Underlying error
+        // Underlying error: Single Underlying error does not have suffix
         XCTAssertEqual(parameters["feature.data.ext.tunnel_start_error.underlying_domain"], "UnderlyingDomain")
         XCTAssertEqual(parameters["feature.data.ext.tunnel_start_error.underlying_code"], "100")
     }
@@ -286,8 +285,8 @@ final class VPNConnectionWideEventTests: XCTestCase {
     func testAddStepError_withMultipleUnderlyingErrors() {
         let eventData = VPNConnectionWideEventData(
             extensionType: .app,
-            startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: "funnel_ios_appsettings")
+            startupMethod: .automaticOnDemand,
+            contextData: WideEventContextData(name: "Test-Context")
         )
 
         let underlyingError2 = NSError(domain: "Domain2", code: 2, userInfo: [:])
@@ -297,35 +296,35 @@ final class VPNConnectionWideEventTests: XCTestCase {
         let topError = NSError(domain: "TopDomain", code: 0, userInfo: [
             NSUnderlyingErrorKey: underlyingError1
         ])
-        
+
         eventData.controllerStartError = WideEventErrorData(error: topError)
 
         let parameters = eventData.pixelParameters()
-        
+
         // Top error
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.domain"], "TopDomain")
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.code"], "0")
-        
-        // First underlying error
+
+        // First underlying error: First Underlying error does not have suffix
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.underlying_domain"], "Domain1")
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.underlying_code"], "1")
-        
+
         // Second underlying error
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.underlying_domain2"], "Domain2")
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.underlying_code2"], "2")
     }
 
-    // MARK: - transformErrorKey Tests
+    // MARK: - transformErrorKey
 
     func testTransformErrorKey() {
         let eventData = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: "funnel_ios_appsettings")
+            contextData: WideEventContextData(name: "Test-Context")
         )
 
         let error = NSError(domain: "TestDomain", code: 1, userInfo: nil)
-        
+
         eventData.controllerStartError = WideEventErrorData(error: error, description: "ControllerError")
         var parameters = eventData.pixelParameters()
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.domain"], "TestDomain")
@@ -338,7 +337,7 @@ final class VPNConnectionWideEventTests: XCTestCase {
         XCTAssertEqual(parameters["feature.data.ext.oauth_error.domain"], "TestDomain")
         XCTAssertEqual(parameters["feature.data.ext.oauth_error.code"], "1")
         XCTAssertEqual(parameters["feature.data.ext.oauth_error.description"], "OauthError")
-        
+
         // No Description
         eventData.tunnelStartError = WideEventErrorData(error: error)
         parameters = eventData.pixelParameters()
@@ -351,17 +350,17 @@ final class VPNConnectionWideEventTests: XCTestCase {
         let eventData = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: "funnel_ios_appsettings")
+            contextData: WideEventContextData(name: "Test-Context")
         )
 
         let underlyingError = NSError(domain: "UnderlyingDomain", code: 1, userInfo: nil)
         let topError = NSError(domain: "TopDomain", code: 0, userInfo: [
             NSUnderlyingErrorKey: underlyingError
         ])
-        
+
         eventData.controllerStartError = WideEventErrorData(error: topError)
         let parameters = eventData.pixelParameters()
-        
+        // Underlying error: Single Underlying error does not have suffix
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.underlying_domain"], "UnderlyingDomain")
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.underlying_code"], "1")
     }
@@ -373,28 +372,28 @@ final class VPNConnectionWideEventTests: XCTestCase {
             contextData: WideEventContextData(name: "funnel_ios_appsettings")
         )
 
-        // Create deep chain to test numeric suffixes
+        // Create deep nested underlying errors
         let underlyingError20 = NSError(domain: "Domain20", code: 20, userInfo: nil)
         var currentError = underlyingError20
-        
-        // Build errors from 19 to 1
         for i in (1...19).reversed() {
             currentError = NSError(domain: "Domain\(i)", code: i, userInfo: [
                 NSUnderlyingErrorKey: currentError
             ])
         }
-        
+
         let topError = NSError(domain: "TopDomain", code: 0, userInfo: [
             NSUnderlyingErrorKey: currentError
         ])
-        
+
         eventData.oauthError = WideEventErrorData(error: topError)
         let parameters = eventData.pixelParameters()
         
-        XCTAssertEqual(parameters["feature.data.ext.oauth_error.underlying_domain"], "Domain1")
-        XCTAssertEqual(parameters["feature.data.ext.oauth_error.underlying_domain2"], "Domain2")
-        XCTAssertEqual(parameters["feature.data.ext.oauth_error.underlying_domain5"], "Domain5")
-        XCTAssertEqual(parameters["feature.data.ext.oauth_error.underlying_domain10"], "Domain10")
-        XCTAssertEqual(parameters["feature.data.ext.oauth_error.underlying_domain20"], "Domain20")
+        for i in 1...20 {
+            if i == 1 {
+                XCTAssertEqual(parameters["feature.data.ext.oauth_error.underlying_domain"], "Domain1")
+            } else {
+                XCTAssertEqual(parameters["feature.data.ext.oauth_error.underlying_domain\(i)"], "Domain\(i)")
+            }
+        }
     }
 }

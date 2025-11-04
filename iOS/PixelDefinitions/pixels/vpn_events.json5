@@ -62,7 +62,7 @@
                 "key": "feature.data.ext.startup_method",
                 "type": "string",
                 "description": "How the VPN setup or connection was initiated",
-                "enum": ["automaticOnDemand", "manualByMainApp", "manualByTheSystem"]
+                "enum": ["automatic_on_demand", "manual_by_main_app", "manual_by_the_system"]
             },
             // Overall latency
             {
@@ -74,7 +74,7 @@
             {
                 "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_latency_ms",
                 "type": "integer",
-                "description": "Latency in ms for VPN connection steps"
+                "description": "Latency for VPN connection steps (in ms)"
             },
             // Per-step error domains
             {
@@ -99,13 +99,13 @@
             {
                 "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.underlying_domain[0-9]*",
                 "type": "string",
-                "description": "Underlying error domain for VPN connection step failures (supports nested errors)"
+                "description": "Underlying error domain for VPN connection step failures"
             },
             // Per-step underlying error codes
             {
                 "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.underlying_code[0-9]*",
                 "type": "string",
-                "description": "Underlying error code for VPN connection step failures (supports nested errors)",
+                "description": "Underlying error code for VPN connection step failures",
                 "pattern": "^-?\\d+$"
             },
             {

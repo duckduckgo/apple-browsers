@@ -419,11 +419,12 @@ final class WideEventTests: XCTestCase {
         let nestedError = NSError(domain: "NestedDomain", code: 2, userInfo: [NSUnderlyingErrorKey: deepError])
         let rootError = NSError(domain: "RootDomain", code: 1, userInfo: [NSUnderlyingErrorKey: nestedError])
 
+        // No Description
         let errorData = WideEventErrorData(error: rootError)
 
         XCTAssertEqual(errorData.domain, "RootDomain")
         XCTAssertEqual(errorData.code, 1)
-        XCTAssertEqual(errorData.description, "Test Deep Error")
+        XCTAssertNil(errorData.description)
 
         XCTAssertEqual(errorData.underlyingErrors.count, 2)
         XCTAssertEqual(errorData.underlyingErrors.first?.domain, "NestedDomain")

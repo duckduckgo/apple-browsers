@@ -272,7 +272,7 @@ extension WideEventErrorData: WideEventParameterProviding {
         parameters[WideEventParameter.Feature.errorDomain] = domain
         parameters[WideEventParameter.Feature.errorCode] = String(code)
         parameters[WideEventParameter.Feature.errorDescription] = description
-        
+
         for (index, nested) in underlyingErrors.enumerated() {
             let suffix = index == 0 ? "" : String(index + 1)
             parameters[WideEventParameter.Feature.underlyingErrorDomain + suffix] = nested.domain

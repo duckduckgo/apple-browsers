@@ -578,6 +578,16 @@ class MainViewController: UIViewController {
                 completion?()
             }
 
+        } else if let currentTab = self.tabManager.current(), currentTab.tabModel.isAITab {
+            currentTab.prepareAIChatPreview(completion: { image in
+                guard let image else {
+                    completion?()
+                    return
+                }
+                self.previewsSource.update(preview: image, forTab: currentTab.tabModel)
+                completion?()
+            })
+
         } else if let currentTab = self.tabManager.current(), currentTab.link != nil {
             // Web view
             currentTab.preparePreview(completion: { image in
@@ -2336,7 +2346,8 @@ class MainViewController: UIViewController {
             tools: tools
         ) { [weak self] in
             guard let self else { return }
-            
+
+            self.themeColorManager.resetThemeColor()
             select(tab: currentTab)
         }
     }

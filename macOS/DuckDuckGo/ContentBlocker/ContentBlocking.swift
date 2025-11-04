@@ -78,6 +78,7 @@ final class AppContentBlocking {
         fireproofDomains: DomainFireproofStatusProviding,
         fireCoordinator: FireCoordinator,
         tld: TLD,
+        autoconsentManagement: AutoconsentManagement,
         contentScopePreferences: ContentScopePreferences
     ) {
         let privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
@@ -101,6 +102,7 @@ final class AppContentBlocking {
             fireproofDomains: fireproofDomains,
             fireCoordinator: fireCoordinator,
             tld: tld,
+            autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences
         )
     }
@@ -121,6 +123,7 @@ final class AppContentBlocking {
         fireproofDomains: DomainFireproofStatusProviding,
         fireCoordinator: FireCoordinator,
         tld: TLD,
+        autoconsentManagement: AutoconsentManagement,
         contentScopePreferences: ContentScopePreferences
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -156,6 +159,7 @@ final class AppContentBlocking {
                                                   historyCoordinator: historyCoordinator,
                                                   fireproofDomains: fireproofDomains,
                                                   fireCoordinator: fireCoordinator,
+                                                  autoconsentManagement: autoconsentManagement,
                                                   contentScopePreferences: contentScopePreferences)
 
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,

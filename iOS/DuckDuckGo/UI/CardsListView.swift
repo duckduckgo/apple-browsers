@@ -43,6 +43,7 @@ extension RemoteMessagingUI {
         let screenTitle: String
         let icon: String?
         let items: [CardsListDisplayModel.Item]
+        let onAppear: (() -> Void)?
         let primaryAction: (title: String, action: () -> Void)?
     }
 
@@ -69,6 +70,7 @@ extension RemoteMessagingUI {
             }
             .padding(.horizontal, Metrics.CardsList.contentHorizontalPadding)
             .background(Color(singleUseColor: .whatsNewBackground))
+            .onAppear(perform: displayModel.onAppear)
         }
     }
 
@@ -333,6 +335,7 @@ struct CardsList_Previews: PreviewProvider {
             screenTitle: "What’s New",
             icon: "RemoteMessageDDGAnnouncement",
             items: listItems,
+            onAppear: nil,
             primaryAction: action
         ))
     }

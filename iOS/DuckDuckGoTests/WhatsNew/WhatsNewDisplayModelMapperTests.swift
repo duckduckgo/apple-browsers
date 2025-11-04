@@ -46,6 +46,7 @@ final class WhatsNewDisplayModelMapperTests {
         let displayModel = try #require(
             sut.makeDisplayModel(
                 from: message,
+                onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
                 onPrimaryAction: { _ in },
@@ -74,6 +75,7 @@ final class WhatsNewDisplayModelMapperTests {
         // WHEN
         let displayModel = sut.makeDisplayModel(
             from: message,
+            onMessageAppear: { },
             onItemAppear: { _ in },
             onItemAction: { _, _ in },
             onPrimaryAction: { _ in },
@@ -103,6 +105,7 @@ final class WhatsNewDisplayModelMapperTests {
         let displayModel = try #require(
             sut.makeDisplayModel(
                 from: message,
+                onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
                 onPrimaryAction: { _ in },
@@ -131,6 +134,7 @@ final class WhatsNewDisplayModelMapperTests {
         let displayModel = try #require(
             sut.makeDisplayModel(
                 from: message,
+                onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
                 onPrimaryAction: { _ in },
@@ -164,6 +168,7 @@ final class WhatsNewDisplayModelMapperTests {
         let displayModel = try #require(
             sut.makeDisplayModel(
                 from: message,
+                onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
                 onPrimaryAction: { _ in },
@@ -177,6 +182,36 @@ final class WhatsNewDisplayModelMapperTests {
         } else {
             #expect(displayModel.items.first?.disclosureIcon == nil)
         }
+    }
+
+    @Test("Check Message Appear Callback Is Set In Display Model")
+    func whenDisplayModelCreatedThenMessageAppearCallbackIsSet() throws {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage()
+        var messageAppearCalled = false
+
+        // WHEN
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: {
+                    messageAppearCalled = true
+                },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        // THEN
+        #expect(displayModel.onAppear != nil)
+
+        // WHEN - Invoke the onAppear callback
+        displayModel.onAppear?()
+
+        // THEN
+        #expect(messageAppearCalled)
     }
 }
 
@@ -198,6 +233,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
         let displayModel = try #require(
             sut.makeDisplayModel(
                 from: message,
+                onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
                 onPrimaryAction: { action in
@@ -235,6 +271,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
         let displayModel = try #require(
             sut.makeDisplayModel(
                 from: message,
+                onMessageAppear: { },
                 onItemAppear: { itemId in
                     itemAppearedCalls.append(itemId)
                 },
@@ -269,6 +306,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
         let displayModel = try #require(
             sut.makeDisplayModel(
                 from: message,
+                onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { action, itemId in
                     itemActionCalled = true
@@ -300,6 +338,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
         let displayModel = try #require(
             sut.makeDisplayModel(
                 from: message,
+                onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in
                     itemActionCalled = true
@@ -341,6 +380,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
         let displayModel = try #require(
             sut.makeDisplayModel(
                 from: message,
+                onMessageAppear: { },
                 onItemAppear: { _ in },
                 onItemAction: { _, _ in },
                 onPrimaryAction: { action in
@@ -368,6 +408,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
 
         let displayModel = try #require(sut.makeDisplayModel(
             from: message,
+            onMessageAppear: { },
             onItemAppear: { _ in },
             onItemAction: { _, _ in
                 callCount += 1

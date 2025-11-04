@@ -33,9 +33,6 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
     private weak var navigationController: UINavigationController?
 
     private var remoteMessage: RemoteMessageModel?
-    private var currentMessageId: String? {
-        remoteMessage?.id
-    }
 
     init(
         remoteMessageStore: RemoteMessagingStoring,
@@ -78,7 +75,6 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
 
     func didPresentModal() {
         Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Did present modal")
-        measureMessageShown()
         Task {
             await markMessageAsShown()
         }
@@ -122,6 +118,9 @@ private extension WhatsNewCoordinator {
         func makeDisplayModel(for message: RemoteMessageModel) -> RemoteMessagingUI.CardsListDisplayModel? {
             displayModelMapper.makeDisplayModel(
                 from: message,
+                onMessageAppear: { [weak self] in
+                    self?.measureMessageShown()
+                },
                 onItemAppear: { [weak self] cardId in
                     self?.measureCardShown(cardId: cardId)
                 },
@@ -153,7 +152,7 @@ private extension WhatsNewCoordinator {
     }
 
     func markMessageAsShown() async {
-        guard let messageId = currentMessageId else {
+        guard let messageId = remoteMessage?.id else {
             Logger.modalPrompt.error("[Modal Prompt Coordination] - What's New - Cannot mark message as shown - no current message ID")
             return
         }
@@ -187,13 +186,13 @@ extension WhatsNewCoordinator {
 private extension WhatsNewCoordinator {
 
     func measureMessageShown() {
-        guard let message = remoteMessage else {
+        guard let remoteMessage else {
             assertionFailure("What's New - Cannot measure message as shown - no current message")
             return
         }
 
-        let hasAlreadySeenMessage = remoteMessageStore.hasShownRemoteMessage(withID: message.id)
-        pixelReporter.measureRemoteMessageAppeared(message, hasAlreadySeenMessage: hasAlreadySeenMessage)
+        let hasAlreadySeenMessage = remoteMessageStore.hasShownRemoteMessage(withID: remoteMessage.id)
+        pixelReporter.measureRemoteMessageAppeared(remoteMessage, hasAlreadySeenMessage: hasAlreadySeenMessage)
     }
 
     func measureMessageDismissed(source: DismissSource) {
@@ -213,21 +212,21 @@ private extension WhatsNewCoordinator {
     }
 
     func measureCardShown(cardId: String) {
-        guard let message = remoteMessage else {
+        guard let remoteMessage else {
             assertionFailure("What's New - Cannot measure card shown - no current message")
             return
         }
 
-        pixelReporter.measureRemoteMessageCardShown(message, cardId: cardId)
+        pixelReporter.measureRemoteMessageCardShown(remoteMessage, cardId: cardId)
     }
 
     func measureCardTapped(cardId: String) {
-        guard let message = remoteMessage else {
+        guard let remoteMessage else {
             assertionFailure("What's New - Cannot measure card tapped - no current message")
             return
         }
 
-        pixelReporter.measureRemoteMessageCardClicked(message, cardId: cardId)
+        pixelReporter.measureRemoteMessageCardClicked(remoteMessage, cardId: cardId)
     }
 
 }

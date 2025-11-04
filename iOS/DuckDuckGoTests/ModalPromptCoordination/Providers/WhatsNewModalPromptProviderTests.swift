@@ -265,24 +265,27 @@ struct WhatsNewCoordinatorPixelTrackingTests {
 
     // MARK: - Message Appeared Pixels
 
-    @Test("Check Message Appeared Pixel Fires When Modal Is Presented")
-    func whenModalIsPresentedThenMessageAppearedPixelFires() {
+    @Test("Check Message Appeared Pixel Fires When Message Appears")
+    func whenMessageAppearsCallbackInvokedThenMessageAppearedPixelFires() {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
         let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
         let mockHandler = MockRemoteMessagingActionHandler()
         let mockPixelReporter = MockRemoteMessagingPixelReporter()
+        let mockMapper = MockWhatsNewDisplayModelMapper()
+        mockMapper.displayModelToReturn = .mock
 
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
-            pixelReporter: mockPixelReporter
+            pixelReporter: mockPixelReporter,
+            displayModelMapper: mockMapper
         )
         _ = coordinator.provideModalPrompt()
 
         // WHEN
-        coordinator.didPresentModal()
+        mockMapper.capturedOnMessageAppear?()
 
         // THEN
         #expect(mockPixelReporter.didCallMeasureRemoteMessageAppeared)
@@ -296,17 +299,20 @@ struct WhatsNewCoordinatorPixelTrackingTests {
         let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
         let mockHandler = MockRemoteMessagingActionHandler()
         let mockPixelReporter = MockRemoteMessagingPixelReporter()
+        let mockMapper = MockWhatsNewDisplayModelMapper()
+        mockMapper.displayModelToReturn = .mock
 
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
-            pixelReporter: mockPixelReporter
+            pixelReporter: mockPixelReporter,
+            displayModelMapper: mockMapper
         )
         _ = coordinator.provideModalPrompt()
 
         // WHEN
-        coordinator.didPresentModal()
+        mockMapper.capturedOnMessageAppear?()
 
         // THEN
         #expect(mockPixelReporter.capturedHasAlreadySeenMessage == false)
@@ -319,17 +325,20 @@ struct WhatsNewCoordinatorPixelTrackingTests {
         let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message, shownRemoteMessagesIDs: ["test-message"])
         let mockHandler = MockRemoteMessagingActionHandler()
         let mockPixelReporter = MockRemoteMessagingPixelReporter()
+        let mockMapper = MockWhatsNewDisplayModelMapper()
+        mockMapper.displayModelToReturn = .mock
 
         let coordinator = WhatsNewCoordinator(
             remoteMessageStore: mockStore,
             remoteMessageActionHandler: mockHandler,
             isIPad: false,
-            pixelReporter: mockPixelReporter
+            pixelReporter: mockPixelReporter,
+            displayModelMapper: mockMapper
         )
         _ = coordinator.provideModalPrompt()
 
         // WHEN
-        coordinator.didPresentModal()
+        mockMapper.capturedOnMessageAppear?()
 
         // THEN
         #expect(mockPixelReporter.capturedHasAlreadySeenMessage == true)
@@ -456,6 +465,7 @@ private extension RemoteMessagingUI.CardsListDisplayModel {
     static let mock = RemoteMessagingUI.CardsListDisplayModel(
         screenTitle: "Test",
         items: [],
+        onAppear: {},
         primaryAction: (title: "OK", action: {})
     )
 

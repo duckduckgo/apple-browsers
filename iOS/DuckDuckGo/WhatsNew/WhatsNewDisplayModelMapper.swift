@@ -24,6 +24,7 @@ import RemoteMessaging
 protocol WhatsNewDisplayModelMapping {
     func makeDisplayModel(
         from message: RemoteMessageModel,
+        onMessageAppear: @escaping () -> Void,
         onItemAppear: @escaping (_ itemId: String) -> Void,
         onItemAction: @escaping (_ action: RemoteAction, _ itemId: String) async -> Void,
         onPrimaryAction: @escaping (RemoteAction) async -> Void,
@@ -43,6 +44,7 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
     /// - Returns: CardsListDisplayModel if message is cardsList, nil otherwise
     func makeDisplayModel(
         from message: RemoteMessageModel,
+        onMessageAppear: @escaping () -> Void,
         onItemAppear: @escaping (_ itemId: String) -> Void,
         onItemAction: @escaping (_ action: RemoteAction, _ itemId: String) async -> Void,
         onPrimaryAction: @escaping (RemoteAction) async -> Void,
@@ -78,6 +80,7 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
             screenTitle: mainTitleText,
             icon: placeholder?.rawValue,
             items: promoItems,
+            onAppear: onMessageAppear,
             primaryAction: (
                 title: primaryActionText,
                 action: makeAction(for: primaryAction, handler: onPrimaryAction, andDismiss: onDismiss)

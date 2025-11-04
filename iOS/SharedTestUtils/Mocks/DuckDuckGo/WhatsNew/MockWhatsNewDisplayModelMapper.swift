@@ -24,6 +24,7 @@ import RemoteMessaging
 final class MockWhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
     private(set) var didCallMakeDisplayModel = false
     private(set) var capturedMessage: RemoteMessageModel?
+    private(set) var capturedOnMessageAppear: (() -> Void)?
     private(set) var capturedOnItemAppear: ((_ itemId: String) -> Void)?
     private(set) var capturedOnItemAction: ((_ action: RemoteAction, _ itemId: String) async -> Void)?
     private(set) var capturedOnPrimaryAction: ((RemoteAction) async -> Void)?
@@ -34,6 +35,7 @@ final class MockWhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
 
     func makeDisplayModel(
         from message: RemoteMessageModel,
+        onMessageAppear: @escaping () -> Void,
         onItemAppear: @escaping (_ itemId: String) -> Void,
         onItemAction: @escaping (_ action: RemoteAction, _ itemId: String) async -> Void,
         onPrimaryAction: @escaping (RemoteAction) async -> Void,
@@ -41,6 +43,7 @@ final class MockWhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
     ) -> RemoteMessagingUI.CardsListDisplayModel? {
         didCallMakeDisplayModel = true
         capturedMessage = message
+        capturedOnMessageAppear = onMessageAppear
         capturedOnItemAppear = onItemAppear
         capturedOnItemAction = onItemAction
         capturedOnPrimaryAction = onPrimaryAction

@@ -326,6 +326,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         }.sorted(by: { lhs, _ in
             lhs.isThisDevice
         })
+        NotificationCenter.default.post(name: .syncDevicesUpdate, object: self, userInfo: [AttributedMetricNotificationParameter.syncCount.rawValue: devices.count])
     }
 
     private func startPairingIfNecessary() {
@@ -526,7 +527,6 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole) {
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
-        NotificationCenter.default.post(name: .userDidSyncDevice, object: self, userInfo: [AttributedMetricNotificationParameter.syncCount.rawValue: registeredDevices.count])
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.dismissVCAndShowRecoveryPDF()
         }

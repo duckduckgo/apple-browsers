@@ -31,15 +31,22 @@ public class RollingEightDays<T: Codable & Equatable>: RollingArray<T> {
         super.init(capacity: 8)
     }
 
-    /// Creates a new `RollingEightDays` instance from a decoder.
-    ///
-    /// This initialiser allows the rolling eight-day structure to be decoded from
-    /// persistent storage or network data while maintaining the seven-day capacity.
-    ///
-    /// - Parameter decoder: The decoder to read data from.
-    /// - Throws: An error if decoding fails.
+    // MARK: - Codable
+
+    private enum CodingKeys: CodingKey {
+        case lastDay
+    }
+
     public required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        lastDay = try container.decodeIfPresent(Date.self, forKey: .lastDay)
         try super.init(from: decoder)
+    }
+
+    public override func encode(to encoder: Encoder) throws {
+        try super.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(lastDay, forKey: .lastDay)
     }
 
     /// Checks if the given date is the same calendar day as the last recorded day.

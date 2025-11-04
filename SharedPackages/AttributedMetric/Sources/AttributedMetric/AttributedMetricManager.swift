@@ -97,7 +97,8 @@ public final class AttributedMetricManager {
     // MARK: - Private
 
     var isEnabled: Bool {
-        featureFlagger.isFeatureOn(for: AttributedMetricFeatureFlag.attributedMetrics)
+        //featureFlagger.isFeatureOn(for: AttributedMetricFeatureFlag.attributedMetrics)
+        true
     }
 
     var daysSinceInstalled: Int {
@@ -145,16 +146,34 @@ public final class AttributedMetricManager {
 
     // MARK: - Triggers
 
-    public enum Trigger {
+    public enum Trigger: CustomDebugStringConvertible {
         case appDidStart
         case userDidSearch
         case userDidSelectAD
         case userDidDuckAIChat
         case userDidSubscribe
         case userDidSync(devicesCount: Int)
+
+        public var debugDescription: String {
+            switch self {
+            case .appDidStart:
+                "AppDidStart"
+            case .userDidSearch:
+                "UserDidSearch"
+            case .userDidSelectAD:
+                "UserDidSelectAD"
+            case .userDidDuckAIChat:
+                "UserDidDuckAIChat"
+            case .userDidSubscribe:
+                "UserDidSubscribe"
+            case .userDidSync:
+                "UserDidSync"
+            }
+        }
     }
 
     public func process(trigger: Trigger) {
+        Logger.attributedMetric.log("Processing \(trigger.debugDescription, privacy: .public)")
         guard isEnabled else { return }
 
         guard isLessThanSixMonths else {
@@ -203,7 +222,7 @@ public final class AttributedMetricManager {
         case .none:
             Logger.attributedMetric.debug("Less than a week from installation")
         case .weeks(let week):
-            Logger.attributedMetric.debug("\(week) week(s) from installation")
+            Logger.attributedMetric.debug("\(week, privacy: .public) week(s) from installation")
             guard let bucket = try? bucketModifier.bucket(value: week, pixelName: .userRetentionWeek) else {
                 Logger.attributedMetric.error("Failed to bucket week value")
                 return
@@ -216,7 +235,7 @@ public final class AttributedMetricManager {
                           frequency: .legacyDailyNoSuffix)
             dataStorage.lastRetentionThreshold = timePastFromInstall
         case .months(let month):
-            Logger.attributedMetric.debug("\(month) month(s) from installation")
+            Logger.attributedMetric.debug("\(month, privacy: .public) month(s) from installation")
             guard let bucket = try? bucketModifier.bucket(value: month, pixelName: .userRetentionMonth) else {
                 Logger.attributedMetric.error("Failed to bucket month value")
                 return
@@ -255,7 +274,7 @@ public final class AttributedMetricManager {
         let search8Days = dataStorage.search8Days
         let searchCount = search8Days.countPast7Days
         guard searchCount > 0 else { return }
-        Logger.attributedMetric.debug("\(searchCount) searches performed in the last week")
+        Logger.attributedMetric.debug("\(searchCount, privacy: .public) searches performed in the last week")
         guard let bucket = try? bucketModifier.bucket(value: searchCount, pixelName: .userActivePastWeek) else {
             Logger.attributedMetric.error("Failed to bucket search count value")
             return
@@ -281,7 +300,7 @@ public final class AttributedMetricManager {
                 Logger.attributedMetric.error("Failed to bucket average search count value")
                 return
             }
-            Logger.attributedMetric.debug("Average search count in the last week: \(bucket.value)")
+            Logger.attributedMetric.debug("Average last week search count bucket: \(bucket.value, privacy: .public)")
             pixelKit.fire(AttributedMetricPixel.userAverageSearchesPastWeekFirstMonth(origin: originOrInstall.origin,
                                                                                       installDate: originOrInstall.installDate,
                                                                                       count: bucket.value,
@@ -292,7 +311,7 @@ public final class AttributedMetricManager {
                 Logger.attributedMetric.error("Failed to bucket average search count value")
                 return
             }
-            Logger.attributedMetric.debug("Average search count in the last week: \(bucket.value)")
+            Logger.attributedMetric.debug("Average search count in the last week: \(bucket.value, privacy: .public)")
             pixelKit.fire(AttributedMetricPixel.userAverageSearchesPastWeek(origin: originOrInstall.origin,
                                                                             installDate: originOrInstall.installDate,
                                                                             count: bucket.value,
@@ -320,7 +339,7 @@ public final class AttributedMetricManager {
             Logger.attributedMetric.error("Failed to bucket average ad click value")
             return
         }
-        Logger.attributedMetric.debug("Average AD click count in the last week: \(bucket.value)")
+        Logger.attributedMetric.debug("Average AD click count in the last week: \(bucket.value, privacy: .public)")
         pixelKit.fire(AttributedMetricPixel.userAverageAdClicksPastWeek(origin: originOrInstall.origin,
                                                                         installDate: originOrInstall.installDate,
                                                                         count: bucket.value,
@@ -347,7 +366,7 @@ public final class AttributedMetricManager {
             Logger.attributedMetric.error("Failed to bucket average Duck.AI chat value")
             return
         }
-        Logger.attributedMetric.debug("Average Duck.AI chats count in the last week: \(bucket.value)")
+        Logger.attributedMetric.debug("Average Duck.AI chats count in the last week: \(bucket.value, privacy: .public)")
         pixelKit.fire(AttributedMetricPixel.userAverageDuckAiUsagePastWeek(origin: originOrInstall.origin,
                                                                            installDate: originOrInstall.installDate,
                                                                            count: bucket.value,
@@ -388,7 +407,7 @@ public final class AttributedMetricManager {
 
     func processSubscriptionCheck() {
         guard let subscriptionDate = dataStorage.subscriptionDate else {
-            Logger.attributedMetric.error("Missing subscription date")
+            Logger.attributedMetric.debug("Not subscribed, subscription date is missing")
             return
         }
         Task {

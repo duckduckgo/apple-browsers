@@ -76,7 +76,7 @@ struct Launching: LaunchingHandling {
         // These services are instantiated early in the app lifecycle for two main reasons:
         // 1. To begin their essential work immediately, without waiting for UI or other components
         // 2. To potentially complete their tasks before the app becomes visible to the user
-        // This approach aims to optimize performance and ensure critical functionalities are ready ASAP
+        // This approach aims to optimise performance and ensure critical functionalities are ready ASAP
         let autofillService = AutofillService()
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared)
@@ -88,7 +88,7 @@ struct Launching: LaunchingHandling {
                                                 userDefaults: UserDefaults.app,
                                                 pixelKit: PixelKit.shared!,
                                                 privacyConfig: privacyConfigurationManager.privacyConfig,
-                                                subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!)
+                                                appDependencies: AppDependencyProvider.shared)
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         reportingService.syncService = syncService

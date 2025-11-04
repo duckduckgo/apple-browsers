@@ -54,7 +54,7 @@ final class ReportingService {
          userDefaults: UserDefaults,
          pixelKit: PixelKit,
          privacyConfig: PrivacyConfiguration,
-         subscriptionManager: SubscriptionManagerV2) {
+         appDependencies: DependencyProvider) {
         self.featureFlagging = featureFlagging
         self.subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)
 
@@ -62,7 +62,7 @@ final class ReportingService {
         let errorHandler = AttributedMetricErrorHandler(pixelKit: pixelKit)
         let attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: userDefaults, errorHandler: errorHandler)
         let bucketsSettingsProvider = DefaultBucketsSettingsProvider(privacyConfig: privacyConfig)
-        let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: subscriptionManager)
+        let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: appDependencies.subscriptionAuthV1toV2Bridge)
         let defaultBrowserProvider = AttributedMetricDefaultBrowserProvider()
         self.attributedMetricManager = AttributedMetricManager(pixelKit: pixelKit,
                                                                dataStoring: attributedMetricDataStorage,
@@ -89,7 +89,7 @@ final class ReportingService {
         // Register for standard notifications or specific ones coming from frameworks like Subscription and relaunch them to AttributedMetric
 
         // App start
-        NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
+        NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
             .receive(on: workQueue)
             .sink { [weak self] _ in
                 self?.attributedMetricManager.process(trigger: .appDidStart)
@@ -134,7 +134,7 @@ final class ReportingService {
 
         // Device sync
 
-        NotificationCenter.default.publisher(for: .userDidSyncDevice)
+        NotificationCenter.default.publisher(for: .syncDevicesUpdate)
             .receive(on: workQueue)
             .sink { [weak self] notification in
                 guard let deviceCount = notification.userInfo?[AttributedMetricNotificationParameter.syncCount.rawValue] as? Int else {
@@ -269,7 +269,7 @@ struct AttributedMetricDefaultBrowserProvider: AttributedMetricDefaultBrowserPro
 
 struct DefaultSubscriptionStateProvider: SubscriptionStateProviding {
 
-    let subscriptionManager: SubscriptionManagerV2
+    let subscriptionManager: SubscriptionAuthV1toV2Bridge
 
     func isFreeTrial() async -> Bool {
         (try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).hasActiveTrialOffer) ?? false

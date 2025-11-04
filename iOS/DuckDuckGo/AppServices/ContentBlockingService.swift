@@ -36,6 +36,4 @@ final class ContentBlockingService {
                                            fireproofing: fireproofing
         )
     }
-
-
 }

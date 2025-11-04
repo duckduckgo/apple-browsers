@@ -131,6 +131,9 @@ extension DebugScreensViewModel {
             .view(title: "Win-back Offer", { d in
                 WinBackOfferDebugView(keyValueStore: d.keyValueStore)
             }),
+            .view(title: "Modal Prompt Coordination", { d in
+                ModalPromptCoordinationDebugView(keyValueStore: d.keyValueStore)
+            }),
 
             // MARK: Controllers
             .controller(title: "Image Cache", { d in

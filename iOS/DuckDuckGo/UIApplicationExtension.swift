@@ -68,6 +68,10 @@ extension UIApplication {
 
     // MARK: app delegate helpers
 
+    func setWindow(_ window: UIWindow?) {
+        (delegate as? AppDelegate)?.window = window
+    }
+
     var window: UIWindow? {
         delegate?.window ?? nil
     }

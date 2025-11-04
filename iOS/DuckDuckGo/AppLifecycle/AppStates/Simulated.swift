@@ -41,6 +41,7 @@ struct Simulated {
         if !Bundle.main.supportsScenes {
             let window = UIWindow(frame: UIScreen.main.bounds)
             configure(window)
+            UIApplication.shared.setWindow(window)
         }
 
         let request = URLRequest(url: URL(string: "about:blank")!)

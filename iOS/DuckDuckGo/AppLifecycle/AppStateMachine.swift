@@ -123,6 +123,7 @@ protocol BackgroundHandling {
 protocol TerminatingHandling {
 
     init(error: Error, application: UIApplication)
+    func alertAndTerminate(window: UIWindow)
 
 }
 
@@ -153,8 +154,10 @@ final class AppStateMachine {
             respond(to: event, in: foreground)
         case .background(let background):
             respond(to: event, in: background)
-        case .terminating, .simulated:
-            break
+        case .terminating(let terminating):
+            respond(to: event, in: terminating)
+        case .simulated(let simulated):
+            respond(to: event, in: simulated)
         }
     }
 
@@ -176,12 +179,6 @@ final class AppStateMachine {
             } catch {
                 currentState = .terminating(Terminating(error: error))
             }
-        }
-    }
-
-    private func responds(to event: AppEvent, in simulated: Simulated) {
-        if case .willConnectToWindow(let window) = event {
-            simulated.configure(window)
         }
     }
 
@@ -252,6 +249,18 @@ final class AppStateMachine {
             background.willLeave()
         default:
             handleUnexpectedEvent(event, for: .background(background))
+        }
+    }
+
+    private func respond(to event: AppEvent, in simulated: Simulated) {
+        if case .willConnectToWindow(let window) = event {
+            simulated.configure(window)
+        }
+    }
+
+    private func respond(to event: AppEvent, in terminating: TerminatingHandling) {
+        if case .willConnectToWindow(let window) = event {
+            terminating.alertAndTerminate(window: window)
         }
     }
 

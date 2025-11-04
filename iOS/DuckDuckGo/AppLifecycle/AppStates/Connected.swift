@@ -22,6 +22,7 @@ import Core
 
 @MainActor
 struct Connected: ConnectedHandling {
+
     typealias Dependencies = SceneDependencies
 
     let launchingContext: Launching.StateContext

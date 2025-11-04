@@ -34,7 +34,7 @@ class BrowserChromeButton: UIButton {
         }
     }
 
-    private var borderColor: UIColor? = nil
+    private var border: UIView?
 
     init(_ type: ButtonType = .primary) {
         self.type = type
@@ -51,12 +51,19 @@ class BrowserChromeButton: UIButton {
     }
 
     func addBorder() {
-        borderColor = UIColor(designSystemColor: .lines)
+        border?.removeFromSuperview()
+        let view = UIView(frame: CGRect(x: 0, y: 0, width: 80, height: 40))
+        view.center = self.center
+        view.layer.borderWidth = 1.5
+        view.layer.cornerRadius = 14
+        view.backgroundColor = .clear
+        border = view
+        addSubview(view)
         setNeedsDisplay()
     }
 
     func removeBorder() {
-        borderColor = nil
+        border?.removeFromSuperview()
         setNeedsDisplay()
     }
 
@@ -65,9 +72,7 @@ class BrowserChromeButton: UIButton {
     }
 
     override func setNeedsDisplay() {
-        layer.borderColor = borderColor?.cgColor ?? UIColor.clear.cgColor
-        layer.borderWidth = 1.5
-        layer.cornerRadius = 14
+        border?.layer.borderColor = UIColor(designSystemColor: .lines).cgColor
         super.setNeedsDisplay()
     }
 

@@ -1838,6 +1838,7 @@
 		F1EFB0062C5B8B8E009AB44B /* StatusIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EFB0052C5B8B8E009AB44B /* StatusIndicatorView.swift */; };
 		F1F5337C1F26A9EF00D80D4F /* UserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F5337B1F26A9EF00D80D4F /* UserText.swift */; };
 		F1F533841F26ABAC00D80D4F /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = F1F533861F26ABAC00D80D4F /* Localizable.strings */; };
+		F1F9AB3C2EBA4815003FC1E0 /* AttributedMetricsDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F9AB3B2EBA4815003FC1E0 /* AttributedMetricsDebugViewController.swift */; };
 		F1FDC9302BF4E0B3006B1435 /* SubscriptionEnvironment+Default.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FDC92F2BF4E0B3006B1435 /* SubscriptionEnvironment+Default.swift */; };
 		F1FDC9312BF4E0B3006B1435 /* SubscriptionEnvironment+Default.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FDC92F2BF4E0B3006B1435 /* SubscriptionEnvironment+Default.swift */; };
 		F1FDC9352BF51E41006B1435 /* VPNSettings+Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FDC9342BF51E41006B1435 /* VPNSettings+Environment.swift */; };
@@ -4132,6 +4133,7 @@
 		F1ED309C1EDC2EA400651986 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/TabSwitcher.storyboard; sourceTree = "<group>"; };
 		F1EFB0052C5B8B8E009AB44B /* StatusIndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusIndicatorView.swift; sourceTree = "<group>"; };
 		F1F5337B1F26A9EF00D80D4F /* UserText.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserText.swift; sourceTree = "<group>"; };
+		F1F9AB3B2EBA4815003FC1E0 /* AttributedMetricsDebugViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributedMetricsDebugViewController.swift; sourceTree = "<group>"; };
 		F1FDC92F2BF4E0B3006B1435 /* SubscriptionEnvironment+Default.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "SubscriptionEnvironment+Default.swift"; sourceTree = "<group>"; };
 		F1FDC9342BF51E41006B1435 /* VPNSettings+Environment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "VPNSettings+Environment.swift"; sourceTree = "<group>"; };
 		F40F843528C938370081AE75 /* AutofillLoginListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginListViewModelTests.swift; sourceTree = "<group>"; };
@@ -6233,6 +6235,7 @@
 				8590CB68268A4E190089F6BF /* DebugEtagStorage.swift */,
 				F1849C672D6E3C98000589A4 /* DebugScreen.swift */,
 				F1849C682D6E3C98000589A4 /* DebugScreensViewController.swift */,
+				F1F9AB3B2EBA4815003FC1E0 /* AttributedMetricsDebugViewController.swift */,
 				F1849C692D6E3C98000589A4 /* DebugScreensViewModel.swift */,
 				F1849C6A2D6E3C98000589A4 /* DebugScreensViewModel+Screens.swift */,
 				9FF967CC2E12182100E45B54 /* DefaultBrowserPromptDebugView */,
@@ -10531,6 +10534,7 @@
 				D63FF8952C1B67E9006DE24D /* YoutubePlayerUserScript.swift in Sources */,
 				C1DA98ED2E7C667C00F8BED9 /* SyncRecoveryPromptView.swift in Sources */,
 				9F465E2A2D41B61900490109 /* MaliciousSiteProtectionService.swift in Sources */,
+				F1F9AB3C2EBA4815003FC1E0 /* AttributedMetricsDebugViewController.swift in Sources */,
 				6F40D15B2C34423800BF22F0 /* HomePageDisplayDailyPixelBucket.swift in Sources */,
 				319B49C42E68AF5C00DD265F /* NewAddressBarPickerViewController.swift in Sources */,
 				311BD1AF2836BB4200AEF6C1 /* AutofillItemsLockedView.swift in Sources */,

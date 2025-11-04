@@ -36,13 +36,20 @@ public protocol SubscriptionStateProviding {
 
 public protocol DateProviding {
     func now() -> Date
+    var debugDate: Date? { get set }
 }
 
 public struct DefaultDateProvider: DateProviding {
     public init() {}
+
     public func now() -> Date {
-        Date()
+        if let debugOverride = debugDate {
+            return debugOverride
+        } else {
+            return Date()
+        }
     }
+    public var debugDate: Date?
 }
 
 public protocol BucketsSettingsProviding {
@@ -64,7 +71,7 @@ public final class AttributedMetricManager {
     private let featureFlagger: any FeatureFlagger
     private let defaultBrowserProvider: any AttributedMetricDefaultBrowserProviding
     private let subscriptionStateProvider: any SubscriptionStateProviding
-    private let dateProvider: any DateProviding
+    private var dateProvider: any DateProviding
     private let bucketsJsonProvider: any BucketsSettingsProviding
     private var bucketModifier: any BucketModifier = DefaultBucketModifier()
     var cancellables = Set<AnyCancellable>()
@@ -92,6 +99,10 @@ public final class AttributedMetricManager {
         if dataStorage.installDate == nil {
             dataStorage.installDate = self.dateProvider.now()
         }
+
+        if let debugDate = dataStorage.debugDate {
+            self.dateProvider.debugDate = debugDate
+        }
     }
 
     // MARK: - Private
@@ -109,7 +120,9 @@ public final class AttributedMetricManager {
     }
 
     var originOrInstall: (origin: String?, installDate: String?) {
-        if let origin = originProvider?.origin {
+        if let debugOrigin = dataStorage.debugOrigin {
+            return (debugOrigin, nil)
+        } else if let origin = originProvider?.origin {
             return (origin, nil)
         } else {
             let installDate = dataStorage.installDate

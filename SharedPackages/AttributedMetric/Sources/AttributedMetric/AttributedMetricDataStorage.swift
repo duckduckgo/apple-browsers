@@ -42,6 +42,10 @@ public protocol AttributedMetricDataStoring {
     // Sync
     var syncDevicesCount: Int { get set }
 
+    // Debug overrides
+    var debugDate: Date? { get set }
+    var debugOrigin: String? { get set }
+
     /// Removes all stored metric data.
     func removeAll()
 }
@@ -87,9 +91,9 @@ public enum DataStorageError: DDGError {
 public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
 
     private let userDefaults: UserDefaults
-    private let errorHandler: AttributedMetricErrorHandler
+    private let errorHandler: AttributedMetricErrorHandler?
 
-    public init(userDefaults: UserDefaults, errorHandler: AttributedMetricErrorHandler) {
+    public init(userDefaults: UserDefaults, errorHandler: AttributedMetricErrorHandler?) {
         self.userDefaults = userDefaults
         self.errorHandler = errorHandler
     }
@@ -108,6 +112,8 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
         case subscriptionFreeTrial
         case subscriptionMonth1
         case syncDevicesCount
+        case debugDate
+        case debugOrigin
     }
 
     // MARK: - Utilities
@@ -127,7 +133,7 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
             let data = try JSONEncoder().encode(object)
             userDefaults.set(data, forKey: key.rawValue)
         } catch {
-            errorHandler.fire(DataStorageError.encodingFailed(error))
+            errorHandler?.report(error: DataStorageError.encodingFailed(error))
         }
     }
 
@@ -139,7 +145,7 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
         do {
             return try JSONDecoder().decode(T.self, from: data)
         } catch {
-            errorHandler.fire(DataStorageError.decodingFailed(error))
+            errorHandler?.report(error: DataStorageError.decodingFailed(error))
             return nil
         }
     }
@@ -191,5 +197,17 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
     public var syncDevicesCount: Int {
         get { return decode(from: userDefaults, key: .syncDevicesCount) ?? 0 }
         set { encode(newValue, to: userDefaults, key: .syncDevicesCount) }
+    }
+
+    // MARK: - Debug overrides
+
+    public var debugDate: Date? {
+        get { return decode(from: userDefaults, key: .debugDate) }
+        set { encode(newValue, to: userDefaults, key: .debugDate) }
+    }
+
+    public var debugOrigin: String? {
+        get { return decode(from: userDefaults, key: .debugOrigin)}
+        set { encode(newValue, to: userDefaults, key: .debugOrigin) }
     }
 }

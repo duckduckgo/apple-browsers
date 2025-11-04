@@ -178,6 +178,12 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
             }
         }.joined(separator: ", ")
 
-        return "RollingEightDaysInt(lastDay: \(dateString), values: [\(valuesDescription)], past7DaysAverage: \(past7DaysAverage), countPast7Days: \(countPast7Days))"
+        return """
+                RollingEightDaysInt
+                lastDay: \(dateString)
+                values: [\(valuesDescription)]
+                past7DaysAverage: \(past7DaysAverage)
+                countPast7Days: \(countPast7Days))
+                """
     }
 }

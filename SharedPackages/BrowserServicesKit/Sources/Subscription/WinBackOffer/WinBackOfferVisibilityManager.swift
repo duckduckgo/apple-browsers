@@ -185,9 +185,25 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
         observer = NotificationCenter.default.addObserver(forName: .subscriptionDidChange, object: nil, queue: .main) { [weak self] notification in
             guard let self, let newSubscription = notification.userInfo?[UserDefaultsCacheKey.subscription] as? DuckDuckGoSubscription else { return }
 
-            hasActiveSubscription = newSubscription.status.isActive
+            let wasActive = hasActiveSubscription
+            let isNowActive = newSubscription.status.isActive
 
-            storeChurnDateIfNeeded(newStatus: newSubscription.status)
+            switch (wasActive, isNowActive) {
+            case (true, false):
+                // User churned
+                storeChurnDateIfNeeded(newStatus: newSubscription.status)
+            case (false, true) where isOfferAvailable:
+                // User subscribed during the win-back offer
+                completeOfferRedemption()
+            case (false, true):
+                // User subscribed regardless of the win-back offer
+                winbackOfferStore.storeOfferPresentationDate(nil)
+                winbackOfferStore.didDismissUrgencyMessage = false
+            default:
+                break
+            }
+
+            hasActiveSubscription = isNowActive
         }
     }
 
@@ -196,27 +212,40 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
             return
         }
 
+        let now = dateProvider()
+
         guard let lastStoredChurnDate = winbackOfferStore.getChurnDate() else {
             // No stored churn date, mark churn.
-            resetOffer()
+            resetOffer(using: now)
             return
         }
 
-        // User churned in the past, and now they churned again.
-        let now = dateProvider()
-        guard now.timeIntervalSince(lastStoredChurnDate) > Constants.cooldownPeriod else {
-            // Still within the cooldown period, no-op.
+        let timeSinceLastChurn = now.timeIntervalSince(lastStoredChurnDate)
+        let cooldownHasPassed = timeSinceLastChurn > Constants.cooldownPeriod
+
+        if cooldownHasPassed {
+            // Cooldown period has passed, mark churn.
+            resetOffer(using: now)
             return
         }
 
-        // Cooldown period has passed, mark churn.
-        resetOffer()
+        // Mark new churn date if previous offer was redeemed.
+        if winbackOfferStore.hasRedeemedOffer() {
+            winbackOfferStore.storeChurnDate(now)
+        }
     }
 
-    private func resetOffer() {
-        winbackOfferStore.storeChurnDate(dateProvider())
+    private func completeOfferRedemption() {
+        setOfferRedeemed(true)
+        winbackOfferStore.storeOfferPresentationDate(nil)
+        didDismissUrgencyMessage = false
+    }
+
+    private func resetOffer(using churnDate: Date) {
+        winbackOfferStore.storeChurnDate(churnDate)
         winbackOfferStore.setHasRedeemedOffer(false)
         winbackOfferStore.storeOfferPresentationDate(nil)
+        didDismissUrgencyMessage = false
     }
 }
 

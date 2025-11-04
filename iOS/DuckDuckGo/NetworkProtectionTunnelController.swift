@@ -207,8 +207,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 includedParameters: [.appVersion, .atb],
                 withAdditionalParameters: [:],
                 onComplete: { _ in })
-            
-            
+
             #if DEBUG
             errorStore.lastErrorMessage = error.localizedDescription
             #endif

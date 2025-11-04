@@ -19,5 +19,23 @@
 
 import Foundation
 import Core
+import SwiftUI
 
-final class OnboardingSearchExperiencePickerViewModel: ObservableObject {}
+final class OnboardingSearchExperiencePickerViewModel: ObservableObject {
+    var isSearchAndAIChatEnabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.searchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding },
+            set: { newValue in
+                guard newValue != self.searchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding else { return }
+                self.objectWillChange.send()
+                self.searchExperienceProvider.enableAIChatSearchInputDuringOnboarding(enable: newValue)
+            }
+        )
+    }
+    
+    private let searchExperienceProvider: OnboardingSearchExperienceProvider
+
+    init(searchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience()) {
+        self.searchExperienceProvider = searchExperienceProvider
+    }
+}

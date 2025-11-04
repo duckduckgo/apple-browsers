@@ -27,26 +27,25 @@ protocol OnboardingSearchExperienceProvider {
 }
 
 final class OnboardingSearchExperience: OnboardingSearchExperienceProvider {
-    private let keyValueStore: KeyValueStoring
-
-    init(keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()) {
-        self.keyValueStore = keyValueStore
+    private let storage: KeyValueStoring
+    init(keyValueStore: KeyValueStoring = UserDefaults.standard) {
+        self.storage = keyValueStore
     }
 
     var didEnableAIChatSearchInputDuringOnboarding: Bool {
         (
-            keyValueStore.object(forKey: .didEnableAIChatSearchInputDuringOnboardingKey) as? Bool
+            storage.object(forKey: .didEnableAIChatSearchInputDuringOnboardingKey) as? Bool
         ) ?? .didEnableAIChatSearchInputDuringOnboardingDefaultValue
     }
 
     func enableAIChatSearchInputDuringOnboarding(enable: Bool) {
-        keyValueStore.set(enable, forKey: .didEnableAIChatSearchInputDuringOnboardingKey)
+        storage.set(enable, forKey: .didEnableAIChatSearchInputDuringOnboardingKey)
 #warning("🇳🇴 implement pixels")
     }
 }
 
 private extension String {
-    static let didEnableAIChatSearchInputDuringOnboardingKey = "onboarding.didEnableAIChatSearchInputDuringOnboarding"
+    static let didEnableAIChatSearchInputDuringOnboardingKey = "com.duckduckgo.ios.onboarding.didEnableAIChatSearchInputDuringOnboarding"
 }
 
 private extension Bool {

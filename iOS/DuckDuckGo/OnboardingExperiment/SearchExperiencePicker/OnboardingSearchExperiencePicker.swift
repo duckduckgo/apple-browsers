@@ -18,12 +18,11 @@
 //
 
 import SwiftUI
-import DesignResourcesKit
 
 struct OnboardingSearchExperiencePicker: View {
     @StateObject private var viewModel = OnboardingSearchExperiencePickerViewModel()
 
     var body: some View {
-        Text("To Do")
+        SettingsAIExperimentalPickerView(isDuckAISelected: viewModel.isSearchAndAIChatEnabled)
     }
 }

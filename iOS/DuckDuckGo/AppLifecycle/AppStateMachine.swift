@@ -179,14 +179,14 @@ final class AppStateMachine {
         }
     }
 
+    private func responds(to event: AppEvent, in simulated: Simulated) {
+        if case .willConnectToWindow(let window) = event {
+            simulated.configure(window)
+        }
+    }
+
     private func respond(to event: AppEvent, in launching: LaunchingHandling) {
         switch event {
-        case .didBecomeActive:
-            break //todo remove
-        case .didEnterBackground:
-            break //todo remove
-        case .willEnterForeground:
-            break //todo remove
         case .willConnectToWindow(let window):
             let connected = launching.makeConnectedState(window: window,
                                                          actionToHandle: actionToHandle)

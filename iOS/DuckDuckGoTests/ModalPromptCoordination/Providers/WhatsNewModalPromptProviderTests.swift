@@ -344,6 +344,35 @@ struct WhatsNewCoordinatorPixelTrackingTests {
         #expect(mockPixelReporter.capturedHasAlreadySeenMessage == true)
     }
 
+    // MARK: - Primary Action
+
+    @Test("Check Primary Action Dismiss Callback Fires Primary Action Clicked Pixel")
+    func whenPrimaryActionDismissCallbackInvokedThenPrimaryActionClickedPixelFires() async {
+        // GIVEN
+        let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
+        let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
+        let mockHandler = MockRemoteMessagingActionHandler()
+        let mockPixelReporter = MockRemoteMessagingPixelReporter()
+        let mockMapper = MockWhatsNewDisplayModelMapper()
+        mockMapper.displayModelToReturn = .mock
+
+        let coordinator = WhatsNewCoordinator(
+            remoteMessageStore: mockStore,
+            remoteMessageActionHandler: mockHandler,
+            isIPad: false,
+            pixelReporter: mockPixelReporter,
+            displayModelMapper: mockMapper
+        )
+        _ = coordinator.provideModalPrompt()
+
+        // WHEN - called after primary action completes
+        await mockMapper.capturedOnPrimaryAction?(.dismiss)
+
+        // THEN
+        #expect(mockPixelReporter.didCallMeasureRemoteMessagePrimaryActionClicked)
+        #expect(mockPixelReporter.capturedPrimaryActionClickedMessage?.id == "test-message")
+    }
+
     // MARK: - Card Pixel Tests
 
     @Test("Check Item Appear Callback Fires Card Shown Pixel")
@@ -406,8 +435,8 @@ struct WhatsNewCoordinatorPixelTrackingTests {
 
     // MARK: - Dismiss Pixel Tests
 
-    @Test("Check Primary Action Dismiss Callback Fires Primary Action Clicked Pixel")
-    func whenPrimaryActionDismissCallbackInvokedThenPrimaryActionClickedPixelFires() {
+    @Test("Check Primary Action Dismiss Callback Fires Dismiss Pixel with Primary Action Type")
+    func whenPrimaryActionCallbackInvokedThenDismissPixelFiresWithPrimaryActionType() {
         // GIVEN
         let message = RemoteMessageModel.makeCardsListMessage(id: "test-message")
         let mockStore = MockRemoteMessagingStore(scheduledRemoteMessage: message)
@@ -429,8 +458,9 @@ struct WhatsNewCoordinatorPixelTrackingTests {
         mockMapper.capturedOnDismiss?()
 
         // THEN
-        #expect(mockPixelReporter.didCallMeasureRemoteMessagePrimaryActionClicked)
-        #expect(mockPixelReporter.capturedPrimaryActionClickedMessage?.id == "test-message")
+        #expect(mockPixelReporter.didCallMeasureRemoteMessageDismissed)
+        #expect(mockPixelReporter.capturedDismissedMessage?.id == "test-message")
+        #expect(mockPixelReporter.capturedDismissType == .primaryAction)
     }
 
     @Test("Check Pull Down Gesture Fires Dismiss Pixel With Pull Down Type")

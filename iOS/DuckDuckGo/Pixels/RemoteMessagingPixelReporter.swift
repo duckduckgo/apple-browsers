@@ -24,6 +24,7 @@ import Core
 enum RemoteMessagePixelDismissType: String {
     case closeButton = "close_button"
     case pullDown = "pull_down"
+    case primaryAction = "primary_action"
 }
 
 protocol RemoteMessagingPixelReporting {

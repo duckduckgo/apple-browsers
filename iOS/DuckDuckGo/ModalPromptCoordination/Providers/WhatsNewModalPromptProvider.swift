@@ -132,6 +132,7 @@ private extension WhatsNewCoordinator {
                     await self?.handleAction(action)
                 },
                 onPrimaryAction: { [weak self] action in
+                    self?.measurePrimaryActionTapped()
                     await self?.handleAction(action)
                 },
                 onDismiss: { [weak self] in
@@ -210,8 +211,17 @@ private extension WhatsNewCoordinator {
         case .pullDown:
             pixelReporter.measureRemoteMessageDismissed(message, dismissType: .pullDown)
         case .mainAction:
-            pixelReporter.measureRemoteMessagePrimaryActionClicked(message)
+            pixelReporter.measureRemoteMessageDismissed(message, dismissType: .primaryAction)
         }
+    }
+
+    func measurePrimaryActionTapped() {
+        guard let remoteMessage else {
+            assertionFailure("What's New - Cannot measure primary action tapped - no current message")
+            return
+        }
+        
+        pixelReporter.measureRemoteMessagePrimaryActionClicked(remoteMessage)
     }
 
     func measureCardShown(cardId: String) {

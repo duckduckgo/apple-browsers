@@ -134,6 +134,20 @@ final class RemoteMessagingPixelReporterTests {
         #expect(PixelFiringMock.lastParams?[PixelParameters.dismissType] == "pull_down")
     }
 
+    @Test("Check Dismissed Pixel Fires With Primary Action Type")
+    func whenMessageDismissedWithPrimaryActionThenPixelFiresWithPrimaryActionType() {
+        // GIVEN
+        let message = makeRemoteMessage(id: "test-message-1", isMetricsEnabled: true)
+
+        // WHEN
+        sut.measureRemoteMessageDismissed(message, dismissType: .primaryAction)
+
+        // THEN
+        #expect(PixelFiringMock.allPixelsFired.count == 1)
+        #expect(PixelFiringMock.lastPixelName == Pixel.Event.remoteMessageDismissed.name)
+        #expect(PixelFiringMock.lastParams?[PixelParameters.dismissType] == "primary_action")
+    }
+
     @Test("Check Dismissed Pixel Fires Without Dismiss Type When Nil")
     func whenMessageDismissedWithoutTypeThenPixelFiresWithoutDismissType() {
         // GIVEN

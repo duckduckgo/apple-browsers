@@ -173,6 +173,26 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         XCTAssertTrue(shouldShow)
     }
 
+    func testUrgencyMessageShowsDuringFinalCalendarDay() {
+        // Given
+        mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
+        let now = Date()
+        let presentationDate = now.addingTimeInterval(.days(-4) + .seconds(25))
+        mockStore.offerPresentationDate = presentationDate
+        manager = WinBackOfferVisibilityManager(
+            subscriptionManager: mockSubscriptionManager,
+            winbackOfferStore: mockStore,
+            winbackOfferFeatureFlagProvider: mockFeatureFlagProvider,
+            dateProvider: { now }
+        )
+
+        // When
+        let shouldShow = manager.shouldShowUrgencyMessage
+
+        // Then
+        XCTAssertTrue(shouldShow)
+    }
+
     func testWhenFirstDayOfOffer_TheUrgencyMessageIsNotShown() {
         // Given
         mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
@@ -352,7 +372,11 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 100_000_000)
 
         // Then
-        XCTAssertEqual(mockStore.churnDate, recentChurnDate)
+        guard let updatedChurnDate = mockStore.churnDate else {
+            XCTFail("Churn date should be stored when churning within cooldown period")
+            return
+        }
+        XCTAssertGreaterThan(updatedChurnDate, recentChurnDate)
         XCTAssertTrue(mockStore.offerRedeemed)
     }
 

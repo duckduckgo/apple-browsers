@@ -63,6 +63,7 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private var winbackOfferStore: any WinbackOfferStoring
     private var winbackOfferFeatureFlagProvider: any WinBackOfferFeatureFlagProvider
+    private let calendar: Calendar
     private let dateProvider: () -> Date
 
     private var hasActiveSubscription: Bool = false
@@ -71,10 +72,12 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     public init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
                 winbackOfferStore: any WinbackOfferStoring,
                 winbackOfferFeatureFlagProvider: any WinBackOfferFeatureFlagProvider,
+                calendar: Calendar = Calendar.current,
                 dateProvider: @escaping () -> Date = Date.init) {
         self.subscriptionManager = subscriptionManager
         self.winbackOfferStore = winbackOfferStore
         self.winbackOfferFeatureFlagProvider = winbackOfferFeatureFlagProvider
+        self.calendar = calendar
         self.dateProvider = dateProvider
 
         observeSubscriptionDidChange()
@@ -96,9 +99,10 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
         }
 
         let now = dateProvider()
-        let daysSincePresentation = now.timeIntervalSince(presentationDate)
-        // Show urgency on last day (day 4-5 of the 5-day window)
-        return daysSincePresentation >= Constants.offerAvailabilityPeriod - TimeInterval.day
+        let offerEndDate = presentationDate.addingTimeInterval(Constants.offerAvailabilityPeriod)
+        let startOfLastDay = calendar.startOfDay(for: offerEndDate.addingTimeInterval(.days(-1)))
+        // Show urgency throughout the final calendar day of the offer window
+        return now >= startOfLastDay
     }
 
     public var shouldShowLaunchMessage: Bool {
@@ -189,9 +193,6 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
             let isNowActive = newSubscription.status.isActive
 
             switch (wasActive, isNowActive) {
-            case (true, false):
-                // User churned
-                storeChurnDateIfNeeded(newStatus: newSubscription.status)
             case (false, true) where isOfferAvailable:
                 // User subscribed during the win-back offer
                 completeOfferRedemption()
@@ -204,6 +205,8 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
             }
 
             hasActiveSubscription = isNowActive
+
+            storeChurnDateIfNeeded(newStatus: newSubscription.status)
         }
     }
 

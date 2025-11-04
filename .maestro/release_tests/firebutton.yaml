@@ -55,10 +55,8 @@ tags:
 - tapOn: "Example Domain"
 
 # Fire button
-- tapOn: 
-    id: "Browser.Toolbar.Button.Fire"
-- tapOn: 
-    id: "alert.forget-data.confirm"
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 
 - assertNotVisible: "https://example.com/"
 - assertVisible: "Search or enter address"
@@ -90,10 +88,8 @@ tags:
 
 - tapOn: "Tab Switcher"
 - assertVisible: "1 Private Tab"
-- tapOn: 
-    id: "Browser.TabSwitcher.Toolbar.Button.Fire"
-- tapOn: 
-    id: "alert.forget-data.confirm"
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 
 - assertNotVisible: "https://privacy-test-pages.site/features/local-storage.html"
 - assertVisible: "Search or enter address"

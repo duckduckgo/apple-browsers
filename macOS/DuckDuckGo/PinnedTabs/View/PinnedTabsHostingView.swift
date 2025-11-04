@@ -19,6 +19,7 @@
 import SwiftUI
 import Combine
 
+@available(*, deprecated, message: "Soon to be replaced by PinnedTabsCollectionView!")
 final class PinnedTabsHostingView: NSHostingView<PinnedTabsView> {
 
     let middleClickPublisher: AnyPublisher<CGPoint, Never>

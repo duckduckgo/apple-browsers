@@ -2275,6 +2275,9 @@ https://duckduckgo.com/mac";
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Address bar option";
 
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies Managed";
 

@@ -43,7 +43,7 @@ final class DefaultOmniBarSearchView: UIView {
     let reloadButton = BrowserChromeButton()
     let clearButton = BrowserChromeButton(.secondary)
 
-    let shareButton = BrowserChromeButton()
+    let customizableButton = BrowserChromeButton()
     let cancelButton = BrowserChromeButton(.secondary)
     let voiceSearchButton = BrowserChromeButton()
     let aiChatButton = BrowserChromeButton()
@@ -98,7 +98,7 @@ final class DefaultOmniBarSearchView: UIView {
         trailingItemsContainer.addArrangedSubview(voiceSearchButton)
         trailingItemsContainer.addArrangedSubview(reloadButton)
         trailingItemsContainer.addArrangedSubview(cancelButton)
-        trailingItemsContainer.addArrangedSubview(shareButton)
+        trailingItemsContainer.addArrangedSubview(customizableButton)
         trailingItemsContainer.addArrangedSubview(separatorView)
         trailingItemsContainer.addArrangedSubview(aiChatButton)
 
@@ -134,7 +134,7 @@ final class DefaultOmniBarSearchView: UIView {
         DefaultOmniBarView.activateItemSizeConstraints(for: voiceSearchButton)
         DefaultOmniBarView.activateItemSizeConstraints(for: reloadButton)
         DefaultOmniBarView.activateItemSizeConstraints(for: clearButton)
-        DefaultOmniBarView.activateItemSizeConstraints(for: shareButton)
+        DefaultOmniBarView.activateItemSizeConstraints(for: customizableButton)
         DefaultOmniBarView.activateItemSizeConstraints(for: cancelButton)
         DefaultOmniBarView.activateItemSizeConstraints(for: aiChatButton)
         DefaultOmniBarView.activateItemSizeConstraints(for: leftIconContainer)
@@ -170,8 +170,8 @@ final class DefaultOmniBarSearchView: UIView {
         clearButton.setImage(DesignSystemImages.Glyphs.Size24.closeCircleSmall)
         DefaultOmniBarView.setUpCommonProperties(for: clearButton)
 
-        shareButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple)
-        DefaultOmniBarView.setUpCommonProperties(for: shareButton)
+        customizableButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple)
+        DefaultOmniBarView.setUpCommonProperties(for: customizableButton)
 
         cancelButton.setImage(DesignSystemImages.Glyphs.Size24.close)
         DefaultOmniBarView.setUpCommonProperties(for: cancelButton)

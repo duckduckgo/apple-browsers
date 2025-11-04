@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Datenschutz aktivieren";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Tabs schließen und Daten löschen";
+"action.title.forgetAll" = "Tabs und Daten löschen";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Tabs und Daten wurden gelöscht";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Tabs, Daten und Duck.ai-Chats löschen";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Im Hintergrund öffnen";
@@ -2827,6 +2830,12 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Aktivieren, damit sich Links nicht automatisch in anderen installierten Apps öffnen.";
 
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Tabs und Daten löschen";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Tabs, Daten und Duck.ai-Chats löschen";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Vorschläge für die Suche";
 
@@ -2871,6 +2880,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Anpassen";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Löscht alle Tabs, Duck.ai-Chats und Daten für alle Websites, die du nicht als Fireproof markiert hast.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Löscht alle Tabs und Daten für alle Websites, die du nicht als Fireproof markiert hast.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datenlöschung";

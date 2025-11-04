@@ -205,6 +205,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210927932064918?focus=true
     case duckAiDataClearing
+    
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1211652685709096?focus=true
+    case fullDuckAIMode
 
     /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709099?focus=true
     case onboardingSearchExperience
@@ -292,7 +295,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .vpnMenuItem,
              .forgetAllInSettings,
              .onboardingSearchExperience,
-             .duckAiDataClearing:
+             .duckAiDataClearing,
+             .fullDuckAIMode:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -499,13 +503,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .vpnMenuItem:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnMenuItem))
         case .forgetAllInSettings:
-            return
-                .internalOnly()
-            // Will update after translations are done
-            // https://app.asana.com/1/137249556945/project/1206226850447395/task/1211803893845698
-                // .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.forgetAllInSettings))
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.forgetAllInSettings))
         case .duckAiDataClearing:
             return .remoteReleasable(.feature(.duckAiDataClearing))
+        case .fullDuckAIMode:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
         case .onboardingSearchExperience:
             return .internalOnly()
         }

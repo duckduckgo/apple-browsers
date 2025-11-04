@@ -58,6 +58,7 @@ enum Preferences {
         let subscriptionUIHandler: SubscriptionUIHandling
         let featureFlagger: FeatureFlagger
         let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+        let pixelHandler: (SubscriptionPixel) -> Void
         private var colorsProvider: ColorsProviding {
             themeManager.theme.colorsProvider
         }
@@ -67,13 +68,15 @@ enum Preferences {
              subscriptionUIHandler: SubscriptionUIHandling,
              themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
              featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager) {
+             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
+             pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) }) {
             self.model = model
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
             self.themeManager = themeManager
             self.featureFlagger = featureFlagger
             self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+            self.pixelHandler = pixelHandler
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.identityTheftRestorationModel = makeIdentityTheftRestorationViewModel()
@@ -174,7 +177,7 @@ enum Preferences {
                 DispatchQueue.main.async {
                     switch event {
                     case .didClickIHaveASubscription:
-                        PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseClick)
+                        pixelHandler(.subscriptionRestorePurchaseClick)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .openWinBackOfferLandingPage:
@@ -219,12 +222,12 @@ enum Preferences {
                 DispatchQueue.main.async {
                     switch event {
                     case .openPIR:
-                        PixelKit.fire(SubscriptionPixel.subscriptionPersonalInformationRemovalSettings)
+                        pixelHandler(.subscriptionPersonalInformationRemovalSettings)
                         Application.appDelegate.windowControllersManager.showTab(with: .dataBrokerProtection)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:
-                        PixelKit.fire(SubscriptionPixel.subscriptionPersonalInformationRemovalSettingsImpression)
+                        pixelHandler(.subscriptionPersonalInformationRemovalSettingsImpression)
                     }
                 }
             }
@@ -238,13 +241,13 @@ enum Preferences {
                 DispatchQueue.main.async {
                     switch event {
                     case .openITR:
-                        PixelKit.fire(SubscriptionPixel.subscriptionIdentityRestorationSettings)
-                        let url = subscriptionManager.url(for: .identityTheftRestoration)
+                        pixelHandler(.subscriptionIdentityRestorationSettings)
+                        let url = self.subscriptionManager.url(for: .identityTheftRestoration)
                         Application.appDelegate.windowControllersManager.showTab(with: .identityTheftRestoration(url))
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenITRPreferencePane:
-                        PixelKit.fire(SubscriptionPixel.subscriptionIdentityRestorationSettingsImpression)
+                        pixelHandler(.subscriptionIdentityRestorationSettingsImpression)
                     }
                 }
             }
@@ -270,11 +273,11 @@ enum Preferences {
                     case .didClickManageEmail:
                         PixelKit.fire(SubscriptionPixel.subscriptionManagementEmail, frequency: .legacyDailyAndCount)
                     case .didOpenSubscriptionSettings:
-                        PixelKit.fire(SubscriptionPixel.subscriptionSettings)
+                        pixelHandler(.subscriptionSettings)
                     case .didClickChangePlanOrBilling:
-                        PixelKit.fire(SubscriptionPixel.subscriptionManagementPlanBilling)
+                        pixelHandler(.subscriptionManagementPlanBilling)
                     case .didClickRemoveSubscription:
-                        PixelKit.fire(SubscriptionPixel.subscriptionManagementRemoval)
+                        pixelHandler(.subscriptionManagementRemoval)
                     case .openWinBackOfferLandingPage:
                         guard let url = WinBackOfferURL.subscriptionURL(for: .winBackSettings) else { return }
                         Application.appDelegate.windowControllersManager.showTab(with: .subscription(url))
@@ -315,6 +318,7 @@ enum Preferences {
         let aiChatURLSettings: AIChatRemoteSettingsProvider
         let wideEvent: WideEventManaging
         let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+        let pixelHandler: (SubscriptionPixel, PixelKit.Frequency) -> Void
         private var colorsProvider: ColorsProviding {
             themeManager.theme.colorsProvider
         }
@@ -329,6 +333,7 @@ enum Preferences {
             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
             themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
+            pixelHandler: @escaping (SubscriptionPixel, PixelKit.Frequency) -> Void = { PixelKit.fire($0, frequency: $1) }
         ) {
             self.model = model
             self.subscriptionManager = subscriptionManager
@@ -339,6 +344,7 @@ enum Preferences {
             self.aiChatURLSettings = aiChatURLSettings
             self.wideEvent = wideEvent
             self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+            self.pixelHandler = pixelHandler
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.paidAIChatModel = makePaidAIChatViewModel()
@@ -440,11 +446,12 @@ enum Preferences {
                 DispatchQueue.main.async {
                     switch event {
                     case .didClickIHaveASubscription:
-                        PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseClick)
+                        pixelHandler(.subscriptionRestorePurchaseClick, .standard)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .openWinBackOfferLandingPage:
                         guard let url = WinBackOfferURL.subscriptionURL(for: .winBackSettings) else { return }
+                        pixelHandler(.subscriptionWinBackOfferSettingsPageCTAClicked, .standard)
                         showTab(.subscription(url))
                     }
                 }
@@ -497,12 +504,12 @@ enum Preferences {
                 DispatchQueue.main.async {
                     switch event {
                     case .openPIR:
-                        PixelKit.fire(SubscriptionPixel.subscriptionPersonalInformationRemovalSettings)
+                        pixelHandler(.subscriptionPersonalInformationRemovalSettings, .standard)
                         showTab(.dataBrokerProtection)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:
-                        PixelKit.fire(SubscriptionPixel.subscriptionPersonalInformationRemovalSettingsImpression)
+                        pixelHandler(.subscriptionPersonalInformationRemovalSettingsImpression, .standard)
                     }
                 }
             }
@@ -516,13 +523,13 @@ enum Preferences {
                  DispatchQueue.main.async {
                      switch event {
                      case .openAIC:
-                         PixelKit.fire(SubscriptionPixel.subscriptionPaidAIChatSettings)
-                         let aiChatURL = aiChatURLSettings.aiChatURL
+                         pixelHandler(.subscriptionPaidAIChatSettings, .standard)
+                         let aiChatURL = self.aiChatURLSettings.aiChatURL
                          showTab(.url(aiChatURL, source: .ui))
                      case .openURL(let url):
                          openURL(subscriptionURL: url)
                      case .didOpenAICPreferencePane:
-                         PixelKit.fire(SubscriptionPixel.subscriptionPaidAIChatSettingsImpression)
+                         pixelHandler(.subscriptionPaidAIChatSettingsImpression, .standard)
                      case .openAIFeaturesSettings:
                          model.selectPane(.aiChat)
                      }
@@ -539,13 +546,13 @@ enum Preferences {
                 DispatchQueue.main.async {
                     switch event {
                     case .openITR:
-                        PixelKit.fire(SubscriptionPixel.subscriptionIdentityRestorationSettings)
+                        pixelHandler(.subscriptionIdentityRestorationSettings, .standard)
                         let url = subscriptionManager.url(for: .identityTheftRestoration)
                         showTab(.identityTheftRestoration(url))
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenITRPreferencePane:
-                        PixelKit.fire(SubscriptionPixel.subscriptionIdentityRestorationSettingsImpression)
+                        pixelHandler(.subscriptionIdentityRestorationSettingsImpression, .standard)
                     }
                 }
             }
@@ -569,15 +576,16 @@ enum Preferences {
                     case .openCustomerPortalURL(let url):
                         showTab(.url(url, source: .ui))
                     case .didClickManageEmail:
-                        PixelKit.fire(SubscriptionPixel.subscriptionManagementEmail, frequency: .legacyDailyAndCount)
+                        pixelHandler(SubscriptionPixel.subscriptionManagementEmail, .legacyDailyAndCount)
                     case .didOpenSubscriptionSettings:
-                        PixelKit.fire(SubscriptionPixel.subscriptionSettings)
+                        pixelHandler(.subscriptionSettings, .standard)
                     case .didClickChangePlanOrBilling:
-                        PixelKit.fire(SubscriptionPixel.subscriptionManagementPlanBilling)
+                        pixelHandler(.subscriptionManagementPlanBilling, .standard)
                     case .didClickRemoveSubscription:
-                        PixelKit.fire(SubscriptionPixel.subscriptionManagementRemoval)
+                        pixelHandler(.subscriptionManagementRemoval, .standard)
                     case .openWinBackOfferLandingPage:
                         guard let url = WinBackOfferURL.subscriptionURL(for: .winBackSettings) else { return }
+                        pixelHandler(.subscriptionWinBackOfferSettingsPageCTAClicked, .standard)
                         showTab(.subscription(url))
                     }
                 }
@@ -598,7 +606,7 @@ enum Preferences {
                 showTab(.subscription(url))
 
                 if subscriptionURL == .purchase {
-                    PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression)
+                    pixelHandler(.subscriptionOfferScreenImpression, .standard)
                 }
             }
         }

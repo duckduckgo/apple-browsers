@@ -819,6 +819,160 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         pixelKitMock.verifyExpectations(file: #file, line: #line)
     }
 
+    // MARK: - Inactive User Modal Pixels
+
+    func testFireInactiveUserModalSeenPixelTypeBothWhenInactiveUserModalPromptIsReturned() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        promptTypeDeciderMock.promptTypeToReturn = .inactive
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalImpression(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+         _ = sut.getPromptType()
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireInactiveUserModalSeenPixelTypeSADOnlyWhenInactiveUserModalPromptIsReturned() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        promptTypeDeciderMock.promptTypeToReturn = .inactive
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = true
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalImpression(type: .setAsDefaultPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+         _ = sut.getPromptType()
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireInactiveUserModalSeenPixelTypeATDOnlyWhenInactiveUserModalPromptIsReturned() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        promptTypeDeciderMock.promptTypeToReturn = .inactive
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalImpression(type: .addToDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+         _ = sut.getPromptType()
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireInactiveUserModalConfirmActionTypeBothWhenInactiveUserModalConfirmAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalConfirmButtonClicked(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.confirmAction(for: .inactive)
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireInactiveUserModalConfirmActionTypeSADOnlyWheInactiveUserModalConfirmAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = true
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalConfirmButtonClicked(type: .setAsDefaultPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.confirmAction(for: .inactive)
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireInactiveUserModalConfirmActionTypeATDOnlyWhenInactiveUserModalConfirmAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalConfirmButtonClicked(type: .addToDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.confirmAction(for: .inactive)
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireInactiveUserModalDismissedTypeBothWhenInactiveUserModalDismissAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalDismissed(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .inactive, shouldHidePermanently: true))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireInactiveUserModalDismissedTypeSADOnlyWhenInactiveUserModalDismissAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = true
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalDismissed(type: .setAsDefaultPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .inactive, shouldHidePermanently: true))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireInactiveUserModalDismissedTypeATDOnlyWhenInactiveUserModalDismissAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalDismissed(type: .addToDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .inactive, shouldHidePermanently: true))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireInactiveUserModalDismissedUponStatusUpdateThenDoesNotFireDismissPixel() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        let sut = makeSUT(expectedFireCalls: [])
+
+        // WHEN
+        sut.dismissAction(.statusUpdate(prompt: .inactive))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
 }
 
 final class FeatureFlaggerMock: FeatureFlagger {

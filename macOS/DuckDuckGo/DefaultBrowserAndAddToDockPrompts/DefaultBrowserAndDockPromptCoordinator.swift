@@ -132,8 +132,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
             pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.bannerImpression(type: evaluatePromptEligibility, numberOfBannersShown: formattedNumberOfBannersShown(value: store.bannerShownOccurrences + 1)), frequency: .uniqueByNameAndParameters)
         case .inactive:
             setInactiveUserModalSeen()
-            // https://app.asana.com/1/137249556945/project/1209825025475019/task/1210864108653442?focus=true
-            // Fire pixel for inactive prompt impression
+            pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalImpression(type: evaluatePromptEligibility))
         case .none:
             break
         }
@@ -173,9 +172,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
             case .active(.banner):
                 pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.bannerConfirmButtonClicked(type: type, numberOfBannersShown: formattedNumberOfBannersShown(value: store.bannerShownOccurrences)))
             case .inactive:
-                // https://app.asana.com/1/137249556945/project/1209825025475019/task/1210864108653442?focus=true
-                // Fire pixel for inactive prompt confirm action
-                break
+                pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalConfirmButtonClicked(type: type))
             }
         }
 
@@ -238,9 +235,7 @@ private extension DefaultBrowserAndDockPromptCoordinator {
                     pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.bannerCloseButtonClicked(type: evaluatePromptEligibility))
                 }
             case .inactive:
-                // https://app.asana.com/1/137249556945/project/1209825025475019/task/1210864108653442?focus=true
-                // Fire pixel for inactive prompt cancel action
-                break
+                pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalDismissed(type: evaluatePromptEligibility))
             }
         }
 

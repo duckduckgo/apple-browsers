@@ -208,10 +208,9 @@ final class AppStateMachine {
             actionToHandle = nil
             currentState = .background(background)
         case .willEnterForeground:
-            // This event *shouldn’t* happen in the Launching state, but apparently, it does in some cases:
-            // https://developer.apple.com/forums/thread/769924
-            // We don’t support this transition and instead stay in Launching.
-            // From here, we can move to Foreground or Background, where resuming/suspension is handled properly.
+            // This is now fixed for scenes and is always called after the scene connects.
+            // However, we only transition to Foreground after didBecomeActive, since both events occur in sequence.
+            // We may revisit this if any UI glitches appear, as some work could potentially happen earlier in willEnterForeground.
             break
         default:
             handleUnexpectedEvent(event, for: .connected(connected))

@@ -55,6 +55,29 @@ final class WinBackOfferDebugViewModel: ObservableObject {
         updateState()
     }
 
+    /// Simulate the end of the cooldown period after a redeemed offer.
+    func simulateCooldownExpiry() {
+        let cooldown = TimeInterval.days(270)
+        let availabilityOffset = TimeInterval.days(3)
+        let totalOffset = cooldown + availabilityOffset
+
+        if let existingChurnDate = winbackOfferStore.getChurnDate(),
+           winbackOfferStore.hasRedeemedOffer() {
+            let targetDate = existingChurnDate.addingTimeInterval(totalOffset)
+            debugStore.simulatedTodayDate = targetDate
+        } else {
+            let now = Date()
+            let churnDate = now.addingTimeInterval(-totalOffset)
+            winbackOfferStore.storeChurnDate(churnDate)
+            winbackOfferStore.setHasRedeemedOffer(true)
+            winbackOfferStore.storeOfferPresentationDate(nil)
+            winbackOfferStore.didDismissUrgencyMessage = false
+            debugStore.simulatedTodayDate = now
+        }
+
+        updateState()
+    }
+
     /// Reset the Win-back offer by clearing the debug store and churn state.
     func resetWinBackOffer() {
         debugStore.reset()
@@ -215,6 +238,12 @@ struct WinBackOfferDebugView: View {
                     viewModel.jumpToLastDay()
                 }) {
                     Text(verbatim: "Jump to Last Day (offer ending)")
+                }
+
+                Button(action: {
+                    viewModel.simulateCooldownExpiry()
+                }) {
+                    Text(verbatim: "Jump to Cooldown Expiry")
                 }
             }
 

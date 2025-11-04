@@ -57,6 +57,7 @@ final class WinBackOfferDebugMenu: NSMenuItem {
         let menu = NSMenu(title: "")
 
         menu.addItem(NSMenuItem(title: "Simulate Churn", action: #selector(simulateChurn), target: self))
+        menu.addItem(NSMenuItem(title: "Simulate Cooldown Expiry", action: #selector(simulateCooldownExpiry), target: self))
         menu.addItem(.separator())
 
         menu.addItem(NSMenuItem(title: "Override Today's Date", action: #selector(overrideTodaysDate), target: self))
@@ -85,6 +86,30 @@ final class WinBackOfferDebugMenu: NSMenuItem {
         winbackOfferStore.setHasRedeemedOffer(false)
         winbackOfferStore.storeOfferPresentationDate(nil)
         winbackOfferStore.didDismissUrgencyMessage = false
+        updateMenuItemsState()
+    }
+
+    @objc
+    func simulateCooldownExpiry() {
+        let cooldown = TimeInterval.days(270)
+        let availabilityOffset = TimeInterval.days(3)
+        let totalOffset = cooldown + availabilityOffset
+
+        if winbackOfferStore.hasRedeemedOffer(),
+           let existingChurnDate = winbackOfferStore.getChurnDate(),
+           existingChurnDate.timeIntervalSince1970 > 0 {
+            let targetDate = existingChurnDate.addingTimeInterval(totalOffset)
+            debugStore.simulatedTodayDate = targetDate
+        } else {
+            let now = Date()
+            let churnDate = now.addingTimeInterval(-totalOffset)
+            winbackOfferStore.storeChurnDate(churnDate)
+            winbackOfferStore.setHasRedeemedOffer(true)
+            winbackOfferStore.storeOfferPresentationDate(nil)
+            winbackOfferStore.didDismissUrgencyMessage = false
+            debugStore.simulatedTodayDate = now
+        }
+
         updateMenuItemsState()
     }
 

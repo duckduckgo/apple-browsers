@@ -99,12 +99,12 @@ final class VPNConnectionWideEventTests: XCTestCase {
         XCTAssertEqual(parameters["feature.name"], "vpn-connection")
         XCTAssertEqual(parameters["feature.data.ext.extension_type"], "app")
         XCTAssertEqual(parameters["feature.data.ext.startup_method"], "manual_by_main_app")
-        
+
         // Have partial latencies
         XCTAssertEqual(parameters["feature.data.ext.controller_start_latency_ms"], "1000")
         XCTAssertEqual(parameters["feature.data.ext.oauth_latency_ms"], "500")
         XCTAssertNil(parameters["feature.data.ext.tunnel_start_latency_ms"])
-        
+
         // Have per step error data
         XCTAssertEqual(parameters["feature.data.ext.oauth_error.domain"], "OAuthError")
         XCTAssertEqual(parameters["feature.data.ext.oauth_error.code"], "100")
@@ -184,7 +184,7 @@ final class VPNConnectionWideEventTests: XCTestCase {
         )
         parameters = eventData.pixelParameters()
         XCTAssertEqual(parameters["feature.data.ext.oauth_latency_ms"], "2500")
-        
+
         eventData.tunnelStartDuration = WideEvent.MeasuredInterval(
             start: base,
             end: base.addingTimeInterval(1.5)
@@ -276,7 +276,7 @@ final class VPNConnectionWideEventTests: XCTestCase {
         // Top error
         XCTAssertEqual(parameters["feature.data.ext.tunnel_start_error.domain"], "TopDomain")
         XCTAssertEqual(parameters["feature.data.ext.tunnel_start_error.code"], "200")
-        
+
         // Underlying error: Single Underlying error does not have suffix
         XCTAssertEqual(parameters["feature.data.ext.tunnel_start_error.underlying_domain"], "UnderlyingDomain")
         XCTAssertEqual(parameters["feature.data.ext.tunnel_start_error.underlying_code"], "100")
@@ -330,7 +330,7 @@ final class VPNConnectionWideEventTests: XCTestCase {
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.domain"], "TestDomain")
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.code"], "1")
         XCTAssertEqual(parameters["feature.data.ext.controller_start_error.description"], "ControllerError")
-        
+
         eventData.oauthError = WideEventErrorData(error: error, description: "OauthError")
         parameters = eventData.pixelParameters()
         XCTAssertEqual(parameters["feature.data.ext.oauth_error.domain"], "TestDomain")
@@ -387,7 +387,7 @@ final class VPNConnectionWideEventTests: XCTestCase {
 
         eventData.oauthError = WideEventErrorData(error: topError)
         let parameters = eventData.pixelParameters()
-        
+
         for i in 1...20 {
             if i == 1 {
                 XCTAssertEqual(parameters["feature.data.ext.oauth_error.underlying_domain"], "Domain1")

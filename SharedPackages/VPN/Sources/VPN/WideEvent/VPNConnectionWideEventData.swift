@@ -156,7 +156,6 @@ private extension VPNConnectionWideEventData {
         params[WideEventParameter.VPNConnectionFeature.latency(at: step)] = String(Int(duration))
     }
 
-
     func addStepError(_ error: WideEventErrorData?, step: Step, to params: inout [String: String]) {
         guard let error else { return }
         let errorParams = error.pixelParameters()
@@ -170,21 +169,21 @@ private extension VPNConnectionWideEventData {
         switch key {
         case WideEventParameter.Feature.errorDomain:
             return WideEventParameter.VPNConnectionFeature.errorDomain(at: step)
-            
+
         case WideEventParameter.Feature.errorCode:
             return WideEventParameter.VPNConnectionFeature.errorCode(at: step)
-            
+
         case WideEventParameter.Feature.errorDescription:
             return WideEventParameter.VPNConnectionFeature.errorDescription(at: step)
-            
+
         case let key where key.hasPrefix(WideEventParameter.Feature.underlyingErrorDomain):
             let suffix = key.dropFirst(WideEventParameter.Feature.underlyingErrorDomain.count)
             return WideEventParameter.VPNConnectionFeature.errorUnderlyingDomain(at: step, suffix: String(suffix))
-            
+
         case let key where key.hasPrefix(WideEventParameter.Feature.underlyingErrorCode):
             let suffix = key.dropFirst(WideEventParameter.Feature.underlyingErrorCode.count)
             return WideEventParameter.VPNConnectionFeature.errorUnderlyingCode(at: step, suffix: String(suffix))
-            
+
         default:
             assertionFailure("Unexpected error parameter key: \(key)")
             return key

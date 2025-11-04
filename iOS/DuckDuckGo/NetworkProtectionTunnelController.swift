@@ -190,7 +190,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 onComplete: { _ in })
             
             
-
             #if DEBUG
             errorStore.lastErrorMessage = error.localizedDescription
             #endif

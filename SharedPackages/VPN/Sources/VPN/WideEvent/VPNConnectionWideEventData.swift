@@ -112,11 +112,29 @@ extension VPNConnectionWideEventData {
         case timeout
     }
 
-    public enum Step: String, Codable {
+    public enum Step: String, Codable, CaseIterable {
         case browserStart = "browser_start"
         case controllerStart = "controller_start"
         case oauth = "oauth"
         case tunnelStart = "tunnel_start"
+
+        var durationPath: KeyPath<VPNConnectionWideEventData, WideEvent.MeasuredInterval?> {
+            switch self {
+            case .browserStart: return \.browserStartDuration
+            case .controllerStart: return \.controllerStartDuration
+            case .oauth: return \.oauthDuration
+            case .tunnelStart: return \.tunnelStartDuration
+            }
+        }
+
+        var errorPath: KeyPath<VPNConnectionWideEventData, WideEventErrorData?> {
+            switch self {
+            case .browserStart: return \.browserStartError
+            case .controllerStart: return \.controllerStartError
+            case .oauth: return \.oauthError
+            case .tunnelStart: return \.tunnelStartError
+            }
+        }
     }
 
     public func pixelParameters() -> [String: String] {
@@ -131,17 +149,10 @@ extension VPNConnectionWideEventData {
             params[WideEventParameter.VPNConnectionFeature.latency] = String(Int(overallDuration))
         }
 
-        // Per-step latencies
-        addStepLatency(browserStartDuration, step: .browserStart, to: &params)
-        addStepLatency(controllerStartDuration, step: .controllerStart, to: &params)
-        addStepLatency(oauthDuration, step: .oauth, to: &params)
-        addStepLatency(tunnelStartDuration, step: .tunnelStart, to: &params)
-
-        // Per-step errors
-        addStepError(browserStartError, step: .browserStart, to: &params)
-        addStepError(controllerStartError, step: .controllerStart, to: &params)
-        addStepError(oauthError, step: .oauth, to: &params)
-        addStepError(tunnelStartError, step: .tunnelStart, to: &params)
+        for step in Step.allCases {
+            addStepLatency(self[keyPath: step.durationPath], step: step, to: &params)
+            addStepError(self[keyPath: step.errorPath], step: step, to: &params)
+        }
 
         return params
     }

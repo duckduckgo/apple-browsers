@@ -88,6 +88,9 @@ extension WhatsNewCoordinator: RemoteMessagingPresenter {
     @MainActor
     func presentActivitySheet(value: String, title: String?) async {
         let activityController = UIActivityViewController(activityItems: [TitleValueShareItem(value: value, title: title).item], applicationActivities: nil)
+        activityController.completionWithItemsHandler = { [weak self] _, result, _, _ in
+            self?.measureSheetShown(result: result)
+        }
         navigationController?.present(activityController, animated: true)
     }
 
@@ -227,6 +230,14 @@ private extension WhatsNewCoordinator {
         }
 
         pixelReporter.measureRemoteMessageCardClicked(remoteMessage, cardId: cardId)
+    }
+
+    func measureSheetShown(result: Bool) {
+        guard let remoteMessage else {
+            assertionFailure("What's New - Cannot measure sheet shown - no current message")
+            return
+        }
+        pixelReporter.measureRemoteMessageSheetShown(remoteMessage, sheetResult: result)
     }
 
 }

@@ -29,10 +29,11 @@ protocol HistoryDeleting: AnyObject {
 }
 
 protocol HistoryDataSource: HistoryGroupingDataSource, HistoryDeleting {
-    var historyDictionary: [URL: HistoryEntry]? { get }
+    @MainActor var historyDictionary: [URL: HistoryEntry]? { get }
 }
 
 extension HistoryCoordinator: HistoryDataSource {
+    @MainActor
     func delete(_ visits: [Visit]) async {
         await withCheckedContinuation { continuation in
             burnVisits(visits) {
@@ -62,13 +63,13 @@ struct HistoryViewGrouping {
 
 protocol HistoryViewDataProviding: HistoryView.DataProviding {
 
-    func titles(for urls: [URL]) -> [URL: String]
+    @MainActor func titles(for urls: [URL]) -> [URL: String]
 
-    func deleteVisits(matching query: DataModel.HistoryQueryKind, and deleteChats: Bool) async
-    func burnVisits(matching query: DataModel.HistoryQueryKind, and burnChats: Bool) async
+    @MainActor func deleteVisits(matching query: DataModel.HistoryQueryKind, and deleteChats: Bool) async
+    @MainActor func burnVisits(matching query: DataModel.HistoryQueryKind, and burnChats: Bool) async
 
     /// Get actual visits for a given query (used for burning specific visits)
-    func visits(matching query: DataModel.HistoryQueryKind) async -> [Visit]
+    @MainActor func visits(matching query: DataModel.HistoryQueryKind) async -> [Visit]
 
     /// Representative URL for a given eTLD+1 domain, preferring HTTPS and most recent visit.
     @MainActor func preferredURL(forSiteDomain domain: String) -> URL?
@@ -104,6 +105,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         }
     }
 
+    @MainActor
     var ranges: [DataModel.HistoryRangeWithCount] {
         let ranges = DataModel.HistoryRange.displayedRanges(for: dateFormatter.currentDate())
         let rangesWithCounts = ranges.map { DataModel.HistoryRangeWithCount(id: $0, count: groupingsByRange[$0]?.items.count ?? 0) }
@@ -174,6 +176,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         }
     }
 
+    @MainActor
     func bestTitle(forSiteDomain domain: String) -> String {
         guard let historyDictionary = historyDataSource.historyDictionary else {
             return domain
@@ -375,6 +378,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
      * The procedure here is to go through all identifiers and retrieve visits from history
      * that match identifier's URL and are on the same date as identifier's date.
      */
+    @MainActor
     private func visits(for identifiers: [VisitIdentifier]) async -> [Visit] {
         guard let historyDictionary = historyDataSource.historyDictionary else {
             return []
@@ -453,6 +457,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         featureFlagger.isFeatureOn(.historyViewSitesSection)
     }
 
+    @MainActor
     private func uniqueETLDPlus1Domains() -> [String] {
         guard let history = historyDataSource.historyDictionary else { return [] }
         let etldPlus1Domains = history.keys.convertedToETLDPlus1(tld: tld)

@@ -21,9 +21,9 @@ import Combine
 
 public protocol HistoryStoring {
 
-    func cleanOld(until date: Date) -> Future<BrowsingHistory, Error>
-    func save(entry: HistoryEntry) -> Future<[(id: Visit.ID, date: Date)], Error>
-    func removeEntries(_ entries: [HistoryEntry]) -> Future<Void, Error>
-    func removeVisits(_ visits: [Visit]) -> Future<Void, Error>
+    func cleanOld(until date: Date) async throws -> BrowsingHistory
+    func save(entry: HistoryEntry) async throws -> [(id: Visit.ID, date: Date)]
+    func removeEntries(_ entries: some Sequence<HistoryEntry>) async throws
+    func removeVisits(_ visits: some Sequence<Visit>) async throws
 
 }

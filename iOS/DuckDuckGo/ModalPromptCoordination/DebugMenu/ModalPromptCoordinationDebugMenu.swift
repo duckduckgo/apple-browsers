@@ -25,7 +25,7 @@ struct ModalPromptCoordinationDebugView: View {
     @StateObject private var viewModel: ModalPromptCoordinationDebugViewModel
 
     init(keyValueStore: ThrowingKeyValueStoring) {
-        let store =  PromptCooldownKeyValueFilesStore(keyValueStore: keyValueStore, eventMapper: .init(mapping: { _, _, _, _ in }))
+        let store = PromptCooldownKeyValueFilesStore(keyValueStore: keyValueStore, eventMapper: .init(mapping: { _, _, _, _ in }))
         self._viewModel = StateObject(wrappedValue: ModalPromptCoordinationDebugViewModel(store: store))
     }
 

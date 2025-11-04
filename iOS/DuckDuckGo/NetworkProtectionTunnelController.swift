@@ -534,9 +534,11 @@ private extension NetworkProtectionTunnelController {
         self.connectionWideEventData?.controllerStartDuration = nil
     }
 
-    func completeAtStepWithFailure(_ step: VPNConnectionWideEventData.Step,
-                      with error: Error,
-                      description: String? = nil) {
+    func completeAtStepWithFailure(
+        _ step: VPNConnectionWideEventData.Step,
+        with error: Error,
+        description: String? = nil
+    ) {
         self.connectionWideEventData?[keyPath: step.errorPath] = .init(error: error, description: description)
         self.connectionWideEventData?[keyPath: step.durationPath]?.complete()
         completeAndCleanupConnectionWideEvent(with: error, description: description)

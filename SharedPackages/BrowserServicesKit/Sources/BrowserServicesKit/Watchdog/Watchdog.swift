@@ -25,21 +25,10 @@ import os.log
 ///
 public final actor Watchdog {
     /// The current state of the main thread.
-    public enum HangState: CustomStringConvertible {
+    public enum HangState: String {
         case responsive
         case hanging
         case timeout
-
-        public var description: String {
-            switch self {
-            case .responsive:
-                return "responsive"
-            case .hanging:
-                return "hanging"
-            case .timeout:
-                return "timeout"
-            }
-        }
     }
 
     /// Events for use with an EventMapper.
@@ -309,7 +298,7 @@ public final actor Watchdog {
              (.responsive, .timeout), (.timeout, .hanging):
             // We can't timeout from a responsive state, or go back to hanging from a timeout state
             // and we should never transition to the same state we're already in
-            Self.logger.warning("Invalid transition from \(currentState.description) to \(newState.description)")
+            Self.logger.warning("Invalid transition from \(currentState.rawValue) to \(newState.rawValue)")
         }
     }
 

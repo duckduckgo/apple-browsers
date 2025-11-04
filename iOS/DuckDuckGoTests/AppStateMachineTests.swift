@@ -58,6 +58,34 @@ final class MockLaunching: LaunchingHandling {
         MockForeground(actionToHandle: actionToHandle)
     }
 
+    func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling {
+        MockConnected(actionToHandle: actionToHandle, window: window)
+    }
+
+}
+
+struct TestDependencies { }
+
+@MainActor
+final class MockConnected: ConnectedHandling {
+    typealias Dependencies = TestDependencies
+
+    var actionToHandle: AppAction?
+    var window: UIWindow
+
+    init(actionToHandle: AppAction?, window: UIWindow) {
+        self.actionToHandle = actionToHandle
+        self.window = window
+    }
+
+    func makeBackgroundState() -> any BackgroundHandling {
+        MockBackground()
+    }
+
+    func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
+        MockForeground(actionToHandle: actionToHandle)
+    }
+
 }
 
 @MainActor
@@ -117,19 +145,11 @@ final class LaunchingTests {
         #expect(stateMachine.currentState.name == "launching")
     }
 
-    @Test("didBecomeActive should transition from Launching to Foreground and call onTransition and didReturn")
-    func transitionFromLaunchingToForeground() {
+    @Test("willConnectTo should transition from Launching to Connected")
+    func transitionFromLaunchingToConnected() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
-        stateMachine.handle(.didBecomeActive)
-        #expect(stateMachine.currentState.name == "foreground")
-
-        if case .foreground(let foreground) = stateMachine.currentState,
-           let mockForeground = foreground as? MockForeground {
-            #expect(mockForeground.eventLog == ["onTransition", "didReturn"])
-            #expect(mockForeground.actionToHandle == nil)
-        } else {
-            Issue.record("Incorrect state")
-        }
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+        #expect(stateMachine.currentState.name == "connected")
     }
 
     @Test("handle(_:) if current state is Launching should pass that action to Foreground and actionToHandle should be consumed afterwards")
@@ -137,6 +157,7 @@ final class LaunchingTests {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
         stateMachine.handle(.openURL(URL("www.duckduckgo.com")!))
         #expect(stateMachine.actionToHandle != nil)
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
         stateMachine.handle(.didBecomeActive)
         #expect(stateMachine.actionToHandle == nil)
 
@@ -147,29 +168,6 @@ final class LaunchingTests {
         } else {
             Issue.record("Incorrect state")
         }
-    }
-
-    @Test("didEnterBackground should transition from Launching to Background and call onTransition and didReturn ")
-    func transitionFromLaunchingToBackground() {
-        stateMachine.handle(.didFinishLaunching(isTesting: false))
-        stateMachine.handle(.didEnterBackground)
-        #expect(stateMachine.currentState.name == "background")
-
-        if case .background(let background) = stateMachine.currentState,
-           let mockBackground = background as? MockBackground {
-            #expect(mockBackground.eventLog == ["onTransition", "didReturn"])
-        } else {
-            Issue.record("Incorrect state")
-        }
-    }
-
-    @Test("handle(_:) if current state is Launching and transitions to Background then actionToHandle should be consumed afterwards")
-    func handleAppActionWhenTransitionsFromLaunchingToBackground() {
-        stateMachine.handle(.didFinishLaunching(isTesting: false))
-        stateMachine.handle(.openURL(URL("www.duckduckgo.com")!))
-        #expect(stateMachine.actionToHandle != nil)
-        stateMachine.handle(.didEnterBackground)
-        #expect(stateMachine.actionToHandle == nil)
     }
 
     @Test("willTerminate(with:) should transition from Launching to Terminating")
@@ -198,6 +196,70 @@ final class LaunchingTests {
 
         stateMachine.handle(.willResignActive)
         #expect(stateMachine.currentState.name == "launching")
+
+        stateMachine.handle(.didBecomeActive)
+        #expect(stateMachine.currentState.name == "launching")
+
+        stateMachine.handle(.didEnterBackground)
+        #expect(stateMachine.currentState.name == "launching")
+    }
+
+}
+
+@MainActor
+@Suite("AppStateMachine connected origin transition tests", .serialized)
+final class ConnectedTests {
+
+    let stateMachine = AppStateMachine(initialState: .connected(MockConnected(actionToHandle: nil, window: UIWindow())))
+
+    @Test("didBecomeActive should transition from Connected to Foreground and call onTransition and didReturn")
+    func transitionFromConnectedToForeground() {
+        stateMachine.handle(.didBecomeActive)
+        #expect(stateMachine.currentState.name == "foreground")
+
+        if case .foreground(let foreground) = stateMachine.currentState,
+           let mockForeground = foreground as? MockForeground {
+            #expect(mockForeground.eventLog == ["onTransition", "didReturn"])
+            #expect(mockForeground.actionToHandle == nil)
+        } else {
+            Issue.record("Incorrect state")
+        }
+    }
+
+    @Test("didEnterBackground should transition from Launching to Background and call onTransition and didReturn")
+    func transitionFromLaunchingToBackground() {
+        stateMachine.handle(.didEnterBackground)
+        #expect(stateMachine.currentState.name == "background")
+
+        if case .background(let background) = stateMachine.currentState,
+           let mockBackground = background as? MockBackground {
+            #expect(mockBackground.eventLog == ["onTransition", "didReturn"])
+        } else {
+            Issue.record("Incorrect state")
+        }
+    }
+
+    @Test("handle(_:) if we transition to Background then actionToHandle should be consumed afterwards")
+    func handleAppActionWhenTransitionsFromLaunchingToBackground() {
+        stateMachine.handle(.openURL(URL("www.duckduckgo.com")!))
+        #expect(stateMachine.actionToHandle != nil)
+        stateMachine.handle(.didEnterBackground)
+        #expect(stateMachine.actionToHandle == nil)
+    }
+
+    @Test("Incorrect transitions from Connected should not trigger state change")
+    func incorrectTransitionsFromConnected() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        #expect(stateMachine.currentState.name == "connected")
+
+        stateMachine.handle(.willEnterForeground)
+        #expect(stateMachine.currentState.name == "connected")
+
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+        #expect(stateMachine.currentState.name == "connected")
+
+        stateMachine.handle(.willResignActive)
+        #expect(stateMachine.currentState.name == "connected")
     }
 
 }
@@ -258,7 +320,7 @@ final class ForegroundTests {
     }
 
     @Test("Incorrect transitions from Foreground should not trigger state change")
-    func incorrectTransitionsFromLaunching() {
+    func incorrectTransitionsFromForeground() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
         #expect(stateMachine.currentState.name == "foreground")
 
@@ -329,7 +391,7 @@ final class BackgroundTests {
     }
 
     @Test("Incorrect transitions from Background should not trigger state change")
-    func incorrectTransitionsFromLaunching() {
+    func incorrectTransitionsFromBackground() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
         #expect(stateMachine.currentState.name == "background")
 

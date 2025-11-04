@@ -247,6 +247,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1209949983074592?focus=true
     case pinnedTabsViewRewrite
+
+    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1211708489642640?focus=true
+    case tabProgressIndicator
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -358,7 +361,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .serpSettings,
                 .blurryAddressBarTahoeFix,
                 .dataImportNewExperience,
-                .pinnedTabsViewRewrite:
+                .pinnedTabsViewRewrite,
+                .tabProgressIndicator:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -543,6 +547,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteDevelopment(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
         case .pinnedTabsViewRewrite:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.pinnedTabsViewRewrite))
+        case .tabProgressIndicator:
+            return .disabled
         }
     }
 }

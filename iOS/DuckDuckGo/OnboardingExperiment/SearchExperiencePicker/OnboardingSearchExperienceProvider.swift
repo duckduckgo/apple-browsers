@@ -23,6 +23,8 @@ import Persistence
 
 protocol OnboardingSearchExperienceProvider {
     var didEnableAIChatSearchInputDuringOnboarding: Bool { get }
+    var didApplyOnboardingChoiceSettings: Bool { get set }
+
     func storeAIChatSearchInputDuringOnboardingChoice(enable: Bool)
 }
 
@@ -38,6 +40,11 @@ final class OnboardingSearchExperience: OnboardingSearchExperienceProvider {
         ) ?? .didEnableAIChatSearchInputDuringOnboardingDefaultValue
     }
 
+    var didApplyOnboardingChoiceSettings: Bool {
+        get { storage.object(forKey: .didApplyOnboardingChoiceSettings) != nil }
+        set { storage.set(newValue, forKey: .didApplyOnboardingChoiceSettings) }
+    }
+
     func storeAIChatSearchInputDuringOnboardingChoice(enable: Bool) {
         storage.set(enable, forKey: .didEnableAIChatSearchInputDuringOnboardingKey)
 #warning("🇳🇴 implement pixels")
@@ -46,6 +53,7 @@ final class OnboardingSearchExperience: OnboardingSearchExperienceProvider {
 
 private extension String {
     static let didEnableAIChatSearchInputDuringOnboardingKey = "com.duckduckgo.ios.onboarding.didEnableAIChatSearchInputDuringOnboarding"
+    static let didApplyOnboardingChoiceSettings = "com.duckduckgo.ios.onboarding.didApplyOnboardingChoiceSettings"
 }
 
 private extension Bool {

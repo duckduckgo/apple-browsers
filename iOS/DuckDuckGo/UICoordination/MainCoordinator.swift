@@ -104,7 +104,9 @@ final class MainCoordinator {
         self.launchSourceManager = launchSourceManager
         onboardingSearchExperienceSelectionHandler = OnboardingSearchExperienceSelectionHandler(
             contextualOnboardingLogic: daxDialogs,
-            aiChatSettings: aiChatSettings
+            aiChatSettings: aiChatSettings,
+            featureFlagger: featureFlagger,
+            onboardingSearchExperienceProvider: OnboardingSearchExperience()
         )
         tabManager = TabManager(model: tabsModel,
                                 persistence: tabsPersistence,

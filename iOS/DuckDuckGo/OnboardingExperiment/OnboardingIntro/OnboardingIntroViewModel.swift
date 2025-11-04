@@ -197,8 +197,6 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func selectSearchExperienceAction() {
-#warning("TODO, finish implementation. Store selected option to local storage, but don't apply it yet!")
-        print("🇳🇴 [OnboardingIntroViewModel] selectSearchExperienceAction called")
         makeNextViewState()
     }
 

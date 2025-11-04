@@ -19,15 +19,21 @@
 
 import Combine
 import AIChat
+import BrowserServicesKit
 
 final class OnboardingSearchExperienceSelectionHandler {
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     private let aiChatSettings: AIChatSettingsProvider
+    private let featureFlagger: FeatureFlagger
+    private var onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider
+
     private var cancellables: Set<AnyCancellable> = []
 
-    init(contextualOnboardingLogic: ContextualOnboardingLogic, aiChatSettings: AIChatSettingsProvider) {
+    init(contextualOnboardingLogic: ContextualOnboardingLogic, aiChatSettings: AIChatSettingsProvider, featureFlagger: FeatureFlagger, onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider) {
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.aiChatSettings = aiChatSettings
+        self.featureFlagger = featureFlagger
+        self.onboardingSearchExperienceProvider = onboardingSearchExperienceProvider
         setupSubscriptions()
     }
 
@@ -40,12 +46,11 @@ final class OnboardingSearchExperienceSelectionHandler {
             .store(in: &cancellables)
     }
     private func updateAIChatSettings(isDaxDialogsOnboardingDismissed: Bool) {
-        //        store in user defaults that I applied this setting, this will be my first guard
-//         read & guard user-defaults storage (user selection)
-//         toggle as a default (if onboarding skipped)
-//         I'll use OnboardingSearchExperienceStoring during onboarding and in DefaultOmniBarViewController (if needed)
-//         Use feature flag guard here as well
-//         subscribe to publisher, confirm with isEnabled (not sure if needed)
-        aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
+        guard featureFlagger.isFeatureOn(.onboardingSearchExperience) else { return }
+        guard isDaxDialogsOnboardingDismissed else { return }
+        guard onboardingSearchExperienceProvider.didApplyOnboardingChoiceSettings == false else { return }
+
+        aiChatSettings.enableAIChatSearchInputUserSettings(enable: onboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding)
+        onboardingSearchExperienceProvider.didApplyOnboardingChoiceSettings = true
     }
 }

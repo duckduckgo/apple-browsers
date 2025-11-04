@@ -134,7 +134,6 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
             setInactiveUserModalSeen()
             // https://app.asana.com/1/137249556945/project/1209825025475019/task/1210864108653442?focus=true
             // Fire pixel for inactive prompt impression
-            break
         case .none:
             break
         }

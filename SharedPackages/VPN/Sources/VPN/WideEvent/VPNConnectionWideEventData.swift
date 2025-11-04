@@ -118,7 +118,7 @@ extension VPNConnectionWideEventData {
         case oauth = "oauth"
         case tunnelStart = "tunnel_start"
 
-        var durationPath: KeyPath<VPNConnectionWideEventData, WideEvent.MeasuredInterval?> {
+        public var durationPath: WritableKeyPath<VPNConnectionWideEventData, WideEvent.MeasuredInterval?> {
             switch self {
             case .browserStart: return \.browserStartDuration
             case .controllerStart: return \.controllerStartDuration
@@ -127,7 +127,7 @@ extension VPNConnectionWideEventData {
             }
         }
 
-        var errorPath: KeyPath<VPNConnectionWideEventData, WideEventErrorData?> {
+        public var errorPath: WritableKeyPath<VPNConnectionWideEventData, WideEventErrorData?> {
             switch self {
             case .browserStart: return \.browserStartError
             case .controllerStart: return \.controllerStartError

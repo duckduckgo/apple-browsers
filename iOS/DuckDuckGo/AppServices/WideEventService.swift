@@ -29,7 +29,7 @@ final class WideEventService {
     private let subscriptionBridge: SubscriptionAuthV1toV2Bridge
     private let activationTimeoutInterval: TimeInterval = .hours(4)
     private let restoreTimeoutInterval: TimeInterval = .minutes(15)
-    private let vpnConnectionTimeoutInterval: TimeInterval = .seconds(15)
+    private let vpnConnectionTimeoutInterval: TimeInterval = .minutes(15)
 
     private let sendQueue = DispatchQueue(label: "com.duckduckgo.wide-pixel.send-queue", qos: .utility)
 

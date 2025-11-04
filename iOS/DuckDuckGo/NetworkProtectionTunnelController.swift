@@ -291,7 +291,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             tunnelManager = try await loadOrMakeTunnelManager()
             self.connectionWideEventData?.controllerStartDuration?.complete()
         } catch {
-            completeAtControllerStartWithFailure(with: error, description: error.contextualizedDescription())
+            completeAtStepWithFailure(.controllerStart, with: error, description: error.contextualizedDescription())
             throw error
         }
 
@@ -330,10 +330,10 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         } catch {
             switch error {
             case SubscriptionManagerError.noTokenAvailable:
-                completeAtOAuthWithFailure(with: error, description: error.contextualizedDescription())
+                completeAtStepWithFailure(.oauth, with: error, description: error.contextualizedDescription())
                 throw StartError.noAuthToken
             default:
-                completeAtOAuthWithFailure(with: error, description: error.contextualizedDescription())
+                completeAtStepWithFailure(.oauth, with: error, description: error.contextualizedDescription())
                 throw StartError.failedToFetchAuthToken(error)
             }
         }
@@ -349,7 +349,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             }
             self.connectionWideEventData?.tunnelStartDuration?.complete()
         } catch {
-            completeAtTunnelStartWithFailure(with: error, description: error.contextualizedDescription())
+            completeAtStepWithFailure(.tunnelStart, with: error, description: error.contextualizedDescription())
             Pixel.fire(pixel: .networkProtectionActivationRequestFailed, error: error)
             throw StartError.startVPNFailed(error)
         }
@@ -533,25 +533,15 @@ private extension NetworkProtectionTunnelController {
     func resetControllerStartWideEventMeasurement() {
         self.connectionWideEventData?.controllerStartDuration = nil
     }
-    
-    func completeAtControllerStartWithFailure(with error: Error, description: String? = nil) {
-        self.connectionWideEventData?.controllerStartError = .init(error: error, description: description)
-        self.connectionWideEventData?.controllerStartDuration?.complete()
+
+    func completeAtStepWithFailure(_ step: VPNConnectionWideEventData.Step,
+                      with error: Error,
+                      description: String? = nil) {
+        self.connectionWideEventData?[keyPath: step.errorPath] = .init(error: error, description: description)
+        self.connectionWideEventData?[keyPath: step.durationPath]?.complete()
         completeAndCleanupConnectionWideEvent(with: error, description: description)
     }
-    
-    func completeAtOAuthWithFailure(with error: Error, description: String? = nil) {
-        self.connectionWideEventData?.oauthError = .init(error: error, description: description)
-        self.connectionWideEventData?.oauthDuration?.complete()
-        completeAndCleanupConnectionWideEvent(with: error, description: description)
-    }
-    
-    func completeAtTunnelStartWithFailure(with error: Error, description: String? = nil) {
-        self.connectionWideEventData?.tunnelStartError = .init(error: error, description: description)
-        self.connectionWideEventData?.tunnelStartDuration?.complete()
-        completeAndCleanupConnectionWideEvent(with: error, description: description)
-    }
-    
+
     func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil) {
         guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
         data.overallDuration?.complete()

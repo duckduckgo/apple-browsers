@@ -137,7 +137,7 @@ final class WinbackOfferStoreTests: XCTestCase {
 
     // MARK: - Integration
 
-    func testItCanStoreAndRetrieveMultipleValues() {
+    func testItCanStoreAndRetrieveMultipleValues() throws {
         // Given
         let churnDate = Date(timeIntervalSince1970: 1704067200)
         let launchPromptDate = Date()
@@ -148,9 +148,11 @@ final class WinbackOfferStoreTests: XCTestCase {
         store.storeOfferPresentationDate(launchPromptDate)
 
         // Then
-        XCTAssertEqual(store.getChurnDate()!.timeIntervalSince1970, churnDate.timeIntervalSince1970, accuracy: 1.0)
+        let churnDateResult = try XCTUnwrap(store.getChurnDate())
+        XCTAssertEqual(churnDateResult.timeIntervalSince1970, churnDate.timeIntervalSince1970, accuracy: 1.0)
         XCTAssertTrue(store.hasRedeemedOffer())
-        XCTAssertEqual(store.getOfferPresentationDate()!.timeIntervalSince1970, launchPromptDate.timeIntervalSince1970, accuracy: 1.0)
+        let launchPromptDateResult = try XCTUnwrap(store.getOfferPresentationDate())
+        XCTAssertEqual(launchPromptDateResult.timeIntervalSince1970, launchPromptDate.timeIntervalSince1970, accuracy: 1.0)
     }
 }
 

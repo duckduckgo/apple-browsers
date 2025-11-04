@@ -115,6 +115,9 @@ class MainViewController: UIViewController {
     let syncService: DDGSyncing
     let syncDataProviders: SyncDataProviders
     let syncPausedStateManager: any SyncPausedStateManaging
+
+    let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
+
     private let tutorialSettings: TutorialSettings
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     let contextualOnboardingPixelReporter: OnboardingPixelReporting
@@ -213,7 +216,8 @@ class MainViewController: UIViewController {
     }()
 
     private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
-        let manager = AIChatViewControllerManager(experimentalAIChatManager: .init(featureFlagger: featureFlagger),
+        let manager = AIChatViewControllerManager(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
+                                                  experimentalAIChatManager: .init(featureFlagger: featureFlagger),
                                                   featureFlagger: featureFlagger,
                                                   featureDiscovery: featureDiscovery,
                                                   aiChatSettings: aiChatSettings)
@@ -251,6 +255,7 @@ class MainViewController: UIViewController {
         homePageConfiguration: HomePageConfiguration,
         syncService: DDGSyncing,
         syncDataProviders: SyncDataProviders,
+        contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
         appSettings: AppSettings,
         previewsSource: TabPreviewsSource,
         tabManager: TabManager,
@@ -289,6 +294,7 @@ class MainViewController: UIViewController {
         self.homePageConfiguration = homePageConfiguration
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
+        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.favoritesViewModel = FavoritesListViewModel(bookmarksDatabase: bookmarksDatabase, favoritesDisplayMode: appSettings.favoritesDisplayMode)
         self.bookmarksCachingSearch = BookmarksCachingSearch(bookmarksStore: CoreDataBookmarksSearchStore(bookmarksStore: bookmarksDatabase))
         self.appSettings = appSettings

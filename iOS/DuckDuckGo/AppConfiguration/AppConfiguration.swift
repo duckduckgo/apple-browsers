@@ -42,9 +42,6 @@ struct AppConfiguration {
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
         PixelConfiguration.configure(with: featureFlagger)
 
-        // Explicitly prepare ContentBlockingUpdating instance before Tabs are created
-        _ = ContentBlockingUpdating.shared
-
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
 
         onboardingConfiguration.migrateToNewOnboarding()

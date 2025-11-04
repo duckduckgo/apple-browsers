@@ -64,7 +64,7 @@ enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEvent, Hashable {
     /// See definitions in `default-browser-and-dock-prompt-inactive-user.json5`
     case inactiveUserModalImpression(type: DefaultBrowserAndDockPromptType)
     case inactiveUserModalConfirmButtonClicked(type: DefaultBrowserAndDockPromptType)
-    case inactiveUserModalCloseButtonClicked(type: DefaultBrowserAndDockPromptType)
+    case inactiveUserModalDismissed(type: DefaultBrowserAndDockPromptType)
 
     var name: String {
         switch self {
@@ -86,7 +86,7 @@ enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEvent, Hashable {
             "m_mac_set-as-default-add-to-dock_inactive-user_modal-shown"
         case .inactiveUserModalConfirmButtonClicked:
             "m_mac_set-as-default-add-to-dock_inactive-user_modal-confirm-action"
-        case .inactiveUserModalCloseButtonClicked:
+        case .inactiveUserModalDismissed:
             "m_mac_set-as-default-add-to-dock_inactive-user_modal-cancel-action"
         }
     }
@@ -101,7 +101,7 @@ enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEvent, Hashable {
             let .bannerNeverAskAgainButtonClicked(type),
             let .inactiveUserModalImpression(type),
             let .inactiveUserModalConfirmButtonClicked(type),
-            let .inactiveUserModalCloseButtonClicked(type):
+            let .inactiveUserModalDismissed(type):
             [ParameterKey.contentType: type.promptTypeDescription]
         case
             let .bannerImpression(type, numberOfBannersShown),

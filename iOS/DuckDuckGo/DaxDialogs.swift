@@ -23,6 +23,7 @@ import TrackerRadarKit
 import BrowserServicesKit
 import Common
 import PrivacyDashboard
+import Combine
 
 protocol EntityProviding {
     
@@ -47,6 +48,7 @@ protocol ContextualOnboardingLogic {
     var isShowingSearchSuggestions: Bool { get }
     var isShowingSitesSuggestions: Bool { get }
     var isAddFavoriteFlow: Bool { get }
+    var isDismissedPublisher: PassthroughSubject<Bool, Never> { get }
 
     func setTryAnonymousSearchMessageSeen()
     func setSearchMessageSeen()
@@ -219,6 +221,8 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     private var currentHomeSpec: HomeScreenSpec?
 
     private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping
+    
+    public let isDismissedPublisher: PassthroughSubject<Bool, Never>
 
     /// Use singleton accessor, this is only accessible for tests
     init(settings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
@@ -232,6 +236,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         self.variantManager = variantManager
         self.launchOptionsHandler = launchOptionsHandler
         self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
+        self.isDismissedPublisher = PassthroughSubject<Bool, Never>()
     }
 
     private var firstBrowsingMessageSeen: Bool {
@@ -303,19 +308,24 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
 
     func isStillOnboarding() -> Bool {
         if peekNextHomeScreenMessageExperiment() != nil {
+            print("🇳🇴 [DaxDialogs] isStillOnboarding: true")
             return true
         }
+        print("🇳🇴 [DaxDialogs] isStillOnboarding: false")
         return false
     }
 
     func dismiss() {
+        print("🇳🇴🟡 [DaxDialog] SETTING DISMISS TO TRUE!")
         settings.isDismissed = true
         // Reset last shown dialog as we don't have to show it anymore.
+        isDismissedPublisher.send(true)
         clearOnboardingBrowsingData()
     }
     
     func primeForUse() {
         settings.isDismissed = false
+        isDismissedPublisher.send(false)
     }
 
     func enableAddFavoriteFlow() {

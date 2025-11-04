@@ -148,7 +148,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     func skipOnboardingAction() {
         pixelReporter.measureSkipOnboardingCTAAction()
     }
-
+#warning("Another entry point for skipping dax dialogs!")
     func confirmSkipOnboardingAction() {
         pixelReporter.measureConfirmSkipOnboardingCTAAction()
         contextualDaxDialogs.disableContextualDaxDialogs()
@@ -195,10 +195,8 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func selectSearchExperienceAction() {
-#warning("TODO, finish implementation")
+#warning("TODO, finish implementation. Store selected option to local storage, but don't apply it yet!")
         print("🇳🇴 [OnboardingIntroViewModel] selectSearchExperienceAction called")
-        // let enableAISearch = (selectedOption == 1)
-//        aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
         makeNextViewState()
     }
 

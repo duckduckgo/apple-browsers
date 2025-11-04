@@ -56,6 +56,7 @@ final class MainCoordinator {
     private let defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
     private let winBackOfferPresenter: WinBackOfferPresenting
     private let launchSourceManager: LaunchSourceManaging
+    private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
 
     init(syncService: SyncService,
          bookmarksDatabase: CoreDataDatabase,
@@ -101,6 +102,10 @@ final class MainCoordinator {
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
         interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
         self.launchSourceManager = launchSourceManager
+        onboardingSearchExperienceSelectionHandler = OnboardingSearchExperienceSelectionHandler(
+            contextualOnboardingLogic: daxDialogs,
+            aiChatSettings: aiChatSettings
+        )
         tabManager = TabManager(model: tabsModel,
                                 persistence: tabsPersistence,
                                 previewsSource: previewsSource,

@@ -37,6 +37,7 @@ import Core
         // Use this method to release any resources that were specific to the discarded scenes, as they will not return.
     }
 
+    @available(*, deprecated, message: "This var should not be used. window is going to be part of SceneDelegate")
     var window: UIWindow?
 
     /// See: `Launching.swift`

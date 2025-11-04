@@ -802,6 +802,7 @@
 		977FC2BD2EB3AB5B0043BAA4 /* OnboardingSearchExperiencePickerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977FC2BC2EB3AB590043BAA4 /* OnboardingSearchExperiencePickerViewModel.swift */; };
 		97C2D6382E79911100A32168 /* SERPSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C2D6372E79911100A32168 /* SERPSettingsTests.swift */; };
 		97C8E6C22EB915A60055756E /* OnboardingSearchExperienceSelectionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C8E6C12EB915990055756E /* OnboardingSearchExperienceSelectionHandler.swift */; };
+		97C8E6C42EBA00240055756E /* OnboardingSearchExperienceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C8E6C32EBA00220055756E /* OnboardingSearchExperienceProvider.swift */; };
 		980891A222369ADB00313A70 /* FeedbackUserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 980891A122369ADB00313A70 /* FeedbackUserText.swift */; };
 		980891A32237146B00313A70 /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 982E562D222C39F8008D861B /* Feedback.swift */; };
 		980891A52237D4F500313A70 /* FeedbackNavigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 980891A42237D4F500313A70 /* FeedbackNavigator.swift */; };
@@ -2765,6 +2766,7 @@
 		977FC2BC2EB3AB590043BAA4 /* OnboardingSearchExperiencePickerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSearchExperiencePickerViewModel.swift; sourceTree = "<group>"; };
 		97C2D6372E79911100A32168 /* SERPSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SERPSettingsTests.swift; sourceTree = "<group>"; };
 		97C8E6C12EB915990055756E /* OnboardingSearchExperienceSelectionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSearchExperienceSelectionHandler.swift; sourceTree = "<group>"; };
+		97C8E6C32EBA00220055756E /* OnboardingSearchExperienceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSearchExperienceProvider.swift; sourceTree = "<group>"; };
 		9801F08927E4B21100191874 /* EmbeddedTrackerDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedTrackerDataTests.swift; sourceTree = "<group>"; };
 		98056C77251EABC000298AF6 /* da */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = da; path = da.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		98056C79251EABC000298AF6 /* da */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = da; path = da.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -6464,6 +6466,7 @@
 		977FC2B92EB3AA250043BAA4 /* SearchExperiencePicker */ = {
 			isa = PBXGroup;
 			children = (
+				97C8E6C32EBA00220055756E /* OnboardingSearchExperienceProvider.swift */,
 				97C8E6C12EB915990055756E /* OnboardingSearchExperienceSelectionHandler.swift */,
 				977FC2BC2EB3AB590043BAA4 /* OnboardingSearchExperiencePickerViewModel.swift */,
 				977FC2BA2EB3AA6E0043BAA4 /* OnboardingSearchExperiencePicker.swift */,
@@ -10373,6 +10376,7 @@
 				D69FBF762B28BE3600B505F1 /* SettingsSubscriptionView.swift in Sources */,
 				D664C7CC2B289AA200CBFA76 /* SubscriptionPagesUserScript.swift in Sources */,
 				9F8E0F262CC9395D001EA7C5 /* Logger+Onboarding.swift in Sources */,
+				97C8E6C42EBA00240055756E /* OnboardingSearchExperienceProvider.swift in Sources */,
 				AA3D854523D9942200788410 /* AppIconSettingsViewController.swift in Sources */,
 				7B059F142D03881000371ED0 /* ControlCenterWidgetEducationView.swift in Sources */,
 				85C297042476C1FD0063A335 /* DaxDialogsSettings.swift in Sources */,

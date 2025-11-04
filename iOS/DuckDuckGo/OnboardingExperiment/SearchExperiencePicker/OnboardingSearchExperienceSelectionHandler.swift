@@ -20,14 +20,6 @@
 import Combine
 import AIChat
 
-protocol OnboardingSearchExperienceStoring {
-    //
-}
-
-struct OnboardingSearchExperienceStorage: OnboardingSearchExperienceStoring {
-    //
-}
-
 final class OnboardingSearchExperienceSelectionHandler {
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     private let aiChatSettings: AIChatSettingsProvider

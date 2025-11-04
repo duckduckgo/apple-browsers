@@ -522,6 +522,8 @@ class TabViewController: UIViewController {
 
         super.init(coder: aDecoder)
         
+        self.aiChatViewControllerManager?.delegate = self
+        
         // Assign itself as tabNavigationHandler for DuckPlayer
         duckPlayerNavigationHandler.tabNavigationHandler = self
 
@@ -4002,5 +4004,24 @@ extension TabViewController {
         let isAIChat = tabModel.type == .aiChat
         webViewContainer.isHidden = isAIChat
         aiChatViewContainer?.isHidden = !isAIChat
+    }
+}
+
+// MARK: - AIChatViewControllerManagerDelegate
+extension TabViewController: AIChatViewControllerManagerDelegate {
+    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL) {
+        delegate?.tab(self, aiChatDidRequestOpenURL: url)
+    }
+
+    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String) {
+        delegate?.tab(self, aiChatDidSubmitQuery: query)
+    }
+
+    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestOpenDownloadWithFileName fileName: String) {
+        delegate?.tabAIChatDidRequestOpenDownloads(self)
+    }
+
+    func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager) {
+        delegate?.tabAIChatDidRequestOpenSettings(self)
     }
 }

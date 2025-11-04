@@ -3302,6 +3302,24 @@ extension MainViewController: TabDelegate {
         hideNotificationBarIfBrokenSitePromptShown()
     }
 
+    // MARK: - AI Chat Delegate Methods
+
+    func tab(_ tab: TabViewController, aiChatDidRequestOpenURL url: URL) {
+        aiChatDidRequestOpenURL(url)
+    }
+
+    func tab(_ tab: TabViewController, aiChatDidSubmitQuery query: String) {
+        aiChatDidSubmitQuery(query)
+    }
+
+    func tabAIChatDidRequestOpenDownloads(_ tab: TabViewController) {
+        aiChatDidRequestOpenDownloads()
+    }
+
+    func tabAIChatDidRequestOpenSettings(_ tab: TabViewController) {
+        aiChatDidRequestOpenSettings()
+    }
+
 }
 
 extension MainViewController: TabSwitcherDelegate {
@@ -3824,9 +3842,9 @@ extension MainViewController: AutofillLoginListViewControllerDelegate {
     }
 }
 
-// MARK: - AIChatViewControllerManagerDelegate
-extension MainViewController: AIChatViewControllerManagerDelegate {
-    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL) {
+// MARK: - AI Chat Helper Methods
+private extension MainViewController {
+    func aiChatDidRequestOpenURL(_ url: URL) {
         if let tabSwitcher = tabSwitcherController {
             loadUrlInNewTab(url, inheritedAttribution: nil)
             tabSwitcher.dismiss(animated: true)
@@ -3835,15 +3853,15 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
         }
     }
 
-    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String) {
+    func aiChatDidSubmitQuery(_ query: String) {
         self.loadQuery(query)
     }
 
-    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestOpenDownloadWithFileName fileName: String) {
+    func aiChatDidRequestOpenDownloads() {
         segueToDownloads()
     }
 
-    func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager) {
+    func aiChatDidRequestOpenSettings() {
         if let controller = tabSwitcherController {
             controller.dismiss(animated: true) {
                 self.segueToSettingsAIChat()
@@ -3851,6 +3869,25 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
         } else {
             segueToSettingsAIChat()
         }
+    }
+}
+
+// MARK: - AIChatViewControllerManagerDelegate
+extension MainViewController: AIChatViewControllerManagerDelegate {
+    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL) {
+        aiChatDidRequestOpenURL(url)
+    }
+
+    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String) {
+        aiChatDidSubmitQuery(query)
+    }
+
+    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestOpenDownloadWithFileName fileName: String) {
+        aiChatDidRequestOpenDownloads()
+    }
+
+    func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager) {
+        aiChatDidRequestOpenSettings()
     }
 }
 

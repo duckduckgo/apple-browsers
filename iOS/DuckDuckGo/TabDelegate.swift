@@ -121,7 +121,13 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestRefresh(tab: TabViewController)
     func tabDidRequestNavigationToDifferentSite(tab: TabViewController)
-    
+
+    // MARK: - AI Chat Delegate Methods
+    func tab(_ tab: TabViewController, aiChatDidRequestOpenURL url: URL)
+    func tab(_ tab: TabViewController, aiChatDidSubmitQuery query: String)
+    func tabAIChatDidRequestOpenDownloads(_ tab: TabViewController)
+    func tabAIChatDidRequestOpenSettings(_ tab: TabViewController)
+
     var isAIChatEnabled: Bool { get }
 }
 

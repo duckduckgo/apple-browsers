@@ -236,9 +236,9 @@ final class ModalPromptCoordinationServiceTests {
         sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
-        #expect(newAddressBarPickerProvider.didCallProvideModalPrompt)
+        #expect(winBackOfferProvider.didCallProvideModalPrompt)
+        #expect(!newAddressBarPickerProvider.didCallProvideModalPrompt)
         #expect(!defaultBrowserProvider.didCallProvideModalPrompt)
-        #expect(!winBackOfferProvider.didCallProvideModalPrompt)
     }
 
     @Test("Check Priority Order For Second Item")
@@ -246,9 +246,9 @@ final class ModalPromptCoordinationServiceTests {
         // GIVEN
         let keyValueStore = try MockKeyValueFileStore()
         let privacyConfigManager = MockPrivacyConfigurationManager()
-        let newAddressBarPickerProvider = MockModalPromptProvider(shouldReturnPrompt: false)
+        let newAddressBarPickerProvider = MockModalPromptProvider()
         let defaultBrowserProvider = MockModalPromptProvider()
-        let winBackOfferProvider = MockModalPromptProvider()
+        let winBackOfferProvider = MockModalPromptProvider(shouldReturnPrompt: false)
         let providers = ModalPromptProviders(
             newAddressBarPicker: newAddressBarPickerProvider,
             defaultBrowser: defaultBrowserProvider,
@@ -270,9 +270,9 @@ final class ModalPromptCoordinationServiceTests {
         sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
+        #expect(winBackOfferProvider.didCallProvideModalPrompt)
         #expect(newAddressBarPickerProvider.didCallProvideModalPrompt)
-        #expect(defaultBrowserProvider.didCallProvideModalPrompt)
-        #expect(!winBackOfferProvider.didCallProvideModalPrompt)
+        #expect(!defaultBrowserProvider.didCallProvideModalPrompt)
     }
 
     @Test("Check Priority Order For Third Item")
@@ -281,8 +281,8 @@ final class ModalPromptCoordinationServiceTests {
         let keyValueStore = try MockKeyValueFileStore()
         let privacyConfigManager = MockPrivacyConfigurationManager()
         let newAddressBarPickerProvider = MockModalPromptProvider(shouldReturnPrompt: false)
-        let defaultBrowserProvider = MockModalPromptProvider(shouldReturnPrompt: false)
-        let winBackOfferProvider = MockModalPromptProvider()
+        let defaultBrowserProvider = MockModalPromptProvider()
+        let winBackOfferProvider = MockModalPromptProvider(shouldReturnPrompt: false)
         let providers = ModalPromptProviders(
             newAddressBarPicker: newAddressBarPickerProvider,
             defaultBrowser: defaultBrowserProvider,
@@ -304,9 +304,9 @@ final class ModalPromptCoordinationServiceTests {
         sut.presentModalPromptIfNeeded(from: presenterMock)
 
         // THEN
+        #expect(winBackOfferProvider.didCallProvideModalPrompt)
         #expect(newAddressBarPickerProvider.didCallProvideModalPrompt)
         #expect(defaultBrowserProvider.didCallProvideModalPrompt)
-        #expect(winBackOfferProvider.didCallProvideModalPrompt)
     }
 
 }

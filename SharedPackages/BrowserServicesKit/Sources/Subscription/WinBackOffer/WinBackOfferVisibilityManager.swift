@@ -88,35 +88,50 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     }
 
     public var shouldShowUrgencyMessage: Bool {
-        guard let lastChurnDate = winbackOfferStore.getChurnDate(), isOfferAvailable else {
-            // Offer no longer valid
+        // Only show if offer was already presented AND it's the last day
+        guard let presentationDate = winbackOfferStore.getOfferPresentationDate(),
+              isOfferAvailable,
+              !didDismissUrgencyMessage else {
             return false
         }
 
-        let offerStartDate = offerStartDate(churnDate: lastChurnDate)
-        // Last day of the offer
-        return isLastDayOfOffer(startDate: offerStartDate)
+        let now = dateProvider()
+        let daysSincePresentation = now.timeIntervalSince(presentationDate)
+        // Show urgency on last day (day 4-5 of the 5-day window)
+        return daysSincePresentation >= Constants.offerAvailabilityPeriod - TimeInterval.day
     }
 
     public var shouldShowLaunchMessage: Bool {
-        isOfferAvailable && !winbackOfferStore.firstDayModalShown
+        guard isFeatureEnabled,
+              winbackOfferStore.getOfferPresentationDate() == nil,
+              !hasActiveSubscription,
+              let churnDate = winbackOfferStore.getChurnDate(),
+              !winbackOfferStore.hasRedeemedOffer() else {
+            return false
+        }
+
+        let eligibilityDate = churnDate.addingTimeInterval(Constants.daysBeforeOfferAvailability)
+        return dateProvider() >= eligibilityDate
     }
 
     public var isOfferAvailable: Bool {
-        guard isFeatureEnabled,
-              !hasActiveSubscription,
-              let lastChurnDate = winbackOfferStore.getChurnDate() else {
+        guard isFeatureEnabled, !hasActiveSubscription else {
             return false
         }
 
-        // Offer availability window check
-        let offerStartDate = offerStartDate(churnDate: lastChurnDate)
+        // Check if already redeemed
+        guard !winbackOfferStore.hasRedeemedOffer() else {
+            return false
+        }
+
+        guard let presentationDate = winbackOfferStore.getOfferPresentationDate() else {
+            return false
+
+        }
+
+        // Offer window is active, check if within 5-day window
         let now = dateProvider()
-        guard now >= offerStartDate, now.timeIntervalSince(offerStartDate) <= Constants.offerAvailabilityPeriod else {
-            return false
-        }
-
-        return !winbackOfferStore.hasRedeemedOffer()
+        return now.timeIntervalSince(presentationDate) <= Constants.offerAvailabilityPeriod
     }
 
     public var didDismissUrgencyMessage: Bool {
@@ -129,7 +144,13 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     }
 
     public func setLaunchMessagePresented(_ newValue: Bool) {
-        winbackOfferStore.firstDayModalShown = newValue
+        if newValue && winbackOfferStore.getOfferPresentationDate() == nil {
+            // Record presentation timestamp
+            winbackOfferStore.storeOfferPresentationDate(dateProvider())
+        } else if !newValue {
+            // Clear presentation
+            winbackOfferStore.storeOfferPresentationDate(nil)
+        }
     }
 
     public func setOfferRedeemed(_ newValue: Bool) {
@@ -195,7 +216,7 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private func resetOffer() {
         winbackOfferStore.storeChurnDate(dateProvider())
         winbackOfferStore.setHasRedeemedOffer(false)
-        winbackOfferStore.firstDayModalShown = false
+        winbackOfferStore.storeOfferPresentationDate(nil)
     }
 }
 

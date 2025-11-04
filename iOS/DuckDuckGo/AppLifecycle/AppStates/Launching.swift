@@ -154,6 +154,10 @@ struct Launching: LaunchingHandling {
                 ),
                 defaultBrowserPrompt: .init(
                     presenter: defaultBrowserPromptService.presenter
+                ),
+                winBackOffer: .init(
+                    presenter: winBackOfferService.presenter,
+                    coordinator: winBackOfferService.coordinator
                 )
             )
         )

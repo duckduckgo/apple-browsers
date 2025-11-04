@@ -103,7 +103,7 @@ final class MainCoordinator {
         interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
         self.launchSourceManager = launchSourceManager
         onboardingSearchExperienceSelectionHandler = OnboardingSearchExperienceSelectionHandler(
-            contextualOnboardingLogic: daxDialogs,
+            daxDialogs: daxDialogs,
             aiChatSettings: aiChatSettings,
             featureFlagger: featureFlagger,
             onboardingSearchExperienceProvider: OnboardingSearchExperience()

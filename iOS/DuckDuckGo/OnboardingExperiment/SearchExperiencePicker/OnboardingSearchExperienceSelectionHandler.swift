@@ -22,15 +22,15 @@ import AIChat
 import BrowserServicesKit
 
 final class OnboardingSearchExperienceSelectionHandler {
-    private let contextualOnboardingLogic: ContextualOnboardingLogic
+    private let daxDialogs: DaxDialogs
     private let aiChatSettings: AIChatSettingsProvider
     private let featureFlagger: FeatureFlagger
     private var onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider
 
     private var cancellables: Set<AnyCancellable> = []
 
-    init(contextualOnboardingLogic: ContextualOnboardingLogic, aiChatSettings: AIChatSettingsProvider, featureFlagger: FeatureFlagger, onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider) {
-        self.contextualOnboardingLogic = contextualOnboardingLogic
+    init(daxDialogs: DaxDialogs, aiChatSettings: AIChatSettingsProvider, featureFlagger: FeatureFlagger, onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider) {
+        self.daxDialogs = daxDialogs
         self.aiChatSettings = aiChatSettings
         self.featureFlagger = featureFlagger
         self.onboardingSearchExperienceProvider = onboardingSearchExperienceProvider
@@ -38,16 +38,15 @@ final class OnboardingSearchExperienceSelectionHandler {
     }
 
     private func setupSubscriptions() {
-        contextualOnboardingLogic.isDismissedPublisher
-            .sink { [weak self] isDismissed in
-                print("🇳🇴🟡 [OnboardingSearchExperienceSelectionHandler] isDismissed changed to: \(isDismissed) (so isEnabled is: \(!isDismissed))")
-                self?.updateAIChatSettings(isDaxDialogsOnboardingDismissed: isDismissed)
+        daxDialogs.isDismissedPublisher
+            .sink { [weak self] _ in
+                self?.updateAIChatSettings()
             }
             .store(in: &cancellables)
     }
-    private func updateAIChatSettings(isDaxDialogsOnboardingDismissed: Bool) {
+    private func updateAIChatSettings() {
         guard featureFlagger.isFeatureOn(.onboardingSearchExperience) else { return }
-        guard isDaxDialogsOnboardingDismissed else { return }
+        guard daxDialogs.isEnabled else { return }
         guard onboardingSearchExperienceProvider.didApplyOnboardingChoiceSettings == false else { return }
 
         aiChatSettings.enableAIChatSearchInputUserSettings(enable: onboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding)

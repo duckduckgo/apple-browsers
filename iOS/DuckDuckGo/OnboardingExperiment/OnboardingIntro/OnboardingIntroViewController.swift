@@ -27,13 +27,11 @@ final class OnboardingIntroViewController: UIHostingController<OnboardingView>, 
 
     init(onboardingPixelReporter: OnboardingPixelReporting,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
-         daxDialogsManager: ContextualDaxDialogDisabling,
-         aiChatSettings: AIChatSettingsProvider) {
+         daxDialogsManager: ContextualDaxDialogDisabling) {
         viewModel = OnboardingIntroViewModel(
             pixelReporter: onboardingPixelReporter,
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-            daxDialogsManager: daxDialogsManager,
-            aiChatSettingsProvider: aiChatSettings
+            daxDialogsManager: daxDialogsManager
         )
         let rootView = OnboardingView(model: viewModel)
         super.init(rootView: rootView)

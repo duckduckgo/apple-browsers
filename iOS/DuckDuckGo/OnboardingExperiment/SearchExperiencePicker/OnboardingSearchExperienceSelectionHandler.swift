@@ -33,14 +33,14 @@ final class OnboardingSearchExperienceSelectionHandler {
 
     private func setupSubscriptions() {
         contextualOnboardingLogic.isDismissedPublisher
-            .sink { isDismissed /*[weak self]*/ in
+            .sink { [weak self] isDismissed in
                 print("🇳🇴🟡 [OnboardingSearchExperienceSelectionHandler] isDismissed changed to: \(isDismissed) (so isEnabled is: \(!isDismissed))")
-//                self?.updateAIChatSettings()
+                self?.updateAIChatSettings(isDaxDialogsOnboardingDismissed: isDismissed)
             }
             .store(in: &cancellables)
     }
-    private func updateAIChatSettings() {
-        //        store in user defaults that I did this setting, this will be my first guard
+    private func updateAIChatSettings(isDaxDialogsOnboardingDismissed: Bool) {
+        //        store in user defaults that I applied this setting, this will be my first guard
 //         read & guard user-defaults storage (user selection)
 //         toggle as a default (if onboarding skipped)
 //         I'll use OnboardingSearchExperienceStoring during onboarding and in DefaultOmniBarViewController (if needed)

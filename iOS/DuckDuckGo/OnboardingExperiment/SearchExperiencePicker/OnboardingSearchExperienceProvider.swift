@@ -23,7 +23,7 @@ import Persistence
 
 protocol OnboardingSearchExperienceProvider {
     var didEnableAIChatSearchInputDuringOnboarding: Bool { get }
-    func enableAIChatSearchInputDuringOnboarding(enable: Bool)
+    func storeAIChatSearchInputDuringOnboardingChoice(enable: Bool)
 }
 
 final class OnboardingSearchExperience: OnboardingSearchExperienceProvider {
@@ -38,7 +38,7 @@ final class OnboardingSearchExperience: OnboardingSearchExperienceProvider {
         ) ?? .didEnableAIChatSearchInputDuringOnboardingDefaultValue
     }
 
-    func enableAIChatSearchInputDuringOnboarding(enable: Bool) {
+    func storeAIChatSearchInputDuringOnboardingChoice(enable: Bool) {
         storage.set(enable, forKey: .didEnableAIChatSearchInputDuringOnboardingKey)
 #warning("🇳🇴 implement pixels")
     }

@@ -38,9 +38,7 @@ extension MainViewController {
         let controller = OnboardingIntroViewController(
             onboardingPixelReporter: contextualOnboardingPixelReporter,
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
-            daxDialogsManager: daxDialogsManager,
-            aiChatSettings: aiChatSettings
-        )
+            daxDialogsManager: daxDialogsManager)
         controller.delegate = self
         controller.modalPresentationStyle = .overFullScreen
         present(controller, animated: false)

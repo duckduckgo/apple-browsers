@@ -200,11 +200,10 @@ struct OnboardingView: View {
         .onboardingDaxDialogStyle()
     }
 
-#warning("TOOD: pass proper params to animateTitle & showContent")
     private var searchExperienceSelectionView: some View {
         SearchExperienceContent(
-//            animateTitle: true,
-//            showContent: true,
+            animateTitle: $model.searchExperienceContentState.animateTitle,
+            showContent: $model.searchExperienceContentState.showContent,
             isSkipped: $model.isSkipped,
             action: model.selectSearchExperienceAction
         )
@@ -332,8 +331,7 @@ struct OnboardingView_Previews: PreviewProvider {
                         videoPlayer: VideoPlayerCoordinator(configuration: VideoPlayerConfiguration()),
                         eventMapper: SystemSettingsPiPTutorialPixelHandler(),
                     ),
-                    daxDialogsManager: MockDaxDialogDisabling(),
-                    aiChatSettingsProvider: AIChatSettings()
+                    daxDialogsManager: MockDaxDialogDisabling()
                 )
             )
             .preferredColorScheme($0)

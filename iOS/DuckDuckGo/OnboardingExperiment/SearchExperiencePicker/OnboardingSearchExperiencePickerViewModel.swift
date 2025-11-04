@@ -28,7 +28,7 @@ final class OnboardingSearchExperiencePickerViewModel: ObservableObject {
             set: { newValue in
                 guard newValue != self.searchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding else { return }
                 self.objectWillChange.send()
-                self.searchExperienceProvider.enableAIChatSearchInputDuringOnboarding(enable: newValue)
+                self.searchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: newValue)
             }
         )
     }

@@ -34,16 +34,16 @@ public class VPNConnectionWideEventData: WideEventData {
     // VPN-specific
     public let extensionType: ExtensionType
     public let startupMethod: StartupMethod
-    
+
     // Overall duration
     public var overallDuration: WideEvent.MeasuredInterval?
-    
+
     // Per-step durations
     public var browserStartDuration: WideEvent.MeasuredInterval?
     public var controllerStartDuration: WideEvent.MeasuredInterval?
     public var oauthDuration: WideEvent.MeasuredInterval?
     public var tunnelStartDuration: WideEvent.MeasuredInterval?
-    
+
     // Per-step errors
     public var browserStartError: WideEventErrorData?
     public var controllerStartError: WideEventErrorData?
@@ -70,19 +70,19 @@ public class VPNConnectionWideEventData: WideEventData {
         self.extensionType = extensionType
         self.startupMethod = startupMethod
         self.overallDuration = overallDuration
-        
+
         // Per-step latencies
         self.browserStartDuration = browserStartDuration
         self.controllerStartDuration = controllerStartDuration
         self.oauthDuration = oauthDuration
         self.tunnelStartDuration = tunnelStartDuration
-        
+
         // Per-step errors
         self.browserStartError = browserStartError
         self.controllerStartError = controllerStartError
         self.oauthError = oauthError
         self.tunnelStartError = tunnelStartError
-        
+
         self.errorData = errorData
         self.contextData = contextData
         self.appData = appData
@@ -111,7 +111,7 @@ extension VPNConnectionWideEventData {
         case partialData = "partial_data"
         case timeout
     }
-    
+
     public enum Step: String, Codable {
         case browserStart = "browser_start"
         case controllerStart = "controller_start"
@@ -150,7 +150,7 @@ extension VPNConnectionWideEventData {
 // MARK: - Private
 
 private extension VPNConnectionWideEventData {
-    
+
     func addStepLatency(_ interval: WideEvent.MeasuredInterval?, step: Step, to params: inout [String: String]) {
         guard let duration = interval?.durationMilliseconds else { return }
         params[WideEventParameter.VPNConnectionFeature.latency(at: step)] = String(Int(duration))
@@ -165,7 +165,7 @@ private extension VPNConnectionWideEventData {
             params[stepKey] = value
         }
     }
-    
+
     func transformErrorKey(_ key: String, for step: Step) -> String {
         switch key {
         case WideEventParameter.Feature.errorDomain:
@@ -199,27 +199,27 @@ extension WideEventParameter {
         static let extensionType = "feature.data.ext.extension_type"
         static let startupMethod = "feature.data.ext.startup_method"
         static let latency = "feature.data.ext.latency_ms"
-            
+
         static func latency(at step: VPNConnectionWideEventData.Step) -> String {
             "feature.data.ext.\(step.rawValue)_latency_ms"
         }
-        
+
         static func errorDomain(at step: VPNConnectionWideEventData.Step) -> String {
             "feature.data.ext.\(step.rawValue)_error.domain"
         }
-        
+
         static func errorCode(at step: VPNConnectionWideEventData.Step) -> String {
             "feature.data.ext.\(step.rawValue)_error.code"
         }
-        
+
         static func errorDescription(at step: VPNConnectionWideEventData.Step) -> String {
             "feature.data.ext.\(step.rawValue)_error.description"
         }
-        
+
         static func errorUnderlyingDomain(at step: VPNConnectionWideEventData.Step, suffix: String) -> String {
             return "feature.data.ext.\(step.rawValue)_error.underlying_domain\(suffix)"
         }
-        
+
         static func errorUnderlyingCode(at step: VPNConnectionWideEventData.Step, suffix: String) -> String {
             return "feature.data.ext.\(step.rawValue)_error.underlying_code\(suffix)"
         }

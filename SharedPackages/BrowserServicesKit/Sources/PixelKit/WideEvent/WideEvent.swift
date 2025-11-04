@@ -140,7 +140,7 @@ public final class WideEvent: WideEventManaging {
             return
         }
 
-        Self.logger.info("Completing wide event '\(T.pixelName, privacy: .public)' with status \(status.description, privacy: .public) and global ID: \(data.globalData.id, privacy: .public)")
+        Self.logger.info("👀 Completing wide event '\(T.pixelName, privacy: .public)' with status \(status.description, privacy: .public) and global ID: \(data.globalData.id, privacy: .public)")
 
         do {
             try storage.update(data)

@@ -102,7 +102,8 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     }
 
     public var shouldShowLaunchMessage: Bool {
-        guard winbackOfferStore.getOfferPresentationDate() == nil,
+        guard isFeatureEnabled,
+              winbackOfferStore.getOfferPresentationDate() == nil,
               !hasActiveSubscription,
               let churnDate = winbackOfferStore.getChurnDate(),
               !winbackOfferStore.hasRedeemedOffer() else {

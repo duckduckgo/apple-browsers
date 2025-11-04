@@ -335,7 +335,7 @@ final class AddressBarViewController: NSViewController {
 
                 subscribeToTabContent()
                 subscribeToPassiveAddressBarString()
-                subscribeToProgressEventsIfNeeded()
+                subscribeToProgressEvents()
 
                 // don't resign first responder on tab switching
                 clickPoint = nil
@@ -374,12 +374,8 @@ final class AddressBarViewController: NSViewController {
             .store(in: &tabViewModelCancellables)
     }
 
-    private var displaysLoadingProgressIndicator: Bool {
-        featureFlagger.isFeatureOn(.tabProgressIndicator) == false
-    }
-
-    private func subscribeToProgressEventsIfNeeded() {
-        guard let tabViewModel, displaysLoadingProgressIndicator else {
+    private func subscribeToProgressEvents() {
+        guard let tabViewModel else {
             progressIndicator.hide(animated: false)
             return
         }

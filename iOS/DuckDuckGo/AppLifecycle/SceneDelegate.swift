@@ -1,5 +1,5 @@
 //
-//  AppDelegate.swift
+//  SceneDelegate.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -29,7 +29,8 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         if let windowScene = scene as? UIWindowScene {
-            appStateMachine.handle(.willConnectToScene(windowScene: windowScene))
+            let window = UIWindow(windowScene: windowScene)
+            appStateMachine.handle(.willConnectToWindow(window: window))
         }
 
         if let shortcutItem = connectionOptions.shortcutItem {

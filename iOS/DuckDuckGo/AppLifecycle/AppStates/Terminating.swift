@@ -187,7 +187,7 @@ struct Terminating: TerminatingHandling {
         }
 
         let window = UIWindow.makeBlank()
-        application.setWindow(window)
+//        application.setWindow(window) TODO
         window.rootViewController?.present(alertController, animated: true, completion: nil)
     }
 

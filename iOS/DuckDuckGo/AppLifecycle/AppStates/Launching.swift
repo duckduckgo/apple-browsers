@@ -49,7 +49,6 @@ struct Launching: LaunchingHandling {
 
     private let didFinishLaunchingStartTime = CFAbsoluteTimeGetCurrent()
     private let isAppLaunchedInBackground = UIApplication.shared.applicationState == .background
-    //private let window: UIWindow = UIWindow(frame: UIScreen.main.bounds)
 
     private let configuration: AppConfiguration
     private let services: AppServices
@@ -224,10 +223,6 @@ struct Launching: LaunchingHandling {
             launchTaskManager: launchTaskManager
         )
 
-        // TODO add if here
-//        setupWindow()
-        logAppLaunchTime()
-
         // Keep this init method minimal and think twice before adding anything here.
         // - Use AppConfiguration for one-time setup.
         // - Use a service for functionality that persists throughout the app's lifecycle.
@@ -250,17 +245,6 @@ struct Launching: LaunchingHandling {
         )
     }
     
-}
-
-// MARK: - Logging
-
-private extension Launching {
-    
-    func logAppLaunchTime() {
-        let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
-        Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
-                   withAdditionalParameters: [PixelParameters.time: String(launchTime)])
-    }
 }
 
 extension Launching {

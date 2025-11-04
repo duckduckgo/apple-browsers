@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Core
 
 @MainActor
 struct Connected: ConnectedHandling {
@@ -48,13 +49,19 @@ struct Connected: ConnectedHandling {
                                               autoClearService: autoClearService)
 
         configure(window, with: mainCoordinator)
+        logAppLaunchTime()
     }
 
     private func configure(_ window: UIWindow, with mainCoordinator: MainCoordinator) { ThemeManager.shared.updateUserInterfaceStyle(window: window)
         window.rootViewController = mainCoordinator.controller
-        UIApplication.shared.setWindow(window)
         window.makeKeyAndVisible()
         mainCoordinator.start()
+    }
+
+    private func logAppLaunchTime() {
+        let launchTime = CFAbsoluteTimeGetCurrent() - launchingContext.didFinishLaunchingStartTime
+        Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
+                   withAdditionalParameters: [PixelParameters.time: String(launchTime)])
     }
 
 }

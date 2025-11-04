@@ -27,7 +27,7 @@ enum AppEvent {
     case didEnterBackground
     case willResignActive
     case willEnterForeground
-    case willConnectToScene(windowScene: UIWindowScene)
+    case willConnectToWindow(window: UIWindow)
 
 }
 
@@ -187,8 +187,8 @@ final class AppStateMachine {
             break //todo remove
         case .willEnterForeground:
             break //todo remove
-        case .willConnectToScene(let windowScene):
-            let connected = launching.makeConnectedState(window: UIWindow(windowScene: windowScene),
+        case .willConnectToWindow(let window):
+            let connected = launching.makeConnectedState(window: window,
                                                          actionToHandle: actionToHandle)
             currentState = .connected(connected)
         default:

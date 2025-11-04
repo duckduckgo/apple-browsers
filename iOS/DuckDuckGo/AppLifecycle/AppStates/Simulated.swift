@@ -38,7 +38,7 @@ struct Simulated {
         window.rootViewController?.view.backgroundColor = .red
         webView.frame = CGRect(x: 10, y: 10, width: 300, height: 300)
 
-        UIApplication.shared.setWindow(window)
+//        UIApplication.shared.setWindow(window) //todo
 
         let request = URLRequest(url: URL(string: "about:blank")!)
         webView.load(request)

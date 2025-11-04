@@ -45,6 +45,11 @@ import Core
         Pixel.fire(pixel: .appInitToLaunchTime, withAdditionalParameters: ["time_diff": String(timeDiff)])
         let isTesting: Bool = ProcessInfo().arguments.contains("testing")
         appStateMachine.handle(.didFinishLaunching(isTesting: isTesting))
+        if !Bundle.main.supportsScenes {
+            let window = UIWindow(frame: UIScreen.main.bounds)
+            self.window = window
+            appStateMachine.handle(.willConnectToWindow(window: window))
+        }
         return true
     }
 
@@ -111,6 +116,18 @@ import Core
         if case .foreground(let foregroundHandling) = appStateMachine.currentState {
             (foregroundHandling as? Foreground)?.services.remoteMessagingService.refreshRemoteMessages()
         }
+    }
+    
+}
+
+extension Bundle {
+
+    var supportsScenes: Bool {
+        guard let infoDict = self.infoDictionary else { return false }
+        guard infoDict["UIApplicationSceneManifest"] is [String: Any] else {
+            return false
+        }
+        return true
     }
 
 }

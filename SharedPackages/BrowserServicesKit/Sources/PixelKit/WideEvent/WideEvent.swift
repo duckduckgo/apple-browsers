@@ -140,7 +140,7 @@ public final class WideEvent: WideEventManaging {
             return
         }
 
-        Self.logger.info("👀 Completing wide event '\(T.pixelName, privacy: .public)' with status \(status.description, privacy: .public) and global ID: \(data.globalData.id, privacy: .public)")
+        Self.logger.info("Completing wide event '\(T.pixelName, privacy: .public)' with status \(status.description, privacy: .public) and global ID: \(data.globalData.id, privacy: .public)")
 
         do {
             try storage.update(data)
@@ -149,7 +149,8 @@ public final class WideEvent: WideEventManaging {
             storage.delete(current)
 
             try firePixel(named: T.pixelName, parameters: parameters, onComplete: onComplete)
-
+            
+            print("👀 Completed wide event flow: \(T.pixelName) with global ID: \(data.globalData.id), status \(status.description), error \(data.errorData?.description ?? "none"), other data: \(data.pixelParameters())")
             Self.logger.info("Completed wide event flow: \(T.pixelName, privacy: .public) with global ID: \(data.globalData.id, privacy: .public)")
         } catch {
             if case WideEventError.flowNotFound = error {

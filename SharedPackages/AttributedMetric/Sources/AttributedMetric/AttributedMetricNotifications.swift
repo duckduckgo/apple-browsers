@@ -22,7 +22,7 @@ public extension NSNotification.Name {
     private static let domain = "com.duckduckgo.attributedMetric."
     static let userDidPerformDDGSearch = Notification.Name("\(Self.domain)userDidPerformDDGSearch")
     static let userDidSendDuckAIChatMessage = Notification.Name("\(Self.domain)userDidSendDuckAIChatMessage")
-    static let userDidSyncDevice = Notification.Name("\(Self.domain)userDidSyncDevice")
+    static let syncDevicesUpdate = Notification.Name("\(Self.domain)userDidSyncDevice")
 }
 
 public enum AttributedMetricNotificationParameter: String {

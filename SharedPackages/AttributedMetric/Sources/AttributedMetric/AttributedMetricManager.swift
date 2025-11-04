@@ -179,7 +179,7 @@ public final class AttributedMetricManager {
         case .userDidSubscribe:
             processSubscriptionDay()
         case .userDidSync(devicesCount: let devicesCount):
-            processSyncCheck(devices: devicesCount)
+            processSyncCheck(devicesCount: devicesCount)
         }
     }
 
@@ -438,16 +438,26 @@ public final class AttributedMetricManager {
     // MARK: - Sync
     // https://app.asana.com/1/137249556945/project/1113117197328546/task/1211301604929616?focus=true
 
-    func processSyncCheck(devices: Int) {
-        guard devices < 3 else {
-            Logger.attributedMetric.log("Devices count higher than 2")
+    func processSyncCheck(devicesCount: Int) {
+        Logger.attributedMetric.log("Device Sync")
+
+        // check if the number of devices is changed
+        let currentDevicesCount = dataStorage.syncDevicesCount
+        guard devicesCount > currentDevicesCount else {
+            Logger.attributedMetric.debug("No changes in the sync devices count")
             return
         }
 
-        Logger.attributedMetric.debug("Device Sync")
-        // specs not clear: https://app.asana.com/1/137249556945/task/1211301604929616/comment/1211362907479310?focus=true
-        guard let bucket = try? bucketModifier.bucket(value: devices, pixelName: .userSyncedDevice) else {
+        guard devicesCount < 3 else {
+            Logger.attributedMetric.debug("Devices count higher than 2")
+            return
+        }
+
+        dataStorage.syncDevicesCount = devicesCount
+
+        guard let bucket = try? bucketModifier.bucket(value: devicesCount, pixelName: .userSyncedDevice) else {
             Logger.attributedMetric.error("Failed to bucket devices value")
+            assertionFailure("Failed to bucket devices value")
             return
         }
         pixelKit.fire(AttributedMetricPixel.userSyncedDevice(origin: originOrInstall.origin, installDate: originOrInstall.installDate, devices: bucket.value, bucketVersion: bucket.version), frequency: .standard)

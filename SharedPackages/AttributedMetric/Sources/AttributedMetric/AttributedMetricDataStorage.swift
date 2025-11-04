@@ -39,6 +39,9 @@ public protocol AttributedMetricDataStoring {
     var subscriptionFreeTrialFired: Bool { get set }
     var subscriptionMonth1Fired: Bool { get set }
 
+    // Sync
+    var syncDevicesCount: Int { get set }
+
     /// Removes all stored metric data.
     func removeAll()
 }
@@ -104,6 +107,7 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
         case subscriptionDate
         case subscriptionFreeTrial
         case subscriptionMonth1
+        case syncDevicesCount
     }
 
     // MARK: - Utilities
@@ -180,5 +184,12 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
     public var subscriptionMonth1Fired: Bool {
         get { return decode(from: userDefaults, key: .subscriptionMonth1) ?? false }
         set { encode(newValue, to: userDefaults, key: .subscriptionMonth1) }
+    }
+
+    // MARK: - Sync
+
+    public var syncDevicesCount: Int {
+        get { return decode(from: userDefaults, key: .syncDevicesCount) ?? 0 }
+        set { encode(newValue, to: userDefaults, key: .syncDevicesCount) }
     }
 }

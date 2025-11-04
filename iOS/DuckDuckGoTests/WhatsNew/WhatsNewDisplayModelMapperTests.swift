@@ -302,6 +302,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
 
         var itemActionCalled = false
         var capturedAction: RemoteAction?
+        var capturedItemId: String?
 
         let displayModel = try #require(
             sut.makeDisplayModel(
@@ -311,6 +312,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
                 onItemAction: { action, itemId in
                     itemActionCalled = true
                     capturedAction = action
+                    capturedItemId = itemId
                 },
                 onPrimaryAction: { _ in },
                 onDismiss: { }
@@ -324,6 +326,7 @@ struct WhatsNewDisplayModelActionHandlingTests {
         // THEN
         #expect(itemActionCalled)
         #expect(capturedAction == expectedAction)
+        #expect(capturedItemId == "1")
     }
 
     @Test("Check Item Action Does Not Invoke Dismiss")

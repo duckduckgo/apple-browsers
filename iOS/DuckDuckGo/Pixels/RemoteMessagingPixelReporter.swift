@@ -1,5 +1,5 @@
 //
-//  RemoteMessagingPixelsReporter.swift
+//  RemoteMessagingPixelReporter.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -51,7 +51,7 @@ final class RemoteMessagePixelReporter: RemoteMessagingPixelReporting {
 
     init(
         pixelFiring: PixelFiring.Type = Pixel.self,
-        parameterRandomiser: @escaping (SubscriptionDataReportingUseCase, [String : String]) -> [String : String]
+        parameterRandomiser: @escaping (SubscriptionDataReportingUseCase, [String: String]) -> [String: String]
     ) {
         self.pixelFiring = pixelFiring
         self.parameterRandomiser = parameterRandomiser

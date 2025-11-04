@@ -34,6 +34,8 @@ class BrowserChromeButton: UIButton {
         }
     }
 
+    private var borderColor: UIColor? = nil
+
     init(_ type: ButtonType = .primary) {
         self.type = type
         super.init(frame: .zero)
@@ -48,8 +50,31 @@ class BrowserChromeButton: UIButton {
         applyConfiguration()
     }
 
+    func addBorder() {
+        borderColor = UIColor(designSystemColor: .lines)
+        setNeedsDisplay()
+    }
+
+    func removeBorder() {
+        borderColor = nil
+        setNeedsDisplay()
+    }
+
     func setImage(_ image: UIImage?) {
         configuration?.image = image
+    }
+
+    override func setNeedsDisplay() {
+        layer.borderColor = borderColor?.cgColor ?? UIColor.clear.cgColor
+        layer.borderWidth = 1.5
+        layer.cornerRadius = 14
+        super.setNeedsDisplay()
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        if previousTraitCollection?.hasDifferentColorAppearance(comparedTo: traitCollection) == true {
+            setNeedsDisplay()
+        }
     }
 
     func applyConfiguration() {

@@ -3994,9 +3994,11 @@ extension MainViewController {
         }
 
         browserChrome.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
+        browserChrome.removeBorder()
 
         if !isNewTabPageVisible && state.isEnabled {
             browserChrome.setImage(state.currentToolbarButton.largeIcon)
+            browserChrome.addBorder()
         }
     }
 

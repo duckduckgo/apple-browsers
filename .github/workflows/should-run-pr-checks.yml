@@ -46,7 +46,8 @@ jobs:
             echo "PR is ready for review, running checks"
           else
             # Check for run checks label
-            if echo '${{ toJson(github.event.pull_request.labels) }}' | jq -e '.[] | select(.name == "${{ inputs.run_checks_label }}")' > /dev/null 2>&1; then
+            labels='${{ toJson(github.event.pull_request.labels) }}'
+            if echo "$labels" | jq -e --arg label "${{ inputs.run_checks_label }}" '.[] | select(.name == $label)' > /dev/null 2>&1; then
               echo "should_run=true" >> $GITHUB_OUTPUT
               echo "Draft PR has '${{ inputs.run_checks_label }}' label, running checks"
             else

@@ -67,6 +67,7 @@ final class AutocompleteSuggestionsDataSource: SuggestionLoadingDataSource {
         self.performSuggestionsRequest = performSuggestionsRequest
     }
 
+    @MainActor
     func history(for suggestionLoading: Suggestions.SuggestionLoading) -> [HistorySuggestion] {
         return historyCoordinator.history ?? []
     }

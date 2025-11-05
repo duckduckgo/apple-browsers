@@ -54,19 +54,16 @@ final class LaunchActionHandler: LaunchActionHandling {
     private let keyboardPresenter: KeyboardPresenting
     private let pixelFiring: PixelFiring.Type
     private let launchSourceManager: LaunchSourceManaging
-    private let newAddressBarPickerPresenter: NewAddressBarPickerPresenting
 
     init(urlHandler: URLHandling,
          shortcutItemHandler: ShortcutItemHandling,
          keyboardPresenter: KeyboardPresenting,
          launchSourceService: LaunchSourceManaging,
-         newAddressBarPickerPresenter: NewAddressBarPickerPresenting,
          pixelFiring: PixelFiring.Type = Pixel.self) {
         self.urlHandler = urlHandler
         self.shortcutItemHandler = shortcutItemHandler
         self.keyboardPresenter = keyboardPresenter
         self.launchSourceManager = launchSourceService
-        self.newAddressBarPickerPresenter = newAddressBarPickerPresenter
         self.pixelFiring = pixelFiring
     }
 
@@ -81,7 +78,6 @@ final class LaunchActionHandler: LaunchActionHandling {
         case .showKeyboard(let lastBackgroundDate):
             launchSourceManager.setSource(.standard)
             keyboardPresenter.showKeyboardOnLaunch(lastBackgroundDate: lastBackgroundDate)
-            newAddressBarPickerPresenter.presentNewAddressBarPickerIfNeeded()
         }
     }
 

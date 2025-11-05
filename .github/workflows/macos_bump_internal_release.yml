@@ -85,7 +85,7 @@ jobs:
 
   run_tests:
 
-    name: Run Tests
+    name: Unit Tests
 
     needs: validate_input_conditions
 

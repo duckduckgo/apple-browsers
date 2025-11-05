@@ -29,15 +29,15 @@ final class HistoryStoringMock: HistoryStoring {
 
     var cleanOldCalled = false
     var cleanOldResult: Result<BrowsingHistory, Error>?
-    func cleanOld(until date: Date) -> Future<BrowsingHistory, Error> {
+    func cleanOld(until date: Date) async throws -> BrowsingHistory {
         cleanOldCalled = true
-        return Future { [weak self] promise in
-            guard let cleanOldResult = self?.cleanOldResult else {
-                promise(.failure(HistoryStoringMockError.defaultError))
-                return
-            }
-
-            promise(cleanOldResult)
+        switch cleanOldResult {
+        case .success(let history):
+            return history
+        case .failure(let error):
+            throw error
+        case .none:
+            throw HistoryStoringMockError.defaultError
         }
     }
 
@@ -48,36 +48,38 @@ final class HistoryStoringMock: HistoryStoring {
     var removeEntriesCalled = false
     var removeEntriesArray = [HistoryEntry]()
     var removeEntriesResult: Result<Void, Error>?
-    func removeEntries(_ entries: [HistoryEntry]) -> Future<Void, Error> {
+    func removeEntries(_ entries: some Sequence<History.HistoryEntry>) async throws {
         removeEntriesCalled = true
-        removeEntriesArray = entries
-        return Future { [weak self] promise in
-            guard let removeEntriesResult = self?.removeEntriesResult else {
-                promise(.failure(HistoryStoringMockError.defaultError))
-                return
-            }
-            promise(removeEntriesResult)
+        removeEntriesArray = Array(entries)
+        switch removeEntriesResult {
+        case .success:
+            return
+        case .failure(let error):
+            throw error
+        case .none:
+            throw HistoryStoringMockError.defaultError
         }
     }
 
     var removeVisitsCalled = false
     var removeVisitsArray = [Visit]()
     var removeVisitsResult: Result<Void, Error>?
-    func removeVisits(_ visits: [Visit]) -> Future<Void, Error> {
+    func removeVisits(_ visits: some Sequence<History.Visit>) async throws {
         removeVisitsCalled = true
-        removeVisitsArray = visits
-        return Future { [weak self] promise in
-            guard let removeVisitsResult = self?.removeVisitsResult else {
-                promise(.failure(HistoryStoringMockError.defaultError))
-                return
-            }
-            promise(removeVisitsResult)
+        removeVisitsArray = Array(visits)
+        switch removeVisitsResult {
+        case .success:
+            return
+        case .failure(let error):
+            throw error
+        case .none:
+            throw HistoryStoringMockError.defaultError
         }
     }
 
     var saveCalled = false
     var savedHistoryEntries = [HistoryEntry]()
-    func save(entry: HistoryEntry) -> Future<[(id: Visit.ID, date: Date)], Error> {
+    func save(entry: HistoryEntry) async throws -> [(id: Visit.ID, date: Date)] {
         saveCalled = true
         savedHistoryEntries.append(entry)
         for visit in entry.visits {
@@ -85,10 +87,7 @@ final class HistoryStoringMock: HistoryStoring {
             visit.identifier = URL(string: "x-coredata://FBEAB2C4-8C32-4F3F-B34F-B79F293CDADD/VisitManagedObject/\(arc4random())")
         }
 
-        return Future { promise in
-            let result = entry.visits.map { ($0.identifier!, $0.date) }
-            promise(.success(result))
-        }
+        return entry.visits.map { ($0.identifier!, $0.date) }
     }
 
 }

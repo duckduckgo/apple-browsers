@@ -62,23 +62,6 @@ final class DefaultBrowserPromptDeciderTests {
         #expect(!userTypeProviderMock.didCallCurrentUserType)
     }
 
-    @Test("Check No Modal Is Presented If A modal Has Already Been Shown In The Same Day")
-    func checkNoModalIsNotPresentedWhenAModalHasAlreadyBeenShownInTheSameDay() {
-        // GIVEN
-        defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
-        let installDate = Date(timeIntervalSince1970: 1750739150) // Tuesday, 24 June 2025 12:00:00 AM (GMT)
-        let today = Date(timeIntervalSince1970: 1750739150) // Wednesday, 6 August 2025 8:01:24 AM
-        storeMock.lastModalShownDate = today.timeIntervalSince1970
-        makeSUT(installDate: installDate)
-        dateProviderMock.setNowDate(today)
-
-        // WHEN
-        let result = sut.promptType()
-
-        // THEN
-        #expect(result == nil)
-    }
-
     @Test("Check Inactive User Modal Has Priority Over Active User Modal")
     func checkInactiveUserModalIsCheckedBeforeActiveUser() {
         // GIVEN
@@ -228,7 +211,6 @@ final class DefaultBrowserPromptDeciderTests {
         featureFlaggerMock.secondActiveModalDelayDays = 4
         featureFlaggerMock.subsequentActiveModalRepeatIntervalDays = 14
         userTypeProviderMock.userType = userType
-        storeMock.lastModalShownDate = nil
         storeMock.modalShownOccurrences = 0
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
         let installDate = Date(timeIntervalSince1970: 1750739150) // Tuesday, 24 June 2025 12:00:00 AM (GMT)
@@ -241,7 +223,6 @@ final class DefaultBrowserPromptDeciderTests {
         // Install day == 1 day. Show First Modal
         dateProviderMock.advanceBy(.days(1))
         #expect(sut.promptType() == .active(.firstModal))
-        storeMock.lastModalShownDate = dateProviderMock.getDate().timeIntervalSince1970
         storeMock.modalShownOccurrences = 1
 
         // Active days after first modal < 4. Do not show any modal.
@@ -290,7 +271,6 @@ final class DefaultBrowserPromptDeciderTests {
         featureFlaggerMock.secondActiveModalDelayDays = 4
         featureFlaggerMock.subsequentActiveModalRepeatIntervalDays = 14
         userTypeProviderMock.userType = .existing
-        storeMock.lastModalShownDate = nil
         storeMock.modalShownOccurrences = 0
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
         let installDate = Date(timeIntervalSince1970: 1750739150) // Tuesday, 24 June 2025 12:00:00 AM (GMT)
@@ -303,7 +283,6 @@ final class DefaultBrowserPromptDeciderTests {
         // Install day == 1 day. Show First Modal
         dateProviderMock.advanceBy(.days(1))
         #expect(sut.promptType() == .active(.firstModal))
-        storeMock.lastModalShownDate = dateProviderMock.getDate().timeIntervalSince1970
         storeMock.modalShownOccurrences = 1
 
         // Active days after first modal < 4. Do not show any modal.
@@ -381,7 +360,6 @@ final class DefaultBrowserPromptDeciderTests {
         featureFlaggerMock.secondActiveModalDelayDays = 4
         featureFlaggerMock.subsequentActiveModalRepeatIntervalDays = 14
         userTypeProviderMock.userType = userType
-        storeMock.lastModalShownDate = nil
         storeMock.modalShownOccurrences = 0
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
         let installDate = Date(timeIntervalSince1970: 1750739150) // Tuesday, 24 June 2025 12:00:00 AM (GMT)
@@ -396,16 +374,11 @@ final class DefaultBrowserPromptDeciderTests {
         userActivityProviderMock.numberOfInactiveDaysPassed = 28
 
         #expect(sut.promptType() == .inactive)
-        storeMock.lastModalShownDate = dateProviderMock.getDate().timeIntervalSince1970
         storeMock.hasInactiveModalShown = true
-
-        // Active modal should show but a modal has already been presented
-        #expect(sut.promptType() == nil)
 
         // Advance by one day. First modal after should show
         dateProviderMock.advanceBy(.days(1))
         #expect(sut.promptType() == .active(.firstModal))
-        storeMock.lastModalShownDate = dateProviderMock.getDate().timeIntervalSince1970
         storeMock.modalShownOccurrences = 1
     }
 
@@ -415,7 +388,6 @@ final class DefaultBrowserPromptDeciderTests {
         featureFlaggerMock.secondActiveModalDelayDays = 4
         featureFlaggerMock.subsequentActiveModalRepeatIntervalDays = 14
         userTypeProviderMock.userType = userType
-        storeMock.lastModalShownDate = nil
         storeMock.modalShownOccurrences = 0
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
         let installDate = Date(timeIntervalSince1970: 1750739150) // Tuesday, 24 June 2025 12:00:00 AM (GMT)
@@ -428,7 +400,6 @@ final class DefaultBrowserPromptDeciderTests {
         // Install day == 1 day. Show First Modal
         dateProviderMock.advanceBy(.days(1))
         #expect(sut.promptType() == .active(.firstModal))
-        storeMock.lastModalShownDate = dateProviderMock.getDate().timeIntervalSince1970
         storeMock.modalShownOccurrences = 1
 
 
@@ -437,7 +408,6 @@ final class DefaultBrowserPromptDeciderTests {
         userActivityProviderMock.numberOfInactiveDaysPassed = 28
 
         #expect(sut.promptType() == .inactive)
-        storeMock.lastModalShownDate = dateProviderMock.getDate().timeIntervalSince1970
         storeMock.hasInactiveModalShown = true
 
         // Active modal should show but a modal has already been presented

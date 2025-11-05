@@ -35,7 +35,6 @@ public enum DefaultBrowserPromptFactory {
         checkDefaultBrowserDebugEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserManagerDebugEvent>,
         promptUserInteractionEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>,
         uiProvider: any DefaultBrowserPromptUIProviding,
-        isOnboardingCompletedProvider: @escaping () -> Bool,
         installDateProvider: @escaping () -> Date?,
         currentDateProvider: @escaping () -> Date
     ) -> DefaultBrowserPromptPresenting {
@@ -61,7 +60,6 @@ public enum DefaultBrowserPromptFactory {
         )
 
         let coordinator = DefaultBrowserPromptCoordinator(
-            isOnboardingCompleted: isOnboardingCompletedProvider,
             promptStore: promptActivityStore,
             userActivityManager: userActivityManager,
             promptTypeDecider: promptTypeDecider,

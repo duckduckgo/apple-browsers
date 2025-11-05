@@ -299,12 +299,16 @@ final class AddressBarViewController: NSViewController {
             .debounce(for: 0.05, scheduler: DispatchQueue.main)
             .sink { [weak self] childWindows in
                 guard let self, let childWindows, childWindows.contains(where: {
-                    !($0.windowController is TabPreviewWindowController || $0.contentViewController is SuggestionViewController)
+                    !(
+                        $0.windowController is TabPreviewWindowController
+                        || $0.contentViewController is SuggestionViewController
+                        || $0 === self.view.window?.titlebarView?.window // fullscreen titlebar owning window
+                    )
                 }) else { return }
 
                 addressBarTextField.hideSuggestionWindow()
             }
-            .store(in: &cancellables)
+            .store(in: &cancellables) // hide Suggestions on Minimuze/Enter Full Screen
 
         NSApp.publisher(for: \.effectiveAppearance)
             .sink { [weak self] _ in
@@ -331,7 +335,7 @@ final class AddressBarViewController: NSViewController {
 
                 subscribeToTabContent()
                 subscribeToPassiveAddressBarString()
-                subscribeToProgressEvents()
+                subscribeToProgressEventsIfNeeded()
 
                 // don't resign first responder on tab switching
                 clickPoint = nil
@@ -370,8 +374,12 @@ final class AddressBarViewController: NSViewController {
             .store(in: &tabViewModelCancellables)
     }
 
-    private func subscribeToProgressEvents() {
-        guard let tabViewModel else {
+    private var displaysLoadingProgressIndicator: Bool {
+        featureFlagger.isFeatureOn(.tabProgressIndicator) == false
+    }
+
+    private func subscribeToProgressEventsIfNeeded() {
+        guard let tabViewModel, displaysLoadingProgressIndicator else {
             progressIndicator.hide(animated: false)
             return
         }

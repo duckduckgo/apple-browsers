@@ -34,7 +34,9 @@ class BrowserChromeButton: UIButton {
         }
     }
 
-    private weak var border: UIView?
+    // For debugging in memory graph.
+    class BrowserChromeButtonBorder: UIView { }
+    private weak var border: BrowserChromeButtonBorder?
 
     init(_ type: ButtonType = .primary) {
         self.type = type
@@ -52,7 +54,7 @@ class BrowserChromeButton: UIButton {
 
     func addBorder(borderFrame: CGRect = CGRect(x: 0, y: 0, width: 80, height: 40)) {
         border?.removeFromSuperview()
-        let view = UIView(frame: borderFrame)
+        let view = BrowserChromeButtonBorder(frame: borderFrame)
         view.center = self.center
         view.layer.borderWidth = 1.5
         view.layer.cornerRadius = 14
@@ -122,12 +124,12 @@ class BrowserChromeButton: UIButton {
             type.foregroundColor(for: self?.state ?? .normal)
         }
 
-        configurationUpdateHandler = { button in
+        configurationUpdateHandler = { [weak self] button in
             var newConfiguration = button.configuration ?? defaultConfiguration
 
             newConfiguration.baseForegroundColor = type.foregroundColor(for: button.state)
 
-            if button.state == .highlighted && self.border != nil {
+            if button.state == .highlighted && self?.border != nil {
                 newConfiguration.baseBackgroundColor = .clear
             } else {
                 newConfiguration.baseBackgroundColor = type.backgroundColor(for: button.state)

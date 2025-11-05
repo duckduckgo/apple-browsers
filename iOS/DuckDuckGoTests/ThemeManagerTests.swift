@@ -61,6 +61,7 @@ class ThemeManagerTests: XCTestCase {
     }
 
     func testEnablingThemeOverridesUserInterfaceStyle() {
+        // swiftlint:disable:next force_cast
         let scene = UIApplication.shared.connectedScenes.first! as! UIWindowScene
         let window = UIWindow(windowScene: scene)
         window.makeKeyAndVisible()

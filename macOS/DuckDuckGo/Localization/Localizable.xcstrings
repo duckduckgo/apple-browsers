@@ -23329,6 +23329,30 @@
         }
       }
     },
+    "duckai.hide-ai-generated-images-settings" : {
+      "comment" : "The section name in preferences for Hide AI-Generated Images Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide AI-Generated Images"
+          }
+        }
+      }
+    },
+    "duckai.hide-ai-generated-images-settings.description" : {
+      "comment" : "Description of the section in Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Filter out AI-generated images from image search results"
+          }
+        }
+      }
+    },
     "duckai.menu.new" : {
       "comment" : "Menu item to launch AI Chat",
       "extractionState" : "extracted_with_value",
@@ -23685,6 +23709,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Включайте Duck.ai на боковой панели при просмотре веб-сайтов"
+          }
+        }
+      }
+    },
+    "duckai.search-ai-features-settings.link" : {
+      "comment" : "Button to open the Search AI Features Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Search AI Features"
           }
         }
       }

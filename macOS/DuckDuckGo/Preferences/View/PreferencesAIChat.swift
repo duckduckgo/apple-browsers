@@ -235,17 +235,17 @@ extension Preferences {
 
                 PreferencePaneSection {
                     VStack(alignment: .leading) {
-                        TextAndImageMenuItemHeader("Hide AI-Generated Images",
-                                                   image: Image(nsImage: DesignSystemImages.Glyphs.Size24.imageAIHide),
+                        TextAndImageMenuItemHeader(UserText.hideAIGeneratedImagesSettings,
+                                                   image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
                                                    bottomPadding: 2)
 
-                        TextMenuItemCaption("Filter out AI-generated images from image search results")
+                        TextMenuItemCaption(UserText.hideAIGeneratedImagesSettingsDescription)
                             .padding(.bottom, 6)
                         Button {
                             model.openSearchAssistSettings()
                         } label: {
                             HStack {
-                                Text("Open Search AI Features")
+                                Text(UserText.searchAIFeaturesSettingsLink)
                                 Image(.externalAppScheme)
                             }
                             .foregroundColor(Color.linkBlue)

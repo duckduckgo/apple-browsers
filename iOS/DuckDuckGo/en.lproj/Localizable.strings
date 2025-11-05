@@ -2713,6 +2713,12 @@ Take back control of your personal information with the browser designed for dat
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Settings";
 
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Hide AI-Generated Images";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filters out AI-Generated images from image search results";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Always On";
 

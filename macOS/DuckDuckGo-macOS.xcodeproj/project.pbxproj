@@ -8727,15 +8727,6 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		84DD63DE2E9783870043A25E /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				B31055C327A1BA1D001AC618 /* autoconsent-bundle.js */,
-				B31055BE27A1BA1D001AC618 /* userscript.js */,
-			);
-			path = Resources;
-			sourceTree = "<group>";
-		};
 		84DD63DF2E9783A30043A25E /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -10525,7 +10516,8 @@
 		B31055BB27A1BA0E001AC618 /* Autoconsent */ = {
 			isa = PBXGroup;
 			children = (
-				84DD63DE2E9783870043A25E /* Resources */,
+				B31055C327A1BA1D001AC618 /* autoconsent-bundle.js */,
+				B31055BE27A1BA1D001AC618 /* userscript.js */,
 				FD23FD2C2886A81D007F6985 /* AutoconsentManagement.swift */,
 				B31055BC27A1BA1D001AC618 /* AutoconsentUserScript.swift */,
 				B313C04E2E1FD91200C34AE6 /* AutoconsentPixels.swift */,

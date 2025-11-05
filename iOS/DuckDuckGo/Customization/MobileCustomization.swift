@@ -199,9 +199,17 @@ class MobileCustomization {
     }()
 
     var state: State {
-        State(isEnabled: featureFlagger.isFeatureOn(.mobileCustomization) && !isPad,
+        State(isEnabled: isEnabled,
               currentToolbarButton: current(forKey: .toolbarButton, containedIn: Self.toolbarButtons, Self.toolbarDefault),
               currentAddressBarButton: current(forKey: .addressBarButton, containedIn: Self.addressBarButtons.compactMap { $0 }, Self.addressBarDefault))
+    }
+
+    var hasFireButton: Bool {
+        return state.currentToolbarButton == .fire || state.currentToolbarButton == .fire
+    }
+
+    var isEnabled: Bool {
+        featureFlagger.isFeatureOn(.mobileCustomization) && !isPad
     }
 
     private let featureFlagger: FeatureFlagger

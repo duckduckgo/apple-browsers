@@ -2655,7 +2655,9 @@ extension MainViewController: OmniBarDelegate {
             menuEntries = tab.buildShortcutsMenu()
             headerEntries = []
         } else {
-            menuEntries = tab.buildBrowsingMenu(with: menuBookmarksViewModel)
+            menuEntries = tab.buildBrowsingMenu(with: menuBookmarksViewModel,
+                                                mobileCustomization: mobileCustomization,
+                                                clearTabsAndData: onFirePressed)
             headerEntries = tab.buildBrowsingMenuHeaderContent()
         }
 
@@ -2761,7 +2763,7 @@ extension MainViewController: OmniBarDelegate {
         stopLoading()
     }
 
-    func onClearPressed() {
+    func onClearTextPressed() {
         fireControllerAwarePixel(ntp: .addressBarClearPressedOnNTP,
                                  serp: .addressBarClearPressedOnSERP,
                                  website: .addressBarClearPressedOnWebsite)

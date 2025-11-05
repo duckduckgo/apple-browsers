@@ -53,8 +53,7 @@ final class MainCoordinator {
 
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let featureFlagger: FeatureFlagger
-    private let defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
-    private let winBackOfferPresenter: WinBackOfferPresenting
+    private let modalPromptCoordinationService: ModalPromptCoordinationService
     private let launchSourceManager: LaunchSourceManaging
 
     init(syncService: SyncService,
@@ -74,17 +73,16 @@ final class MainCoordinator {
          customConfigurationURLProvider: CustomConfigurationURLProviding,
          didFinishLaunchingStartTime: CFAbsoluteTime?,
          keyValueStore: ThrowingKeyValueStoring,
-         defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          daxDialogsManager: DaxDialogsManaging,
          dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
          launchSourceManager: LaunchSourceManaging,
-         winBackOfferService: WinBackOfferService
+         winBackOfferService: WinBackOfferService,
+         modalPromptCoordinationService: ModalPromptCoordinationService
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
-        self.defaultBrowserPromptPresenter = defaultBrowserPromptPresenter
-        self.winBackOfferPresenter = winBackOfferService.presenter
+        self.modalPromptCoordinationService = modalPromptCoordinationService
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
@@ -122,7 +120,8 @@ final class MainCoordinator {
                                 maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                 featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
                                 keyValueStore: keyValueStore,
-                                daxDialogsManager: daxDialogsManager)
+                                daxDialogsManager: daxDialogsManager,
+                                aiChatSettings: aiChatSettings)
         controller = MainViewController(bookmarksDatabase: bookmarksDatabase,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         historyManager: historyManager,
@@ -212,14 +211,11 @@ final class MainCoordinator {
     }
 
     func presentNetworkProtectionStatusSettingsModal() {
-        Task {
-            if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
-               canShowVPNInUI {
-                controller.segueToVPN()
-            } else {
-                controller.segueToDuckDuckGoSubscription()
-            }
-        }
+        controller.presentNetworkProtectionStatusSettingsModal()
+    }
+
+    func presentModalPromptIfNeeded() {
+        modalPromptCoordinationService.presentModalPromptIfNeeded(from: controller)
     }
 
     // MARK: App Lifecycle handling
@@ -227,12 +223,6 @@ final class MainCoordinator {
     func onForeground() {
         controller.showBars()
         controller.onForeground()
-
-        // Present Win-Back Offer Prompt if user is eligible.
-        winBackOfferPresenter.tryPresentWinBackOfferPrompt(from: controller)
-
-        // Present Default Browser Prompt if user is eligible.
-        defaultBrowserPromptPresenter.tryPresentDefaultModalPrompt(from: controller)
     }
 
     func onBackground() {
@@ -346,7 +336,7 @@ extension MainCoordinator: ShortcutItemHandling {
         } else if item.type == ShortcutKey.passwords {
             handleSearchPassword()
         } else if item.type == ShortcutKey.openVPNSettings {
-            presentNetworkProtectionStatusSettingsModal()
+            controller.presentNetworkProtectionStatusSettingsModal()
         } else if item.type == ShortcutKey.aiChat {
             handleAIChatAppIconShortuct()
         } else if item.type == ShortcutKey.voiceSearch {

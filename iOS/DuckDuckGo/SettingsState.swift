@@ -68,11 +68,13 @@ struct SettingsState {
     var showsFullURL: Bool
     var isExperimentalAIChatEnabled: Bool
     var refreshButtonPosition: RefreshButtonPosition
+    var mobileCustomization: MobileCustomization.State
 
     // Privacy properties
     var sendDoNotSell: Bool
     var autoconsentEnabled: Bool
     var autoclearDataEnabled: Bool
+    var autoClearAIChatHistory: Bool
     var applicationLock: Bool
 
     // Customization properties
@@ -128,9 +130,11 @@ struct SettingsState {
             showsFullURL: false,
             isExperimentalAIChatEnabled: false,
             refreshButtonPosition: .addressBar,
+            mobileCustomization: .default,
             sendDoNotSell: true,
             autoconsentEnabled: false,
             autoclearDataEnabled: false,
+            autoClearAIChatHistory: false,
             applicationLock: false,
             autocomplete: true,
             recentlyVisitedSites: true,

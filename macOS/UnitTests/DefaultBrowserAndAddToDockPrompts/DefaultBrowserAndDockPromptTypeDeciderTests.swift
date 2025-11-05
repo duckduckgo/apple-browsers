@@ -46,7 +46,7 @@ final class DefaultBrowserAndDockPromptTypeDeciderTests {
     @Test("Return Nil Prompt when Feature Is Disabled")
     func checkPromptIsNilWhenFeatureFlagIsDisabled() {
         // GIVEN
-        featureFlaggerMock.isDefaultBrowserAndDockPromptFeatureEnabled = false
+        featureFlaggerMock.isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled = false
         makeSUT()
 
         // WHEN

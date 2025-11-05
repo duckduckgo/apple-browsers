@@ -116,4 +116,5 @@ class AppSettingsMock: AppSettings {
     var duckPlayerControlsVisible: Bool = true
     var duckPlayerNativeUIWasUsed: Bool = false
     var duckPlayerNativeUISettingsMapped: Bool = false
+    var autoClearAIChatHistory: Bool = false
 }

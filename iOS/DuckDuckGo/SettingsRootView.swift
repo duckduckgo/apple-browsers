@@ -226,6 +226,7 @@ struct SettingsRootView: View {
         case .dbp:
             if viewModel.isPIREnabled, let vcProvider = viewModel.dataBrokerProtectionViewControllerProvider {
                 DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
+                    .edgesIgnoringSafeArea(.bottom)
             } else {
                 SubscriptionPIRMoveToDesktopView()
             }

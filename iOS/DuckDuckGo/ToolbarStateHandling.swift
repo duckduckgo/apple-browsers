@@ -40,7 +40,18 @@ enum ToolbarContentState: Equatable {
 }
 
 protocol ToolbarStateHandling {
+
+    var backButton: UIBarButtonItem { get }
+    var fireBarButtonItem: UIBarButtonItem { get }
+    var forwardButton: UIBarButtonItem { get }
+    var tabSwitcherButton: UIBarButtonItem { get }
+    var bookmarkButton: UIBarButtonItem { get }
+
+    var passwordsButton: UIBarButtonItem { get }
+    var browserMenuButton: UIBarButtonItem { get }
+
     func updateToolbarWithState(_ state: ToolbarContentState)
+
 }
 
 final class ToolbarHandler: ToolbarStateHandling {
@@ -53,7 +64,9 @@ final class ToolbarHandler: ToolbarStateHandling {
     }()
 
     lazy var fireBarButtonItem = {
-        return createBarButtonItem(title: UserText.actionForgetAll, image: DesignSystemImages.Glyphs.Size24.fireSolid)
+       let buttonItem = createBarButtonItem(title: UserText.actionForgetAll, image: DesignSystemImages.Glyphs.Size24.fireSolid)
+        buttonItem.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
+        return buttonItem
     }()
 
     lazy var forwardButton = {

@@ -78,8 +78,7 @@ struct Foreground: ForegroundHandling {
             urlHandler: appDependencies.mainCoordinator,
             shortcutItemHandler: appDependencies.mainCoordinator,
             keyboardPresenter: KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller),
-            launchSourceService: appDependencies.launchSourceManager,
-            newAddressBarPickerPresenter: NewAddressBarPickerPresenter(mainViewController: appDependencies.mainCoordinator.controller)
+            launchSourceService: appDependencies.launchSourceManager
         )
         interactionManager = UIInteractionManager(
             authenticationService: sceneDependencies.authenticationService,
@@ -120,6 +119,9 @@ struct Foreground: ForegroundHandling {
                 // Mark that the app has successfully launched at least once
                 // This helps distinguish database corruption from fresh installs/restores
                 BoolFileMarker(name: .hasSuccessfullyLaunchedBefore)?.mark()
+
+                // Present any eligible modal prompt
+                appDependencies.mainCoordinator.presentModalPromptIfNeeded()
             }
         )
 

@@ -77,12 +77,43 @@ final class QuantisedTimePastTests: XCTestCase {
         let day56 = Calendar.current.date(byAdding: .day, value: 56, to: installDate)!
         XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day56, andInstallationDate: installDate), .months(2))
 
+        // Month 3 boundary tests
+        let day57 = Calendar.current.date(byAdding: .day, value: 57, to: installDate)!
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day57, andInstallationDate: installDate), .months(3))
+
+        let day84 = Calendar.current.date(byAdding: .day, value: 84, to: installDate)!
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day84, andInstallationDate: installDate), .months(3))
+
+        // Month 4 boundary tests
+        let day85 = Calendar.current.date(byAdding: .day, value: 85, to: installDate)!
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day85, andInstallationDate: installDate), .months(4))
+
+        let day112 = Calendar.current.date(byAdding: .day, value: 112, to: installDate)!
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day112, andInstallationDate: installDate), .months(4))
+
+        // Month 5 boundary tests
+        let day113 = Calendar.current.date(byAdding: .day, value: 113, to: installDate)!
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day113, andInstallationDate: installDate), .months(5))
+
+        let day140 = Calendar.current.date(byAdding: .day, value: 140, to: installDate)!
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day140, andInstallationDate: installDate), .months(5))
+
         // Month 6 boundary tests
         let day141 = Calendar.current.date(byAdding: .day, value: 141, to: installDate)!
         XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day141, andInstallationDate: installDate), .months(6))
 
         let day168 = Calendar.current.date(byAdding: .day, value: 168, to: installDate)!
         XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day168, andInstallationDate: installDate), .months(6))
+
+        // Month 7 boundary test (first day after month 6 ends)
+        let day169 = Calendar.current.date(byAdding: .day, value: 169, to: installDate)!
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: day169, andInstallationDate: installDate), .months(7))
+    }
+
+    func testNegativeTimeInterval() {
+        let installDate = testDate
+        let beforeInstall = Calendar.current.date(byAdding: .day, value: -1, to: installDate)!
+        XCTAssertEqual(QuantisedTimePast.timePastFrom(date: beforeInstall, andInstallationDate: installDate), .none)
     }
 
     func testDaysBetween() {

@@ -49,7 +49,7 @@ final class DataBrokerProtectionErrorsTests: XCTestCase {
     func testLocalizedDescriptionWhenActionFailed_returnsUnderlyingMessage() {
         let error = DataBrokerProtectionError.actionFailed(actionID: "action-id", message: "Lorem ipsum dolor sit amet")
 
-        XCTAssertEqual(error.localizedDescription, "Action failed: Lorem ipsum dolor sit amet")
+        XCTAssertEqual(error.localizedDescription, "Action failed: [action-id] Lorem ipsum dolor sit amet")
     }
 
     func testLocalizedDescriptionWhenEmailError_returnsNestedDescription() {

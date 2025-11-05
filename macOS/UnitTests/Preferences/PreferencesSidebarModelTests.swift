@@ -449,6 +449,30 @@ final class PreferencesSidebarModelTests: XCTestCase {
         pixelFiringMock.verifyExpectations()
     }
 
+    func testWhenSelectedPaneIsUpdatedToSubscriptionDuringTheWinBackOfferThenWinBackOfferPixelIsSent() throws {
+        // Given
+        mockWinBackOfferVisibilityManager.isOfferAvailable = true
+        let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .subscription])]
+        let model = PreferencesSidebarModel(loadSections: sections)
+
+        // When
+        model.selectPane(.subscription)
+        model.selectPane(.appearance)
+        model.selectPane(.subscription)
+        model.selectPane(.appearance)
+
+        // Then
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: SettingsPixel.settingsPaneOpened(.appearance), frequency: .daily),
+            .init(pixel: SubscriptionPixel.subscriptionWinBackOfferSettingsPageShown, frequency: .standard),
+            .init(pixel: SettingsPixel.settingsPaneOpened(.appearance), frequency: .daily),
+            .init(pixel: SubscriptionPixel.subscriptionWinBackOfferSettingsPageShown, frequency: .standard),
+            .init(pixel: SettingsPixel.settingsPaneOpened(.appearance), frequency: .daily)
+        ]
+
+        pixelFiringMock.verifyExpectations()
+    }
+
     // MARK: - isPaneNew tests
 
     func testIsPaneNewReturnsTrueForPaidAIChat() throws {

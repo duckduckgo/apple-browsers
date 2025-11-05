@@ -36,6 +36,7 @@ final class BackForwardListItemViewModel {
         self.isCurrentItem = isCurrentItem
     }
 
+    @MainActor
     var title: String {
         switch backForwardListItem.kind {
         case .url(let url):

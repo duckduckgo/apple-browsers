@@ -21,6 +21,7 @@ import Combine
 import OSLog
 import Common
 import Subscription
+import PixelKit
 
 final class WinBackOfferPromotionViewCoordinator: ObservableObject {
 
@@ -43,25 +44,53 @@ final class WinBackOfferPromotionViewCoordinator: ObservableObject {
     }
 
     private var winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+    private let pixelHandler: (SubscriptionPixel) -> Void
+    private let urlOpener: @MainActor (URL) -> Void
 
     /// A set of cancellables for managing Combine subscriptions.
     private var cancellables = Set<AnyCancellable>()
 
-    init(winBackOfferVisibilityManager: WinBackOfferVisibilityManaging) {
+    init(winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
+         pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) },
+         urlOpener: @escaping @MainActor (URL) -> Void = { @MainActor url in
+             Application.appDelegate.windowControllersManager.showTab(with: .subscription(url))
+         }) {
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+        self.pixelHandler = pixelHandler
+        self.urlOpener = urlOpener
 
         setUpViewModelRefreshing()
         setInitialPromotionVisibilityState()
     }
 }
 
-private extension WinBackOfferPromotionViewCoordinator {
+extension WinBackOfferPromotionViewCoordinator {
+    /// Action to be executed when the user proceeds with the promotion (e.g., opens win-back offer)
     var proceedAction: () async -> Void {
-        { }
+        { @MainActor [weak self] in
+            guard let self else { return }
+
+            // Open the win-back offer subscription page with proper attribution
+            guard let url = WinBackOfferURL.subscriptionURL(for: .winBackNewTabPage) else { return }
+
+            pixelHandler(.subscriptionWinBackOfferNewTabPageCTAClicked)
+
+            urlOpener(url)
+
+            // Dismiss the promotion after action
+            dismissHomePagePromotion()
+        }
     }
 
+    /// Action to be executed when the user closes the promotion
     var closeAction: () -> Void {
-        { }
+        { [weak self] in
+            guard let self else { return }
+
+            pixelHandler(.subscriptionWinBackOfferNewTabPageDismissed)
+
+            dismissHomePagePromotion()
+        }
     }
 
     /// Dismisses the home page promotion and updates the user state to reflect this.
@@ -78,6 +107,8 @@ private extension WinBackOfferPromotionViewCoordinator {
         guard winBackOfferVisibilityManager.shouldShowUrgencyMessage, isHomePagePromotionVisible else {
             return nil
         }
+
+        pixelHandler(.subscriptionWinBackOfferNewTabPageShown)
 
         return PromotionViewModel(image: .subscriptionClock96,
                                   title: UserText.winBackCampaignLastDayMessageTitle,

@@ -42,22 +42,44 @@ public enum QuantisedTimePast: Equatable, Codable {
     }
 
     /// Calculates quantised time interval between installation and given date.
-    /// Returns weeks for 0-4 week periods, months thereafter using 28-day approximation.
+    ///
+    /// Quantization logic:
+    /// - Day 0 (install day): `.none`
+    /// - Days 1-7: `.weeks(1)`
+    /// - Days 8-14: `.weeks(2)`
+    /// - Days 15-21: `.weeks(3)`
+    /// - Days 22-28: `.weeks(4)`
+    /// - Days 29-56: `.months(2)` ← Note: Month 1 is intentionally skipped
+    /// - Days 57-84: `.months(3)`
+    /// - Days 85-112: `.months(4)`
+    /// - Days 113-140: `.months(5)`
+    /// - Days 141-168: `.months(6)`
+    /// - And so on...
+    ///
+    /// Each month bucket represents a 28-day period for consistent quantization.
+    /// Month 1 is skipped to avoid confusion between "4 weeks" and "1 month".
     static func timePastFrom(date: Date, andInstallationDate installationDate: Date) -> QuantisedTimePast {
         let days = daysBetween(from: installationDate, to: date)
 
-        // Handle negative time intervals (invalid dates)
+        // Install day or invalid date range (negative time)
         guard days > 0 else {
             return .none
         }
-        // 0 / 1-7/ 8-14 ...
-        let weeks = Float(days-1) / 7
 
-        if weeks < 4 {
-            return .weeks(Int(weeks+1))
+        // Calculate which bucket this falls into (0-indexed)
+        // Days 1-7 → bucket 0 → week 1
+        // Days 8-14 → bucket 1 → week 2
+        // Days 29-56 → bucket 4 → month 2 (bucket 4 + 1 = 5, then subtract 3 for skipped weeks)
+        let bucket = (days - 1) / 7
+
+        if bucket < 4 {
+            // Weeks 1-4: bucket 0-3 maps to weeks 1-4
+            return .weeks(bucket + 1)
         } else {
-            let months = Float(days-1) / 28
-            return .months(Int(months+1))
+            // Months: Convert 7-day buckets to 28-day (4-week) buckets
+            // bucket 4-7 → month 2, bucket 8-11 → month 3, etc.
+            let monthBucket = bucket / 4
+            return .months(monthBucket + 1)
         }
     }
 

@@ -62,6 +62,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
 
     // MARK: - ranges
 
+    @MainActor
     func testThatRangesReturnsAllWhenHistoryIsEmpty() async {
         dataSource.history = nil
         await provider.refreshData()
@@ -78,6 +79,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         ])
     }
 
+    @MainActor
     func testThatRangesIncludesTodayWhenHistoryContainsEntriesFromToday() async throws {
         dateFormatter.date = try date(year: 2025, month: 2, day: 24)
         let today = dateFormatter.currentDate().startOfDay
@@ -95,6 +97,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         ])
     }
 
+    @MainActor
     func testThatRangesIncludesYesterdayWhenHistoryContainsEntriesFromYesterday() async throws {
         dateFormatter.date = try date(year: 2025, month: 2, day: 24)
         let today = dateFormatter.currentDate().startOfDay
@@ -114,6 +117,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         ])
     }
 
+    @MainActor
     func testThatRangesIncludesAllRangesUntilTheOldestRangeThatContainsEntries() async throws {
         dateFormatter.date = try date(year: 2025, month: 2, day: 24) // Monday
         let today = dateFormatter.currentDate().startOfDay
@@ -136,6 +140,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         ])
     }
 
+    @MainActor
     func testThatRangesIncludesAllDaysAndOlderWhenHistoryContainsEntriesOlderThan7Days() async throws {
         dateFormatter.date = try date(year: 2025, month: 2, day: 24) // Monday
         let today = dateFormatter.currentDate().startOfDay
@@ -160,6 +165,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         ])
     }
 
+    @MainActor
     func testThatRangesIncludesNamedWeekdaysWhenHistoryContainsEntriesFrom2To4DaysAgo() async throws {
         func populateHistory(for date: Date) async throws {
             dateFormatter.date = date
@@ -624,6 +630,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
 
     // MARK: - titlesForURLs
 
+    @MainActor
     func testThatTitlesForURLsReturnsTitlesMappingForMatchingURLs() async throws {
         dataSource.history = [
             .make(url: try XCTUnwrap("https://example1.com".url), title: "Example 1", visits: []),
@@ -764,13 +771,14 @@ final class HistoryViewDataProviderTests: XCTestCase {
     }
 
     // MARK: - bestTitle(forSiteDomain:)
-
+    @MainActor
     func testWhenHistoryIsEmptyThenBestTitleReturnsDomain() {
         dataSource.history = nil
         let title = provider.bestTitle(forSiteDomain: "example.com")
         XCTAssertEqual(title, "example.com")
     }
 
+    @MainActor
     func testWhenNoEntriesMatchDomainThenBestTitleReturnsDomain() throws {
         dataSource.history = [
             .make(url: try XCTUnwrap("https://other.com".url), title: "Other Site", visits: [.init(date: Date())])
@@ -779,6 +787,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(title, "example.com")
     }
 
+    @MainActor
     func testWhenRootIndexPageExistsThenBestTitleReturnsItsTitle() throws {
         let today = Date()
         dataSource.history = [
@@ -790,6 +799,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(title, "Example Home")
     }
 
+    @MainActor
     func testWhenRootIndexPageHasEmptyTitleThenBestTitleReturnsURL() throws {
         let today = Date()
         dataSource.history = [
@@ -799,6 +809,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(title, "https://example.com")
     }
 
+    @MainActor
     func testWhenRootIndexPageHasNilTitleThenBestTitleReturnsURL() throws {
         let today = Date()
         dataSource.history = [
@@ -808,6 +819,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(title, "https://example.com")
     }
 
+    @MainActor
     func testWhenWWWRootIndexPageExistsThenBestTitleReturnsItsTitle() throws {
         let today = Date()
         dataSource.history = [
@@ -818,6 +830,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(title, "WWW Example")
     }
 
+    @MainActor
     func testWhenRootIndexPageWithSlashExistsThenBestTitleReturnsItsTitle() throws {
         let today = Date()
         dataSource.history = [
@@ -828,6 +841,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(title, "Root Slash")
     }
 
+    @MainActor
     func testWhenMultipleRootPagesThenBestTitlePrefersHTTPS() throws {
         let today = Date()
         dataSource.history = [
@@ -838,6 +852,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(title, "HTTPS Root")
     }
 
+    @MainActor
     func testWhenMultipleRootPagesWithSameSchemesThenBestTitlePrefersMostRecent() throws {
         let olderDate = Date().addingTimeInterval(-7200)
         let newerDate = Date().addingTimeInterval(-3600)
@@ -849,6 +864,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(title, "Newer Root")
     }
 
+    @MainActor
     func testWhenNoRootPageThenBestTitleReturnsMostRecentPageTitle() throws {
         let olderDate = Date().addingTimeInterval(-7200)
         let newerDate = Date().addingTimeInterval(-3600)
@@ -860,6 +876,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(title, "Newer Page")
     }
 
+    @MainActor
     func testWhenNoRootPageAndMostRecentHasEmptyTitleThenBestTitleReturnsURL() throws {
         let olderDate = Date().addingTimeInterval(-7200)
         let newerDate = Date().addingTimeInterval(-3600)
@@ -871,6 +888,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(title, "https://example.com/newer")
     }
 
+    @MainActor
     func testWhenMultipleSubdomainsThenBestTitleMatchesAllForDomain() throws {
         let today = Date()
         dataSource.history = [
@@ -883,6 +901,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(title, "Subdomain B")
     }
 
+    @MainActor
     func testWhenRootPageExistsWithSubdomainPagesThenBestTitlePrefersRoot() throws {
         let today = Date()
         let olderDate = today.addingTimeInterval(-7200)
@@ -895,6 +914,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(title, "Root Page")
     }
 
+    @MainActor
     func testWhenHTTPSRootAndHTTPNonRootThenBestTitlePrefersHTTPSRoot() throws {
         let today = Date()
         dataSource.history = [
@@ -905,6 +925,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(title, "HTTPS Root")
     }
 
+    @MainActor
     func testWhenRootHTTPNewerThanRootHTTPSThenBestTitlePrefersHTTPS() throws {
         let olderDate = Date().addingTimeInterval(-7200)
         let newerDate = Date().addingTimeInterval(-3600)

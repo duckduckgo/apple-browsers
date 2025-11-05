@@ -98,7 +98,8 @@ public final class VPNPrivacyConfigurationManager: PrivacyConfigurationManaging 
                 fetchedConfigData = (data, configData, etag)
                 updatesSubject.send(())
             } catch {
-                Pixel.fire(pixel: .trackerDataParseFailed, error: error, withAdditionalParameters: ["target": "vpn"])
+                let pixel = Pixel.Event.couldNotParseConfiguration(configuration: .privacyConfiguration, target: .vpn)
+                DailyPixel.fireDailyAndCount(pixel: pixel, error: error)
                 fetchedConfigData = nil
                 return .embeddedFallback
             }

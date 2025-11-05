@@ -40,7 +40,6 @@ final class FireDialogViewModelTests: XCTestCase {
     @MainActor
     override func setUp() {
         super.setUp()
-        FireDialogViewModel.resetPersistedDefaults()
 
         fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD())
         historyCoordinator = HistoryCoordinatingMock()
@@ -1457,6 +1456,8 @@ final class FireDialogViewModelTests: XCTestCase {
     @MainActor func testIncludeChatHistory_OffByDefault() {
         // Scenario: ViewModel initialized with chat history toggle visible.
         // Expectation: Chat history toggle is off by default.
+        let mockSettings = MockFireDialogViewSettings()
+
         let viewModel = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
@@ -1465,11 +1466,13 @@ final class FireDialogViewModelTests: XCTestCase {
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
             clearingOption: .allData,
-            tld: TLD(),
+            settings: mockSettings,
+            tld: TLD()
         )
 
         XCTAssertTrue(viewModel.shouldShowChatHistoryToggle)
         XCTAssertFalse(viewModel.includeChatHistory)
+        XCTAssertFalse(viewModel.includeChatHistorySetting)
     }
 
     @MainActor func testClearingOption_UpdatesIncludeChatHistory_AndPersistsUserSelection() {
@@ -1484,6 +1487,7 @@ final class FireDialogViewModelTests: XCTestCase {
                         tld: Application.appDelegate.tld)
         let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD())
         let aiChatHistoryCleaner = MockAIChatHistoryCleaner(showCleanOption: true)
+        let mockSettings = MockFireDialogViewSettings()
 
         let viewModel = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
@@ -1493,7 +1497,8 @@ final class FireDialogViewModelTests: XCTestCase {
             fireproofDomains: fireproofDomains,
             faviconManagement: faviconManager,
             clearingOption: .allData,
-            tld: Application.appDelegate.tld,
+            settings: mockSettings,
+            tld: Application.appDelegate.tld
         )
 
         // User makes selection to clear chat history.
@@ -1514,6 +1519,8 @@ final class FireDialogViewModelTests: XCTestCase {
         // Action: History Cleaner enabled clean history option.
         // Expectation: Chat history toggle is now visible.
         let aiChatHistoryCleaner = MockAIChatHistoryCleaner(showCleanOption: false)
+        let mockSettings = MockFireDialogViewSettings()
+
         let viewModel = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
@@ -1522,7 +1529,8 @@ final class FireDialogViewModelTests: XCTestCase {
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
             clearingOption: .allData,
-            tld: TLD(),
+            settings: mockSettings,
+            tld: TLD()
         )
 
         // Check precondition
@@ -1537,6 +1545,8 @@ final class FireDialogViewModelTests: XCTestCase {
         // Scenario: Changing scope updates chat history toggle.
         // Action: Set clearingOption to each option.
         // Expectation: Chat history toggle is only visible for .allData.
+        let mockSettings = MockFireDialogViewSettings()
+
         let viewModel = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
@@ -1545,7 +1555,8 @@ final class FireDialogViewModelTests: XCTestCase {
             fireproofDomains: fireproofDomains,
             faviconManagement: fire.faviconManagement,
             clearingOption: .currentTab,
-            tld: TLD(),
+            settings: mockSettings,
+            tld: TLD()
         )
 
         // Check precondition (false for current tab)
@@ -1565,6 +1576,8 @@ final class FireDialogViewModelTests: XCTestCase {
     @MainActor func testInitWithLimitedScopeMode_DisablesChatHistoryToggleVisibility() {
         // Scenario: ViewModel initialized with limited scope mode.
         // Expectation: Chat history toggle is not visible.
+        let mockSettings = MockFireDialogViewSettings()
+
         let viewModel = FireDialogViewModel(
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionVM,
@@ -1574,10 +1587,416 @@ final class FireDialogViewModelTests: XCTestCase {
             faviconManagement: fire.faviconManagement,
             clearingOption: .allData,
             mode: .historyView(query: .rangeFilter(.today)),
-            tld: TLD(),
+            settings: mockSettings,
+            tld: TLD()
         )
 
         XCTAssertFalse(viewModel.shouldShowChatHistoryToggle)
+    }
+
+    // MARK: - Settings Persistence Tests
+
+    @MainActor func testWhenClearingOptionChanged_ThenSettingIsPersisted() {
+        // Scenario: User changes the clearing option (scope).
+        // Action: Change clearingOption using mock settings.
+        // Expectation: Mock settings are updated and used by subsequent ViewModel.
+
+        let mockSettings = MockFireDialogViewSettings()
+
+        let viewModel1 = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        viewModel1.clearingOption = .allData
+
+        XCTAssertEqual(mockSettings.lastSelectedClearingOption, .allData, "Mock settings should be updated")
+
+        // Create new ViewModel with same mock settings
+        let viewModel2 = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        XCTAssertEqual(viewModel2.clearingOption, .allData, "clearingOption should be loaded from mock settings")
+
+        // Change to different option
+        viewModel2.clearingOption = .currentWindow
+
+        XCTAssertEqual(mockSettings.lastSelectedClearingOption, .currentWindow, "Mock settings should reflect new value")
+
+        // Create third ViewModel
+        let viewModel3 = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        XCTAssertEqual(viewModel3.clearingOption, .currentWindow, "Updated clearingOption should persist in mock settings")
+    }
+
+    @MainActor func testWhenIncludeTabsAndWindowsChanged_ThenSettingIsPersisted() {
+        // Scenario: User toggles includeTabsAndWindows setting.
+        // Action: Change includeTabsAndWindows value using mock settings.
+        // Expectation: Mock settings are updated and used by subsequent ViewModel.
+
+        let mockSettings = MockFireDialogViewSettings()
+
+        let viewModel1 = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        viewModel1.includeTabsAndWindows = false
+
+        XCTAssertEqual(mockSettings.lastIncludeTabsAndWindowsState, false, "Mock settings should be updated")
+
+        let viewModel2 = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        XCTAssertFalse(viewModel2.includeTabsAndWindows, "includeTabsAndWindows should be loaded from mock settings")
+
+        viewModel2.includeTabsAndWindows = true
+
+        XCTAssertEqual(mockSettings.lastIncludeTabsAndWindowsState, true, "Mock settings should reflect new value")
+
+        let viewModel3 = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        XCTAssertTrue(viewModel3.includeTabsAndWindows, "Updated includeTabsAndWindows should persist in mock settings")
+    }
+
+    @MainActor func testWhenIncludeHistoryChanged_ThenSettingIsPersisted() {
+        // Scenario: User toggles includeHistory setting.
+        // Action: Change includeHistory value using mock settings.
+        // Expectation: Mock settings are updated and used by subsequent ViewModel.
+
+        let mockSettings = MockFireDialogViewSettings()
+
+        let viewModel1 = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        viewModel1.includeHistory = false
+
+        XCTAssertEqual(mockSettings.lastIncludeHistoryState, false, "Mock settings should be updated")
+
+        let viewModel2 = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        XCTAssertFalse(viewModel2.includeHistory, "includeHistory should be loaded from mock settings")
+
+        viewModel2.includeHistory = true
+
+        XCTAssertEqual(mockSettings.lastIncludeHistoryState, true, "Mock settings should reflect new value")
+
+        let viewModel3 = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        XCTAssertTrue(viewModel3.includeHistory, "Updated includeHistory should persist in mock settings")
+    }
+
+    @MainActor func testWhenIncludeCookiesAndSiteDataChanged_ThenSettingIsPersisted() {
+        // Scenario: User toggles includeCookiesAndSiteData setting.
+        // Action: Change includeCookiesAndSiteData value using mock settings.
+        // Expectation: Mock settings are updated and used by subsequent ViewModel.
+
+        let mockSettings = MockFireDialogViewSettings()
+
+        let viewModel1 = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        viewModel1.includeCookiesAndSiteData = false
+
+        XCTAssertEqual(mockSettings.lastIncludeCookiesAndSiteDataState, false, "Mock settings should be updated")
+
+        let viewModel2 = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        XCTAssertFalse(viewModel2.includeCookiesAndSiteData, "includeCookiesAndSiteData should be loaded from mock settings")
+
+        viewModel2.includeCookiesAndSiteData = true
+
+        XCTAssertEqual(mockSettings.lastIncludeCookiesAndSiteDataState, true, "Mock settings should reflect new value")
+
+        let viewModel3 = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        XCTAssertTrue(viewModel3.includeCookiesAndSiteData, "Updated includeCookiesAndSiteData should persist in mock settings")
+    }
+
+    @MainActor func testWhenIncludeChatHistoryChanged_ThenSettingIsPersisted() {
+        // Scenario: User toggles includeChatHistory setting.
+        // Action: Change includeChatHistorySetting value using mock settings.
+        // Expectation: Mock settings are updated and used by subsequent ViewModel.
+
+        let mockSettings = MockFireDialogViewSettings()
+
+        let viewModel1 = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            clearingOption: .allData,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        viewModel1.includeChatHistorySetting = true
+
+        XCTAssertEqual(mockSettings.lastIncludeChatHistoryState, true, "Mock settings should be updated")
+
+        let viewModel2 = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            clearingOption: .allData,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        XCTAssertTrue(viewModel2.includeChatHistorySetting, "includeChatHistorySetting should be loaded from mock settings")
+
+        viewModel2.includeChatHistorySetting = false
+
+        XCTAssertEqual(mockSettings.lastIncludeChatHistoryState, false, "Mock settings should reflect new value")
+
+        let viewModel3 = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            clearingOption: .allData,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        XCTAssertFalse(viewModel3.includeChatHistorySetting, "Updated includeChatHistorySetting should persist in mock settings")
+    }
+
+    @MainActor func testWhenAllSettingsChanged_ThenAllSettingsPersist() {
+        // Scenario: User changes all settings at once.
+        // Action: Modify all dialog settings using mock settings.
+        // Expectation: All mock settings are updated and used by subsequent ViewModel.
+
+        let mockSettings = MockFireDialogViewSettings()
+
+        let viewModel1 = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        // Change all settings
+        viewModel1.clearingOption = .currentWindow
+        viewModel1.includeTabsAndWindows = false
+        viewModel1.includeHistory = false
+        viewModel1.includeCookiesAndSiteData = false
+        viewModel1.includeChatHistorySetting = true
+
+        // Verify all mock settings were updated
+        XCTAssertEqual(mockSettings.lastSelectedClearingOption, .currentWindow)
+        XCTAssertEqual(mockSettings.lastIncludeTabsAndWindowsState, false)
+        XCTAssertEqual(mockSettings.lastIncludeHistoryState, false)
+        XCTAssertEqual(mockSettings.lastIncludeCookiesAndSiteDataState, false)
+        XCTAssertEqual(mockSettings.lastIncludeChatHistoryState, true)
+
+        // Create new ViewModel with same mock settings
+        let viewModel2 = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        // Verify all settings were loaded from mock settings
+        XCTAssertEqual(viewModel2.clearingOption, .currentWindow, "clearingOption should be loaded from mock settings")
+        XCTAssertFalse(viewModel2.includeTabsAndWindows, "includeTabsAndWindows should be loaded from mock settings")
+        XCTAssertFalse(viewModel2.includeHistory, "includeHistory should be loaded from mock settings")
+        XCTAssertFalse(viewModel2.includeCookiesAndSiteData, "includeCookiesAndSiteData should be loaded from mock settings")
+        XCTAssertTrue(viewModel2.includeChatHistorySetting, "includeChatHistorySetting should be loaded from mock settings")
+    }
+
+    @MainActor func testWhenViewModelInitializedWithExplicitSettings_ThenExplicitSettingsOverridePersisted() {
+        // Scenario: ViewModel initialized with explicit parameters should override mock settings values.
+        // Action: Create ViewModel with mock settings, then create new one with explicit overrides.
+        // Expectation: Explicit parameters take precedence over mock settings.
+
+        let mockSettings = MockFireDialogViewSettings(
+            lastSelectedClearingOption: .allData,
+            lastIncludeTabsAndWindowsState: false,
+            lastIncludeHistoryState: false,
+            lastIncludeCookiesAndSiteDataState: false,
+            lastIncludeChatHistoryState: true
+        )
+
+        // Create ViewModel with explicit overrides
+        let viewModel = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            clearingOption: .currentTab,
+            includeTabsAndWindows: true,
+            includeHistory: true,
+            includeCookiesAndSiteData: true,
+            includeChatHistory: false,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        // Verify explicit parameters override mock settings
+        XCTAssertEqual(viewModel.clearingOption, .currentTab, "Explicit clearingOption should override mock settings")
+        XCTAssertTrue(viewModel.includeTabsAndWindows, "Explicit includeTabsAndWindows should override mock settings")
+        XCTAssertTrue(viewModel.includeHistory, "Explicit includeHistory should override mock settings")
+        XCTAssertTrue(viewModel.includeCookiesAndSiteData, "Explicit includeCookiesAndSiteData should override mock settings")
+        XCTAssertFalse(viewModel.includeChatHistorySetting, "Explicit includeChatHistory should override mock settings")
+    }
+
+    @MainActor func testWhenSettingsPersisted_ThenDefaultsUsedWhenNoPersistedValues() {
+        // Scenario: Fresh start with no persisted settings (empty mock).
+        // Action: Create ViewModel with empty mock settings.
+        // Expectation: Default values are used.
+
+        let mockSettings = MockFireDialogViewSettings()
+
+        let viewModel = FireDialogViewModel(
+            fireViewModel: .init(fire: fire),
+            tabCollectionViewModel: tabCollectionVM,
+            historyCoordinating: historyCoordinator,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner(showCleanOption: true),
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            settings: mockSettings,
+            tld: TLD()
+        )
+
+        // Verify default values
+        XCTAssertEqual(viewModel.clearingOption, .currentTab, "Default clearingOption should be .currentTab")
+        XCTAssertTrue(viewModel.includeTabsAndWindows, "Default includeTabsAndWindows should be true")
+        XCTAssertTrue(viewModel.includeHistory, "Default includeHistory should be true")
+        XCTAssertTrue(viewModel.includeCookiesAndSiteData, "Default includeCookiesAndSiteData should be true")
+        XCTAssertFalse(viewModel.includeChatHistorySetting, "Default includeChatHistorySetting should be false")
+    }
+}
+
+class MockFireDialogViewSettings: FireDialogViewSettings {
+    var lastSelectedClearingOption: FireDialogViewModel.ClearingOption?
+    var lastIncludeTabsAndWindowsState: Bool?
+    var lastIncludeHistoryState: Bool?
+    var lastIncludeCookiesAndSiteDataState: Bool?
+    var lastIncludeChatHistoryState: Bool?
+
+    init(lastSelectedClearingOption: FireDialogViewModel.ClearingOption? = nil, lastIncludeTabsAndWindowsState: Bool? = nil, lastIncludeHistoryState: Bool? = nil, lastIncludeCookiesAndSiteDataState: Bool? = nil, lastIncludeChatHistoryState: Bool? = nil) {
+        self.lastSelectedClearingOption = lastSelectedClearingOption
+        self.lastIncludeTabsAndWindowsState = lastIncludeTabsAndWindowsState
+        self.lastIncludeHistoryState = lastIncludeHistoryState
+        self.lastIncludeCookiesAndSiteDataState = lastIncludeCookiesAndSiteDataState
+        self.lastIncludeChatHistoryState = lastIncludeChatHistoryState
     }
 }
 

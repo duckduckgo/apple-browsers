@@ -181,7 +181,7 @@ final class MockOmniBarDelegate: OmniBarDelegate {
 
     func onDidEndEditing() { }
 
-    func onSharePressed() { }
+    func onCustomizableButtonPressed() { }
 
     func onEditFavorite(_ favorite: Bookmarks.BookmarkEntity) {}
 

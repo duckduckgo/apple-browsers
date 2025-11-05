@@ -68,6 +68,7 @@ extension DebugScreensViewModel {
             }),
             .action(title: "Show New AddressBar Modal", showNewAddressBarModal),
             .action(title: "Reset New Address Bar Picker Data", resetNewAddressBarPickerData),
+            .action(title: "Reset Prompts Cooldown Period", resetModalPromptsCooldownPeriod),
 
             // MARK: SwiftUI Views
             .view(title: "AI Chat", { _ in
@@ -129,6 +130,9 @@ extension DebugScreensViewModel {
             }),
             .view(title: "Win-back Offer", { d in
                 WinBackOfferDebugView(keyValueStore: d.keyValueStore)
+            }),
+            .view(title: "Modal Prompt Coordination", { d in
+                ModalPromptCoordinationDebugView(keyValueStore: d.keyValueStore)
             }),
 
             // MARK: Controllers
@@ -249,10 +253,19 @@ extension DebugScreensViewModel {
     }
     
     private func resetNewAddressBarPickerData(_ dependencies: DebugScreen.Dependencies) {
-        let pickerStorage = NewAddressBarPickerStorage()
+        let pickerStorage = NewAddressBarPickerStore()
         pickerStorage.reset()
         
         ActionMessageView.present(message: "New Address Bar Picker data reset successfully")
+    }
+
+    private func resetModalPromptsCooldownPeriod(_ dependencies: DebugScreen.Dependencies) {
+        let store = PromptCooldownKeyValueFilesStore(
+            keyValueStore: dependencies.keyValueStore,
+            eventMapper: .init(mapping: { _, _, _, _ in })
+        )
+
+        store.lastPresentationTimestamp = nil
     }
 
 }

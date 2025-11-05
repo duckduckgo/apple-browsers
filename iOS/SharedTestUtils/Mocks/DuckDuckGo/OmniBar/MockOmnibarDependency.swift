@@ -20,26 +20,30 @@
 import AIChat
 import Foundation
 import BrowserServicesKit
+import PersistenceTestingUtils
 import UIKit
 @testable import DuckDuckGo
 
 struct MockOmnibarDependency: OmnibarDependencyProvider {
-    
     var suggestionTrayDependencies: SuggestionTrayDependencies?
     var voiceSearchHelper: VoiceSearchHelperProtocol
     var featureFlagger: FeatureFlagger
     var aiChatSettings: AIChatSettingsProvider
     var appSettings: any AppSettings
     var daxEasterEggPresenter: DaxEasterEggPresenting
+    var mobileCustomization: DuckDuckGo.MobileCustomization
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol = MockVoiceSearchHelper(),
          featureFlagger: FeatureFlagger = MockFeatureFlagger(),
          aiChatSettings: AIChatSettingsProvider = MockAIChatSettingsProvider(),
-         appSettings: AppSettings = AppSettingsMock(), daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter()) {
+         appSettings: AppSettings = AppSettingsMock(),
+         daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(),
+         mobileCustomization: MobileCustomization = MobileCustomization(featureFlagger: MockFeatureFlagger(), keyValueStore: MockThrowingKeyValueStore())) {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
         self.appSettings = appSettings
         self.daxEasterEggPresenter = daxEasterEggPresenter
+        self.mobileCustomization = mobileCustomization
     }
 }

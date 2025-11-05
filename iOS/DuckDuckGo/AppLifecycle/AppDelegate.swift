@@ -101,7 +101,7 @@ import Core
             (foregroundHandling as? Foreground)?.services.remoteMessagingService.refreshRemoteMessages()
         }
     }
-    
+
 }
 
 extension Bundle {

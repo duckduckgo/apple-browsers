@@ -51,7 +51,8 @@ struct Connected: ConnectedHandling {
                                                         appSettings: appDependencies.appSettings,
                                                         voiceSearchHelper: appDependencies.voiceSearchHelper,
                                                         featureFlagger: appDependencies.featureFlagger,
-                                                        aiChatSettings: appDependencies.aiChatSettings)
+                                                        aiChatSettings: appDependencies.aiChatSettings,
+                                                        mobileCustomization: mainCoordinator.controller.mobileCustomization)
         let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)

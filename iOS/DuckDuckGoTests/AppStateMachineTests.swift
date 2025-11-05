@@ -134,10 +134,35 @@ final class MockBackground: BackgroundHandling {
 }
 
 @MainActor
+final class MockTerminating: TerminatingHandling {
+
+    let error: Error
+    var alertAndTerminateCalled: Bool = false
+
+    init(error: Error) {
+        self.error = error
+    }
+    
+    func alertAndTerminate(window: UIWindow) {
+        alertAndTerminateCalled = true
+    }
+
+}
+
+@MainActor
+final class MockTerminatingStateFactory: TerminatingStateFactory {
+
+    func makeTerminatingState(error: Error) -> any TerminatingHandling {
+        MockTerminating(error: error)
+    }
+
+}
+
+@MainActor
 @Suite("AppStateMachine launching origin transition tests", .serialized)
 final class LaunchingTests {
 
-    let stateMachine = AppStateMachine(initialState: .initializing(MockInitializing()))
+    let stateMachine = AppStateMachine(initialState: .initializing(MockInitializing()), terminatingStateFactory: MockTerminatingStateFactory())
 
     @Test("didFinishLaunching should transition from Initializing to Launching")
     func transitionFromInitializingToLaunching() {
@@ -179,9 +204,14 @@ final class LaunchingTests {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
         #expect(stateMachine.currentState.name == "terminating")
 
-        guard case .terminating(let terminating) = stateMachine.currentState else {
+        if case .terminating(let terminating) = stateMachine.currentState,
+           let mockTerminating = terminating as? MockTerminating {
+            #expect(mockTerminating.error is TerminationError)
+            #expect(mockTerminating.alertAndTerminateCalled == false)
+            stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+            #expect(mockTerminating.alertAndTerminateCalled == true)
+        } else {
             Issue.record("Expected to transition to .terminating state")
-            return
         }
     }
 

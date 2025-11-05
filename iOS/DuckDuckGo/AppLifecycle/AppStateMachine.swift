@@ -122,8 +122,26 @@ protocol BackgroundHandling {
 @MainActor
 protocol TerminatingHandling {
 
-    init(error: Error, application: UIApplication)
+    init(error: Error)
     func alertAndTerminate(window: UIWindow)
+
+}
+
+@MainActor
+protocol TerminatingStateFactory {
+
+    func makeTerminatingState(error: Error) -> any TerminatingHandling
+
+}
+
+@MainActor
+struct DefaultTerminatingStateFactory: TerminatingStateFactory {
+
+    nonisolated init() {}
+
+    func makeTerminatingState(error: Error) -> any TerminatingHandling {
+        Terminating(error: error)
+    }
 
 }
 
@@ -138,8 +156,11 @@ final class AppStateMachine {
     /// if the app is backgrounded before user authentication (iOS 18.0+).
     private(set) var actionToHandle: AppAction?
 
-    init(initialState: AppState) {
+    private let terminatingStateFactory: TerminatingStateFactory
+
+    init(initialState: AppState, terminatingStateFactory: TerminatingStateFactory = DefaultTerminatingStateFactory()) {
         self.currentState = initialState
+        self.terminatingStateFactory = terminatingStateFactory
     }
 
     func handle(_ event: AppEvent) {
@@ -177,7 +198,7 @@ final class AppStateMachine {
             do {
                 currentState = try .launching(initializing.makeLaunchingState())
             } catch {
-                currentState = .terminating(Terminating(error: error))
+                currentState = .terminating(terminatingStateFactory.makeTerminatingState(error: error))
             }
         }
     }

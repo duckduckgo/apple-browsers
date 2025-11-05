@@ -57,13 +57,11 @@ private enum TerminationMode {
 ///
 struct Terminating: TerminatingHandling {
 
-    private let application: UIApplication
+    private let application: UIApplication = .shared
     private let mode: TerminationMode
 
-    init(error: Error, application: UIApplication = UIApplication.shared) {
+    init(error: Error) {
         Logger.lifecycle.info("Terminating: \(#function)")
-
-        self.application = application
 
         let pixel: Pixel.Event
         var errorToReport: Error?

@@ -125,6 +125,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let dataClearingPreferences: DataClearingPreferences
     let startupPreferences: StartupPreferences
     let defaultBrowserPreferences: DefaultBrowserPreferences
+    let downloadsPreferences: DownloadsPreferences
 
     let database: Database!
     let bookmarkDatabase: BookmarkDatabase
@@ -704,6 +705,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         visualizeFireSettingsDecider = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
         startupPreferences = StartupPreferences(persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore), appearancePreferences: appearancePreferences)
         defaultBrowserPreferences = DefaultBrowserPreferences()
+        downloadsPreferences = DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor())
         newTabPageCustomizationModel = NewTabPageCustomizationModel(themeManager: themeManager, appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld,

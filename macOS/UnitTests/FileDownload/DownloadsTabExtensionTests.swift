@@ -153,6 +153,6 @@ private extension DownloadsTabExtensionTests {
             alwaysRequestDownloadLocation: alwaysRequestDownloadLocation
         )
         let downloadPreferences = DownloadsPreferences(persistor: preferencesPersistorMock)
-        return DownloadsTabExtension(downloadManager: FileDownloadManagerMock(), isBurner: false, downloadsPreferences: downloadPreferences)
+        return DownloadsTabExtension(downloadManager: FileDownloadManagerMock(), downloadsPreferences: downloadPreferences, isBurner: false)
     }
 }

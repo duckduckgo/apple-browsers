@@ -24,13 +24,13 @@ final class DownloadsPopover: NSPopover {
     let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
 
-    init(fireWindowSession: FireWindowSessionRef?) {
+    init(fireWindowSession: FireWindowSessionRef?, downloadsPreferences: DownloadsPreferences) {
         super.init()
 
         self.animates = false
         self.behavior = .semitransient
 
-        setupContentController(fireWindowSession: fireWindowSession)
+        setupContentController(fireWindowSession: fireWindowSession, downloadsPreferences: downloadsPreferences)
 
         subscribeToThemeChanges()
         applyThemeStyle()
@@ -51,8 +51,11 @@ final class DownloadsPopover: NSPopover {
     var viewController: DownloadsViewController { contentViewController as! DownloadsViewController }
     // swiftlint:enable force_cast
 
-    private func setupContentController(fireWindowSession: FireWindowSessionRef?) {
-        let controller = DownloadsViewController(viewModel: DownloadListViewModel(fireWindowSession: fireWindowSession))
+    private func setupContentController(fireWindowSession: FireWindowSessionRef?, downloadsPreferences: DownloadsPreferences) {
+        let controller = DownloadsViewController(
+            viewModel: DownloadListViewModel(fireWindowSession: fireWindowSession),
+            preferences: downloadsPreferences
+        )
         contentViewController = controller
     }
 }

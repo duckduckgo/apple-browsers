@@ -100,14 +100,7 @@ final class StyledTopBottomBorderView: UIView {
         isUserInteractionEnabled = false
         backgroundColor = .clear
 
-        let edgeColor = UIColor { traitCollection in
-            switch traitCollection.userInterfaceStyle {
-            case .dark:
-                return UIColor(designSystemColor: .highlightDecoration)
-            default:
-                return UIColor(designSystemColor: .shadowTertiary)
-            }
-        }
+        let edgeColor = UIColor(singleUseColor: .inputContentSeparator)
         topEdge.backgroundColor = edgeColor
         bottomEdge.backgroundColor = edgeColor
     }

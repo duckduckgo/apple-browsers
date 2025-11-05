@@ -50,7 +50,7 @@ struct DataImportProfilePicker: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Select Profile:", comment: "Browser Profile picker title for Data Import")
+            Text(UserText.importDataSelectProfileTitle)
                 .bold()
 
             Picker(selection: Binding {

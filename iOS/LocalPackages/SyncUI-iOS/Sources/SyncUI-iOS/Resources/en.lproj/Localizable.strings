@@ -29,7 +29,7 @@
 "connect.with.server.sheet.button" = "Turn On Sync & Back Up";
 
 /* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "This creates an encrypted backup of your bookmarks and passwords on DuckDuckGo’s secure server, which can be synced with your other devices.";
+"connect.with.server.sheet.description.part1" = "This creates an encrypted backup of your bookmarks and autofill data on DuckDuckGo’s secure server, which can be synced with your other devices.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "The encryption key is only stored on your device, DuckDuckGo cannot access it.";
@@ -47,7 +47,13 @@
 "credentials.invalid.objects.present.description" = "credentials.invalid.objects.present.description";
 
 /* Alert title for invalid logins being filtered out of synced data */
-"credentials.invalid.objects.present.title" = "Some logins are not syncing due to excessively long content in certain fields.";
+"credentials.invalid.objects.present.title" = "Some passwords are not syncing due to excessively long content in certain fields.";
+
+/* Do not translate - stringsdict entry */
+"creditcards.invalid.objects.present.description" = "creditcards.invalid.objects.present.description";
+
+/* Alert title for invalid credit cards being filtered out of synced data */
+"creditCards.invalid.objects.present.title" = "Some credit cards are not syncing due to excessively long content in certain fields.";
 
 /* Delete Server Data - Button */
 "delete.server.data" = "Turn Off and Delete Server Data...";
@@ -115,8 +121,11 @@
 /* Button title for sync credentials limits exceeded warning to go to manage passwords */
 "prefrences.sync.credentials-limit-exceeded-action" = "Manage passwords…";
 
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Manage Credit Cards…";
+
 /* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Your bookmarks and passwords are being prepared to sync. This should only take a moment.";
+"preparing.to.sync.sheet.description" = "Your bookmarks and autofill data are being prepared to sync. This should only take a moment.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Connecting…";
@@ -233,7 +242,7 @@
 "sync.get.other.devices.screen.title" = "Get DuckDuckGo";
 
 /* Message included when sharing a url via the system share sheet */
-"sync.get.other.devices.share.link.message" = "Install the DuckDuckGo browser on your devices to start securely syncing your bookmarks and passwords:";
+"sync.get.other.devices.share.link.message" = "Install the DuckDuckGo browser on your devices to start securely syncing your bookmarks and autofill data:";
 
 /* Sync Menu Path */
 "sync.menu.path" = "Settings > Sync & Backup > Sync With Another Device";

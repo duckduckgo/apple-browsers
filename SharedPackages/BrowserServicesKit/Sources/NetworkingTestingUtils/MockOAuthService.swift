@@ -24,6 +24,13 @@ public final class MockOAuthService: OAuthService {
 
     public init() {}
 
+    public private(set) var refreshAccessTokenCallCount = 0
+    private var refreshAccessTokenDelay: UInt64 = 0
+
+    public func setRefreshAccessTokenDelay(_ delay: UInt64) {
+        refreshAccessTokenDelay = delay
+    }
+
     public var authorizeResponse: Result<Networking.OAuthSessionID, Error>?
     public func authorize(codeChallenge: String) async throws -> Networking.OAuthSessionID {
         switch authorizeResponse! {
@@ -66,6 +73,10 @@ public final class MockOAuthService: OAuthService {
 
     public var refreshAccessTokenResponse: Result<Networking.OAuthTokenResponse, Error>?
     public func refreshAccessToken(clientID: String, refreshToken: String) async throws -> Networking.OAuthTokenResponse {
+        refreshAccessTokenCallCount += 1
+        if refreshAccessTokenDelay > 0 {
+            try await Task.sleep(nanoseconds: refreshAccessTokenDelay)
+        }
         switch refreshAccessTokenResponse! {
         case .success(let result):
             return result

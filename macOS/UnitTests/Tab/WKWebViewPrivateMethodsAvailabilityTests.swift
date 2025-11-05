@@ -36,7 +36,11 @@ final class WKWebViewPrivateMethodsAvailabilityTests: XCTestCase {
     }
 
     func testWKBackForwardListRespondsTo_removeAllItems() {
-        XCTAssertTrue(WKBackForwardList.instancesRespond(to: WKBackForwardList.removeAllItemsSelector))
+        XCTAssertTrue(WKBackForwardList.instancesRespond(to: WKBackForwardList.Selector.removeAllItems))
+    }
+
+    func testWKBackForwardListRespondsTo_clear() {
+        XCTAssertTrue(WKBackForwardList.instancesRespond(to: WKBackForwardList.Selector.clear))
     }
 
     func testWebViewRespondsTo_pageMutedState() {

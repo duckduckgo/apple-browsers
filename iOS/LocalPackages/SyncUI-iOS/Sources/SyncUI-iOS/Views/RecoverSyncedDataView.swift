@@ -65,6 +65,6 @@ public struct RecoverSyncedDataView: View {
             .padding(.horizontal, 30)
             .padding(.bottom, 8)
         }
-        .background(Color(designSystemColor: .background))
+        .background(Color(designSystemColor: .backgroundSheets))
     }
 }

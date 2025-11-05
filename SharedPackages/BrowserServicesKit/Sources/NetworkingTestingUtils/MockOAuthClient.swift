@@ -141,7 +141,7 @@ public class MockOAuthClient: OAuthClient {
     }
 
     public var decodeResponse: Result<Networking.TokenContainer, Error>!
-    public func decode(accessToken: String, refreshToken: String) async throws -> Networking.TokenContainer {
+    public func decode(accessToken: String, refreshToken: String, refreshID: String?) async throws -> Networking.TokenContainer {
         switch decodeResponse! {
         case .success(let success):
             return success

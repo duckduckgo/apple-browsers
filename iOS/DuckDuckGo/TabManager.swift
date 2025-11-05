@@ -26,6 +26,7 @@ import Persistence
 import History
 import Subscription
 import os.log
+import AIChat
 
 class TabManager {
 
@@ -40,7 +41,7 @@ class TabManager {
     private var previewsSource: TabPreviewsSource
     private let interactionStateSource: TabInteractionStateSource?
     private var duckPlayer: DuckPlayerControlling
-    private var privacyProDataReporter: PrivacyProDataReporting
+    private var subscriptionDataReporter: SubscriptionDataReporting
     private let contextualOnboardingPresenter: ContextualOnboardingPresenting
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     private let onboardingPixelReporter: OnboardingPixelReporting
@@ -55,6 +56,7 @@ class TabManager {
     private let featureDiscovery: FeatureDiscovery
     private let keyValueStore: ThrowingKeyValueStoring
     private let daxDialogsManager: DaxDialogsManaging
+    private let aiChatSettings: AIChatSettingsProvider
 
     weak var delegate: TabDelegate?
 
@@ -70,7 +72,7 @@ class TabManager {
          historyManager: HistoryManaging,
          syncService: DDGSyncing,
          duckPlayer: DuckPlayer = DuckPlayer(),
-         privacyProDataReporter: PrivacyProDataReporting,
+         subscriptionDataReporter: SubscriptionDataReporting,
          contextualOnboardingPresenter: ContextualOnboardingPresenting,
          contextualOnboardingLogic: ContextualOnboardingLogic,
          onboardingPixelReporter: OnboardingPixelReporting,
@@ -84,7 +86,8 @@ class TabManager {
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
          featureDiscovery: FeatureDiscovery,
          keyValueStore: ThrowingKeyValueStoring,
-         daxDialogsManager: DaxDialogsManaging
+         daxDialogsManager: DaxDialogsManaging,
+         aiChatSettings: AIChatSettingsProvider
     ) {
         self.model = model
         self.persistence = persistence
@@ -94,7 +97,7 @@ class TabManager {
         self.historyManager = historyManager
         self.syncService = syncService
         self.duckPlayer = duckPlayer
-        self.privacyProDataReporter = privacyProDataReporter
+        self.subscriptionDataReporter = subscriptionDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
@@ -109,6 +112,7 @@ class TabManager {
         self.featureDiscovery = featureDiscovery
         self.keyValueStore = keyValueStore
         self.daxDialogsManager = daxDialogsManager
+        self.aiChatSettings = aiChatSettings
         registerForNotifications()
     }
 
@@ -136,7 +140,7 @@ class TabManager {
                                                               historyManager: historyManager,
                                                               syncService: syncService,
                                                               duckPlayer: duckPlayer,
-                                                              privacyProDataReporter: privacyProDataReporter,
+                                                              subscriptionDataReporter: subscriptionDataReporter,
                                                               contextualOnboardingPresenter: contextualOnboardingPresenter,
                                                               contextualOnboardingLogic: contextualOnboardingLogic,
                                                               onboardingPixelReporter: onboardingPixelReporter,
@@ -149,7 +153,8 @@ class TabManager {
                                                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                                                               featureDiscovery: featureDiscovery,
                                                               keyValueStore: keyValueStore,
-                                                              daxDialogsManager: daxDialogsManager)
+                                                              daxDialogsManager: daxDialogsManager,
+                                                              aiChatSettings: aiChatSettings)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -230,7 +235,7 @@ class TabManager {
                                                               historyManager: historyManager,
                                                               syncService: syncService,
                                                               duckPlayer: duckPlayer,
-                                                              privacyProDataReporter: privacyProDataReporter,
+                                                              subscriptionDataReporter: subscriptionDataReporter,
                                                               contextualOnboardingPresenter: contextualOnboardingPresenter,
                                                               contextualOnboardingLogic: contextualOnboardingLogic,
                                                               onboardingPixelReporter: onboardingPixelReporter,
@@ -243,7 +248,8 @@ class TabManager {
                                                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                                                               featureDiscovery: featureDiscovery,
                                                               keyValueStore: keyValueStore,
-                                                              daxDialogsManager: daxDialogsManager)
+                                                              daxDialogsManager: daxDialogsManager,
+                                                              aiChatSettings: aiChatSettings)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !model.hasActiveTabs,

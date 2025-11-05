@@ -18,6 +18,7 @@
 
 import Foundation
 
+@MainActor
 public protocol ManagementViewModel: ObservableObject {
 
     var isDataSyncingAvailable: Bool { get }
@@ -27,12 +28,11 @@ public protocol ManagementViewModel: ObservableObject {
     var isAppVersionNotSupported: Bool { get }
 
     var isSyncEnabled: Bool { get }
-    var isCreatingAccount: Bool { get }
-    var shouldShowErrorMessage: Bool { get set }
-    var syncErrorMessage: SyncErrorMessage? { get }
     var isSyncPaused: Bool { get }
     var isSyncBookmarksPaused: Bool { get }
     var isSyncCredentialsPaused: Bool { get }
+    var isSyncCreditCardsPaused: Bool { get }
+    var isSyncIdentitiesPaused: Bool { get }
     var syncPausedTitle: String? { get }
     var syncPausedMessage: String? { get }
     var syncPausedButtonTitle: String? { get }
@@ -45,13 +45,20 @@ public protocol ManagementViewModel: ObservableObject {
     var syncCredentialsPausedMessage: String? { get }
     var syncCredentialsPausedButtonTitle: String? { get }
     var syncCredentialsPausedButtonAction: (() -> Void)? { get }
+    var syncCreditCardsPausedTitle: String? { get }
+    var syncCreditCardsPausedMessage: String? { get }
+    var syncCreditCardsPausedButtonTitle: String? { get }
+    var syncCreditCardsPausedButtonAction: (() -> Void)? { get }
+    var syncIdentitiesPausedTitle: String? { get }
+    var syncIdentitiesPausedMessage: String? { get }
+    var syncIdentitiesPausedButtonTitle: String? { get }
+    var syncIdentitiesPausedButtonAction: (() -> Void)? { get }
 
     var invalidBookmarksTitles: [String] { get }
     var invalidCredentialsTitles: [String] { get }
+    var invalidCreditCardsTitles: [String] { get }
+    var invalidIdentitiesTitles: [String] { get }
 
-    var recoveryCode: String? { get }
-    var stringForQR: String? { get }
-    var codeForDisplayOrPasting: String? { get }
     var devices: [SyncDevice] { get }
     var isFaviconsFetchingEnabled: Bool { get set }
     var isUnifiedFavoritesEnabled: Bool { get set }
@@ -65,6 +72,8 @@ public protocol ManagementViewModel: ObservableObject {
 
     func manageBookmarks()
     func manageLogins()
+    func manageCreditCards()
+    func manageIdentities()
 
     func syncWithAnotherDevicePressed() async
     func syncWithServerPressed() async
@@ -130,6 +139,7 @@ public enum SyncErrorType {
         }
     }
 
+    @MainActor
     func onButtonPressed(delegate: ManagementDialogModelDelegate?) {
         switch self {
         case .unableToAuthenticateOnDevice:

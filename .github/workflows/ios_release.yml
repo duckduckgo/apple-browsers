@@ -9,7 +9,6 @@ on:
     inputs:
       destination:
         description: "Upload destination (App Store or TestFlight)"
-        required: true
         default: testflight
         type: choice
         options:
@@ -29,11 +28,19 @@ on:
         description: "Branch name"
         required: false
         type: string
+      commit-sha:
+        description: "Commit SHA"
+        required: false
+        type: string
       destination:
         description: "Upload destination (TestFlight or App Store)"
-        required: false
         default: testflight
         type: string
+      measure-app-size:
+        description: "Whether to measure and track app sizes"
+        required: false
+        default: false
+        type: boolean
     secrets:
       APPLE_API_KEY_BASE64:
         required: true
@@ -70,7 +77,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        ref: ${{ env.branch }}
+        ref: ${{ inputs.commit-sha || env.branch }}
 
     - name: Set destination output
       id: destination
@@ -116,7 +123,19 @@ jobs:
         echo "app_version=${app_version}" >> $GITHUB_ENV
         echo "build_number=${build_number}" >> $GITHUB_ENV
         bundle exec fastlane release_${{ steps.destination.outputs.destination }}
-        mv -f "$original_dsyms_path" "$dsyms_path" 
+        mv -f "$original_dsyms_path" "$dsyms_path"
+
+    - name: Measure App Size
+      id: measure-app-size
+      if: success() && inputs.measure-app-size == true
+      continue-on-error: true
+      uses: ./.github/actions/measure-app-size
+      with:
+        report-file: "iOS/App Thinning Size Report.txt"
+        download-size-pixel-name: "m_ci_apple_ios_release_download_size"
+        installation-size-pixel-name: "m_ci_apple_ios_release_installation_size"
+        app-version: ${{ env.app_version }}
+        build-number: ${{ env.build_number }}
 
     - name: Upload dSYMs artifact
       if: always()

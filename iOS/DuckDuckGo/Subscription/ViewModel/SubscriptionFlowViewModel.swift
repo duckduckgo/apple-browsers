@@ -23,6 +23,8 @@ import Combine
 import Core
 import Subscription
 import BrowserServicesKit
+import DataBrokerProtection_iOS
+import PixelKit
 
 final class SubscriptionFlowViewModel: ObservableObject {
     
@@ -30,10 +32,12 @@ final class SubscriptionFlowViewModel: ObservableObject {
     let subFeature: any SubscriptionPagesUseSubscriptionFeature
     var webViewModel: AsyncHeadlessWebViewViewModel
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    weak var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     let purchaseURL: URL
 
     private let urlOpener: URLOpener
     private let featureFlagger: FeatureFlagger
+    private let wideEvent: WideEventManaging
     private var cancellables = Set<AnyCancellable>()
     private var canGoBackCancellable: AnyCancellable?
     private var urlCancellable: AnyCancellable?
@@ -76,13 +80,17 @@ final class SubscriptionFlowViewModel: ObservableObject {
          subscriptionManager: SubscriptionAuthV1toV2Bridge,
          selectedFeature: SettingsViewModel.SettingsDeepLinkSection? = nil,
          urlOpener: URLOpener = UIApplication.shared,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
+         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
         self.purchaseURL = purchaseURL
         self.userScript = userScript
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager
         self.urlOpener = urlOpener
         self.featureFlagger = featureFlagger
+        self.wideEvent = wideEvent
+        self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 
@@ -127,16 +135,16 @@ final class SubscriptionFlowViewModel: ObservableObject {
              DispatchQueue.main.async {
                  switch feature {
                  case .networkProtection:
-                     UniquePixel.fire(pixel: .privacyProWelcomeVPN)
+                     UniquePixel.fire(pixel: .subscriptionWelcomeVPN)
                      self.state.selectedFeature = .netP
                  case .dataBrokerProtection:
-                     UniquePixel.fire(pixel: .privacyProWelcomePersonalInformationRemoval)
+                     UniquePixel.fire(pixel: .subscriptionWelcomePersonalInformationRemoval)
                      self.state.selectedFeature = .dbp
                  case .identityTheftRestoration, .identityTheftRestorationGlobal:
-                     UniquePixel.fire(pixel: .privacyProWelcomeIdentityRestoration)
+                     UniquePixel.fire(pixel: .subscriptionWelcomeIdentityRestoration)
                      self.state.selectedFeature = .itr
                  case .paidAIChat:
-                     UniquePixel.fire(pixel: .privacyProWelcomeAIChat)
+                     UniquePixel.fire(pixel: .subscriptionWelcomeAIChat)
                      self.urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
                  case .unknown:
                      break
@@ -165,11 +173,11 @@ final class SubscriptionFlowViewModel: ObservableObject {
         
         switch error {
         case .purchaseFailed:
-            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureStoreError,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureStoreError,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .purchaseFailed
         case .missingEntitlements:
-            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureBackendError,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureBackendError,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .missingEntitlements
         case .failedToGetSubscriptionOptions:
@@ -179,7 +187,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         case .cancelledByUser:
             state.transactionError = .cancelledByUser
         case .accountCreationFailed:
-            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureAccountNotCreated,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureAccountNotCreated,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .generalError
         case .activeSubscriptionAlreadyPresent:
@@ -194,7 +202,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
             // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
             state.transactionError = .failedToRestorePastPurchase
         case .generalError:
-            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureOther,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseFailureOther,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .generalError
         }
@@ -242,6 +250,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     }
 
     private func shouldAllowWebViewBackNavigationForURL(currentURL: URL) -> Bool {
+        return !currentURL.shouldPreventBackNavigation &&
         !isCurrentURL(matching: .purchase) &&
         !isCurrentURL(matching: .welcome) &&
         !isCurrentURL(matching: .activationFlowSuccess) &&
@@ -325,21 +334,47 @@ final class SubscriptionFlowViewModel: ObservableObject {
         }
         await self.setupTransactionObserver()
         await self.setupWebViewObservers()
-        Pixel.fire(pixel: .privacyProOfferScreenImpression)
+        Pixel.fire(pixel: .subscriptionOfferScreenImpression)
     }
 
     @MainActor
     func restoreAppstoreTransaction() {
+        let isSubscriptionRestoreWidePixelMeasurementEnabled = featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement)
+        let data = SubscriptionRestoreWideEventData(
+            restorePlatform: .purchaseBackgroundTask,
+            contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.prePurchaseCheck.rawValue)
+        )
+        
         clearTransactionError()
+        
         Task {
+            if isSubscriptionRestoreWidePixelMeasurementEnabled {
+                data.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
+                wideEvent.startFlow(data)
+            }
+            
             do {
                 try await subFeature.restoreAccountFromAppStorePurchase()
+                
+                if isSubscriptionRestoreWidePixelMeasurementEnabled {
+                    data.appleAccountRestoreDuration?.complete()
+                    wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
+                }
+                
                 backButtonEnabled(false)
                 await webViewModel.navigationCoordinator.reload()
                 backButtonEnabled(true)
             } catch let error {
                 if let specificError = error as? UseSubscriptionError {
+                    data.errorData = .init(error: specificError)
                     handleTransactionError(error: specificError)
+                } else {
+                    data.errorData = .init(error: error)
+                }
+                
+                if isSubscriptionRestoreWidePixelMeasurementEnabled {
+                    data.appleAccountRestoreDuration?.complete()
+                    wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
                 }
             }
         }

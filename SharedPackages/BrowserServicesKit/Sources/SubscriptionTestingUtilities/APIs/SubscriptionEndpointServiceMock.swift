@@ -20,13 +20,13 @@ import Foundation
 import Subscription
 
 public final class SubscriptionEndpointServiceMock: SubscriptionEndpointService {
-    public var getSubscriptionResult: Result<PrivacyProSubscription, SubscriptionServiceError>?
+    public var getSubscriptionResult: Result<DuckDuckGoSubscription, SubscriptionServiceError>?
     public var getProductsResult: Result<[GetProductsItem], APIServiceError>?
     public var getSubscriptionFeaturesResult: Result<GetSubscriptionFeaturesResponse, APIServiceError>?
     public var getCustomerPortalURLResult: Result<GetCustomerPortalURLResponse, APIServiceError>?
     public var confirmPurchaseResult: Result<ConfirmPurchaseResponse, APIServiceError>?
 
-    public var onUpdateCache: ((PrivacyProSubscription) -> Void)?
+    public var onUpdateCache: ((DuckDuckGoSubscription) -> Void)?
     public var onConfirmPurchase: ((String, String, [String: String]?) -> Void)?
     public var onGetSubscription: ((String, APICachePolicy) -> Void)?
     public var onSignOut: (() -> Void)?
@@ -37,12 +37,12 @@ public final class SubscriptionEndpointServiceMock: SubscriptionEndpointService 
 
     public init() { }
 
-    public func updateCache(with subscription: PrivacyProSubscription) {
+    public func updateCache(with subscription: DuckDuckGoSubscription) {
         onUpdateCache?(subscription)
         updateCacheWithSubscriptionCalled = true
     }
 
-    public func getSubscription(accessToken: String, cachePolicy: APICachePolicy) async -> Result<PrivacyProSubscription, SubscriptionServiceError> {
+    public func getSubscription(accessToken: String, cachePolicy: APICachePolicy) async -> Result<DuckDuckGoSubscription, SubscriptionServiceError> {
         getSubscriptionCalled = true
         onGetSubscription?(accessToken, cachePolicy)
         return getSubscriptionResult!

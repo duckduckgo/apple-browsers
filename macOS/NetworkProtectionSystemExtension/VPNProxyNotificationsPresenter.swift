@@ -55,6 +55,10 @@ final class VPNProxyNotificationsPresenter: VPNNotificationsPresenting {
         notificationCenter.post(.showTestNotification)
     }
 
+    func showDebugEventNotification(message: String) {
+        // no-op
+    }
+
     func showSnoozingNotification(duration: TimeInterval) {
         assertionFailure("macOS does not support VPN snooze")
     }

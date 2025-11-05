@@ -37,8 +37,6 @@ class BlankSnapshotViewController: UIViewController {
 
     private var tapInterceptView: UIView?
 
-    let menuButton = MenuButton()
-
     var tabSwitcherButton: TabSwitcherButton!
 
     let addressBarPosition: AddressBarPosition
@@ -46,6 +44,7 @@ class BlankSnapshotViewController: UIViewController {
     let aiChatSettings: AIChatSettings
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let appSettings: AppSettings
+    let mobileCustomization: MobileCustomization
 
     var viewCoordinator: MainViewCoordinator!
 
@@ -55,12 +54,14 @@ class BlankSnapshotViewController: UIViewController {
          aiChatSettings: AIChatSettings,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          featureFlagger: FeatureFlagger,
-         appSettings: AppSettings) {
+         appSettings: AppSettings,
+         mobileCustomization: MobileCustomization) {
         self.addressBarPosition = addressBarPosition
         self.aiChatSettings = aiChatSettings
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.appSettings = appSettings
+        self.mobileCustomization = mobileCustomization
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -77,7 +78,8 @@ class BlankSnapshotViewController: UIViewController {
                                                               aiChatSettings: aiChatSettings,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger,
-                                                              appSettings: appSettings)
+                                                              appSettings: appSettings,
+                                                              mobileCustomization: mobileCustomization)
         if addressBarPosition.isBottom {
             viewCoordinator.moveAddressBarToPosition(.bottom)
             viewCoordinator.hideToolbarSeparator()
@@ -91,9 +93,6 @@ class BlankSnapshotViewController: UIViewController {
             configureTabBar()
         } else {
             viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
-            viewCoordinator.menuToolbarButton.customView = menuButton
-            menuButton.setState(.menuImage, animated: false)
-            viewCoordinator.menuToolbarButton.customView = menuButton
         }
 
         addTapInterceptor()
@@ -169,7 +168,7 @@ extension BlankSnapshotViewController: UICollectionViewDataSource {
             fatalError("Not \(OmniBarCell.self)")
         }
         cell.omniBar = viewCoordinator.omniBar
-        cell.omniBar?.barView.accessoryButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat, for: .normal)
+        cell.omniBar?.barView.aiChatButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat, for: .normal)
         return cell
     }
 

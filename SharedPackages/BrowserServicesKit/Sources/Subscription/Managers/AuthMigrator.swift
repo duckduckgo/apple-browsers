@@ -62,6 +62,9 @@ public class AuthMigrator {
             Logger.subscription.log("V1 token migration completed")
         } catch OAuthClientError.authMigrationNotPerformed {
             Logger.subscription.log("V1 token migration not needed")
+        } catch OAuthServiceError.authAPIError(let code) where code == OAuthRequest.BodyErrorCode.invalidToken {
+            Logger.subscription.error("V1 token invalid during migration, logging out user")
+            try? await oAuthClient.logout()
         } catch {
             Logger.subscription.error("Failed to migrate V1 token: \(error, privacy: .public)")
             pixelHandler.handle(pixel: .migrationFailed(error))

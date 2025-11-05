@@ -21,7 +21,6 @@ import Foundation
 @testable import DuckDuckGo_Privacy_Browser
 
 struct AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
-
     var isFavoriteVisible: Bool
     var isContinueSetUpVisible: Bool
     var continueSetUpCardsLastDemonstrated: Date?
@@ -31,7 +30,8 @@ struct AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
     var isProtectionsReportVisible: Bool
     var isSearchBarVisible: Bool
     var showFullURL: Bool
-    var currentThemeName: String
+    var themeAppearance: String
+    var themeName: String
     var favoritesDisplayMode: String?
     var showBookmarksBar: Bool
     var bookmarksBarAppearance: BookmarksBarAppearance
@@ -40,10 +40,12 @@ struct AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
     var centerAlignedBookmarksBar: Bool
     var didDismissHomePagePromotion: Bool
     var showTabsAndBookmarksBarOnFullScreen: Bool
+    var syncAppIconWithTheme: Bool
 
     init(
         showFullURL: Bool = false,
-        currentThemeName: String = ThemeName.systemDefault.rawValue,
+        themeAppearance: String = ThemeAppearance.systemDefault.rawValue,
+        themeName: String = ThemeName.default.rawValue,
         favoritesDisplayMode: String? = FavoritesDisplayMode.displayNative(.desktop).description,
         isContinueSetUpVisible: Bool = true,
         continueSetUpCardsLastDemonstrated: Date? = nil,
@@ -59,10 +61,12 @@ struct AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
         homePageCustomBackground: String? = nil,
         centerAlignedBookmarksBar: Bool = true,
         didDismissHomePagePromotion: Bool = true,
-        showTabsAndBookmarksBarOnFullScreen: Bool = false
+        showTabsAndBookmarksBarOnFullScreen: Bool = false,
+        syncAppIconWithTheme: Bool = false
     ) {
         self.showFullURL = showFullURL
-        self.currentThemeName = currentThemeName
+        self.themeAppearance = themeAppearance
+        self.themeName = themeName
         self.favoritesDisplayMode = favoritesDisplayMode
         self.isContinueSetUpVisible = isContinueSetUpVisible
         self.continueSetUpCardsLastDemonstrated = continueSetUpCardsLastDemonstrated
@@ -79,5 +83,6 @@ struct AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
         self.centerAlignedBookmarksBar = centerAlignedBookmarksBar
         self.didDismissHomePagePromotion = didDismissHomePagePromotion
         self.showTabsAndBookmarksBarOnFullScreen = showTabsAndBookmarksBarOnFullScreen
+        self.syncAppIconWithTheme = syncAppIconWithTheme
     }
 }

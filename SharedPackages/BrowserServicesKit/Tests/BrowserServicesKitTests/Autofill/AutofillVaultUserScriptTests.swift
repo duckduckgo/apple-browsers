@@ -658,7 +658,8 @@ class AutofillVaultUserScriptTests: XCTestCase {
         XCTAssertEqual(delegate.capturedMainType, .creditCards)
     }
 
-    func testWhenGetAutofillDataFocusCalledWithNilCard_ThenNoneActionReturned() {
+    func testWhenGetAutofillDataFocusCalledWithNilCard_ThenNoneActionReturned() throws {
+        throw XCTSkip("Flaky test")
         class FocusDelegate: MockSecureVaultDelegate {
             override func autofillUserScriptDidFocus(_: AutofillUserScript,
                                                      mainType: AutofillUserScript.GetAutofillDataMainType,

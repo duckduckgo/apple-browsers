@@ -20,23 +20,18 @@ import XCTest
 
 class AIChatTests: UITestCase {
     private var addressBarTextField: XCUIElement!
-    private var app: XCUIApplication!
-
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
 
-        addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Let's enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        addressBarTextField = app.addressBar
+        app.enforceSingleWindow()
     }
 
     override func tearDownWithError() throws {
+        try super.tearDownWithError()
         app.terminate()
     }
 

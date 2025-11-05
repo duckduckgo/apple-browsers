@@ -491,6 +491,7 @@ extension TabSwitcherViewController {
         }, for: .touchUpInside)
         button.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
         button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+        button.accessibilityIdentifier = "Browser.TabSwitcher.Toolbar.Button.Fire"
         barsHandler.fireButton.customView = button
         barsHandler.fireButton.accessibilityLabel = "Close all tabs and clear data"
     }

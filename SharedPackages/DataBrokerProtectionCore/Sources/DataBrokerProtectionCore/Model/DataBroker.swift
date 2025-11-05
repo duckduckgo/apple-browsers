@@ -21,6 +21,8 @@ import Common
 import os.log
 
 public struct DataBrokerScheduleConfig: Codable, Sendable {
+    public static let `default` = DataBrokerScheduleConfig(retryError: 48, confirmOptOutScan: 72, maintenanceScan: 120, maxAttempts: -1)
+
     let retryError: Int
     let confirmOptOutScan: Int
     let maintenanceScan: Int
@@ -30,6 +32,14 @@ public struct DataBrokerScheduleConfig: Codable, Sendable {
     // This value should be less than `confirmOptOutScan` to ensure the next attempt occurs before
     // the confirmation scan.
     var hoursUntilNextOptOutAttempt: Int {
+        maintenanceScan
+    }
+
+    // Used for opt-outs with email confirmation step following the decoupling changes
+    // We should allow sufficient time for email confirmation to complete while ensuring
+    // the opt-out can be retried if the email confirmation process fails
+    // https://app.asana.com/1/137249556945/project/481882893211075/task/1211046211583710?focus=true
+    var hoursUntilNextAttemptForOptOutWithEmailConfirmation: Int {
         maintenanceScan
     }
 }
@@ -129,6 +139,7 @@ public struct DataBroker: Codable, Sendable {
     public let mirrorSites: [MirrorSite]
     public let optOutUrl: String
     public var eTag: String
+    public var removedAt: Date?
 
     public var isFakeBroker: Bool {
         name.contains("fake") // A future improvement will be to add a property in the JSON file.
@@ -144,6 +155,7 @@ public struct DataBroker: Codable, Sendable {
         case mirrorSites
         case optOutUrl
         case eTag
+        case removedAt
     }
 
     enum Constants {
@@ -159,7 +171,8 @@ public struct DataBroker: Codable, Sendable {
          parent: String? = nil,
          mirrorSites: [MirrorSite] = [MirrorSite](),
          optOutUrl: String,
-         eTag: String
+         eTag: String,
+         removedAt: Date?
     ) {
         self.id = id
         self.name = name
@@ -177,6 +190,7 @@ public struct DataBroker: Codable, Sendable {
         self.mirrorSites = mirrorSites
         self.optOutUrl = optOutUrl
         self.eTag = eTag
+        self.removedAt = removedAt
     }
 
     public init(from decoder: Decoder) throws {
@@ -197,7 +211,7 @@ public struct DataBroker: Codable, Sendable {
         do {
             schedulingConfig = try container.decode(DataBrokerScheduleConfig.self, forKey: .schedulingConfig)
         } catch {
-            schedulingConfig = .init(retryError: 48, confirmOptOutScan: 72, maintenanceScan: 120, maxAttempts: -1)
+            schedulingConfig = .default
         }
         parent = try? container.decode(String.self, forKey: .parent)
 
@@ -217,6 +231,8 @@ public struct DataBroker: Codable, Sendable {
         }
 
         id = nil
+
+        removedAt = try? container.decode(Date.self, forKey: .removedAt)
     }
 
     public mutating func setETag(_ eTag: String) {
@@ -275,5 +291,20 @@ extension DataBroker {
 
     var type: DataBrokerHierarchy {
         parent == nil ? .parent : .child
+    }
+
+    var isRemoved: Bool {
+        return removedAt != nil
+    }
+
+    public func requiresEmailConfirmationDuringOptOut() -> Bool {
+        guard let optOutStep = optOutStep() else { return false }
+        return optOutStep.actions.contains { $0 is EmailConfirmationAction }
+    }
+
+    /// Returns the removedAt timestamp in milliseconds
+    var removedAtTimestamp: Int64? {
+        guard let removedAt = removedAt else { return nil }
+        return Int64(removedAt.timeIntervalSince1970 * 1000)
     }
 }

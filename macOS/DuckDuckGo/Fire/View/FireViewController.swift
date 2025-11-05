@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Cocoa
-import Lottie
 import Combine
 import Common
-import BrowserServicesKit
 import FeatureFlags
+import Lottie
+import OSLog
 
 @MainActor
 final class FireViewController: NSViewController {
@@ -32,8 +33,13 @@ final class FireViewController: NSViewController {
 
     private(set) var fireViewModel: FireViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
-    private let visualStyle: VisualStyleProviding
-    private let visualizeFireAnimationDecider: VisualizeFireAnimationDecider
+
+    private let themeManager: ThemeManaging
+    private var theme: ThemeStyleProviding {
+        themeManager.theme
+    }
+
+    private let visualizeFireAnimationDecider: VisualizeFireSettingsDecider
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var fireDialogViewController: FirePopoverViewController = {
@@ -52,7 +58,7 @@ final class FireViewController: NSViewController {
     private var fireAnimationViewLoadingTask: Task<(), Never>?
     private(set) lazy var fireIndicatorVisibilityManager = FireIndicatorVisibilityManager { [weak self] in self?.view.superview }
 
-    static func create(tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel, visualizeFireAnimationDecider: VisualizeFireAnimationDecider) -> FireViewController {
+    static func create(tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel, visualizeFireAnimationDecider: VisualizeFireSettingsDecider) -> FireViewController {
         NSStoryboard(name: "Fire", bundle: nil).instantiateInitialController { coder in
             self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
         }!
@@ -64,11 +70,11 @@ final class FireViewController: NSViewController {
 
     init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
           fireViewModel: FireViewModel,
-          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
-          visualizeFireAnimationDecider: VisualizeFireAnimationDecider) {
+          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+          visualizeFireAnimationDecider: VisualizeFireSettingsDecider) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.fireViewModel = fireViewModel
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
         self.visualizeFireAnimationDecider = visualizeFireAnimationDecider
 
         super.init(coder: coder)
@@ -76,13 +82,21 @@ final class FireViewController: NSViewController {
 
     deinit {
         fireAnimationViewLoadingTask?.cancel()
+#if DEBUG
+        MainActor.assumeMainThread {
+            if isLazyVar(named: "fireDialogViewController", initializedIn: self) {
+                fireDialogViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            }
+            fireAnimationView?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+#endif
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        fakeFireButton.image = visualStyle.iconsProvider.fireButtonStyleProvider.icon
-        fakeFireButtonWidthConstraint.constant = visualStyle.tabBarButtonSize
-        fakeFireButtonHeightConstraint.constant = visualStyle.tabBarButtonSize
+        fakeFireButton.image = theme.iconsProvider.fireButtonStyleProvider.icon
+        fakeFireButtonWidthConstraint.constant = theme.tabBarButtonSize
+        fakeFireButtonHeightConstraint.constant = theme.tabBarButtonSize
         deletingDataLabel.stringValue = UserText.fireDialogDelitingData
         if case .normal = AppVersion.runType {
             fireAnimationViewLoadingTask = Task.detached(priority: .userInitiated) {
@@ -92,21 +106,21 @@ final class FireViewController: NSViewController {
     }
 
     override func viewWillAppear() {
-        super.viewWillAppear()
+        progressIndicator.startAnimation(self)
+        progressIndicatorWrapperBG.applyDropShadow()
+        fireIndicatorVisibilityManager.updateVisibility(false)
 
         subscribeToFireAnimationEvents()
-        progressIndicator.startAnimation(self)
     }
 
     override func viewDidDisappear() {
-        super.viewDidDisappear()
-
         progressIndicator.stopAnimation(self)
     }
 
     private var fireAnimationEventsCancellable: AnyCancellable?
     private func subscribeToFireAnimationEvents() {
         fireAnimationEventsCancellable = fireViewModel.isFirePresentationInProgress
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] shouldShowFirePresentation in
                 self?.fireIndicatorVisibilityManager.updateVisibility(shouldShowFirePresentation)
             }
@@ -140,7 +154,7 @@ final class FireViewController: NSViewController {
     }
 
     private func subscribeToIsBurning() {
-        fireViewModel.fire.$burningData
+        fireViewModel.fire.burningDataPublisher
             .sink(receiveValue: { [weak self] burningData in
                 guard let burningData = burningData,
                     let self = self else {
@@ -175,11 +189,11 @@ final class FireViewController: NSViewController {
         await withUnsafeContinuation { (continuation: UnsafeContinuation<Void, Never>) in
             progressIndicatorWrapper.isHidden = true
             fakeFireButton.isHidden = true
-            fireViewModel.isAnimationPlaying = true
+            fireViewModel.setAnimationPlaying(true, isFireWindow: true)
 
             fireAnimationView?.currentProgress = 0
             let completion = { [fireViewModel] in
-                fireViewModel.isAnimationPlaying = false
+                fireViewModel.setAnimationPlaying(false, isFireWindow: true)
                 continuation.resume()
             }
             fireAnimationView?.play(fromProgress: fireAnimationBeginning, toProgress: fireAnimationEnd) { [weak self] _ in
@@ -209,24 +223,26 @@ final class FireViewController: NSViewController {
             await waitForFireAnimationViewIfNeeded()
 
             progressIndicatorWrapper.isHidden = true
-            fireViewModel.isAnimationPlaying = true
+            fireViewModel.setAnimationPlaying(true, isFireWindow: false)
 
-            fireViewModel.fire.fireAnimationDidStart()
             fireAnimationView?.currentProgress = 0
-            fireAnimationView?.play(fromProgress: fireAnimationBeginning, toProgress: fireAnimationEnd) { [weak self, fireViewModel] _ in
-                fireViewModel.isAnimationPlaying = false
-                fireViewModel.fire.fireAnimationDidFinish()
 
-                guard let self = self else { return }
+            fireAnimationView?.play(fromProgress: fireAnimationBeginning, toProgress: fireAnimationEnd) { [weak self, fireViewModel] _ in
+                Logger.general.debug("Fire animation did finish")
+                fireViewModel.setAnimationPlaying(false, isFireWindow: false)
+
+                guard let self else { return }
 
                 // If not finished yet, present the progress indicator
-                if self.fireViewModel.fire.burningData != nil {
+                if self.fireViewModel.isBurning {
 
                     // Waits until windows are closed in Fire.swift
                     DispatchQueue.main.async {
                         self.progressIndicatorWrapper.isHidden = false
-                        self.progressIndicatorWrapperBG.applyDropShadow()
+                        Logger.general.debug("Fire animation progress indicator hidden")
                     }
+                } else {
+                    Logger.general.debug("Fire animation did finish but is not burning")
                 }
             }
         }
@@ -240,8 +256,13 @@ final class FireViewController: NSViewController {
 
     @MainActor
     private func closeAllChildWindows() {
-        view.window?.childWindows?.forEach { $0.close() }
+        guard let mainWindow = view.window else { return }
+        for window in mainWindow.childWindows ?? [] {
+            guard !(window === mainWindow.titlebarView?.window /* fullscreen titlebar owning window */) else { continue }
+            window.close()
+        }
     }
+
 }
 
 /**
@@ -297,15 +318,18 @@ final class FireIndicatorVisibilityManager {
             if let fireIndicatorDialogPresentedAt {
                 let presentationDuration = Date().timeIntervalSince(fireIndicatorDialogPresentedAt)
                 self.fireIndicatorDialogPresentedAt = nil
-                if presentationDuration > Self.fireIndicatorPresentationDuration {
+                if presentationDuration >= Self.fireIndicatorPresentationDuration {
                     view()?.isHidden = true
                 } else {
+                    Logger.general.debug("Fire animation starting Timer to hide")
                     let remainingPresentationTime = Self.fireIndicatorPresentationDuration - presentationDuration
                     timer = Timer.scheduledTimer(withTimeInterval: remainingPresentationTime, repeats: false) { [weak self] _ in
+                        Logger.general.debug("Fire animation hiding on Timer")
                         self?.view()?.isHidden = true
                     }
                 }
             } else {
+                Logger.general.debug("Fire animation hiding")
                 view()?.isHidden = true
             }
         }

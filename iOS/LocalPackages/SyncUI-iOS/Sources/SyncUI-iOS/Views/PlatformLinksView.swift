@@ -49,7 +49,7 @@ public struct PlatformLinksView: View {
                 .frame(maxWidth: .infinity)
             }
         .background(Rectangle()
-            .foregroundColor(Color(designSystemColor: .background))
+            .foregroundColor(Color(designSystemColor: .backgroundSheets))
             .ignoresSafeArea())
 
         .navigationTitle(UserText.syncGetOtherDevicesScreenTitle)

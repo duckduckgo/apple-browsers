@@ -44,11 +44,20 @@ final class PrivacyDashboardPopover: NSPopover {
 #else
         self.behavior = .transient
 #endif
+
+        self.backgroundColor = .privacyDashboardBackground
         setupContentController(entryPoint: entryPoint, contentBlocking: contentBlocking, permissionManager: permissionManager)
     }
 
     required init?(coder: NSCoder) {
         fatalError("\(Self.self): Bad initializer")
+    }
+
+    deinit {
+#if DEBUG
+        // Check that our content view controller deallocates
+        contentViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
     }
 
     private func setupContentController(

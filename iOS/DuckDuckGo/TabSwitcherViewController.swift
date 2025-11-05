@@ -335,8 +335,11 @@ class TabSwitcherViewController: UIViewController {
         canUpdateCollection = false
 
         Pixel.fire(pixel: .tabSwitcherNewTab)
-        delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
         dismiss()
+        // This call needs to be after the dismiss to allow OmniBarEditingStateViewController
+        // to present on top of MainVC instead of TabSwitcher.
+        // If these calls are switched it'll be immediately dismissed along with this controller.
+        delegate.tabSwitcherDidRequestNewTab(tabSwitcher: self)
     }
 
     func bookmarkTabs(withIndexPaths indexPaths: [IndexPath], viewModel: MenuBookmarksInteracting) -> BookmarkAllResult {

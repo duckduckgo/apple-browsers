@@ -65,7 +65,7 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -132,7 +132,7 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -188,7 +188,7 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -227,7 +227,7 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -269,7 +269,7 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),

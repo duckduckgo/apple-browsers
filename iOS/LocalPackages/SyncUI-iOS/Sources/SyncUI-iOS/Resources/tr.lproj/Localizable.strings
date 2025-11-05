@@ -35,7 +35,7 @@
 "connect.with.server.sheet.button" = "Senkronizasyon ve Yedekleme'yi açın";
 
 /* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "Bu, DuckDuckGo'nun güvenli sunucusunda yer imlerinizin ve şifrelerinizi diğer cihazlarınızla senkronize edilebilen şifrelenmiş bir yedeğini oluşturur.";
+"connect.with.server.sheet.description.part1" = "Bu, DuckDuckGo'nun güvenli sunucusunda yer işaretlerinizin ve otomatik doldurma verilerinizin diğer cihazlarınızla senkronize edilebilen şifrelenmiş bir yedeğini oluşturur.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Şifreleme anahtarı sadece cihazınızda saklanır, DuckDuckGo buna erişemez.";
@@ -53,7 +53,13 @@
 "credentials.invalid.objects.present.description" = "credentials.invalid.objects.present.description";
 
 /* Alert title for invalid logins being filtered out of synced data */
-"credentials.invalid.objects.present.title" = "Bazı girişler, belirli alanlardaki aşırı uzun içerik nedeniyle senkronize edilmiyor.";
+"credentials.invalid.objects.present.title" = "Bazı şifreler, belirli alanlardaki aşırı uzun içerik nedeniyle senkronize edilmiyor.";
+
+/* Do not translate - stringsdict entry */
+"creditcards.invalid.objects.present.description" = "creditcards.invalid.objects.present.description";
+
+/* Alert title for invalid credit cards being filtered out of synced data */
+"creditCards.invalid.objects.present.title" = "Bazı kredi kartları, belirli alanlardaki aşırı uzun içerik nedeniyle senkronize edilmiyor.";
 
 /* Delete Server Data - Button */
 "delete.server.data" = "Sunucu Verilerini Kapat ve Sil...";
@@ -130,8 +136,11 @@
 /* Button title for sync credentials limits exceeded warning to go to manage passwords */
 "prefrences.sync.credentials-limit-exceeded-action" = "Şifreleri yönet…";
 
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Kredi kartlarını yönetin…";
+
 /* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Yer imleriniz ve şifreler senkronize edilmek üzere hazırlanıyor. Bu sadece bir dakikanızı alacaktır.";
+"preparing.to.sync.sheet.description" = "Yer işaretleriniz ve otomatik doldurma verileriniz senkronize edilmek üzere hazırlanıyor. Bu sadece bir dakikanızı alacaktır.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Bağlantı kuruluyor...";
@@ -254,7 +263,7 @@
 "sync.get.other.devices.screen.title" = "DuckDuckGo'yu edinin";
 
 /* Message included when sharing a url via the system share sheet */
-"sync.get.other.devices.share.link.message" = "Yer işaretlerinizi ve şifrelerinizi güvenli bir şekilde senkronize etmeye başlamak için DuckDuckGo tarayıcısını cihazlarınıza yükleyin:";
+"sync.get.other.devices.share.link.message" = "Cihazlarınıza DuckDuckGo tarayıcısını yükleyin ve yer işaretlerinizi ve otomatik doldurma verilerinizi güvenli bir şekilde senkronize etmeye başlayın:";
 
 /* Sync Menu Path */
 "sync.menu.path" = "Ayarlar > Senkronizasyon ve Yedekleme > Başka Bir Cihazla Senkronize Et";
@@ -278,7 +287,7 @@
 "sync.with.another.device.footer" = "Verileriniz uçtan uca şifrelenir ve DuckDuckGo'nun şifreleme anahtarına erişimi yoktur.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Yer imlerini ve parolaları cihazlarınız arasında güvenli bir şekilde senkronize edin.";
+"sync.with.another.device.message" = "Yer işaretlerini ve otomatik doldurma verilerini cihazlarınız arasında güvenli bir şekilde senkronize edin.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Senkronizasyonu Başlat";

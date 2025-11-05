@@ -26,7 +26,7 @@ struct SettingsAIChatShortcutsView: View {
 
     var body: some View {
         List {
-            Section {
+            Section(viewModel.firstSectionTitle) {
                 SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
                                  accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
 
@@ -40,6 +40,14 @@ struct SettingsAIChatShortcutsView: View {
 
                 SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
                                  accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
+            }
+            
+            if viewModel.shouldShowSERPSettingsFollowUpQuestions {
+                Section(header: Text(UserText.aiChatSettingsAllowFollowUpQuestionsSectionTitle),
+                        footer: Text(UserText.aiChatSettingsAllowFollowUpQuestionsDescription)) {
+                    SettingsCellView(label: UserText.aiChatSettingsAllowFollowUpQuestionsToggle,
+                                     accessory: .toggle(isOn: viewModel.serpSettingsFollowUpQuestionsBinding))
+                }
             }
         }
         .applySettingsListModifiers(title: UserText.settingsAiChatShortcuts, displayMode: .inline, viewModel: viewModel)

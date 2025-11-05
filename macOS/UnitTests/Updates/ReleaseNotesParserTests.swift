@@ -27,10 +27,10 @@ class ReleaseNotesParserTests: XCTestCase {
 
         func testParseReleaseNotes_withEmptyDescription() {
             let description: String? = nil
-            let (standard, privacyPro) = ReleaseNotesParser.parseReleaseNotes(from: description)
+            let (standard, subscription) = ReleaseNotesParser.parseReleaseNotes(from: description)
 
             XCTAssertTrue(standard.isEmpty)
-            XCTAssertTrue(privacyPro.isEmpty)
+            XCTAssertTrue(subscription.isEmpty)
         }
 
         func testParseReleaseNotes_withOnlyStandardNotes() {
@@ -41,24 +41,24 @@ class ReleaseNotesParserTests: XCTestCase {
                 <li>Improvement B</li>
             </ul>
             """
-            let (standard, privacyPro) = ReleaseNotesParser.parseReleaseNotes(from: description)
+            let (standard, subscription) = ReleaseNotesParser.parseReleaseNotes(from: description)
 
             XCTAssertEqual(standard, ["New feature A", "Improvement B"])
-            XCTAssertTrue(privacyPro.isEmpty)
+            XCTAssertTrue(subscription.isEmpty)
         }
 
-        func testParseReleaseNotes_withOnlyPrivacyProNotes() {
+        func testParseReleaseNotes_withOnlySubscriptionNotes() {
             let description = """
-            <h3>For Privacy Pro subscribers</h3>
+            <h3>For DuckDuckGo subscribers</h3>
             <ul>
                 <li>Exclusive feature X</li>
                 <li>Exclusive improvement Y</li>
             </ul>
             """
-            let (standard, privacyPro) = ReleaseNotesParser.parseReleaseNotes(from: description)
+            let (standard, subscription) = ReleaseNotesParser.parseReleaseNotes(from: description)
 
             XCTAssertTrue(standard.isEmpty)
-            XCTAssertEqual(privacyPro, ["Exclusive feature X", "Exclusive improvement Y"])
+            XCTAssertEqual(subscription, ["Exclusive feature X", "Exclusive improvement Y"])
         }
 
         func testParseReleaseNotes_withBothSections() {
@@ -68,16 +68,16 @@ class ReleaseNotesParserTests: XCTestCase {
                 <li>New feature A</li>
                 <li>Improvement B</li>
             </ul>
-            <h3>For Privacy Pro subscribers</h3>
+            <h3>For DuckDuckGo subscribers</h3>
             <ul>
                 <li>Exclusive feature X</li>
                 <li>Exclusive improvement Y</li>
             </ul>
             """
-            let (standard, privacyPro) = ReleaseNotesParser.parseReleaseNotes(from: description)
+            let (standard, subscription) = ReleaseNotesParser.parseReleaseNotes(from: description)
 
             XCTAssertEqual(standard, ["New feature A", "Improvement B"])
-            XCTAssertEqual(privacyPro, ["Exclusive feature X", "Exclusive improvement Y"])
+            XCTAssertEqual(subscription, ["Exclusive feature X", "Exclusive improvement Y"])
         }
 
         func testParseReleaseNotes_withInvalidHTML() {
@@ -87,16 +87,16 @@ class ReleaseNotesParserTests: XCTestCase {
                 <li>New feature A</li>
                 <li>Improvement B
             </ul>
-            <h3>For Privacy Pro subscribers</h3>
+            <h3>For DuckDuckGo subscribers</h3>
             <ul>
                 <li>Exclusive feature X</li>
                 <li>Exclusive improvement Y</li>
             </ul>
             """
-            let (standard, privacyPro) = ReleaseNotesParser.parseReleaseNotes(from: description)
+            let (standard, subscription) = ReleaseNotesParser.parseReleaseNotes(from: description)
 
             XCTAssertEqual(standard, ["New feature A"])
-            XCTAssertEqual(privacyPro, ["Exclusive feature X", "Exclusive improvement Y"])
+            XCTAssertEqual(subscription, ["Exclusive feature X", "Exclusive improvement Y"])
         }
 
     }

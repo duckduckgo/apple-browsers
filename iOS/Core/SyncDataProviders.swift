@@ -29,7 +29,10 @@ import SyncDataProviders
 public class SyncDataProviders: DataProvidersSource {
     public let bookmarksAdapter: SyncBookmarksAdapter
     public let credentialsAdapter: SyncCredentialsAdapter
+    public let creditCardsAdapter: SyncCreditCardsAdapter?
     public let settingsAdapter: SyncSettingsAdapter
+
+    private let featureFlagger: FeatureFlagger
 
     public func makeDataProviders() -> [DataProviding] {
         initializeMetadataDatabaseIfNeeded()
@@ -48,17 +51,29 @@ public class SyncDataProviders: DataProvidersSource {
             metadataStore: syncMetadata,
             metricsEventsHandler: metricsEventsHandler
         )
+        if featureFlagger.isFeatureOn(.syncCreditCards) {
+            creditCardsAdapter?.setUpProviderIfNeeded(
+                secureVaultFactory: secureVaultFactory,
+                metadataStore: syncMetadata,
+                metricsEventsHandler: metricsEventsHandler
+            )
+        }
         settingsAdapter.setUpProviderIfNeeded(
             metadataDatabase: syncMetadataDatabase,
             metadataStore: syncMetadata,
             metricsEventsHandler: metricsEventsHandler
         )
 
-        let providers: [Any] = [
+        var providers: [Any] = [
             bookmarksAdapter.provider as Any,
             credentialsAdapter.provider as Any,
             settingsAdapter.provider as Any
         ]
+
+        if featureFlagger.isFeatureOn(.syncCreditCards),
+           let creditCardsProvider = creditCardsAdapter?.provider {
+            providers.append(creditCardsProvider as Any)
+        }
 
         return providers.compactMap { $0 as? DataProviding }
     }
@@ -74,6 +89,11 @@ public class SyncDataProviders: DataProvidersSource {
         credentialsAdapter.databaseCleaner.isSyncActive = { [weak syncService] in
             syncService?.authState == .active
         }
+        if featureFlagger.isFeatureOn(.syncCreditCards) {
+            creditCardsAdapter?.databaseCleaner.isSyncActive = { [weak syncService] in
+                syncService?.authState == .active
+            }
+        }
 
         let syncAuthStateDidChangePublisher = syncService.authStatePublisher
             .dropFirst()
@@ -84,11 +104,17 @@ public class SyncDataProviders: DataProvidersSource {
             .sink { [weak self] isSyncDisabled in
                 self?.credentialsAdapter.cleanUpDatabaseAndUpdateSchedule(shouldEnable: isSyncDisabled)
                 self?.bookmarksAdapter.cleanUpDatabaseAndUpdateSchedule(shouldEnable: isSyncDisabled)
+                if self?.featureFlagger.isFeatureOn(.syncCreditCards) == true {
+                    self?.creditCardsAdapter?.cleanUpDatabaseAndUpdateSchedule(shouldEnable: isSyncDisabled)
+                }
             }
 
         if syncService.authState == .inactive {
             credentialsAdapter.cleanUpDatabaseAndUpdateSchedule(shouldEnable: true)
             bookmarksAdapter.cleanUpDatabaseAndUpdateSchedule(shouldEnable: true)
+            if featureFlagger.isFeatureOn(.syncCreditCards) {
+                creditCardsAdapter?.cleanUpDatabaseAndUpdateSchedule(shouldEnable: true)
+            }
         }
 
         isDatabaseCleanersSetUp = true
@@ -102,11 +128,14 @@ public class SyncDataProviders: DataProvidersSource {
         favoritesDisplayModeStorage: FavoritesDisplayModeStoring,
         syncErrorHandler: SyncErrorHandling,
         faviconStoring: FaviconStoring,
-        tld: TLD
+        tld: TLD,
+        featureFlagger: FeatureFlagger
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.secureVaultFactory = secureVaultFactory
         self.secureVaultErrorReporter = secureVaultErrorReporter
+        self.featureFlagger = featureFlagger
+
         bookmarksAdapter = SyncBookmarksAdapter(database: bookmarksDatabase,
                                                 favoritesDisplayModeStorage: favoritesDisplayModeStorage,
                                                 syncErrorHandler: syncErrorHandler,
@@ -117,6 +146,14 @@ public class SyncDataProviders: DataProvidersSource {
                                                     tld: tld)
         settingsAdapter = SyncSettingsAdapter(settingHandlers: settingHandlers,
                                               syncErrorHandler: syncErrorHandler)
+        if featureFlagger.isFeatureOn(.syncCreditCards) {
+            creditCardsAdapter = SyncCreditCardsAdapter(secureVaultFactory: secureVaultFactory,
+                                                        secureVaultErrorReporter: secureVaultErrorReporter,
+                                                        syncErrorHandler: syncErrorHandler)
+        } else {
+            creditCardsAdapter = nil
+        }
+
     }
 
     private func initializeMetadataDatabaseIfNeeded() {

@@ -25,16 +25,15 @@ import PixelKit
 final class DebugDatabaseBrowserViewModel: ObservableObject {
     @Published var selectedTable: DataBrokerDatabaseBrowserData.Table?
     @Published var tables: [DataBrokerDatabaseBrowserData.Table]
-    private let database: DataBrokerProtectionRepository?
+    private weak var databaseDelegate: DBPIOSInterface.DatabaseDelegate?
 
-    internal init(database: DataBrokerProtectionRepository, tables: [DataBrokerDatabaseBrowserData.Table]? = nil) {
+    internal init(databaseDelegate: DBPIOSInterface.DatabaseDelegate?, tables: [DataBrokerDatabaseBrowserData.Table]? = nil) {
 
         if let tables = tables {
             self.tables = tables
             self.selectedTable = tables.first
-            self.database = nil
         } else {
-            self.database = database
+            self.databaseDelegate = databaseDelegate
             self.tables = [DataBrokerDatabaseBrowserData.Table]()
             self.selectedTable = nil
             updateTables()
@@ -48,11 +47,12 @@ final class DebugDatabaseBrowserViewModel: ObservableObject {
     }
 
     private func updateTables() {
-        guard let database = self.database else { return }
+        guard let databaseDelegate = self.databaseDelegate else { return }
 
         Task {
-            guard let data = try? database.fetchAllBrokerProfileQueryData(),
-                  let attempts = try? database.fetchAllAttempts() else {
+            guard let data = try? databaseDelegate.getAllBrokerProfileQueryData(),
+                  let attempts = try? databaseDelegate.getAllAttempts(),
+                  let emailConfirmations = try? databaseDelegate.getAllOptOutEmailConfirmations() else {
                 assertionFailure("DataManager error during DataBrokerDatavaseBrowserViewModel.updateTables")
                 return
             }
@@ -65,7 +65,7 @@ final class DebugDatabaseBrowserViewModel: ObservableObject {
             let optOutJobs = data.flatMap { $0.optOutJobData }
             let extractedProfiles = data.flatMap { $0.extractedProfiles }
             let events = data.flatMap { $0.events }
-            let bgTaskEvents = (try? database.fetchBackgroundTaskEvents(since: .distantPast)) ?? []
+            let bgTaskEvents = (try? databaseDelegate.getBackgroundTaskEvents(since: .distantPast)) ?? []
 
             let brokersTable = createTable(using: dataBrokers, tableName: "DataBrokers")
             let profileQueriesTable = createTable(using: profileQuery, tableName: "ProfileQuery")
@@ -75,9 +75,10 @@ final class DebugDatabaseBrowserViewModel: ObservableObject {
             let eventsTable = createTable(using: events.sorted(by: { $0.date > $1.date }), tableName: "Events")
             let attemptsTable = createTable(using: attempts.sorted(by: <), tableName: "OptOutAttempts")
             let backgroundTaskEventsTable = createTable(using: bgTaskEvents.sorted(by: { $0.timestamp < $1.timestamp }), tableName: "BackgroundTaskEvents")
+            let emailConfirmationsTable = createTable(using: emailConfirmations, tableName: "EmailConfirmations")
 
             DispatchQueue.main.async {
-                self.tables = [brokersTable, profileQueriesTable, scansTable, optOutsTable, extractedProfilesTable, eventsTable, attemptsTable, backgroundTaskEventsTable]
+                self.tables = [brokersTable, profileQueriesTable, scansTable, optOutsTable, extractedProfilesTable, eventsTable, attemptsTable, backgroundTaskEventsTable, emailConfirmationsTable]
             }
         }
  }

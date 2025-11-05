@@ -35,6 +35,7 @@ public protocol DataBrokerProtectionDatabaseProvider: SecureStorageDatabaseProvi
     func update(_ broker: BrokerDB) throws
     func fetchBroker(with id: Int64) throws -> BrokerDB?
     func fetchBroker(with url: String) throws -> BrokerDB?
+    func fetchAllNonRemovedBrokers() throws -> [BrokerDB]
     func fetchAllBrokers() throws -> [BrokerDB]
 
     func save(_ profileQuery: ProfileQueryDB) throws -> Int64
@@ -60,7 +61,8 @@ public protocol DataBrokerProtectionDatabaseProvider: SecureStorageDatabaseProvi
               submittedSuccessfullyDate: Date?,
               sevenDaysConfirmationPixelFired: Bool,
               fourteenDaysConfirmationPixelFired: Bool,
-              twentyOneDaysConfirmationPixelFired: Bool) throws
+              twentyOneDaysConfirmationPixelFired: Bool,
+              fortyTwoDaysConfirmationPixelFired: Bool) throws
     func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws
     func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws
     func updateAttemptCount(_ count: Int64, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws
@@ -81,10 +83,36 @@ public protocol DataBrokerProtectionDatabaseProvider: SecureStorageDatabaseProvi
                                                    forBrokerId brokerId: Int64,
                                                    profileQueryId: Int64,
                                                    extractedProfileId: Int64) throws
+    func updateFortyTwoDaysConfirmationPixelFired(_ pixelFired: Bool,
+                                                  forBrokerId brokerId: Int64,
+                                                  profileQueryId: Int64,
+                                                  extractedProfileId: Int64) throws
     func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> (optOutDB: OptOutDB, extractedProfileDB: ExtractedProfileDB)?
     func fetchOptOuts(brokerId: Int64, profileQueryId: Int64) throws -> [(optOutDB: OptOutDB, extractedProfileDB: ExtractedProfileDB)]
     func fetchOptOuts(brokerId: Int64) throws -> [(optOutDB: OptOutDB, extractedProfileDB: ExtractedProfileDB)]
     func fetchAllOptOuts() throws -> [(optOutDB: OptOutDB, extractedProfileDB: ExtractedProfileDB)]
+
+    func save(profileQueryId: Int64,
+              brokerId: Int64,
+              extractedProfileId: Int64,
+              generatedEmail: String,
+              attemptID: String,
+              mapperToDB: MapperToDB) throws
+    func updateEmailConfirmationLink(_ emailConfirmationLink: String?,
+                                     emailConfirmationLinkObtainedOnBEDate: Date?,
+                                     profileQueryId: Int64,
+                                     brokerId: Int64,
+                                     extractedProfileId: Int64,
+                                     mapperToDB: MapperToDB) throws
+    func incrementEmailConfirmationAttemptCount(profileQueryId: Int64,
+                                                brokerId: Int64,
+                                                extractedProfileId: Int64) throws
+    func deleteOptOutEmailConfirmation(profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws
+    func fetchOptOutEmailConfirmation(profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws -> OptOutEmailConfirmationDB?
+    func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationDB]
+    func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationDB]
+    func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationDB]
+    func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier>
 
     func save(_ scanEvent: ScanHistoryEventDB) throws
     func save(_ optOutEvent: OptOutHistoryEventDB) throws
@@ -127,7 +155,7 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
                                                      key: Data,
                                                      migrationProvider: T.Type = DefaultDataBrokerProtectionDatabaseMigrationsProvider.self,
                                                      reporter: SecureVaultReporting? = nil) throws -> DefaultDataBrokerProtectionDatabaseProvider {
-        try DefaultDataBrokerProtectionDatabaseProvider(file: file, key: key, registerMigrationsHandler: migrationProvider.v7Migrations, reporter: reporter)
+        try DefaultDataBrokerProtectionDatabaseProvider(file: file, key: key, registerMigrationsHandler: migrationProvider.v10Migrations, reporter: reporter)
     }
 
     public init(file: URL,
@@ -235,6 +263,10 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
                 .deleteAll(db)
             try ProfileDB
                 .deleteAll(db)
+            if try db.tableExists(OptOutEmailConfirmationDB.databaseTableName) {
+                try OptOutEmailConfirmationDB
+                    .deleteAll(db)
+            }
         }
     }
 
@@ -262,6 +294,14 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
             return try BrokerDB
                 .filter(Column(BrokerDB.Columns.url.name) == url)
                 .fetchOne(db)
+        }
+    }
+
+    public func fetchAllNonRemovedBrokers() throws -> [BrokerDB] {
+        try db.read { db in
+            return try BrokerDB
+                .filter(Column(BrokerDB.Columns.removedAt.name) == nil)
+                .fetchAll(db)
         }
     }
 
@@ -368,7 +408,8 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
                      submittedSuccessfullyDate: Date?,
                      sevenDaysConfirmationPixelFired: Bool,
                      fourteenDaysConfirmationPixelFired: Bool,
-                     twentyOneDaysConfirmationPixelFired: Bool) throws {
+                     twentyOneDaysConfirmationPixelFired: Bool,
+                     fortyTwoDaysConfirmationPixelFired: Bool) throws {
         try db.write { db in
             try extractedProfile.insert(db)
             let extractedProfileId = db.lastInsertedRowID
@@ -383,7 +424,8 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
                 submittedSuccessfullyDate: submittedSuccessfullyDate,
                 sevenDaysConfirmationPixelFired: sevenDaysConfirmationPixelFired,
                 fourteenDaysConfirmationPixelFired: fourteenDaysConfirmationPixelFired,
-                twentyOneDaysConfirmationPixelFired: twentyOneDaysConfirmationPixelFired
+                twentyOneDaysConfirmationPixelFired: twentyOneDaysConfirmationPixelFired,
+                fortyTwoDaysConfirmationPixelFired: fortyTwoDaysConfirmationPixelFired
             ).insert(db)
         }
     }
@@ -477,6 +519,16 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
                               extractedProfileId: extractedProfileId)
     }
 
+    public func updateFortyTwoDaysConfirmationPixelFired(_ pixelFired: Bool,
+                                                         forBrokerId brokerId: Int64,
+                                                         profileQueryId: Int64,
+                                                         extractedProfileId: Int64) throws {
+        try updateOptOutField({ $0.fortyTwoDaysConfirmationPixelFired = $1 },
+                              value: pixelFired, forBrokerId: brokerId,
+                              profileQueryId: profileQueryId,
+                              extractedProfileId: extractedProfileId)
+    }
+
     public func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> (optOutDB: OptOutDB, extractedProfileDB: ExtractedProfileDB)? {
         try db.read { db in
             if let optOut = try OptOutDB.fetchOne(db, key: [
@@ -537,6 +589,137 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
             }
 
             return optOutsWithExtractedProfiles
+        }
+    }
+
+    public func save(profileQueryId: Int64,
+                     brokerId: Int64,
+                     extractedProfileId: Int64,
+                     generatedEmail: String,
+                     attemptID: String,
+                     mapperToDB: MapperToDB) throws {
+        let optOutEmailConfirmationJobData = OptOutEmailConfirmationJobData(
+            brokerId: brokerId,
+            profileQueryId: profileQueryId,
+            extractedProfileId: extractedProfileId,
+            generatedEmail: generatedEmail,
+            attemptID: attemptID,
+            emailConfirmationLink: nil,
+            emailConfirmationLinkObtainedOnBEDate: nil,
+            emailConfirmationAttemptCount: 0
+        )
+
+        let optOutEmailConfirmation = try mapperToDB.mapToDB(optOutEmailConfirmationJobData)
+
+        try db.write { db in
+            try optOutEmailConfirmation.upsert(db)
+        }
+    }
+
+    public func updateEmailConfirmationLink(_ emailConfirmationLink: String?,
+                                            emailConfirmationLinkObtainedOnBEDate: Date?,
+                                            profileQueryId: Int64,
+                                            brokerId: Int64,
+                                            extractedProfileId: Int64,
+                                            mapperToDB: MapperToDB) throws {
+        try db.write { db in
+            if var confirmation = try OptOutEmailConfirmationDB.fetchOne(db, key: [
+                OptOutEmailConfirmationDB.Columns.profileQueryId.name: profileQueryId,
+                OptOutEmailConfirmationDB.Columns.brokerId.name: brokerId,
+                OptOutEmailConfirmationDB.Columns.extractedProfileId.name: extractedProfileId
+            ]) {
+                confirmation.emailConfirmationLink = try mapperToDB.mapToDB(emailConfirmationLink)
+                confirmation.emailConfirmationLinkObtainedOnBEDate = emailConfirmationLinkObtainedOnBEDate
+                try confirmation.update(db)
+            } else {
+                throw DataBrokerProtectionDatabaseErrors.elementNotFound
+            }
+        }
+    }
+
+    public func incrementEmailConfirmationAttemptCount(profileQueryId: Int64,
+                                                       brokerId: Int64,
+                                                       extractedProfileId: Int64) throws {
+        try db.write { db in
+            if var confirmation = try OptOutEmailConfirmationDB.fetchOne(db, key: [
+                OptOutEmailConfirmationDB.Columns.profileQueryId.name: profileQueryId,
+                OptOutEmailConfirmationDB.Columns.brokerId.name: brokerId,
+                OptOutEmailConfirmationDB.Columns.extractedProfileId.name: extractedProfileId
+            ]) {
+                confirmation.emailConfirmationAttemptCount += 1
+                try confirmation.update(db)
+            } else {
+                throw DataBrokerProtectionDatabaseErrors.elementNotFound
+            }
+        }
+    }
+
+    public func deleteOptOutEmailConfirmation(profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws {
+        _ = try db.write { db in
+            try OptOutEmailConfirmationDB
+                .filter(Column(OptOutEmailConfirmationDB.Columns.profileQueryId.name) == profileQueryId &&
+                        Column(OptOutEmailConfirmationDB.Columns.brokerId.name) == brokerId &&
+                        Column(OptOutEmailConfirmationDB.Columns.extractedProfileId.name) == extractedProfileId)
+                .deleteAll(db)
+        }
+    }
+
+    public func fetchOptOutEmailConfirmation(profileQueryId: Int64, brokerId: Int64, extractedProfileId: Int64) throws -> OptOutEmailConfirmationDB? {
+        try db.read { db in
+            return try OptOutEmailConfirmationDB.fetchOne(db, key: [
+                OptOutEmailConfirmationDB.Columns.profileQueryId.name: profileQueryId,
+                OptOutEmailConfirmationDB.Columns.brokerId.name: brokerId,
+                OptOutEmailConfirmationDB.Columns.extractedProfileId.name: extractedProfileId
+            ])
+        }
+    }
+
+    public func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationDB] {
+        try db.read { db in
+            try OptOutEmailConfirmationDB
+                .fetchAll(db)
+        }
+    }
+
+    public func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationDB] {
+        try db.read { db in
+            try OptOutEmailConfirmationDB
+                .filter(OptOutEmailConfirmationDB.Columns.emailConfirmationLink == nil)
+                .fetchAll(db)
+        }
+    }
+
+    public func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationDB] {
+        try db.read { db in
+            try OptOutEmailConfirmationDB
+                .filter(OptOutEmailConfirmationDB.Columns.emailConfirmationLink != nil)
+                .fetchAll(db)
+        }
+    }
+
+    public func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier> {
+        try db.read { db in
+            // BE only stores email addresses for 7 days
+            let cutOff = Date().daysAgo(7)
+            let recentEvents = try OptOutHistoryEventDB
+                .filter(OptOutHistoryEventDB.Columns.timestamp >= cutOff)
+                .order(OptOutHistoryEventDB.Columns.timestamp.desc)
+                .fetchAll(db)
+
+            var visitedCombinations: Set<OptOutIdentifier> = []
+            var results: Set<OptOutIdentifier> = []
+            for event in recentEvents {
+                let identifier = OptOutIdentifier(brokerId: event.brokerId, profileQueryId: event.profileQueryId, extractedProfileId: event.extractedProfileId)
+                if !visitedCombinations.contains(identifier) {
+                    visitedCombinations.insert(identifier)
+                    let eventType = try JSONDecoder().decode(HistoryEvent.EventType.self, from: event.event)
+                    if eventType == .optOutSubmittedAndAwaitingEmailConfirmation {
+                        results.insert(identifier)
+                    }
+                }
+            }
+
+            return results
         }
     }
 

@@ -22,17 +22,21 @@ import SwiftUIExtensions
 struct AddBookmarkPopoverView: View {
 
     @ObservedObject private var model: AddBookmarkPopoverViewModel
+    @ObservedObject private var syncButtonModel: DismissableSyncDeviceButtonModel
     @Environment(\.dismiss) private var dismiss
 
-    init(model: AddBookmarkPopoverViewModel) {
+    init(model: AddBookmarkPopoverViewModel, syncButtonModel: DismissableSyncDeviceButtonModel) {
         self.model = model
+        self.syncButtonModel = syncButtonModel
     }
 
     var body: some View {
         if let addFolderViewModel = model.addFolderViewModel {
             AddBookmarkFolderPopoverView(model: addFolderViewModel)
         } else {
-            addBookmarkView
+            addBookmarkView.onAppear {
+                syncButtonModel.viewDidLoad()
+            }
         }
     }
 
@@ -48,6 +52,9 @@ struct AddBookmarkPopoverView: View {
             selectedFolder: $model.selectedFolder,
             isURLFieldHidden: true,
             addFolderAction: model.addFolderButtonAction,
+            shouldShowSyncButton: $syncButtonModel.shouldShowSyncButton,
+            syncButtonAction: syncButtonModel.syncButtonAction,
+            dismissSyncButtonAction: syncButtonModel.dismissSyncButtonAction,
             otherActionTitle: UserText.delete,
             isOtherActionDisabled: false,
             otherAction: { _ in model.removeButtonAction() },
@@ -85,7 +92,7 @@ struct AddBookmarkPopoverView: View {
     bkman.loadBookmarks()
     customAssertionFailure = { _, _, _ in }
 
-    return AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bkm, bookmarkManager: bkman))
+    return AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bkm, bookmarkManager: bkman), syncButtonModel: DismissableSyncDeviceButtonModel(source: .bookmarkAdded, keyValueStore: UserDefaults.standard))
         .preferredColorScheme(.light)
 }
 
@@ -100,7 +107,7 @@ struct AddBookmarkPopoverView: View {
     )
     bkman.loadBookmarks()
 
-    return AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bkm, bookmarkManager: bkman))
+    return AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bkm, bookmarkManager: bkman), syncButtonModel: DismissableSyncDeviceButtonModel(source: .bookmarkAdded, keyValueStore: UserDefaults.standard))
         .preferredColorScheme(.dark)
 }
 #endif

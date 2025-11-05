@@ -59,15 +59,14 @@ final class SubscriptionUIHandler: SubscriptionUIHandling {
         let actionHandlers = SubscriptionAccessActionHandlers(openActivateViaEmailURL: {
             let url = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .activationFlow)
             handler.subscriptionAccessActionOpenURLHandler(url: url)
-            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
+            PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
         }, restorePurchases: {
             handler.subscriptionAccessActionRestorePurchases(message: message)
-            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
+            PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
         })
 
         let newSubscriptionAccessViewController = SubscriptionAccessViewController(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,
-                                                                                   actionHandlers: actionHandlers,
-                                                                                   isRebrandingOn: { Application.appDelegate.featureFlagger.isFeatureOn(.subscriptionRebranding) })
+                                                                                   actionHandlers: actionHandlers)
         currentMainViewController?.presentAsSheet(newSubscriptionAccessViewController)
     }
 

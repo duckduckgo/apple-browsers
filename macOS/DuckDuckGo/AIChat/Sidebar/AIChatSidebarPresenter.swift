@@ -49,6 +49,12 @@ protocol AIChatSidebarPresenting {
     /// Returns whether the AI Chat sidebar is currently open for the active tab.
     func isSidebarOpenForCurrentTab() -> Bool
 
+    /// Returns the date when the AI Chat sidebar was last hidden for a tab specified by `tabID`.
+    func sidebarHiddenAt(for tabID: TabIdentifier) -> Date?
+
+    /// Returns the date when the AI Chat sidebar was last hidden for the active tab.
+    func sidebarHiddenAtForCurrentTab() -> Date?
+
     /// Emits events whenever sidebar is shown or hidden for a tab.
     var sidebarPresenceWillChangePublisher: AnyPublisher<AIChatSidebarPresenceChange, Never> { get }
 
@@ -62,6 +68,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
     private let sidebarHost: AIChatSidebarHosting
     private let sidebarProvider: AIChatSidebarProviding
+    private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatTabOpener: AIChatTabOpening
     private let featureFlagger: FeatureFlagger
     private let windowControllersManager: WindowControllersManagerProtocol
@@ -73,7 +80,8 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
     init(
         sidebarHost: AIChatSidebarHosting,
-        sidebarProvider: AIChatSidebarProviding = AIChatSidebarProvider(),
+        sidebarProvider: AIChatSidebarProviding,
+        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatTabOpener: AIChatTabOpening,
         featureFlagger: FeatureFlagger,
         windowControllersManager: WindowControllersManagerProtocol,
@@ -81,6 +89,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
     ) {
         self.sidebarHost = sidebarHost
         self.sidebarProvider = sidebarProvider
+        self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatTabOpener = aiChatTabOpener
         self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
@@ -126,21 +135,36 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         return isSidebarOpen(for: currentTabID)
     }
 
+    func sidebarHiddenAt(for tabID: TabIdentifier) -> Date? {
+        sidebarProvider.sidebarsByTab[tabID]?.hiddenAt
+    }
+
+    func sidebarHiddenAtForCurrentTab() -> Date? {
+        guard let currentTabID = sidebarHost.currentTabID else { return nil }
+        return sidebarHiddenAt(for: currentTabID)
+    }
+
     private func updateSidebarConstraints(for tabID: TabIdentifier, isShowingSidebar: Bool, withAnimation: Bool) {
         isAnimatingSidebarTransition = true
         sidebarPresenceWillChangeSubject.send(.init(tabID: tabID, isShown: isShowingSidebar))
 
         if isShowingSidebar {
             let sidebarViewController: AIChatSidebarViewController = {
-                if let sidebar = sidebarProvider.getSidebar(for: tabID) {
-                    return sidebar.sidebarViewController
+                if let existingViewController = sidebarProvider.getSidebarViewController(for: tabID) {
+                    return existingViewController
                 } else {
-                    return sidebarProvider.makeSidebar(for: tabID, burnerMode: sidebarHost.burnerMode).sidebarViewController
+                    return sidebarProvider.makeSidebarViewController(for: tabID, burnerMode: sidebarHost.burnerMode)
                 }
             }()
 
             sidebarViewController.delegate = self
             sidebarHost.embedSidebarViewController(sidebarViewController)
+
+            // Mark sidebar as revealed when it's being shown
+            sidebarProvider.sidebarsByTab[tabID]?.setRevealed()
+        } else {
+            // Mark sidebar as hidden when it's being hidden
+            sidebarProvider.sidebarsByTab[tabID]?.setHidden()
         }
 
         let newConstraintValue = isShowingSidebar ? -self.sidebarProvider.sidebarWidth : 0.0
@@ -176,9 +200,8 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
         guard let currentTabID = sidebarHost.currentTabID else { return }
 
-        if let sidebar = sidebarProvider.getSidebar(for: currentTabID) {
+        if let sidebarViewController = sidebarProvider.getSidebarViewController(for: currentTabID) {
             // If sidebar is open append conversation with prompt
-            let sidebarViewController = sidebar.sidebarViewController
             sidebarViewController.setAIChatPrompt(prompt)
         } else {
             AIChatPromptHandler.shared.setData(prompt)
@@ -195,13 +218,20 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
         if !isShowingSidebar {
             // If not showing the sidebar open it with the payload received
-            let sidebarViewController = sidebarProvider.makeSidebar(for: currentTabID, burnerMode: sidebarHost.burnerMode).sidebarViewController
+            let sidebarViewController = sidebarProvider.makeSidebarViewController(for: currentTabID, burnerMode: sidebarHost.burnerMode)
             sidebarViewController.aiChatPayload = payload
             updateSidebarConstraints(for: currentTabID, isShowingSidebar: true, withAnimation: true)
-            pixelFiring?.fire(AIChatPixel.aiChatSidebarOpened(source: .serp), frequency: .dailyAndStandard)
+            pixelFiring?.fire(
+                AIChatPixel.aiChatSidebarOpened(
+                    source: .serp,
+                    shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
+                    minutesSinceSidebarHidden: sidebarHiddenAt(for: currentTabID)?.minutesSinceNow()
+                ),
+                frequency: .dailyAndStandard
+            )
         } else {
             // If sidebar is open then pass the payload to a new AIChat tab
-            aiChatTabOpener.openNewAIChatTab(withPayload: payload)
+            aiChatTabOpener.openAIChatTab(with: .payload(payload), behavior: .newTab(selected: true))
         }
     }
 }
@@ -209,7 +239,8 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 extension AIChatSidebarPresenter: AIChatSidebarHostingDelegate {
 
     func sidebarHostDidSelectTab(with tabID: TabIdentifier) {
-        updateSidebarConstraints(for: tabID, isShowingSidebar: isSidebarOpen(for: tabID), withAnimation: false)
+        let shouldShowSidebar = isSidebarOpen(for: tabID)
+        updateSidebarConstraints(for: tabID, isShowingSidebar: shouldShowSidebar, withAnimation: false)
     }
 
     func sidebarHostDidUpdateTabs() {
@@ -221,16 +252,22 @@ extension AIChatSidebarPresenter: AIChatSidebarHostingDelegate {
 
 extension AIChatSidebarPresenter: AIChatSidebarViewControllerDelegate {
 
-    func didClickOpenInNewTabButton(currentAIChatURL: URL, aiChatRestorationData: AIChatRestorationData?) {
+    func didClickOpenInNewTabButton() {
+        guard let currentTabID = sidebarHost.currentTabID,
+              let sidebar = sidebarProvider.sidebarsByTab[currentTabID] else { return }
+
         pixelFiring?.fire(AIChatPixel.aiChatSidebarExpanded, frequency: .dailyAndStandard)
+
+        let restorationData = sidebar.restorationData
+        let currentAIChatURL = sidebar.currentAIChatURL.removingAIChatPlacementParameter()
 
         toggleSidebar()
 
         Task { @MainActor in
-            if let data = aiChatRestorationData {
-                aiChatTabOpener.openNewAIChatTab(withChatRestorationData: data)
+            if let data = restorationData {
+                aiChatTabOpener.openAIChatTab(with: .restoration(data), behavior: .newTab(selected: true))
             } else {
-                aiChatTabOpener.openNewAIChatTab(currentAIChatURL, with: .newTab(selected: true))
+                aiChatTabOpener.openAIChatTab(with: .url(currentAIChatURL), behavior: .newTab(selected: true))
             }
         }
     }

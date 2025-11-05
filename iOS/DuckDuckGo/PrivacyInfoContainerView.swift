@@ -20,10 +20,23 @@
 import UIKit
 import Lottie
 
+/// Delegate for handling privacy info container interactions.
+protocol PrivacyInfoContainerViewDelegate: AnyObject {
+    /// Called when the user taps a Dax Easter Egg logo in the privacy icon.
+    /// - Parameters:
+    ///   - view: The privacy info container view that was tapped
+    ///   - logoURL: The URL of the tapped logo for full-screen loading
+    ///   - currentImage: The currently displayed small image for transition animation
+    ///   - sourceFrame: The frame of the tapped logo in screen coordinates for zoom animation
+    func privacyInfoContainerViewDidTapDaxLogo(_ view: PrivacyInfoContainerView, logoURL: URL?, currentImage: UIImage?, sourceFrame: CGRect)
+}
+
 class PrivacyInfoContainerView: UIView, NibLoading {
     
     @IBOutlet var privacyIcon: PrivacyIconView!
     @IBOutlet var maskingView: UIView!
+    
+    weak var delegate: PrivacyInfoContainerViewDelegate?
     
     @IBOutlet var trackers1Animation: LottieAnimationView!
     @IBOutlet var trackers2Animation: LottieAnimationView!
@@ -42,6 +55,8 @@ class PrivacyInfoContainerView: UIView, NibLoading {
             // Trackers animation do not render properly using Lottie CoreAnimation. Running them on the CPU seems working fine.
             animationView.configuration = LottieConfiguration(renderingEngine: .mainThread)
         }
+        
+        privacyIcon.delegate = self
         
         decorate()
     }
@@ -92,5 +107,13 @@ extension PrivacyInfoContainerView {
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
             loadAnimations()
         }
+    }
+}
+
+// MARK: - PrivacyIconViewDelegate
+extension PrivacyInfoContainerView: PrivacyIconViewDelegate {
+    
+    func privacyIconViewDidTapDaxLogo(_ view: PrivacyIconView, logoURL: URL?, currentImage: UIImage?, sourceFrame: CGRect) {
+        delegate?.privacyInfoContainerViewDidTapDaxLogo(self, logoURL: logoURL, currentImage: currentImage, sourceFrame: sourceFrame)
     }
 }

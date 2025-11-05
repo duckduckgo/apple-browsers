@@ -1,8 +1,7 @@
 {
   "name": "Pub360",
   "url": "pub360.com",
-  "version": "0.4.0",
-  "parent": "verecor.com",
+  "version": "0.6.0",
   "addedDatetime": 1677736800000,
   "optOutUrl": "https://plcom.net/ng/control/privacy",
   "steps": [
@@ -30,28 +29,29 @@
           "selector": ".search-item",
           "profile": {
             "name": {
-              "selector": ".//div[@class='col-sm-24 col-md-19 col-text']"
+              "selector": ".//div[@class='search-item__title-text']",
+              "beforeText": ","
             },
             "alternativeNamesList": {
-              "selector": ".//div[@class='col-sm-24 col-md-16 name']//li",
+              "selector": ".//dt[contains(@class, 'search-item__info-title') and contains(., 'Also Known As')]/following-sibling::div[@class='search-item__info-col']/dd",
               "findElements": true
             },
             "age": {
-              "selector": ".age"
+              "selector": ".search-item__title-age"
+            },
+            "addressCityState": {
+              "selector": ".//dt[contains(@class, 'search-item__info-title') and contains(., 'Home Address')]/following-sibling::div[@class='search-item__info-col']"
             },
             "addressCityStateList": {
-              "selector": ".//span[@itemprop='address']",
+              "selector": ".//dt[contains(@class, 'search-item__info-title') and contains(., 'Previous Addresses')]/following-sibling::div[@class='search-item__info-col']/dd",
               "findElements": true
             },
             "relativesList": {
-              "selector": ".//li[@itemprop='relatedTo']",
-              "findElements": true,
-              "beforeText": ","
+              "selector": ".//dt[contains(@class, 'search-item__info-title') and contains(., 'Possible Relatives')]/following-sibling::div[@class='search-item__info-col']/dd",
+              "findElements": true
             },
             "profileUrl": {
-              "selector": "a",
-              "identifierType": "path",
-              "identifier": "https://pub360.com/entry/${id}"
+              "selector": ".search-item__title a"
             }
           }
         }
@@ -59,8 +59,92 @@
     },
     {
       "stepType": "optOut",
-      "optOutType": "parentSiteOptOut",
-      "actions": []
+      "optOutType": "formOptOut",
+      "actions": [
+        {
+          "actionType": "navigate",
+          "url": "https://pub360.com/control/privacy",
+          "id": "19bb052b-39e6-4c34-bfec-366e94d19658"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//h1[contains(text(), 'Opt Out')]",
+              "parent": ".contact"
+            }
+          ],
+          "id": "541faf70-4f24-4336-b9d0-444d0641a649"
+        },
+        {
+          "actionType": "fillForm",
+          "selector": ".ahm",
+          "elements": [
+            {
+              "type": "fullName",
+              "selector": "#user_name"
+            },
+            {
+              "type": "email",
+              "selector": "#user_email"
+            },
+            {
+              "type": "profileUrl",
+              "selector": "#url"
+            }
+          ],
+          "id": "85404df4-cd04-4de2-a984-0193761ce756"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//input[@name='cf-turnstile-response' and @value and @value != '']",
+              "parent": "//form[@id='form-contact']"
+            }
+          ],
+          "id": "49d145b9-bdb5-4f82-9335-de363d8df95b"
+        },
+        {
+          "actionType": "click",
+          "elements": [
+            {
+              "type": "button",
+              "selector": ".//button[@type='submit']"
+            }
+          ],
+          "id": "6e8a0cdf-d652-470a-ace0-e6b0805a6cd2"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "text",
+              "selector": "body",
+              "expect": "Your removal request has been received"
+            }
+          ],
+          "id": "f2e243f1-ed8a-4659-9af8-15dc3db1e4f4"
+        },
+        {
+          "actionType": "emailConfirmation",
+          "pollingTime": 30,
+          "id": "9f7b9633-a99e-4e3b-baca-0d567df85d26"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "text",
+              "selector": "body",
+              "expect": "Your information control request has been confirmed."
+            }
+          ],
+          "id": "1bdf8113-6a43-45d6-8c62-6b21431ccaab"
+        }
+      ]
     }
   ],
   "schedulingConfig": {

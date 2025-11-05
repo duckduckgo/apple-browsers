@@ -38,30 +38,52 @@ struct BookmarksDatabaseSetup {
     }
 
     static func makeValidator() -> BookmarksStateValidator {
-        return BookmarksStateValidator(keyValueStore: UserDefaults.app) { validationError in
+        return BookmarksStateValidator(keyValueStore: UserDefaults.app) { validationError, additionalParams in
             switch validationError {
             case .bookmarksStructureLost:
-                DailyPixel.fire(pixel: .debugBookmarksStructureLost, includedParameters: [.appVersion])
+                var enhancedParams = additionalParams ?? [:]
+                
+                // Add app group access diagnostics to help identify the root cause
+                let appGroupStatus = AppGroupContainerValidator.checkAppGroupAccessStatus()
+                switch appGroupStatus {
+                case .containerUnavailable:
+                    enhancedParams["app-group-container-available"] = "false"
+                case .markerMissing:
+                    enhancedParams["app-group-container-available"] = "true"
+                    enhancedParams["app-group-marker-present"] = "false"
+                case .accessible:
+                    enhancedParams["app-group-container-available"] = "true"
+                    enhancedParams["app-group-marker-present"] = "true"
+                }
+                
+                DailyPixel.fireDailyAndCount(pixel: .debugBookmarksStructureLost,
+                                withAdditionalParameters: enhancedParams)
             case .bookmarksStructureNotRecovered:
-                DailyPixel.fire(pixel: .debugBookmarksStructureNotRecovered, includedParameters: [.appVersion])
-            case .bookmarksStructureBroken(let additionalParams):
-                DailyPixel.fire(pixel: .debugBookmarksInvalidRoots,
-                                withAdditionalParameters: additionalParams,
-                                includedParameters: [.appVersion])
+                DailyPixel.fireDailyAndCount(pixel: .debugBookmarksStructureNotRecovered)
+            case .bookmarksStructureBroken:
+                DailyPixel.fireDailyAndCount(pixel: .debugBookmarksInvalidRoots,
+                                withAdditionalParameters: additionalParams ?? [:])
             case .validatorError(let underlyingError):
                 let processedErrors = CoreDataErrorsParser.parse(error: underlyingError as NSError)
-
                 DailyPixel.fireDailyAndCount(pixel: .debugBookmarksValidationFailed,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                             withAdditionalParameters: processedErrors.errorPixelParameters,
-                                             includedParameters: [.appVersion])
+                                             withAdditionalParameters: processedErrors.errorPixelParameters)
             }
         }
     }
 
     func loadStoreAndMigrate(bookmarksDatabase: CoreDataStoring,
                              formFactorFavoritesMigrator: BookmarkFormFactorFavoritesMigrating = BookmarkFormFactorFavoritesMigration(),
-                             validator: BookmarksStateValidation = Self.makeValidator()) -> Result {
+                             validator: BookmarksStateValidation = Self.makeValidator(),
+                             isBackground: Bool = false) throws {
+
+        // Check if bookmarks database file exists before attempting to load
+        let dbFileURL = BookmarksDatabase.defaultDBFileURL
+        let dbFileExists = FileManager.default.fileExists(atPath: dbFileURL.path)
+        
+        if !dbFileExists {
+            DailyPixel.fireDailyAndCount(pixel: .debugBookmarksDatabaseFileMissing)
+        }
 
         let oldFavoritesOrder: [String]?
         do {
@@ -70,11 +92,12 @@ struct BookmarksDatabaseSetup {
                 dbFileURL: BookmarksDatabase.defaultDBFileURL
             )
         } catch {
-            return .failure(error)
+            throw BookmarksDatabaseError.couldNotGetFavoritesOrder(error)
         }
 
         var migrationHappened = false
         var loadError: Error?
+        var migrationError: Error?
         bookmarksDatabase.loadStore { context, error in
             guard let context = context, error == nil else {
                 loadError = error
@@ -82,15 +105,19 @@ struct BookmarksDatabaseSetup {
             }
 
             // Perform pre-setup/migration validation
-            let isMissingStructure = !validator.validateInitialState(context: context,
-                                                                     validationError: .bookmarksStructureLost)
-
-            self.migrateFromLegacyCoreDataStorageIfNeeded(context)
-            migrationHappened = self.migrateToFormFactorSpecificFavorites(context, oldFavoritesOrder)
+            let isMissingStructure = !validator.validateInitialState(context: context, validationError: .bookmarksStructureLost, isBackground: isBackground)
+            do {
+                try self.migrateFromLegacyCoreDataStorageIfNeeded(context)
+                migrationHappened = try self.migrateToFormFactorSpecificFavorites(context, oldFavoritesOrder)
+            } catch {
+                migrationError = error
+                return
+            }
 
             if isMissingStructure {
                 _ = validator.validateInitialState(context: context,
-                                                   validationError: .bookmarksStructureNotRecovered)
+                                                   validationError: .bookmarksStructureNotRecovered,
+                                                   isBackground: isBackground)
             }
 
             // Add new migrations and set migrationHappened flag above this comment. Only the last migration is relevant.
@@ -98,7 +125,9 @@ struct BookmarksDatabaseSetup {
         }
 
         if let loadError {
-            return .failure(loadError)
+            throw BookmarksDatabaseError.couldNotPrepareDatabase(loadError)
+        } else if let migrationError {
+            throw migrationError
         }
 
         // Perform post-setup validation
@@ -107,6 +136,9 @@ struct BookmarksDatabaseSetup {
             validator.validateBookmarksStructure(context: contextForValidation)
             repairDeletedFlag(context: contextForValidation)
         }
+        
+        // Create app group access marker for future validation (first launch only)
+        AppGroupContainerValidator.createMarkerFileAfterFirstSuccessfulAccess()
 
         if migrationHappened {
             do {
@@ -118,8 +150,6 @@ struct BookmarksDatabaseSetup {
                 assertionFailure(error.localizedDescription)
             }
         }
-
-        return .success
     }
 
     private func repairDeletedFlag(context: NSManagedObjectContext) {
@@ -140,7 +170,7 @@ struct BookmarksDatabaseSetup {
         }
     }
 
-    private func migrateToFormFactorSpecificFavorites(_ context: NSManagedObjectContext, _ oldFavoritesOrder: [String]?) -> Bool {
+    private func migrateToFormFactorSpecificFavorites(_ context: NSManagedObjectContext, _ oldFavoritesOrder: [String]?) throws -> Bool {
         do {
             BookmarkFormFactorFavoritesMigration.migrateToFormFactorSpecificFavorites(byCopyingExistingTo: .mobile,
                                                                                       preservingOrderOf: oldFavoritesOrder,
@@ -149,17 +179,16 @@ struct BookmarksDatabaseSetup {
                 try context.save(onErrorFire: .bookmarksMigrationCouldNotPrepareMultipleFavoriteFolders)
                 return true
             }
+            return false
         } catch {
-            Thread.sleep(forTimeInterval: 1)
-            fatalError("Could not prepare Bookmarks DB structure")
+            throw BookmarksDatabaseError.couldNotPrepareBookmarksDBStructure(error)
         }
-        return false
     }
-    
-    private func migrateFromLegacyCoreDataStorageIfNeeded(_ context: NSManagedObjectContext) {
-        let legacyStorage = LegacyBookmarksCoreDataStorage()
-        legacyStorage?.loadStoreAndCaches()
-        LegacyBookmarksStoreMigration.migrate(from: legacyStorage, to: context)
+
+    private func migrateFromLegacyCoreDataStorageIfNeeded(_ context: NSManagedObjectContext) throws {
+        let legacyStorage = try LegacyBookmarksCoreDataStorage()
+        try legacyStorage?.loadStoreAndCaches()
+        try LegacyBookmarksStoreMigration.migrate(from: legacyStorage, to: context)
         legacyStorage?.removeStore()
     }
 }

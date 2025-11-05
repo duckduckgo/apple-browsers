@@ -76,16 +76,19 @@ protocol TabExtensionDependencies {
     var certificateTrustEvaluator: CertificateTrustEvaluating { get }
     var tunnelController: NetworkProtectionIPCTunnelController? { get }
     var maliciousSiteDetector: MaliciousSiteDetecting { get }
-    var faviconManagement: FaviconManagement? { get }
+    var faviconManagement: FaviconManagement { get }
     var featureFlagger: FeatureFlagger { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
     var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable { get }
     var newTabPageShownPixelSender: NewTabPageShownPixelSender { get }
+    var aiChatSidebarProvider: AIChatSidebarProviding { get }
+    var tabCrashAggregator: TabCrashAggregator { get }
 }
 
 // swiftlint:disable:next large_tuple
 typealias TabExtensionsBuilderArguments = (
     tabIdentifier: UInt64,
+    tabID: String,
     isTabPinned: () -> Bool,
     isTabBurner: Bool,
     isTabLoadedInSidebar: Bool,
@@ -180,7 +183,8 @@ extension TabExtensionsBuilder {
                                contentPublisher: args.contentPublisher,
                                isLoadedInSidebar: args.isTabLoadedInSidebar,
                                internalUserDecider: dependencies.featureFlagger.internalUserDecider,
-                               aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration)
+                               aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration,
+                               tld: dependencies.privacyFeatures.contentBlocking.tld)
         }
         add {
             HoveredLinkTabExtension(hoverUserScriptPublisher: userScripts.map(\.?.hoverUserScript))
@@ -244,6 +248,18 @@ extension TabExtensionsBuilder {
         }
 
         add {
+            PageContextTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
+                                    webViewPublisher: args.webViewFuture,
+                                    contentPublisher: args.contentPublisher,
+                                    tabID: args.tabID,
+                                    featureFlagger: dependencies.featureFlagger,
+                                    aiChatSidebarProvider: dependencies.aiChatSidebarProvider,
+                                    aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration,
+                                    isLoadedInSidebar: args.isTabLoadedInSidebar,
+                                    faviconManagement: dependencies.faviconManagement)
+        }
+
+        add {
             FaviconsTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
                                  contentPublisher: args.contentPublisher,
                                  faviconManagement: dependencies.faviconManagement)
@@ -254,7 +270,8 @@ extension TabExtensionsBuilder {
                 featureFlagger: dependencies.featureFlagger,
                 contentPublisher: args.contentPublisher,
                 webViewPublisher: args.webViewFuture,
-                webViewErrorPublisher: args.errorPublisher
+                webViewErrorPublisher: args.errorPublisher,
+                tabCrashAggregator: dependencies.tabCrashAggregator
             )
         }
 

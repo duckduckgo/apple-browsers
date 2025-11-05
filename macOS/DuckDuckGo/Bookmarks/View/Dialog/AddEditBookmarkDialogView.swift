@@ -20,16 +20,20 @@ import SwiftUI
 
 struct AddEditBookmarkDialogView: ModalView {
     @ObservedObject private var viewModel: AddEditBookmarkDialogCoordinatorViewModel<AddEditBookmarkDialogViewModel, AddEditBookmarkFolderDialogViewModel>
+    @ObservedObject private var syncButtonModel: DismissableSyncDeviceButtonModel
 
-    init(viewModel: AddEditBookmarkDialogCoordinatorViewModel<AddEditBookmarkDialogViewModel, AddEditBookmarkFolderDialogViewModel>) {
+    init(viewModel: AddEditBookmarkDialogCoordinatorViewModel<AddEditBookmarkDialogViewModel, AddEditBookmarkFolderDialogViewModel>, syncButtonModel: DismissableSyncDeviceButtonModel) {
         self.viewModel = viewModel
+        self.syncButtonModel = syncButtonModel
     }
 
     var body: some View {
         Group {
             switch viewModel.viewState {
             case .bookmark:
-                addEditBookmarkView
+                addEditBookmarkView.onAppear {
+                    syncButtonModel.viewDidLoad()
+                }
             case .folder:
                 addFolderView
             }
@@ -48,6 +52,9 @@ struct AddEditBookmarkDialogView: ModalView {
             selectedFolder: $viewModel.bookmarkModel.selectedFolder,
             isURLFieldHidden: false,
             addFolderAction: viewModel.addFolderAction,
+            shouldShowSyncButton: $syncButtonModel.shouldShowSyncButton,
+            syncButtonAction: syncButtonModel.syncButtonAction,
+            dismissSyncButtonAction: syncButtonModel.dismissSyncButtonAction,
             otherActionTitle: viewModel.bookmarkModel.cancelActionTitle,
             isOtherActionDisabled: viewModel.bookmarkModel.isOtherActionDisabled,
             otherAction: viewModel.bookmarkModel.cancel,

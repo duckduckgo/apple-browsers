@@ -28,15 +28,15 @@ public final class SubscriptionEndpointServiceMockV2: SubscriptionEndpointServic
     public init() { }
 
     public var updateCacheWithSubscriptionCalled: Bool = false
-    public var onUpdateCache: ((PrivacyProSubscription) -> Void)?
-    public func updateCache(with subscription: Subscription.PrivacyProSubscription) {
+    public var onUpdateCache: ((DuckDuckGoSubscription) -> Void)?
+    public func updateCache(with subscription: Subscription.DuckDuckGoSubscription) {
         onUpdateCache?(subscription)
         updateCacheWithSubscriptionCalled = true
     }
 
     public func clearSubscription() {}
 
-    public var getProductsResult: Result<[GetProductsItem], APIRequestV2.Error>?
+    public var getProductsResult: Result<[GetProductsItem], APIRequestV2Error>?
     public func getProducts() async throws -> [Subscription.GetProductsItem] {
         switch getProductsResult! {
         case .success(let result): return result
@@ -46,8 +46,8 @@ public final class SubscriptionEndpointServiceMockV2: SubscriptionEndpointServic
 
     public var getSubscriptionCalled: Bool = false
     public var onGetSubscription: ((String?, SubscriptionCachePolicy) -> Void)?
-    public var getSubscriptionResult: Result<PrivacyProSubscription, SubscriptionEndpointServiceError>?
-    public func getSubscription(accessToken: String?, cachePolicy: Subscription.SubscriptionCachePolicy) async throws -> Subscription.PrivacyProSubscription {
+    public var getSubscriptionResult: Result<DuckDuckGoSubscription, SubscriptionEndpointServiceError>?
+    public func getSubscription(accessToken: String?, cachePolicy: Subscription.SubscriptionCachePolicy) async throws -> Subscription.DuckDuckGoSubscription {
         getSubscriptionCalled = true
         onGetSubscription?(accessToken, cachePolicy)
         switch getSubscriptionResult! {
@@ -56,7 +56,7 @@ public final class SubscriptionEndpointServiceMockV2: SubscriptionEndpointServic
         }
     }
 
-    public var getCustomerPortalURLResult: Result<GetCustomerPortalURLResponse, APIRequestV2.Error>?
+    public var getCustomerPortalURLResult: Result<GetCustomerPortalURLResponse, APIRequestV2Error>?
     public func getCustomerPortalURL(accessToken: String, externalID: String) async throws -> Subscription.GetCustomerPortalURLResponse {
         switch getCustomerPortalURLResult! {
         case .success(let result): return result
@@ -64,7 +64,7 @@ public final class SubscriptionEndpointServiceMockV2: SubscriptionEndpointServic
         }
     }
 
-    public var confirmPurchaseResult: Result<ConfirmPurchaseResponseV2, APIRequestV2.Error>?
+    public var confirmPurchaseResult: Result<ConfirmPurchaseResponseV2, APIRequestV2Error>?
     public func confirmPurchase(accessToken: String, signature: String, additionalParams: [String: String]?) async throws -> Subscription.ConfirmPurchaseResponseV2 {
         switch confirmPurchaseResult! {
         case .success(let result): return result
@@ -80,11 +80,11 @@ public final class SubscriptionEndpointServiceMockV2: SubscriptionEndpointServic
         }
     }
 
-    public func ingestSubscription(_ subscription: Subscription.PrivacyProSubscription) async throws {
+    public func ingestSubscription(_ subscription: Subscription.DuckDuckGoSubscription) async throws {
         getSubscriptionResult = .success(subscription)
     }
 
-    public func getCachedSubscription() -> Subscription.PrivacyProSubscription? {
+    public func getCachedSubscription() -> Subscription.DuckDuckGoSubscription? {
         switch getSubscriptionResult! {
         case .success(let subscription): return subscription
         case .failure: return nil

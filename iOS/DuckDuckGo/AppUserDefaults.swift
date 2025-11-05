@@ -31,12 +31,16 @@ public class AppUserDefaults: AppSettings {
         public static let favoritesDisplayModeChange = Notification.Name("com.duckduckgo.app.FavoritesDisplayModeChange")
         public static let syncPausedStateChanged = SyncBookmarksAdapter.syncBookmarksPausedStateChanged
         public static let syncCredentialsPausedStateChanged = SyncCredentialsAdapter.syncCredentialsPausedStateChanged
+        public static let syncCreditCardsPausedStateChanged = SyncCreditCardsAdapter.syncCreditCardsPausedStateChanged
         public static let autofillEnabledChange = Notification.Name("com.duckduckgo.app.AutofillEnabledChange")
         public static let didVerifyInternalUser = Notification.Name("com.duckduckgo.app.DidVerifyInternalUser")
         public static let inspectableWebViewsToggled = Notification.Name("com.duckduckgo.app.DidToggleInspectableWebViews")
         public static let addressBarPositionChanged = Notification.Name("com.duckduckgo.app.AddressBarPositionChanged")
+        public static let refreshButtonSettingsChanged = Notification.Name("com.duckduckgo.refreshButton.settings.changed")
+        public static let customizationSettingsChanged = Notification.Name("com.duckduckgo.customization.settings.changed")
         public static let showsFullURLAddressSettingChanged = Notification.Name("com.duckduckgo.app.ShowsFullURLAddressSettingChanged")
         public static let autofillDebugScriptToggled = Notification.Name("com.duckduckgo.app.DidToggleAutofillDebugScript")
+        public static let contentScopeDebugStateToggled = Notification.Name("com.duckduckgo.app.DidToggleContentScopeDebugState")
         public static let duckPlayerSettingsUpdated = Notification.Name("com.duckduckgo.app.DuckPlayerSettingsUpdated")
         public static let appDataClearingUpdated = Notification.Name("com.duckduckgo.app.dataClearingUpdates")
     }
@@ -76,6 +80,8 @@ public class AppUserDefaults: AppSettings {
         static let autofillIsNewInstallForOnByDefault = "com.duckduckgo.ios.autofillIsNewInstallForOnByDefault"
 
         static let favoritesDisplayMode = "com.duckduckgo.ios.favoritesDisplayMode"
+        
+        static let refreshButtonPosition = "com.duckduckgo.ios.refreshbuttonposition"
 
         static let crashCollectionOptInStatus = "com.duckduckgo.ios.crashCollectionOptInStatus"
         static let crashCollectionShouldRevertOptedInStatusTrigger = "com.duckduckgo.ios.crashCollectionShouldRevertOptedInStatusTrigger"
@@ -94,11 +100,13 @@ public class AppUserDefaults: AppSettings {
         static let duckPlayerControlsVisible = "com.duckduckgo.ios.duckPlayerControlsVisible"
         static let duckPlayerNativeUIWasUsed = "com.duckduckgo.ios.duckPlayerNativeUIWasUsed"
         static let duckPlayerNativeUISettingsMapped = "com.duckduckgo.ios.duckPlayerNativeUISettingsMapped"
+        static let autoClearAIChatHistory = "com.duckduckgo.ios.autoClearAIChatHistory"
     }
 
     private struct DebugKeys {
         static let inspectableWebViewsEnabledKey = "com.duckduckgo.ios.debug.inspectableWebViewsEnabled"
         static let autofillDebugScriptEnabledKey = "com.duckduckgo.ios.debug.autofillDebugScriptEnabled"
+        static let contentScopeDebugStateEnabledKey = "com.duckduckgo.ios.debug.contentScopeDebugStateEnabled"
         static let onboardingIsNewUserKey = "com.duckduckgo.ios.debug.onboardingIsNewUser"
     }
 
@@ -244,6 +252,20 @@ public class AppUserDefaults: AppSettings {
         set {
             addressBarPositionStorage = newValue.rawValue
             NotificationCenter.default.post(name: Notifications.addressBarPositionChanged, object: currentAddressBarPosition)
+        }
+    }
+    
+    var currentRefreshButtonPosition: RefreshButtonPosition {
+        get {
+            guard let value = userDefaults?.string(forKey: Keys.refreshButtonPosition), let refreshButtonPosition = RefreshButtonPosition(rawValue: value) else {
+                return .addressBar
+            }
+            return refreshButtonPosition
+        }
+        
+        set {
+            userDefaults?.setValue(newValue.rawValue, forKey: Keys.refreshButtonPosition)
+            NotificationCenter.default.post(name: Notifications.refreshButtonSettingsChanged, object: currentRefreshButtonPosition)
         }
     }
 
@@ -436,6 +458,16 @@ public class AppUserDefaults: AppSettings {
         }
     }
 
+    var contentScopeDebugStateEnabled: Bool {
+        get {
+            return userDefaults?.object(forKey: DebugKeys.contentScopeDebugStateEnabledKey) as? Bool ?? false
+        }
+
+        set {
+            userDefaults?.set(newValue, forKey: DebugKeys.contentScopeDebugStateEnabledKey)
+        }
+    }
+
     var crashCollectionOptInStatus: CrashCollectionOptInStatus {
         get {
             guard let string = userDefaults?.string(forKey: Keys.crashCollectionOptInStatus),
@@ -593,6 +625,9 @@ public class AppUserDefaults: AppSettings {
 
     @UserDefaultsWrapper(key: .duckPlayerControlsVisible, defaultValue: true)
     var duckPlayerControlsVisible: Bool
+
+    @UserDefaultsWrapper(key: .autoClearAIChatHistory, defaultValue: false)
+    var autoClearAIChatHistory: Bool
 }
 
 extension AppUserDefaults: AppConfigurationFetchStatistics {

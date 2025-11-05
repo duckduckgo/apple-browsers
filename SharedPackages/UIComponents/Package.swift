@@ -32,13 +32,15 @@ let package = Package(
             targets: ["UIComponents"]),
     ],
     dependencies: [
-        .package(path: "../DesignResourcesKit")
+        .package(path: "../DesignResourcesKit"),
+        .package(path: "../DesignResourcesKitIcons")
     ],
     targets: [
         .target(
             name: "UIComponents",
             dependencies: [
                 "DesignResourcesKit",
+                "DesignResourcesKitIcons",
             ],
             resources: [
                 .process("Resources/Assets.xcassets")

@@ -160,7 +160,7 @@ final class URLEventHandler {
     }
 }
 
-private extension String {
+extension String {
     static let dataBrokerProtectionScheme = "databrokerprotection"
     static let networkProtectionScheme = "networkprotection"
 

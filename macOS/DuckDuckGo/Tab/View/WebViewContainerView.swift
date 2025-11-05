@@ -122,7 +122,7 @@ final class WebViewContainerView: NSView {
             .store(in: &cancellables)
     }
 
-    /** 
+    /**
 
      Fix a glitch breaking the Full Screen presentation on a repeated
      Full Screen mode activation after dragging out of Mission Control Spaces.
@@ -163,15 +163,18 @@ final class WebViewContainerView: NSView {
                     DispatchQueue.main.async { [weak fullScreenWindowController, weak webView=self.webView] in
                         guard let webView, let fullScreenWindowController,
                               let window = fullScreenWindowController.window,
-                              let pageRef = fullScreenWindowController.value(forKey: Key.page) else { return }
+                              let pageRef = webView.value(forIvar: Key.page),
+                              let method = class_getInstanceMethod(object_getClass(fullScreenWindowController), Selector.initWithWindowWebViewPage) else { return }
 
                         window.close()
                         fullScreenWindowController.window = nil
 
                         let newWindow = type(of: window).init(contentRect: NSScreen.main?.frame ?? .zero, styleMask: window.styleMask, backing: .buffered, defer: false)
 
-                        fullScreenWindowController.perform(Selector.initWithWindowWebViewPage, withArguments: [newWindow, webView, NSValue(pointer: nil)])
-                        fullScreenWindowController.setValue(pageRef, forKey: Key.page)
+                        let imp = method_getImplementation(method)
+                        typealias InitWithWindowWebViewPageType = @convention(c) (NSWindowController, ObjectiveC.Selector, NSWindow, WKWebView, UnsafeRawPointer) -> NSWindowController?
+                        let initWithWindowWebViewPage = unsafeBitCast(imp, to: InitWithWindowWebViewPageType.self)
+                        _=initWithWindowWebViewPage(fullScreenWindowController, Selector.initWithWindowWebViewPage, newWindow, webView, pageRef)
 
                         // prevent fullScreenWindowController getting released after we‘ve reset its window
                         _=Unmanaged.passUnretained(fullScreenWindowController).retain()
@@ -185,7 +188,7 @@ final class WebViewContainerView: NSView {
         static let initWithWindowWebViewPage = NSSelectorFromString("initWithWindow:webView:page:")
     }
     private enum Key {
-        static let page = "page"
+        static let page = "_page"
     }
 
     override func removeFromSuperview() {

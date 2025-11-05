@@ -21,7 +21,17 @@ import UIKit
 
 extension ActionMessageView: NibLoading {}
 
-class ActionMessageView: UIView {
+protocol ActionMessagePresenting {
+
+    static func present(message: String,
+                        actionTitle: String?,
+                        presentationLocation: ActionMessageView.PresentationLocation,
+                        duration: TimeInterval,
+                        onAction: @escaping () -> Void,
+                        onDidDismiss: @escaping () -> Void)
+}
+
+class ActionMessageView: UIView, ActionMessagePresenting {
 
     enum PresentationLocation {
         case withBottomBar(andAddressBarBottom: Bool)

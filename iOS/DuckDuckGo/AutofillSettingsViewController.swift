@@ -40,6 +40,7 @@ enum AutofillSettingsSource: String {
     case newTabPageToolbar = "new_tab_page_toolbar"
     case viewSavedCreditCardPrompt = "view_saved_credit_card_prompt"
     case creditCardKeyboardShortcut = "credit_card_keyboard_shortcut"
+    case customizedToolbarButton = "customized_toolbar_button"
 }
 
 protocol AutofillSettingsViewControllerDelegate: AnyObject {
@@ -86,7 +87,7 @@ final class AutofillSettingsViewController: UIViewController {
         self.bookmarksDatabase = bookmarksDatabase
         self.favoritesDisplayMode = favoritesDisplayMode
         self.keyValueStore = keyValueStore
-        self.viewModel = AutofillSettingsViewModel(appSettings: appSettings, source: source)
+        self.viewModel = AutofillSettingsViewModel(appSettings: appSettings, source: source, syncService: syncService, syncDataProviders: syncDataProviders)
         
         super.init(nibName: nil, bundle: nil)
     }
@@ -110,7 +111,7 @@ final class AutofillSettingsViewController: UIViewController {
         
         Pixel.fire(pixel: .autofillSettingsOpened)
     }
-    
+
     private func setupView() {
         viewModel.delegate = self
         
@@ -139,6 +140,8 @@ final class AutofillSettingsViewController: UIViewController {
     private func segueToCreditCards() {
         let autofillCreditCardsViewController = AutofillCreditCardListViewController(
             secureVault: viewModel.secureVault,
+            syncService: syncService,
+            syncDataProviders: syncDataProviders,
             selectedCard: selectedCard,
             source: source)
         navigationController?.pushViewController(autofillCreditCardsViewController, animated: true)

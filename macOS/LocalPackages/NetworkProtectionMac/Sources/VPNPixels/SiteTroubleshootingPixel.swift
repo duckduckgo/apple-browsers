@@ -45,8 +45,4 @@ public enum SiteTroubleshootingPixel: VPNPixel {
             return [PixelKit.Parameters.domain: domain]
         }
     }
-
-    public var error: Error? {
-        return nil
-    }
 }

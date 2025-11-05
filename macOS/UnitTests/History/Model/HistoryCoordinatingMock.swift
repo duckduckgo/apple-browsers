@@ -56,28 +56,34 @@ class HistoryCoordinatingMock: HistoryCoordinating, SuggestionContainer.HistoryP
         commitChangesCalled = true
     }
 
-    var burnCalled = false
-    func burn(except fireproofDomains: FireproofDomains, completion: @escaping () -> Void) {
-        burnCalled = true
-        completion()
-    }
-
     var burnAllCalled = false
-    func burnAll(completion: @escaping () -> Void) {
+    var onBurnAll: (() -> Void)?
+    func burnAll(completion: @escaping @MainActor () -> Void) {
         burnAllCalled = true
-        completion()
+        onBurnAll?()
+        MainActor.assumeMainThread {
+            completion()
+        }
     }
 
     var burnDomainsCalled = false
-    func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping (Set<URL>) -> Void) {
+    var onBurnDomains: (() -> Void)?
+    func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Set<URL>) -> Void) {
         burnDomainsCalled = true
-        completion([])
+        onBurnDomains?()
+        MainActor.assumeMainThread {
+            completion([])
+        }
     }
 
     var burnVisitsCalled = false
-    func burnVisits(_ visits: [Visit], completion: @escaping () -> Void) {
+    var onBurnVisits: (() -> Void)?
+    func burnVisits(_ visits: [Visit], completion: @escaping @MainActor () -> Void) {
         burnVisitsCalled = true
-        completion()
+        onBurnVisits?()
+        MainActor.assumeMainThread {
+            completion()
+        }
     }
 
     var markFailedToLoadUrlCalled = false
@@ -97,7 +103,7 @@ class HistoryCoordinatingMock: HistoryCoordinating, SuggestionContainer.HistoryP
     }
 
     var removeUrlEntryCalled = false
-    func removeUrlEntry(_ url: URL, completion: (((any Error)?) -> Void)?) {
+    func removeUrlEntry(_ url: URL, completion: (@MainActor ((any Error)?) -> Void)?) {
         removeUrlEntryCalled = true
         completion?(nil)
     }
@@ -111,6 +117,7 @@ class HistoryCoordinatingMock: HistoryCoordinating, SuggestionContainer.HistoryP
 extension HistoryCoordinatingMock: HistoryGroupingDataSource {}
 
 extension HistoryCoordinatingMock: HistoryDataSource {
+    @MainActor
     func delete(_ visits: [History.Visit]) async {
         await withCheckedContinuation { continuation in
             burnVisits(visits) {

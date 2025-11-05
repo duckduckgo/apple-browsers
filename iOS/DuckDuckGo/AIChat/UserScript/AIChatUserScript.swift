@@ -98,7 +98,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         self.handler = handler
         self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules(debugSettings: debugSettings))
         super.init()
-        
+
         // Set self as the metric reporting handler
         handler.setMetricReportingHandler(self)
     }
@@ -145,6 +145,10 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.showChatInput
         case .reportMetric:
             return handler.reportMetric
+        case .openKeyboard:
+            return { [weak self] params, message in
+                await self?.handler.openKeyboard(params: params, message: message, webView: self?.webView)
+            }
         default:
             return nil
         }

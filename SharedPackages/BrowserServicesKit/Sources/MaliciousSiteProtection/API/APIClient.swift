@@ -127,7 +127,7 @@ struct APIClient {
 
         guard let apiRequest = APIRequestV2(url: url, method: .get, headers: headers, timeoutInterval: timeout) else {
             assertionFailure("Invalid URL")
-            throw APIRequestV2.Error.invalidURL
+            throw APIRequestV2Error.invalidURL
         }
         let response = try await service.fetch(request: apiRequest)
         let result: R.Response = try response.decodeBody()

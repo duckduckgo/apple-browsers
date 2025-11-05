@@ -68,7 +68,7 @@ class SmallOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showBackButton)
         XCTAssertFalse(testee.showForwardButton)
         XCTAssertFalse(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
     
     func testWhenInHomeEmptyEditingStateWithVoiceSearchThenCorrectButtonsAreShown() {
@@ -90,7 +90,7 @@ class SmallOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showBackButton)
         XCTAssertFalse(testee.showForwardButton)
         XCTAssertFalse(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
 
     func testWhenEnteringHomeEmptyEditingStateThenTextIsCleared() {
@@ -146,7 +146,7 @@ class SmallOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showBackButton)
         XCTAssertFalse(testee.showForwardButton)
         XCTAssertFalse(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
 
     func testWhenInHomeTextEditingStateWithVoiceSearchThenCorrectButtonsAreShown() {
@@ -168,7 +168,7 @@ class SmallOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showBackButton)
         XCTAssertFalse(testee.showForwardButton)
         XCTAssertFalse(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
     
     func testWhenEnteringHomeTextEditingStateThenTextIsNotCleared() {
@@ -224,7 +224,7 @@ class SmallOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showBackButton)
         XCTAssertFalse(testee.showForwardButton)
         XCTAssertFalse(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
     
     func testWhenInHomeNonEditingStateWithVoiceSearchThenCorrectButtonsAreShown() {
@@ -245,7 +245,7 @@ class SmallOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showBackButton)
         XCTAssertFalse(testee.showForwardButton)
         XCTAssertFalse(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
 
     func testWhenEnteringHomeNonEditingStateThenTextIsCleared() {
@@ -301,7 +301,7 @@ class SmallOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showBackButton)
         XCTAssertFalse(testee.showForwardButton)
         XCTAssertFalse(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
 
     func testWhenInBrowserEmptyEditingStateWithVoiceSearchThenCorrectButtonsAreShown() {
@@ -322,7 +322,7 @@ class SmallOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showBackButton)
         XCTAssertFalse(testee.showForwardButton)
         XCTAssertFalse(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
     
     func testWhenEnteringBrowserEmptyEditingStateThenTextIsCleared() {
@@ -378,7 +378,7 @@ class SmallOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showBackButton)
         XCTAssertFalse(testee.showForwardButton)
         XCTAssertFalse(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
 
     func testWhenInBrowsingTextEditingStateWithVoiceSearchThenCorrectButtonsAreShown() {
@@ -399,7 +399,7 @@ class SmallOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showBackButton)
         XCTAssertFalse(testee.showForwardButton)
         XCTAssertFalse(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
     
     func testWhenEnteringBrowsingTextEditingStateThenTextIsMaintained() {
@@ -448,13 +448,23 @@ class SmallOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showSearchLoupe)
         XCTAssertFalse(testee.showAbort)
         XCTAssertTrue(testee.showRefresh)
-        XCTAssertTrue(testee.showShare)
+        XCTAssertTrue(testee.showCustomizableButton)
 
         XCTAssertFalse(testee.hasLargeWidth)
         XCTAssertFalse(testee.showBackButton)
         XCTAssertFalse(testee.showForwardButton)
         XCTAssertFalse(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
+    }
+    
+    func testWhenInBrowsingNonEditingStateThenRefreshButtonIsHiddenIfNotEnabled() {
+        let mockAppSettings = AppSettingsMock()
+        mockAppSettings.currentRefreshButtonPosition = .menu
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger,
+                                                 appSettings: mockAppSettings)
+        let testee = SmallOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertFalse(testee.showRefresh)
     }
 
     func testWhenEnteringBrowsingNonEditingStateThenTextIsMaintained() {
@@ -495,5 +505,40 @@ class SmallOmniBarStateTests: XCTestCase {
     func testWhenInBrowsingNonEditingStateThenBrowsingStoppedTransitionsToHomeNonEditingState() {
         let testee = SmallOmniBarState.BrowsingNonEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
         XCTAssertEqual(testee.onBrowsingStoppedState.name, SmallOmniBarState.HomeNonEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false).name)
+    }
+    
+    func testWhenRefreshButtonFeatureFlagIsOffThenIsRefreshButtonEnabledReturnsTrue() {
+        // Given
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        
+        // When
+        let isEnabled = dependencies.isRefreshButtonEnabled
+        
+        // Then
+        XCTAssertTrue(isEnabled)
+    }
+    
+    func testWhenRefreshButtonFeatureFlagIsOnThenIsRefreshButtonEnabledReturnsAppSettingsValue() {
+        // Given
+        let mockAppSettings = AppSettingsMock()
+        mockAppSettings.currentRefreshButtonPosition = .addressBar
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger,
+                                                 appSettings: mockAppSettings)
+        
+        // When
+        let isEnabled = dependencies.isRefreshButtonEnabled
+        
+        // Then
+        XCTAssertTrue(isEnabled)
+        
+        // Given
+        mockAppSettings.currentRefreshButtonPosition = .menu
+        
+        // When
+        let isEnabledWithMenuSetting = dependencies.isRefreshButtonEnabled
+        
+        // Then
+        XCTAssertFalse(isEnabledWithMenuSetting)
     }
 }

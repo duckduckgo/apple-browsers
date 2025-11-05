@@ -68,6 +68,14 @@ struct LogExporter {
                 ))
         }
 
+        if configuration.includePersonalInformationRemoval {
+            filters.append(
+                LogFilter(
+                    predicate: NSPredicate(format: "subsystem == %@ AND process CONTAINS[c] %@", "PIR", "DuckDuckGo"),
+                    destinationFileName: "personal_information_removal.log"
+                ))
+        }
+
         try await exportFilteredLogsToDesktop(minutesBack: configuration.timeInterval, logFilters: filters)
     }
 

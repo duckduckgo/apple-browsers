@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKitIcons
 
 enum BookmarksEmptyStateContent {
     case noBookmarks
@@ -50,12 +51,19 @@ enum BookmarksEmptyStateContent {
 
     var image: NSImage? {
         switch self {
-        case .noBookmarks: .bookmarksEmpty
+        case .noBookmarks: .bookmarksImport128
         case .noSearchResults: .bookmarkEmptySearch
         }
     }
 
     var shouldHideImportButton: Bool {
+        switch self {
+        case .noBookmarks: false
+        case .noSearchResults: true
+        }
+    }
+
+    var shouldHideSyncButton: Bool {
         switch self {
         case .noBookmarks: false
         case .noSearchResults: true

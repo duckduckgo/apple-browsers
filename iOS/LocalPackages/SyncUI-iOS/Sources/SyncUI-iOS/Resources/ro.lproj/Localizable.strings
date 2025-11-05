@@ -35,7 +35,7 @@
 "connect.with.server.sheet.button" = "Activează Sincronizare și backup";
 
 /* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "Aceasta creează o copie de rezervă criptată a marcajelor și parolelor tale pe serverul securizat DuckDuckGo, care poate fi sincronizată cu celelalte dispozitive ale tale.";
+"connect.with.server.sheet.description.part1" = "Aceasta creează o copie de rezervă criptată a marcajelor și a datelor de completare automată pe serverul securizat DuckDuckGo, care poate fi sincronizată cu celelalte dispozitive ale tale.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Cheia de criptare este stocată doar pe dispozitivul tău, DuckDuckGo nu o poate accesa.";
@@ -53,7 +53,13 @@
 "credentials.invalid.objects.present.description" = "credentials.invalid.objects.present.description";
 
 /* Alert title for invalid logins being filtered out of synced data */
-"credentials.invalid.objects.present.title" = "Unele date de conectare nu se sincronizează din cauza conținutului excesiv de lung din anumite câmpuri.";
+"credentials.invalid.objects.present.title" = "Unele parole nu se sincronizează din cauza conținutului excesiv de lung din anumite câmpuri.";
+
+/* Do not translate - stringsdict entry */
+"creditcards.invalid.objects.present.description" = "creditcards.invalid.objects.present.description";
+
+/* Alert title for invalid credit cards being filtered out of synced data */
+"creditCards.invalid.objects.present.title" = "Unele carduri de credit nu se sincronizează din cauza conținutului excesiv de lung din anumite câmpuri.";
 
 /* Delete Server Data - Button */
 "delete.server.data" = "Oprește și șterge datele serverului...";
@@ -130,8 +136,11 @@
 /* Button title for sync credentials limits exceeded warning to go to manage passwords */
 "prefrences.sync.credentials-limit-exceeded-action" = "Gestionează parolele…";
 
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Gestionează cardurile de credit…";
+
 /* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Marcajele și parolele tale sunt pregătite pentru sincronizare. Acest lucru ar trebui să dureze doar un moment.";
+"preparing.to.sync.sheet.description" = "Marcajele și datele de completare automată sunt pregătite pentru sincronizare. Acest lucru ar trebui să dureze doar un moment.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Se conectează…";
@@ -254,7 +263,7 @@
 "sync.get.other.devices.screen.title" = "Obține DuckDuckGo";
 
 /* Message included when sharing a url via the system share sheet */
-"sync.get.other.devices.share.link.message" = "Instalează browserul DuckDuckGo pe dispozitivele tale pentru a începe să îți sincronizezi în siguranță marcajele și parolele:";
+"sync.get.other.devices.share.link.message" = "Instalează browserul DuckDuckGo pe dispozitivele tale pentru a începe să sincronizezi în siguranță marcajele și datele de completare automată:";
 
 /* Sync Menu Path */
 "sync.menu.path" = "Setări > Sincronizare și backup > Sincronizează cu un alt dispozitiv";
@@ -278,7 +287,7 @@
 "sync.with.another.device.footer" = "Datele tale sunt criptate integral, iar DuckDuckGo nu are acces la cheia de criptare.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Sincronizează în siguranță marcajele și parolele între dispozitivele tale.";
+"sync.with.another.device.message" = "Sincronizează în siguranță marcajele și datele de completare automată între dispozitivele tale.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Începe sincronizarea";

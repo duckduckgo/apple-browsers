@@ -106,6 +106,7 @@ public enum NavigationTarget: String, Codable, Equatable {
     case duckAISettings = "duckai.settings"
     case settings
     case feedback
+    case sync
 }
 
 public enum RemoteAction: Codable, Equatable {

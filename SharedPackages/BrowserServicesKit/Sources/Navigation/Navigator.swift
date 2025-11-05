@@ -155,7 +155,7 @@ extension ExpectedNavigation: CustomDebugStringConvertible {
             assertionFailure("Accessing ExpectedNavigation from background thread")
             return "<ExpectedNavigation ?>"
         }
-        return MainActor.assumeIsolated {
+        return MainActor.assumeMainThread {
             "<ExpectedNavigation \(navigation.identity) \(navigation.navigationActions.last != nil ? "from_redirected: #\(navigation.navigationActions.last!.identifier)" : "")>"
         }
     }

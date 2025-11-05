@@ -26,8 +26,10 @@ import PixelKit
 import Networking
 
 final class DBPService: NSObject {
-
     private let dbpIOSManager: DataBrokerProtectionIOSManager?
+    public var dbpIOSPublicInterface: DBPIOSInterface.PublicInterface? {
+        return dbpIOSManager
+    }
 
     init(appDependencies: DependencyProvider) {
         guard appDependencies.featureFlagger.isFeatureOn(.personalInformationRemoval) else {
@@ -49,6 +51,7 @@ final class DBPService: NSObject {
                 privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
                 pixelKit: pixelKit,
+                wideEvent: appDependencies.wideEvent,
                 subscriptionManager: dbpSubscriptionManager,
                 quickLinkOpenURLHandler: { url in
                     guard let quickLinkURL = URL(string: AppDeepLinkSchemes.quickLink.appending(url.absoluteString)) else { return }
@@ -57,7 +60,6 @@ final class DBPService: NSObject {
                 feedbackViewCreator: {
                     let viewModel = UnifiedFeedbackFormViewModel(
                         subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-                        apiService: DefaultAPIService(),
                         vpnMetadataCollector: DefaultVPNMetadataCollector(),
                         dbpMetadataCollector: DefaultDBPMetadataCollector(),
                         isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
@@ -66,7 +68,6 @@ final class DBPService: NSObject {
                     return view
                 })
 
-            DataBrokerProtectionIOSManager.shared = self.dbpIOSManager
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil
@@ -75,19 +76,23 @@ final class DBPService: NSObject {
     }
 
     func onBackground() {
-        dbpIOSManager?.scheduleBGProcessingTask()
+        dbpIOSManager?.appDidEnterBackground()
     }
 
     func resume() {
-        dbpIOSManager?.tryToFireWeeklyPixels()
+        dbpIOSManager?.appDidBecomeActive()
     }
 }
 
-final class DBPFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging {
+final class DBPFeatureFlagger: DBPFeatureFlagging {
     private let appDependencies: DependencyProvider
 
     var isRemoteBrokerDeliveryFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
+    }
+
+    var isEmailConfirmationDecouplingFeatureOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
     }
 
     init(appDependencies: DependencyProvider) {

@@ -25,16 +25,7 @@ import Common
 import os.log
 import DataBrokerProtectionCore
 import Subscription
-
-public protocol DBPUIViewModelDelegate: AnyObject {
-    func isUserAuthenticated() -> Bool
-    func getUserProfile() throws -> DataBrokerProtectionProfile?
-    func getAllDataBrokers() throws -> [DataBroker]
-    func getAllBrokerProfileQueryData() throws -> [BrokerProfileQueryData]
-    func saveProfile(_ profile: DataBrokerProtectionProfile) async throws
-    func deleteAllUserProfileData() throws
-    func matchRemovedByUser(with id: Int64) throws
-}
+import enum UserScript.UserScriptError
 
 public protocol DBPUIViewModelOpenFeedbackFormDelegate: AnyObject {
     func openSendFeedbackForm()
@@ -42,7 +33,8 @@ public protocol DBPUIViewModelOpenFeedbackFormDelegate: AnyObject {
 
 public final class DBPUIViewModel {
 
-    private weak var delegate: DBPUIViewModelDelegate?
+    private weak var authenticationDelegate: DBPIOSInterface.AuthenticationDelegate?
+    private weak var databaseDelegate: DBPIOSInterface.DatabaseDelegate?
     private weak var feedbackFormDelegate: DBPUIViewModelOpenFeedbackFormDelegate?
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let contentScopeProperties: ContentScopeProperties
@@ -52,13 +44,15 @@ public final class DBPUIViewModel {
 
     private var editablePartialProfile: DBPUIEditablePartialProfile
 
-    public init(delegate: DBPUIViewModelDelegate,
+    public init(authenticationDelegate: DBPIOSInterface.AuthenticationDelegate,
+                databaseDelegate: DBPIOSInterface.DatabaseDelegate,
                 feedbackFormDelegate: DBPUIViewModelOpenFeedbackFormDelegate,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 privacyConfigManager: PrivacyConfigurationManaging,
                 contentScopeProperties: ContentScopeProperties) {
-        self.delegate = delegate
+        self.authenticationDelegate = authenticationDelegate
+        self.databaseDelegate = databaseDelegate
         self.feedbackFormDelegate = feedbackFormDelegate
         self.webUISettings = webUISettings
         self.pixelHandler = pixelHandler
@@ -66,7 +60,7 @@ public final class DBPUIViewModel {
         self.contentScopeProperties = contentScopeProperties
 
         self.editablePartialProfile = .init()
-        let profile = try? delegate.getUserProfile()
+        let profile = try? databaseDelegate.getUserProfile()
         if let profile = profile {
             self.editablePartialProfile = .init(from: profile)
         }
@@ -74,24 +68,32 @@ public final class DBPUIViewModel {
 
     @MainActor func setupCommunicationLayer() -> WKWebViewConfiguration {
         let configuration = WKWebViewConfiguration()
-        configuration.applyDBPUIConfiguration(privacyConfig: privacyConfigManager,
-                                              prefs: contentScopeProperties,
-                                              delegate: self,
-                                              webUISettings: webUISettings,
-                                              vpnBypassService: nil)
-        configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
+        do {
+            try configuration.applyDBPUIConfiguration(privacyConfig: privacyConfigManager,
+                                                      prefs: contentScopeProperties,
+                                                      delegate: self,
+                                                      webUISettings: webUISettings,
+                                                      vpnBypassService: nil)
+            configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 
-        if let dbpUIContentController = configuration.userContentController as? DBPUIUserContentController {
-            communicationLayer = dbpUIContentController.dbpUIUserScripts.dbpUICommunicationLayer
+            if let dbpUIContentController = configuration.userContentController as? DBPUIUserContentController {
+                communicationLayer = dbpUIContentController.dbpUIUserScripts.dbpUICommunicationLayer
+            }
+
+            return configuration
+        } catch {
+            if case let UserScriptError.failedToLoadJS(jsFile, error) = error {
+                pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
+                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            }
+            fatalError("Failed to apply DBPUI configuration: \(error)")
         }
-
-        return configuration
     }
 }
 
 extension DBPUIViewModel: DBPUICommunicationDelegate {
     public func getHandshakeUserData() -> DBPUIHandshakeUserData? {
-        let isUserAuthenticated = delegate?.isUserAuthenticated() ?? false
+        let isUserAuthenticated = authenticationDelegate?.isUserAuthenticated() ?? false
         return DBPUIHandshakeUserData(isAuthenticatedUser: isUserAuthenticated)
     }
     
@@ -100,12 +102,12 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
             assertionFailure("Couldn't save profile")
             return
         }
-        try await delegate?.saveProfile(profile)
+        try await databaseDelegate?.saveProfile(profile)
     }
     
     public func getUserProfile() -> DBPUIUserProfile? {
         do {
-            let profile = try delegate?.getUserProfile()
+            let profile = try databaseDelegate?.getUserProfile()
 
             guard let profile = profile else { return nil }
             return DBPUIUserProfile(from: profile)
@@ -115,7 +117,7 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
     }
     
     public func deleteProfileData() throws {
-        try delegate?.deleteAllUserProfileData()
+        try databaseDelegate?.deleteAllUserProfileData()
 
         // Clear the in memory data
         editablePartialProfile = DBPUIEditablePartialProfile()
@@ -158,7 +160,7 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
     
     public func getInitialScanState() async -> DBPUIInitialScanState {
         do {
-            let allQueryData = try delegate?.getAllBrokerProfileQueryData() ?? []
+            let allQueryData = try databaseDelegate?.getAllBrokerProfileQueryData() ?? []
             return DBPUIInitialScanState(from: allQueryData)
         } catch {
             assertionFailure("Failed to fetch broker profile query data")
@@ -168,7 +170,7 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
 
     public func getMaintenanceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
         do {
-            let allQueryData = try delegate?.getAllBrokerProfileQueryData() ?? []
+            let allQueryData = try databaseDelegate?.getAllBrokerProfileQueryData() ?? []
             return DBPUIScanAndOptOutMaintenanceState(from: allQueryData)
         } catch {
             assertionFailure("Failed to fetch broker profile query data")
@@ -178,7 +180,7 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
     
     public func getDataBrokers() async -> [DBPUIDataBroker] {
         do {
-            let brokers = try delegate?.getAllDataBrokers() ?? []
+            let brokers = try databaseDelegate?.getAllDataBrokers() ?? []
             let result = brokers.flatMap {
                 return DBPUIDataBroker.brokerWithMirrorSites(from: $0)
             }
@@ -191,7 +193,7 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
 
     public func removeOptOutFromDashboard(_ id: Int64) async {
         do {
-            try delegate?.matchRemovedByUser(with: id)
+            try databaseDelegate?.matchRemovedByUser(with: id)
         } catch {
             assertionFailure("Failed to add removed match to DB: \(error)")
         }

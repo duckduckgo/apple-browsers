@@ -21,24 +21,14 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import NetworkProtectionProxy
 import NetworkProtectionIPC
+import VPNAppState
 
 extension VPNBypassService {
     public convenience init() {
         self.init(dbpSettings: DataBrokerProtectionSettings(defaults: .dbp),
                   backgroundAgentBundleId: Bundle.main.dbpBackgroundAgentBundleId,
-                  proxySettings: TransparentProxySettings(defaults: .netP))
-    }
-
-    public var isSupported: Bool {
-#if APPSTORE
-#if NETP_SYSTEM_EXTENSION
-        return true
-#else
-        return false
-#endif
-#else
-        return true
-#endif
+                  proxySettings: TransparentProxySettings(defaults: .netP),
+                  vpnAppState: VPNAppState(defaults: .netP))
     }
 }
 

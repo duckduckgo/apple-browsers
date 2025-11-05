@@ -29,6 +29,7 @@ import Combine
 import os.log
 import PixelKit
 import Core
+import enum UserScript.UserScriptError
 
 // MARK: - Main View Controller
 
@@ -353,10 +354,12 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     }
 
     private let contentScopeProperties: ContentScopeProperties
-    private let emailService: EmailService
+    private let emailConfirmationDataService: EmailConfirmationDataService
     private let captchaService: CaptchaService
     private let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    private var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let executionConfig: BrokerJobExecutionConfig
+    private let featureFlagger: DBPFeatureFlagging
 
     var hasValidInput: Bool {
         !firstName.isEmpty && !lastName.isEmpty && !city.isEmpty && !state.isEmpty && !birthYear.isEmpty
@@ -401,8 +404,12 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         self.fakePixelHandler = EventMapping { event, _, _, _ in
             print("Debug Pixel: \(event)")
         }
-        
+        if let pixelKit = PixelKit.shared {
+            self.pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
+        }
+
         let appDependencies = AppDependencyProvider.shared
+        self.featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
         let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
             subscriptionManager: appDependencies.subscriptionAuthV1toV2Bridge,
             runTypeProvider: appDependencies.dbpSettings,
@@ -416,10 +423,40 @@ final class RunDBPDebugModeViewModel: ObservableObject {
             settings: dbpSettings
         )
         
-        self.emailService = EmailService(
+        let emailService = EmailService(
             authenticationManager: authenticationManager,
             settings: dbpSettings,
             servicePixel: backendServicePixels
+        )
+        
+        let emailServiceV1 = EmailServiceV1(
+            authenticationManager: authenticationManager,
+            settings: dbpSettings,
+            servicePixel: backendServicePixels
+        )
+        
+        // Create database
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
+            directoryName: DatabaseConstants.directoryName,
+            fileName: DatabaseConstants.fileName,
+            appGroupIdentifier: nil
+        )
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
+        let database: DataBrokerProtectionRepository
+        do {
+            let vault = try vaultFactory.makeVault(reporter: nil)
+            // swiftlint:disable:next force_cast
+            database = vault as! DataBrokerProtectionRepository
+        } catch {
+            fatalError("Failed to create database: \(error)")
+        }
+        
+        self.emailConfirmationDataService = EmailConfirmationDataService(
+            database: database,
+            emailServiceV0: emailService,
+            emailServiceV1: emailServiceV1,
+            featureFlagger: featureFlagger,
+            pixelHandler: fakePixelHandler
         )
         
         self.captchaService = CaptchaService(
@@ -490,9 +527,10 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                         let runner = BrokerProfileScanSubJobWebRunner(
                             privacyConfig: privacyConfigManager,
                             prefs: contentScopeProperties,
-                            query: brokerProfileQueryData,
-                            emailService: emailService,
+                            context: brokerProfileQueryData,
+                            emailConfirmationDataService: emailConfirmationDataService,
                             captchaService: captchaService,
+                            featureFlagger: featureFlagger,
                             stageDurationCalculator: FakeStageDurationCalculator(),
                             pixelHandler: fakePixelHandler,
                             executionConfig: executionConfig
@@ -511,6 +549,10 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                             allResults.append(result)
                         }
                         
+                    } catch let UserScriptError.failedToLoadJS(jsFile, error) {
+                        pixelHandler?.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
+                        try? await Task.sleep(interval: 1.0) // give time for the pixel to be sent
+                        fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
                     } catch {
                         print("Error scanning \(broker.name): \(error)")
                     }
@@ -572,11 +614,11 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     
     private func getWebViewTitle() -> String {
         if let runner = currentRunner {
-            let brokerName = runner.query.dataBroker.name
+            let brokerName = runner.context.dataBroker.name
             return "PIR Debug Mode: \(brokerName) (Scan)"
         }
         if let optOutRunner = currentOptOutRunner {
-            let brokerName = optOutRunner.query.dataBroker.name
+            let brokerName = optOutRunner.context.dataBroker.name
             return "PIR Debug Mode: \(brokerName) (Opt Out)"
         }
         return "PIR Debug Mode"
@@ -618,12 +660,14 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                 let runner = BrokerProfileOptOutSubJobWebRunner(
                     privacyConfig: privacyConfigManager,
                     prefs: contentScopeProperties,
-                    query: brokerProfileQueryData,
-                    emailService: emailService,
+                    context: brokerProfileQueryData,
+                    emailConfirmationDataService: emailConfirmationDataService,
                     captchaService: captchaService,
+                    featureFlagger: featureFlagger,
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
-                    executionConfig: executionConfig
+                    executionConfig: executionConfig,
+                    actionsHandlerMode: .optOut
                 ) { true }
                 
                 self.currentOptOutRunner = runner
@@ -636,6 +680,10 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                 
                 showAlert(title: "Success", message: "Opt-out process completed for \(result.extractedProfile.name ?? "profile").")
                 
+            } catch let UserScriptError.failedToLoadJS(jsFile, error) {
+                pixelHandler?.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
+                try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
+                fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
             } catch {
                 showAlert(title: "Error", message: "Opt-out failed: \(error.localizedDescription)")
             }
@@ -764,10 +812,10 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     func fireOptOutSubmitSuccess(tries: Int) {}
     func fireOptOutFailure(tries: Int) {}
     func fireScanSuccess(matchesFound: Int) {}
-    func fireScanFailed() {}
+    func fireScanNoResults() {}
     func fireScanError(error: Error) {}
     func setStage(_ stage: Stage) {}
-    func setLastActionId(_ actionID: String) {}
+    func setLastAction(_ action: Action) {}
     func fireOptOutConditionFound() {}
     func fireOptOutConditionNotFound() {}
     func resetTries() { tries = 1 }

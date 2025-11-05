@@ -19,6 +19,8 @@
 import Combine
 import Common
 import Foundation
+import History
+import HistoryView
 import UniformTypeIdentifiers
 import XCTest
 
@@ -107,19 +109,27 @@ final class DownloadListCoordinatorTests: XCTestCase {
 
         var fireWindowSession: FireWindowSessionRef?
         if isBurner {
-            let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+            let fireCoordinator = FireCoordinator(tld: TLD(),
+                                                  featureFlagger: Application.appDelegate.featureFlagger,
+                                                  historyCoordinating: HistoryCoordinatingMock(),
+                                                  visualizeFireAnimationDecider: nil,
+                                                  onboardingContextualDialogsManager: nil,
+                                                  fireproofDomains: MockFireproofDomains(),
+                                                  faviconManagement: FaviconManagerMock(),
+                                                  windowControllersManager: WindowControllersManagerMock(),
+                                                  pixelFiring: nil,
+                                                  historyProvider: MockHistoryViewDataProvider())
             let mainViewController = MainViewController(
                 tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: []), burnerMode: .init(isBurner: true)),
                 autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
-                aiChatSidebarProvider: AIChatSidebarProvider(),
+                aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()),
                 fireCoordinator: fireCoordinator
             )
             let mainWindowController = MainWindowController(
                 mainViewController: mainViewController,
-                popUp: false,
                 fireWindowSession: .init(),
                 fireViewModel: fireCoordinator.fireViewModel,
-                visualStyle: NSApp.delegateTyped.visualStyle
+                themeManager: MockThemeManager()
             )
             fireWindowSession = FireWindowSessionRef(window: mainWindowController.window)
         }

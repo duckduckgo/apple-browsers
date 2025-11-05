@@ -59,7 +59,7 @@ struct DataBrokerProtectionAppEvents {
 
                 // Wait to make sure the agent has had time to restart before attempting to call a method on it
                 try await Task.sleep(nanoseconds: 1_000_000_000)
-                loginItemInterface.appLaunched()
+                await loginItemInterface.appLaunched()
             }
         }
 

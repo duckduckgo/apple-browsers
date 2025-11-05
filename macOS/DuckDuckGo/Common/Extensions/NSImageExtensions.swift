@@ -21,7 +21,7 @@ import CoreGraphics
 
 extension NSImage {
 
-    func resized(to size: NSSize) -> NSImage? {
+    func resized(to size: NSSize) -> NSImage {
         let image = NSImage(size: size)
         let targetRect = NSRect(x: 0, y: 0, width: size.width, height: size.height)
         let currentRect = NSRect(x: 0, y: 0, width: self.size.width, height: self.size.height)
@@ -35,7 +35,7 @@ extension NSImage {
         return image
     }
 
-    func resizedToFaviconSize() -> NSImage? {
+    func resizedToFaviconSize() -> NSImage {
         if size.width > NSSize.faviconSize.width ||
             size.height > NSSize.faviconSize.height {
             return resized(to: .faviconSize)

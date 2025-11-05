@@ -40,7 +40,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         userDefaults.set(Date(), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
         capturingDefaultBrowserProvider = CapturingDefaultBrowserProvider()
         capturingDataImportProvider = CapturingDataImportProvider()
-        tabCollectionVM = TabCollectionViewModel()
+        tabCollectionVM = TabCollectionViewModel(isPopup: false)
         emailStorage = MockEmailStorage()
         emailManager = EmailManager(storage: emailStorage)
         duckPlayerPreferences = DuckPlayerPreferencesPersistorMock()
@@ -435,7 +435,7 @@ extension HomePage.Models.ContinueSetUpModel {
             defaultBrowserProvider: defaultBrowserProvider,
             dockCustomizer: dockCustomizer,
             dataImportProvider: dataImportProvider,
-            tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: TabCollectionViewModel()),
+            tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: TabCollectionViewModel(isPopup: false)),
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
             privacyConfigurationManager: manager)

@@ -53,7 +53,7 @@ let package = Package(
             dependencies: [],
             sources: [
                 "NSException+Catch.m",
-                "NSObject+performSelector.m",
+                "NSObject+valueForIvar.m",
             ],
             publicHeadersPath: "include",
             cSettings: [

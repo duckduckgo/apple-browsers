@@ -28,7 +28,7 @@ final class AIChatPreferences: ObservableObject {
     private var storage: AIChatPreferencesStorage
     private var cancellables = Set<AnyCancellable>()
     private let learnMoreURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/duckai/approach-to-ai")!
-    private let searchAssistSettingsURL = URL(string: "https://duckduckgo.com/settings#aifeatures")!
+    private let searchAssistSettingsURL = URL(string: "https://duckduckgo.com/settings?return=aiFeatures#aifeatures")!
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     private var windowControllersManager: WindowControllersManager
     private let featureFlagger: FeatureFlagger
@@ -45,8 +45,10 @@ final class AIChatPreferences: ObservableObject {
         isAIFeaturesEnabled = storage.isAIFeaturesEnabled
         showShortcutOnNewTabPage = storage.showShortcutOnNewTabPage
         showShortcutInApplicationMenu = storage.showShortcutInApplicationMenu
+        showShortcutInAddressBarWhenTyping = storage.showShortcutInAddressBarWhenTyping
         showShortcutInAddressBar = storage.showShortcutInAddressBar
         openAIChatInSidebar = storage.openAIChatInSidebar
+        shouldAutomaticallySendPageContext = storage.shouldAutomaticallySendPageContext
 
         subscribeToShowInApplicationMenuSettingsChanges()
     }
@@ -76,6 +78,12 @@ final class AIChatPreferences: ObservableObject {
             .assign(to: \.showShortcutInAddressBar, onWeaklyHeld: self)
             .store(in: &cancellables)
 
+        storage.showShortcutInAddressBarWhenTypingPublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.showShortcutInAddressBarWhenTyping, onWeaklyHeld: self)
+            .store(in: &cancellables)
+
         storage.openAIChatInSidebarPublisher
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
@@ -89,16 +97,20 @@ final class AIChatPreferences: ObservableObject {
         aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature
     }
 
-    var shouldShowAIFeaturesToggle: Bool {
-        featureFlagger.isFeatureOn(.aiChatGlobalSwitch)
-    }
-
     var shouldShowOpenAIChatInSidebarToggle: Bool {
         featureFlagger.isFeatureOn(.aiChatSidebar)
     }
 
+    var shouldShowPageContextToggle: Bool {
+        featureFlagger.isFeatureOn(.aiChatPageContext)
+    }
+
     var shouldShowNewTabPageToggle: Bool {
         featureFlagger.isFeatureOn(.newTabPageOmnibar)
+    }
+
+    var shouldShowUpdatedSettings: Bool {
+        aiChatMenuConfiguration.shouldShowSettingsImprovements
     }
 
     // Properties for managing the current state of AI Chat preference options
@@ -107,8 +119,16 @@ final class AIChatPreferences: ObservableObject {
         didSet { storage.isAIFeaturesEnabled = isAIFeaturesEnabled }
     }
 
+    var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> {
+        $isAIFeaturesEnabled.eraseToAnyPublisher()
+    }
+
     @Published var showShortcutOnNewTabPage: Bool {
         didSet { storage.showShortcutOnNewTabPage = showShortcutOnNewTabPage }
+    }
+
+    @Published var showShortcutInAddressBarWhenTyping: Bool {
+        didSet { storage.showShortcutInAddressBarWhenTyping = showShortcutInAddressBarWhenTyping }
     }
 
     @Published var showShortcutInApplicationMenu: Bool {
@@ -123,12 +143,16 @@ final class AIChatPreferences: ObservableObject {
         didSet { storage.openAIChatInSidebar = openAIChatInSidebar }
     }
 
+    @Published var shouldAutomaticallySendPageContext: Bool {
+        didSet { storage.shouldAutomaticallySendPageContext = shouldAutomaticallySendPageContext }
+    }
+
     @MainActor func openLearnMoreLink() {
         windowControllersManager.show(url: learnMoreURL, source: .ui, newTab: true)
     }
 
     @MainActor func openAIChatLink() {
-        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab()
+        NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: .currentTab)
     }
 
     @MainActor func openSearchAssistSettings() {

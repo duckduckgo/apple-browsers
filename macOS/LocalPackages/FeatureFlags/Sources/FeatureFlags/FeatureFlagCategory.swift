@@ -21,6 +21,7 @@ import BrowserServicesKit
 
 public enum FeatureFlagCategory: String, CaseIterable, Comparable {
     case duckAI = "Duck.ai"
+    case dbp = "Personal Information Removal"
     case osSupportWarnings = "OS Support Warnings"
     case other = "Other"
     case sync = "Sync"
@@ -45,12 +46,18 @@ public protocol FeatureFlagCategorization {
 extension FeatureFlag: FeatureFlagCategorization {
     public var category: FeatureFlagCategory {
         switch self {
-        case .aiChatGlobalSwitch,
-                .aiChatSidebar,
-                .aiChatTextSummarization:
+        case .aiChatSidebar,
+                .aiChatTextSummarization,
+                .aiChatTextTranslation,
+                .aiChatPageContext,
+                .duckAISearchParameter,
+                .aiChatImprovements,
+                .aiChatKeepSession,
+                .aiChatDataClearing:
             return .duckAI
         case .osSupportForceUnsupportedMessage,
-                .osSupportForceWillSoonDropSupportMessage:
+                .osSupportForceWillSoonDropSupportMessage,
+                .willSoonDropBigSurSupport:
             return .osSupportWarnings
         case .syncSeamlessAccountSwitching,
                 .syncSetupBarcodeIsUrlBased,
@@ -58,13 +65,17 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .exchangeKeysToSyncWithAnotherDevice:
             return .sync
         case .updatesWontAutomaticallyRestartApp,
-                .autoUpdateInDEBUG:
+                .autoUpdateInDEBUG,
+                .appStoreUpdateFlow:
             return .updates
         case .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
-                .networkProtectionRiskyDomainsProtection,
-                .vpnToolbarUpsell:
+                .vpnToolbarUpsell,
+                .winBackOffer:
             return .vpn
+        case .dbpEmailConfirmationDecoupling,
+                .dbpRemoteBrokerDelivery:
+            return .dbp
         default:
             return .other
         }

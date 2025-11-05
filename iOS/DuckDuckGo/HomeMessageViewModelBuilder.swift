@@ -33,7 +33,7 @@ struct HomeMessageViewModelBuilder {
     }
 
     static func build(for remoteMessage: RemoteMessageModel,
-                      with privacyProDataReporter: PrivacyProDataReporting?,
+                      with subscriptionDataReporter: SubscriptionDataReporting?,
                       navigator: MessageNavigator,
                       onDidClose: @escaping (HomeMessageViewModel.ButtonAction?) async -> Void,
                       onDidAppear: @escaping () -> Void) -> HomeMessageViewModel? {
@@ -47,7 +47,7 @@ struct HomeMessageViewModelBuilder {
             onDidClose: onDidClose,
             onDidAppear: onDidAppear,
             onAttachAdditionalParameters: { useCase, params in
-                privacyProDataReporter?.mergeRandomizedParameters(for: useCase, with: params) ?? params
+                subscriptionDataReporter?.mergeRandomizedParameters(for: useCase, with: params) ?? params
             }
         )
     }

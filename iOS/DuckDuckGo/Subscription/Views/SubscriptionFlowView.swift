@@ -60,11 +60,14 @@ struct SubscriptionFlowView: View {
         NavigationLink(destination: LazyView(SubscriptionITPView().navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
-        if viewModel.isPIREnabled,
-           let dbpManager = DataBrokerProtectionIOSManager.shared {
-            NavigationLink(destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: dbpManager).navigationViewStyle(.stack)),
-                           isActive: $isShowingDBP,
-                           label: { EmptyView() })
+        if viewModel.isPIREnabled, let vcProvider = viewModel.dataBrokerProtectionViewControllerProvider {
+            NavigationLink(
+                destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
+                    .edgesIgnoringSafeArea(.bottom)
+                    .navigationViewStyle(.stack)),
+                isActive: $isShowingDBP,
+                label: { EmptyView() }
+            )
         } else {
             NavigationLink(destination: LazyView(SubscriptionPIRMoveToDesktopView().navigationViewStyle(.stack)),
                            isActive: $isShowingDBP,

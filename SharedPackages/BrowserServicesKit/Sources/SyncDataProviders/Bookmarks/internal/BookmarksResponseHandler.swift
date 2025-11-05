@@ -300,7 +300,7 @@ final class BookmarksResponseHandler {
 
     private func updateEntity(_ entity: BookmarkEntity, with syncable: SyncableBookmarkAdapter) throws {
         let url = entity.url
-        try entity.update(with: syncable, in: context, decryptedUsing: decrypt)
+        try entity.update(with: syncable, in: context, decryptedUsing: decrypt, metricsEvents: metricsEvents)
         if let uuid = entity.uuid {
             if entity.isDeleted {
                 idsOfDeletedBookmarks.insert(uuid)

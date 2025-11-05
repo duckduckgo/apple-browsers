@@ -19,6 +19,7 @@
 import Foundation
 import Subscription
 import Common
+import os.log
 
 public protocol DataBrokerProtectionSubscriptionManaging {
     func accessToken() async -> String?
@@ -35,20 +36,26 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
     let isAuthV2Enabled: Bool
 
     public func accessToken() async -> String? {
-        // We use a staging token for privacy pro supplied through a github secret/action
+        // We use a staging token for DuckDuckGo subscription supplied through a github secret/action
         // for PIR end to end tests. This is also stored in bitwarden if you want to run
         // the tests locally
 
         if runTypeProvider.runType == .integrationTests {
+            Logger.dataBrokerProtection.error("🐕 integrationTests")
             var tokenKey: String
             if !isAuthV2Enabled {
+                Logger.dataBrokerProtection.error("🐕 not auth v2")
                 tokenKey = "PRIVACYPRO_STAGING_TOKEN"
             } else {
+                Logger.dataBrokerProtection.error("🐕 auth v2")
                 tokenKey = "PRIVACYPRO_STAGING_ACCESS_TOKEN_V2"
             }
 
             if let token = ProcessInfo.processInfo.environment[tokenKey] {
                 return token
+            } else {
+                Logger.dataBrokerProtection.error("🐕 No environment token")
+                assertionFailure("No environment token")
             }
         }
         return try? await subscriptionManager.getAccessToken()

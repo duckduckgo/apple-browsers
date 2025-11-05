@@ -18,7 +18,7 @@
 
 import PixelKit
 
-enum AutoconsentPixel: PixelKitEventV2 {
+enum AutoconsentPixel: PixelKitEvent {
 
     case acInit
     case missedPopup
@@ -35,6 +35,7 @@ enum AutoconsentPixel: PixelKitEventV2 {
     case detectedOnlyRules
     case selfTestOk
     case selfTestFail
+    case popupManagedCount(params: [String: String])
 
     case summary(events: [String: Int])
 
@@ -74,6 +75,7 @@ enum AutoconsentPixel: PixelKitEventV2 {
         case .selfTestOk: "autoconsent_self-test-ok"
         case .selfTestFail: "autoconsent_self-test-fail"
         case .summary: "autoconsent_summary"
+        case .popupManagedCount: "autoconsent_popup-managed-count"
         }
     }
 
@@ -87,11 +89,10 @@ enum AutoconsentPixel: PixelKitEventV2 {
             Dictionary(uniqueKeysWithValues: AutoconsentPixel.summaryPixels.map { pixel in
             (pixel.key, "\(events[pixel.key] ?? 0)")
             })
+        case let .popupManagedCount(params):
+            params
         default: [:]
         }
     }
 
-    var error: (any Error)? {
-        nil
-    }
 }

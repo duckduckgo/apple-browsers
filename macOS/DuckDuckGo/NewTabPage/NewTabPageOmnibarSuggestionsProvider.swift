@@ -75,7 +75,7 @@ extension Suggestion {
             return .internalPage(title: title, url: url.absoluteString, score: score)
         case .openTab(let title, _, let tabId, let score):
             return .openTab(title: title, tabId: tabId, score: score)
-        case .unknown:
+        case .unknown, .askAIChat:
             return nil
         }
     }

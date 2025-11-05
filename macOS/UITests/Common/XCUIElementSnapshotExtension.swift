@@ -19,7 +19,13 @@
 import XCTest
 
 extension XCUIElementSnapshot {
-    func toDictionary(keys: [String]) -> [String: Any] {
+    func toDictionary(keys: [String] = ["elementType",
+                                        "identifier",
+                                        "label",
+                                        "title",
+                                        "value",
+                                        "isEnabled",
+                                        "frame"]) -> [String: Any] {
         var dict: [String: Any] = [:]
 
         // Add requested properties

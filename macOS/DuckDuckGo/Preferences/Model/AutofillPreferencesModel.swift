@@ -66,8 +66,11 @@ final class AutofillPreferencesModel: ObservableObject {
     @MainActor
     @Published private(set) var passwordManager: PasswordManager {
         didSet {
+            guard oldValue != passwordManager else { return }
+
             persistor.passwordManager = passwordManager
 
+            // Original logic (preserved ad-verbatim)
             let enabled = passwordManager == .bitwarden
             PasswordManagerCoordinator.shared.setEnabled(enabled)
             if enabled {
@@ -172,12 +175,12 @@ final class AutofillPreferencesModel: ObservableObject {
     private let bitwardenInstallationService: BWInstallationService
     private let neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager
     private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager()
-    lazy var syncPromoViewModel: SyncPromoViewModel = SyncPromoViewModel(touchpointType: .passwords,
+    lazy var syncPromoViewModel: SyncPromoViewModel = SyncPromoViewModel(touchpointType: .autofill,
                                                                          primaryButtonAction: { [weak self] in
-        self?.syncPromoManager.goToSyncSettings(for: .passwords)
+        self?.syncPromoManager.goToSyncSettings(for: .autofill)
     },
                                                                          dismissButtonAction: { [weak self] in
-        self?.syncPromoManager.dismissPromoFor(.passwords)
+        self?.syncPromoManager.dismissPromoFor(.autofill)
         self?.showSyncPromo = false
     })
 

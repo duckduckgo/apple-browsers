@@ -260,6 +260,9 @@
         "daysSinceNetPEnabled": {
           "min": 5
         },
+        "daysSinceDuckAiUsed": {
+          "min": 3
+        },
         "pproEligible": {
           "value": true
         },
@@ -303,6 +306,14 @@
                   "Two"
               ]
           },
+      }
+    },
+    {
+      "id": 11,
+      "attributes": {
+          "syncEnabled": {
+              "value": true
+          }
       }
     }
   ]

@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Povolit ochranu soukromí";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Zavřít karty a vymazat data";
+"action.title.forgetAll" = "Vymazat karty a data";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Karty a data vymazány";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Vymazat karty, data a chaty Duck.ai";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Otevřít na pozadí";
@@ -99,6 +102,9 @@
 
 /* Refresh action - button shown in alert */
 "action.title.refresh" = "Obnovit";
+
+/* Refresh page action */
+"action.title.refreshPage" = "Obnovit stránku";
 
 /* Remove Favorite action */
 "action.title.remove.favorite" = "Odebrat oblíbenou položku";
@@ -129,6 +135,9 @@
 
 /* New tab menu item opening a new tab */
 "action.title.tab.new" = "Nová karta";
+
+/* VPN menu item */
+"action.title.vpn" = "VPN";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Dole";
@@ -180,6 +189,15 @@
 
 /* Title for alert shown when sync credentials paused for too many items */
 "alert.sync-credentials-paused-title" = "Synchronizace hesel je pozastavená";
+
+/* Description for alert shown when sync error occurs because of bad credit cards data */
+"alert.sync-credit-cards-bad-data-error-description" = "Některé platební karty jsou nesprávně naformátované nebo příliš dlouhé, takže jsme je nemohli synchronizovat.";
+
+/* Description for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-description" = "Už máš maximální počet platebních karet. Jestli chceš synchronizaci obnovit, některé platební karty smaž.";
+
+/* Title for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-title" = "Synchronizace platební karty je pozastavená";
 
 /* Title for sync error alert */
 "alert.sync-error" = "Chyba synchronizace a zálohování";
@@ -1309,6 +1327,18 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkce AI u DuckDuckGo jsou soukromé a volitelné. Tvoje data se nepoužívají k trénování umělé inteligence.";
 
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "Zobrazí tlačítka a odkazy Duck.ai ve výsledcích vyhledávání DuckDuckGo.";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "Zkratky vyhledávání";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "Pokládat navazující otázky";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "Zkratky prohlížeče";
+
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adresní řádek";
 
@@ -1706,7 +1736,7 @@
 "feedback.form.submit" = "Odeslat";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Pomoz zlepšit službu Privacy Pro";
+"feedback.form.title" = "Pomoz nám vylepšit předplatné DuckDuckGo";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -1914,6 +1944,9 @@
 
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importuj svá hesla do DuckDuckGo";
+
+/* Placeholder text for the duck.ai input field */
+"input.field.placeholder.duckai" = "Zeptej se soukromě";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Musíš povolit VPN v aplikaci DuckDuckGo.";
@@ -2287,47 +2320,26 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Zkratky";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Přizpůsob si oblíbené záložky a časté funkce. Přeskládej je nebo je skryj, ať je všechno přehledné.";
+/* Confirm button for the new address bar picker */
+"new.address.bar.picker.confirm" = "Potvrdit";
 
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Stránka nové karty je... úplně nová!";
+/* Footer text for the new address bar picker */
+"new.address.bar.picker.footer" = "Úpravy provedeš v Nastavení > Funkce AI";
 
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Oblíbené";
+/* Not now button for the new address bar picker */
+"new.address.bar.picker.not.now" = "Teď ne";
 
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Zkratky";
+/* Option for search and AI in the new address bar picker */
+"new.address.bar.picker.search.and.ai" = "Vyhledávání a Duck.ai";
 
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Zobrazení, skrytí a změna pořadí oddílů na stránce nové karty";
+/* Option for search only in the new address bar picker */
+"new.address.bar.picker.search.only" = "Jen vyhledávání";
 
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "ODDÍLY";
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline.private" = "Chceš mít soukromý AI chat hned po ruce?";
 
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "ZKRATKY";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Přizpůsobení karty s novou stránkou";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Záložky";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Stahování";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Hesla";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Nastavení";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Na libovolném webu otevři nabídku ••• a vyber **Přidat do oblíbených**. Web se ti přidá na stránku nové karty.";
+/* Title for the new address bar picker modal */
+"new.address.bar.picker.title" = "Možnost adresního řádku";
 
 /* No comment provided by engineer. */
 "No results found" = "Nebyly nalezeny žádné výsledky";
@@ -2349,6 +2361,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Soukromé vyhledávání ve výchozím nastavení";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo má také %1$@, které je dostupné s %2$@ a %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "pokročilou soukromou AI";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "volitelného předplatného";
@@ -2395,7 +2413,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Vymaž údaje o prohlížení jedním tlačítkem";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokuj trackery třetích stran";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2587,11 +2605,11 @@
 /* Caption of the option to show the Threat Protection preferences */
 "preferences.threat-protection.caption" = "Vylepšená ochrana DuckDuckGo zastavuje běžné hrozby a zároveň chrání tvoje připojení.\n[Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
-/* Description of incorrectly formatted data error when syncing. */
-"prefrences.sync.bad-request.description" = "Některé záložky nebo hesla jsou nesprávně naformátované nebo příliš dlouhé, takže jsme je nemohli synchronizovat.";
+/* Description of incorrectly formatted bookmarks data error when syncing. */
+"prefrences.sync.bookmarks-bad-request.description" = "Některé záložky jsou nesprávně naformátované nebo příliš dlouhé, takže jsme je nemohli synchronizovat.";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
-"prefrences.sync.bookmarks-limit-exceeded-action" = "Spravovat záložky";
+"prefrences.sync.bookmarks-limit-exceeded-action" = "Spravovat záložky…";
 
 /* Description for sync bookmarks limits exceeded warning */
 "prefrences.sync.bookmarks-limit-exceeded-description" = "Už máš maximální počet záložek. Jestli chceš synchronizaci obnovit, některé smaž.";
@@ -2602,11 +2620,23 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Už máš maximální počet hesel. Jestli chceš synchronizaci obnovit, některá smaž.";
 
+/* Description of incorrectly formatted credit card data error when syncing. */
+"prefrences.sync.credit-cards-bad-request.description" = "Čísla některých platebních karet jsou nesprávně naformátovaná nebo příliš dlouhá, takže se nesynchronizují.";
+
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Spravovat platební karty…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "Už máš maximální počet platebních karet. Jestli chceš synchronizaci obnovit, některé smaž.";
+
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Při synchronizaci došlo k chybě. Zkus na tomto zařízení synchronizaci vypnout a pak se znovu připoj pomocí jiného zařízení nebo kódu pro obnovení.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Synchronizace je pozastavená";
+
+/* Description of incorrectly formatted password data error when syncing. */
+"prefrences.sync.passwords-bad-request.description" = "Některá hesla jsou nesprávně naformátovaná nebo příliš dlouhá, takže jsme je nemohli synchronizovat.";
 
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Funkce Sync & Backup je dočasně nedostupná.";
@@ -2698,6 +2728,12 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Vyhledejte nebo zadejte adresu";
 
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Hledat";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Sekundární / druhá akce";
 
@@ -2728,9 +2764,6 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "O společnosti";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "Kromě toho nabízíme taky službu [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/). To je předplacená služba „tři v jednom“, která je integrovaná v našem prohlížeči. Předplatitelé Privacy Pro získávají ještě větší ochranu soukromí díky rychlé a jednoduché [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), která pomáhá zabezpečit tvoje online aktivity, službě, která vyhledává a maže tvé osobní údaje ze stránek pro vyhledávání osob, a službě, která obnoví tvou identitu, kdyby ji někdo ukradl.";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "Kromě toho nabízíme také [předplatné DuckDuckGo](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integrované do našeho prohlížeče. Předplatitelé získávají ještě lepší ochranu soukromí díky rychlé a jednoduché [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), která pomáhá zabezpečit online aktivity, přístup k pokročilým modelům umělé inteligence v naší soukromé AI chatovací službě Duck.ai, službu, která vyhledává a maže osobní údaje ze stránek pro vyhledávání osob, a službu, která obnoví tvou identitu, kdyby došlo k její krádeži.";
 
@@ -2757,6 +2790,18 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Zobrazovat celou adresu webu";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Vyhledávání a Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Jen vyhledávání";
+
+/* Footer under the AI picker, descriptive sentence without link */
+"settings.ai.new.picker.footer" = "Vyzkoušej novou možnost přepínání mezi vyhledáváním a Duck.ai v adresním řádku.";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Spravovat zkratky Duck.ai";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Zkratky Duck.ai";
@@ -2785,6 +2830,12 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Zakažte, chcete-li zabránit automatickému otevírání odkazů v jiných nainstalovaných aplikacích.";
 
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Vymazat karty a data";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Vymazat karty, data a chaty Duck.ai";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Návrhy vyhledávání";
 
@@ -2806,6 +2857,12 @@
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Zpětná vazba k prohlížeči";
 
+/* Settings screen footer text explaining that Fire Button also clears AI chat history */
+"settings.clear.aichat.history.footer" = "Tlačítko Fire Button taky smaže historii Duck.ai, včetně připnutých chatů.";
+
+/* Settings screen cell text for clearing AI chat history */
+"settings.clear.aichat.history.title" = "Vymazat chaty Duck.ai";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automaticky vymazat data";
 
@@ -2824,6 +2881,12 @@
 /* Settings title for the customize section */
 "settings.customize" = "Přizpůsobit";
 
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Vymaže všechny karty, chaty Duck.ai a data všech webů, které nechrání funkce Fireproof.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Vymaže všechny karty a data všech webů, které nechrání funkce Fireproof.";
+
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Vymazání dat";
 
@@ -2837,7 +2900,7 @@
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo na jiných platformách";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Tvoje předplatné Privacy Pro vypršelo";
+"settings.duckduckgo.subscription.expired.title" = "Tvoje předplatné DuckDuckGo vypršelo";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Blokuje e-mailové trackery a skryje tvou adresu bez nutnosti přepínat poskytovatele e-mailu.\n[Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2893,6 +2956,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klávesnice";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Více informací";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Nechat správu oken pro souhlas s cookies na DuckDuckGo";
 
@@ -2923,9 +2989,6 @@
 /* Label describing a feature which is turned on */
 "settings.on" = "Aktivní";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Zásady ochrany osobních údajů a podmínky služby";
 
@@ -2940,6 +3003,15 @@
 
 /* Explanation in Settings how the private search feature works */
 "settings.private.search.explanation" = "DuckDuckGo Private Search je tvůj výchozí vyhledávač, takže můžeš hledat na webu, aniž by tě někdo sledoval.";
+
+/* Settings screen option to set refresh button in the address bar */
+"settings.refreshButton.position.addressBar" = "Adresní řádek";
+
+/* Settings screen option to set refresh button in the menu */
+"settings.refreshButton.position.menu" = "Menu";
+
+/* Settings screen cell text for setting the refresh button position. */
+"settings.refreshButton.position.title" = "Pozice tlačítka pro obnovení";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Nastavení vyhledávání";
@@ -2986,23 +3058,14 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Mám předplatné";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Tvoje předplatné Privacy Pro vypršelo";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "Předplatné DuckDuckGo";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Pokud dojde ke krádeži tvé identity, pomůžeme ti ji obnovit.";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Pořiď si službu Privacy Pro";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Nastavení předplatného";
@@ -3022,9 +3085,6 @@
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Vyzkoušet zdarma";
 
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Vyzkoušej zdarma službu Privacy Pro";
-
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
 
@@ -3043,6 +3103,66 @@
 /* Title for the Settings View */
 "settings.title" = "Nastavení";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Pomáhá blokovat trackery třetích stran, které se snaží maskovat na webu pomocí DNS.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Chrání před maskováním DNS CNAME";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Znemožní sledování u obsahu na Facebooku, jako jsou widgety pro komentáře na webech, které nejsou součástí Facebooku.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Ochrana před sledováním na Facebooku";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Brání tomu, aby společnosti, které sledují uživatele, získávaly jedinečné údaje o tvém prohlížeči a zařízení, takže nebudou moct sledovat tvůj pohyb po internetu.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Brání vytváření digitálních stop";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Automaticky nechá po 30 dnech vypršet cookies první strany, aby tě stránky nemohly po odhlášení sledovat donekonečna.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Ukončí platnost souborů cookie první strany";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Nahradí odkazy Google AMP webem původního vydavatele.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Blokuje sledování pomocí stránek AMP na Googlu";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Blokuje vyskakovací okna pro přihlášení na Google na webech, které Google nevlastní.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Blokuje vyskakovací okna pro přihlášení na Google";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Odstraní parametry sledování v odkazech, aby třetí strany nemohly sledovat tvoje chování napříč weby.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Blokuje sledování přes odkazy";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Brání tomu, aby společnosti mohly zjistit, jaká byla tvoje naposledy navštívená webová stránka.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Chrání před sledováním poslední navštívené stránky";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Zablokuje invazivní trackery ještě před jejich načtením, čímž účinně eliminuje reklamy, které tě pronásledují.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Blokuje cílené reklamy";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Pomáhá blokovat cookies třetích stran, které se tě snaží sledovat napříč různými weby tím, že brání načítání trackerů třetích stran.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Blokuje trackery třetích stran";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Nechráněné stránky";
 
@@ -3055,8 +3175,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Ochrana před sledováním na webu";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Ochrana Web Tracking Protections je vždy zapnutá";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo automaticky blokuje skryté trackery při procházení webu.\n[Více informací](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Jak tě chráníme";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "Prohlížeč DuckDuckGo poskytuje ochranu proti sledování, která je neustále zapnutá. [Více informací](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Vyber možnost, která nejlíp popisuje tvůj problém.";
@@ -3106,9 +3235,6 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Upravit e-mail";
 
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "Přidej do tohoto zařízení své předplatné Privacy Pro";
-
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Zrušit";
 
@@ -3127,9 +3253,6 @@
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Začínáme";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Pokud si do tohoto zařízení chceš přidat předplatné Privacy Pro, použij e-mailovou adresu.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "Přidat přes e-mailovou adresu";
 
@@ -3141,15 +3264,6 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Přidat e-mail";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Přidej předplatné Privacy Pro do dalších zařízení";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Přidej předplatné Privacy Pro do svých dalších zařízení přes Apple ID nebo propojením e-mailové adresy. **[Další informace](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "Pomocí tohoto e-mailu si v aplikaci DuckDuckGo přidej předplatné do ostatních zařízení. Přejdi do Nastavení > Privacy Pro > Mám předplatné. **[Další informace](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Předplatné bylo zakoupeno prostřednictvím obchodu Google Play. Předplatné se dá obnovit tak, že otevřeš nastavení předplatného obchodu Google Play na zařízení přihlášeném ke stejnému účtu Google, který byl původně použit k nákupu předplatného.";
@@ -3172,8 +3286,17 @@
 /* Caption of the Duck.ai settings (do not modify link) */
 "subscription.duck.ai.caption" = "Chatuj soukromě s modely AI jen pro předplatitele.\n[Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
 
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "Nakonfiguruj Duck.ai v nastavení funkcí AI.";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "Povolit v nastavení funkcí AI";
+
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Spustit Duck.ai";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "Spravovat v nastavení funkcí AI";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";
@@ -3190,11 +3313,8 @@
 /* FAQ Button */
 "subscription.faq" = "Časté dotazy a podpora";
 
-/* FAQ Description */
-"subscription.faq.description" = "Získej odpovědi na časté otázky nebo přes naše stránky nápovědy kontaktuj podporu služby Privacy Pro.";
-
-/* Send Feedback Button */
-"subscription.feedback" = "Odeslat zpětnou vazbu";
+/* Share Feedback Button */
+"subscription.feedback" = "Podělte se o zpětnou vazbu";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Zrušit";
@@ -3226,14 +3346,11 @@
 /* View plans button text */
 "subscription.notFound.view.plans" = "Zobrazit tarify";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Aktivuj si na počítači službu Privacy Pro a nastav si v ní funkci Personal Information Removal";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "V prohlížeči DuckDuckGo pro počítače přejdi na %1$@ a klikni na %2$@.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "Nastavení > Privacy Pro";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Nastavení > Předplatit si DuckDuckGo";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "Mám předplatné";
@@ -3258,9 +3375,6 @@
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Odebrat z tohohle zařízení";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "Na tomhle zařízení už nebudeš mít přístup k předplatnému Privacy Pro. Tím se tvoje předplatné nezruší, na tvých ostatních zařízeních zůstane aktivní.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Odebrat z tohohle zařízení?";
@@ -3334,9 +3448,6 @@
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Tvoje roční předplatné se obnoví %@.";
 
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
-
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Bezplatná zkušební verze je aktivní";
 
@@ -3372,6 +3483,36 @@
 
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Synchronizuj a zálohuj si hesla";
+
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Synchronizovat a zálohovat toto zařízení";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Uložením kódu pro obnovení ti v budoucnu může pomoci snadno obnovit heslo.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Synchronizovaná hesla můžeš obnovit pouze tehdy, pokud máš přístup k jinému zařízení, nebo pomocí kódu pro obnovení, který byl vytvořen při nastavování funkce Sync & Backup.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Naskenovat kód pro obnovení";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Je jiné zařízení nedostupné? Naskenuj svůj kód pro obnovení.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Nemáš jiné zařízení?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "Hesla DuckDuckGo se nepřenášejí přes iCloud, protože jsou zašifrovaná přímo na zařízení. Všechno ostatní už je tady.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Synchronizovat s jiným zařízením";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Na nové zařízení %@? Synchronizujme tvá hesla.";
 
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Odstranit";
@@ -3726,6 +3867,54 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Zpráva od %@:";
+
+/* CTA of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.cta" = "Zobrazit nabídku";
+
+/* Dismiss of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.dismiss" = "Teď ne";
+
+/* Message of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.text" = "Zůstaň v bezpečí díky naší VPN, soukromé AI a dalším funkcím. Obnov si předplatné ještě dnes a ušetři 25 %.";
+
+/* Title of message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.title" = "Poslední šance ušetřit 25 %!";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "UŠETŘI 25 %";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "Zobrazit nabídku";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Teď ne";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "Zůstaň v bezpečí díky naší VPN, soukromé AI a dalším funkcím. Obnov si předplatné ještě dnes a ušetři 25 %.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Jen na omezenou dobu";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "Vrať se k nám!\nMáme slevu 25 %.";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "Zobrazit nabídku";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "Mám předplatné";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "Časově omezená nabídka!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "Zůstaň v bezpečí díky naší VPN, soukromé AI a dalším funkcím. Obnov si předplatné ještě dnes a ušetři 25 %.\nČasově omezená nabídka.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "Obnov si předplatné a ušetři 25 %";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Obnov si předplatné a ušetři 25 %";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Hledáš verzi pro Mac?";

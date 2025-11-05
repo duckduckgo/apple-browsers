@@ -23,9 +23,6 @@ protocol NewTabPage: UIViewController {
 
     var isDragging: Bool { get }
 
-    func launchNewSearch()
-    func openedAsNewTab(allowingKeyboard: Bool)
-
     func dismiss()
 
     func showNextDaxDialog()

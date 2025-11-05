@@ -54,6 +54,9 @@ private enum AttributesKey: String, CaseIterable {
     case messageShown
     case isCurrentFreemiumPIRUser
     case allFeatureFlagsEnabled
+    case syncEnabled
+    case shouldShowWinBackOfferUrgencyMessage
+    case daysSinceDuckAiUsed
 
     func matchingAttribute(jsonMatchingAttribute: AnyDecodable) -> MatchingAttribute {
         switch self {
@@ -74,12 +77,12 @@ private enum AttributesKey: String, CaseIterable {
         case .appTheme: return AppThemeMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .daysSinceInstalled: return DaysSinceInstalledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .daysSinceNetPEnabled: return DaysSinceNetPEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
-        case .pproEligible: return IsPrivacyProEligibleUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
-        case .pproSubscriber: return IsPrivacyProSubscriberUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
-        case .pproDaysSinceSubscribed: return PrivacyProDaysSinceSubscribedMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
-        case .pproDaysUntilExpiryOrRenewal: return PrivacyProDaysUntilExpiryMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
-        case .pproPurchasePlatform: return PrivacyProPurchasePlatformMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
-        case .pproSubscriptionStatus: return PrivacyProSubscriptionStatusMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .pproEligible: return IsSubscriptionEligibleUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .pproSubscriber: return IsDuckDuckGoSubscriberUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .pproDaysSinceSubscribed: return SubscriptionDaysSinceSubscribedMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .pproDaysUntilExpiryOrRenewal: return SubscriptionDaysUntilExpiryMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .pproPurchasePlatform: return SubscriptionPurchasePlatformMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .pproSubscriptionStatus: return SubscriptionStatusMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .interactedWithMessage: return InteractedWithMessageMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .interactedWithDeprecatedMacRemoteMessage: return InteractedWithDeprecatedMacRemoteMessageMatchingAttribute(
             jsonMatchingAttribute: jsonMatchingAttribute
@@ -92,6 +95,9 @@ private enum AttributesKey: String, CaseIterable {
         case .messageShown: return MessageShownMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isCurrentFreemiumPIRUser: return FreemiumPIRCurrentUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .allFeatureFlagsEnabled: return AllFeatureFlagsEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .syncEnabled: return SyncEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .shouldShowWinBackOfferUrgencyMessage: return WinBackOfferUrgencyMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .daysSinceDuckAiUsed: return DaysSinceDuckAIUsedMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         }
     }
 }
@@ -295,6 +301,10 @@ struct JsonToRemoteMessageModelMapper {
         }
 
         if let translation = translations[LocaleMatchingAttribute.localeIdentifierAsJsonFormat(locale.identifier)] {
+            return translation
+        }
+
+        if let languageCode = locale.languageCode, let translation = translations[languageCode] {
             return translation
         }
 

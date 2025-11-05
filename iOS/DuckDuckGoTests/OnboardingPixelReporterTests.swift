@@ -461,15 +461,15 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
     }
 
-    func testWhenMeasurePrivacyProPromoDialogNewTabDismissButtonTappedThenPixelIsFired() {
+    func testWhenMeasureSubscriptionPromoDialogNewTabDismissButtonTappedThenPixelIsFired() {
         // GIVEN
-        let expectedPixel = Pixel.Event.onboardingPrivacyPromoDialogDismissButtonTapped
+        let expectedPixel = Pixel.Event.onboardingSubscriptionDialogDismissButtonTapped
         XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
         XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measurePrivacyPromoDialogNewTabDismissButtonTapped()
+        sut.measureSubscriptionDialogNewTabDismissButtonTapped()
 
         // THEN
         XCTAssertTrue(OnboardingPixelFireMock.didCallFire)

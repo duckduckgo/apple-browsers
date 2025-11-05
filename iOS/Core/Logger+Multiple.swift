@@ -25,4 +25,6 @@ public extension Logger {
     static var lifecycle = { Logger(subsystem: "Lifecycle", category: "") }()
     static var configuration = { Logger(subsystem: "Configuration", category: "") }()
     static var duckPlayer = { Logger(subsystem: "DuckPlayer", category: "") }()
+    static var launchSource = { Logger(subsystem: "LaunchSource", category: "") }()
+    static var addressBarPicker = { Logger(subsystem: "AddressBar Picker", category: "") }()
 }

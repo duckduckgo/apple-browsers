@@ -33,7 +33,7 @@ final class DaxDialogsNewTabTests: XCTestCase {
             settings: settings,
             entityProviding: MockEntityProvider(),
             variantManager: mockVariantManager,
-            onboardingPrivacyProPromotionHelper: MockOnboardingPrivacyProPromotionHelper()
+            onboardingSubscriptionPromotionHelper: MockOnboardingSubscriptionPromotionHelper()
         )
     }
 
@@ -150,5 +150,5 @@ class MockDaxDialogsSettings: DaxDialogsSettings {
 
     var browsingFinalDialogShown: Bool = false
 
-    var privacyProPromotionDialogShown: Bool = false
+    var subscriptionPromotionDialogShown: Bool = false
 }

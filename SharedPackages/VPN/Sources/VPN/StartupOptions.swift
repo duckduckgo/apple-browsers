@@ -21,6 +21,52 @@ import Common
 import Networking
 import os.log
 
+/// Codable representation of VPN settings that can be passed to the packet tunnel
+///
+public struct VPNSettingsSnapshot: Codable, Equatable {
+    let registrationKeyValidity: VPNSettings.RegistrationKeyValidity
+    let selectedEnvironment: VPNSettings.SelectedEnvironment
+    let selectedServer: VPNSettings.SelectedServer
+    let selectedLocation: VPNSettings.SelectedLocation
+    let dnsSettings: NetworkProtectionDNSSettings
+    let excludeLocalNetworks: Bool
+
+    /// Create a snapshot of the current VPN settings
+    public init(from settings: VPNSettings) {
+        self.registrationKeyValidity = settings.registrationKeyValidity
+        self.selectedEnvironment = settings.selectedEnvironment
+        self.selectedServer = settings.selectedServer
+        self.selectedLocation = settings.selectedLocation
+        self.dnsSettings = settings.dnsSettings
+        self.excludeLocalNetworks = settings.excludeLocalNetworks
+    }
+
+    /// Create a snapshot with explicit values
+    public init(registrationKeyValidity: VPNSettings.RegistrationKeyValidity,
+                selectedEnvironment: VPNSettings.SelectedEnvironment,
+                selectedServer: VPNSettings.SelectedServer,
+                selectedLocation: VPNSettings.SelectedLocation,
+                dnsSettings: NetworkProtectionDNSSettings,
+                excludeLocalNetworks: Bool) {
+        self.registrationKeyValidity = registrationKeyValidity
+        self.selectedEnvironment = selectedEnvironment
+        self.selectedServer = selectedServer
+        self.selectedLocation = selectedLocation
+        self.dnsSettings = dnsSettings
+        self.excludeLocalNetworks = excludeLocalNetworks
+    }
+
+    /// Apply these settings to a VPNSettings instance
+    public func applyTo(_ settings: VPNSettings) {
+        settings.registrationKeyValidity = registrationKeyValidity
+        settings.selectedEnvironment = selectedEnvironment
+        settings.selectedServer = selectedServer
+        settings.selectedLocation = selectedLocation
+        settings.dnsSettings = dnsSettings
+        settings.excludeLocalNetworks = excludeLocalNetworks
+    }
+}
+
 /// This class handles the proper parsing of the startup options for our tunnel.
 ///
 public struct StartupOptions {
@@ -105,16 +151,11 @@ public struct StartupOptions {
     let simulateError: Bool
     let simulateCrash: Bool
     let simulateMemoryCrash: Bool
-    let keyValidity: StoredOption<TimeInterval>
-    let selectedEnvironment: StoredOption<VPNSettings.SelectedEnvironment>
-    let selectedServer: StoredOption<VPNSettings.SelectedServer>
-    let selectedLocation: StoredOption<VPNSettings.SelectedLocation>
-    let dnsSettings: StoredOption<NetworkProtectionDNSSettings>
-    public let excludeLocalNetworks: StoredOption<Bool>
+    public let vpnSettings: StoredOption<VPNSettingsSnapshot>
 #if os(macOS)
-    let isAuthV2Enabled: StoredOption<Bool>
-    let authToken: StoredOption<String>
-    let tokenContainer: StoredOption<TokenContainer>
+    public let isAuthV2Enabled: StoredOption<Bool>
+    public let authToken: StoredOption<String>
+    public let tokenContainer: StoredOption<TokenContainer>
 #endif
     let enableTester: StoredOption<Bool>
 
@@ -142,12 +183,7 @@ public struct StartupOptions {
         tokenContainer = Self.readTokenContainer(from: options, resetIfNil: resetStoredOptionsIfNil)
 #endif
         enableTester = Self.readEnableTester(from: options, resetIfNil: resetStoredOptionsIfNil)
-        keyValidity = Self.readKeyValidity(from: options, resetIfNil: resetStoredOptionsIfNil)
-        selectedEnvironment = Self.readSelectedEnvironment(from: options, resetIfNil: resetStoredOptionsIfNil)
-        selectedServer = Self.readSelectedServer(from: options, resetIfNil: resetStoredOptionsIfNil)
-        selectedLocation = Self.readSelectedLocation(from: options, resetIfNil: resetStoredOptionsIfNil)
-        dnsSettings = Self.readDNSSettings(from: options, resetIfNil: resetStoredOptionsIfNil)
-        excludeLocalNetworks = Self.readExcludeLocalNetworks(from: options, resetIfNil: resetStoredOptionsIfNil)
+        vpnSettings = Self.readVPNSettings(from: options, resetIfNil: resetStoredOptionsIfNil)
     }
 
     var description: String {
@@ -157,13 +193,8 @@ public struct StartupOptions {
             simulateError: \(self.simulateError.description),
             simulateCrash: \(self.simulateCrash.description),
             simulateMemoryCrash: \(self.simulateMemoryCrash.description),
-            keyValidity: \(self.keyValidity.description),
-            selectedEnvironment: \(self.selectedEnvironment.description),
-            selectedServer: \(self.selectedServer.description),
-            selectedLocation: \(self.selectedLocation.description),
-            dnsSettings: \(self.dnsSettings.description),
+            vpnSettings: \(self.vpnSettings.description),
             enableTester: \(self.enableTester),
-            excludeLocalNetworks: \(self.excludeLocalNetworks),
         """
 #if os(macOS)
         result += """
@@ -213,59 +244,14 @@ public struct StartupOptions {
     }
 #endif
 
-    private static func readKeyValidity(from options: [String: Any], resetIfNil: Bool) -> StoredOption<TimeInterval> {
+    private static func readVPNSettings(from options: [String: Any], resetIfNil: Bool) -> StoredOption<VPNSettingsSnapshot> {
         StoredOption(resetIfNil: resetIfNil) {
-            guard let keyValidityString = options[NetworkProtectionOptionKey.keyValidity] as? String,
-                  let keyValidity = TimeInterval(keyValidityString) else {
-
+            guard let data = options[NetworkProtectionOptionKey.settings] as? Data,
+                  let vpnSettings = try? JSONDecoder().decode(VPNSettingsSnapshot.self, from: data) else {
                 return nil
             }
 
-            return keyValidity
-        }
-    }
-
-    private static func readSelectedEnvironment(from options: [String: Any], resetIfNil: Bool) -> StoredOption<VPNSettings.SelectedEnvironment> {
-        StoredOption(resetIfNil: resetIfNil) {
-            guard let environment = options[NetworkProtectionOptionKey.selectedEnvironment] as? String else {
-                return nil
-            }
-
-            return VPNSettings.SelectedEnvironment(rawValue: environment) ?? .default
-        }
-    }
-
-    private static func readSelectedServer(from options: [String: Any], resetIfNil: Bool) -> StoredOption<VPNSettings.SelectedServer> {
-        StoredOption(resetIfNil: resetIfNil) {
-            guard let serverName = options[NetworkProtectionOptionKey.selectedServer] as? String else {
-                return nil
-            }
-
-            return .endpoint(serverName)
-        }
-    }
-
-    private static func readSelectedLocation(from options: [String: Any], resetIfNil: Bool) -> StoredOption<VPNSettings.SelectedLocation> {
-        StoredOption(resetIfNil: resetIfNil) {
-            guard
-                let data = options[NetworkProtectionOptionKey.selectedLocation] as? Data,
-                let selectedLocation = try? JSONDecoder().decode(VPNSettings.SelectedLocation.self, from: data)
-            else {
-                return nil
-            }
-
-            return selectedLocation
-        }
-    }
-
-    private static func readDNSSettings(from options: [String: Any], resetIfNil: Bool) -> StoredOption<NetworkProtectionDNSSettings> {
-        StoredOption(resetIfNil: resetIfNil) {
-            guard let data = options[NetworkProtectionOptionKey.dnsSettings] as? Data,
-                  let dnsSettings = try? JSONDecoder().decode(NetworkProtectionDNSSettings.self, from: data) else {
-                return nil
-            }
-
-            return dnsSettings
+            return vpnSettings
         }
     }
 
@@ -279,13 +265,4 @@ public struct StartupOptions {
         }
     }
 
-    private static func readExcludeLocalNetworks(from options: [String: Any], resetIfNil: Bool) -> StoredOption<Bool> {
-        StoredOption(resetIfNil: resetIfNil) {
-            guard let value = options[NetworkProtectionOptionKey.excludeLocalNetworks] as? Bool else {
-                return nil
-            }
-
-            return value
-        }
-    }
 }

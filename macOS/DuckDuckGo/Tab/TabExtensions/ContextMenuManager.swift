@@ -22,6 +22,7 @@ import Combine
 import Foundation
 import WebKitExtensions
 import BrowserServicesKit
+import Common
 
 enum NavigationDecision {
     case allow(NewWindowPolicy)
@@ -42,6 +43,7 @@ final class ContextMenuManager: NSObject {
     private let isLoadedInSidebar: Bool
     private let internalUserDecider: InternalUserDecider
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+    private let tld: TLD
 
     private var isEmailAddress: Bool {
         guard let linkURL, let url = URL(string: linkURL) else {
@@ -65,12 +67,14 @@ final class ContextMenuManager: NSObject {
          tabsPreferences: TabsPreferences = TabsPreferences.shared,
          isLoadedInSidebar: Bool = false,
          internalUserDecider: InternalUserDecider,
-         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
+         tld: TLD
     ) {
         self.tabsPreferences = tabsPreferences
         self.isLoadedInSidebar = isLoadedInSidebar
         self.internalUserDecider = internalUserDecider
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
+        self.tld = tld
         super.init()
 
         contextMenuScriptPublisher
@@ -221,15 +225,20 @@ extension ContextMenuManager {
 
     private func handleSearchWebItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
         let isSummarizationAvailable = shouldShowTextSummarization
+        let isTranslationAvailable = shouldShowTextTranslation
 
         var currentIndex = index
-        if isSummarizationAvailable {
+        if isSummarizationAvailable || isTranslationAvailable {
             menu.insertItem(.separator(), at: currentIndex)
             currentIndex += 1
         }
         menu.replaceItem(at: currentIndex, with: self.searchMenuItem(makeBurner: isCurrentWindowBurner))
         if isSummarizationAvailable {
             menu.insertItem(summarizeMenuItem(), at: currentIndex + 1)
+            currentIndex += 1
+        }
+        if isTranslationAvailable {
+            menu.insertItem(translateMenuItem(), at: currentIndex + 1)
         }
     }
 
@@ -249,6 +258,15 @@ extension ContextMenuManager {
             return false
         default:
             return aiChatMenuConfiguration.shouldDisplaySummarizationMenuItem
+        }
+    }
+
+    private var shouldShowTextTranslation: Bool {
+        switch tabContent {
+        case .aiChat:
+            return false
+        default:
+            return aiChatMenuConfiguration.shouldDisplayTranslationMenuItem
         }
     }
 }
@@ -361,6 +379,10 @@ private extension ContextMenuManager {
         NSMenuItem(title: UserText.aiChatSummarize, action: #selector(summarize), target: self, keyEquivalent: [.command, .shift, "\r"])
     }
 
+    func translateMenuItem() -> NSMenuItem {
+        NSMenuItem(title: UserText.aiChatTranslate, action: #selector(translate), target: self)
+    }
+
     private func makeMenuItem(withTitle title: String, action: Selector, from item: NSMenuItem, with identifier: WKMenuItemIdentifier, keyEquivalent: String? = nil) -> NSMenuItem {
         return makeMenuItem(withTitle: title, action: action, from: item, withIdentifierIn: [identifier], keyEquivalent: keyEquivalent)
     }
@@ -420,6 +442,30 @@ private extension ContextMenuManager {
 
         let request = AIChatTextSummarizationRequest(text: selectedText, websiteURL: webView?.url, websiteTitle: webView?.title, source: .contextMenu)
         mainViewController?.aiChatSummarizer.summarize(request)
+    }
+
+    func translate(_ sender: NSMenuItem) {
+        guard let selectedText else {
+            assertionFailure("Failed to get selected text")
+            return
+        }
+
+        Task { @MainActor in
+            let websiteTLD: String? = {
+                guard let sourceTLD = tld.eTLD(forStringURL: webView?.url?.absoluteString ?? "") else { return nil }
+                return "." + sourceTLD
+            }()
+
+            let sourceLanguage: String? = await webView?.currentSelectionLanguage
+
+            let request = AIChatTextTranslationRequest(text: selectedText,
+                                                       websiteURL: webView?.url,
+                                                       websiteTitle: webView?.title,
+                                                       websiteTLD: websiteTLD,
+                                                       sourceLanguage: sourceLanguage)
+
+            mainViewController?.aiChatTranslator.translate(request)
+        }
     }
 
     func openLinkInNewTab(_ sender: NSMenuItem) {

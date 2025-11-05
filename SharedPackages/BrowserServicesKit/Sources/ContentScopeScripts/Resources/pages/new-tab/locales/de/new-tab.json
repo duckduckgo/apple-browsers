@@ -28,6 +28,10 @@
     "title" : "Neuen Tab anpassen",
     "note" : "Heading text describing that there's a list of toggles for customizing the page layout."
   },
+  "ntp_popover_close_button" : {
+    "title" : "Schließen",
+    "note" : "Button that closes the current popover."
+  },
   "updateNotification_updated_version" : {
     "title" : "Browser auf Version {version} aktualisiert.",
     "note" : "Text to indicate which new version was updated. `{version}` will be formatted like `1.22.0`"
@@ -175,6 +179,26 @@
   "omnibar_visitSuffix" : {
     "title" : "{url} besuchen",
     "description" : "Text placed after suggestions that will open a webpage."
+  },
+  "omnibar_askDuckAiSuffix" : {
+    "title" : "Frag Duck.ai",
+    "description" : "Text placed after aiChat suggestions that will submit a chat query."
+  },
+  "omnibar_switchToTab" : {
+    "title" : "Zu Tab wechseln",
+    "description" : "Badge text shown next to open tab suggestions."
+  },
+  "omnibar_customizePopoverTitle" : {
+    "title" : "Wechseln zwischen Suche und KI-Chat",
+    "description" : "Title for the popover that introduces the search/AI toggle feature."
+  },
+  "omnibar_customizePopoverBadge" : {
+    "title" : "Neu",
+    "description" : "Badge text for the popover that introduces the search/AI toggle feature."
+  },
+  "omnibar_customizePopoverDescription" : {
+    "title" : "Deine Daten bleiben auf jeden Fall privat.<br />Du möchtest das nicht? <button>Anpassen</button>",
+    "description" : "Description message in the popover including privacy statement and customize option."
   },
   "nextSteps_sectionTitle" : {
     "title" : "Nächste Schritte",

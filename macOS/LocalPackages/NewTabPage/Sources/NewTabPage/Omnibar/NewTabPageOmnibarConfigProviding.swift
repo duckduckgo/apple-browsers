@@ -28,4 +28,9 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
 
     var isAIChatSettingVisible: Bool { get }
     var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> { get }
+
+    var showCustomizePopover: Bool { get set }
+    var showCustomizePopoverPublisher: AnyPublisher<Bool, Never> { get }
+
+    var customizePopoverPresentationCount: Int { get set }
 }

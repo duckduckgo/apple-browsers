@@ -43,6 +43,10 @@ public final class TunnelControllerViewModel: ObservableObject {
     @Published
     public var isVPNEnabled: Bool
 
+    public var isVPNStagingEnvironmentSelected: Bool {
+        vpnSettings.selectedEnvironment == .staging
+    }
+
     public var exclusionsFeatureEnabled: Bool {
         vpnAppState.isUsingSystemExtension
     }

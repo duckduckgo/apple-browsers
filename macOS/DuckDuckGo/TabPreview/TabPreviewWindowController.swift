@@ -53,6 +53,16 @@ final class TabPreviewWindowController: NSWindowController {
         fatalError("\(Self.self): Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        // Check that the window deallocates
+        window?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+
+        // Check that the view controller deallocates
+        tabPreviewViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     private static func loadWindow() -> NSWindow {
         let tabPreviewViewController = TabPreviewViewController()
 
@@ -65,6 +75,8 @@ final class TabPreviewWindowController: NSWindowController {
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.animationBehavior = .utilityWindow
+        window.setAccessibilityEnabled(false)
+        window.setAccessibilityElement(false)
 
         return window
     }

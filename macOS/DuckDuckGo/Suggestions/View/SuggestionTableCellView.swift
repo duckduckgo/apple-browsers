@@ -52,7 +52,7 @@ final class SuggestionTableCellView: NSTableCellView {
     @IBOutlet weak var iconImageViewLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var searchSuggestionTextFieldLeadingConstraint: NSLayoutConstraint!
 
-    var visualStyle: VisualStyleProviding?
+    var theme: ThemeStyleProviding?
     var suggestion: Suggestion?
 
     static let switchToTabAttributedString: NSAttributedString = {
@@ -127,14 +127,14 @@ final class SuggestionTableCellView: NSTableCellView {
             switchToTabBox.backgroundColor = .white.withAlphaComponent(0.09)
         } else {
             textField?.attributedStringValue = attributedString
-            textField?.textColor = visualStyle?.colorsProvider.addressBarTextFieldColor ?? Constants.textColor
+            textField?.textColor = theme?.colorsProvider.addressBarTextFieldColor ?? Constants.textColor
             switchToTabLabel.textColor = Constants.textColor
             switchToTabArrowView.contentTintColor = Constants.textColor
             switchToTabBox.backgroundColor = .buttonMouseOver
             if isBurner {
                 suffixTextField.textColor = Constants.burnerSuffixColor
             } else {
-                suffixTextField.textColor = visualStyle?.colorsProvider.addressBarSuffixTextColor ?? Constants.suffixColor
+                suffixTextField.textColor = theme?.colorsProvider.addressBarSuffixTextColor ?? Constants.suffixColor
             }
         }
     }
@@ -194,8 +194,8 @@ final class SuggestionTableCellView: NSTableCellView {
             }
         }
 
-        iconImageViewLeadingConstraint.constant = visualStyle?.addressBarStyleProvider.suggestionIconViewLeadingPadding ?? Constants.iconImageViewLeadingSpace
-        searchSuggestionTextFieldLeadingConstraint.constant = visualStyle?.addressBarStyleProvider.suggestionTextFieldLeadingPadding ?? Constants.suggestionTextFieldLeadingSpace
+        iconImageViewLeadingConstraint.constant = theme?.addressBarStyleProvider.suggestionIconViewLeadingPadding ?? Constants.iconImageViewLeadingSpace
+        searchSuggestionTextFieldLeadingConstraint.constant = theme?.addressBarStyleProvider.suggestionTextFieldLeadingPadding ?? Constants.suggestionTextFieldLeadingSpace
 
         super.layout()
     }

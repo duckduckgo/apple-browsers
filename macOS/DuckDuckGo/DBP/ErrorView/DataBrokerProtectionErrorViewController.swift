@@ -50,7 +50,7 @@ struct DataBrokerProtectionErrorView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 32, height: 32)
 
-                Text("Privacy Pro")
+                Text("DuckDuckGo Subscription")
                     .font(.title)
                     .fontWeight(.light)
             }

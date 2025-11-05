@@ -220,6 +220,10 @@ class NavigationResponderMock: NavigationResponder {
         onNavResponseWillBecomeDownload = nil
         onNavResponseBecameDownload = nil
 
+        navigations = []
+        navigationActionsCache = ([:], 0)
+        navigationResponses = []
+
         self.defaultHandler = defaultHandler
     }
     func clear() {

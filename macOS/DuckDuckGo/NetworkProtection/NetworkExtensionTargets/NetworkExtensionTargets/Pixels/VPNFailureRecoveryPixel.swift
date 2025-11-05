@@ -23,7 +23,7 @@ import PixelKit
 ///
 /// Ref: https://app.asana.com/0/0/1206939413299475/f
 ///
-public enum VPNFailureRecoveryPixel: PixelKitEventV2 {
+public enum VPNFailureRecoveryPixel: PixelKitEvent {
 
     /// This pixel is emitted when the last handshake diff is greater than n minutes and an attempt to recover is made (/register is called with failureRecovery)
     ///
@@ -51,13 +51,6 @@ public enum VPNFailureRecoveryPixel: PixelKitEventV2 {
             return "m_mac_netp_ev_failure_recovery_completed_server_healthy"
         case .vpnFailureRecoveryCompletedUnhealthy:
             return "m_mac_netp_ev_failure_recovery_completed_server_unhealthy"
-        }
-    }
-
-    public var error: Error? {
-        switch self {
-        case .vpnFailureRecoveryStarted, .vpnFailureRecoveryCompletedHealthy, .vpnFailureRecoveryCompletedUnhealthy: return nil
-        case .vpnFailureRecoveryFailed(let error): return error
         }
     }
 

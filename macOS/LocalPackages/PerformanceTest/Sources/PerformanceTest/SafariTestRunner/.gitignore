@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+src/constants/metricsScript.js
+
+# Test output
+coverage/
+*.log
+
+# IDE
+.DS_Store
+.vscode/
+.idea/

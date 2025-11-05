@@ -29,15 +29,16 @@ struct SuggestionViewModel {
     init(isHomePage: Bool,
          suggestion: Suggestion,
          userStringValue: String,
-         visualStyle: VisualStyleProviding) {
+         themeManager: ThemeManaging) {
         self.isHomePage = isHomePage
         self.suggestion = suggestion
         self.userStringValue = userStringValue
 
-        let fontSize = isHomePage ? visualStyle.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize : visualStyle.addressBarStyleProvider.defaultAddressBarFontSize
+        let theme = themeManager.theme
+        let fontSize = isHomePage ? theme.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize : theme.addressBarStyleProvider.defaultAddressBarFontSize
         self.tableRowViewStandardAttributes = Self.rowViewStandardAttributes(size: fontSize, isBold: false)
         self.tableRowViewBoldAttributes = Self.rowViewStandardAttributes(size: fontSize, isBold: true)
-        self.suggestionIcons = visualStyle.iconsProvider.suggestionsIconsProvider
+        self.suggestionIcons = theme.iconsProvider.suggestionsIconsProvider
     }
 
     // MARK: - Attributed Strings
@@ -96,7 +97,7 @@ struct SuggestionViewModel {
              .internalPage(title: let title, url: _, _),
              .openTab(title: let title, url: _, _, _):
             return title
-        case .unknown(value: let value):
+        case .unknown(value: let value), .askAIChat(let value):
             return value
         }
     }
@@ -105,7 +106,8 @@ struct SuggestionViewModel {
         switch suggestion {
         case .phrase,
              .website,
-             .unknown:
+             .unknown,
+             .askAIChat:
             return nil
         case .historyEntry(title: let title, url: let url, _):
             if url.isDuckDuckGoSearch {
@@ -146,7 +148,7 @@ struct SuggestionViewModel {
         case .website(url: let url) where url.toString(forUserInput: userStringValue, decodePunycode: false) != self.string:
             return url.toString(decodePunycode: false, dropScheme: true, dropTrailingSlash: true)
 
-        case .phrase, .unknown, .website:
+        case .phrase, .unknown, .website, .askAIChat:
             return nil
         case .openTab(title: _, url: let url, _, _) where url.isDuckURLScheme:
             return UserText.duckDuckGo
@@ -179,7 +181,7 @@ struct SuggestionViewModel {
             return suggestionIcons.bookmarkEntryIcon
         case .bookmark(title: _, url: _, isFavorite: true, _):
             return suggestionIcons.favoriteEntryIcon
-        case .unknown:
+        case .unknown, .askAIChat:
             return suggestionIcons.unknownEntryIcon
         case .internalPage(title: _, url: let url, _) where url == .bookmarks,
              .openTab(title: _, url: let url, _, _) where url == .bookmarks:

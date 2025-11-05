@@ -135,11 +135,11 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         await currentSubscriptionFeatures().contains(feature)
     }
 
-    public func signOut(notifyUI: Bool) async {
-        accountManager.signOut(skipNotification: !notifyUI)
+    public func signOut(notifyUI: Bool, userInitiated: Bool) async {
+        accountManager.signOut(skipNotification: !notifyUI, userInitiated: userInitiated)
     }
 
-    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {
+    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription {
         if let accessToken = accountManager.accessToken {
             let subscriptionResult = await subscriptionEndpointService.getSubscription(accessToken: accessToken, cachePolicy: cachePolicy.apiCachePolicy)
             if case let .success(subscription) = subscriptionResult {

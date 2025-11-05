@@ -22,7 +22,7 @@ import NewTabPage
 final class NewTabPageFreemiumDBPBannerProvider: NewTabPageFreemiumDBPBannerProviding {
 
     var bannerMessage: NewTabPageDataModel.FreemiumPIRBannerMessage? {
-        guard let viewModel = model.viewModel else {
+        guard shouldReturnBanner, let viewModel = model.viewModel else {
             return nil
         }
         return .init(viewModel)
@@ -30,8 +30,8 @@ final class NewTabPageFreemiumDBPBannerProvider: NewTabPageFreemiumDBPBannerProv
 
     var bannerMessagePublisher: AnyPublisher<NewTabPageDataModel.FreemiumPIRBannerMessage?, Never> {
         model.$viewModel.dropFirst()
-            .map { viewModel in
-                guard let viewModel else {
+            .map { [weak self] viewModel in
+                guard let self, self.shouldReturnBanner, let viewModel else {
                     return nil
                 }
                 return NewTabPageDataModel.FreemiumPIRBannerMessage(viewModel)
@@ -48,9 +48,18 @@ final class NewTabPageFreemiumDBPBannerProvider: NewTabPageFreemiumDBPBannerProv
     }
 
     let model: FreemiumDBPPromotionViewCoordinator
+    private let contextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
 
-    init(model: FreemiumDBPPromotionViewCoordinator) {
+    init(model: FreemiumDBPPromotionViewCoordinator,
+         contextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater = Application.appDelegate.onboardingContextualDialogsManager) {
         self.model = model
+        self.contextualDialogsManager = contextualDialogsManager
+    }
+
+    /// Determines whether the banner should be returned based on onboarding completion status.
+    /// Returns `true` only when contextual onboarding has been completed.
+    private var shouldReturnBanner: Bool {
+        contextualDialogsManager.state == .onboardingCompleted
     }
 }
 

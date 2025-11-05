@@ -43,6 +43,7 @@ import os.log
 import Navigation
 import Subscription
 import WKAbstractions
+import AIChat
 
 class TabViewController: UIViewController {
 
@@ -63,6 +64,11 @@ class TabViewController: UIViewController {
     @IBOutlet weak var webViewContainer: UIView!
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     var daxContextualOnboardingController: UIViewController?
+    
+    // AI Chat
+    private var aiChatViewContainer: UIView?
+    private(set) var aiChatSettings: AIChatSettingsProvider
+    private var aiChatViewControllerManager: AIChatViewControllerManager?
     
     /// Stores the visual state of the web view
     /// Used by DuckPlayer to save and restore view appearance when switching between normal browsing and fullscreen (portrail/landscape) video modes.
@@ -113,6 +119,9 @@ class TabViewController: UIViewController {
         get { return findInPageScript?.findInPage }
         set { findInPageScript?.findInPage = newValue }
     }
+    
+    var daxEasterEggHandler: DaxEasterEggHandling?
+    var logoCache: DaxEasterEggLogoCaching = DaxEasterEggLogoCache()
 
     let favicons = Favicons.shared
     let progressWorker = WebProgressWorker()
@@ -154,6 +163,7 @@ class TabViewController: UIViewController {
     public var inferredOpenerContext: BrokenSiteReport.OpenerContext?
     private var refreshCountSinceLoad: Int = 0
     private var performanceMetrics: PerformanceMetricsSubfeature?
+    private var breakageReportingSubfeature: BreakageReportingSubfeature?
 
     private var detectedLoginURL: URL?
     private var fireproofingWorker: FireproofingWorking?
@@ -177,7 +187,7 @@ class TabViewController: UIViewController {
         return false
     }
 
-    let privacyProDataReporter: PrivacyProDataReporting
+    let subscriptionDataReporter: SubscriptionDataReporting
 
     // Required to know when to disable autofill, see SaveLoginViewModel / SaveCreditCardViewModel for details
     // Stored in memory on TabViewController for privacy reasons
@@ -364,7 +374,7 @@ class TabViewController: UIViewController {
                                    historyManager: HistoryManaging,
                                    syncService: DDGSyncing,
                                    duckPlayer: DuckPlayerControlling?,
-                                   privacyProDataReporter: PrivacyProDataReporting,
+                                   subscriptionDataReporter: SubscriptionDataReporting,
                                    contextualOnboardingPresenter: ContextualOnboardingPresenting,
                                    contextualOnboardingLogic: ContextualOnboardingLogic,
                                    onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
@@ -377,7 +387,8 @@ class TabViewController: UIViewController {
                                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                                    featureDiscovery: FeatureDiscovery,
                                    keyValueStore: ThrowingKeyValueStoring,
-                                   daxDialogsManager: DaxDialogsManaging) -> TabViewController {
+                                   daxDialogsManager: DaxDialogsManaging,
+                                   aiChatSettings: AIChatSettingsProvider) -> TabViewController {
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
             TabViewController(coder: coder,
@@ -387,7 +398,7 @@ class TabViewController: UIViewController {
                               historyManager: historyManager,
                               syncService: syncService,
                               duckPlayer: duckPlayer,
-                              privacyProDataReporter: privacyProDataReporter,
+                              subscriptionDataReporter: subscriptionDataReporter,
                               contextualOnboardingPresenter: contextualOnboardingPresenter,
                               contextualOnboardingLogic: contextualOnboardingLogic,
                               onboardingPixelReporter: onboardingPixelReporter,
@@ -400,7 +411,8 @@ class TabViewController: UIViewController {
                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                               featureDiscovery: featureDiscovery,
                               keyValueStore: keyValueStore,
-                              daxDialogsManager: daxDialogsManager
+                              daxDialogsManager: daxDialogsManager,
+                              aiChatSettings: aiChatSettings
             )
         })
         return controller
@@ -455,7 +467,7 @@ class TabViewController: UIViewController {
                    syncService: DDGSyncing,
                    certificateTrustEvaluator: CertificateTrustEvaluating = CertificateTrustEvaluator(),
                    duckPlayer: DuckPlayerControlling?,
-                   privacyProDataReporter: PrivacyProDataReporting,
+                   subscriptionDataReporter: SubscriptionDataReporting,
                    contextualOnboardingPresenter: ContextualOnboardingPresenting,
                    contextualOnboardingLogic: ContextualOnboardingLogic,
                    onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
@@ -470,7 +482,8 @@ class TabViewController: UIViewController {
                    featureDiscovery: FeatureDiscovery,
                    keyValueStore: ThrowingKeyValueStoring,
                    daxDialogsManager: DaxDialogsManaging,
-                   adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector()) {
+                   adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector(),
+                   aiChatSettings: AIChatSettingsProvider) {
 
         self.tabModel = tabModel
         self.appSettings = appSettings
@@ -480,7 +493,7 @@ class TabViewController: UIViewController {
         self.syncService = syncService
         self.certificateTrustEvaluator = certificateTrustEvaluator
         self.duckPlayer = duckPlayer
-        self.privacyProDataReporter = privacyProDataReporter
+        self.subscriptionDataReporter = subscriptionDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
@@ -498,6 +511,14 @@ class TabViewController: UIViewController {
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase
         }
+        
+        self.aiChatSettings = aiChatSettings
+        self.aiChatViewControllerManager = AIChatViewControllerManager(
+            experimentalAIChatManager: .init(featureFlagger: featureFlagger),
+            featureFlagger: featureFlagger,
+            featureDiscovery: featureDiscovery,
+            aiChatSettings: aiChatSettings
+        )
 
         super.init(coder: aDecoder)
         
@@ -528,6 +549,7 @@ class TabViewController: UIViewController {
         initAttributionLogic()
         decorate()
         addTextZoomObserver()
+        setupAIChatViewContainer()
         subscribeToEmailProtectionSignOutNotification()
         registerForDownloadsNotifications()
         registerForAddressBarLocationNotifications()
@@ -967,11 +989,33 @@ class TabViewController: UIViewController {
     
     private func shouldReissueSearch(for url: URL) -> Bool {
         guard url.isDuckDuckGoSearch else { return false }
-        return !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
+        
+        var shouldReissue = !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
+        
+        // SerpSettingsFollowUpQuestions takes precedence over duckAISearchParameter
+        // If it's enabled, don't evaluate shouldReissue
+        if !featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) {
+            // Only check DuckAI params if the feature flag is enabled
+            if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+                let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+                shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
+            }
+        }
+        return shouldReissue
     }
     
     private func reissueSearchWithRequiredParams(for url: URL) {
-        let mobileSearch = url.applyingStatsParams()
+        var mobileSearch = url.applyingStatsParams()
+        
+        // SerpSettingsFollowUpQuestions takes precedence over duckAISearchParameter
+        // If it's enabled, don't evaluate shouldReissue
+        if !featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) {
+            if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+                let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+                mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
+            }
+        }
+        
         reissueNavigationWithSearchHeaderParams(for: mobileSearch)
     }
     
@@ -1260,6 +1304,7 @@ class TabViewController: UIViewController {
         
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: dontOpen, style: .cancel, handler: { _ in
+            self.reportExternalSchemePixelIfNeeded(url: url, openedExternally: false)
             if self.webView.url == nil {
                 self.delegate?.tabDidRequestClose(self)
             } else {
@@ -1267,6 +1312,7 @@ class TabViewController: UIViewController {
             }
         }))
         alert.addAction(UIAlertAction(title: open, style: .destructive, handler: { _ in
+            self.reportExternalSchemePixelIfNeeded(url: url, openedExternally: true)
             self.openExternally(url: url)
         }))
         delegate?.tab(self, didRequestPresentingAlert: alert)
@@ -1307,7 +1353,8 @@ class TabViewController: UIViewController {
                                                                      openerContext: inferredOpenerContext,
                                                                      vpnOn: netPConnected,
                                                                      userRefreshCount: refreshCountSinceLoad,
-                                                                     performanceMetrics: performanceMetrics)
+                                                                     performanceMetrics: performanceMetrics,
+                                                                     breakageReportingSubfeature: breakageReportingSubfeature)
     }
 
     public func print() {
@@ -1433,6 +1480,9 @@ extension TabViewController: WKNavigationDelegate {
         let httpsForced = tld.domain(lastUpgradedURL?.host) == tld.domain(webView.url?.host)
         onWebpageDidStartLoading(httpsForced: httpsForced)
         textZoomCoordinator.onNavigationCommitted(applyToWebView: webView)
+        
+        // Check cache for instant logo display during back navigation
+        checkDaxEasterEggCacheIfDuckDuckGoSearch(webView)
     }
 
     private func onWebpageDidStartLoading(httpsForced: Bool) {
@@ -1578,6 +1628,7 @@ extension TabViewController: WKNavigationDelegate {
         adClickAttributionLogic.onDidFinishNavigation(host: webView.url?.host)
         hideProgressIndicator()
         onWebpageDidFinishLoading()
+        extractDaxEasterEggLogoIfDuckDuckGoSearch(webView)
         instrumentation.didLoadURL()
         checkLoginDetectionAfterNavigation()
         trackSecondSiteVisitIfNeeded(url: webView.url)
@@ -1659,6 +1710,58 @@ extension TabViewController: WKNavigationDelegate {
         }
         
         tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
+    }
+    
+    /// Check cache for DaxEasterEgg logo on commit (instant display for back navigation)
+    private func checkDaxEasterEggCacheIfDuckDuckGoSearch(_ webView: WKWebView) {
+        guard featureFlagger.isFeatureOn(.daxEasterEggLogos) else { return }
+        
+        guard let url = webView.url, url.isDuckDuckGoSearch else {
+            // Clear logo when navigating away from DuckDuckGo search
+            if tabModel.daxEasterEggLogoURL != nil {
+                delegate?.tab(self, didExtractDaxEasterEggLogoURL: nil)
+            }
+            return
+        }
+        
+        // Check cache for instant logo display
+        if let searchQuery = url.searchQuery,
+           let cachedLogoURL = logoCache.getLogo(for: searchQuery) {
+            Logger.daxEasterEgg.debug("Using cached logo on commit for query '\(searchQuery)': \(cachedLogoURL)")
+            delegate?.tab(self, didExtractDaxEasterEggLogoURL: cachedLogoURL)
+        }
+    }
+    
+    /// Trigger DaxEasterEgg extraction with cache fallback on DuckDuckGo search pages
+    private func extractDaxEasterEggLogoIfDuckDuckGoSearch(_ webView: WKWebView) {
+        guard featureFlagger.isFeatureOn(.daxEasterEggLogos) else { return }
+        
+        guard let url = webView.url, url.isDuckDuckGoSearch else {
+            // Clear logo when navigating away from DuckDuckGo search
+            if tabModel.daxEasterEggLogoURL != nil {
+                delegate?.tab(self, didExtractDaxEasterEggLogoURL: nil)
+            }
+            return
+        }
+        
+        // Check cache first - if found, use it and skip extraction
+        if let searchQuery = url.searchQuery,
+           let cachedLogoURL = logoCache.getLogo(for: searchQuery) {
+            Logger.daxEasterEgg.debug("Using cached logo on finish for query '\(searchQuery)': \(cachedLogoURL)")
+            delegate?.tab(self, didExtractDaxEasterEggLogoURL: cachedLogoURL)
+            return
+        }
+        
+        // Cache miss - proceed with JavaScript extraction
+        // Ensure handler is created for new tabs that navigate directly to DuckDuckGo
+        if daxEasterEggHandler == nil {
+            daxEasterEggHandler = DaxEasterEggHandler(webView: webView, logoCache: logoCache)
+            daxEasterEggHandler?.delegate = self
+            Logger.daxEasterEgg.debug("Created DaxEasterEggHandler for new tab")
+        }
+        
+        Logger.daxEasterEgg.debug("Extracting for tab - URL: \(url.absoluteString)")
+        daxEasterEggHandler?.extractLogosForCurrentPage()
     }
 
     func trackSecondSiteVisitIfNeeded(url: URL?) {
@@ -1978,7 +2081,7 @@ extension TabViewController: WKNavigationDelegate {
                             backgroundAssertion.release()
                         }
                     }
-                    privacyProDataReporter.saveSearchCount()
+                    subscriptionDataReporter.saveSearchCount()
                 }
 
                 self.delegate?.closeFindInPage(tab: self)
@@ -2703,6 +2806,18 @@ extension TabViewController: UIGestureRecognizerDelegate {
 }
 
 // MARK: - UserContentControllerDelegate
+extension TabViewController: DaxEasterEggDelegate {
+    
+    func daxEasterEggHandler(_ handler: DaxEasterEggHandling, didFindLogoURL logoURL: String?, for pageURL: String) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            
+            Logger.daxEasterEgg.debug("Handler found logo - Page: \(pageURL), Logo: \(logoURL ?? "nil")")
+            self.delegate?.tab(self, didExtractDaxEasterEggLogoURL: logoURL)
+        }
+    }
+}
+
 extension TabViewController: UserContentControllerDelegate {
 
     var userScripts: UserScripts? {
@@ -2737,6 +2852,12 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.contentScopeUserScript.delegate = self
         userScripts.serpSettingsUserScript.delegate = self
         userScripts.serpSettingsUserScript.webView = webView
+        
+        // Setup DaxEasterEgg handler only for DuckDuckGo search pages
+        if daxEasterEggHandler == nil, let url = webView.url, url.isDuckDuckGoSearch {
+            daxEasterEggHandler = DaxEasterEggHandler(webView: webView, logoCache: logoCache)
+            daxEasterEggHandler?.delegate = self
+        }
 
         // Special Error Page (SSL, Malicious Site protection)
         specialErrorPageNavigationHandler.setUserScript(userScripts.specialErrorPageUserScript)
@@ -2750,6 +2871,9 @@ extension TabViewController: UserContentControllerDelegate {
         
         performanceMetrics = PerformanceMetricsSubfeature(targetWebview: webView)
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: performanceMetrics!)
+        
+        breakageReportingSubfeature = BreakageReportingSubfeature(targetWebview: webView)
+        userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: breakageReportingSubfeature!)
 
         adClickAttributionLogic.onRulesChanged(latestRules: ContentBlocking.shared.contentBlockingManager.currentRules)
         
@@ -3366,14 +3490,21 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
-        let runtimeConfiguration =
-                DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
-                                                                         properties: buildContentScopePropertiesForDomain(domain))
-                                                                .build()
-                                                                .buildRuntimeConfigResponse()
+        do {
+            let runtimeConfiguration =
+            try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+                                                      properties: buildContentScopePropertiesForDomain(domain))
+            .build()
+            .buildRuntimeConfigResponse()
 
-        cachedRuntimeConfigurationForDomain = [domain: runtimeConfiguration]
-        completionHandler(runtimeConfiguration)
+            cachedRuntimeConfigurationForDomain = [domain: runtimeConfiguration]
+            completionHandler(runtimeConfiguration)
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to build DefaultAutofillSourceProvider: \(error.localizedDescription)")
+        }
     }
 
     private func buildContentScopePropertiesForDomain(_ domain: String) -> ContentScopeProperties {
@@ -3499,6 +3630,7 @@ extension TabViewController: SaveCreditCardViewControllerDelegate {
             guard let self = self else { return }
             self.delegate?.tab(self, didRequestSettingsToCreditCards: card, source: .viewSavedCreditCardPrompt)
         })
+        syncService.scheduler.notifyDataChanged()
     }
     
     func saveCreditCardViewControllerConfirmKeepUsing(_ viewController: SaveCreditCardViewController) {
@@ -3629,6 +3761,16 @@ private extension TabViewController {
 
         return didRestoreWebViewState
     }
+
+    private func reportExternalSchemePixelIfNeeded(url: URL, openedExternally: Bool) {
+        guard url.scheme == "x-safari-https" else { return }
+
+        if openedExternally {
+            DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationXSafariHTTPSContinue)
+        } else {
+            DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationXSafariHTTPSCancel)
+        }
+    }
 }
 
 // Landscape/Portrait mode customizations
@@ -3739,8 +3881,9 @@ extension TabViewController {
 }
 
 extension TabViewController: SERPSettingsUserScriptDelegate {
+    
 
-    func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
+    func serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
         guard let mainVC = parent as? MainViewController else { return }
         mainVC.segueToSettingsPrivateSearch {
             mainVC.closeTab(self.tabModel)
@@ -3748,12 +3891,91 @@ extension TabViewController: SERPSettingsUserScriptDelegate {
         }
     }
     
-    func serpSettingsUserScriptDidRequestToOpenDuckAISettings(_ userScript: SERPSettingsUserScript) {
+    func serpSettingsUserScriptDidRequestToCloseTabAndOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
         guard let mainVC = parent as? MainViewController else { return }
-        mainVC.segueToSettingsAIChat {
+        mainVC.segueToSettingsAIChat(openedFromSERPSettingsButton: false) { // false because we're reopening previously closed settings
             mainVC.closeTab(self.tabModel)
             mainVC.showBars()
         }
     }
 
+    func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
+        guard let mainVC = parent as? MainViewController else { return }
+        mainVC.segueToSettingsAIChat(openedFromSERPSettingsButton: true)
+    }
+}
+
+// AI Chat
+extension TabViewController {
+    
+    // MARK: Public API
+
+    /// Loads AI Chat into this tab's container.
+    ///
+    /// - Parameters:
+    ///   - query: Optional initial query to send to AI Chat
+    ///   - payload: Optional payload data for AI Chat
+    ///   - autoSend: Whether to automatically send the query
+    ///   - tools: Optional RAG tools available in AI Chat
+    ///   - completion: Optional callback when setup completes
+    func loadAIChat(query: String? = nil,
+                    payload: Any? = nil,
+                    autoSend: Bool = false,
+                    tools: [AIChatRAGTool]? = nil,
+                    completion: (() -> Void)? = nil) {
+
+        guard let container = aiChatViewContainer else { return }
+
+        tabModel.type = .aiChat
+
+        aiChatViewControllerManager?.openAIChatInContainer(
+            query,
+            payload: payload,
+            autoSend: autoSend,
+            tools: tools,
+            in: container,
+            parentViewController: self
+        ) {
+            completion?()
+        }
+
+        updateContainerVisibility()
+    }
+    
+    /// Exits AI Chat mode and switches back to web browsing.
+    func prepareUIForWebModeIfModeIsAI() {
+        guard tabModel.isAITab else { return }
+        tabModel.type = .web
+        updateContainerVisibility()
+        view.layoutIfNeeded()
+    }
+
+    // MARK: Private API
+
+    /// Creates the AI Chat container. The container is inserted as a subview below the web view container
+    private func setupAIChatViewContainer() {
+        let container = UIView()
+        container.backgroundColor = .black
+        container.isHidden = true
+        container.translatesAutoresizingMaskIntoConstraints = false
+
+        guard let parent = webViewContainer.superview else { return }
+        parent.insertSubview(container, belowSubview: webViewContainer)
+
+        NSLayoutConstraint.activate([
+            container.topAnchor.constraint(equalTo: parent.topAnchor),
+            container.leadingAnchor.constraint(equalTo: parent.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: parent.trailingAnchor),
+            container.bottomAnchor.constraint(equalTo: parent.bottomAnchor)
+        ])
+
+        self.aiChatViewContainer = container
+    }
+
+    /// Toggles visibility between web view and AI Chat container based on tab type.
+    private func updateContainerVisibility() {
+        let isAIChat = tabModel.type == .aiChat
+        webViewContainer.isHidden = isAIChat
+        aiChatViewContainer?.isHidden = !isAIChat
+    }
 }

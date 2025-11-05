@@ -54,31 +54,31 @@ final class ContentScopeUserScriptTests: XCTestCase {
         super.tearDown()
     }
 
-    func testPrivacyConfigurationJSONGeneratorIsUsed() {
+    func testPrivacyConfigurationJSONGeneratorIsUsed() throws {
         // GIVEN
         configGenerator.config = generatorConfig
 
         // WHEN
-        let source = ContentScopeUserScript.generateSource(mockPrivacyConfigurationManager, properties: properties, isolated: false, config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true), privacyConfigurationJSONGenerator: configGenerator)
+        let source = try ContentScopeUserScript.generateSource(mockPrivacyConfigurationManager, properties: properties, isolated: false, config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true), privacyConfigurationJSONGenerator: configGenerator)
 
         // THEN
         XCTAssertTrue(source.contains(generatorConfig))
     }
 
-    func testFallbackToPrivacyConfigurationManagerWhenGeneratorIsNil() {
+    func testFallbackToPrivacyConfigurationManagerWhenGeneratorIsNil() throws {
         // GIVEN
         configGenerator.config = nil
 
         // WHEN
-        let source = ContentScopeUserScript.generateSource(mockPrivacyConfigurationManager, properties: properties, isolated: false, config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true), privacyConfigurationJSONGenerator: configGenerator)
+        let source = try ContentScopeUserScript.generateSource(mockPrivacyConfigurationManager, properties: properties, isolated: false, config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true), privacyConfigurationJSONGenerator: configGenerator)
 
         // THEN
         XCTAssertFalse(source.contains(generatorConfig))
     }
 
-    func testThatForIsolatedContext_debugFlagsAreCaptured_and_messageIsRoutedToTheBroker() async {
+    func testThatForIsolatedContext_debugFlagsAreCaptured_and_messageIsRoutedToTheBroker() async throws {
         // GIVEN
-        let contentScopeScript = ContentScopeUserScript(mockPrivacyConfigurationManager, properties: properties, isIsolated: true, privacyConfigurationJSONGenerator: configGenerator)
+        let contentScopeScript = try ContentScopeUserScript(mockPrivacyConfigurationManager, properties: properties, isIsolated: true, privacyConfigurationJSONGenerator: configGenerator)
         let capturingContentScopeUserScriptDelegate = CapturingContentScopeUserScriptDelegate()
         contentScopeScript.delegate = capturingContentScopeUserScriptDelegate
         let message = await MockWKScriptMessage(name: ContentScopeUserScript.MessageName.contentScopeScriptsIsolated.rawValue, body: mockMessageBody)
@@ -93,9 +93,9 @@ final class ContentScopeUserScriptTests: XCTestCase {
         XCTAssertNotNil(result.1)
     }
 
-    func testThatForNonIsolatedContentScopeContext_debugFlagsAreCaptured_and_messageIsNotRoutedToTheBroker() async {
+    func testThatForNonIsolatedContentScopeContext_debugFlagsAreCaptured_and_messageIsNotRoutedToTheBroker() async throws {
         // GIVEN
-        let contentScopeScript = ContentScopeUserScript(mockPrivacyConfigurationManager, properties: properties, isIsolated: false, privacyConfigurationJSONGenerator: configGenerator)
+        let contentScopeScript = try ContentScopeUserScript(mockPrivacyConfigurationManager, properties: properties, isIsolated: false, privacyConfigurationJSONGenerator: configGenerator)
         let capturingContentScopeUserScriptDelegate = CapturingContentScopeUserScriptDelegate()
         contentScopeScript.delegate = capturingContentScopeUserScriptDelegate
         let message = await MockWKScriptMessage(name: ContentScopeUserScript.MessageName.contentScopeScripts.rawValue, body: mockMessageBody)
@@ -110,9 +110,9 @@ final class ContentScopeUserScriptTests: XCTestCase {
         XCTAssertNil(result.1)
     }
 
-    func testThatForNonIsolatedContext_andNotContentScopeScriptContext_messageIsToTheBroker() async {
+    func testThatForNonIsolatedContext_andNotContentScopeScriptContext_messageIsToTheBroker() async throws {
         // GIVEN
-        let contentScopeScript = ContentScopeUserScript(mockPrivacyConfigurationManager, properties: properties, isIsolated: false, privacyConfigurationJSONGenerator: configGenerator)
+        let contentScopeScript = try ContentScopeUserScript(mockPrivacyConfigurationManager, properties: properties, isIsolated: false, privacyConfigurationJSONGenerator: configGenerator)
         let capturingContentScopeUserScriptDelegate = CapturingContentScopeUserScriptDelegate()
         contentScopeScript.delegate = capturingContentScopeUserScriptDelegate
         let message = await MockWKScriptMessage(name: "dbpui", body: mockMessageBody)
@@ -125,8 +125,8 @@ final class ContentScopeUserScriptTests: XCTestCase {
         XCTAssertNotNil(result.1)
     }
 
-    func testSourceContainsExperimentProperties() {
-        let source = ContentScopeUserScript.generateSource(mockPrivacyConfigurationManager, properties: properties, isolated: false, config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true), privacyConfigurationJSONGenerator: configGenerator)
+    func testSourceContainsExperimentProperties() throws {
+        let source = try ContentScopeUserScript.generateSource(mockPrivacyConfigurationManager, properties: properties, isolated: false, config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true), privacyConfigurationJSONGenerator: configGenerator)
 
         XCTAssertTrue(source.contains("currentCohorts"))
         XCTAssertTrue(source.contains(experimentData.cohort))

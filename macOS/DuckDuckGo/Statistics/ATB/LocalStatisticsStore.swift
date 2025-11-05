@@ -59,6 +59,7 @@ final class LocalStatisticsStore: StatisticsStore {
         static let atb = "stats.atb.key"
         static let searchRetentionAtb = "stats.retentionatb.key"
         static let appRetentionAtb = "stats.appretentionatb.key"
+        static let duckAIRetentionAtb = "stats.duckairetentionatb.key"
         static let variant = "stats.variant.key"
         static let lastAppRetentionRequestDate = "stats.appretentionatb.last.request.key"
         static let waitlistUnlocked = "waitlist.unlocked"
@@ -160,6 +161,19 @@ final class LocalStatisticsStore: StatisticsStore {
         }
     }
 
+    var duckAIRetentionAtb: String? {
+        get {
+            pixelDataStore.value(forKey: Keys.duckAIRetentionAtb)
+        }
+        set {
+            if let value = newValue {
+                pixelDataStore.set(value, forKey: Keys.duckAIRetentionAtb)
+            } else {
+                pixelDataStore.removeValue(forKey: Keys.duckAIRetentionAtb)
+            }
+        }
+    }
+
     var variant: String? {
         get {
             pixelDataStore.value(forKey: Keys.variant)
@@ -241,6 +255,7 @@ final class StubStatisticsStore: StatisticsStore {
     var atb: String?
     var searchRetentionAtb: String?
     var appRetentionAtb: String?
+    var duckAIRetentionAtb: String?
     var variant: String?
     var lastAppRetentionRequestDate: Date?
 

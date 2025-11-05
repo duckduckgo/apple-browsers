@@ -134,7 +134,8 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
             (.userDidSubmitFirstPrompt, .aiChatMetricStartNewConversation),
             (.userDidOpenHistory, .aiChatMetricOpenHistory),
             (.userDidSelectFirstHistoryItem, .aiChatMetricOpenMostRecentHistoryChat),
-            (.userDidCreateNewChat, .aiChatMetricStartNewConversationButtonClicked)
+            (.userDidCreateNewChat, .aiChatMetricStartNewConversationButtonClicked),
+            (.userDidTapKeyboardReturnKey, .aiChatMetricDuckAIKeyboardReturnPressed)
         ]
 
         // When & Then
@@ -145,6 +146,21 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
             XCTAssertEqual(PixelFiringMock.allPixelsFired.count, index + 1)
             XCTAssertEqual(PixelFiringMock.allPixelsFired[index].pixelName, testCase.1.name)
         }
+    }
+
+    func testFirePixelWithMetricForKeyboardReturnKey() {
+        // Given
+        let timeElapsed = 15
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: timeElapsed, pixelFiring: PixelFiringMock.self)
+        let metric = AIChatMetric(metricName: .userDidTapKeyboardReturnKey)
+
+        // When
+        handler.firePixelWithMetric(metric)
+
+        // Then
+        XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
+        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.aiChatMetricDuckAIKeyboardReturnPressed.name)
+        XCTAssertTrue(PixelFiringMock.lastParams?.isEmpty ?? false)
     }
 
     func testFirePixelWithMetricForUnknownMetricDoesNothing() {

@@ -16,28 +16,50 @@
 //  limitations under the License.
 //
 
-import XCTest
+import BrowserServicesKit
+import Common
+import History
+import HistoryView
 import Onboarding
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ContextualDaxDialogsFactoryTests: XCTestCase {
     private var factory: ContextualDaxDialogsFactory!
     private var delegate: CapturingOnboardingNavigationDelegate!
     private var reporter: CapturingOnboardingPixelReporter!
+    private var featureFlagger: MockFeatureFlagger!
+    private var fireCoordinator: FireCoordinator!
+    private var windowControllersManager: WindowControllersManagerMock!
 
     @MainActor
     override func setUpWithError() throws {
         reporter = CapturingOnboardingPixelReporter()
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        windowControllersManager = WindowControllersManagerMock()
+        fireCoordinator = FireCoordinator(tld: TLD(),
+                                          featureFlagger: Application.appDelegate.featureFlagger,
+                                          historyCoordinating: HistoryCoordinatingMock(),
+                                          visualizeFireAnimationDecider: nil,
+                                          onboardingContextualDialogsManager: nil,
+                                          fireproofDomains: MockFireproofDomains(),
+                                          faviconManagement: FaviconManagerMock(),
+                                          windowControllersManager: windowControllersManager,
+                                          pixelFiring: nil,
+                                          historyProvider: MockHistoryViewDataProvider())
         factory = DefaultContextualDaxDialogViewFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
         delegate = CapturingOnboardingNavigationDelegate()
+        featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.contextualOnboarding, .newTabPagePerTab]
     }
 
     @MainActor override func tearDownWithError() throws {
         factory = nil
         delegate = nil
         reporter = nil
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = nil
+        featureFlagger = nil
+        windowControllersManager = nil
+        fireCoordinator = nil
     }
 
     func testWhenMakeViewForTryASearchThenOnboardingTrySearchDialogViewCreatedAndOnActionExpectedSearchOccurs() throws {
@@ -238,23 +260,24 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let onFireButtonPressed = { onFireButtonRun = true }
         let onDismiss = { onDismissRun = true }
 
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
-            aiChatSidebarProvider: AIChatSidebarProvider(),
+            aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()),
             fireCoordinator: fireCoordinator
         )
         let window = MockWindow(isVisible: false)
         let mainWindowController = MainWindowController(
             window: window,
             mainViewController: mainViewController,
-            popUp: false,
             fireViewModel: fireCoordinator.fireViewModel,
-            visualStyle: NSApp.delegateTyped.visualStyle
+            themeManager: MockThemeManager()
         )
         mainWindowController.window = window
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
+        windowControllersManager.mainWindowControllers = [mainWindowController]
+        defer {
+            windowControllersManager.mainWindowControllers = []
+        }
 
         // WHEN
         let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: onDismiss, onGotItPressed: {}, onFireButtonPressed: onFireButtonPressed)

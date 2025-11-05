@@ -18,6 +18,8 @@
 
 import Combine
 import Common
+import History
+import HistoryView
 import NewTabPage
 import PersistenceTestingUtils
 import PixelKit
@@ -40,12 +42,13 @@ final class MockPrivacyStats: PrivacyStatsCollecting {
 final class NewTabPageCoordinatorTests: XCTestCase {
     var coordinator: NewTabPageCoordinator!
     var appearancePreferences: AppearancePreferences!
+    var themeManager: ThemeManaging!
     var customizationModel: NewTabPageCustomizationModel!
     var notificationCenter: NotificationCenter!
     var keyValueStore: MockKeyValueFileStore!
     var firePixelCalls: [PixelKitEvent] = []
     var featureFlagger: FeatureFlagger!
-    var windowControllersManager: WindowControllersManagerProtocol!
+    var windowControllersManager: (WindowControllersManagerProtocol & AIChatTabManaging)!
     var tabsPreferences: TabsPreferences!
 
     @MainActor
@@ -64,13 +67,15 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             featureFlagger: featureFlagger
         )
 
+        themeManager = MockThemeManager()
+
         customizationModel = NewTabPageCustomizationModel(
             appearancePreferences: appearancePreferences,
             userBackgroundImagesManager: nil,
             sendPixel: { _ in },
             openFilePanel: { nil },
             showAddImageFailedAlert: {},
-            visualStyle: VisualStyle.current
+            themeManager: themeManager
         )
 
         windowControllersManager = WindowControllersManagerMock()
@@ -79,6 +84,16 @@ final class NewTabPageCoordinatorTests: XCTestCase {
 
         featureFlagger = FeatureFlaggerMock()
 
+        let fireCoordinator = FireCoordinator(tld: TLD(),
+                                              featureFlagger: Application.appDelegate.featureFlagger,
+                                              historyCoordinating: HistoryCoordinatingMock(),
+                                              visualizeFireAnimationDecider: nil,
+                                              onboardingContextualDialogsManager: nil,
+                                              fireproofDomains: MockFireproofDomains(),
+                                              faviconManagement: FaviconManagerMock(),
+                                              windowControllersManager: windowControllersManager,
+                                              pixelFiring: nil,
+                                              historyProvider: MockHistoryViewDataProvider())
         coordinator = NewTabPageCoordinator(
             appearancePreferences: appearancePreferences,
             customizationModel: customizationModel,
@@ -99,10 +114,11 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                 freemiumDBPFeature: MockFreemiumDBPFeature(),
                 freemiumDBPPresenter: MockFreemiumDBPPresenter(),
                 notificationCenter: notificationCenter,
-                dataBrokerProtectionFreemiumPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler()
+                dataBrokerProtectionFreemiumPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler(),
+                contextualOnboardingPublisher: Just(false).eraseToAnyPublisher()
             ),
             tld: Application.appDelegate.tld,
-            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld),
+            fireCoordinator: fireCoordinator,
             keyValueStore: keyValueStore,
             notificationCenter: notificationCenter,
             visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider(),
@@ -110,6 +126,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
+            winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator(winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager()),
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
     }
@@ -123,6 +140,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         keyValueStore = nil
         notificationCenter = nil
         tabsPreferences = nil
+        themeManager = nil
         windowControllersManager = nil
     }
 

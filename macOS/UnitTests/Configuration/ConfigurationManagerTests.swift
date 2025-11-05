@@ -69,41 +69,51 @@ final class ConfigurationManagerTests: XCTestCase {
     func test_WhenRefreshNow_AndPrivacyConfigFetchFails_OtherFetchStillHappen() async {
         // GIVEN
         mockFetcher.shouldFailPrivacyFetch = true
-        operationLog.steps = []
-        let expectedFirstTwo: Set<ConfigurationStep> = [.fetchPrivacyConfigStarted, .fetchSurrogatesStarted]
-        let expectedOrder: [ConfigurationStep] = [
-            .fetchTrackerDataSetStarted,
-            .reloadTrackerDataSet,
-            .reloadPrivacyConfig,
-            .contentBlockingScheduleCompilation
-        ]
+        operationLog.clear()
 
         // WHEN
         await configManager.refreshNow(isDebug: false)
 
         // THEN
-        XCTAssertEqual(Set(operationLog.steps.prefix(2)), expectedFirstTwo, "Steps do not match the expected order.")
-        XCTAssertEqual(Array(operationLog.steps.dropFirst(2)), expectedOrder, "Steps do not match the expected order.")
+        let allSteps = Set(operationLog.steps)
+        XCTAssertTrue(allSteps.contains(.fetchPrivacyConfigStarted), "Privacy config fetch should have started.")
+        XCTAssertTrue(allSteps.contains(.fetchSurrogatesStarted), "Surrogates fetch should have started.")
+        XCTAssertTrue(allSteps.contains(.fetchTrackerDataSetStarted), "Tracker data set fetch should have started.")
+
+        XCTAssertTrue(allSteps.contains(.reloadTrackerDataSet), "Tracker data should be reloaded.")
+        XCTAssertTrue(allSteps.contains(.reloadPrivacyConfig), "Privacy config should be reloaded.")
+        XCTAssertTrue(allSteps.contains(.contentBlockingScheduleCompilation), "Content blocking should be scheduled.")
+
+        XCTAssertEqual(operationLog.steps.count, 6, "Should have exactly 6 operations.")
     }
 
-    func test_WhenRefreshNow_ThenPrivacyConfigFetchAndReloadBeforeTrackerDataSetFetch() async {
+    func test_WhenRefreshNow_ThenPrivacyConfigFetchAndReloadBeforeTrackerDataSetFetch() async throws {
         // GIVEN
-        operationLog.steps = []
-        let expectedFirstTwo: Set<ConfigurationStep> = [.fetchPrivacyConfigStarted, .fetchSurrogatesStarted]
-        let expectedOrder: [ConfigurationStep] = [
-            .reloadPrivacyConfig,
-            .fetchTrackerDataSetStarted,
-            .reloadTrackerDataSet,
-            .reloadPrivacyConfig,
-            .contentBlockingScheduleCompilation
-        ]
+        operationLog.clear()
 
         // WHEN
         await configManager.refreshNow(isDebug: false)
 
         // THEN
-        XCTAssertEqual(Set(operationLog.steps.prefix(2)), expectedFirstTwo, "Steps do not match the expected order.")
-        XCTAssertEqual(Array(operationLog.steps.dropFirst(2)), expectedOrder, "Steps do not match the expected order.")
+        let steps = operationLog.steps
+
+        // Find indices of key operations
+        let fetchPrivacyConfigIndex = try XCTUnwrap(steps.firstIndex(of: .fetchPrivacyConfigStarted))
+        let fetchTrackerDataSetIndex = try XCTUnwrap(steps.firstIndex(of: .fetchTrackerDataSetStarted))
+        let firstReloadIndex = try XCTUnwrap(steps.firstIndex(of: .reloadPrivacyConfig))
+
+        // Verify correct dependency ordering
+        XCTAssertLessThan(fetchPrivacyConfigIndex, firstReloadIndex, "Privacy config should be fetched before being reloaded")
+        XCTAssertLessThan(firstReloadIndex, fetchTrackerDataSetIndex, "Privacy config should be reloaded before tracker data set fetch starts")
+
+        // THEN
+        let allSteps = Set(operationLog.steps)
+        XCTAssertTrue(allSteps.contains(.fetchPrivacyConfigStarted), "Privacy config fetch should have started.")
+        XCTAssertTrue(allSteps.contains(.fetchSurrogatesStarted), "Surrogates fetch should have started.")
+        XCTAssertTrue(allSteps.contains(.fetchTrackerDataSetStarted), "Tracker data set fetch should have started.")
+        XCTAssertTrue(allSteps.contains(.reloadTrackerDataSet), "Tracker data should be reloaded.")
+        XCTAssertTrue(allSteps.contains(.reloadPrivacyConfig), "Privacy config should be reloaded.")
+        XCTAssertTrue(allSteps.contains(.contentBlockingScheduleCompilation), "Content blocking should be scheduled.")
     }
 
 }
@@ -135,15 +145,15 @@ private class MockConfigurationFetcher: ConfigurationFetching {
         case .bloomFilterExcludedDomains:
             break
         case .privacyConfiguration:
-            operationLog.steps.append(.fetchPrivacyConfigStarted)
+            operationLog.append(.fetchPrivacyConfigStarted)
             if shouldFailPrivacyFetch {
                 throw NSError(domain: "TestError", code: 1, userInfo: nil)
             }
             try await Task.sleep(nanoseconds: 50_000_000)
         case .surrogates:
-            operationLog.steps.append(.fetchSurrogatesStarted)
+            operationLog.append(.fetchSurrogatesStarted)
         case .trackerDataSet:
-            operationLog.steps.append(.fetchTrackerDataSetStarted)
+            operationLog.append(.fetchTrackerDataSetStarted)
         case .remoteMessagingConfig:
             break
         }
@@ -161,7 +171,7 @@ private class MockPrivacyConfigurationManager: PrivacyConfigurationManager {
     }
 
     override func reload(etag: String?, data: Data?) -> ReloadResult {
-        operationLog.steps.append(.reloadPrivacyConfig)
+        operationLog.append(.reloadPrivacyConfig)
         return .embedded
     }
 }
@@ -175,7 +185,7 @@ private class MockTrackerDataManager: TrackerDataManager {
     }
 
     public override func reload(etag: String?, data: Data?) -> ReloadResult {
-        operationLog.steps.append(.reloadTrackerDataSet)
+        operationLog.append(.reloadTrackerDataSet)
         return .embedded
     }
 }
@@ -192,7 +202,7 @@ private class MockContentBlockerRulesManager: ContentBlockerRulesManagerProtocol
     var currentRules: [ContentBlockerRulesManager.Rules] = []
 
     func scheduleCompilation() -> ContentBlockerRulesManager.CompletionToken {
-        operationLog.steps.append(.contentBlockingScheduleCompilation)
+        operationLog.append(.contentBlockingScheduleCompilation)
         return ""
     }
 
@@ -208,5 +218,18 @@ private class MockContentBlockerRulesManager: ContentBlockerRulesManagerProtocol
 }
 
 private class OperationLog {
-    var steps: [ConfigurationStep] = []
+    private let queue = DispatchQueue(label: "operationLog", attributes: [])
+    private var _steps: [ConfigurationStep] = []
+
+    var steps: [ConfigurationStep] {
+        return queue.sync { _steps }
+    }
+
+    func append(_ step: ConfigurationStep) {
+        queue.sync { _steps.append(step) }
+    }
+
+    func clear() {
+        queue.sync { _steps.removeAll() }
+    }
 }

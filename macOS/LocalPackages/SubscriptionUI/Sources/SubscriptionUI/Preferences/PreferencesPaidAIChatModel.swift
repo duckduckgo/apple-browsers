@@ -26,20 +26,27 @@ public final class PreferencesPaidAIChatModel: ObservableObject {
     public enum UserEvent {
         case openAIC,
              openURL(SubscriptionURL),
-             didOpenAICPreferencePane
+             didOpenAICPreferencePane,
+             openAIFeaturesSettings
     }
 
     @Published public var status: StatusIndicator = .off
+    @Published public var isAIFeaturesEnabled: Bool = false
 
     private let userEventHandler: (PreferencesPaidAIChatModel.UserEvent) -> Void
     private var cancellables = Set<AnyCancellable>()
 
     public init(userEventHandler: @escaping (PreferencesPaidAIChatModel.UserEvent) -> Void,
-                statusUpdates: AnyPublisher<StatusIndicator, Never>) {
+                statusUpdates: AnyPublisher<StatusIndicator, Never>,
+                aiFeaturesEnabledUpdates: AnyPublisher<Bool, Never>) {
         self.userEventHandler = userEventHandler
 
         statusUpdates
             .assign(to: \.status, onWeaklyHeld: self)
+            .store(in: &cancellables)
+
+        aiFeaturesEnabledUpdates
+            .assign(to: \.isAIFeaturesEnabled, onWeaklyHeld: self)
             .store(in: &cancellables)
     }
 
@@ -56,6 +63,11 @@ public final class PreferencesPaidAIChatModel: ObservableObject {
     @MainActor
     func openFAQ() {
         userEventHandler(.openURL(.faq))
+    }
+
+    @MainActor
+    func openAIFeaturesSettings() {
+        userEventHandler(.openAIFeaturesSettings)
     }
 
 }

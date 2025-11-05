@@ -29,7 +29,11 @@ public enum JobType {
 }
 
 public protocol BrokerProfileJobErrorDelegate: AnyObject {
-    func dataBrokerOperationDidError(_ error: Error, withBrokerName brokerName: String?, version: String?)
+    func dataBrokerOperationDidError(_ error: any Error,
+                                     withBrokerURL brokerURL: String?,
+                                     version: String?,
+                                     stepType: StepType?,
+                                     dataBrokerParent: String?)
 }
 
 public class BrokerProfileJob: Operation, @unchecked Sendable {
@@ -123,6 +127,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         } else {
             filteredAndSortedJobData = jobsData
                 .excludingUserRemoved()
+                .excludingOptOutsWithEmailConfirmationBeingHalted()
         }
 
         return filteredAndSortedJobData
@@ -132,7 +137,8 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         let allBrokerProfileQueryData: [BrokerProfileQueryData]
 
         do {
-            allBrokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData()
+            // Jobs for removed brokers will already be prevented from being scheduled upstream and are filtered below to the specific broker ID
+            allBrokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
         } catch {
             Logger.dataBrokerProtection.error("DataBrokerOperationsCollection error: runOperation, error: \(error.localizedDescription, privacy: .public)")
             return
@@ -202,9 +208,19 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
             } catch {
                 Logger.dataBrokerProtection.error("Error: \(error.localizedDescription, privacy: .public)")
 
+                let stepType: StepType? = {
+                    switch jobData {
+                    case is ScanJobData: return .scan
+                    case is OptOutJobData: return .optOut
+                    default: return nil
+                    }
+                }()
+                let dataBroker = brokerProfileQueriesData.first?.dataBroker
                 errorDelegate?.dataBrokerOperationDidError(error,
-                                                           withBrokerName: brokerProfileQueriesData.first?.dataBroker.name,
-                                                           version: brokerProfileQueriesData.first?.dataBroker.version)
+                                                           withBrokerURL: dataBroker?.url,
+                                                           version: dataBroker?.version,
+                                                           stepType: stepType,
+                                                           dataBrokerParent: dataBroker?.parent)
             }
         }
     }
@@ -243,5 +259,11 @@ private extension Array where Element == BrokerJobData {
 
     func excludingUserRemoved() -> [BrokerJobData] {
         filter { !$0.isRemovedByUser }
+    }
+
+    func excludingOptOutsWithEmailConfirmationBeingHalted() -> [BrokerJobData] {
+        filter { jobData in
+            jobData.historyEvents.max(by: { $0.date < $1.date })?.type != .optOutSubmittedAndAwaitingEmailConfirmation
+        }
     }
 }

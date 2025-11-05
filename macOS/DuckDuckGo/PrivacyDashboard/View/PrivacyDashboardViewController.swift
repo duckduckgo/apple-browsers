@@ -112,6 +112,21 @@ final class PrivacyDashboardViewController: NSViewController {
         fatalError("\(Self.self): Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        if isViewLoaded {
+            // Check that our view deallocates
+            view.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+
+            // Check that webView deallocates
+            webView.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+
+        // Check that our controller deallocates
+        privacyDashboardController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     public func updateTabViewModel(_ tabViewModel: TabViewModel) {
         self.tabViewModel = tabViewModel
         privacyDashboardController.updatePrivacyInfo(tabViewModel.tab.privacyInfo)
@@ -151,6 +166,7 @@ final class PrivacyDashboardViewController: NSViewController {
 #endif
         let webView = PrivacyDashboardWebView(frame: .zero, configuration: configuration)
         webView.setValue(false, forKey: "drawsBackground")
+        webView.setAccessibilityIdentifier("PrivacyDashboard")
         self.webView = webView
         view.addAndLayout(webView)
 
@@ -330,6 +346,19 @@ extension PrivacyDashboardViewController {
         return webVitalsResult
     }
 
+    private func calculateExpandedWebVitals(breakageReportingSubfeature: BreakageReportingSubfeature?, privacyConfig: PrivacyConfiguration) async -> PerformanceMetrics? {
+        var expandedWebVitalsResult: PerformanceMetrics?
+        if privacyConfig.isEnabled(featureKey: .breakageReporting) {
+            expandedWebVitalsResult = await withCheckedContinuation({ continuation in
+                guard let breakageReportingSubfeature else { continuation.resume(returning: nil); return }
+                breakageReportingSubfeature.notifyHandler { result in
+                    continuation.resume(returning: result)
+                }
+            })
+        }
+        return expandedWebVitalsResult
+    }
+
     private func isPirEnabledAndUserHasProfile() async -> Bool {
         let isPIRFeatureEnabled = try? await Application.appDelegate.subscriptionAuthV1toV2Bridge.isFeatureIncludedInSubscription(.dataBrokerProtection)
         guard let isPIRFeatureEnabled,
@@ -359,6 +388,9 @@ extension PrivacyDashboardViewController {
         let protectionsState = configuration.isFeature(.contentBlocking, enabledForDomain: currentTab.content.urlForWebView?.host)
 
         let webVitals = await calculateWebVitals(performanceMetrics: currentTab.brokenSiteInfo?.performanceMetrics, privacyConfig: configuration)
+
+        let expandedWebVitals = await calculateExpandedWebVitals(breakageReportingSubfeature: currentTab.brokenSiteInfo?.breakageReportingSubfeature, privacyConfig: configuration)
+        let privacyAwareWebVitals = expandedWebVitals?.privacyAwareMetrics()
 
         var errors: [Error]?
         var statusCodes: [Int]?
@@ -391,11 +423,13 @@ extension PrivacyDashboardViewController {
                                                openerContext: currentTab.brokenSiteInfo?.inferredOpenerContext,
                                                vpnOn: currentTab.networkProtection?.tunnelController.isConnected ?? false,
                                                jsPerformance: webVitals,
+                                               extendedPerformanceMetrics: privacyAwareWebVitals,
                                                userRefreshCount: currentTab.brokenSiteInfo?.refreshCountSinceLoad ?? -1,
                                                cookieConsentInfo: currentTab.privacyInfo?.cookieConsentManaged,
                                                debugFlags: currentTab.privacyInfo?.debugFlags ?? "",
                                                privacyExperiments: currentTab.privacyInfo?.privacyExperimentCohorts ?? "",
-                                               isPirEnabled: isPirEnabled)
+                                               isPirEnabled: isPirEnabled,
+                                               pageLoadTiming: currentTab.brokenSiteInfo?.lastPageLoadTiming)
         return websiteBreakage
     }
 }

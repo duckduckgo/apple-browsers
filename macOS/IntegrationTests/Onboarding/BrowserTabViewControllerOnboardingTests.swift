@@ -18,10 +18,14 @@
 
 import BrowserServicesKit
 import Combine
+import Common
+import History
+import HistoryView
 import Onboarding
 import PrivacyDashboard
 import struct SwiftUI.AnyView
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 @available(macOS 12.0, *)
@@ -41,9 +45,9 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     @MainActor override func setUp() {
         autoreleasepool {
-            let tabCollectionViewModel = TabCollectionViewModel()
+            let tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
             featureFlagger = MockFeatureFlagger()
-            featureFlagger.enabledFeatureFlags = [.contextualOnboarding]
+            featureFlagger.enabledFeatureFlags = [.contextualOnboarding, .newTabPagePerTab]
             pixelReporter = CapturingOnboardingPixelReporter()
             dialogProvider = MockDialogsProvider()
             factory = CapturingDialogFactory(expectation: expectation)
@@ -64,6 +68,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
             viewController.viewWillAppear()
             viewController.viewDidAppear()
+            viewController.tabViewModel?.tab.setContent(.url(URL.duckDuckGo, credential: nil, source: .ui))
         }
     }
 
@@ -85,7 +90,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     func testWhenNavigationCompletedAndFeatureIsOffThenTurnOffFeature() throws {
-        featureFlagger.enabledFeatureFlags = []
+        featureFlagger.enabledFeatureFlags = [.newTabPagePerTab]
         let expectation = self.expectation(description: "Wait for turnOffFeatureCalled to be called")
         dialogProvider.turnOffFeatureCalledExpectation = expectation
 
@@ -339,23 +344,35 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         tab.navigateFromOnboarding(to: url)
         wait(for: [expectation], timeout: 3.0)
 
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        let windowControllersManager = WindowControllersManagerMock()
+        let fireCoordinator = FireCoordinator(tld: TLD(),
+                                              featureFlagger: Application.appDelegate.featureFlagger,
+                                              historyCoordinating: HistoryCoordinatingMock(),
+                                              visualizeFireAnimationDecider: nil,
+                                              onboardingContextualDialogsManager: nil,
+                                              fireproofDomains: MockFireproofDomains(),
+                                              faviconManagement: FaviconManagerMock(),
+                                              windowControllersManager: windowControllersManager,
+                                              pixelFiring: nil,
+                                              historyProvider: MockHistoryViewDataProvider())
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
-            aiChatSidebarProvider: AIChatSidebarProvider(),
+            aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()),
             fireCoordinator: fireCoordinator
         )
         window.isVisible = false
         let mainWindowController = MainWindowController(
             window: window,
             mainViewController: mainViewController,
-            popUp: false,
             fireViewModel: fireCoordinator.fireViewModel,
-            visualStyle: NSApp.delegateTyped.visualStyle
+            themeManager: MockThemeManager()
         )
         mainWindowController.window = window
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
+        windowControllersManager.mainWindowControllers = [mainWindowController]
+        defer {
+            windowControllersManager.mainWindowControllers = []
+        }
 
         // WHEN
         window.isVisible = true

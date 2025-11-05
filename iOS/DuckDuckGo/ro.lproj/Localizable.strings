@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Activează protecția confidențialității";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Închide filele și șterge datele";
+"action.title.forgetAll" = "Șterge filele și datele";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "File și date șterse";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Șterge filele, datele și chaturile Duck.ai";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Deschide în fundal";
@@ -99,6 +102,9 @@
 
 /* Refresh action - button shown in alert */
 "action.title.refresh" = "Reîmprospătare";
+
+/* Refresh page action */
+"action.title.refreshPage" = "Reîncarcă pagina";
 
 /* Remove Favorite action */
 "action.title.remove.favorite" = "Elimină Favoritul";
@@ -129,6 +135,9 @@
 
 /* New tab menu item opening a new tab */
 "action.title.tab.new" = "Filă nouă";
+
+/* VPN menu item */
+"action.title.vpn" = "VPN";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Partea de jos";
@@ -180,6 +189,15 @@
 
 /* Title for alert shown when sync credentials paused for too many items */
 "alert.sync-credentials-paused-title" = "Sincronizarea parolelor este întreruptă";
+
+/* Description for alert shown when sync error occurs because of bad credit cards data */
+"alert.sync-credit-cards-bad-data-error-description" = "Unele carduri de credit sunt formatate incorect sau sunt prea lungi și nu au fost sincronizate.";
+
+/* Description for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-description" = "Ai atins numărul maxim de carduri de credit. Șterge câteva carduri de credit pentru a relua sincronizarea.";
+
+/* Title for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-title" = "Sincronizarea cardului de credit este întreruptă";
 
 /* Title for sync error alert */
 "alert.sync-error" = "Eroare de sincronizare și backup";
@@ -1309,6 +1327,18 @@
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funcțiile AI ale DuckDuckGo sunt private și opționale. Datele tale nu sunt folosite pentru a antrena AI.";
 
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "Afișează butoanele și linkurile Duck.ai în rezultatele căutării DuckDuckGo.";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "Scurtături de căutare";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "Pune întrebări suplimentare";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "Comenzi rapide pentru browser";
+
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Bara de adrese";
 
@@ -1706,7 +1736,7 @@
 "feedback.form.submit" = "Trimite";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Contribuie la îmbunătățirea Privacy Pro";
+"feedback.form.title" = "Contribuie la îmbunătățirea abonamentului DuckDuckGo";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -1914,6 +1944,9 @@
 
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importă-ți parolele în DuckDuckGo";
+
+/* Placeholder text for the duck.ai input field */
+"input.field.placeholder.duckai" = "Întreabă în mod privat";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Trebuie să activezi VPN-ul din aplicația DuckDuckGo.";
@@ -2287,47 +2320,26 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Scurtături";
 
-/* Information message about New Tab Page redesign */
-"new.tab.page.intro.message.body" = "Personalizează-ți Favoritele și funcțiile predilecte. Reordonează lucrurile sau ascunde-le pentru a menține ordinea.";
+/* Confirm button for the new address bar picker */
+"new.address.bar.picker.confirm" = "Confirmare";
 
-/* Title of information message about New Tab Page redesign */
-"new.tab.page.intro.message.title" = "Pagina Filă nouă este... nouă!";
+/* Footer text for the new address bar picker */
+"new.address.bar.picker.footer" = "Ajustează din Setări > Funcții IA";
 
-/* Name of favorites section setting */
-"new.tab.page.settings.section.name.favorites" = "Preferințe";
+/* Not now button for the new address bar picker */
+"new.address.bar.picker.not.now" = "Nu acum";
 
-/* Name of shortcuts section setting */
-"new.tab.page.settings.section.name.shortcuts" = "Scurtături";
+/* Option for search and AI in the new address bar picker */
+"new.address.bar.picker.search.and.ai" = "Caută pe Duck.ai";
 
-/* Footer of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.description" = "Afișează, ascunde și reordonează secțiunile din pagina noii file";
+/* Option for search only in the new address bar picker */
+"new.address.bar.picker.search.only" = "Doar căutare";
 
-/* Header title of the group allowing for setting up new tab page sections */
-"new.tab.page.settings.sections.header.title" = "SECȚIUNI";
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline.private" = "Dorești un acces mai ușor la chatul privat cu IA?";
 
-/* Header title of the shortcuts in New Tab Page preferences. */
-"new.tab.page.settings.shortcuts.header.title" = "SCURTĂTURI";
-
-/* Title of New Tab Page preferences page. */
-"new.tab.page.settings.title" = "Personalizează pagina Filă nouă";
-
-/* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Duck.ai";
-
-/* Shortcut title leading to Bookmarks */
-"new.tab.page.shortcut.bookmarks" = "Semne de carte";
-
-/* Shortcut title leading to Downloads */
-"new.tab.page.shortcut.downloads" = "Descărcări";
-
-/* Shortcut title leading to Passwords */
-"new.tab.page.shortcut.passwords" = "Parole";
-
-/* Shortcut title leading to app settings */
-"new.tab.page.shortcut.settings" = "Setări";
-
-/* Text shown on the favorites info tooltip */
-"new.tab.page.tooltip.body" = "Pe orice site, deschide meniul ••• și selectează **Adaugă la favorite** pentru a adăuga la pagina Filă nouă.";
+/* Title for the new address bar picker modal */
+"new.address.bar.picker.title" = "Opțiunea bară de adrese";
 
 /* No comment provided by engineer. */
 "No results found" = "Nu s-a găsit niciun rezultat";
@@ -2349,6 +2361,12 @@
 
 /* Message to highlight browser capability of private searches */
 "onboarding.browsers.features.privateSearch.title" = "Caută implicit în mod privat";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo are, de asemenea, un %1$@, disponibil cu un %2$@ și %3$@.";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "IA avansată și privată";
 
 /* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
 "onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "abonament opțional cu plată";
@@ -2395,7 +2413,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Șterge datele de navigare cu un singur buton";
 
-/* Message to highlight browser capability of blocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd-party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blochează tehnologiile de urmărire terțe";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2587,11 +2605,11 @@
 /* Caption of the option to show the Threat Protection preferences */
 "preferences.threat-protection.caption" = "Protecțiile îmbunătățite oferite de DuckDuckGo stopează amenințările comune, menținându-ți în același timp conexiunea securizată.\n[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
-/* Description of incorrectly formatted data error when syncing. */
-"prefrences.sync.bad-request.description" = "Unele semne de carte sau parole sunt formatate incorect sau sunt prea lungi și nu au fost sincronizate.";
+/* Description of incorrectly formatted bookmarks data error when syncing. */
+"prefrences.sync.bookmarks-bad-request.description" = "Unele semne de carte sunt formatate incorect sau sunt prea lungi și nu au fost sincronizate.";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
-"prefrences.sync.bookmarks-limit-exceeded-action" = "Gestionează marcajele";
+"prefrences.sync.bookmarks-limit-exceeded-action" = "Gestionează marcajele…";
 
 /* Description for sync bookmarks limits exceeded warning */
 "prefrences.sync.bookmarks-limit-exceeded-description" = "Ai atins numărul maxim de marcaje. Șterge câteva pentru a relua sincronizarea.";
@@ -2602,11 +2620,23 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Ai atins numărul maxim de parole. Șterge câteva pentru a relua sincronizarea.";
 
+/* Description of incorrectly formatted credit card data error when syncing. */
+"prefrences.sync.credit-cards-bad-request.description" = "Unele carduri de credit sunt formatate incorect sau sunt prea lungi și nu au fost sincronizate.";
+
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Gestionează cardurile de credit…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "Ai atins numărul maxim de carduri de credit. Șterge câteva pentru a relua sincronizarea.";
+
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "A apărut o eroare în timpul sincronizării. Încearcă să dezactivezi sincronizarea pe acest dispozitiv și apoi reconectează-te folosind un alt dispozitiv sau codul de recuperare.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Sincronizarea întreruptă";
+
+/* Description of incorrectly formatted password data error when syncing. */
+"prefrences.sync.passwords-bad-request.description" = "Unele parole sunt formatate incorect sau sunt prea lungi și nu au fost sincronizate.";
 
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sync & Backup sunt temporar indisponibile.";
@@ -2698,6 +2728,12 @@
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Caută sau introdu adresa";
 
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "Caută";
+
 /* No comment provided by engineer. */
 "Secondary / Second Action" = "Acțiune secundară/a doua acțiune";
 
@@ -2728,9 +2764,6 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Despre";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "În plus, oferim și [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), un serviciu de abonament trei-în-unu, integrat în browserul nostru. Abonații Privacy Pro beneficiază de și mai multă protecție a vieții private, cu un [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) rapid și simplu care contribuie la securizarea activității tale online, un serviciu care găsește și elimină datele tale cu caracter personal de pe site-urile de căutare a persoanelor și un serviciu care îți restabilește identitatea în cazul în care aceasta este sustrasă.";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "În plus, oferim și [abonamentul DuckDuckGo](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integrat în browserul nostru. Abonații beneficiază de și mai multă protecție a vieții private, cu un [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) rapid și simplu care contribuie la securizarea activității tale online, acces la modele de IA avansate în serviciul nostru de chat privat IA Duck.ai, un serviciu care găsește și elimină datele tale cu caracter personal de pe site-urile de căutare a persoanelor și un serviciu care îți recuperează identitatea în cazul în care ai fost ținta unui furt de identitate.";
 
@@ -2757,6 +2790,18 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Afișați adresa completă a site-ului";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "Caută pe Duck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "Doar căutare";
+
+/* Footer under the AI picker, descriptive sentence without link */
+"settings.ai.new.picker.footer" = "Încearcă noua opțiune de a comuta între căutare și Duck.ai în bara de adrese.";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Gestionează comenzile rapide Duck.ai";
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Comenzi rapide Duck.ai";
@@ -2785,6 +2830,12 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Dezactivează pentru a preveni deschiderea automată a linkurilor în alte aplicații instalate.";
 
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Șterge filele și datele";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Șterge filele, datele și chaturile Duck.ai";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sugestii de căutare";
 
@@ -2806,6 +2857,12 @@
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Feedback browser";
 
+/* Settings screen footer text explaining that Fire Button also clears AI chat history */
+"settings.clear.aichat.history.footer" = "Fire Button va șterge și istoricul Duck.ai, inclusiv chaturile fixate.";
+
+/* Settings screen cell text for clearing AI chat history */
+"settings.clear.aichat.history.title" = "Șterge chaturile Duck.ai";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Șterge automat datele";
 
@@ -2824,6 +2881,12 @@
 /* Settings title for the customize section */
 "settings.customize" = "Personalizare";
 
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Șterge toate filele, conversațiile Duck.ai și datele pentru site-urile pe care nu le-ai protejat cu Fireproof.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Șterge toate filele și datele pentru site-urile pe care nu le-ai protejat cu Fireproof.";
+
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Ștergerea datelor";
 
@@ -2837,7 +2900,7 @@
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo pe alte platforme";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Abonamentul tău Privacy Pro a expirat";
+"settings.duckduckgo.subscription.expired.title" = "Abonamentul tău DuckDuckGo a expirat";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Blochează tehnologiile de urmărire prin e-mail și ascunde-ți adresa fără a schimba furnizorul de servicii de e-mail.\n[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2893,6 +2956,9 @@
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatură";
 
+/* Link text for learning more about a feature */
+"settings.learn.more" = "Află mai multe";
+
 /* Switch button label. */
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Lasă DuckDuckGo să gestioneze ferestrele pop-up de solicitare a consimțământului cu privire la modulele cookie";
 
@@ -2923,9 +2989,6 @@
 /* Label describing a feature which is turned on */
 "settings.on" = "Activat";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Politica de confidențialitate și Condițiile de prestare a serviciului";
 
@@ -2940,6 +3003,15 @@
 
 /* Explanation in Settings how the private search feature works */
 "settings.private.search.explanation" = "DuckDuckGo Private Search este motorul tău de căutare implicit, astfel încât poți căuta pe web fără a fi urmărit(ă).";
+
+/* Settings screen option to set refresh button in the address bar */
+"settings.refreshButton.position.addressBar" = "Bara de adrese";
+
+/* Settings screen option to set refresh button in the menu */
+"settings.refreshButton.position.menu" = "Meniu";
+
+/* Settings screen cell text for setting the refresh button position. */
+"settings.refreshButton.position.title" = "Reîncarcă poziția butonului";
 
 /* Header of settings related to search */
 "settings.search.settings" = "Setări de căutare";
@@ -2986,23 +3058,14 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Am un abonament";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Abonamentul tău Privacy Pro a expirat";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "Abonament DuckDuckGo";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Dacă identitatea ta este furată, te vom ajuta să o restabilești.";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Obține Privacy Pro";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Setări pentru abonament";
@@ -3022,9 +3085,6 @@
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Încearcă gratuit";
 
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Încearcă Privacy Pro gratuit";
-
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
 
@@ -3043,6 +3103,66 @@
 /* Title for the Settings View */
 "settings.title" = "Setări";
 
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "Ajută la blocarea tehnologiilor de urmărire externe care încearcă să se deghizeze pe un site web folosind DNS.";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "Protejează împotriva disimulării DNS CNAME";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Dezactivează urmărirea conținutului de pe Facebook, cum ar fi widgeturile de comentarii Facebook pe site-urile ce nu țin de Facebook.";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Protecție împotriva urmăririi Facebook";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "Ajută la împiedicarea companiilor de urmărire să obțină identificatori unici despre browserul și dispozitivul tău, pe care să îl folosească pentru a te urmări pe web.";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "Împiedică urmărirea amprentelor digitale";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "Expiră automat modulele cookie originale după 30 de zile, asigurând faptul că site-urile nu te pot urmări la nesfârșit atunci când ești deconectat.";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "Expiră modulele cookie originale";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Înlocuiește linkurile Google AMP cu site-ul editorului original.";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "Blochează urmărirea AMP de la Google";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "Blochează ferestrele pop-up de conectare Google pe site-urile pe care nu le deține Google.";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Blochează ferestrele pop-up de conectare Google";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "Elimină parametrii de urmărire din linkuri pentru a împiedica terții să-ți urmărească comportamentul pe site-uri.";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "Blochează urmărirea linkurilor";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "Ajută la blocarea identificării de către companii a ultimului site pe care l-ai vizitat.";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "Protejează împotriva urmăririi numelui de gazdă de referință";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "Blochează tehnologiile de urmărire invazive înainte de a se încărca, eliminând eficient reclamele care se bazează pe urmărire.";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "Blochează reclamele direcționate";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "Ajută la blocarea modulelor cookie terțe care te urmăresc de la un site la altul, împiedicând încărcarea instrumentelor de urmărire terțe de la bun început.";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "Blochează tehnologiile de urmărire terță parte";
+
 /* Settings screen cell text for Unprotected Sites */
 "settings.unprotected.sites" = "Site-uri neprotejate";
 
@@ -3055,8 +3175,17 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Protecție împotriva urmăririi pe web";
 
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Web Tracking Protections sunt întotdeauna activate";
+
 /* Explanation in Settings how the web tracking protection feature works */
 "settings.web.tracking.protection.explanation" = "DuckDuckGo blochează automat tehnologiile de urmărire ascunse în timp ce navighezi pe web.\n[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "Cum te protejăm";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "Browserul DuckDuckGo oferă instrumente de protecție împotriva urmăririi, care sunt mereu active. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Selectează opțiunea care descrie cel mai bine problema cu care te-ai confruntat.";
@@ -3106,9 +3235,6 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Editează adresa de e-mail";
 
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "Adaugă abonamentul tău Privacy Pro pe acest dispozitiv";
-
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Renunță";
 
@@ -3127,9 +3253,6 @@
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Să începem";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Folosește o adresă de e-mail pentru a adăuga Privacy Pro pe acest dispozitiv.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "Adaugă folosind adresa de e-mail";
 
@@ -3141,15 +3264,6 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Adaugă adresa de e-mail";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Adaugă Privacy Pro pe alte dispozitive";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Adaugă Privacy Pro pe celelalte dispozitive ale tale prin Apple ID sau prin conectarea unei adrese de e-mail. **[Află mai multe](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "Folosește această adresă de e-mail pentru a-ți adăuga abonamentul pe celelalte dispozitive ale tale, în aplicația DuckDuckGo. Accesează Setări > Privacy Pro > Am un abonament. **[Află mai multe](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Abonamentul tău a fost achiziționat prin Magazinul Google Play. Pentru a-ți reînnoi abonamentul, deschide setările abonamentului din Magazinului Google Play pe un dispozitiv conectat la același cont Google folosit pentru achiziționarea inițială a abonamentului.";
@@ -3172,8 +3286,17 @@
 /* Caption of the Duck.ai settings (do not modify link) */
 "subscription.duck.ai.caption" = "Fă chat în privat cu modele AI exclusive pentru abonați.\n[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
 
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "Configurează Duck.ai în setările funcțiilor IA.";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "Activează în setările funcțiilor IA";
+
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Deschide Duck.ai";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "Gestionează în setările funcțiilor IA";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";
@@ -3190,11 +3313,8 @@
 /* FAQ Button */
 "subscription.faq" = "Întrebări frecvente și asistență";
 
-/* FAQ Description */
-"subscription.faq.description" = "Primește răspunsuri la întrebările frecvente sau contactează asistența Privacy Pro din paginile noastre de ajutor.";
-
-/* Send Feedback Button */
-"subscription.feedback" = "Trimite feedback";
+/* Share Feedback Button */
+"subscription.feedback" = "Trimitere feedback";
 
 /* Cancel action for the existing subscription dialog */
 "subscription.found.cancel" = "Renunță";
@@ -3226,14 +3346,11 @@
 /* View plans button text */
 "subscription.notFound.view.plans" = "Vezi planurile";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Activează Privacy Pro pe desktop pentru a configura Personal Information Removal";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "În browserul DuckDuckGo pentru desktop, accesează %1$@ și dă clic pe %2$@ pentru a începe.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "Setări > Privacy Pro";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Setări > Abonează-te la DuckDuckGo";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "Am un abonament";
@@ -3258,9 +3375,6 @@
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Elimină de pe acest dispozitiv";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "Nu vei mai putea-ți să accesezi abonamentul Privacy Pro de pe acest dispozitiv. Acest lucru nu îți va anula abonamentul, care va rămâne activ pe celelalte dispozitive.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Dorești să elimini de pe acest dispozitiv?";
@@ -3334,9 +3448,6 @@
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Abonamentul tău anual se reînnoiește la data de %@.";
 
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
-
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Perioada de încercare gratuită este activă";
 
@@ -3372,6 +3483,36 @@
 
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sincronizează și creează copii de rezervă pentru parolele tale";
+
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sync & Backup pentru acest dispozitiv";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Salvarea codului de recuperare poate asigura faptul că vei putea să-ți restaurezi parolele cu ușurință în viitor.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Parolele sincronizate pot fi restaurate numai dacă ai acces la un alt dispozitiv sau utilizând codul de recuperare furnizat ca parte a configurării Sync & Backup.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Scanează codul de recuperare";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Celălalt dispozitiv nu este disponibil? Scanează codul de recuperare.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Nu ai un alt dispozitiv?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "Parolele DuckDuckGo nu se transferă cu iCloud, deoarece sunt criptate pe dispozitivul tău. Orice altceva se află deja aici.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Sincronizează cu un alt dispozitiv";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Ești pe un nou %@? Haide să-ți sincronizăm parolele.";
 
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Elimină";
@@ -3617,7 +3758,7 @@
 "vpn.settings.control.with.siri" = "Controlează VPN-ul cu Siri";
 
 /* Disclaimer for the DNS Server section on the DNS Server screen */
-"vpn.settings.dns.section-disclaimer" = "Folosirea unui server DNS personalizat poate afecta viteza de navigare și îți poate expune activitatea unor terțe părți, dacă serverul nu este sigur sau de încredere.";
+"vpn.settings.dns.section-disclaimer" = "Folosirea unui server DNS personalizat poate afecta viteza de navigare și îți poate expune activitatea unor terțe părți dacă serverul nu este sigur sau de încredere.";
 
 /* Header text for the DNS section on the VPN Settings screen */
 "vpn.settings.dns.section-header" = "DNS";
@@ -3726,6 +3867,54 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Un mesaj de la %@:";
+
+/* CTA of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.cta" = "Vezi oferta";
+
+/* Dismiss of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.dismiss" = "Nu acum";
+
+/* Message of the message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.text" = "Rămâi protejat cu VPN-ul nostru, IA privată și multe altele. Reabonează-te astăzi și economisește 25%.";
+
+/* Title of message displayed on the last day of the win-back campaign */
+"win-back.campaign.last-day.message.title" = "Ultima zi în care poți să economisești 25%!";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "ECONOMISEȘTE 25%";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "Vezi oferta";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Nu acum";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "Rămâi protejat cu VPN-ul nostru, IA privată și multe altele. Reabonează-te astăzi și economisește 25%.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Doar pe perioadă limitată";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "Te vrem înapoi!\nPrimește o reducere de 25%.";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "Vezi oferta";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "Am un abonament";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "Ofertă valabilă pentru o perioadă limitată!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "Rămâi protejat cu VPN-ul nostru, IA privată și multe altele. Reabonează-te astăzi și economisește 25%.\nOfertă valabilă pentru o perioadă limitată.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "Reabonează-te și economisește 25%";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Reabonează-te și economisește 25%";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Cauți versiunea pentru Mac?";

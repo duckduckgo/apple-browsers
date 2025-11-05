@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
+import Common
 import DeveloperToolsSupport
+import Foundation
 
 extension NSSize {
 
@@ -38,7 +39,7 @@ extension CGSize {
     /// #Preview helper to convert CGSize to Preview Traits
     @available(macOS 14.0, *)
     var fixedLayout: PreviewTrait<Preview.ViewTraits> {
-        MainActor.assumeIsolated {
+        MainActor.assumeMainThread {
             .fixedLayout(width: width, height: height)
         }
     }

@@ -52,11 +52,13 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
         try? db.tearDown(deleteStores: true)
     }
 
+    @MainActor
     func testDataSourceReturnsHistory() {
         let dataSource = makeDataSource(tabsEnabled: false)
         XCTAssertEqual(dataSource.history(for: MockSuggestionLoading()).count, 2)
     }
 
+    @MainActor
     func testWhenSuggestTabsFeatureIsDisable_ThenNoTabsReturned() {
         let dataSource = makeDataSource(tabsEnabled: false)
 
@@ -64,6 +66,7 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
         XCTAssertTrue(result.isEmpty)
     }
 
+    @MainActor
     func testWhenSuggestTabsFeatureIsEnabled_ThenProvidesOpenTabsExcludingCurrent() {
         let dataSource = makeDataSource()
 
@@ -74,17 +77,20 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
         XCTAssertEqual("DDG", result[1].title)
     }
 
+    @MainActor
     func testDataSourceReturnsBookmarks() {
         let dataSource = makeDataSource()
         let bookmarks = dataSource.bookmarks(for: MockSuggestionLoading())
         XCTAssertEqual(bookmarks.count, 5)
     }
 
+    @MainActor
     func testDataSourceReturnsEmptyInternalPages() {
         let dataSource = makeDataSource()
         XCTAssertTrue(dataSource.internalPages(for: MockSuggestionLoading()).isEmpty)
     }
 
+    @MainActor
     private func makeDataSource(tabsEnabled: Bool = true) -> AutocompleteSuggestionsDataSource {
 
         var mockHistoryCoordinator = MockHistoryCoordinator()

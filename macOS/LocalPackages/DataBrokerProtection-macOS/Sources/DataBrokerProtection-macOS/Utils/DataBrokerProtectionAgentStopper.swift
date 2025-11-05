@@ -65,8 +65,14 @@ struct DefaultDataBrokerProtectionAgentStopper: DataBrokerProtectionAgentStopper
             let isAuthenticated = authenticationManager.isUserAuthenticated
             let didActivateFreemium = freemiumDBPUserStateManager.didActivate
 
-            if !hasProfile || (!isAuthenticated && !didActivateFreemium) {
-                Logger.dataBrokerProtection.log("Prerequisites are invalid")
+            if !hasProfile {
+                Logger.dataBrokerProtection.log("Prerequisites are invalid: no profile saved")
+                stopAgent()
+                return
+            }
+
+            if !isAuthenticated && !didActivateFreemium {
+                Logger.dataBrokerProtection.log("Prerequisites are invalid: Not authenticated and did not activate freemium")
                 stopAgent()
                 return
             }

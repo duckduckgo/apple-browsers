@@ -19,7 +19,7 @@
 import Foundation
 import PixelKit
 
-enum SyncPromoPixelKitEvent: PixelKitEventV2 {
+enum SyncPromoPixelKitEvent: PixelKitEvent {
     case syncPromoDisplayed
     case syncPromoConfirmed
     case syncPromoDismissed
@@ -36,11 +36,18 @@ enum SyncPromoPixelKitEvent: PixelKitEventV2 {
         nil
     }
 
-    var error: (any Error)? {
-        nil
-    }
-
     var withoutMacPrefix: NonStandardEvent {
         NonStandardEvent(self)
     }
+}
+
+enum SyncDeviceButtonTouchpoint: String {
+    case moreMenu
+    case bookmarkAdded
+    case bookmarksListEmpty
+    case bookmarksManagementEmpty
+    case bookmarksBar
+    case passwordsEmpty
+    case dataImportStart
+    case dataImportFinish
 }

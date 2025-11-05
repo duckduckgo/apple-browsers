@@ -18,7 +18,46 @@
 
 import XCTest
 
+extension XCUIElementSnapshot {
+    var accessibilityElement: AXElement? {
+        guard let accessibilityElement = (self as! NSObject).value(forKey: "accessibilityElement") as? NSObject else {
+            Logger.log("Could not get accessibilityElement of \(self)")
+            return nil
+        }
+        return unsafeBitCast(accessibilityElement, to: AXElement.self)
+    }
+}
 extension XCUIElement {
+
+    @nonobjc var application: XCUIApplication {
+        return self.value(forKey: "application") as! XCUIApplication
+    }
+
+    var url: String? {
+        do {
+            guard let values = try self.queryAXAttributes([kAXURLAttribute]) else { return nil }
+            return values[kAXURLAttribute] as? String
+        } catch {
+            Logger.log("\(self): queryAXAttributes error: \(error)")
+            return nil
+        }
+    }
+
+    func queryAXAttributes(_ attributes: [String]) throws -> [String: Any]? {
+        let snapshot = try self.snapshot()
+        guard let accessibilityElement = snapshot.accessibilityElement,
+              var result = try self.application.automationSession?.attributes(for: accessibilityElement, attributes: attributes) as? [String: Any] else {
+            return nil
+        }
+        let prefix = "Unsafe value, description '"
+        for (key, value) in result {
+            if let value = value as? String, value.hasPrefix(prefix), value.hasSuffix("'") {
+                result[key] = String(value.dropFirst(prefix.count).dropLast(1))
+            }
+        }
+        return result
+    }
+
     // https://stackoverflow.com/a/63089781/119717
     // Licensed under https://creativecommons.org/licenses/by-sa/4.0/
     // Credit: Adil Hussain
@@ -124,4 +163,110 @@ extension XCUIElement {
         )
         self.hover()
     }
+
+    /// Toggles a checkbox or switch element to the desired boolean value if needed.
+    /// Supports value types: String ("1"/"on"), NSNumber (non-zero), or falls back to single click.
+    func toggleCheckboxIfNeeded(to enabled: Bool, validate: Bool = false, ensureHittable: (XCUIElement) -> Void) {
+        if !exists {
+            ensureHittable(self)
+        }
+        XCTAssertTrue(self.exists, "Control should exist before toggling")
+        Logger.log("Checkbox value is \(self.value.map { type(of: $0) } ??? ""): `\(self.value ??? "<nil>")`: isOn: \(isOn): \(isOn == enabled ? "skip" : "switching to \(enabled)")")
+        if isOn == enabled { return }
+
+        if !isHittable {
+            ensureHittable(self)
+        }
+        self.click()
+        if validate {
+            XCTAssertEqual(isOn, enabled, "value of \(self) does not match expected after toggling")
+        }
+    }
+
+    var isOn: Bool {
+        let isOn: Bool
+        if let valueString = self.value as? String {
+            isOn = valueString == "1" || valueString.lowercased() == "on"
+        } else if let valueNumber = self.value as? NSNumber {
+            isOn = valueNumber.intValue != 0
+        } else {
+            XCTFail("\(self.value ??? "<nil>") (\(self.value.map { type(of: $0) } ??? "")) is not a String or NSNumber")
+            return false
+        }
+        return isOn
+    }
+
+    public var tabs: XCUIElementQuery {
+        var element = self
+        if element is XCUIApplication {
+            element = windows.firstMatch
+        }
+
+        return element.tabGroups["TabBarViewController.CollectionView"].radioButtons
+    }
+
+    func closeTab() throws {
+        // Hover the tab to reveal its close ("x") button
+        self.hover()
+
+        XCTAssertTrue(self.exists)
+        let tabFrame = self.frame
+
+        let normalizedX = (tabFrame.width - 12) / tabFrame.width
+        let normalizedY = 0.5
+
+        let coordinate = self.coordinate(withNormalizedOffset: CGVector(dx: normalizedX, dy: normalizedY))
+        coordinate.click()
+    }
+
+    /// Performs a middle mouse click on the element
+    func middleClick() {
+        UITestCase.$shouldReplaceButtonWithMiddleMouseButton.withValue(true) {
+            rightClick()
+        }
+    }
+
+    /// Wait for a property of the element to contain a specific substring
+    /// - Parameters:
+    ///   - keyPath: The key path to the property to check (e.g., \.value, \.label, \.title)
+    ///   - substring: The substring that should be contained in the property
+    ///   - timeout: Maximum time to wait (default: 30 seconds)
+    /// - Returns: True if the condition is met within the timeout, false otherwise
+    @discardableResult
+    func wait(for keyPath: PartialKeyPath<XCUIElement>,
+              contains substring: String,
+              timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
+        let expectation = XCTNSPredicateExpectation(predicate: .keyPath(keyPath, contains: substring), object: self)
+        let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
+        return result == .completed
+    }
+
+    /// Wait for a property of the element to equal a specific value
+    /// - Parameters:
+    ///   - keyPath: The key path to the property to check (e.g., \.value, \.label, \.title)
+    ///   - value: The value that the property should equal
+    ///   - timeout: Maximum time to wait (default: 30 seconds)
+    /// - Returns: True if the condition is met within the timeout, false otherwise
+    @discardableResult
+    func wait<V: CVarArg>(for keyPath: PartialKeyPath<XCUIElement>,
+                          equals value: V,
+                          timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
+        let predicate = NSPredicate.keyPath(keyPath, equalTo: value)
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
+        let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
+        return result == .completed
+    }
+
+    /// Wait for a property of the element to equal a specific value
+    /// - Parameters:
+    ///   - predicate: NSPredicate to wait for
+    ///   - timeout: Maximum time to wait (default: 30 seconds)
+    /// - Returns: True if the condition is met within the timeout, false otherwise
+    @discardableResult
+    func wait(for predicate: NSPredicate, timeout: TimeInterval = UITests.Timeouts.navigation) -> Bool {
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
+        let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
+        return result == .completed
+    }
+
 }

@@ -34,11 +34,14 @@ final class FireInfoViewController: NSViewController {
     weak var delegate: FireInfoViewControllerDelegate?
 
     override func viewDidLoad() {
-        let visualStyle = NSApp.delegateTyped.visualStyle
+        super.viewDidLoad()
+
+        let theme = NSApp.delegateTyped.themeManager.theme
+
         titleLabel.stringValue = UserText.fireInfoDialogTitle
         descriptionLabel.stringValue = UserText.fireInfoDialogDescription
         gotItButton.title = UserText.gotIt
-        fireGraphic.image = visualStyle.iconsProvider.fireInfoGraphic
+        fireGraphic.image = theme.iconsProvider.fireInfoGraphic
     }
 
     override func mouseDown(with event: NSEvent) {}

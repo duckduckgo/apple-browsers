@@ -122,8 +122,22 @@ internal class FireproofDomains: DomainFireproofStatusProviding {
             return
         }
 
+        let id: NSManagedObjectID
         do {
-            let id = try store.add(eTLDPlus1Domain)
+            id = try store.add(eTLDPlus1Domain)
+        } catch {
+#if DEBUG
+            if AppVersion.runType == .xcPreviews {
+                id = NSManagedObjectID()
+            } else {
+                assertionFailure("could not add fireproof domain \(eTLDPlus1Domain): \(error)")
+                return
+            }
+#else
+            return
+#endif
+        }
+        do {
             try container.add(domain: eTLDPlus1Domain, withId: id)
         } catch {
             assertionFailure("could not add fireproof domain \(eTLDPlus1Domain): \(error)")
@@ -135,6 +149,17 @@ internal class FireproofDomains: DomainFireproofStatusProviding {
                 Constants.newFireproofDomainKey: eTLDPlus1Domain
             ])
         }
+    }
+
+    /// Validates and normalizes arbitrary user input (URL or host) into an eTLD+1 host.
+    /// Returns nil if the input is empty, invalid, or already fireproofed.
+    func normalizedHost(fromUserInput input: String) -> String? {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let url = URL(trimmedAddressBarString: trimmed),
+              url.navigationalScheme?.isHypertextScheme == true,
+              let eTLDPlus1Domain = tld.eTLDplus1(url.host) else { return nil }
+        return eTLDPlus1Domain
     }
 
     func remove(domain: String, changeToETLDPlus1: Bool = true) {

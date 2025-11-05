@@ -90,7 +90,7 @@ public struct UpdateManager: InternalUpdateManaging {
             Logger.updateManager.error("error fetching \(type(of: key)).\(key.threatKind): \(error)")
 
             // Fire a Pixel if it fails to load initial datasets
-            if case APIRequestV2.Error.urlSession(URLError.notConnectedToInternet) = error, oldRevision == 0 {
+            if case APIRequestV2Error.urlSession(URLError.notConnectedToInternet) = error, oldRevision == 0 {
                 eventMapping.fire(MaliciousSiteProtection.Event.failedToDownloadInitialDataSets(category: key.threatKind, type: key.dataType.kind))
             }
 

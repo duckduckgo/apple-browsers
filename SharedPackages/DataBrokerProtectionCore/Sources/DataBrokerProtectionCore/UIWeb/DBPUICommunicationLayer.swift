@@ -26,10 +26,12 @@ import os.log
 public struct DBPUIFeatureConfigurationResponse: Encodable {
     public let useUnifiedFeedback: Bool
     public let excludeVpnTraffic: Bool
+    public let brokerRemovalEnabled: Bool
 
-    public init(useUnifiedFeedback: Bool, excludeVpnTraffic: Bool) {
+    public init(useUnifiedFeedback: Bool, excludeVpnTraffic: Bool, brokerRemovalEnabled: Bool) {
         self.useUnifiedFeedback = useUnifiedFeedback
         self.excludeVpnTraffic = excludeVpnTraffic
+        self.brokerRemovalEnabled = brokerRemovalEnabled
     }
 }
 
@@ -326,9 +328,11 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        // brokerRemovalEnabled is hardcoded to true, given it's an "inaugural" flag for Data Broker Removal
         return DBPUIFeatureConfigurationResponse(
             useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
-            excludeVpnTraffic: vpnBypassService?.isSupported ?? false
+            excludeVpnTraffic: vpnBypassService?.isSupported ?? false,
+            brokerRemovalEnabled: true
         )
     }
 

@@ -70,6 +70,13 @@ public final class VPNSettings {
             case .location(let location): return location
             }
         }
+
+        public var stringValue: String {
+            switch self {
+            case .nearest: return "nearest"
+            case .location: return "custom"
+            }
+        }
     }
 
     public enum SelectedEnvironment: String, Codable {
@@ -396,24 +403,11 @@ public final class VPNSettings {
         defaults.customDnsServers
     }
 
-    public var didBlockRiskyDomainsDefaultToTrue: Bool {
-        get {
-            defaults.didBlockRiskyDomainsDefaultToTrue
-        }
-        set {
-            defaults.didBlockRiskyDomainsDefaultToTrue = newValue
-        }
-    }
-
     public var dnsSettings: NetworkProtectionDNSSettings {
         get {
             return defaults.dnsSettings
         }
         set {
-            // If dnsSettings is already ddg(true), mark that we've defaulted.
-            if case .ddg(true) = defaults.dnsSettings {
-                didBlockRiskyDomainsDefaultToTrue = true
-            }
             defaults.dnsSettings = newValue
         }
     }
@@ -463,6 +457,22 @@ public final class VPNSettings {
 
         set {
             defaults.networkProtectionSettingDisableRekeying = newValue
+        }
+    }
+
+    // MARK: - Show Debug VPN Event Notifications
+
+    public var showDebugVPNEventNotificationsPublisher: AnyPublisher<Bool, Never> {
+        defaults.networkProtectionSettingShowDebugVPNEventNotificationsPublisher
+    }
+
+    public var showDebugVPNEventNotifications: Bool {
+        get {
+            defaults.networkProtectionSettingShowDebugVPNEventNotifications
+        }
+
+        set {
+            defaults.networkProtectionSettingShowDebugVPNEventNotifications = newValue
         }
     }
 }

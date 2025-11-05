@@ -34,11 +34,11 @@ public final class PixelKitMock: PixelFiring {
         self.expectedFireCalls = expectedFireCalls
     }
 
-    public func fire(_ event: PixelKitEventV2) {
+    public func fire(_ event: PixelKitEvent) {
         fire(event, frequency: .standard)
     }
 
-    public func fire(_ event: PixelKitEventV2, frequency: PixelKit.Frequency) {
+    public func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency) {
         let fireCall = ExpectedFireCall(pixel: event, frequency: frequency)
         actualFireCalls.append(fireCall)
     }
@@ -49,10 +49,10 @@ public final class PixelKitMock: PixelFiring {
 }
 
 public struct ExpectedFireCall: Equatable {
-    let pixel: PixelKitEventV2
+    let pixel: PixelKitEvent
     let frequency: PixelKit.Frequency
 
-    public init(pixel: PixelKitEventV2, frequency: PixelKit.Frequency) {
+    public init(pixel: PixelKitEvent, frequency: PixelKit.Frequency) {
         self.pixel = pixel
         self.frequency = frequency
     }

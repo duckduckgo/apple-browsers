@@ -55,7 +55,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // #2 load URL#namedlink1
         eDidFinish = expectation(description: "#2")
@@ -68,60 +68,60 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.localHashed1))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // #3 load URL#namedlink2
         eDidFinish = expectation(description: "#3")
         withWebView { webView in
             webView.evaluateJavaScript("window.location.href = '\(urls.localHashed2.string)'")
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // #4 load URL#namedlink3
         eDidFinish = expectation(description: "#4")
         withWebView { webView in
             webView.evaluateJavaScript("window.location.href = '\(urls.localHashed3.string)'")
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // #4.1 go back to URL#namedlink2
         eDidFinish = expectation(description: "#4.1")
         withWebView { webView in
             _=webView.goBack()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
         // #4.2 go back to URL#namedlink1
         eDidFinish = expectation(description: "#4.2")
         withWebView { webView in
             _=webView.goBack()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
         // #4.3 go forward to URL#namedlink2
         eDidFinish = expectation(description: "#4.3")
         withWebView { webView in
             _=webView.goForward()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
         // #4.4 go forward to URL#namedlink3
         eDidFinish = expectation(description: "#4.4")
         withWebView { webView in
             _=webView.goForward()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // #5 load URL#
         eDidFinish = expectation(description: "#5")
         withWebView { webView in
             webView.evaluateJavaScript("window.location.href = '\(urls.localHashed.string)'")
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // #6 load URL
         eDidFinish = expectation(description: "#6")
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // #7 go back to URL#
         // !! here‘s the WebKit bug: no forward item will be present here
@@ -129,14 +129,14 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.goBack()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // #8 go back to URL#namedlink
         eDidFinish = expectation(description: "#8")
         withWebView { webView in
             _=webView.goBack()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             // #1 load URL
@@ -220,7 +220,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
         responder(at: 0).clear()
 
         eDidFinish = expectation(description: "onDidFinish 2")
@@ -246,7 +246,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
                 }
             }
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // #2 navigate from pseudo `/3` to `/3#hashed`
         var eDidGoBack = expectation(description: "onDidGoToNamedLink")
@@ -256,21 +256,21 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local3Hashed))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // #3 go back
         eDidGoBack = expectation(description: "onDidGoBack")
         withWebView { webView in
             _=webView.goBack()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // #4 go back
         eDidGoBack = expectation(description: "onDidGoBack 2")
         withWebView { webView in
             _=webView.goBack()
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             // #1
@@ -314,7 +314,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
         responder(at: 0).clear()
 
         // 2. Anchor Navigation (#target)
@@ -332,7 +332,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             webView.evaluateJavaScript("performNavigation('anchorNavigation')")
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // 2. Session State Push (#target2)
         eDidFinish = expectation(description: "Session State Push")
@@ -340,7 +340,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             webView.evaluateJavaScript("performNavigation('sessionStatePush')")
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // 3. Session State Replace (#target3)
         eDidFinish = expectation(description: "Session State Replace")
@@ -348,7 +348,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             webView.evaluateJavaScript("performNavigation('sessionStateReplace')")
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // 4. Session State Pop (#target)
         eDidFinish = expectation(description: "Session State Pop")
@@ -356,7 +356,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             webView.evaluateJavaScript("performNavigation('sessionStatePop')")
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             // 2. Anchor Navigation (#target)
@@ -397,7 +397,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         if case .didCommit = responder(at: 0).history[5] {
             responder(at: 0).history.insert(responder(at: 0).history[5], at: 4)
@@ -434,7 +434,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         if case .didCommit = responder(at: 0).history[5] {
             responder(at: 0).history.insert(responder(at: 0).history[5], at: 4)

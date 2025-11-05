@@ -28,16 +28,16 @@ struct NetworkProtectionVisibilityForTunnelProvider: NetworkProtectionFeatureVis
         self.accountManager = accountManager
     }
 
-    func isPrivacyProLaunched() -> Bool {
+    func isSubscriptionLaunched() -> Bool {
         accountManager.isUserAuthenticated
     }
     
     func shouldMonitorEntitlement() -> Bool {
-        isPrivacyProLaunched()
+        isSubscriptionLaunched()
     }
 
     func shouldShowVPNShortcut() -> Bool {
-        guard isPrivacyProLaunched() else {
+        guard isSubscriptionLaunched() else {
             return false
         }
 

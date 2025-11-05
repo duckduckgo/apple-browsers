@@ -30,6 +30,7 @@ final class VPNService: NSObject {
     private let tunnelDefaults = UserDefaults.networkProtectionGroupDefaults
     private let vpnFeatureVisibility: DefaultNetworkProtectionVisibility = AppDependencyProvider.shared.vpnFeatureVisibility
     private let tipKitAppEventsHandler = TipKitAppEventHandler()
+    private let notificationServiceManager: NotificationServiceManaging
 
     private let mainCoordinator: MainCoordinator
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
@@ -37,13 +38,17 @@ final class VPNService: NSObject {
     init(mainCoordinator: MainCoordinator,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
          application: UIApplication = UIApplication.shared,
-         notificationCenter: UNUserNotificationCenter = .current()) {
+         notificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
+         notificationServiceManager: NotificationServiceManaging,
+    ) {
         self.mainCoordinator = mainCoordinator
         self.subscriptionManager = subscriptionManager
         self.application = application
-        super.init()
+        self.notificationServiceManager = notificationServiceManager
 
-        notificationCenter.delegate = self
+        notificationCenter.delegate = notificationServiceManager
+        
+        super.init()
 
         widgetRefreshModel.beginObservingVPNStatus()
         tipKitAppEventsHandler.appDidFinishLaunching()
@@ -59,7 +64,6 @@ final class VPNService: NSObject {
 
         Task {
             await stopAndRemoveVPNIfNotAuthenticated()
-            await refreshVPNShortcuts()
 
             if #available(iOS 17.0, *) {
                 await VPNSnoozeLiveActivityManager().endSnoozeActivityIfNecessary()
@@ -86,7 +90,7 @@ final class VPNService: NSObject {
     @MainActor
     private func presentExpiredEntitlementAlert() {
         let alertController = CriticalAlerts.makeExpiredEntitlementAlert {
-            self.mainCoordinator.segueToPrivacyPro()
+            self.mainCoordinator.segueToDuckDuckGoSubscription()
         }
         application.window?.rootViewController?.present(alertController, animated: true) {
             self.tunnelDefaults.showEntitlementAlert = false
@@ -106,52 +110,22 @@ final class VPNService: NSObject {
     // MARK: - Suspend
 
     func suspend() {
-        Task { @MainActor in
-            await refreshVPNShortcuts()
-        }
+        // No-op
     }
 
     @MainActor
-    private func refreshVPNShortcuts() async {
+    func shortcutItem() async -> UIApplicationShortcutItem? {
         guard await vpnFeatureVisibility.shouldShowVPNShortcut(),
-              let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
-              canShowVPNInUI
-        else {
-            application.shortcutItems = nil
-            return
+           let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
+           canShowVPNInUI else {
+            return nil
         }
 
-        application.shortcutItems = [
-            UIApplicationShortcutItem(type: ShortcutKey.openVPNSettings,
-                                      localizedTitle: UserText.netPOpenVPNQuickAction,
-                                      localizedSubtitle: nil,
-                                      icon: UIApplicationShortcutIcon(templateImageName: "VPN-16"),
-                                      userInfo: nil)
-        ]
-    }
-
-}
-
-extension VPNService: UNUserNotificationCenterDelegate {
-
-    func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                willPresent notification: UNNotification,
-                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        completionHandler(.banner)
-    }
-
-    @MainActor
-    func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                didReceive response: UNNotificationResponse,
-                                withCompletionHandler completionHandler: @escaping () -> Void) {
-        if response.actionIdentifier == UNNotificationDefaultActionIdentifier {
-            let identifier = response.notification.request.identifier
-
-            if NetworkProtectionNotificationIdentifier(rawValue: identifier) != nil {
-                mainCoordinator.presentNetworkProtectionStatusSettingsModal()
-            }
-        }
-        completionHandler()
+        return UIApplicationShortcutItem(type: ShortcutKey.openVPNSettings,
+                                  localizedTitle: UserText.netPOpenVPNQuickAction,
+                                  localizedSubtitle: nil,
+                                  icon: UIApplicationShortcutIcon(templateImageName: "ApplicationShortcutItemVPN"),
+                                  userInfo: nil)
     }
 
 }

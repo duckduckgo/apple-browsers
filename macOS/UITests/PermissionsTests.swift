@@ -30,7 +30,7 @@ import XCTest
 /// and you want to branch the implementations per macOS version:
 /// https://stackoverflow.com/questions/56559269/adduiinterruptionmonitor-is-not-getting-called-on-macos
 class PermissionsTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var notificationCenter: XCUIApplication!
     private var addressBarTextField: XCUIElement!
     private var permissionsSiteURL: URL!
@@ -39,18 +39,14 @@ class PermissionsTests: UITestCase {
     private var clearAllHistoryAlertClearButton: XCUIElement!
     private var fakeFireButton: XCUIElement!
 
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
-
     override func setUpWithError() throws {
+        try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
 
         permissionsSiteURL = try XCTUnwrap(URL(string: "https://permission.site"), "It wasn't possible to unwrap a URL that the tests depend on.")
         notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
-        addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
+        addressBarTextField = app.addressBar
         historyMenuBarItem = app.menuBarItems["History"]
         clearAllHistoryMenuItem = app.menuItems["HistoryMenu.clearAllHistory"]
         clearAllHistoryAlertClearButton = app.buttons["ClearAllHistoryAndDataAlert.clearButton"]
@@ -68,8 +64,7 @@ class PermissionsTests: UITestCase {
             "Fire animation didn't finish and cease existing in a reasonable timeframe."
         )
 
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
         XCTAssertTrue(
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe before starting the test."
@@ -213,8 +208,7 @@ class PermissionsTests: UITestCase {
         )
         let permissionContextMenuAlwaysDeny = app.menuItems["PermissionContextMenu.alwaysDeny"]
         permissionContextMenuAlwaysDeny.clickAfterExistenceTestSucceeds()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
         addressBarTextField.typeURL(permissionsSiteURL)
         for _ in 1 ... 4 {
             cameraButton.clickAfterExistenceTestSucceeds()
@@ -370,8 +364,7 @@ class PermissionsTests: UITestCase {
 
         let permissionContextMenuAlwaysDeny = app.menuItems["PermissionContextMenu.alwaysDeny"]
         permissionContextMenuAlwaysDeny.clickAfterExistenceTestSucceeds()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
         addressBarTextField.typeURL(permissionsSiteURL)
         for _ in 1 ... 4 {
             microphoneButton.clickAfterExistenceTestSucceeds()
@@ -460,8 +453,7 @@ class PermissionsTests: UITestCase {
 
         let permissionContextMenuAlwaysDeny = app.menuItems["PermissionContextMenu.alwaysDeny"]
         permissionContextMenuAlwaysDeny.clickAfterExistenceTestSucceeds()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
         addressBarTextField.typeURL(permissionsSiteURL)
         for _ in 1 ... 4 {
             locationButton.clickAfterExistenceTestSucceeds()

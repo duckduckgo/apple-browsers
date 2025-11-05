@@ -26,7 +26,7 @@ import PixelKit
 /// [Sidebar Pixel Triage](https://app.asana.com/1/137249556945/project/1209671977594486/task/1210676151750614)
 /// [Summarization Pixel Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210636012460969?focus=true)
 
-enum AIChatPixel: PixelKitEventV2 {
+enum AIChatPixel: PixelKitEvent {
 
     /// Event Trigger: AI Chat is opened via the ... Menu -> New Duck.ai Chat
     case aichatApplicationMenuAppClicked
@@ -57,6 +57,12 @@ enum AIChatPixel: PixelKitEventV2 {
     /// Event Trigger: Address bar shortcut for AI Chat is turned off
     case aiChatSettingsAddressBarShortcutTurnedOff
 
+    /// Event Trigger: Address bar typing shortcut for AI Chat is turned on
+    case aiChatSettingsAddressBarTypingShortcutTurnedOn
+
+    /// Event Trigger: Address bar typing shortcut for AI Chat is turned off
+    case aiChatSettingsAddressBarTypingShortcutTurnedOff
+
     /// Event Trigger: Application menu shortcut for AI Chat is turned off
     case aiChatSettingsApplicationMenuShortcutTurnedOff
 
@@ -70,13 +76,16 @@ enum AIChatPixel: PixelKitEventV2 {
     /// Before removing it, verify that it's not needed for measuring settings interaction.
     case aiChatSettingsDisplayed
 
+    /// Event Trigger: Data Clearing setting to auto-clear Duck.ai chat history is toggled.
+    case aiChatAutoClearHistorySettingToggled(enabled: Bool)
+
     /// Event Trigger: User clicks in the Omnibar duck.ai button
     case aiChatAddressBarButtonClicked(action: AIChatAddressBarAction)
 
     // MARK: - Sidebar
 
     /// Event Trigger: User opens a tab sidebar
-    case aiChatSidebarOpened(source: AIChatSidebarOpenSource)
+    case aiChatSidebarOpened(source: AIChatSidebarOpenSource, shouldAutomaticallySendPageContext: Bool?, minutesSinceSidebarHidden: Int?)
 
     /// Event Trigger: User closes a tab sidebar
     case aiChatSidebarClosed(source: AIChatSidebarCloseSource)
@@ -95,6 +104,29 @@ enum AIChatPixel: PixelKitEventV2 {
 
     /// Event Trigger: User clicks the website link on a summarize prompt in Duck.ai tab or sidebar
     case aiChatSummarizeSourceLinkClicked
+
+    /// Event Trigger: User triggers translate action
+    case aiChatTranslateText
+
+    /// Event Trigger: User clicks the website link on a translation prompt in Duck.ai tab or sidebar
+    case aiChatTranslationSourceLinkClicked
+
+    /// Event Trigger: User adds page context to the prompt using a button in the input field
+    case aiChatPageContextAdded(automaticEnabled: Bool)
+
+    /// Event Trigger: User removes page context from the prompt using a button in the input field
+    case aiChatPageContextRemoved(automaticEnabled: Bool)
+
+    // MARK: - Deleting chat history
+
+    /// Event Trigger: User requests to delete Duck.ai chat history from the fire button or history delete dialog
+    case aiChatDeleteHistoryRequested
+
+    /// Event Trigger: Duck.ai chat history is deleted successfully
+    case aiChatDeleteHistorySuccessful
+
+    /// Event Trigger: Duck.ai chat history fails to be deleted
+    case aiChatDeleteHistoryFailed
 
     // MARK: -
 
@@ -118,6 +150,10 @@ enum AIChatPixel: PixelKitEventV2 {
             return "aichat_settings_addressbar_on"
         case .aiChatSettingsAddressBarShortcutTurnedOff:
             return "aichat_settings_addressbar_off"
+        case .aiChatSettingsAddressBarTypingShortcutTurnedOn:
+            return "aichat_settings_addressbar_typing_on"
+        case .aiChatSettingsAddressBarTypingShortcutTurnedOff:
+            return "aichat_settings_addressbar_typing_off"
         case .aiChatSettingsApplicationMenuShortcutTurnedOff:
             return "aichat_settings_application_menu_off"
         case .aiChatSettingsApplicationMenuShortcutTurnedOn:
@@ -138,6 +174,26 @@ enum AIChatPixel: PixelKitEventV2 {
             return "aichat_summarize_text"
         case .aiChatSummarizeSourceLinkClicked:
             return "aichat_summarize_source_link_clicked"
+        case .aiChatTranslateText:
+            return "aichat_translate_text"
+        case .aiChatTranslationSourceLinkClicked:
+            return "aichat_translation_source_link_clicked"
+        case .aiChatPageContextAdded:
+            return "aichat_page_context_added"
+        case .aiChatPageContextRemoved:
+            return "aichat_page_context_removed"
+        case let .aiChatAutoClearHistorySettingToggled(enabled):
+            if enabled {
+                return "m_mac_aichat_history_autoclear_enabled"
+            } else {
+                return "m_mac_aichat_history_autoclear_disabled"
+            }
+        case .aiChatDeleteHistoryRequested:
+            return "m_mac_aichat_history_delete_requested"
+        case .aiChatDeleteHistorySuccessful:
+            return "m_mac_aichat_history_delete_successful"
+        case .aiChatDeleteHistoryFailed:
+            return "m_mac_aichat_history_delete_failed"
         }
     }
 
@@ -152,27 +208,41 @@ enum AIChatPixel: PixelKitEventV2 {
                 .aiChatSettingsNewTabPageShortcutTurnedOff,
                 .aiChatSettingsAddressBarShortcutTurnedOn,
                 .aiChatSettingsAddressBarShortcutTurnedOff,
+                .aiChatSettingsAddressBarTypingShortcutTurnedOn,
+                .aiChatSettingsAddressBarTypingShortcutTurnedOff,
                 .aiChatSettingsApplicationMenuShortcutTurnedOff,
                 .aiChatSettingsApplicationMenuShortcutTurnedOn,
                 .aiChatSettingsDisplayed,
                 .aiChatSidebarExpanded,
                 .aiChatSidebarSettingChanged,
-                .aiChatSummarizeSourceLinkClicked:
+                .aiChatSummarizeSourceLinkClicked,
+                .aiChatTranslateText,
+                .aiChatTranslationSourceLinkClicked,
+                .aiChatAutoClearHistorySettingToggled,
+                .aiChatDeleteHistoryRequested,
+                .aiChatDeleteHistorySuccessful,
+                .aiChatDeleteHistoryFailed:
             return nil
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
-        case .aiChatSidebarOpened(let source):
-            return ["source": source.rawValue]
+        case .aiChatSidebarOpened(let source, let shouldAutomaticallySendPageContext, let minutesSinceSidebarHidden):
+            var params = ["source": source.rawValue]
+            if let shouldAutomaticallySendPageContext {
+                params["automaticPageContext"] = String(shouldAutomaticallySendPageContext)
+            }
+            if let minutesSinceSidebarHidden {
+                params["minutesSinceSidebarHidden"] = String(minutesSinceSidebarHidden)
+            }
+            return params
         case .aiChatSidebarClosed(let source):
             return ["source": source.rawValue]
         case .aiChatSummarizeText(let source):
             return ["source": source.rawValue]
+        case .aiChatPageContextAdded(let automaticEnabled), .aiChatPageContextRemoved(let automaticEnabled):
+            return ["automaticEnabled": String(automaticEnabled)]
         }
     }
 
-    var error: (any Error)? {
-        nil
-    }
 }
 
 // MARK: - Parameter values
@@ -190,6 +260,7 @@ enum AIChatSidebarOpenSource: String, CaseIterable {
     case summarization = "summarization"
     case serp = "serp"
     case contextMenu = "context-menu"
+    case translation = "translation"
 }
 
 /// Source of AI Chat sidebar close action

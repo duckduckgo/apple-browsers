@@ -133,13 +133,13 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
             return communicator.brokerProfileQueryData
         }
 
-        let queryData = try database.fetchAllBrokerProfileQueryData()
+        let queryData = try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
         communicator.brokerProfileQueryData = queryData
         return queryData
     }
 
     public func prepareBrokerProfileQueryDataCache() throws {
-        communicator.brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData()
+        communicator.brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
     }
 
     public func hasMatches() throws -> Bool {
@@ -157,7 +157,7 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
     ///   - `brokerCount`: The number of brokers that have at least one match.
     /// - Throws: An error if fetching broker profile query data from the database fails.
     public func matchesFoundAndBrokersCount() throws -> (matchCount: Int, brokerCount: Int) {
-        let queryData = try database.fetchAllBrokerProfileQueryData()
+        let queryData = try database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
         return matchesAndBrokersCount(forQueryData: queryData)
     }
 }

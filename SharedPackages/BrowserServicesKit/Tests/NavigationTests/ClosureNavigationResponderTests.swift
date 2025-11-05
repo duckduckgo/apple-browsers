@@ -93,7 +93,7 @@ class ClosureNavigationResponderTests: DistributedNavigationDelegateTestsBase {
                 XCTFail("unexpected navigationResponseWillBecomeDownload")
             }
 
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
     }
 
     @MainActor
@@ -140,7 +140,7 @@ class ClosureNavigationResponderTests: DistributedNavigationDelegateTestsBase {
                 XCTFail("unexpected navigationResponseWillBecomeDownload")
             }
 
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
     }
 
     @MainActor
@@ -192,7 +192,7 @@ class ClosureNavigationResponderTests: DistributedNavigationDelegateTestsBase {
                 XCTFail("unexpected navigationResponseWillBecomeDownload")
             }
 
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
     }
 
     @MainActor
@@ -230,7 +230,7 @@ class ClosureNavigationResponderTests: DistributedNavigationDelegateTestsBase {
                 XCTFail("unexpected navigationResponseWillBecomeDownload")
             })
 
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
     }
 
     @MainActor
@@ -254,7 +254,7 @@ class ClosureNavigationResponderTests: DistributedNavigationDelegateTestsBase {
                     return .allow
                 }
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         XCTAssertFalse(navAct(1).navigationAction.isTargetingNewWindow)
         assertHistory(ofResponderAt: 0, equalsTo: [
@@ -319,7 +319,7 @@ class ClosureNavigationResponderTests: DistributedNavigationDelegateTestsBase {
                     XCTFail("unexpected navigationResponseWillBecomeDownload")
                 }
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         XCTAssertFalse(navAct(1).navigationAction.isTargetingNewWindow)
         assertHistory(ofResponderAt: 0, equalsTo: [
@@ -357,7 +357,7 @@ class ClosureNavigationResponderTests: DistributedNavigationDelegateTestsBase {
                 XCTFail("unexpected navigationResponseWillBecomeDownload")
             }
 
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
     }
 
     @MainActor
@@ -394,7 +394,7 @@ class ClosureNavigationResponderTests: DistributedNavigationDelegateTestsBase {
                 eDidBecomeDownload.fulfill()
             }
 
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
     }
 
     @MainActor
@@ -426,7 +426,7 @@ class ClosureNavigationResponderTests: DistributedNavigationDelegateTestsBase {
             _=webView.load(req(urls.local1))
         }
 
-        waitForExpectations(timeout: 10)
+        waitForExpectations()
     }
 
 }

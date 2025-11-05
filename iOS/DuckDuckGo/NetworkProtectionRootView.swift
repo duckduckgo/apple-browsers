@@ -39,7 +39,6 @@ struct NetworkProtectionRootView: View {
                                                            enablesUnifiedFeedbackForm: subscriptionManager.isUserAuthenticated)
 
         feedbackFormModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
-                                                         apiService: DefaultAPIService(),
                                                          vpnMetadataCollector: DefaultVPNMetadataCollector(),
                                                          dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                          isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
@@ -50,7 +49,7 @@ struct NetworkProtectionRootView: View {
         NetworkProtectionStatusView(statusModel: statusViewModel, feedbackFormModel: feedbackFormModel)
             .navigationTitle(UserText.netPNavTitle)
             .onFirstAppear {
-                Pixel.fire(pixel: .privacyProVPNSettings, withAdditionalParameters: self.statusViewModel.featureDiscovery.addToParams([:], forFeature: .vpn))
+                Pixel.fire(pixel: .subscriptionVPNSettings, withAdditionalParameters: self.statusViewModel.featureDiscovery.addToParams([:], forFeature: .vpn))
             }
     }
 }

@@ -17,8 +17,12 @@
 //
 
 import AppKit
+import Combine
 
 final class DownloadsPopover: NSPopover {
+
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
 
     init(fireWindowSession: FireWindowSessionRef?) {
         super.init()
@@ -27,10 +31,20 @@ final class DownloadsPopover: NSPopover {
         self.behavior = .semitransient
 
         setupContentController(fireWindowSession: fireWindowSession)
+
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     required init?(coder: NSCoder) {
         fatalError("\(Self.self): Bad initializer")
+    }
+
+    deinit {
+#if DEBUG
+        // Check that our content view controller deallocates
+        contentViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
     }
 
     // swiftlint:disable force_cast
@@ -41,5 +55,11 @@ final class DownloadsPopover: NSPopover {
         let controller = DownloadsViewController(viewModel: DownloadListViewModel(fireWindowSession: fireWindowSession))
         contentViewController = controller
     }
+}
 
+extension DownloadsPopover: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        backgroundColor = theme.colorsProvider.popoverBackgroundColor
+    }
 }

@@ -24,7 +24,7 @@ struct SettingsDescription {
     let imageName: String
     let title: String
     let status: StatusIndicator
-    let explanation: String
+    let explanation: String?
 }
 
 // Universal Settings description view
@@ -47,13 +47,15 @@ struct SettingsDescriptionView: View {
             StatusIndicatorView(status: content.status)
                 .padding(.top, -4)
 
-            Text(LocalizedStringKey(content.explanation))
-                .daxBodyRegular()
-                .multilineTextAlignment(.center)
-                .foregroundColor(.init(designSystemColor: .textSecondary))
-                .tintIfAvailable(Color(designSystemColor: .accent))
-                .padding(.horizontal, 32)
-                .padding(.top, 8)
+            if let explanation = content.explanation {
+                Text(LocalizedStringKey(explanation))
+                    .daxBodyRegular()
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.init(designSystemColor: .textSecondary))
+                    .tintIfAvailable(Color(designSystemColor: .accent))
+                    .padding(.horizontal, 32)
+                    .padding(.top, 8)
+            }
 
             Spacer()
         }

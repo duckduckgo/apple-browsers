@@ -260,6 +260,28 @@ final class LoadingProgressView: NSView, CAAnimationDelegate {
         layer!.backgroundColor = NSColor.progressBarGradientDark.cgColor
     }
 
+    // MARK: Accessibility
+
+    @objc override func isAccessibilityElement() -> Bool {
+        true
+    }
+
+    @objc override func isAccessibilityEnabled() -> Bool {
+        true
+    }
+
+    @objc override func accessibilityIdentifier() -> String {
+        return "LoadingProgressIndicator"
+    }
+
+    @objc override func accessibilityRole() -> NSAccessibility.Role {
+        .progressIndicator
+    }
+
+    @objc func accessibilityValue() -> NSNumber? {
+        NSNumber(value: currentProgress())
+    }
+
 }
 
 extension LoadingProgressView {
@@ -282,7 +304,7 @@ extension LoadingProgressView {
             ProgressEvent(progress: 0.65, interval: 15.0),
             ProgressEvent(progress: 0.80, interval: 5.0),
             ProgressEvent(progress: 0.85, interval: 3.0),
-            ProgressEvent(progress: 1.00, interval: 2.5)
+            ProgressEvent(progress: 0.90, interval: 2.5)
         ]
 
         static let initialValue = milestones[0].progress
@@ -301,14 +323,14 @@ extension LoadingProgressView {
             var estimatedElapsedTime: CFTimeInterval = 0.0
             var nextStepIdx: Int!
 
+            if let lastProgressEvent,
+               lastProgressEvent.progress >= Constants.max {
+                return nil
+            }
+
             for (idx, step) in milestones.enumerated() {
                 if let event = lastProgressEvent {
-                    if event.progress == Constants.max {
-                        // 100%: finish fast
-                        nextStepIdx = milestones.indices.last!
-                        estimatedElapsedTime = TimeInterval.greatestFiniteMagnitude
-                        break
-                    } else if event.progress >= step.progress {
+                    if event.progress >= step.progress {
                         estimatedElapsedTime += step.interval
                     } else {
                         // take percentage of estimated time for the current step based of (actual / estimated) progress difference

@@ -104,7 +104,7 @@ final class PreferencesSectionTests: XCTestCase {
         XCTAssertTrue(regularPanesSection.panes.contains(.aiChat))
     }
 
-    func testNoPrivacyProSectionsArePresentWhenNoSubscriptionAndPurchaseOptions() throws {
+    func testNoSubscriptionSectionsArePresentWhenNoSubscriptionAndPurchaseOptions() throws {
         // Given
         let subscriptionState = PreferencesSidebarSubscriptionState(hasSubscription: false,
                                                                     shouldHideSubscriptionPurchase: true)
@@ -116,11 +116,11 @@ final class PreferencesSectionTests: XCTestCase {
                                                           subscriptionState: subscriptionState)
 
         // Then
-        XCTAssertFalse(sections.contains { $0.id ==  .purchasePrivacyPro })
-        XCTAssertFalse(sections.contains { $0.id ==  .privacyPro })
+        XCTAssertFalse(sections.contains { $0.id ==  .purchaseSubscription })
+        XCTAssertFalse(sections.contains { $0.id ==  .subscription })
     }
 
-    func testPurchasePrivacyProSectionIsPresentWhenNoSubscription() throws {
+    func testPurchaseSubscriptionSectionIsPresentWhenNoSubscription() throws {
         // Given
         let subscriptionState = PreferencesSidebarSubscriptionState(hasSubscription: false,
                                                                     shouldHideSubscriptionPurchase: false)
@@ -132,14 +132,14 @@ final class PreferencesSectionTests: XCTestCase {
                                                           subscriptionState: subscriptionState)
 
         // Then
-        XCTAssertTrue(sections.contains { $0.id ==  .purchasePrivacyPro })
-        XCTAssertFalse(sections.contains { $0.id ==  .privacyPro })
+        XCTAssertTrue(sections.contains { $0.id ==  .purchaseSubscription })
+        XCTAssertFalse(sections.contains { $0.id ==  .subscription })
 
-        let purchasePrivacyProSection = sections.first { $0.id ==  .purchasePrivacyPro }!
-        XCTAssertEqual(purchasePrivacyProSection.panes, [.privacyPro])
+        let purchaseSubscriptionSection = sections.first { $0.id ==  .purchaseSubscription }!
+        XCTAssertEqual(purchaseSubscriptionSection.panes, [.subscription])
     }
 
-    func testPrivacyProSectionIsPresentWhenHasSubscription() throws {
+    func testSubscriptionSectionIsPresentWhenHasSubscription() throws {
         // Given
         let subscriptionState = PreferencesSidebarSubscriptionState(hasSubscription: true,
                                                                     shouldHideSubscriptionPurchase: false,
@@ -159,14 +159,14 @@ final class PreferencesSectionTests: XCTestCase {
                                                           subscriptionState: subscriptionState)
 
         // Then
-        XCTAssertFalse(sections.contains { $0.id ==  .purchasePrivacyPro })
-        XCTAssertTrue(sections.contains { $0.id ==  .privacyPro })
+        XCTAssertFalse(sections.contains { $0.id ==  .purchaseSubscription })
+        XCTAssertTrue(sections.contains { $0.id ==  .subscription })
 
-        let purchasePrivacyProSection = sections.first { $0.id ==  .privacyPro }!
-        XCTAssertEqual(purchasePrivacyProSection.panes, [.vpn, .personalInformationRemoval, .paidAIChat, .identityTheftRestoration, .subscriptionSettings])
+        let purchaseSubscriptionSection = sections.first { $0.id ==  .subscription }!
+        XCTAssertEqual(purchaseSubscriptionSection.panes, [.vpn, .personalInformationRemoval, .paidAIChat, .identityTheftRestoration, .subscriptionSettings])
     }
 
-    func testPrivacyProSectionContentsIsDependantOnSubscriptionFeatures() throws {
+    func testSubscriptionSectionContentsIsDependantOnSubscriptionFeatures() throws {
         // Given
         let subscriptionState = PreferencesSidebarSubscriptionState(hasSubscription: true,
                                                                     shouldHideSubscriptionPurchase: false)
@@ -178,10 +178,10 @@ final class PreferencesSectionTests: XCTestCase {
                                                           subscriptionState: subscriptionState)
 
         // Then
-        XCTAssertFalse(sections.contains { $0.id ==  .purchasePrivacyPro })
-        XCTAssertTrue(sections.contains { $0.id ==  .privacyPro })
+        XCTAssertFalse(sections.contains { $0.id ==  .purchaseSubscription })
+        XCTAssertTrue(sections.contains { $0.id ==  .subscription })
 
-        let purchasePrivacyProSection = sections.first { $0.id ==  .privacyPro }!
-        XCTAssertEqual(purchasePrivacyProSection.panes, [.subscriptionSettings])
+        let purchaseSubscriptionSection = sections.first { $0.id ==  .subscription }!
+        XCTAssertEqual(purchaseSubscriptionSection.panes, [.subscriptionSettings])
     }
 }

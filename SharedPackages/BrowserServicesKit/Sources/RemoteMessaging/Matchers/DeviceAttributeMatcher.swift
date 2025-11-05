@@ -25,7 +25,7 @@ public struct DeviceAttributeMatcher: AttributeMatching {
     let localeIdentifier: String
     let formFactor: String
 
-    public init(osVersion: String = AppVersion.shared.osVersion,
+    public init(osVersion: String = AppVersion.shared.osVersionMajorMinorPatch,
                 locale: String = Locale.current.identifier,
                 formFactor: String = DevicePlatform.formFactor) {
         self.osVersion = osVersion

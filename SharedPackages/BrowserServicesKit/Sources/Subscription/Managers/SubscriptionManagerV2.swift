@@ -21,8 +21,9 @@ import Combine
 import Common
 import os.log
 import Networking
+import PixelKit
 
-public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
+public enum SubscriptionManagerError: DDGError {
     /// The app has no `TokenContainer`
     case noTokenAvailable
     /// There was a failure wile retrieving, updating or creating the `TokenContainer`
@@ -33,28 +34,43 @@ public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
 
     public static func == (lhs: SubscriptionManagerError, rhs: SubscriptionManagerError) -> Bool {
         switch (lhs, rhs) {
-        case (.noTokenAvailable, .noTokenAvailable):
-            return true
         case (.errorRetrievingTokenContainer(let lhsError), .errorRetrievingTokenContainer(let rhsError)):
-            return lhsError?.localizedDescription == rhsError?.localizedDescription
+            return String(describing: lhsError) == String(describing: rhsError)
         case (.confirmationHasInvalidSubscription, .confirmationHasInvalidSubscription),
-            (.noProductsFound, .noProductsFound):
+            (.noProductsFound, .noProductsFound),
+            (.noTokenAvailable, .noTokenAvailable):
             return true
         default:
             return false
         }
     }
 
-    public var errorDescription: String? {
+    public var description: String {
         switch self {
-        case .noTokenAvailable:
-            "No token available"
+        case .noTokenAvailable: "No token available"
+        case .errorRetrievingTokenContainer(error: let error): "Error retrieving token container: \(String(describing: error))"
+        case .confirmationHasInvalidSubscription: "Confirmation has an invalid subscription"
+        case .noProductsFound: "No products found"
+        }
+    }
+
+    public static var errorDomain: String { "com.duckduckgo.subscription.SubscriptionManagerError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .noTokenAvailable: 12000
+        case .errorRetrievingTokenContainer: 12001
+        case .confirmationHasInvalidSubscription: 12002
+        case .noProductsFound: 12003
+        }
+    }
+
+    public var underlyingError: (any Error)? {
+        switch self {
         case .errorRetrievingTokenContainer(error: let error):
-            "Error retrieving token container: \(String(describing: error))"
-        case .confirmationHasInvalidSubscription:
-            "Confirmation has an invalid subscription"
-        case .noProductsFound:
-            "No products found"
+            return error
+        default:
+            return nil
         }
     }
 }
@@ -102,8 +118,8 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
 
     /// Retrieve the purchased subscription
     /// - Parameter cachePolicy: The cache policy, `remoteFirst` or `cacheFirst`
-    /// - Returns: A `PrivacyProSubscription` if available, throws `SubscriptionEndpointServiceError.noData` if the subscription is not available or any other errors if the process failed at any point.
-    @discardableResult func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription
+    /// - Returns: A `DuckDuckGoSubscription` if available, throws `SubscriptionEndpointServiceError.noData` if the subscription is not available or any other errors if the process failed at any point.
+    @discardableResult func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription
 
     /// - Returns: true is a subscription (expired or not) is present, false otherwise.
     func isSubscriptionPresent() -> Bool
@@ -112,7 +128,7 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     /// - Parameter lastTransactionJWSRepresentation: A platform signature coming from the AppStore
     /// - Returns: A subscription if found
     /// - Throws: An error if the access token is not available or something goes wrong in the api requests
-    func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> PrivacyProSubscription?
+    func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> DuckDuckGoSubscription?
 
     /// If the user can purchase a subscription or not
     var canPurchase: Bool { get }
@@ -136,13 +152,13 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     var userEmail: String? { get }
 
     /// Sign out the user, clear and invalidate the access token and clear the subscription cache
-    func signOut(notifyUI: Bool) async
+    func signOut(notifyUI: Bool, userInitiated: Bool) async
 
     /// Removes the subscription cache, this will trigger a remote fetch the next time `getSubscription(...)` is called
     func clearSubscriptionCache()
 
     /// Confirm a purchase with a platform signature
-    func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> PrivacyProSubscription
+    func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> DuckDuckGoSubscription
 
     /// Closure called when an expired refresh token is detected and the Subscription login is invalid. An attempt to automatically recover it can be performed or the app can ask the user to do it manually
     typealias TokenRecoveryHandler = () async throws -> Void
@@ -180,6 +196,12 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     func removeLocalAccount() throws
 }
 
+extension SubscriptionManagerV2 {
+    func signOut(notifyUI: Bool) async {
+        await signOut(notifyUI: notifyUI, userInitiated: false)
+    }
+}
+
 /// Single entry point for everything related to Subscription. This manager is disposable, every time something related to the environment changes this need to be recreated.
 public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
@@ -194,6 +216,8 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     private let userDefaults: UserDefaults
     private let canPurchaseSubject = PassthroughSubject<Bool, Never>()
     private var cancellables = Set<AnyCancellable>()
+    private let wideEvent: WideEventManaging?
+    private let isAuthV2WideEventEnabled: () -> Bool
 
     public init(storePurchaseManager: StorePurchaseManagerV2? = nil,
                 oAuthClient: any OAuthClient,
@@ -204,7 +228,9 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 tokenRecoveryHandler: TokenRecoveryHandler? = nil,
                 initForPurchase: Bool = true,
                 legacyAccountStorage: AccountKeychainStorage? = nil,
-                isInternalUserEnabled: @escaping () -> Bool = { false }) {
+                isInternalUserEnabled: @escaping () -> Bool = { false },
+                wideEvent: WideEventManaging? = nil,
+                isAuthV2WideEventEnabled: @escaping () -> Bool = { false }) {
         self._storePurchaseManager = storePurchaseManager
         self.oAuthClient = oAuthClient
         self.userDefaults = userDefaults
@@ -214,6 +240,8 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         self.tokenRecoveryHandler = tokenRecoveryHandler
         self.isInternalUserEnabled = isInternalUserEnabled
         self.legacyAccountStorage = legacyAccountStorage
+        self.wideEvent = wideEvent
+        self.isAuthV2WideEventEnabled = isAuthV2WideEventEnabled
         if initForPurchase {
             switch currentEnvironment.purchasePlatform {
             case .appStore:
@@ -294,7 +322,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     }
 
     @discardableResult
-    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {
+    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription {
 
         // NOTE: This is ugly, the subscription cache will be moved from the endpoint service to here and handled properly https://app.asana.com/0/0/1209015691872191
 
@@ -302,7 +330,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             throw SubscriptionEndpointServiceError.noData
         }
 
-        var subscription: PrivacyProSubscription
+        var subscription: DuckDuckGoSubscription
 
         switch cachePolicy {
 
@@ -339,7 +367,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         subscriptionEndpointService.getCachedSubscription() != nil
     }
 
-    public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> PrivacyProSubscription? {
+    public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> DuckDuckGoSubscription? {
         do {
             let tokenContainer = try await oAuthClient.activate(withPlatformSignature: lastTransactionJWSRepresentation)
             return try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken, cachePolicy: .remoteFirst)
@@ -414,45 +442,46 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     }
 
     var cachedUserEntitlements: [SubscriptionEntitlement] {
-        get {
-            userDefaults.userEntitlements
-        }
-        set {
-            let currentCachedUserEntitlements = self.userDefaults.userEntitlements
-            self.userDefaults.userEntitlements = newValue
+        userDefaults.userEntitlements
+    }
 
-            // Send notification when entitlements change
-            if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedUserEntitlements, newValue) {
-                Logger.subscription.debug("Entitlements changed - New \(String(describing: newValue)) Old \(String(describing: currentCachedUserEntitlements))")
-                let payload = EntitlementsDidChangePayload(entitlements: newValue)
-                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: payload.notificationUserInfo)
-            }
+    private func updateCachedUserEntitlements(_ newEntitlements: [SubscriptionEntitlement], userInitiated: Bool = false) {
+        let currentCachedUserEntitlements = self.userDefaults.userEntitlements
+        self.userDefaults.userEntitlements = newEntitlements
+
+        // Send notification when entitlements change
+        if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedUserEntitlements, newEntitlements) {
+            Logger.subscription.debug("Entitlements changed - New \(String(describing: newEntitlements)) Old \(String(describing: currentCachedUserEntitlements))")
+            let payload = EntitlementsDidChangePayload(entitlements: newEntitlements)
+
+            var userInfo = payload.notificationUserInfo
+            userInfo[EntitlementsDidChangePayload.userInitiatedEntitlementChangeKey] = userInitiated
+            NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: userInfo)
         }
     }
 
     var cachedIsUserAuthenticated: Bool {
-        get {
-            userDefaults.isUserAuthenticated
+        userDefaults.isUserAuthenticated
+    }
+
+    private func updateCachedIsUserAuthenticated(_ newValue: Bool, userInitiated: Bool = false) {
+        let currentCachedIsAuthenticated = self.userDefaults.isUserAuthenticated
+        self.userDefaults.isUserAuthenticated = newValue
+
+        // Send notification when the login changes
+        switch (currentCachedIsAuthenticated, newValue) {
+        case (false, true):
+            Logger.subscription.debug("Login detected")
+            NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
+        case (true, false):
+            Logger.subscription.debug("Logout detected")
+            NotificationCenter.default.post(name: .accountDidSignOut, object: self, userInfo: nil)
+        default:
+            Logger.subscription.debug("Login state unchanged - Current: \(currentCachedIsAuthenticated), new: \(newValue)")
         }
-        set {
-            let currentCachedIsAuthenticated = self.userDefaults.isUserAuthenticated
-            self.userDefaults.isUserAuthenticated = newValue
 
-            // Send notification when the login changes
-            switch (currentCachedIsAuthenticated, newValue) {
-            case (false, true):
-                Logger.subscription.debug("Login detected")
-                NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
-            case (true, false):
-                Logger.subscription.debug("Logout detected")
-                NotificationCenter.default.post(name: .accountDidSignOut, object: self, userInfo: nil)
-            default:
-                Logger.subscription.debug("Login state unchanged - Current: \(currentCachedIsAuthenticated), new: \(newValue)")
-            }
-
-            if newValue == false {
-                self.cachedUserEntitlements = []
-            }
+        if newValue == false {
+            self.updateCachedUserEntitlements([], userInitiated: userInitiated)
         }
     }
 
@@ -463,12 +492,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             let resultTokenContainer = try await oAuthClient.getTokens(policy: policy)
             let newEntitlements = resultTokenContainer.decodedAccessToken.subscriptionEntitlements
 
-            cachedUserEntitlements = newEntitlements
-            cachedIsUserAuthenticated = true
+            self.updateCachedUserEntitlements(newEntitlements)
+            self.updateCachedIsUserAuthenticated(true)
             return resultTokenContainer
         } catch OAuthClientError.missingTokenContainer {
             // Expected when no tokens are available
-            cachedUserEntitlements = []
+            self.updateCachedUserEntitlements([])
             throw SubscriptionManagerError.noTokenAvailable
         } catch {
             pixelHandler.handle(pixel: .getTokensError(policy, error))
@@ -478,7 +507,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             case OAuthClientError.unknownAccount:
 
                 Logger.subscription.error("Refresh failed, the account is unknown. Logging out...")
-                await signOut(notifyUI: true)
+                await signOut(notifyUI: true, userInitiated: false)
                 throw SubscriptionManagerError.noTokenAvailable
 
             case OAuthClientError.invalidTokenRequest:
@@ -490,7 +519,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
                     return recoveredTokenContainer
                 } catch {
-                    await signOut(notifyUI: false)
+                    await signOut(notifyUI: false, userInitiated: false)
                     pixelHandler.handle(pixel: .invalidRefreshTokenSignedOut)
                     throw SubscriptionManagerError.noTokenAvailable
                 }
@@ -522,49 +551,84 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     public func exchange(tokenV1: String) async throws -> TokenContainer {
         let tokenContainer = try await oAuthClient.exchange(accessTokenV1: tokenV1)
-            cachedIsUserAuthenticated = true
-            cachedUserEntitlements = tokenContainer.decodedAccessToken.subscriptionEntitlements
+            updateCachedIsUserAuthenticated(true)
+            updateCachedUserEntitlements(tokenContainer.decodedAccessToken.subscriptionEntitlements)
         return tokenContainer
     }
 
     public func adopt(accessToken: String, refreshToken: String) async throws {
         Logger.subscription.log("Adopting and decoding token container")
-        let tokenContainer = try await oAuthClient.decode(accessToken: accessToken, refreshToken: refreshToken)
+        let tokenContainer = try await oAuthClient.decode(accessToken: accessToken, refreshToken: refreshToken, refreshID: nil)
         try await adopt(tokenContainer: tokenContainer)
     }
 
     public func adopt(tokenContainer: TokenContainer) async throws {
-        Logger.subscription.log("Adopting token container")
-        try oAuthClient.adopt(tokenContainer: tokenContainer)
-        // It’s important to force refresh the token to immediately branch from the one received.
-        // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
-        let refreshedTokenContainer = try await oAuthClient.getTokens(policy: .localForceRefresh)
-        cachedIsUserAuthenticated = true
-        cachedUserEntitlements = refreshedTokenContainer.decodedAccessToken.subscriptionEntitlements
+        let adoptionID = UUID().uuidString
+
+        if isAuthV2WideEventEnabled(), let wideEvent {
+            let globalData = WideEventGlobalData(id: adoptionID)
+            let data = AuthV2TokenAdoptionWideEventData(globalData: globalData)
+            data.failingStep = .adoptingToken
+            wideEvent.startFlow(data)
         }
+
+        do {
+            Logger.subscription.log("Adopting token container")
+
+            try oAuthClient.adopt(tokenContainer: tokenContainer)
+
+            if isAuthV2WideEventEnabled(), let wideEvent {
+                wideEvent.updateFlow(globalID: adoptionID) { (event: inout AuthV2TokenAdoptionWideEventData) in
+                    event.failingStep = .refreshingToken
+                }
+            }
+
+            // It’s important to force refresh the token to immediately branch from the one received.
+            // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
+            let refreshedTokenContainer = try await oAuthClient.getTokens(policy: .localForceRefresh)
+
+            updateCachedIsUserAuthenticated(true)
+            updateCachedUserEntitlements(refreshedTokenContainer.decodedAccessToken.subscriptionEntitlements)
+
+            if isAuthV2WideEventEnabled(), let wideEvent, let data = wideEvent.getFlowData(AuthV2TokenAdoptionWideEventData.self, globalID: adoptionID) {
+                data.failingStep = nil
+                wideEvent.completeFlow(data, status: .success(reason: nil), onComplete: { _, _ in })
+            }
+        } catch {
+            if isAuthV2WideEventEnabled(), let wideEvent, let data = wideEvent.getFlowData(AuthV2TokenAdoptionWideEventData.self, globalID: adoptionID) {
+                data.errorData = WideEventErrorData(error: error)
+                wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            }
+
+            throw error
+        }
+    }
 
     public func removeLocalAccount() throws {
         Logger.subscription.log("Removing local account")
-            cachedIsUserAuthenticated = false
+            updateCachedIsUserAuthenticated(false)
         try oAuthClient.removeLocalAccount()
     }
 
-    public func signOut(notifyUI: Bool) async {
-        Logger.subscription.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI ? "true" : "false")")
+    public func signOut(notifyUI: Bool, userInitiated: Bool) async {
+        Logger.subscription.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI ? "true" : "false"), User Initiated: \(userInitiated ? "true" : "false")")
+
         try? await oAuthClient.logout()
         clearSubscriptionCache()
+
         if notifyUI {
-                cachedIsUserAuthenticated = false
+                updateCachedIsUserAuthenticated(false, userInitiated: userInitiated)
         } else {
             // skipping cached setter for avoiding notification
-                userDefaults.isUserAuthenticated = false
-                userDefaults.userEntitlements = []
-            }
+            userDefaults.isUserAuthenticated = false
+            userDefaults.userEntitlements = []
+        }
+
         Logger.subscription.log("Removing V1 Account")
         try? legacyAccountStorage?.clearAuthenticationState()
     }
 
-    public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> PrivacyProSubscription {
+    public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> DuckDuckGoSubscription {
         Logger.subscription.log("Confirming Purchase...")
         let accessToken = try await getTokenContainer(policy: .localValid).accessToken
         let confirmation = try await subscriptionEndpointService.confirmPurchase(accessToken: accessToken,

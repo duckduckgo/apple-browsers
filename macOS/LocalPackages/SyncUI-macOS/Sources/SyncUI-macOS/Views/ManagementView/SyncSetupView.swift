@@ -29,7 +29,7 @@ struct SyncSetupView<ViewModel>: View where ViewModel: ManagementViewModel {
                 syncWithAnotherDeviceView()
                 SyncUIViews.TextDetailSecondary(text: UserText.beginSyncFooter)
                     .padding(.bottom, 24)
-                    .padding(.horizontal, 110)
+                    .padding(.horizontal, 60)
                     .font(.system(size: 11))
             }
             VStack(alignment: .leading, spacing: 12) {

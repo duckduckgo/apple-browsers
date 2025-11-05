@@ -1,30 +1,30 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
-    pixel_name: {
-        description: 'Describe when the pixel fires and its purpose',
+    "pixel_name": {
+        "description": "Describe when the pixel fires and its purpose",
         // Github usernames of the people responsible for the pixel.
-        owners: ['nshuba'],
-        triggers: ['other'],
-        suffixes: [
+        "owners": ["nshuba"],
+        "triggers": ["other"],
+        "suffixes": [
             // A suffix is a dynamic part of the pixel name, e.g. "some.pixel.[count|daily]"
-            'first_daily_count', // shortcut to a commonly used suffix, defined in common_suffixes.json.
+            "first_daily_count", // shortcut to a commonly used suffix, defined in common_suffixes.json.
             {
                 // Custom suffix.
-                description: 'Describe the custom suffix and its purpose',
-                enum: ['suffix1', 'suffix2'],
-            },
+                "description": "Describe the custom suffix and its purpose",
+                "enum": ["suffix1", "suffix2"]
+            }
         ],
-        parameters: [
+        "parameters": [
             // Commonly used param, defined in params_dictionary.json.
-            'appVersion',
+            "appVersion",
             // Commonly used param, defined in params_dictionary.json.
-            'pixelSource',
+            "pixelSource",
             {
-                key: 'paramKey',
-                description: 'Describe the parameter and its purpose',
-            },
+                "key": "paramKey",
+                "description": "Describe the parameter and its purpose"
+            }
         ],
         // If pixel is temporary, remove if pixel is permanent.
-        expires: '2025-01-30',
-    },
+        "expires": "2025-01-30"
+    }
 }

@@ -25,13 +25,19 @@ import SwiftUI
 ///   - type: The type of view to search for.
 ///   - root: The root object to start searching from.
 /// - Returns: An optional view of type `T`, or `nil` if no such view is found.
-public func find<T: View>(_ type: T.Type, in root: Any) -> T? {
+public func find<T: View>(_ type: T.Type, in root: Any, seen: Set<ObjectIdentifier> = []) -> T? {
     let mirror = Mirror(reflecting: root)
+    var seen = seen
+    if mirror.displayStyle == .class,
+       !seen.insert(ObjectIdentifier(root as AnyObject)).inserted {
+        // object already seen: avoid circular recursion
+        return nil
+    }
     for child in mirror.children {
         if let view = child.value as? T {
             return view
         }
-        if let found = find(type, in: child.value) {
+        if let found = find(type, in: child.value, seen: seen) {
             return found
         }
     }

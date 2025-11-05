@@ -45,6 +45,11 @@ extension NSCoder {
         return decodeInteger(forKey: key)
     }
 
+    func decodeIfPresent(at key: String) -> Bool? {
+        guard containsValue(forKey: key) else { return nil }
+        return decodeBool(forKey: key)
+    }
+
     func decodeIfPresent<T: NSObject>(at key: String) -> T? where T: NSSecureCoding {
         guard containsValue(forKey: key) else { return nil }
         return decodeObject(of: T.self, forKey: key)

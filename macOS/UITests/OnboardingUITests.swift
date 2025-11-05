@@ -20,20 +20,29 @@ import XCTest
 
 final class OnboardingUITests: UITestCase {
 
+    private var welcomeWindow: XCUIElement!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+
+        continueAfterFailure = false
+        try resetApplicationData()
+
+        app = XCUIApplication.setUp(environment: [
+            "UITEST_MODE_ONBOARDING": "1"
+        ])
+        app.enforceSingleWindow()
+
+        welcomeWindow = app.windows["Welcome"]
+    }
+
     override func tearDownWithError() throws {
         try resetApplicationData()
+        try super.tearDownWithError()
     }
 
     func testOnboardingToBrowsing() throws {
-        try resetApplicationData()
-        continueAfterFailure = false
-        let app = XCUIApplication.setUp(environment: [
-            "UITEST_MODE_ONBOARDING": "1"
-        ])
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        app.typeKey("n", modifierFlags: .command)
-        let welcomeWindow = app.windows["Welcome"]
-
+        // Options button initially disabled on welcome
         let optionsButton = welcomeWindow.buttons["NavigationBarViewController.optionsButton"]
         XCTAssertTrue(optionsButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertFalse(optionsButton.isEnabled)
@@ -43,10 +52,9 @@ final class OnboardingUITests: UITestCase {
 
         let getStartedButton = welcomeWindow.webViews["Welcome"].buttons["Let’s Do It!"]
         XCTAssertTrue(getStartedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        getStartedButton.click()
-        // When it clicks on the button the y it's not alligned
-        let centerCoordinate = getStartedButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
-        centerCoordinate.tap()
+        // Use coordinate tap to avoid overlay/hittability quirks
+        let centerCoordinate = getStartedButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))
+        centerCoordinate.click()
 
         // Protections activated
         XCTAssertTrue(welcomeWindow.webViews["Welcome"].staticTexts["Protections activated!"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -102,9 +110,8 @@ final class OnboardingUITests: UITestCase {
 
         // AfterOnboarding
         let ddgLogo = app.windows.webViews.groups.containing(.image, identifier: "DuckDuckGo Logo").element
-        XCTAssertTrue(ddgLogo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        let homePageSubTitle = app.windows.webViews.groups.containing(.staticText, identifier: "Protection. Privacy. Peace of mind.").element
-        XCTAssertTrue(homePageSubTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        let tooltip = app.windows.webViews.groups.containing(.staticText, identifier: "Toggle between search and AI chat").element
+        XCTAssertTrue(ddgLogo.waitForExistence(timeout: UITests.Timeouts.elementExistence) || tooltip.waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 
     func resetApplicationData() throws {

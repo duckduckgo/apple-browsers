@@ -51,11 +51,12 @@ final class NewTabPageCoordinator {
         keyValueStore: ThrowingKeyValueStoring,
         legacyKeyValueStore: KeyValueStoring = UserDefaultsWrapper<Any>.sharedDefaults,
         notificationCenter: NotificationCenter = .default,
-        visualizeFireAnimationDecider: VisualizeFireAnimationDecider,
+        visualizeFireAnimationDecider: VisualizeFireSettingsDecider,
         featureFlagger: FeatureFlagger,
-        windowControllersManager: WindowControllersManagerProtocol,
+        windowControllersManager: WindowControllersManagerProtocol & AIChatTabManaging,
         tabsPreferences: TabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
+        winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
         fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) }
     ) {
 
@@ -88,7 +89,8 @@ final class NewTabPageCoordinator {
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
-            newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider
+            newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
+            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
         )
         newTabPageShownPixelSender = NewTabPageShownPixelSender(
             appearancePreferences: appearancePreferences,

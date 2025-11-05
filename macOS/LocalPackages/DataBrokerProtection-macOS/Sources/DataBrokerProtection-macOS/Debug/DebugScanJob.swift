@@ -28,18 +28,18 @@ struct DebugScanReturnValue {
     let brokerURL: String
     let extractedProfiles: [ExtractedProfile]
     let error: Error?
-    let brokerProfileQueryData: BrokerProfileQueryData
+    let context: SubJobContextProviding
     let meta: [String: Any]?
 
     init(brokerURL: String,
          extractedProfiles: [ExtractedProfile] = [ExtractedProfile](),
          error: Error? = nil,
-         brokerProfileQueryData: BrokerProfileQueryData,
+         context: SubJobContextProviding,
          meta: [String: Any]? = nil) {
         self.brokerURL = brokerURL
         self.extractedProfiles = extractedProfiles
         self.error = error
-        self.brokerProfileQueryData = brokerProfileQueryData
+        self.context = context
         self.meta = meta
     }
 }
@@ -56,8 +56,8 @@ final class DebugScanJob: SubJobWebRunning {
 
     let privacyConfig: PrivacyConfigurationManaging
     let prefs: ContentScopeProperties
-    let query: BrokerProfileQueryData
-    let emailService: EmailServiceProtocol
+    let context: SubJobContextProviding
+    let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     let captchaService: CaptchaServiceProtocol
     let stageCalculator: StageDurationCalculator
     let executionConfig: BrokerJobExecutionConfig
@@ -73,15 +73,17 @@ final class DebugScanJob: SubJobWebRunning {
     let cookieHandler: CookieHandler
     let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     var postLoadingSiteStartTime: Date?
+    let featureFlagger: DBPFeatureFlagging
 
     private let fileManager = FileManager.default
     private let debugScanContentPath: String?
 
     init(privacyConfig: PrivacyConfigurationManaging,
          prefs: ContentScopeProperties,
-         query: BrokerProfileQueryData,
-         emailService: EmailServiceProtocol,
+         context: SubJobContextProviding,
+         emailConfirmationDataService: EmailConfirmationDataServiceProvider,
          captchaService: CaptchaServiceProtocol,
+         featureFlagger: DBPFeatureFlagging,
          executionConfig: BrokerJobExecutionConfig = BrokerJobExecutionConfig(),
          operationAwaitTime: TimeInterval = 3,
          clickAwaitTime: TimeInterval = 0,
@@ -89,13 +91,14 @@ final class DebugScanJob: SubJobWebRunning {
     ) {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
-        self.query = query
-        self.emailService = emailService
+        self.context = context
+        self.emailConfirmationDataService = emailConfirmationDataService
         self.captchaService = captchaService
         self.executionConfig = executionConfig
         self.operationAwaitTime = operationAwaitTime
         self.shouldRunNextStep = shouldRunNextStep
         self.clickAwaitTime = clickAwaitTime
+        self.featureFlagger = featureFlagger
         if let desktopPath = fileManager.urls(for: .desktopDirectory, in: .userDomainMask).first?.relativePath {
             self.debugScanContentPath = desktopPath + "/PIR-Debug"
         } else {
@@ -115,14 +118,22 @@ final class DebugScanJob: SubJobWebRunning {
         try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation
             Task {
-                await initialize(handler: webViewHandler, isFakeBroker: query.dataBroker.isFakeBroker, showWebView: showWebView)
+                do {
+                    try await initialize(handler: webViewHandler, isFakeBroker: context.dataBroker.isFakeBroker, showWebView: showWebView)
+                } catch {
+                    if case let UserScriptError.failedToLoadJS(jsFile, error) = error {
+                        pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
+                        try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
+                    }
+                    fatalError("Failed to initialize handler for DebugScanJob: \(error.localizedDescription)")
+                }
 
                 do {
-                    let scanStep = try query.dataBroker.scanStep()
+                    let scanStep = try context.dataBroker.scanStep()
                     if let actionsHandler = actionsHandler {
                         self.actionsHandler = actionsHandler
                     } else {
-                        self.actionsHandler = ActionsHandler(step: scanStep)
+                        self.actionsHandler = ActionsHandler.forScan(scanStep)
                     }
                     if self.shouldRunNextStep() {
                         await executeNextStep()
@@ -140,7 +151,7 @@ final class DebugScanJob: SubJobWebRunning {
         if action is ExtractAction {
             do {
                 if let path = self.debugScanContentPath {
-                    let fileName = "\(query.profileQuery.id ?? 0)_\(query.dataBroker.name)"
+                    let fileName = "\(context.profileQuery.id ?? 0)_\(context.dataBroker.name)"
                     try await webViewHandler?.takeSnaphost(path: path + "/screenshots/", fileName: "\(fileName).png")
                     try await webViewHandler?.saveHTML(path: path + "/html/", fileName: "\(fileName).html")
                 }
@@ -151,7 +162,7 @@ final class DebugScanJob: SubJobWebRunning {
 
         await webViewHandler?.execute(action: action,
                                       ofType: actionsHandler?.stepType,
-                                      data: .userData(query.profileQuery, self.extractedProfile))
+                                      data: .userData(context.profileQuery, self.extractedProfile))
     }
 
     public func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
@@ -159,7 +170,7 @@ final class DebugScanJob: SubJobWebRunning {
             let debugScanReturnValue = DebugScanReturnValue(
                 brokerURL: scanURL,
                 extractedProfiles: profiles,
-                brokerProfileQueryData: query,
+                context: context,
                 meta: meta
             )
             complete(debugScanReturnValue)
@@ -170,19 +181,11 @@ final class DebugScanJob: SubJobWebRunning {
 
     public func completeWith(error: Error) async {
         if let scanURL = self.scanURL {
-            let debugScanReturnValue = DebugScanReturnValue(brokerURL: scanURL, error: error, brokerProfileQueryData: query)
+            let debugScanReturnValue = DebugScanReturnValue(brokerURL: scanURL, error: error, context: context)
             complete(debugScanReturnValue)
         }
 
         await executeNextStep()
-    }
-
-    func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
-        if action.actionType == .expectation, !stageCalculator.isRetrying {
-            retriesCountOnError = 1
-        }
-
-        return false
     }
 
     public func executeNextStep() async {

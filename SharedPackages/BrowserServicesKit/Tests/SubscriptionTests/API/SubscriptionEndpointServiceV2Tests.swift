@@ -27,7 +27,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
     private var apiService: MockAPIService!
     private var endpointService: DefaultSubscriptionEndpointServiceV2!
     private let baseURL = SubscriptionEnvironment.ServiceEnvironment.staging.url
-    private let disposableCache = UserDefaultsCache<PrivacyProSubscription>(key: UserDefaultsCacheKeyKest.subscriptionTest,
+    private let disposableCache = UserDefaultsCache<DuckDuckGoSubscription>(key: UserDefaultsCacheKeyKest.subscriptionTest,
                                                                             settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
     private enum UserDefaultsCacheKeyKest: String, UserDefaultsCacheKeyStore {
         case subscriptionTest = "com.duckduckgo.bsk.subscription.info.testing"
@@ -55,7 +55,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
     private func createSubscriptionResponseData() throws -> Data {
         let date = Date(timeIntervalSince1970: 123456789)
-        let subscription = PrivacyProSubscription(
+        let subscription = DuckDuckGoSubscription(
             productId: "prod123",
             name: "Pro Plan",
             billingPeriod: .yearly,
@@ -82,7 +82,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
     func testGetSubscriptionReturnsCachedSubscription() async throws {
         let date = Date(timeIntervalSince1970: 123456789)
-        let cachedSubscription = PrivacyProSubscription(
+        let cachedSubscription = DuckDuckGoSubscription(
             productId: "prod123",
             name: "Pro Plan",
             billingPeriod: .monthly,
@@ -153,7 +153,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         do {
             _ = try await endpointService.getProducts()
             XCTFail("Expected invalidResponse error")
-        } catch Networking.APIRequestV2.Error.emptyResponseBody {
+        } catch Networking.APIRequestV2Error.emptyResponseBody {
             // Success
         } catch {
             XCTFail("Unexpected error: \(error)")
@@ -180,7 +180,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         let date = Date(timeIntervalSince1970: 123456789)
         let confirmResponse = ConfirmPurchaseResponseV2(
             email: "user@example.com",
-            subscription: PrivacyProSubscription(
+            subscription: DuckDuckGoSubscription(
                 productId: "prod123",
                 name: "Pro Plan",
                 billingPeriod: .monthly,
@@ -206,7 +206,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
     func testUpdateCacheStoresSubscription() async throws {
         let date = Date(timeIntervalSince1970: 123456789)
-        let subscription = PrivacyProSubscription(
+        let subscription = DuckDuckGoSubscription(
             productId: "prod123",
             name: "Pro Plan",
             billingPeriod: .monthly,
@@ -234,7 +234,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         apiService.set(response: apiResponse, forRequest: request)
 
         let date = Date(timeIntervalSince1970: 123456789)
-        let subscription = PrivacyProSubscription(
+        let subscription = DuckDuckGoSubscription(
             productId: "prod123",
             name: "Pro Plan",
             billingPeriod: .monthly,
@@ -273,7 +273,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
         static let authorizationHeader = ["Authorization": "Bearer TOKEN"]
 
-//        static let unknownServerError = APIServiceError.serverError(statusCode: 401, error: "unknown_error")
+//        static let unknownServerError = APIServiceError.serverError(statusCode: 401, statusDescription: "unknown_error")
     }
 
     var apiService: MockAPIService!

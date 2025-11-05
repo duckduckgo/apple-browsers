@@ -41,15 +41,9 @@ protocol FavoritesFaviconCaching {
     func populateFavicon(for domain: String, intoCache: FaviconsCacheType, fromCache: FaviconsCacheType?)
 }
 
-struct FavoritesSlice {
-    let items: [FavoriteItem]
-    let isCollapsible: Bool
-}
-
 class FavoritesViewModel: ObservableObject {
 
-    @Published private(set) var allFavorites: [FavoriteItem] = []
-    @Published private(set) var isCollapsed: Bool = true
+    @Published private(set) var allFavorites: [Favorite] = []
     @Published var canEditFavorites = true
 
     // In memory only so that when settings is dismissed we can show the prompt.
@@ -60,28 +54,26 @@ class FavoritesViewModel: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
 
+    private let isFocussedState: Bool
     private let favoriteDataSource: NewTabPageFavoriteDataSource
     private let faviconsCache: FavoritesFaviconCaching
     private let pixelFiring: PixelFiring.Type
     private let dailyPixelFiring: DailyPixelFiring.Type
-
-    let isNewTabPageCustomizationEnabled: Bool
    
     var isEmpty: Bool {
-        allFavorites.filter(\.isFavorite).isEmpty
+        allFavorites.isEmpty
     }
 
-    init(isNewTabPageCustomizationEnabled: Bool = false,
+    init(isFocussedState: Bool,
          favoriteDataSource: NewTabPageFavoriteDataSource,
          faviconLoader: FavoritesFaviconLoading,
          faviconsCache: FavoritesFaviconCaching = Favicons.shared,
          pixelFiring: PixelFiring.Type = Pixel.self,
          dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self) {
+        self.isFocussedState = isFocussedState
         self.favoriteDataSource = favoriteDataSource
         self.pixelFiring = pixelFiring
         self.dailyPixelFiring = dailyPixelFiring
-        self.isNewTabPageCustomizationEnabled = isNewTabPageCustomizationEnabled
-        self.isCollapsed = isNewTabPageCustomizationEnabled
         self.faviconsCache = faviconsCache
 
         self.faviconLoader = MissingFaviconWrapper(loader: faviconLoader, onFaviconMissing: { [weak self] in
@@ -99,36 +91,6 @@ class FavoritesViewModel: ObservableObject {
         updateData()
     }
 
-    func toggleCollapse() {
-        isCollapsed.toggle()
-        
-        if isCollapsed {
-            pixelFiring.fire(.newTabPageFavoritesSeeLess, withAdditionalParameters: [:])
-        } else {
-            pixelFiring.fire(.newTabPageFavoritesSeeMore, withAdditionalParameters: [:])
-        }
-    }
-
-    func prefixedFavorites(for columnsCount: Int) -> FavoritesSlice {
-        guard isNewTabPageCustomizationEnabled else {
-            return .init(items: allFavorites, isCollapsible: false)
-        }
-
-        let hasFavorites = allFavorites.contains(where: \.isFavorite)
-        let maxCollapsedItemsCount = hasFavorites ? columnsCount * 2 : columnsCount
-        let isCollapsible = allFavorites.count > maxCollapsedItemsCount
-
-        var favorites = isCollapsed ? Array(allFavorites.prefix(maxCollapsedItemsCount)) : allFavorites
-
-        if !hasFavorites {
-            for _ in favorites.count ..< maxCollapsedItemsCount {
-                favorites.append(.placeholder(UUID().uuidString))
-            }
-        }
-
-        return .init(items: favorites, isCollapsible: isCollapsible)
-    }
-
     // MARK: - External actions
 
     var onFaviconMissing: () -> Void = {}
@@ -141,8 +103,12 @@ class FavoritesViewModel: ObservableObject {
     func favoriteSelected(_ favorite: Favorite) {
         guard let url = favorite.urlObject else { return }
 
-        pixelFiring.fire(.favoriteLaunchedNTP, withAdditionalParameters: [:])
-        dailyPixelFiring.fireDaily(.favoriteLaunchedNTPDaily)
+        if isFocussedState {
+            pixelFiring.fire(.favoriteLaunchedWebsite, withAdditionalParameters: [:])
+        } else {
+            pixelFiring.fire(.favoriteLaunchedNTP, withAdditionalParameters: [:])
+            dailyPixelFiring.fireDaily(.favoriteLaunchedNTPDaily)
+        }
         if let host = url.host {
             faviconsCache.populateFavicon(for: host, intoCache: .fireproof, fromCache: .tabs)
         }
@@ -181,29 +147,16 @@ class FavoritesViewModel: ObservableObject {
         guard indexSet.count == 1,
               let fromIndex = indexSet.first else { return }
 
-        let favoriteItem = allFavorites[fromIndex]
-        guard case let .favorite(favorite) = favoriteItem else { return }
+        let favorite = allFavorites[fromIndex]
 
         favoriteDataSource.moveFavorite(favorite, fromIndex: fromIndex, toIndex: index)
         allFavorites.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: index)
     }
 
-    func placeholderTapped() {
-        pixelFiring.fire(.newTabPageFavoritesPlaceholderTapped, withAdditionalParameters: [:])
-    }
-
     // MARK: -
 
     private func updateData() {
-        var allFavorites = favoriteDataSource.favorites.map {
-            FavoriteItem.favorite($0)
-        }
-
-        if isNewTabPageCustomizationEnabled {
-            allFavorites.append(.addFavorite)
-        }
-
-        self.allFavorites = allFavorites
+        allFavorites = favoriteDataSource.favorites
     }
 }
 
@@ -237,17 +190,6 @@ private final class MissingFaviconWrapper: FavoritesFaviconLoading {
 
     func existingFavicon(for favorite: Favorite, size: CGFloat) -> Favicon? {
         loader.existingFavicon(for: favorite, size: size)
-    }
-}
-
-private extension FavoriteItem {
-    var isFavorite: Bool {
-        switch self {
-        case .favorite:
-            return true
-        case .addFavorite, .placeholder:
-            return false
-        }
     }
 }
 

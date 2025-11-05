@@ -22,12 +22,16 @@ import Foundation
 @testable import DuckDuckGo_Privacy_Browser
 
 class CapturingOptionsButtonMenuDelegate: OptionsButtonMenuDelegate {
-
     var optionsButtonMenuRequestedPreferencesCalled = false
     var optionsButtonMenuRequestedAppearancePreferencesCalled = false
     var optionsButtonMenuRequestedAccessibilityPreferencesCalled = false
     var optionsButtonMenuRequestedBookmarkAllOpenTabsCalled = false
     var optionsButtonMenuRequestedPaidAIChatCalled = false
+    var optionsButtonMenuRequestedWinBackOfferPurchasePageCalled = false
+
+    func optionsButtonMenuRequestedStartSync(_ menu: NSMenu) {
+
+    }
 
     func optionsButtonMenuRequestedDataBrokerProtection(_ menu: NSMenu) {
 
@@ -95,6 +99,10 @@ class CapturingOptionsButtonMenuDelegate: OptionsButtonMenuDelegate {
 
     func optionsButtonMenuRequestedSubscriptionPurchasePage(_ menu: NSMenu) {
 
+    }
+
+    func optionsButtonMenuRequestedWinBackOfferPurchasePage(_ menu: NSMenu) {
+        optionsButtonMenuRequestedWinBackOfferPurchasePageCalled = true
     }
 
     func optionsButtonMenuRequestedIdentityTheftRestoration(_ menu: NSMenu) {

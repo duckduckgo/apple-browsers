@@ -49,7 +49,7 @@ protocol UnifiedFeedbackSender {
 }
 
 extension UnifiedFeedbackSender {
-    func sendStandardPixel(_ pixel: PixelKitEventV2) async throws {
+    func sendStandardPixel(_ pixel: PixelKitEvent) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             PixelKit.fire(pixel, frequency: .standard) { _, error in
                 if let error {

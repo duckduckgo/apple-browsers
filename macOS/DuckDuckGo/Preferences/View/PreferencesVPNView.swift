@@ -129,18 +129,16 @@ extension Preferences {
                         Picker(selection: $model.isCustomDNSSelected, label: EmptyView()) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(UserText.vpnDnsServerPickerDefaultTitle)
-                                if model.isRiskySitesProtectionFeatureEnabled && model.didRiskySitesProtectionDefaultToTrue {
-                                    NativeCheckboxToggle(isOn: $model.isBlockRiskyDomainsOn, label: UserText.vpnDnsServerBlockRiskyDomainsToggleTitle)
-                                        .disabled(model.isCustomDNSSelected)
-                                    VStack(alignment: .leading, spacing: 0, content: {
-                                        TextMenuItemCaption(UserText.vpnDnsServerBlockRiskyDomainsToggleFooter)
-                                        TextButton(UserText.learnMore) {
-                                            model.openNewTab(with: .dnsBlocklistLearnMore)
-                                        }
-                                    })
-                                    .padding(.leading, 20)
-                                    .padding(.bottom, 8)
-                                }
+                                NativeCheckboxToggle(isOn: $model.isBlockRiskyDomainsOn, label: UserText.vpnDnsServerBlockRiskyDomainsToggleTitle)
+                                    .disabled(model.isCustomDNSSelected)
+                                VStack(alignment: .leading, spacing: 0, content: {
+                                    TextMenuItemCaption(UserText.vpnDnsServerBlockRiskyDomainsToggleFooter)
+                                    TextButton(UserText.learnMore) {
+                                        model.openNewTab(with: .dnsBlocklistLearnMore)
+                                    }
+                                })
+                                .padding(.leading, 20)
+                                .padding(.bottom, 8)
                             }.tag(false)
                             VStack(alignment: .leading, spacing: 0) {
                                 HStack(spacing: 15) {

@@ -35,7 +35,7 @@
 "connect.with.server.sheet.button" = "Ieslēgt sinhronizāciju un dublēšanu";
 
 /* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "Tādējādi DuckDuckGo drošajā serverī tiek izveidota šifrēta grāmatzīmju un paroļu dublējumkopija, ko var sinhronizēt ar citām ierīcēm.";
+"connect.with.server.sheet.description.part1" = "Tādējādi DuckDuckGo drošajā serverī tiek izveidota šifrēta grāmatzīmju un automātiskās aizpildes datu dublējumkopija, ko var sinhronizēt ar citām ierīcēm.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Šifrēšanas atslēga tiek saglabāta tikai tavā ierīcē – DuckDuckGo tai nevar piekļūt.";
@@ -53,7 +53,13 @@
 "credentials.invalid.objects.present.description" = "credentials.invalid.objects.present.description";
 
 /* Alert title for invalid logins being filtered out of synced data */
-"credentials.invalid.objects.present.title" = "Daži pieteikšanās dati netiek sinhronizēti, jo noteiktos laukos saturs ir pārāk garš.";
+"credentials.invalid.objects.present.title" = "Dažas paroles netiek sinhronizētas, jo noteiktos laukos saturs ir pārāk garš.";
+
+/* Do not translate - stringsdict entry */
+"creditcards.invalid.objects.present.description" = "creditcards.invalid.objects.present.description";
+
+/* Alert title for invalid credit cards being filtered out of synced data */
+"creditCards.invalid.objects.present.title" = "Dažas kredītkartes netiek sinhronizētas, jo noteiktos laukos saturs ir pārāk garš.";
 
 /* Delete Server Data - Button */
 "delete.server.data" = "Izslēgt un dzēst servera datus...";
@@ -130,8 +136,11 @@
 /* Button title for sync credentials limits exceeded warning to go to manage passwords */
 "prefrences.sync.credentials-limit-exceeded-action" = "Pārvaldīt paroles…";
 
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Pārvaldīt kredītkartes…";
+
 /* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Tavas grāmatzīmes un paroles tiek sagatavotas sinhronizēšanai. Tam vajadzētu aizņemt tikai neilgu brīdi.";
+"preparing.to.sync.sheet.description" = "Tavas grāmatzīmes un automātiskās aizpildes dati tiek sagatavoti sinhronizēšanai. Tam vajadzētu aizņemt tikai neilgu brīdi.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Notiek savienojuma izveide…";
@@ -254,7 +263,7 @@
 "sync.get.other.devices.screen.title" = "Iegūsti DuckDuckGo";
 
 /* Message included when sharing a url via the system share sheet */
-"sync.get.other.devices.share.link.message" = "Instalē DuckDuckGo pārlūkprogrammu savās ierīcēs, lai sāktu droši sinhronizēt grāmatzīmes un paroles:";
+"sync.get.other.devices.share.link.message" = "Instalējiet DuckDuckGo pārlūkprogrammu savās ierīcēs, lai sāktu droši sinhronizēt grāmatzīmes un automātiski aizpildāmos datus:";
 
 /* Sync Menu Path */
 "sync.menu.path" = "Iestatījumi > Sinhronizācija un dublēšana > Sinhronizācija ar citu ierīci";
@@ -278,7 +287,7 @@
 "sync.with.another.device.footer" = "Tavi dati tiek šifrēti no gala līdz galam, un DuckDuckGo nav piekļuves šifrēšanas atslēgai.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Droši sinhronizē grāmatzīmes un paroles starp ierīcēm.";
+"sync.with.another.device.message" = "Droši sinhronizējiet grāmatzīmes un automātiski aizpildiet datus starp ierīcēm.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Sinhronizācijas sākšana";

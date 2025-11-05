@@ -106,7 +106,7 @@ final class OnboardingDebugViewModel: ObservableObject {
         settings.fireButtonPulseDateShown = nil
         settings.privacyButtonPulseShown = false
         settings.browsingFinalDialogShown = false
-        settings.privacyProPromotionDialogShown = false
+        settings.subscriptionPromotionDialogShown = false
     }
 }
 

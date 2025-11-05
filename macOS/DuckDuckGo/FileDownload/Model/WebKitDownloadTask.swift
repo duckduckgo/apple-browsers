@@ -16,15 +16,15 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Combine
 import BrowserServicesKit
+import Combine
 import Common
+import Foundation
 import Navigation
+import os.log
+import PixelKit
 import UniformTypeIdentifiers
 import WebKit
-import PixelKit
-import os.log
 
 protocol WebKitDownloadTaskDelegate: AnyObject {
     func fileDownloadTaskNeedsDestinationURL(_ task: WebKitDownloadTask, suggestedFilename: String, suggestedFileType: UTType?) async -> (URL?, UTType?)
@@ -297,7 +297,7 @@ final class WebKitDownloadTask: NSObject, ProgressReporting, @unchecked Sendable
 
         // Set up a handler for file system events
         fileMonitor.setEventHandler {
-            MainActor.assumeIsolated { // DispatchSource is set up with the main queue above
+            MainActor.assumeMainThread { // DispatchSource is set up with the main queue above
                 fileAddedHandler(tempURL)
             }
         }
@@ -557,7 +557,7 @@ final class WebKitDownloadTask: NSObject, ProgressReporting, @unchecked Sendable
                 switch state {
                 case .initial: return
                 case .downloading:
-                    MainActor.assumeIsolated(completionHandler)
+                    MainActor.assumeMainThread(completionHandler)
                     cancellable = nil
                 case .downloaded:
                     pixelAssertionFailure("unexpected state change to \(state)")
@@ -759,7 +759,7 @@ extension WebKitDownloadTask {
 #endif
             return ""
         }
-        return MainActor.assumeIsolated {
+        return MainActor.assumeMainThread {
             "<Task \(download!) – \(state)>"
         }
     }

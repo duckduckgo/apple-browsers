@@ -110,3 +110,53 @@ public final class AIChatRestorationDataHandler: AIChatConsumableDataHandling {
 }
 
 public typealias AIChatRestorationData = String
+
+/// Handles page context data for AI Chat
+public final class AIChatPageContextHandler: AIChatConsumableDataHandling {
+    public typealias DataType = AIChatPageContextData
+    private var data: DataType?
+
+    public init() {}
+
+    public func setData(_ data: DataType) {
+        self.data = data
+    }
+
+    public func consumeData() -> DataType? {
+        let currentData = data
+        reset()
+        return currentData
+    }
+
+    public func reset() {
+        self.data = nil
+    }
+}
+
+public struct AIChatPageContextData: Codable {
+    public let title: String
+    public let favicon: [PageContextFavicon]
+    public let url: String
+    public let content: String
+    public let truncated: Bool
+    public let fullContentLength: Int
+
+    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int) {
+        self.title = title
+        self.favicon = favicon
+        self.url = url
+        self.content = content
+        self.truncated = truncated
+        self.fullContentLength = fullContentLength
+    }
+
+    public struct PageContextFavicon: Codable {
+        public let href: String
+        public let rel: String
+
+        public init(href: String, rel: String) {
+            self.href = href
+            self.rel = rel
+        }
+    }
+}

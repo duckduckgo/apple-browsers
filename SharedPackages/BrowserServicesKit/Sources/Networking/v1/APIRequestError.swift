@@ -31,7 +31,7 @@ extension APIRequest {
         public var errorDescription: String? {
             switch self {
             case .urlSession(let error):
-                return "URL session error: \(error.localizedDescription)"
+                return "URL session error: \(String(describing: error))"
             case .invalidResponse:
                 return "Invalid response received."
             case .missingEtagInResponse:

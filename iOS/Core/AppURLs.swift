@@ -19,6 +19,8 @@
 
 import BrowserServicesKit
 import Foundation
+import URLPredictor
+import OSLog
 
 public extension URL {
 
@@ -36,11 +38,19 @@ public extension URL {
     static let emailProtectionHelpPageLink = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/"))!
     static let aboutLink = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/about"))!
     static let otherDevices = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/app/devices?origin=funnel_app_ios"))!
-    static let searchSettings = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/settings"))!
-    static let assistSettings = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/settings#aifeatures"))!
+
+    static let settingsPath = "/settings"
+    static let embeddedGeneralSERPSettings = URL(string: "\(base)\(settingsPath)?ko=-1&embedded=1#general")!
+    static let embeddedSearchAssistSettings =  URL(string: "\(base)\(settingsPath)?ko=-1&embedded=1&highlight=kbe#aifeatures")!
+
+    static let searchSettings = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)\(settingsPath)"))!
+    static let assistSettings = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)\(settingsPath)#aifeatures"))!
+
     static let aiFeaturesLearnMore = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/duckai/approach-to-ai"))!
     static let autofillHelpPageLink = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/sync-and-backup/password-manager-security/"))!
     static let maliciousSiteProtectionLearnMore = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/privacy/phishing-and-malware-protection/"))!
+    static let webTrackingProtection = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/privacy/web-tracking-protections/"))!
+    static let gpcLearnMore = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/privacy/gpc/"))!
 
     static let surrogates = URL(string: "\(staticBase)/surrogates.txt")!
 
@@ -92,15 +102,28 @@ public extension URL {
     func applyingSearchHeaderParams() -> URL {
         removingParameters(named: [Param.searchHeader]).appendingParameter(name: Param.searchHeader, value: ParamValue.searchHeader)
     }
+    
+    func applyingDuckAIParams(isAIChatEnabled: Bool) -> URL {
+        var url = removingParameters(named: [Param.kbg])
+        if !isAIChatEnabled {
+            url = url.appendingParameter(name: Param.kbg, value: ParamValue.kbgDisabled)
+        }
+        return url
+    }
 
     var hasCorrectSearchHeaderParams: Bool {
         guard let header = getParameter(named: Param.searchHeader) else { return false }
         return header == ParamValue.searchHeader
     }
+    
+    func hasCorrectDuckAIParams(isDuckAIEnabled: Bool) -> Bool {
+        let kbgValue = getParameter(named: Param.kbg)
+        return isDuckAIEnabled ? (kbgValue == nil) : (kbgValue == ParamValue.kbgDisabled)
+    }
 
     func removingInternalSearchParameters() -> URL {
         guard isDuckDuckGoSearch else { return self }
-        return removingParameters(named: [Param.atb, Param.source, Param.searchHeader])
+        return removingParameters(named: [Param.atb, Param.source, Param.searchHeader, Param.kbg])
     }
 
     fileprivate enum Param {
@@ -112,6 +135,7 @@ public extension URL {
         static let activityType = "at"
         static let partialHost = "pv1"
         static let searchHeader = "ko"
+        static let kbg = "kbg"
         static let vertical = "ia"
         static let verticalRewrite = "iar"
         static let verticalMaps = "iaxm"
@@ -124,6 +148,7 @@ public extension URL {
         static let source = "ddg_ios"
         static let appUsage = "app_use"
         static let searchHeader = "-1"
+        static let kbgDisabled = "-1"
         static let emailEnabled = "1"
         static let emailDisabled = "0"
         static let majorVerticals: Set<String> = ["images", "videos", "news"]
@@ -134,10 +159,30 @@ public extension URL {
 
     private static let defaultStatisticsDependentURLFactory = StatisticsDependentURLFactory()
 
-    static func makeSearchURL(text: String) -> URL? { defaultStatisticsDependentURLFactory.makeSearchURL(text: text) }
+    static func makeSearchURL(text: String) -> URL? {
+        makeSearchURL(query: text)
+    }
 
-    static func makeSearchURL(query: String, forceSearchQuery: Bool = false, queryContext: URL? = nil) -> URL? {
-        defaultStatisticsDependentURLFactory.makeSearchURL(query: query, forceSearchQuery: forceSearchQuery, queryContext: queryContext)
+    static func makeSearchURL(query: String, useUnifiedLogic: Bool = false, forceSearchQuery: Bool = false, queryContext: URL? = nil) -> URL? {
+
+        if useUnifiedLogic && !forceSearchQuery {
+            do {
+                switch try Classifier.classify(input: query) {
+                case .navigate(let url):
+                    return url
+                case .search(let query):
+                    return defaultStatisticsDependentURLFactory.makeSearchURL(query: query, forceSearchQuery: true, queryContext: queryContext)
+                }
+            } catch let error as Classifier.Error {
+                Logger.general.error("Failed to classify \"\(query)\" as URL or search phrase: \(error)")
+                return nil
+            } catch {
+                Logger.general.error("URL extension: Making URL from \(query) failed")
+                return nil
+            }
+        } else {
+            return defaultStatisticsDependentURLFactory.makeSearchURL(query: query, forceSearchQuery: forceSearchQuery, queryContext: queryContext)
+        }
     }
 
     func applyingStatsParams() -> URL { URL.defaultStatisticsDependentURLFactory.applyingStatsParams(to: self) }

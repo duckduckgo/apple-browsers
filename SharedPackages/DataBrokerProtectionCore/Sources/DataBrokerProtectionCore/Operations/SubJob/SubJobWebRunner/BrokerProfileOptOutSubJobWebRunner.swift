@@ -23,6 +23,8 @@ import UserScript
 import os.log
 import Common
 
+public typealias BrokerProfileOptOutSubJobWebProtocol = BrokerProfileOptOutSubJobWebRunning & BrokerProfileOptOutSubJobWebTesting
+
 public protocol BrokerProfileOptOutSubJobWebRunning {
     func optOut(profileQuery: BrokerProfileQueryData,
                 extractedProfile: ExtractedProfile,
@@ -30,14 +32,36 @@ public protocol BrokerProfileOptOutSubJobWebRunning {
                 shouldRunNextStep: @escaping () -> Bool) async throws
 }
 
-public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerProfileOptOutSubJobWebRunning {
+public protocol BrokerProfileOptOutSubJobWebTesting {
+    func run(inputValue: ExtractedProfile,
+             webViewHandler: WebViewHandler?,
+             actionsHandler: ActionsHandler?,
+             showWebView: Bool) async throws
+}
+
+extension BrokerProfileOptOutSubJobWebTesting {
+    public func run(inputValue: ExtractedProfile,
+                    webViewHandler: WebViewHandler? = nil,
+                    actionsHandler: ActionsHandler? = nil,
+                    showWebView: Bool = false) async throws {
+        try await run(inputValue: inputValue, webViewHandler: webViewHandler, actionsHandler: actionsHandler, showWebView: showWebView)
+    }
+}
+
+public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerProfileOptOutSubJobWebProtocol {
+    public enum ActionsHandlerMode {
+        case testing // for injecting custom actionsHandler
+        case optOut // for opt-out operations (action list may be modified depending on featureFlagger.isEmailConfirmationDecouplingFeatureOn)
+        case emailConfirmation(URL) // for email confirmation operations
+    }
+
     public typealias ReturnValue = Void
     public typealias InputValue = ExtractedProfile
 
     public let privacyConfig: PrivacyConfigurationManaging
     public let prefs: ContentScopeProperties
-    public let query: BrokerProfileQueryData
-    public let emailService: EmailServiceProtocol
+    public let context: SubJobContextProviding
+    public let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     public let captchaService: CaptchaServiceProtocol
     public let cookieHandler: CookieHandler
     public let stageCalculator: StageDurationCalculator
@@ -51,25 +75,29 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public var postLoadingSiteStartTime: Date?
     public let executionConfig: BrokerJobExecutionConfig
+    public let featureFlagger: DBPFeatureFlagging
+    private let actionsHandlerMode: ActionsHandlerMode
 
-    public var retriesCountOnError: Int = 3
+    public var retriesCountOnError: Int = 0
 
     public init(privacyConfig: PrivacyConfigurationManaging,
                 prefs: ContentScopeProperties,
-                query: BrokerProfileQueryData,
-                emailService: EmailServiceProtocol,
+                context: SubJobContextProviding,
+                emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
+                featureFlagger: DBPFeatureFlagging,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
                 operationAwaitTime: TimeInterval = 3,
                 clickAwaitTime: TimeInterval = 40,
                 stageCalculator: StageDurationCalculator,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 executionConfig: BrokerJobExecutionConfig,
+                actionsHandlerMode: ActionsHandlerMode,
                 shouldRunNextStep: @escaping () -> Bool) {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
-        self.query = query
-        self.emailService = emailService
+        self.context = context
+        self.emailConfirmationDataService = emailConfirmationDataService
         self.captchaService = captchaService
         self.operationAwaitTime = operationAwaitTime
         self.stageCalculator = stageCalculator
@@ -78,6 +106,8 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         self.cookieHandler = cookieHandler
         self.pixelHandler = pixelHandler
         self.executionConfig = executionConfig
+        self.actionsHandlerMode = actionsHandlerMode
+        self.featureFlagger = featureFlagger
     }
 
     public func optOut(profileQuery: BrokerProfileQueryData,
@@ -89,14 +119,14 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
 
     @MainActor
     public func run(inputValue: ExtractedProfile,
-                    webViewHandler: WebViewHandler? = nil,
-                    actionsHandler: ActionsHandler? = nil,
-                    showWebView: Bool = false) async throws {
+                    webViewHandler: WebViewHandler?,
+                    actionsHandler: ActionsHandler?,
+                    showWebView: Bool) async throws {
         var task: Task<Void, Never>?
 
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
-                self.extractedProfile = inputValue.merge(with: query.profileQuery)
+                self.extractedProfile = inputValue.merge(with: context.profileQuery)
                 self.continuation = continuation
 
                 guard self.shouldRunNextStep() else {
@@ -105,15 +135,32 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 }
 
                 task = Task {
-                    await initialize(handler: webViewHandler,
-                                     isFakeBroker: query.dataBroker.isFakeBroker,
-                                     showWebView: showWebView)
+                    do {
+                        try await initialize(handler: webViewHandler,
+                                         isFakeBroker: context.dataBroker.isFakeBroker,
+                                         showWebView: showWebView)
+                    } catch {
+                        failed(with: error)
+                    }
 
-                    if let optOutStep = query.dataBroker.optOutStep() {
-                        if let actionsHandler = actionsHandler {
-                            self.actionsHandler = actionsHandler
-                        } else {
-                            self.actionsHandler = ActionsHandler(step: optOutStep)
+                    if let optOutStep = context.dataBroker.optOutStep() {
+                        switch actionsHandlerMode {
+                        case .testing:
+                            if let actionsHandler {
+                                self.actionsHandler = actionsHandler
+                            } else {
+                                assertionFailure("Missing ActionsHandler")
+                            }
+                        case .optOut:
+                            if actionsHandler != nil {
+                                assertionFailure("Use .testing actionsHandlerMode instead")
+                            }
+                            self.actionsHandler = ActionsHandler.forOptOut(optOutStep, haltsAtEmailConfirmation: featureFlagger.isEmailConfirmationDecouplingFeatureOn)
+                        case .emailConfirmation(let url):
+                            if actionsHandler != nil {
+                                assertionFailure("Use .testing actionsHandlerMode instead")
+                            }
+                            self.actionsHandler = ActionsHandler.forEmailConfirmationContinuation(optOutStep, confirmationURL: url)
                         }
 
                         if self.shouldRunNextStep() {
@@ -146,7 +193,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
 
         let shouldContinue = self.shouldRunNextStep()
         if let action = actionsHandler?.nextAction(), shouldContinue {
-            stageCalculator.setLastActionId(action.id)
+            stageCalculator.setLastAction(action)
             Logger.action.debug(loggerContext(for: action), message: "Next action")
             await runNextAction(action)
         } else {
@@ -164,6 +211,6 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     }
 
     private func loggerContext(for action: Action? = nil) -> PIRActionLogContext {
-        .init(stepType: .optOut, broker: query.dataBroker, attemptId: stageCalculator.attemptId, action: action)
+        .init(stepType: .optOut, broker: context.dataBroker, attemptId: stageCalculator.attemptId, action: action)
     }
 }

@@ -23,6 +23,7 @@ import Core
 import SubscriptionTestingUtilities
 import BrowserServicesKit
 import PersistenceTestingUtils
+import BrowserServicesKitTestsUtils
 
 // swiftlint:disable force_try
 
@@ -89,7 +90,7 @@ final class TabManagerTests: XCTestCase {
                           bookmarksDatabase: MockBookmarksDatabase.make(prepareFolderStructure: false),
                           historyManager: MockHistoryManager(),
                           syncService: MockDDGSyncing(),
-                          privacyProDataReporter: MockPrivacyProDataReporter(),
+                          subscriptionDataReporter: MockSubscriptionDataReporter(),
                           contextualOnboardingPresenter: ContextualOnboardingPresenterMock(),
                           contextualOnboardingLogic: ContextualOnboardingLogicMock(),
                           onboardingPixelReporter: OnboardingPixelReporterMock(),
@@ -103,7 +104,8 @@ final class TabManagerTests: XCTestCase {
                           maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                           featureDiscovery: MockFeatureDiscovery(),
                           keyValueStore: try! MockKeyValueFileStore(),
-                          daxDialogsManager: DummyDaxDialogsManager())
+                          daxDialogsManager: DummyDaxDialogsManager(),
+                          aiChatSettings: MockAIChatSettingsProvider())
     }
 
 }

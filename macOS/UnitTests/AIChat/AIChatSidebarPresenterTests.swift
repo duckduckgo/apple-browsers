@@ -30,6 +30,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
     private var presenter: AIChatSidebarPresenter!
     private var mockSidebarHost: MockAIChatSidebarHosting!
     private var mockSidebarProvider: MockAIChatSidebarProvider!
+    private var mockAIChatMenuConfig: DummyAIChatConfig!
     private var mockAIChatTabOpener: MockAIChatTabOpener!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockWindowControllersManager: WindowControllersManagerMock!
@@ -40,6 +41,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         super.setUp()
         mockSidebarHost = MockAIChatSidebarHosting()
         mockSidebarProvider = MockAIChatSidebarProvider()
+        mockAIChatMenuConfig = DummyAIChatConfig()
         mockAIChatTabOpener = MockAIChatTabOpener()
         mockFeatureFlagger = MockFeatureFlagger()
         mockWindowControllersManager = WindowControllersManagerMock()
@@ -52,6 +54,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         presenter = AIChatSidebarPresenter(
             sidebarHost: mockSidebarHost,
             sidebarProvider: mockSidebarProvider,
+            aiChatMenuConfig: mockAIChatMenuConfig,
             aiChatTabOpener: mockAIChatTabOpener,
             featureFlagger: mockFeatureFlagger,
             windowControllersManager: mockWindowControllersManager,
@@ -66,6 +69,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         mockWindowControllersManager = nil
         mockFeatureFlagger = nil
         mockAIChatTabOpener = nil
+        mockAIChatMenuConfig = nil
         mockSidebarProvider = nil
         mockSidebarHost = nil
         super.tearDown()
@@ -84,6 +88,8 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         // Given & When
         let presenter = AIChatSidebarPresenter(
             sidebarHost: mockSidebarHost,
+            sidebarProvider: mockSidebarProvider,
+            aiChatMenuConfig: mockAIChatMenuConfig,
             aiChatTabOpener: mockAIChatTabOpener,
             featureFlagger: mockFeatureFlagger,
             windowControllersManager: mockWindowControllersManager,
@@ -147,7 +153,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         // Given
         let tabID = "test-tab"
         mockSidebarHost.currentTabID = tabID
-        _ = mockSidebarProvider.makeSidebar(for: tabID, burnerMode: .regular)
+        _ = mockSidebarProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
         XCTAssertTrue(mockSidebarProvider.isShowingSidebar(for: tabID))
 
         var presenceChangeReceived: AIChatSidebarPresenceChange?
@@ -181,7 +187,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         // Given
         let tabID = "test-tab"
         mockSidebarHost.currentTabID = tabID
-        _ = mockSidebarProvider.makeSidebar(for: tabID, burnerMode: .regular)
+        _ = mockSidebarProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
 
         var presenceChangeReceived: AIChatSidebarPresenceChange?
         presenter.sidebarPresenceWillChangePublisher
@@ -200,7 +206,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         // Given
         let tabID = "test-tab"
         mockSidebarHost.currentTabID = tabID
-        _ = mockSidebarProvider.makeSidebar(for: tabID, burnerMode: .regular)
+        _ = mockSidebarProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
 
         var presenceChangeReceived: AIChatSidebarPresenceChange?
         presenter.sidebarPresenceWillChangePublisher
@@ -221,7 +227,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = []
         let tabID = "test-tab"
-        _ = mockSidebarProvider.makeSidebar(for: tabID, burnerMode: .regular)
+        _ = mockSidebarProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
 
         // When
         let isOpen = presenter.isSidebarOpen(for: tabID)
@@ -233,7 +239,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
     func testIsSidebarOpen_withExistingSidebar_returnsTrue() {
         // Given
         let tabID = "test-tab"
-        _ = mockSidebarProvider.makeSidebar(for: tabID, burnerMode: .regular)
+        _ = mockSidebarProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
 
         // When
         let isOpen = presenter.isSidebarOpen(for: tabID)
@@ -257,7 +263,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         // Given
         let tabID = "current-tab"
         mockSidebarHost.currentTabID = tabID
-        _ = mockSidebarProvider.makeSidebar(for: tabID, burnerMode: .regular)
+        _ = mockSidebarProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
 
         // When
         let isOpen = presenter.isSidebarOpenForCurrentTab()
@@ -309,7 +315,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         // Given
         let tabID = "test-tab"
         mockSidebarHost.currentTabID = tabID
-        let sidebar = mockSidebarProvider.makeSidebar(for: tabID, burnerMode: .regular)
+        let sidebarViewController = mockSidebarProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
         let prompt = AIChatNativePrompt.queryPrompt("What is the best pizza recipe?", autoSubmit: true)
 
         // When
@@ -317,7 +323,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
 
         // Then
         // The sidebar should receive the prompt (tested via the sidebar's view controller)
-        XCTAssertNotNil(sidebar.sidebarViewController)
+        XCTAssertNotNil(sidebarViewController)
     }
 
     func testPresentSidebar_withoutExistingSidebar_createsSidebar() {
@@ -340,7 +346,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
     func testSidebarHostDidSelectTab_updatesConstraints() {
         // Given
         let tabID = "selected-tab"
-        _ = mockSidebarProvider.makeSidebar(for: tabID, burnerMode: .regular)
+        _ = mockSidebarProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
 
         // When
         presenter.sidebarHostDidSelectTab(with: tabID)
@@ -353,8 +359,8 @@ final class AIChatSidebarPresenterTests: XCTestCase {
 
     func testSidebarHostDidUpdateTabs_cleansUpProvider() {
         // Given
-        _ = mockSidebarProvider.makeSidebar(for: "tab1", burnerMode: .regular)
-        _ = mockSidebarProvider.makeSidebar(for: "tab2", burnerMode: .regular)
+        _ = mockSidebarProvider.makeSidebarViewController(for: "tab1", burnerMode: .regular)
+        _ = mockSidebarProvider.makeSidebarViewController(for: "tab2", burnerMode: .regular)
         XCTAssertEqual(mockSidebarProvider.sidebarsByTab.count, 2)
 
         // When
@@ -377,8 +383,8 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         // Set up the mock to return predefined tabCollectionViewModel
         mockWindowControllersManager.customAllTabCollectionViewModels = [tabCollectionViewModel]
 
-        _ = mockSidebarProvider.makeSidebar(for: "tab1", burnerMode: .regular)
-        _ = mockSidebarProvider.makeSidebar(for: "tab2", burnerMode: .regular)
+        _ = mockSidebarProvider.makeSidebarViewController(for: "tab1", burnerMode: .regular)
+        _ = mockSidebarProvider.makeSidebarViewController(for: "tab2", burnerMode: .regular)
         XCTAssertEqual(mockSidebarProvider.sidebarsByTab.count, 2)
 
         // When
@@ -392,38 +398,69 @@ final class AIChatSidebarPresenterTests: XCTestCase {
 
     func testDidClickOpenInNewTabButton_newAIChatTabIsOpen() {
         // Given
-        let testURL = URL(string: "https://example.com")!
+        let tabID = "test-tab"
+        mockSidebarHost.currentTabID = tabID
+
+        // Set up the sidebar with a test URL that includes a placement parameter
+        let testURL = URL(string: "https://example.com")!.forAIChatSidebar()
+        let sidebar = AIChatSidebar(initialAIChatURL: testURL, burnerMode: .regular)
+        mockSidebarProvider.restoreState([tabID: sidebar])
+
         mockAIChatTabOpener.openMethodCalledExpectation = expectation(description: "AIChatTabOpener did open a new tab")
 
         // When
-        presenter.didClickOpenInNewTabButton(currentAIChatURL: testURL, aiChatRestorationData: nil)
+        presenter.didClickOpenInNewTabButton()
 
         // Then
         waitForExpectations(timeout: 3)
-        XCTAssertTrue(mockAIChatTabOpener.openNewAIChatTabCalled)
-        XCTAssertEqual(mockAIChatTabOpener.lastURL, testURL)
+        XCTAssertTrue(mockAIChatTabOpener.openAIChatTabCalled)
+
+        // Verify the placement parameter is stripped from the URL
+        let expectedURL = testURL.removingAIChatPlacementParameter()
+        XCTAssertEqual(mockAIChatTabOpener.lastURL, expectedURL)
+        XCTAssertNotEqual(mockAIChatTabOpener.lastURL, testURL, "URL should have placement parameter stripped")
+
+        // Verify it was called with .url content type
+        if case .url(let url) = mockAIChatTabOpener.lastTrigger {
+            XCTAssertEqual(url, expectedURL)
+        } else {
+            XCTFail("Expected .url content type")
+        }
     }
 
     func testDidClickOpenInNewTabButton_withRestorationData() {
         // Given
-        let testURL = URL(string: "https://example.com")!
+        let tabID = "test-tab"
+        mockSidebarHost.currentTabID = tabID
+
+        // Set up the sidebar with restoration data
         let restorationData = AIChatRestorationData()
+        let sidebar = AIChatSidebar(burnerMode: .regular)
+        sidebar.updateRestorationData(restorationData)
+        mockSidebarProvider.restoreState([tabID: sidebar])
+
         mockAIChatTabOpener.openMethodCalledExpectation = expectation(description: "AIChatTabOpener did open a new tab")
 
         // When
-        presenter.didClickOpenInNewTabButton(currentAIChatURL: testURL, aiChatRestorationData: restorationData)
+        presenter.didClickOpenInNewTabButton()
 
         // Then
         waitForExpectations(timeout: 3)
-        XCTAssertTrue(mockAIChatTabOpener.openNewAIChatTabWithRestorationDataCalled)
+        XCTAssertTrue(mockAIChatTabOpener.openAIChatTabCalled)
         XCTAssertEqual(mockAIChatTabOpener.lastRestorationData, restorationData)
+        // Verify it was called with .restoration content type
+        if case .restoration(let data) = mockAIChatTabOpener.lastTrigger {
+            XCTAssertEqual(data, restorationData)
+        } else {
+            XCTFail("Expected .restoration content type")
+        }
     }
 
     func testDidClickCloseButton_firesPixelAndTogglesSidebar() {
         // Given
         let tabID = "test-tab"
         mockSidebarHost.currentTabID = tabID
-        _ = mockSidebarProvider.makeSidebar(for: tabID, burnerMode: .regular)
+        _ = mockSidebarProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
         XCTAssertTrue(mockSidebarProvider.isShowingSidebar(for: tabID))
 
         let sidebarPresenceChangeExpectation = expectation(description: "Sidebar presence did change")
@@ -459,7 +496,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         NotificationCenter.default.post(notification)
 
         // Then
-        XCTAssertFalse(mockAIChatTabOpener.openNewAIChatTabWithPayloadCalled)
+        XCTAssertFalse(mockAIChatTabOpener.openAIChatTabCalled)
     }
 
     func testHandleAIChatHandoff_notInKeyWindow_doesNothing() {
@@ -475,7 +512,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         NotificationCenter.default.post(notification)
 
         // Then
-        XCTAssertFalse(mockAIChatTabOpener.openNewAIChatTabWithPayloadCalled)
+        XCTAssertFalse(mockAIChatTabOpener.openAIChatTabCalled)
     }
 
     func testHandleAIChatHandoff_withoutSidebar_createsSidebar() {
@@ -511,7 +548,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         // Given
         let tabID = "test-tab"
         mockSidebarHost.currentTabID = tabID
-        _ = mockSidebarProvider.makeSidebar(for: tabID, burnerMode: .regular)
+        _ = mockSidebarProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
         let payload = AIChatPayload()
         XCTAssertTrue(mockSidebarProvider.isShowingSidebar(for: tabID))
         mockAIChatTabOpener.openMethodCalledExpectation = expectation(description: "AIChatTabOpener did open a new tab")
@@ -525,7 +562,14 @@ final class AIChatSidebarPresenterTests: XCTestCase {
 
         // Then
         waitForExpectations(timeout: 3)
-        XCTAssertTrue(mockAIChatTabOpener.openNewAIChatTabWithPayloadCalled)
+        XCTAssertTrue(mockAIChatTabOpener.openAIChatTabCalled)
+        XCTAssertEqual(mockAIChatTabOpener.lastPayload as? NSDictionary, payload as NSDictionary)
+        // Verify it was called with .payload content type
+        if case .payload(let receivedPayload) = mockAIChatTabOpener.lastTrigger {
+            XCTAssertEqual(receivedPayload as NSDictionary, payload as NSDictionary)
+        } else {
+            XCTFail("Expected .payload content type")
+        }
     }
 
     // MARK: - Integration Tests
@@ -663,15 +707,34 @@ class MockAIChatSidebarHosting: AIChatSidebarHosting {
 
 class MockAIChatSidebarProvider: AIChatSidebarProviding {
     var sidebarWidth: CGFloat = 400
-    var sidebarsByTab: AIChatSidebarsByTab = [:]
+    @Published var sidebarsByTab: AIChatSidebarsByTab = [:]
+
+    var sidebarsByTabPublisher: AnyPublisher<DuckDuckGo_Privacy_Browser.AIChatSidebarsByTab, Never> {
+        $sidebarsByTab.eraseToAnyPublisher()
+    }
 
     private var _isShowingSidebar: [TabIdentifier: Bool] = [:]
 
-    func getSidebar(for tabID: TabIdentifier) -> AIChatSidebar? {
-        return sidebarsByTab[tabID]
+    func getSidebarViewController(for tabID: TabIdentifier) -> AIChatSidebarViewController? {
+        return sidebarsByTab[tabID]?.sidebarViewController
     }
 
-    func makeSidebar(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebar {
+    func makeSidebarViewController(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebarViewController {
+        let sidebar = sidebarsByTab[tabID] ?? makeSidebar(for: tabID, burnerMode: burnerMode)
+
+        if let existingViewController = sidebar.sidebarViewController {
+            return existingViewController
+        }
+
+        let aiChatRemoteSettings = AIChatRemoteSettings()
+        let initialAIChatURL = aiChatRemoteSettings.aiChatURL.forAIChatSidebar()
+        let sidebarViewController = AIChatSidebarViewController(currentAIChatURL: initialAIChatURL, burnerMode: burnerMode)
+        sidebar.sidebarViewController = sidebarViewController
+
+        return sidebarViewController
+    }
+
+    private func makeSidebar(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebar {
         let sidebar = AIChatSidebar(burnerMode: burnerMode)
         sidebarsByTab[tabID] = sidebar
         _isShowingSidebar[tabID] = true
@@ -683,6 +746,12 @@ class MockAIChatSidebarProvider: AIChatSidebarProviding {
     }
 
     func handleSidebarDidClose(for tabID: TabIdentifier) {
+        if let sidebar = sidebarsByTab[tabID] {
+            if let sidebarViewController = sidebar.sidebarViewController {
+                sidebarViewController.stopLoading()
+                sidebarViewController.removeCompletely()
+            }
+        }
         sidebarsByTab.removeValue(forKey: tabID)
         _isShowingSidebar[tabID] = false
     }
@@ -701,17 +770,19 @@ class MockAIChatSidebarProvider: AIChatSidebarProviding {
 }
 
 class MockAIChatTabOpener: AIChatTabOpening {
-    var openNewAIChatTabCalled = false
-    var openNewAIChatTabWithPayloadCalled = false
-    var openNewAIChatTabWithRestorationDataCalled = false
-    var openAIChatTabWithQueryCalled = false
-    var openAIChatTabWithValueCalled = false
+    var openAIChatTabCalled = false
+    var lastTrigger: AIChatOpenTrigger?
+    var lastBehavior: LinkOpenBehavior?
+
+    var openNewAIChatCalled = false
+    var lastNewAIChatBehavior: LinkOpenBehavior?
+
+    // Specific tracking for different content types
     var lastURL: URL?
     var lastPayload: AIChatPayload?
     var lastRestorationData: AIChatRestorationData?
     var lastQuery: String?
-    var lastValue: AddressBarTextField.Value?
-    var lastLinkOpenBehavior: LinkOpenBehavior?
+    var lastShouldAutoSubmit: Bool?
 
     var openMethodCalledExpectation: XCTestExpectation?
 
@@ -720,60 +791,50 @@ class MockAIChatTabOpener: AIChatTabOpening {
     }
 
     @MainActor
-    func openAIChatTab(_ query: String?, with linkOpenBehavior: LinkOpenBehavior) {
-        openAIChatTabWithQueryCalled = true
-        lastQuery = query
-        lastLinkOpenBehavior = linkOpenBehavior
+    func openAIChatTab(with trigger: AIChatOpenTrigger, behavior: LinkOpenBehavior) {
+        openAIChatTabCalled = true
+        lastTrigger = trigger
+        lastBehavior = behavior
+
+        // Extract specific data based on content type
+        switch trigger {
+        case .newChat:
+            break
+        case .query(let query, let shouldAutoSubmit):
+            lastQuery = query
+            lastShouldAutoSubmit = shouldAutoSubmit
+        case .url(let url):
+            lastURL = url
+        case .payload(let payload):
+            lastPayload = payload
+        case .restoration(let data):
+            lastRestorationData = data
+        }
+
         openMethodCalledExpectation?.fulfill()
         openMethodCalledExpectation = nil
     }
 
     @MainActor
-    func openAIChatTab(_ value: AddressBarTextField.Value, with linkOpenBehavior: LinkOpenBehavior) {
-        openAIChatTabWithValueCalled = true
-        lastValue = value
-        lastLinkOpenBehavior = linkOpenBehavior
-        openMethodCalledExpectation?.fulfill()
-        openMethodCalledExpectation = nil
-    }
+    func openNewAIChat(in linkOpenBehavior: LinkOpenBehavior) {
+        openNewAIChatCalled = true
+        lastNewAIChatBehavior = linkOpenBehavior
 
-    @MainActor
-    func openNewAIChatTab(_ aiChatURL: URL, with linkOpenBehavior: LinkOpenBehavior) {
-        openNewAIChatTabCalled = true
-        lastURL = aiChatURL
-        lastLinkOpenBehavior = linkOpenBehavior
-        openMethodCalledExpectation?.fulfill()
-        openMethodCalledExpectation = nil
-    }
-
-    @MainActor
-    func openNewAIChatTab(withPayload payload: AIChatPayload) {
-        openNewAIChatTabWithPayloadCalled = true
-        lastPayload = payload
-        openMethodCalledExpectation?.fulfill()
-        openMethodCalledExpectation = nil
-    }
-
-    @MainActor
-    func openNewAIChatTab(withChatRestorationData data: AIChatRestorationData) {
-        openNewAIChatTabWithRestorationDataCalled = true
-        lastRestorationData = data
         openMethodCalledExpectation?.fulfill()
         openMethodCalledExpectation = nil
     }
 
     func reset() {
-        openNewAIChatTabCalled = false
-        openNewAIChatTabWithPayloadCalled = false
-        openNewAIChatTabWithRestorationDataCalled = false
-        openAIChatTabWithQueryCalled = false
-        openAIChatTabWithValueCalled = false
+        openAIChatTabCalled = false
+        lastTrigger = nil
+        lastBehavior = nil
+        openNewAIChatCalled = false
+        lastNewAIChatBehavior = nil
         lastURL = nil
         lastPayload = nil
         lastRestorationData = nil
         lastQuery = nil
-        lastValue = nil
-        lastLinkOpenBehavior = nil
+        lastShouldAutoSubmit = nil
         openMethodCalledExpectation = nil
     }
 }

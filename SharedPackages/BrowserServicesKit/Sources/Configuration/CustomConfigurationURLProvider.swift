@@ -24,9 +24,20 @@ public protocol ConfigurationURLProviding {
 }
 
 public protocol CustomConfigurationURLSetting {
-    func setCustomURL(_ url: URL?, for configuration: Configuration)
+    func setCustomURL(_ url: URL?, for configuration: Configuration) throws
     var isCustomURLEnabled: Bool { get }
     func isURLOverridden(for configuration: Configuration) -> Bool
+}
+
+public enum URLSettingError: LocalizedError {
+    case notInternalUser
+
+    public var errorDescription: String? {
+        switch self {
+        case .notInternalUser:
+            return "Not an internal user"
+        }
+    }
 }
 
 public typealias CustomConfigurationURLProviding = ConfigurationURLProviding & CustomConfigurationURLSetting
@@ -64,8 +75,8 @@ public class ConfigurationURLProvider: CustomConfigurationURLProviding {
         return customURL ?? defaultURL
     }
 
-    public func setCustomURL(_ url: URL?, for configuration: Configuration) {
-        guard isCustomURLEnabled else { return }
+    public func setCustomURL(_ url: URL?, for configuration: Configuration) throws {
+        guard isCustomURLEnabled else { throw  URLSettingError.notInternalUser }
         switch configuration {
         case .bloomFilterSpec:
             store.customBloomFilterSpecURL = url

@@ -26,7 +26,7 @@ protocol SettingsIconsProviding {
     var threatProtectionIcon: NSImage { get }
     var cookiePopUpProtectionIcon: NSImage { get }
     var emailProtectionIcon: NSImage { get }
-    var privacyProIcon: NSImage { get }
+    var subscriptionIcon: NSImage { get }
     var vpnIcon: NSImage { get }
     var personalInformationRemovalIcon: NSImage { get }
     var identityTheftRestorationIcon: NSImage { get }
@@ -51,7 +51,7 @@ final class LegacySettingsIconProvider: SettingsIconsProviding {
     var threatProtectionIcon: NSImage = .radarColor16
     var cookiePopUpProtectionIcon: NSImage = .cookieProtectionIcon
     var emailProtectionIcon: NSImage = .emailProtectionIcon
-    var privacyProIcon: NSImage = .privacyPro
+    var subscriptionIcon: NSImage = .privacyPro
     var vpnIcon: NSImage = .VPN
     var personalInformationRemovalIcon: NSImage = .personalInformationRemovalMulticolor16
     var identityTheftRestorationIcon: NSImage = .identityTheftRestorationMulticolor16
@@ -75,7 +75,7 @@ final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var threatProtectionIcon: NSImage = DesignSystemImages.Color.Size16.radar
     var cookiePopUpProtectionIcon: NSImage = DesignSystemImages.Color.Size16.cookie
     var emailProtectionIcon: NSImage = DesignSystemImages.Color.Size16.emailProtection
-    var privacyProIcon: NSImage = DesignSystemImages.Color.Size16.privacyPro
+    var subscriptionIcon: NSImage = DesignSystemImages.Color.Size16.subscription
     var vpnIcon: NSImage = DesignSystemImages.Color.Size16.vpn
     var personalInformationRemovalIcon: NSImage = DesignSystemImages.Color.Size16.identityBlockedPIR
     var identityTheftRestorationIcon: NSImage = DesignSystemImages.Color.Size16.identityTheftRestoration

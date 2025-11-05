@@ -37,6 +37,8 @@ public extension NSNotification.Name {
 public struct EntitlementsDidChangePayload {
 
     private let entitlementsKey = "entitlements"
+    public static let userInitiatedEntitlementChangeKey = "userInitiatedEntitlementChange"
+
     public let entitlements: [SubscriptionEntitlement]
     public var notificationUserInfo: [AnyHashable: Any] {
         return [entitlementsKey: entitlements]

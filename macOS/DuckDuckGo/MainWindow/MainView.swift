@@ -247,14 +247,15 @@ final class MainView: NSView {
         }
     }
 
-    var isTabBarShown: Bool {
-        get {
-            navigationBarTopConstraint.constant > 0
+    func setTabBarShown(_ newValue: Bool, animated: Bool) {
+        var tabBarHeightConstraint = tabBarHeightConstraint
+        var navigationBarTopConstraint = navigationBarTopConstraint
+        if animated {
+            tabBarHeightConstraint = tabBarHeightConstraint?.animator()
+            navigationBarTopConstraint = navigationBarTopConstraint?.animator()
         }
-        set {
-            tabBarHeightConstraint.animator().constant = newValue ? Constants.tabBarHeight : 0
-            navigationBarTopConstraint.animator().constant = newValue ? Constants.tabBarHeight : 0
-        }
+        tabBarHeightConstraint?.constant = newValue ? Constants.tabBarHeight : 0
+        navigationBarTopConstraint?.constant = newValue ? Constants.tabBarHeight : 0
     }
     // MARK: - NSDraggingDestination
 

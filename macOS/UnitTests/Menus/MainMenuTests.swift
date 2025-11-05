@@ -111,7 +111,7 @@ class MainMenuTests: XCTestCase {
         dockCustomizer.addToDock()
 
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
@@ -120,7 +120,9 @@ class MainMenuTests: XCTestCase {
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            configurationURLProvider: MockCustomURLProvider()
+            isFireWindowDefault: false,
+            configurationURLProvider: MockCustomURLProvider(),
+            contentScopePreferences: ContentScopePreferences()
         )
 
         sut.update()
@@ -137,11 +139,17 @@ class MainMenuTests: XCTestCase {
         let dockCustomizer = DockCustomizerMock()
 
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
-            faviconManagement: FaviconManagerMock(),
+            historyCoordinator: HistoryCoordinatingMock(),
+            faviconManager: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
-            aiChatMenuConfig: DummyAIChatConfig()
+            aiChatMenuConfig: DummyAIChatConfig(),
+            internalUserDecider: MockInternalUserDecider(),
+            appearancePreferences: appearancePreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            isFireWindowDefault: false,
+            configurationURLProvider: MockCustomURLProvider()
         )
 
         sut.update()
@@ -158,11 +166,17 @@ class MainMenuTests: XCTestCase {
         dockCustomizer.dockStatus = true
 
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
-            faviconManagement: FaviconManagerMock(),
+            historyCoordinator: HistoryCoordinatingMock(),
+            faviconManager: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
-            aiChatMenuConfig: DummyAIChatConfig()
+            aiChatMenuConfig: DummyAIChatConfig(),
+            internalUserDecider: MockInternalUserDecider(),
+            appearancePreferences: appearancePreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            isFireWindowDefault: false,
+            configurationURLProvider: MockCustomURLProvider()
         )
 
         sut.update()
@@ -182,7 +196,7 @@ class MainMenuTests: XCTestCase {
         defaultBrowserProvider.isDefault = true
 
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
@@ -191,7 +205,9 @@ class MainMenuTests: XCTestCase {
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            configurationURLProvider: MockCustomURLProvider()
+            isFireWindowDefault: false,
+            configurationURLProvider: MockCustomURLProvider(),
+            contentScopePreferences: ContentScopePreferences()
         )
 
         sut.update()
@@ -208,7 +224,7 @@ class MainMenuTests: XCTestCase {
         defaultBrowserProvider.isDefault = false
 
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
@@ -217,7 +233,7 @@ class MainMenuTests: XCTestCase {
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            configurationURLProvider: MockCustomURLProvider()
+            isFireWindowDefault: false, configurationURLProvider: MockCustomURLProvider()
         )
 
         sut.update()
@@ -234,7 +250,7 @@ class MainMenuTests: XCTestCase {
     func testWhenBookmarksMenuIsInitialized_ThenSecondItemIsBookmarkAllTabs() throws {
         // GIVEN
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
@@ -242,7 +258,9 @@ class MainMenuTests: XCTestCase {
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            configurationURLProvider: MockCustomURLProvider()
+            isFireWindowDefault: false,
+            configurationURLProvider: MockCustomURLProvider(),
+            contentScopePreferences: ContentScopePreferences()
         )
         let bookmarksMenu = try XCTUnwrap(sut.item(withTitle: UserText.bookmarks))
 
@@ -261,7 +279,7 @@ class MainMenuTests: XCTestCase {
         // GIVEN
         let aiChatConfig = DummyAIChatConfig()
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
@@ -269,7 +287,9 @@ class MainMenuTests: XCTestCase {
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            configurationURLProvider: MockCustomURLProvider()
+            isFireWindowDefault: false,
+            configurationURLProvider: MockCustomURLProvider(),
+            contentScopePreferences: ContentScopePreferences()
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
@@ -290,7 +310,7 @@ class MainMenuTests: XCTestCase {
         aiChatConfig.shouldDisplayAddressBarShortcut = true
 
         let sut = MainMenu(
-            featureFlagger: DummyFeatureFlagger(),
+            featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
@@ -298,7 +318,9 @@ class MainMenuTests: XCTestCase {
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            configurationURLProvider: MockCustomURLProvider()
+            isFireWindowDefault: false,
+            configurationURLProvider: MockCustomURLProvider(),
+            contentScopePreferences: ContentScopePreferences()
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
@@ -310,34 +332,118 @@ class MainMenuTests: XCTestCase {
         XCTAssertNotNil(aiChatMenu, "AI Chat menu item should exist in the file menu.")
         XCTAssertFalse(aiChatMenu?.isHidden ?? true, "AI Chat menu item should be visible when the AI chat flag is true.")
     }
+
+    @MainActor
+    func testMainMenuShowsFireWindowFirst_whenOpenFireWindowByDefaultIsEnabled() throws {
+        let isFireWindowDefault = true
+
+        let sut = MainMenu(
+            featureFlagger: MockFeatureFlagger(),
+            bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
+            faviconManager: FaviconManagerMock(),
+            aiChatMenuConfig: DummyAIChatConfig(),
+            internalUserDecider: MockInternalUserDecider(),
+            appearancePreferences: appearancePreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            isFireWindowDefault: isFireWindowDefault,
+            configurationURLProvider: MockCustomURLProvider(),
+            contentScopePreferences: ContentScopePreferences()
+        )
+
+        let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
+
+        XCTAssertEqual(fileMenu.submenu?.item(at: 1)?.title, UserText.newBurnerWindowMenuItem)
+        XCTAssertEqual(fileMenu.submenu?.item(at: 2)?.title, UserText.newWindowMenuItem)
+    }
+
+    @MainActor
+    func testMainMenuInitializedWithTrueOpenFileFlag_ThenOpenFileMenuItemIsVisible() throws {
+        let sut = MainMenu(
+            featureFlagger: MockFeatureFlagger(),
+            bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
+            faviconManager: FaviconManagerMock(),
+            aiChatMenuConfig: DummyAIChatConfig(),
+            internalUserDecider: MockInternalUserDecider(),
+            appearancePreferences: appearancePreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            isFireWindowDefault: false,
+            configurationURLProvider: MockCustomURLProvider(),
+            contentScopePreferences: ContentScopePreferences()
+        )
+
+        let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
+        let openFileMenuItem = fileMenu.submenu?.item(withTitle: UserText.mainMenuFileOpenFile)
+
+        XCTAssertNotNil(openFileMenuItem, "Open File menu item should exist in the file menu.")
+        XCTAssertFalse(openFileMenuItem?.isHidden ?? true, "Open File menu item should be visible when the openFileFeature feature flag is enabled.")
+    }
+
+    @MainActor
+    func testMainMenuShowsFireWindowSecond_whenOpenFireWindowByDefaultIsDisabled() throws {
+        let isFireWindowDefault = false
+
+        let sut = MainMenu(
+            featureFlagger: MockFeatureFlagger(),
+            bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
+            faviconManager: FaviconManagerMock(),
+            aiChatMenuConfig: DummyAIChatConfig(),
+            internalUserDecider: MockInternalUserDecider(),
+            appearancePreferences: appearancePreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            isFireWindowDefault: isFireWindowDefault,
+            configurationURLProvider: MockCustomURLProvider(),
+            contentScopePreferences: ContentScopePreferences()
+        )
+
+        let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
+
+        XCTAssertEqual(fileMenu.submenu?.item(at: 1)?.title, UserText.newWindowMenuItem)
+        XCTAssertEqual(fileMenu.submenu?.item(at: 2)?.title, UserText.newBurnerWindowMenuItem)
+    }
+
+    @MainActor
+    func testupdateMenuItemsPositionForFireWindowDefault_worksAsExpected() throws {
+        let sut = MainMenu(
+            featureFlagger: MockFeatureFlagger(),
+            bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
+            faviconManager: FaviconManagerMock(),
+            aiChatMenuConfig: DummyAIChatConfig(),
+            internalUserDecider: MockInternalUserDecider(),
+            appearancePreferences: appearancePreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            isFireWindowDefault: false,
+            configurationURLProvider: MockCustomURLProvider(),
+            contentScopePreferences: ContentScopePreferences()
+        )
+
+        let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
+
+        XCTAssertEqual(fileMenu.submenu?.item(at: 1)?.title, UserText.newWindowMenuItem)
+        XCTAssertEqual(fileMenu.submenu?.item(at: 2)?.title, UserText.newBurnerWindowMenuItem)
+
+        sut.updateMenuItemsPositionForFireWindowDefault(true)
+
+        XCTAssertEqual(fileMenu.submenu?.item(at: 2)?.title, UserText.newWindowMenuItem)
+        XCTAssertEqual(fileMenu.submenu?.item(at: 1)?.title, UserText.newBurnerWindowMenuItem)
+    }
 }
 
-private class DummyFeatureFlagger: FeatureFlagger {
-    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
-    var localOverrides: FeatureFlagLocalOverriding?
-
-    func isFeatureOn<Flag: FeatureFlagDescribing>(for: Flag, allowOverride: Bool) -> Bool {
-        false
-    }
-
-    func getCohortIfEnabled(_ subfeature: any PrivacySubfeature) -> CohortID? {
-        return nil
-    }
-
-    func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
-        return nil
-    }
-
-    var allActiveExperiments: Experiments = [:]
-}
-
-private class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
+class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldDisplayNewTabPageShortcut = false
     var shouldDisplayApplicationMenuShortcut = false
     var shouldDisplayAddressBarShortcut = false
+    var shouldDisplayAddressBarShortcutWhenTyping = false
     var shouldDisplayAnyAIChatFeature = false
     var shouldOpenAIChatInSidebar = false
     var shouldDisplaySummarizationMenuItem = false
+    var shouldDisplayTranslationMenuItem = false
+    var shouldAutomaticallySendPageContext = false
+    var shouldAutomaticallySendPageContextTelemetryValue: Bool?
+    var shouldShowSettingsImprovements = false
 
     var valuesChangedPublisher: PassthroughSubject<Void, Never> {
         return PassthroughSubject<Void, Never>()

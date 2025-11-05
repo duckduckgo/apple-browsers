@@ -68,13 +68,17 @@ public extension WKFrameInfo {
             return "\(("\(file)" as NSString).lastPathComponent):\(line + 1)"
         }
 
-        // don‘t break twice
-        if Self.ignoredRequestUsageSymbols.insert(callingSymbol()).inserted {
+        let symbol = callingSymbol()
+        if !isWebExtensionSymbol(symbol) && Self.ignoredRequestUsageSymbols.insert(symbol).inserted {
             breakByRaisingSigInt("Don‘t use `WKFrameInfo.request` as it has incorrect nullability\n" +
                                  "Use `WKFrameInfo.safeRequest` instead")
         }
 
         return self.swizzledRequest() // call the original
+    }
+
+    private func isWebExtensionSymbol(_ symbol: String) -> Bool {
+        symbol.contains("WebExtension")
     }
 
 #else

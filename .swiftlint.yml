@@ -49,6 +49,8 @@ identifier_name:
 large_tuple:
   warning: 4
   error: 5
+todo:
+  severity: warning
 file_header:
   required_pattern: |
                     \/\/

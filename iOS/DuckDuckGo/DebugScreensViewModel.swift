@@ -151,7 +151,11 @@ class DebugScreensViewModel: ObservableObject {
     }
 
     func setCustomURL(_ url: URL?, for configuration: Configuration) {
-        dependencies.customConfigurationURLProvider.setCustomURL(url, for: configuration)
+        do {
+            try dependencies.customConfigurationURLProvider.setCustomURL(url, for: configuration)
+        } catch {
+            ActionMessageView.present(message: "Failed to set custom URL: \(error.localizedDescription)")
+        }
     }
 
     func urlString(for configuration: Configuration) -> String {

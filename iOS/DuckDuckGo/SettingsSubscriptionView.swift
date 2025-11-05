@@ -44,26 +44,29 @@ struct SettingsSubscriptionView: View {
     @State var isShowingRestoreFlow = false
     @State var isShowingGoogleView = false
     @State var isShowingStripeView = false
-    @State var isShowingPrivacyPro = false
+    @State var isShowingSubscription = false
 
     var subscriptionRestoreView: some View {
         SubscriptionContainerViewFactory.makeRestoreFlow(navigationCoordinator: subscriptionNavigationCoordinator,
                                                          subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
                                                          subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
-                                                         internalUserDecider: AppDependencyProvider.shared.internalUserDecider)
+                                                         internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                         dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider)
     }
 
     var subscriptionRestoreViewV2: some View {
         SubscriptionContainerViewFactory.makeRestoreFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
                                                            subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
                                                            subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
-                                                           internalUserDecider: AppDependencyProvider.shared.internalUserDecider)
+                                                           internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                           wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                           dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider)
     }
 
     private var manageSubscriptionView: some View {
         SettingsCellView(
             label: UserText.settingsPProManageSubscription,
-            image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro)
+            image: Image(uiImage: DesignSystemImages.Color.Size24.subscription)
         )
     }
 
@@ -72,6 +75,64 @@ struct SettingsSubscriptionView: View {
             return AppDependencyProvider.shared.subscriptionManager!.storePurchaseManager().currentStorefrontRegion
         } else {
             return AppDependencyProvider.shared.subscriptionManagerV2!.storePurchaseManager().currentStorefrontRegion
+        }
+    }
+    
+    private var winBackURLComponents: URLComponents? {
+        SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(
+            origin: SubscriptionFunnelOrigin.winBackSettings.rawValue,
+            featurePage: SubscriptionURL.FeaturePage.winback
+        )
+    }
+    
+    @ViewBuilder
+    private var resubscribeWithWinbackOfferView: some View {
+        Group {
+            let titleText: String = UserText.winBackCampaignSubscriptionSettingsMenuTitle
+            let subtitleText = UserText.winBackCampaignSubscriptionSettingsMenuSubtitle
+
+            SettingsCellView(label: titleText,
+                             subtitle: subtitleText,
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.subscription))
+            .disabled(true)
+
+            // See Offer
+            SettingsCustomCell(content: {
+                Text(UserText.winBackCampaignSubscriptionSettingsMenuCTA)
+                    .daxBodyRegular()
+                    .foregroundColor(Color.init(designSystemColor: .accent))
+                    .padding(.leading, 32.0)
+            }, action: {
+                Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedOutOfferCTAClicked)
+                subscriptionNavigationCoordinator.redirectURLComponents = winBackURLComponents
+                subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
+            }, isButton: true, shouldShowWinBackOffer: true)
+
+            // Restore subscription
+            if !settingsViewModel.isAuthV2Enabled {
+                let restoreView = subscriptionRestoreView
+                    .navigationViewStyle(.stack)
+                    .onFirstAppear {
+                        Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
+                    }
+                NavigationLink(destination: restoreView,
+                               isActive: $isShowingRestoreFlow) {
+                    SettingsCellView(label: UserText.settingsPProIHaveASubscription).padding(.leading, 32.0)
+                }
+            } else {
+                let restoreView = subscriptionRestoreViewV2
+                    .navigationViewStyle(.stack)
+                    .onFirstAppear {
+                        Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
+                    }
+                NavigationLink(destination: restoreView,
+                               isActive: $isShowingRestoreFlow) {
+                    SettingsCellView(label: UserText.settingsPProIHaveASubscription).padding(.leading, 32.0)
+                }
+            }
+        }
+        .onFirstAppear {
+            Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedOutOfferShown)
         }
     }
 
@@ -91,11 +152,11 @@ struct SettingsSubscriptionView: View {
 
             SettingsCellView(label: titleText,
                              subtitle: subtitleText,
-                             image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro))
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.subscription))
             .disabled(true)
 
-            // Get privacy pro
-            let getText = settingsViewModel.state.subscription.isEligibleForTrialOffer ? UserText.trySubscriptionButton(isSubscriptionRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled) : UserText.getSubscriptionButton(isSubscriptionRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)
+            // Get Subscription
+            let getText = settingsViewModel.state.subscription.isEligibleForTrialOffer ? UserText.trySubscriptionButton : UserText.getSubscriptionButton
             SettingsCustomCell(content: {
                 Text(getText)
                     .daxBodyRegular()
@@ -110,7 +171,7 @@ struct SettingsSubscriptionView: View {
                 let restoreView = subscriptionRestoreView
                     .navigationViewStyle(.stack)
                     .onFirstAppear {
-                        Pixel.fire(pixel: .privacyProRestorePurchaseClick)
+                        Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
                     }
                 NavigationLink(destination: restoreView,
                                isActive: $isShowingRestoreFlow) {
@@ -120,7 +181,7 @@ struct SettingsSubscriptionView: View {
                 let restoreView = subscriptionRestoreViewV2
                     .navigationViewStyle(.stack)
                     .onFirstAppear {
-                        Pixel.fire(pixel: .privacyProRestorePurchaseClick)
+                        Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
                     }
                 NavigationLink(destination: restoreView,
                                isActive: $isShowingRestoreFlow) {
@@ -151,7 +212,7 @@ struct SettingsSubscriptionView: View {
             )
         }
 
-        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
+        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled && settingsViewModel.isAuthV2Enabled {
             SettingsCellView(
                 label: UserText.settingsSubscriptionAiChatTitle,
                 image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
@@ -186,8 +247,8 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: settingsView) {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
-                    subtitle: UserText.settingsPProSubscriptionExpiredTitle(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled),
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro),
+                    subtitle: UserText.settingsPProSubscriptionExpiredTitle,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription),
                     accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )
             }
@@ -201,11 +262,62 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: settingsView) {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
-                    subtitle: UserText.settingsPProSubscriptionExpiredTitle(isRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled),
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro),
+                    subtitle: UserText.settingsPProSubscriptionExpiredTitle,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription),
                     accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )
             }
+        }
+    }
+
+    @ViewBuilder
+    private var subscribeWithWinBackOfferView: some View {
+        Group {
+        disabledFeaturesView
+
+        // Subscribe with Win-back offer
+        if !settingsViewModel.isAuthV2Enabled {
+            let settingsView = SubscriptionSettingsView(configuration: SubscriptionSettingsViewConfiguration.expired,
+                                                        settingsViewModel: settingsViewModel,
+                                                        takeWinBackOffer: {
+                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsCTAClicked)
+                subscriptionNavigationCoordinator.redirectURLComponents = winBackURLComponents
+                subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
+            }).onFirstAppear {
+                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsShown)
+            }
+                .environmentObject(subscriptionNavigationCoordinator)
+            NavigationLink(destination: settingsView) {
+                SettingsCellView(
+                    label: UserText.settingsPProManageSubscription,
+                    subtitle: UserText.winBackCampaignSubscriptionSettingsMenuLoggedOutSubtitle,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription),
+                    shouldShowWinBackOffer: true
+                )
+            }
+        } else {
+            let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.expired,
+                                                          settingsViewModel: settingsViewModel,
+                                                          takeWinBackOffer: {
+                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsCTAClicked)
+                subscriptionNavigationCoordinator.redirectURLComponents = winBackURLComponents
+                subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
+            }).onFirstAppear {
+                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsShown)
+            }
+                .environmentObject(subscriptionNavigationCoordinator)
+            NavigationLink(destination: settingsView) {
+                SettingsCellView(
+                    label: UserText.settingsPProManageSubscription,
+                    subtitle: UserText.winBackCampaignSubscriptionSettingsMenuLoggedOutSubtitle,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription),
+                    shouldShowWinBackOffer: true
+                )
+            }
+        }
+        }
+        .onFirstAppear {
+            Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedInOfferShown)
         }
     }
 
@@ -225,7 +337,7 @@ struct SettingsSubscriptionView: View {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
                     subtitle: UserText.settingsPProActivating,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro)
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription)
                 )
             }
         } else {
@@ -239,7 +351,7 @@ struct SettingsSubscriptionView: View {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
                     subtitle: UserText.settingsPProActivating,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro)
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription)
                 )
             }
         }
@@ -267,14 +379,13 @@ struct SettingsSubscriptionView: View {
 
         if subscriptionFeatures.contains(.dataBrokerProtection) {
             let hasDBPEntitlement = userEntitlements.contains(.dataBrokerProtection)
-            let hasValidStoredProfile = settingsViewModel.dataBrokerProtectionIOSManager
-                .flatMap { try? $0.meetsProfileRunPrequisite } ?? false
+            let hasValidStoredProfile = settingsViewModel.dbpMeetsProfileRunPrequisite
             var statusIndicator: StatusIndicator = hasDBPEntitlement && hasValidStoredProfile ? .on : .off
 
             let destination: LazyView<AnyView> = {
-                if settingsViewModel.isPIREnabled,
-                   let dbpManager = settingsViewModel.dataBrokerProtectionIOSManager {
-                    return LazyView(AnyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: dbpManager)))
+                if settingsViewModel.isPIREnabled, let vcProvider = settingsViewModel.dataBrokerProtectionViewControllerProvider {
+                    return LazyView(AnyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
+                        .edgesIgnoringSafeArea(.bottom)))
                 } else {
                     statusIndicator = .on
                     return LazyView(AnyView(SubscriptionPIRMoveToDesktopView()))
@@ -292,14 +403,14 @@ struct SettingsSubscriptionView: View {
             .disabled(!hasDBPEntitlement)
         }
 
-        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
+        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled && settingsViewModel.isAuthV2Enabled {
             let hasAIChatEntitlement = userEntitlements.contains(.paidAIChat)
 
             NavigationLink(destination: LazyView(SubscriptionAIChatView(viewModel: settingsViewModel)), isActive: $isShowingPaidAIChat) {
                 SettingsCellView(
                     label: UserText.settingsSubscriptionAiChatTitle,
                     image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
-                    statusIndicator: StatusIndicatorView(status: hasAIChatEntitlement ? .on : .off),
+                    statusIndicator: StatusIndicatorView(status: (hasAIChatEntitlement && settingsViewModel.isAIChatEnabled) ? .on : .off),
                     isGreyedOut: !hasAIChatEntitlement,
                     isNew: true
                 )
@@ -341,23 +452,28 @@ struct SettingsSubscriptionView: View {
         
     var body: some View {
         Group {
-            if isShowingPrivacyPro {
+            if isShowingSubscription {
 
                 let isSignedIn = settingsViewModel.state.subscription.isSignedIn
                 let hasSubscription = settingsViewModel.state.subscription.hasSubscription
                 let hasActiveSubscription = settingsViewModel.state.subscription.hasActiveSubscription
                 let hasAnyEntitlements = !settingsViewModel.state.subscription.entitlements.isEmpty
+                let isWinBackEligible = settingsViewModel.state.subscription.isWinBackEligible
 
                 let footerLink = Link(UserText.settingsPProSectionFooter,
                                       destination: ViewConstants.privacyPolicyURL)
                     .daxFootnoteRegular().accentColor(Color.init(designSystemColor: .accent))
 
-                Section(header: Text(UserText.settingsSubscriptionSection(isSubscriptionRebrandingOn: settingsViewModel.isSubscriptionRebrandingEnabled)),
+                Section(header: Text(UserText.settingsSubscriptionSection),
                         footer: !isSignedIn ? footerLink : nil
                 ) {
 
                     switch (isSignedIn, hasSubscription, hasActiveSubscription, hasAnyEntitlements) {
 
+                    // Signed out, Eligible for Win-back offer
+                    case (false, _, _, _) where isWinBackEligible:
+                        resubscribeWithWinbackOfferView
+                        
                     // Signed out
                     case (false, _, _, _):
                         purchaseSubscriptionView
@@ -366,6 +482,10 @@ struct SettingsSubscriptionView: View {
                     case (true, false, _, _):
                         missingSubscriptionOrEntitlementsView
 
+                    // Subscription Expired, Eligible for Win-back offer
+                    case (true, true, false, _) where isWinBackEligible:
+                        subscribeWithWinBackOfferView
+                        
                     // Signed In, Subscription Present & Not Active
                     case (true, true, false, _):
                         subscriptionExpiredView
@@ -388,7 +508,7 @@ struct SettingsSubscriptionView: View {
             }
         }
         .onReceive(settingsViewModel.$state) { state in
-            isShowingPrivacyPro = (state.subscription.isSignedIn || state.subscription.canPurchase)
+            isShowingSubscription = (state.subscription.isSignedIn || state.subscription.canPurchase)
         }
     }
 }

@@ -230,9 +230,9 @@ final class FingerprintingReferenceTests: XCTestCase {
                                                             messageSecret: UUID().uuidString,
                                                             featureToggles: configFeatureToggle)
 
-        let contentScopeScript = ContentScopeUserScript(self.privacyManager,
-                                                        properties: contentScopeProperties,
-                                                        privacyConfigurationJSONGenerator: nil)
+        let contentScopeScript = try! ContentScopeUserScript(self.privacyManager,
+                                                             properties: contentScopeProperties,
+                                                             privacyConfigurationJSONGenerator: nil)
 
         configuration.userContentController.addUserScript(WKUserScript(source: "\(scriptToInject) init(window)",
                                                                        injectionTime: .atDocumentStart,

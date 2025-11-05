@@ -34,6 +34,7 @@ struct SearchPreferencesUserDefaultsPersistor: SearchPreferencesPersistor {
 final class SearchPreferences: ObservableObject, PreferencesTabOpening {
 
     static let shared = SearchPreferences()
+    static let moreSearchSettingsURL = URL(string: "https://duckduckgo.com/settings?return=privateSearch")!
 
     @Published var showAutocompleteSuggestions: Bool {
         didSet {
@@ -42,12 +43,19 @@ final class SearchPreferences: ObservableObject, PreferencesTabOpening {
         }
     }
 
-    init(persistor: SearchPreferencesPersistor = SearchPreferencesUserDefaultsPersistor()) {
+    init(persistor: SearchPreferencesPersistor = SearchPreferencesUserDefaultsPersistor(),
+         windowControllersManager: WindowControllersManager = Application.appDelegate.windowControllersManager) {
         self.persistor = persistor
+        self.windowControllersManager = windowControllersManager
         showAutocompleteSuggestions = persistor.showAutocompleteSuggestions
     }
 
     private var persistor: SearchPreferencesPersistor
+    private var windowControllersManager: WindowControllersManager
+
+    @MainActor func openMoreSearchSettings() {
+        windowControllersManager.show(url: Self.moreSearchSettingsURL, source: .ui, newTab: true)
+    }
 }
 
 protocol PreferencesTabOpening {

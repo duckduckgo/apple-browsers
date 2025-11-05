@@ -18,36 +18,96 @@
 //
 
 import UIKit
+import SwiftUI
+import Core
 
 class ForgetDataAlert {
     
     static func buildAlert(cancelHandler: (() -> Void)? = nil, forgetTabsAndDataHandler: @escaping () -> Void) -> UIAlertController {
         
-        let additionalDescription = ongoingDownloadsInProgress() ? UserText.fireButtonInterruptingDownloadsAlertDescription : nil
-        
         let alert = UIAlertController(title: additionalDescription, message: nil, preferredStyle: .actionSheet)
 
-        let forgetTabsAndDataAction = UIAlertAction(title: UserText.actionForgetAll, style: .destructive) { _ in
+        let title = forgetAllActionTitle()
+        let forgetTabsAndDataAction = UIAlertAction(title: title, style: .destructive) { _ in
             forgetTabsAndDataHandler()
         }
 
-        forgetTabsAndDataAction.accessibilityIdentifier = "alert.forget-data.confirm"
+        forgetTabsAndDataAction.accessibilityIdentifier = confirmAccessibilityIdentifier
 
         let cancelAction = UIAlertAction(title: UserText.actionCancel, style: .cancel) { _ in
             cancelHandler?()
         }
 
-        cancelAction.accessibilityIdentifier = "alert.forget-data.cancel"
+        cancelAction.accessibilityIdentifier = cancelAccessibilityIdentifier
 
         alert.addAction(forgetTabsAndDataAction)
         alert.addAction(cancelAction)
 
         return alert
     }
+
+    private static var additionalDescription: String? {
+        ongoingDownloadsInProgress() ? UserText.fireButtonInterruptingDownloadsAlertDescription : nil
+    }
+
+    private static var confirmAccessibilityIdentifier: String {
+        "alert.forget-data.confirm"
+    }
+
+    private static var cancelAccessibilityIdentifier: String {
+        "alert.forget-data.cancel"
+    }
     
+    static private func forgetAllActionTitle() -> String {
+        let appSettings = AppDependencyProvider.shared.appSettings
+        let shouldIncludeAIChat = appSettings.autoClearAIChatHistory
+        
+        return shouldIncludeAIChat ? UserText.actionForgetAllWithAIChat : UserText.actionForgetAll
+    }
+
     static private func ongoingDownloadsInProgress() -> Bool {
         let allDownloads = AppDependencyProvider.shared.downloadManager.downloadList
         let ongoingDownloads = allDownloads.filter { $0.isRunning && !$0.temporary }
         return !ongoingDownloads.isEmpty
+    }
+
+    fileprivate struct ConfirmationModifier: ViewModifier {
+        @Binding var isPresented: Bool
+
+        let onConfirm: () -> Void
+        let onCancel: (() -> Void)?
+
+        func body(content: Content) -> some View {
+            let additionalDescription = ForgetDataAlert.additionalDescription
+            let titleVisibility = additionalDescription == nil ? Visibility.hidden : .visible
+            content
+                .confirmationDialog(
+                    ForgetDataAlert.additionalDescription ?? "",
+                    isPresented: $isPresented,
+                    titleVisibility: titleVisibility
+                ) {
+                    Button(forgetAllActionTitle(), role: .destructive) {
+                        onConfirm()
+                    }
+                    .accessibilityIdentifier(ForgetDataAlert.confirmAccessibilityIdentifier)
+
+                    Button(UserText.actionCancel, role: .cancel) {
+                        onCancel?()
+                    }
+                    .accessibilityIdentifier(ForgetDataAlert.cancelAccessibilityIdentifier)
+                }
+        }
+    }
+}
+
+extension View {
+    func forgetDataConfirmationDialog(
+        isPresented: Binding<Bool>,
+        onConfirm: @escaping () -> Void,
+        onCancel: (() -> Void)? = nil
+    ) -> some View {
+        modifier(ForgetDataAlert.ConfirmationModifier(isPresented: isPresented,
+                                                      onConfirm: onConfirm,
+                                                      onCancel: onCancel))
     }
 }

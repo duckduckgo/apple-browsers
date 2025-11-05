@@ -38,9 +38,9 @@ final class PersistentStoresConfiguration {
         self.application = application
     }
 
-    func configure() throws {
+    func configure(syncKeyValueStore: ThrowingKeyValueStoring, isBackground: Bool = false) throws {
         try loadDatabase()
-        try loadAndMigrateBookmarksDatabase()
+        try loadAndMigrateBookmarksDatabase(syncKeyValueStore: syncKeyValueStore, isBackground: isBackground)
     }
 
     private func loadDatabase() throws {
@@ -58,10 +58,14 @@ final class PersistentStoresConfiguration {
         }
     }
 
-    private func loadAndMigrateBookmarksDatabase() throws {
-        let result = BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: bookmarksDatabase)
-        if case .failure(let error) = result {
+    private func loadAndMigrateBookmarksDatabase(syncKeyValueStore: ThrowingKeyValueStoring, isBackground: Bool) throws {
+        do {
+            let validator = BookmarksDatabaseSetup.makeValidator()
+            try BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: bookmarksDatabase, validator: validator, isBackground: isBackground)
+        } catch let error as BookmarksDatabaseError {
             throw TerminationError.bookmarksDatabase(error)
+        } catch {
+            throw TerminationError.bookmarksDatabase(.other(error))
         }
     }
 

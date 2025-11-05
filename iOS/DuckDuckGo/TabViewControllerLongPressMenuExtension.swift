@@ -108,7 +108,7 @@ extension TabViewController {
             historyManager: historyManager,
             syncService: syncService,
             duckPlayer: duckPlayer,
-            privacyProDataReporter: privacyProDataReporter,
+            subscriptionDataReporter: subscriptionDataReporter,
             contextualOnboardingPresenter: contextualOnboardingPresenter,
             contextualOnboardingLogic: contextualOnboardingLogic,
             onboardingPixelReporter: onboardingPixelReporter,
@@ -121,7 +121,8 @@ extension TabViewController {
             specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
             featureDiscovery: featureDiscovery,
             keyValueStore: keyValueStore,
-            daxDialogsManager: daxDialogsManager)
+            daxDialogsManager: daxDialogsManager,
+            aiChatSettings: aiChatSettings)
 
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()

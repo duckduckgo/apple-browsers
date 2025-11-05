@@ -55,7 +55,7 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
         withWebView { webView in
             webView.load(URLRequest(url: dataURL))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         withWebView { webView in
             XCTAssertNotNil(webView.backForwardList.currentItem, "Should have current item after loading")
@@ -98,21 +98,21 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
         withWebView { webView in
             webView.load(URLRequest(url: dataURL1))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         let eDidFinish2 = expectation(description: "onDidFinish2")
         responder(at: 0).onDidFinish = { _ in eDidFinish2.fulfill() }
         withWebView { webView in
             webView.load(URLRequest(url: dataURL2))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         let eDidFinish3 = expectation(description: "onDidFinish3")
         responder(at: 0).onDidFinish = { _ in eDidFinish3.fulfill() }
         withWebView { webView in
             webView.load(URLRequest(url: dataURL3))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         withWebView { webView in
             // Verify we have the expected navigation history
@@ -160,21 +160,21 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
         withWebView { webView in
             webView.load(URLRequest(url: dataURL1))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         let eDidFinish2 = expectation(description: "onDidFinish2")
         responder(at: 0).onDidFinish = { _ in eDidFinish2.fulfill() }
         withWebView { webView in
             webView.load(URLRequest(url: dataURL2))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         let eDidFinish3 = expectation(description: "onDidFinish3")
         responder(at: 0).onDidFinish = { _ in eDidFinish3.fulfill() }
         withWebView { webView in
             webView.load(URLRequest(url: dataURL3))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         // Capture session state when we're on page 3 with back history
         var sessionState: Any?
@@ -189,7 +189,7 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
         withWebView { webView in
             webView.load(URLRequest(url: differentURL))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         let eDidFinish5 = expectation(description: "onDidFinish5")
         responder(at: 0).onDidFinish = { _ in eDidFinish5.fulfill() }
@@ -199,7 +199,7 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
             let navigation = webView.restoreSessionState(from: sessionState!, andNavigate: true)
             XCTAssertNotNil(navigation)
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         withWebView { webView in
             // Verify we restored to the original multi-page session state
@@ -226,14 +226,14 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
         withWebView { webView in
             webView.load(URLRequest(url: dataURL1))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         let eDidFinish2 = expectation(description: "onDidFinish2")
         responder(at: 0).onDidFinish = { _ in eDidFinish2.fulfill() }
         withWebView { webView in
             webView.load(URLRequest(url: dataURL2))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         var sessionState: Any?
         withWebView { webView in
@@ -245,7 +245,7 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
         withWebView { webView in
             webView.load(URLRequest(url: dataURL3))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         responder(at: 0).defaultHandler = {
             XCTFail("Unexpected navigation event: \($0))")

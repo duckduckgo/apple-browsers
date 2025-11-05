@@ -125,7 +125,7 @@ struct AutofillSettingsView: View {
     }
 
     private struct CountRowView: View {
-        let viewModel: AutofillSettingsViewModel
+        @ObservedObject var viewModel: AutofillSettingsViewModel
         let autofillType: AutofillSettingsViewModel.AutofillType
 
         var body: some View {
@@ -178,8 +178,4 @@ struct AutofillSettingsView: View {
             .lineSpacing(2)
         }
     }
-}
-
-#Preview {
-    AutofillSettingsView(viewModel: AutofillSettingsViewModel(source: .settings))
 }

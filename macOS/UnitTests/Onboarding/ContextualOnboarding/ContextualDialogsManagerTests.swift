@@ -21,6 +21,7 @@ import Testing
 import PrivacyDashboard
 @testable import DuckDuckGo_Privacy_Browser
 
+@MainActor
 class ContextualDialogsManagerTests {
     var manager: ContextualDialogsManager!
     var trackerProvider: MockTrackerMessageProvider!

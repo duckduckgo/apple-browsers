@@ -30,6 +30,7 @@ import Subscription
 import WidgetKit
 import WireGuard
 import BrowserServicesKit
+import PixelKit
 
 final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
@@ -42,6 +43,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
     private let configurationStore = ConfigurationStore()
     private let configurationManager: ConfigurationManager
+    private let wideEvent: WideEventManaging = WideEvent()
 
     // MARK: - PacketTunnelProvider.Event reporting
 
@@ -52,7 +54,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         case .userBecameActive:
             DailyPixel.fire(pixel: .networkProtectionActiveUser,
                             withAdditionalParameters: [PixelParameters.vpnCohort: UniquePixel.cohort(from: defaults.vpnFirstEnabled)],
-                            includedParameters: [.appVersion, .atb])
+                            includedParameters: [.appVersion])
 
             persistentPixel.sendQueuedPixels { error in
                 Logger.networkProtection.error("Failed to send queued pixels, with error: \(error)")
@@ -74,7 +76,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                 DailyPixel.fireDailyAndCount(pixel: pixel,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
                                              withAdditionalParameters: [PixelParameters.server: server],
-                                             includedParameters: [.appVersion, .atb])
+                                             includedParameters: [.appVersion])
             case .recovered(let duration, let failureCount):
                 let pixel: Pixel.Event = {
                     switch duration {
@@ -91,7 +93,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                                 PixelParameters.count: String(failureCount),
                                                 PixelParameters.server: server
                                              ],
-                                             includedParameters: [.appVersion, .atb])
+                                             includedParameters: [.appVersion])
             }
         case .reportConnectionAttempt(attempt: let attempt):
             vpnLogger.log(attempt)
@@ -100,18 +102,18 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             case .connecting:
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionEnableAttemptConnecting,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                             includedParameters: [.appVersion, .atb])
+                                             includedParameters: [.appVersion])
             case .success:
                 let versionStore = NetworkProtectionLastVersionRunStore(userDefaults: .networkProtectionGroupDefaults)
                 versionStore.lastExtensionVersionRun = AppVersion.shared.versionAndBuildNumber
 
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionEnableAttemptSuccess,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                             includedParameters: [.appVersion, .atb])
+                                             includedParameters: [.appVersion])
             case .failure:
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionEnableAttemptFailure,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                             includedParameters: [.appVersion, .atb])
+                                             includedParameters: [.appVersion])
             }
         case .reportTunnelFailure(result: let result):
             vpnLogger.log(result)
@@ -120,26 +122,27 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             case .failureDetected:
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionTunnelFailureDetected,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                             includedParameters: [.appVersion, .atb])
+                                             includedParameters: [.appVersion])
             case .failureRecovered:
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionTunnelFailureRecovered,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                             includedParameters: [.appVersion, .atb])
+                                             includedParameters: [.appVersion])
             case .networkPathChanged(let newPath):
                 defaults.updateNetworkPath(with: newPath)
             }
-        case .reportLatency(result: let result):
+        case .reportLatency(result: let result, location: let location):
             vpnLogger.log(result)
 
             switch result {
             case .error:
-                DailyPixel.fire(pixel: .networkProtectionLatencyError, includedParameters: [.appVersion, .atb])
+                DailyPixel.fire(pixel: .networkProtectionLatencyError, includedParameters: [.appVersion])
             case .quality(let quality):
                 guard quality != .unknown else { return }
                 DailyPixel.fireDailyAndCount(
                     pixel: .networkProtectionLatency(quality: quality.rawValue),
                     pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                    includedParameters: [.appVersion, .atb]
+                    withAdditionalParameters: ["location": location.stringValue],
+                    includedParameters: [.appVersion]
                 )
             }
         case .rekeyAttempt(let step):
@@ -292,6 +295,12 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             vpnLogger.logStartingWithoutAuthToken()
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+        case .adapterEndTemporaryShutdownStateAttemptFailure(let error):
+            DailyPixel.fireDailyAndCount(pixel: .networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure, error: error)
+        case .adapterEndTemporaryShutdownStateRecoverySuccess:
+            DailyPixel.fireDailyAndCount(pixel: .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess)
+        case .adapterEndTemporaryShutdownStateRecoveryFailure(let error):
+            DailyPixel.fireDailyAndCount(pixel: .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure, error: error)
         }
     }
 
@@ -456,17 +465,26 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             let keychainType: KeychainType = .dataProtection(.named(subscriptionAppGroup))
             let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
             let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
-                let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-                                  PixelParameters.privacyProKeychainError: error.localizedDescription,
+                let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
+                                  PixelParameters.subscriptionKeychainError: error.localizedDescription,
                                   PixelParameters.source: KeychainErrorSource.vpn.rawValue,
                                   PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
-                DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainAccessError,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
                                              withAdditionalParameters: parameters)
             }
+
             let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                                 legacyTokenStorage: nil, // Only the main app can migrate
-                                                authService: authService)
+                                                authService: authService,
+                                                refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: self.wideEvent, isFeatureEnabled: {
+#if DEBUG
+                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true) // Allow the refresh event when using staging in debug mode, for easier testing
+#else
+                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true) && authEnvironment == .production
+#endif
+            }))
+
             let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
                                                                                    baseURL: subscriptionEnvironment.serviceEnvironment.url)
             let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
@@ -476,7 +494,16 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                                                    subscriptionEndpointService: subscriptionEndpointService,
                                                                    subscriptionEnvironment: subscriptionEnvironment,
                                                                    pixelHandler: pixelHandler,
-                                                                   initForPurchase: false)
+                                                                   initForPurchase: false,
+                                                                   wideEvent: self.wideEvent,
+                                                                   isAuthV2WideEventEnabled: {
+#if DEBUG
+                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true) // Allow the refresh event when using staging in debug mode, for easier testing
+#else
+                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true) && subscriptionEnvironment.serviceEnvironment == .production
+#endif
+            })
+
             self.subscriptionManager = subscriptionManager
 
             entitlementsCheck = {
@@ -655,11 +682,11 @@ extension NetworkProtectionPacketTunnelProvider: AccountManagerKeychainAccessDel
             return
         }
 
-        let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-                          PixelParameters.privacyProKeychainError: expectedError.errorDescription ?? "Unknown",
+        let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
+                          PixelParameters.subscriptionKeychainError: expectedError.errorDescription ?? "Unknown",
                           PixelParameters.source: KeychainErrorSource.vpn.rawValue,
                           PixelParameters.authVersion: KeychainErrorAuthVersion.v1.rawValue]
-        DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
+        DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainAccessError,
                                      pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
                                      withAdditionalParameters: parameters)
     }

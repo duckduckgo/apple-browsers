@@ -21,7 +21,11 @@ import BrowserServicesKit
 import Common
 import Foundation
 import AppKitExtensions
+import URLPredictor
 import os.log
+#if !SANDBOX_TEST_TOOL
+import PixelKit
+#endif
 
 extension URL.NavigationalScheme {
 
@@ -106,11 +110,67 @@ extension URL {
            let atbWithVariant = LocalStatisticsStore().atbWithVariant {
             url = url.appendingParameter(name: URL.DuckDuckGoParameters.ATB.atb, value: atbWithVariant + "-wb")
         }
+
+        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.duckAISearchParameter) {
+            /// Append the kbg disable parameter only when Duck AI features are not shown
+            if !AIChatPreferences.shared.shouldShowAIFeatures {
+                url = url.appendingParameter(name: URL.DuckDuckGoParameters.KBG.kbg,
+                                             value: URL.DuckDuckGoParameters.KBG.kbgDisabledValue)
+            }
+        }
+
         return url
     }
 
-    static func makeURL(from addressBarString: String) -> URL? {
+    static func makeURL(from addressBarString: String, enableMetrics: Bool = true) -> URL? {
+        let featureFlagger = Application.appDelegate.featureFlagger
+        guard featureFlagger.isFeatureOn(.unifiedURLPredictor) else {
+            return makeURLUsingNativePredictionLogic(from: addressBarString)
+        }
 
+        let url = makeURLUsingUnifiedPredictionLogic(from: addressBarString)
+
+        /// Return early if the metrics feature flag is disabled (only internal users can opt in to metrics collection).
+        guard enableMetrics, featureFlagger.isFeatureOn(.unifiedURLPredictorMetrics) else {
+            return url
+        }
+
+        /// Verify unified prediction logic against native one and fire a pixel when the output (wrt search/navigate/error) differs.
+        let expectedURL = makeURLUsingNativePredictionLogic(from: addressBarString)
+        switch (url?.isDuckDuckGoSearch, expectedURL?.isDuckDuckGoSearch) {
+        case (true, false):
+            PixelKit.fire(DebugEvent(GeneralPixel.unifiedURLPredictionMismatch(prediction: "search", input: addressBarString)))
+        case (false, true):
+            PixelKit.fire(DebugEvent(GeneralPixel.unifiedURLPredictionMismatch(prediction: "navigate", input: addressBarString)))
+        case (nil, nil):
+            break
+        case (nil, _):
+            PixelKit.fire(DebugEvent(GeneralPixel.unifiedURLPredictionMismatch(prediction: "error", input: addressBarString)))
+        default:
+            break
+        }
+
+        return url
+    }
+
+    static func makeURLUsingUnifiedPredictionLogic(from addressBarString: String) -> URL? {
+        do {
+            switch try Classifier.classify(input: addressBarString) {
+            case .navigate(let url):
+                return url
+            case .search(let query):
+                return URL.makeSearchUrl(from: query)
+            }
+        } catch let error as Classifier.Error {
+            Logger.general.error("Failed to classify \"\(addressBarString)\" as URL or search phrase: \(error)")
+            return nil
+        } catch {
+            Logger.general.error("URL extension: Making URL from \(addressBarString) failed")
+            return nil
+        }
+    }
+
+    static func makeURLUsingNativePredictionLogic(from addressBarString: String) -> URL? {
         let trimmed = addressBarString.trimmingWhitespace()
 
         if let addressBarUrl = URL(trimmedAddressBarString: trimmed), addressBarUrl.isValid {
@@ -125,15 +185,17 @@ extension URL {
         return nil
     }
 
-    static func makeURL(fromSuggestionPhrase phrase: String) -> URL? {
-        guard let url = URL(trimmedAddressBarString: phrase),
-              let scheme = url.scheme.map(NavigationalScheme.init),
-              NavigationalScheme.hypertextSchemes.contains(scheme),
-              url.isValid else {
-            return nil
+    static func makeURL(fromSuggestionPhrase phrase: String, useUnifiedLogic: Bool) -> URL? {
+        guard useUnifiedLogic else {
+            guard let url = URL(trimmedAddressBarString: phrase),
+                  let scheme = url.scheme.map(NavigationalScheme.init),
+                  NavigationalScheme.hypertextSchemes.contains(scheme),
+                  url.isValid else {
+                return nil
+            }
+            return url
         }
-
-        return url
+        return .init(trimmedAddressBarString: phrase, useUnifiedLogic: true)
     }
 #endif
 
@@ -155,12 +217,24 @@ extension URL {
         return settings.appendingPathComponent(pane.rawValue)
     }
 
+    static func historyPane(_ pane: HistoryPaneIdentifier) -> URL {
+        return history.appendingParameter(name: "range", value: pane.rawValue)
+    }
+
     var isSettingsURL: Bool {
         isChild(of: .settings) && (pathComponents.isEmpty || PreferencePaneIdentifier(url: self) != nil)
     }
 
     var isErrorURL: Bool {
         return navigationalScheme == .duck && host == URL.error.host
+    }
+
+    var isHistory: Bool {
+        return navigationalScheme == .duck && host == URL.history.host
+    }
+
+    var isNTP: Bool {
+        return navigationalScheme == .duck && host == URL.newtab.host
     }
 
 #endif
@@ -175,6 +249,7 @@ extension URL {
 
         static let aboutSettings = URL(string: "about:settings")!
         static let aboutPreferences = URL(string: "about:preferences")!
+        static let aboutHistory = URL(string: "about:history")!
         static let duckPreferences = URL(string: "duck://preferences")!
         static let aboutConfig = URL(string: "about:config")!
         static let duckConfig = URL(string: "duck://config")!
@@ -220,6 +295,18 @@ extension URL {
                 DuckDuckGoParameters.ATB.atb: atbWithVariant,
                 DuckDuckGoParameters.ATB.setAtb: setAtb
             ])
+    }
+
+    static func duckAIAtb(atbWithVariant: String, setAtb: String?) -> URL {
+        var params: [String: String?] = [
+            DuckDuckGoParameters.ATB.activityType: DuckDuckGoParameters.ATB.duckAIValue,
+            DuckDuckGoParameters.ATB.atb: atbWithVariant,
+            DuckDuckGoParameters.ATB.setAtb: setAtb
+        ]
+
+        // Don't include setAtb if the parameter is nil
+        return Self.initialAtb
+            .appendingParameters(params.compactMapValues { $0 })
     }
 
     static func exti(forAtb atb: String) -> URL {
@@ -431,7 +518,11 @@ extension URL {
         return URL(string: "https://duckduckgo.com/privacy")!
     }
 
-    static var privacyPro: URL {
+    static var termsOfService: URL {
+        URL(string: "https://duckduckgo.com/terms")!
+    }
+
+    static var subscription: URL {
         return URL(string: "https://duckduckgo.com/pro")!
     }
 
@@ -462,6 +553,11 @@ extension URL {
         case ia
         case iax
 
+        enum KBG {
+            static let kbg = "kbg"
+            static let kbgDisabledValue = "-1"
+        }
+
         enum ATB {
             static let atb = "atb"
             static let setAtb = "set_atb"
@@ -469,6 +565,7 @@ extension URL {
             static let email = "email"
 
             static let appUsageValue = "app_use"
+            static let duckAIValue = "duckai"
         }
     }
 

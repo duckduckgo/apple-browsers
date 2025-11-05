@@ -21,6 +21,7 @@ import Combine
 import Common
 import Foundation
 import os.log
+import DesignResourcesKitIcons
 
 final class BookmarksBarViewController: NSViewController {
 
@@ -33,6 +34,14 @@ final class BookmarksBarViewController: NSViewController {
     @IBOutlet private var promptAnchor: NSView!
     @IBOutlet var backgroundColorView: ColorView!
 
+    @IBOutlet weak var syncButton: NSView!
+    @IBOutlet weak var syncMouseOverView: MouseOverView!
+    @IBOutlet weak var syncButtonIcon: NSImageView!
+    @IBOutlet weak var syncButtonDivider: NSBox!
+
+    @IBOutlet weak var syncButtonLabel: NSTextField!
+    @IBOutlet weak var syncDismissButton: MouseOverButton!
+
     private var bookmarkMenuPopover: BookmarksBarMenuPopover?
 
     private let bookmarkManager: BookmarkManager
@@ -40,7 +49,11 @@ final class BookmarksBarViewController: NSViewController {
     private let viewModel: BookmarksBarViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
     private let appereancePreferences: AppearancePreferencesPersistor
-    private let visualStyle: VisualStyleProviding
+
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
+    let syncButtonModel: DismissableSyncDeviceButtonModel = .init(source: .bookmarksBar, keyValueStore: UserDefaults.standard)
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -67,18 +80,18 @@ final class BookmarksBarViewController: NSViewController {
           bookmarkManager: BookmarkManager,
           dragDropManager: BookmarkDragDropManager,
           appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore),
-          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
+          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
     ) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.appereancePreferences = appereancePreferences
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager,
                                                dragDropManager: dragDropManager,
                                                tabCollectionViewModel: tabCollectionViewModel,
-                                               visualStyle: visualStyle)
+                                               themeManager: themeManager)
 
         super.init(coder: coder)
     }
@@ -98,15 +111,12 @@ final class BookmarksBarViewController: NSViewController {
 
         viewModel.delegate = self
 
-        backgroundColorView.backgroundColor = visualStyle.colorsProvider.navigationBackgroundColor
-
         let nib = NSNib(nibNamed: "BookmarksBarCollectionViewItem", bundle: .main)
         bookmarksBarCollectionView.setDraggingSourceOperationMask([.copy, .move], forLocal: true)
         bookmarksBarCollectionView.register(nib, forItemWithIdentifier: BookmarksBarCollectionViewItem.identifier)
         bookmarksBarCollectionView.allowsMultipleSelection = false
 
         bookmarksBarCollectionView.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
-        bookmarksBarCollectionView.backgroundColors = [visualStyle.colorsProvider.navigationBackgroundColor]
         bookmarksBarCollectionView.setAccessibilityIdentifier("BookmarksBarViewController.bookmarksBarCollectionView")
 
         clippedItemsIndicator.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
@@ -114,16 +124,40 @@ final class BookmarksBarViewController: NSViewController {
         clippedItemsIndicator.sendAction(on: .leftMouseDown)
 
         importBookmarksLabel.stringValue = UserText.importBookmarks
+        importBookmarksLabel.font = .systemFont(ofSize: 11, weight: .regular)
 
         bookmarksBarCollectionView.delegate = viewModel
         bookmarksBarCollectionView.dataSource = viewModel
 
         view.postsFrameChangedNotifications = true
+
+        setUpSyncButton()
+        subscribeToThemeChanges()
+        applyThemeStyle()
+    }
+
+    private func setUpSyncButton() {
+        if appereancePreferences.showBookmarksBar {
+            syncButtonModel.viewDidLoad()
+        }
+        syncButton.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
+        syncMouseOverView.cornerRadius = theme.toolbarButtonsCornerRadius
+        syncButton.isHidden = !syncButtonModel.shouldShowSyncButton
+        syncButtonIcon.image = DesignSystemImages.Glyphs.Size16.sync
+        syncButtonIcon.contentTintColor = .textPrimary
+        syncButtonLabel.font = .systemFont(ofSize: 11, weight: .regular)
+        syncButtonDivider.boxType = .separator
+        syncButtonDivider.fillColor = .textPrimary
+        syncDismissButton.image = DesignSystemImages.Glyphs.Size16.close
+        syncDismissButton.contentTintColor = .textPrimary
     }
 
     private func setUpImportBookmarksButton() {
         importBookmarksIcon.image = NSImage(named: "Import-16D")
+        importBookmarksIcon.contentTintColor = .textPrimary
         importBookmarksButton.isHidden = true
+        importBookmarksButton.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
+        importBookmarksMouseOverView.cornerRadius = theme.toolbarButtonsCornerRadius
     }
 
     private func addContextMenu() {
@@ -166,6 +200,12 @@ final class BookmarksBarViewController: NSViewController {
     override func removeFromParent() {
         super.removeFromParent()
         unsubscribeFromEvents()
+    }
+
+    deinit {
+#if DEBUG
+        bookmarkMenuPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
     }
 
     private func subscribeToEvents() {
@@ -214,6 +254,12 @@ final class BookmarksBarViewController: NSViewController {
                 mouseDidHover(over: clippedItemsIndicator)
             }
             .store(in: &cancellables)
+
+        syncButtonModel.$shouldShowSyncButton.sink { [weak self] in
+            self?.syncButton.isHidden = !$0
+            self?.syncButtonZeroWidthConstraint.priority = $0 ? .defaultLow : .required
+        }
+        .store(in: &cancellables)
     }
 
     private func unsubscribeFromEvents() {
@@ -274,7 +320,17 @@ final class BookmarksBarViewController: NSViewController {
     }
 
     @IBAction func importBookmarksClicked(_ sender: Any) {
-        DataImportView(isDataTypePickerExpanded: true).show(in: view.window)
+        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true, in: view.window)
+    }
+
+    @IBOutlet weak var syncButtonZeroWidthConstraint: NSLayoutConstraint!
+
+    @IBAction func syncClicked(_ sender: Any) {
+        syncButtonModel.syncButtonAction()
+    }
+
+    @IBAction func dismissSyncClicked(_ sender: Any) {
+        syncButtonModel.dismissSyncButtonAction()
     }
 
     @IBAction private func clippedItemsIndicatorClicked(_ sender: NSButton) {
@@ -377,7 +433,17 @@ extension BookmarksBarViewController: BookmarksBarViewModelDelegate {
     func showDialog(_ dialog: any ModalView) {
         dialog.show(in: view.window)
     }
+}
 
+// MARK: - ThemeUpdateListening
+extension BookmarksBarViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        let navigationBackgroundColor = theme.colorsProvider.navigationBackgroundColor
+
+        backgroundColorView.backgroundColor = navigationBackgroundColor
+        bookmarksBarCollectionView.backgroundColors = [navigationBackgroundColor]
+    }
 }
 
 private let draggingInfoUpdatedTimerKey = UnsafeRawPointer(bitPattern: "draggingInfoUpdatedTimerKey".hashValue)!

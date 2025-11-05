@@ -36,9 +36,10 @@ protocol MoreOptionsMenuIconsProviding {
     var downloadsIcon: NSImage { get }
     var historyIcon: NSImage { get }
     var passwordsIcon: NSImage { get }
+    var syncIcon: NSImage { get }
     var deleteBrowsingDataIcon: NSImage { get }
     var emailProtectionIcon: NSImage { get }
-    var privacyProIcon: NSImage { get }
+    var subscriptionIcon: NSImage { get }
     var fireproofSiteIcon: NSImage { get }
     var removeFireproofIcon: NSImage { get }
     var findInPageIcon: NSImage { get }
@@ -50,7 +51,7 @@ protocol MoreOptionsMenuIconsProviding {
     /// Send Feedback Sub-Menu
     var browserFeedbackIcon: NSImage { get }
     var reportBrokenSiteIcon: NSImage { get }
-    var sendPrivacyProFeedbackIcon: NSImage { get }
+    var sendSubscriptionFeedbackIcon: NSImage { get }
 
     /// Password & Autofill Sub-Menu
     var passwordsSubMenuIcon: NSImage { get }
@@ -92,7 +93,7 @@ final class LegacyMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let passwordsIcon: NSImage = .passwordManagement
     let deleteBrowsingDataIcon: NSImage = .burn
     let emailProtectionIcon: NSImage = .optionsButtonMenuEmail
-    let privacyProIcon: NSImage = .subscriptionIcon
+    let subscriptionIcon: NSImage = .subscriptionIcon
     let fireproofSiteIcon: NSImage = .fireproof
     let removeFireproofIcon: NSImage = .burn
     let findInPageIcon: NSImage = .findSearch
@@ -102,8 +103,9 @@ final class LegacyMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let settingsIcon: NSImage = .preferences
     let browserFeedbackIcon: NSImage = .browserFeedback
     let reportBrokenSiteIcon: NSImage = .siteBreakage
-    let sendPrivacyProFeedbackIcon: NSImage = .pProFeedback
+    let sendSubscriptionFeedbackIcon: NSImage = .pProFeedback
     let passwordsSubMenuIcon: NSImage = .loginGlyph
+    var syncIcon: NSImage = DesignSystemImages.Glyphs.Size16.sync
     let identitiesIcon: NSImage = .identityGlyph
     let creditCardsIcon: NSImage = .creditCardGlyph
     let vpnIcon: NSImage? = .image(for: .vpnIcon)
@@ -134,9 +136,10 @@ final class CurrentMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let downloadsIcon: NSImage = DesignSystemImages.Glyphs.Size16.downloads
     let historyIcon: NSImage = DesignSystemImages.Glyphs.Size16.history
     let passwordsIcon: NSImage = DesignSystemImages.Glyphs.Size16.keyLogin
+    var syncIcon: NSImage = DesignSystemImages.Glyphs.Size16.sync
     let deleteBrowsingDataIcon: NSImage = DesignSystemImages.Glyphs.Size16.fire
     let emailProtectionIcon: NSImage = DesignSystemImages.Glyphs.Size16.email
-    let privacyProIcon: NSImage = DesignSystemImages.Glyphs.Size16.privacyPro
+    let subscriptionIcon: NSImage = DesignSystemImages.Glyphs.Size16.subscription
     let fireproofSiteIcon: NSImage = DesignSystemImages.Glyphs.Size16.fireproof
     let removeFireproofIcon: NSImage = DesignSystemImages.Glyphs.Size16.fire
     let findInPageIcon: NSImage = DesignSystemImages.Glyphs.Size16.findSearch
@@ -146,7 +149,7 @@ final class CurrentMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let settingsIcon: NSImage = DesignSystemImages.Glyphs.Size16.settings
     let browserFeedbackIcon: NSImage = DesignSystemImages.Glyphs.Size16.browser
     let reportBrokenSiteIcon: NSImage = DesignSystemImages.Glyphs.Size16.siteBreakage
-    let sendPrivacyProFeedbackIcon: NSImage = DesignSystemImages.Glyphs.Size16.privacyPro
+    let sendSubscriptionFeedbackIcon: NSImage = DesignSystemImages.Glyphs.Size16.subscription
     let passwordsSubMenuIcon: NSImage = DesignSystemImages.Glyphs.Size16.keyLogin
     let identitiesIcon: NSImage = DesignSystemImages.Glyphs.Size16.profile
     let creditCardsIcon: NSImage = DesignSystemImages.Glyphs.Size16.creditCard

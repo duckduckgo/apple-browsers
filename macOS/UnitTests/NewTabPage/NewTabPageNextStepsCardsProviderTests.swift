@@ -35,7 +35,7 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
             defaultBrowserProvider: CapturingDefaultBrowserProvider(),
             dockCustomizer: DockCustomizerMock(),
             dataImportProvider: CapturingDataImportProvider(),
-            tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: TabCollectionViewModel()),
+            tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: TabCollectionViewModel(isPopup: false)),
             emailManager: EmailManager(storage: MockEmailStorage()),
             duckPlayerPreferences: DuckPlayerPreferencesPersistorMock(),
             privacyConfigurationManager: privacyConfigManager

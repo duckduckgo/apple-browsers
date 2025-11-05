@@ -90,12 +90,12 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         view.menu = BookmarksContextMenu(delegate: self)
     }
 
-    func updateItem(from entity: BaseBookmarkEntity, isInteractionPrevented: Bool, visualStyle: VisualStyleProviding) {
+    func updateItem(from entity: BaseBookmarkEntity, isInteractionPrevented: Bool, theme: ThemeStyleProviding) {
         self.representedObject = entity
         self.title = entity.title
         self.representedObject = entity
 
-        view.layer?.cornerRadius = visualStyle.toolbarButtonsCornerRadius
+        view.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
 
         if let bookmark = entity as? Bookmark {
             let favicon = bookmark.favicon(.small)?.copy() as? NSImage
@@ -123,9 +123,9 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         case .bookmark(_, let url, let storedFavicon, _):
             let host = URL(string: url)?.host ?? ""
             let favicon = storedFavicon ?? NSApp.delegateTyped.faviconManager.getCachedFavicon(for: host, sizeCategory: .small)?.image
-            faviconView.image = favicon ?? visualStyle.iconsProvider.bookmarksIconsProvider.bookmarkIcon
+            faviconView.image = favicon ?? theme.iconsProvider.bookmarksIconsProvider.bookmarkIcon
         case .folder:
-            faviconView.image = visualStyle.iconsProvider.bookmarksIconsProvider.bookmarkFolderIcon
+            faviconView.image = theme.iconsProvider.bookmarksIconsProvider.bookmarkFolderIcon
         }
         mouseOverView.isEnabled = !isInteractionPrevented
         faviconView.isEnabled = !isInteractionPrevented

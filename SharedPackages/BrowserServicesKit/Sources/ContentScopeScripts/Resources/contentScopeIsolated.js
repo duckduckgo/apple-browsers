@@ -1,4 +1,4 @@
-/*! © DuckDuckGo ContentScopeScripts protections https://github.com/duckduckgo/content-scope-scripts/ */
+/*! © DuckDuckGo ContentScopeScripts apple-isolated https://github.com/duckduckgo/content-scope-scripts/ */
 "use strict";
 (() => {
   var __create = Object.create;
@@ -1558,6 +1558,10 @@
     TypeError: () => TypeError2,
     URL: () => URL2,
     addEventListener: () => addEventListener,
+    console: () => console2,
+    consoleError: () => consoleError,
+    consoleLog: () => consoleLog,
+    consoleWarn: () => consoleWarn,
     customElementsDefine: () => customElementsDefine,
     customElementsGet: () => customElementsGet,
     dispatchEvent: () => dispatchEvent,
@@ -1598,6 +1602,10 @@
   var Map2 = globalThis.Map;
   var Error2 = globalThis.Error;
   var randomUUID = globalThis.crypto?.randomUUID?.bind(globalThis.crypto);
+  var console2 = globalThis.console;
+  var consoleLog = console2.log.bind(console2);
+  var consoleWarn = console2.warn.bind(console2);
+  var consoleError = console2.error.bind(console2);
 
   // src/utils.js
   var globalObj = typeof window === "undefined" ? globalThis : window;
@@ -1703,7 +1711,11 @@
     return false;
   }
   function isFeatureBroken(args, feature) {
-    return isPlatformSpecificFeature(feature) ? !args.site.enabledFeatures.includes(feature) : args.site.isBroken || args.site.allowlisted || !args.site.enabledFeatures.includes(feature);
+    const isFeatureEnabled = args.site.enabledFeatures?.includes(feature) ?? false;
+    if (isPlatformSpecificFeature(feature)) {
+      return !isFeatureEnabled;
+    }
+    return args.site.isBroken || args.site.allowlisted || !isFeatureEnabled;
   }
   function camelcase(dashCaseText) {
     return dashCaseText.replace(/-(.)/g, (_2, letter) => {
@@ -1751,10 +1763,11 @@
     switch (configSettingType) {
       case "object":
         if (Array.isArray(configSetting)) {
-          configSetting = processAttrByCriteria(configSetting);
-          if (configSetting === void 0) {
+          const selectedSetting = processAttrByCriteria(configSetting);
+          if (selectedSetting === void 0) {
             return defaultValue;
           }
+          return processAttr(selectedSetting, defaultValue);
         }
         if (!configSetting.type) {
           return defaultValue;
@@ -1763,9 +1776,16 @@
           if (configSetting.functionName && functionMap[configSetting.functionName]) {
             return functionMap[configSetting.functionName];
           }
+          if (configSetting.functionValue) {
+            const functionValue = configSetting.functionValue;
+            return () => processAttr(functionValue, void 0);
+          }
         }
         if (configSetting.type === "undefined") {
           return void 0;
+        }
+        if (configSetting.async) {
+          return DDGPromise.resolve(configSetting.value);
         }
         return configSetting.value;
       default:
@@ -1901,6 +1921,9 @@
     };
   }
   function getPlatformVersion(preferences) {
+    if (preferences.platform?.version !== void 0 && preferences.platform?.version !== "") {
+      return preferences.platform.version;
+    }
     if (preferences.versionNumber) {
       return preferences.versionNumber;
     }
@@ -1935,6 +1958,18 @@
       }
     } else if (typeof currentVersion === "number" && typeof minSupportedVersion === "number") {
       if (minSupportedVersion <= currentVersion) {
+        return true;
+      }
+    }
+    return false;
+  }
+  function isMaxSupportedVersion(maxSupportedVersion, currentVersion) {
+    if (typeof currentVersion === "string" && typeof maxSupportedVersion === "string") {
+      if (satisfiesMinVersion(currentVersion, maxSupportedVersion)) {
+        return true;
+      }
+    } else if (typeof currentVersion === "number" && typeof maxSupportedVersion === "number") {
+      if (maxSupportedVersion >= currentVersion) {
         return true;
       }
     }
@@ -1992,7 +2027,7 @@
   function isGloballyDisabled(args) {
     return args.site.allowlisted || args.site.isBroken;
   }
-  var platformSpecificFeatures = ["windowsPermissionUsage", "messageBridge", "favicon"];
+  var platformSpecificFeatures = ["navigatorInterface", "duckAiListener", "windowsPermissionUsage", "messageBridge", "favicon"];
   function isPlatformSpecificFeature(featureName) {
     return platformSpecificFeatures.includes(featureName);
   }
@@ -2033,24 +2068,27 @@
       "messageBridge",
       "duckPlayer",
       "duckPlayerNative",
+      "duckAiListener",
+      "duckAiDataClearing",
       "harmfulApis",
       "webCompat",
       "windowsPermissionUsage",
       "brokerProtection",
       "performanceMetrics",
       "breakageReporting",
-      "autofillPasswordImport",
+      "autofillImport",
       "favicon",
       "webTelemetry",
-      "scriptlets"
+      "pageContext"
     ]
   );
   var platformSupport = {
-    apple: ["webCompat", "duckPlayerNative", "scriptlets", ...baseFeatures],
+    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "duckAiListener", "duckAiDataClearing", "pageContext"],
     "apple-isolated": [
       "duckPlayer",
       "duckPlayerNative",
       "brokerProtection",
+      "breakageReporting",
       "performanceMetrics",
       "clickToLoad",
       "messageBridge",
@@ -2058,7 +2096,18 @@
     ],
     android: [...baseFeatures, "webCompat", "breakageReporting", "duckPlayer", "messageBridge"],
     "android-broker-protection": ["brokerProtection"],
-    "android-autofill-password-import": ["autofillPasswordImport"],
+    "android-autofill-import": ["autofillImport"],
+    "android-adsjs": [
+      "apiManipulation",
+      "webCompat",
+      "fingerprintingHardware",
+      "fingerprintingScreenSize",
+      "fingerprintingTemporaryStorage",
+      "fingerprintingAudio",
+      "fingerprintingBattery",
+      "gpc",
+      "breakageReporting"
+    ],
     windows: [
       "cookie",
       ...baseFeatures,
@@ -2068,7 +2117,10 @@
       "brokerProtection",
       "breakageReporting",
       "messageBridge",
-      "webCompat"
+      "webCompat",
+      "pageContext",
+      "duckAiListener",
+      "duckAiDataClearing"
     ],
     firefox: ["cookie", ...baseFeatures, "clickToLoad"],
     chrome: ["cookie", ...baseFeatures, "clickToLoad"],
@@ -3073,6 +3125,246 @@
     }
   };
 
+  // ../messaging/lib/android-adsjs.js
+  init_define_import_meta_trackerLookup();
+  var AndroidAdsjsMessagingTransport = class {
+    /**
+     * @param {AndroidAdsjsMessagingConfig} config
+     * @param {MessagingContext} messagingContext
+     * @internal
+     */
+    constructor(config2, messagingContext) {
+      this.messagingContext = messagingContext;
+      this.config = config2;
+    }
+    /**
+     * @param {NotificationMessage} msg
+     */
+    notify(msg) {
+      try {
+        this.config.sendMessageThrows?.(msg);
+      } catch (e) {
+        console.error(".notify failed", e);
+      }
+    }
+    /**
+     * @param {RequestMessage} msg
+     * @return {Promise<any>}
+     */
+    request(msg) {
+      return new Promise((resolve, reject) => {
+        const unsub = this.config.subscribe(msg.id, handler);
+        try {
+          this.config.sendMessageThrows?.(msg);
+        } catch (e) {
+          unsub();
+          reject(new Error("request failed to send: " + e.message || "unknown error"));
+        }
+        function handler(data2) {
+          if (isResponseFor(msg, data2)) {
+            if (data2.result) {
+              resolve(data2.result || {});
+              return unsub();
+            }
+            if (data2.error) {
+              reject(new Error(data2.error.message));
+              return unsub();
+            }
+            unsub();
+            throw new Error("unreachable: must have `result` or `error` key by this point");
+          }
+        }
+      });
+    }
+    /**
+     * @param {Subscription} msg
+     * @param {(value: unknown | undefined) => void} callback
+     */
+    subscribe(msg, callback) {
+      const unsub = this.config.subscribe(msg.subscriptionName, (data2) => {
+        if (isSubscriptionEventFor(msg, data2)) {
+          callback(data2.params || {});
+        }
+      });
+      return () => {
+        unsub();
+      };
+    }
+  };
+  var AndroidAdsjsMessagingConfig = class {
+    /**
+     * @param {object} params
+     * @param {Record<string, any>} params.target
+     * @param {boolean} params.debug
+     * @param {string} params.objectName - the object name for addWebMessageListener
+     */
+    constructor(params) {
+      /** @type {{
+       * postMessage: (message: string) => void,
+       * addEventListener: (type: string, listener: (event: MessageEvent) => void) => void,
+       * } | null} */
+      __publicField(this, "_capturedHandler");
+      this.target = params.target;
+      this.debug = params.debug;
+      this.objectName = params.objectName;
+      this.listeners = new globalThis.Map();
+      this._captureGlobalHandler();
+      this._setupEventListener();
+    }
+    /**
+     * The transport can call this to transmit a JSON payload along with a secret
+     * to the native Android handler via postMessage.
+     *
+     * Note: This can throw - it's up to the transport to handle the error.
+     *
+     * @type {(json: object) => void}
+     * @throws
+     * @internal
+     */
+    sendMessageThrows(message) {
+      if (!this.objectName) {
+        throw new Error("Object name not set for WebMessageListener");
+      }
+      if (this._capturedHandler && this._capturedHandler.postMessage) {
+        this._capturedHandler.postMessage(JSON.stringify(message));
+      } else {
+        throw new Error("postMessage not available");
+      }
+    }
+    /**
+     * A subscription on Android is just a named listener. All messages from
+     * android -> are delivered through a single function, and this mapping is used
+     * to route the messages to the correct listener.
+     *
+     * Note: Use this to implement request->response by unsubscribing after the first
+     * response.
+     *
+     * @param {string} id
+     * @param {(msg: MessageResponse | SubscriptionEvent) => void} callback
+     * @returns {() => void}
+     * @internal
+     */
+    subscribe(id, callback) {
+      this.listeners.set(id, callback);
+      return () => {
+        this.listeners.delete(id);
+      };
+    }
+    /**
+     * Accept incoming messages and try to deliver it to a registered listener.
+     *
+     * This code is defensive to prevent any single handler from affecting another if
+     * it throws (producer interference).
+     *
+     * @param {MessageResponse | SubscriptionEvent} payload
+     * @internal
+     */
+    _dispatch(payload) {
+      if (!payload) return this._log("no response");
+      if ("id" in payload) {
+        if (this.listeners.has(payload.id)) {
+          this._tryCatch(() => this.listeners.get(payload.id)?.(payload));
+        } else {
+          this._log("no listeners for ", payload);
+        }
+      }
+      if ("subscriptionName" in payload) {
+        if (this.listeners.has(payload.subscriptionName)) {
+          this._tryCatch(() => this.listeners.get(payload.subscriptionName)?.(payload));
+        } else {
+          this._log("no subscription listeners for ", payload);
+        }
+      }
+    }
+    /**
+     *
+     * @param {(...args: any[]) => any} fn
+     * @param {string} [context]
+     */
+    _tryCatch(fn, context = "none") {
+      try {
+        return fn();
+      } catch (e) {
+        if (this.debug) {
+          console.error("AndroidAdsjsMessagingConfig error:", context);
+          console.error(e);
+        }
+      }
+    }
+    /**
+     * @param {...any} args
+     */
+    _log(...args) {
+      if (this.debug) {
+        console.log("AndroidAdsjsMessagingConfig", ...args);
+      }
+    }
+    /**
+     * Capture the global handler and remove it from the global object.
+     */
+    _captureGlobalHandler() {
+      const { target, objectName } = this;
+      if (Object.prototype.hasOwnProperty.call(target, objectName)) {
+        this._capturedHandler = target[objectName];
+        delete target[objectName];
+      } else {
+        this._capturedHandler = null;
+        this._log("Android adsjs messaging interface not available", objectName);
+      }
+    }
+    /**
+     * Set up event listener for incoming messages from the captured handler.
+     */
+    _setupEventListener() {
+      if (!this._capturedHandler || !this._capturedHandler.addEventListener) {
+        this._log("No event listener support available");
+        return;
+      }
+      this._capturedHandler.addEventListener("message", (event) => {
+        try {
+          const data2 = (
+            /** @type {MessageEvent} */
+            event.data
+          );
+          if (typeof data2 === "string") {
+            const parsedData = JSON.parse(data2);
+            this._dispatch(parsedData);
+          }
+        } catch (e) {
+          this._log("Error processing incoming message:", e);
+        }
+      });
+    }
+    /**
+     * Send an initial ping message to the platform to establish communication.
+     * This is a fire-and-forget notification that signals the JavaScript side is ready.
+     * Only sends in top context (not in frames) and if the messaging interface is available.
+     *
+     * @param {MessagingContext} messagingContext
+     * @returns {boolean} true if ping was sent, false if in frame or interface not ready
+     */
+    sendInitialPing(messagingContext) {
+      if (isBeingFramed()) {
+        this._log("Skipping initial ping - running in frame context");
+        return false;
+      }
+      try {
+        const message = new RequestMessage({
+          id: "initialPing",
+          context: messagingContext.context,
+          featureName: "messaging",
+          method: "initialPing"
+        });
+        this.sendMessageThrows(message);
+        this._log("Initial ping sent successfully");
+        return true;
+      } catch (e) {
+        this._log("Failed to send initial ping:", e);
+        return false;
+      }
+    }
+  };
+
   // ../messaging/lib/typed-messages.js
   init_define_import_meta_trackerLookup();
 
@@ -3203,6 +3495,9 @@
     }
     if (config2 instanceof AndroidMessagingConfig) {
       return new AndroidMessagingTransport(config2, messagingContext);
+    }
+    if (config2 instanceof AndroidAdsjsMessagingConfig) {
+      return new AndroidAdsjsMessagingTransport(config2, messagingContext);
     }
     if (config2 instanceof TestTransportConfig) {
       return new TestTransport(config2, messagingContext);
@@ -4422,6 +4717,7 @@
        *   platform: import('./utils.js').Platform,
        *   desktopModeEnabled?: boolean,
        *   forcedZoomEnabled?: boolean,
+       *   isDdgWebView?: boolean,
        *   featureSettings?: Record<string, unknown>,
        *   assets?: import('./content-feature.js').AssetConfig | undefined,
        *   site: import('./content-feature.js').Site,
@@ -4499,6 +4795,7 @@
      * @property {string[] | string} [domain]
      * @property {object} [urlPattern]
      * @property {object} [minSupportedVersion]
+     * @property {object} [maxSupportedVersion]
      * @property {object} [experiment]
      * @property {string} [experiment.experimentName]
      * @property {string} [experiment.cohort]
@@ -4506,6 +4803,7 @@
      * @property {boolean} [context.frame] - true if the condition applies to frames
      * @property {boolean} [context.top] - true if the condition applies to the top frame
      * @property {string} [injectName] - the inject name to match against (e.g., "apple-isolated")
+     * @property {boolean} [internal] - true if the condition applies to internal builds
      */
     /**
      * Takes multiple conditional blocks and returns true if any apply.
@@ -4531,7 +4829,9 @@
         urlPattern: this._matchUrlPatternConditional,
         experiment: this._matchExperimentConditional,
         minSupportedVersion: this._matchMinSupportedVersion,
-        injectName: this._matchInjectNameConditional
+        maxSupportedVersion: this._matchMaxSupportedVersion,
+        injectName: this._matchInjectNameConditional,
+        internal: this._matchInternalConditional
       };
       for (const key in conditionBlock) {
         if (!conditionChecks[key]) {
@@ -4623,6 +4923,17 @@
       return conditionBlock.injectName === currentInjectName;
     }
     /**
+     * Takes a condition block and returns true if the internal state matches the condition.
+     * @param {ConditionBlock} conditionBlock
+     * @returns {boolean}
+     */
+    _matchInternalConditional(conditionBlock) {
+      if (conditionBlock.internal === void 0) return false;
+      const isInternal = __privateGet(this, _args)?.platform?.internal;
+      if (isInternal === void 0) return false;
+      return Boolean(conditionBlock.internal) === Boolean(isInternal);
+    }
+    /**
      * Takes a condition block and returns true if the platform version satisfies the `minSupportedFeature`
      * @param {ConditionBlock} conditionBlock
      * @returns {boolean}
@@ -4630,6 +4941,15 @@
     _matchMinSupportedVersion(conditionBlock) {
       if (!conditionBlock.minSupportedVersion) return false;
       return isSupportedVersion(conditionBlock.minSupportedVersion, __privateGet(this, _args)?.platform?.version);
+    }
+    /**
+     * Takes a condition block and returns true if the platform version satisfies the `maxSupportedFeature`
+     * @param {ConditionBlock} conditionBlock
+     * @returns {boolean}
+     */
+    _matchMaxSupportedVersion(conditionBlock) {
+      if (!conditionBlock.maxSupportedVersion) return false;
+      return isMaxSupportedVersion(conditionBlock.maxSupportedVersion, __privateGet(this, _args)?.platform?.version);
     }
     /**
      * Return the settings object for a feature
@@ -4661,11 +4981,12 @@
      * ```
      * This also supports domain overrides as per `getFeatureSetting`.
      * @param {string} featureKeyName
+     * @param {'enabled' | 'disabled'} [defaultState]
      * @param {string} [featureName]
      * @returns {boolean}
      */
-    getFeatureSettingEnabled(featureKeyName, featureName) {
-      const result = this.getFeatureSetting(featureKeyName, featureName);
+    getFeatureSettingEnabled(featureKeyName, defaultState, featureName) {
+      const result = this.getFeatureSetting(featureKeyName, featureName) || defaultState;
       if (typeof result === "object") {
         return result.state === "enabled";
       }
@@ -4786,6 +5107,16 @@
        * @type {boolean}
        */
       __publicField(this, "listenForUrlChanges", false);
+      /**
+       * Set this to true if you wish to get update calls (legacy).
+       * @type {boolean}
+       */
+      __publicField(this, "listenForUpdateChanges", false);
+      /**
+       * Set this to true if you wish to receive configuration updates from initial ping responses (Android only).
+       * @type {boolean}
+       */
+      __publicField(this, "listenForConfigUpdates", false);
       /** @type {ImportMeta} */
       __privateAdd(this, _importConfig);
       this.setArgs(this.args);
@@ -4794,6 +5125,40 @@
     }
     get isDebug() {
       return this.args?.debug || false;
+    }
+    get shouldLog() {
+      return this.isDebug;
+    }
+    /**
+     * Logging utility for this feature (Stolen some inspo from DuckPlayer logger, will unify in the future)
+     */
+    get log() {
+      const shouldLog = this.shouldLog;
+      const prefix = `${this.name.padEnd(20, " ")} |`;
+      return {
+        // These are getters to have the call site be the reported line number.
+        get info() {
+          if (!shouldLog) {
+            return () => {
+            };
+          }
+          return consoleLog.bind(console, prefix);
+        },
+        get warn() {
+          if (!shouldLog) {
+            return () => {
+            };
+          }
+          return consoleWarn.bind(console, prefix);
+        },
+        get error() {
+          if (!shouldLog) {
+            return () => {
+            };
+          }
+          return consoleError.bind(console, prefix);
+        }
+      };
     }
     get desktopModeEnabled() {
       return this.args?.desktopModeEnabled || false;
@@ -4940,6 +5305,14 @@
      * @deprecated - use messaging instead.
      */
     update() {
+    }
+    /**
+     * Called when user preferences are merged from initial ping response. (Android only)
+     * Override this method in your feature to handle user preference updates.
+     * This only happens once during initialization when the platform responds with user-specific settings.
+     * @param {object} _updatedConfig - The configuration with merged user preferences
+     */
+    onUserPreferencesMerged(_updatedConfig) {
     }
     /**
      * Register a flag that will be added to page breakage reports
@@ -8241,7 +8614,7 @@ ul.messages {
           break;
         case "UNKNOWN":
         default:
-          console.warn("No known pageType");
+          logger.log("No known pageType");
       }
       if (this.currentPage) {
         this.currentPage.destroy();
@@ -11711,6 +12084,15 @@ ul.messages {
     return new SuccessResponse({ actionID: action.id, actionType: action.actionType, response: { actions: [] } });
   }
 
+  // src/features/broker-protection/actions/scroll.js
+  init_define_import_meta_trackerLookup();
+  function scroll(action, root = document) {
+    const element = getElement(root, action.selector);
+    if (!element) return new ErrorResponse({ actionID: action.id, message: "missing element" });
+    element.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    return new SuccessResponse({ actionID: action.id, actionType: action.actionType, response: null });
+  }
+
   // src/features/broker-protection/execute.js
   async function execute(action, inputData, root = document) {
     try {
@@ -11731,6 +12113,8 @@ ul.messages {
           return solveCaptcha2(action, data(action, inputData, "token"), root);
         case "condition":
           return condition(action, root);
+        case "scroll":
+          return scroll(action, root);
         default: {
           return new ErrorResponse({
             actionID: action.id,
@@ -11778,36 +12162,36 @@ ul.messages {
   }
 
   // src/features/broker-protection.js
-  var BrokerProtection = class extends ContentFeature {
-    init() {
-      this.messaging.subscribe("onActionReceived", async (params) => {
-        try {
-          const action = params.state.action;
-          const data2 = params.state.data;
-          if (!action) {
-            return this.messaging.notify("actionError", { error: "No action found." });
-          }
-          const { results, exceptions } = await this.exec(action, data2);
-          if (results) {
-            const parent = results[0];
-            const errors = results.filter((x2) => "error" in x2);
-            if (results.length === 1 || errors.length === 0) {
-              return this.messaging.notify("actionCompleted", { result: parent });
-            }
-            const joinedErrors = errors.map((x2) => x2.error.message).join(", ");
-            const response = new ErrorResponse({
-              actionID: action.id,
-              message: "Secondary actions failed: " + joinedErrors
-            });
-            return this.messaging.notify("actionCompleted", { result: response });
-          } else {
-            return this.messaging.notify("actionError", { error: "No response found, exceptions: " + exceptions.join(", ") });
-          }
-        } catch (e) {
-          console.log("unhandled exception: ", e);
-          this.messaging.notify("actionError", { error: e.toString() });
+  var ActionExecutorBase = class extends ContentFeature {
+    /**
+     * @param {any} action
+     * @param {Record<string, any>} data
+     */
+    async processActionAndNotify(action, data2) {
+      try {
+        if (!action) {
+          return this.messaging.notify("actionError", { error: "No action found." });
         }
-      });
+        const { results, exceptions } = await this.exec(action, data2);
+        if (results) {
+          const parent = results[0];
+          const errors = results.filter((x2) => "error" in x2);
+          if (results.length === 1 || errors.length === 0) {
+            return this.messaging.notify("actionCompleted", { result: parent });
+          }
+          const joinedErrors = errors.map((x2) => x2.error.message).join(", ");
+          const response = new ErrorResponse({
+            actionID: action.id,
+            message: "Secondary actions failed: " + joinedErrors
+          });
+          return this.messaging.notify("actionCompleted", { result: response });
+        } else {
+          return this.messaging.notify("actionError", { error: "No response found, exceptions: " + exceptions.join(", ") });
+        }
+      } catch (e) {
+        this.log.error("unhandled exception: ", e);
+        return this.messaging.notify("actionError", { error: e.toString() });
+      }
     }
     /**
      * Recursively execute actions with the same dataset, collecting all results/exceptions for
@@ -11835,6 +12219,20 @@ ul.messages {
       return { results: [], exceptions };
     }
     /**
+     * @returns {any}
+     */
+    retryConfigFor(action) {
+      this.log.error("unimplemented method: retryConfigFor:", action);
+    }
+  };
+  var BrokerProtection = class extends ActionExecutorBase {
+    init() {
+      this.messaging.subscribe("onActionReceived", async (params) => {
+        const { action, data: data2 } = params.state;
+        return await this.processActionAndNotify(action, data2);
+      });
+    }
+    /**
      * Define default retry configurations for certain actions
      *
      * @param {any} action
@@ -11860,7 +12258,7 @@ ul.messages {
     }
   };
 
-  // src/features/performance-metrics.js
+  // src/features/breakage-reporting.js
   init_define_import_meta_trackerLookup();
 
   // src/features/breakage-reporting/utils.js
@@ -11870,14 +12268,149 @@ ul.messages {
     const firstPaint = paintResources.find((entry) => entry.name === "first-contentful-paint");
     return firstPaint ? [firstPaint.startTime] : [];
   }
+  function returnError(errorMessage) {
+    return { error: errorMessage, success: false };
+  }
+  function waitForLCP(timeoutMs = 500) {
+    return new Promise((resolve) => {
+      let timeoutId;
+      let observer;
+      const cleanup = () => {
+        if (observer) observer.disconnect();
+        if (timeoutId) clearTimeout(timeoutId);
+      };
+      timeoutId = setTimeout(() => {
+        cleanup();
+        resolve(null);
+      }, timeoutMs);
+      observer = new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        const lastEntry = entries[entries.length - 1];
+        if (lastEntry) {
+          cleanup();
+          resolve(lastEntry.startTime);
+        }
+      });
+      try {
+        observer.observe({ type: "largest-contentful-paint", buffered: true });
+      } catch (error) {
+        cleanup();
+        resolve(null);
+      }
+    });
+  }
+  async function getExpandedPerformanceMetrics() {
+    try {
+      if (document.readyState !== "complete") {
+        return returnError("Document not ready");
+      }
+      const navigation = (
+        /** @type {PerformanceNavigationTiming} */
+        performance.getEntriesByType("navigation")[0]
+      );
+      const paint = performance.getEntriesByType("paint");
+      const resources = (
+        /** @type {PerformanceResourceTiming[]} */
+        performance.getEntriesByType("resource")
+      );
+      const fcp = paint.find((p) => p.name === "first-contentful-paint");
+      let largestContentfulPaint = null;
+      if (PerformanceObserver.supportedEntryTypes.includes("largest-contentful-paint")) {
+        largestContentfulPaint = await waitForLCP();
+      }
+      const totalResourceSize = resources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
+      if (navigation) {
+        return {
+          success: true,
+          metrics: {
+            // Core timing metrics (in milliseconds)
+            loadComplete: navigation.loadEventEnd - navigation.fetchStart,
+            domComplete: navigation.domComplete - navigation.fetchStart,
+            domContentLoaded: navigation.domContentLoadedEventEnd - navigation.fetchStart,
+            domInteractive: navigation.domInteractive - navigation.fetchStart,
+            // Paint metrics
+            firstContentfulPaint: fcp ? fcp.startTime : null,
+            largestContentfulPaint,
+            // Network metrics
+            timeToFirstByte: navigation.responseStart - navigation.fetchStart,
+            responseTime: navigation.responseEnd - navigation.responseStart,
+            serverTime: navigation.responseStart - navigation.requestStart,
+            // Size metrics (in octets)
+            transferSize: navigation.transferSize,
+            encodedBodySize: navigation.encodedBodySize,
+            decodedBodySize: navigation.decodedBodySize,
+            // Resource metrics
+            resourceCount: resources.length,
+            totalResourcesSize: totalResourceSize,
+            // Additional metadata
+            protocol: navigation.nextHopProtocol,
+            redirectCount: navigation.redirectCount,
+            navigationType: navigation.type
+          }
+        };
+      }
+      return returnError("No navigation timing found");
+    } catch (e) {
+      return returnError("JavaScript execution error: " + e.message);
+    }
+  }
+
+  // src/features/breakage-reporting.js
+  var BreakageReporting = class extends ContentFeature {
+    init() {
+      const isExpandedPerformanceMetricsEnabled = this.getFeatureSettingEnabled("expandedPerformanceMetrics", "enabled");
+      this.messaging.subscribe("getBreakageReportValues", async () => {
+        const jsPerformance = getJsPerformanceMetrics();
+        const referrer = document.referrer;
+        const result = {
+          jsPerformance,
+          referrer
+        };
+        if (isExpandedPerformanceMetricsEnabled) {
+          const expandedPerformanceMetrics = await getExpandedPerformanceMetrics();
+          if (expandedPerformanceMetrics.success) {
+            result.expandedPerformanceMetrics = expandedPerformanceMetrics.metrics;
+          }
+        }
+        this.messaging.notify("breakageReportResult", result);
+      });
+    }
+  };
 
   // src/features/performance-metrics.js
+  init_define_import_meta_trackerLookup();
   var PerformanceMetrics = class extends ContentFeature {
     init() {
       this.messaging.subscribe("getVitals", () => {
         const vitals = getJsPerformanceMetrics();
         this.messaging.notify("vitalsResult", { vitals });
       });
+      if (isBeingFramed()) return;
+      if (this.getFeatureSettingEnabled("expandedPerformanceMetricsOnLoad", "enabled")) {
+        this.waitForAfterPageLoad(() => {
+          this.triggerExpandedPerformanceMetrics();
+        });
+      }
+    }
+    waitForNextTask(callback) {
+      setTimeout(callback, 0);
+    }
+    waitForAfterPageLoad(callback) {
+      if (document.readyState === "complete") {
+        this.waitForNextTask(callback);
+      } else {
+        window.addEventListener(
+          "load",
+          () => {
+            this.waitForNextTask(callback);
+          },
+          { once: true }
+        );
+      }
+    }
+    async triggerExpandedPerformanceMetrics() {
+      const expandedPerformanceMetrics = await getExpandedPerformanceMetrics();
+      this.messaging.notify("expandedPerformanceMetricsResult", expandedPerformanceMetrics);
     }
   };
 
@@ -14405,6 +14938,7 @@ ul.messages {
       super(...arguments);
       /** @type {MessagingContext} */
       __privateAdd(this, _messagingContext);
+      __publicField(this, "listenForUpdateChanges", true);
     }
     async init(args) {
       if (!this.messaging) {
@@ -14866,23 +15400,23 @@ ul.messages {
         return `${eventName}-${args.messageSecret}`;
       }
       const reply = (incoming) => {
-        if (!args.messageSecret) return this.log("ignoring because args.messageSecret was absent");
+        if (!args.messageSecret) return this.log.info("ignoring because args.messageSecret was absent");
         const eventName = appendToken(incoming.name + "-" + incoming.id);
         const event = new captured.CustomEvent(eventName, { detail: incoming });
         captured.dispatchEvent(event);
       };
       const accept = (ClassType, callback) => {
         captured.addEventListener(appendToken(ClassType.NAME), (e) => {
-          this.log(`${ClassType.NAME}`, JSON.stringify(e.detail));
+          this.log.info(`${ClassType.NAME}`, JSON.stringify(e.detail));
           const instance = ClassType.create(e.detail);
           if (instance) {
             callback(instance);
           } else {
-            this.log("Failed to create an instance");
+            this.log.info("Failed to create an instance");
           }
         });
       };
-      this.log(`bridge is installing...`);
+      this.log.info(`bridge is installing...`);
       accept(InstallProxy, (install) => {
         this.installProxyFor(install, args.messagingConfig, reply);
       });
@@ -14901,15 +15435,15 @@ ul.messages {
      */
     installProxyFor(install, config2, reply) {
       const { id, featureName } = install;
-      if (this.proxies.has(featureName)) return this.log("ignoring `installProxyFor` because it exists", featureName);
+      if (this.proxies.has(featureName)) return this.log.info("ignoring `installProxyFor` because it exists", featureName);
       const allowed = this.getFeatureSettingEnabled(featureName);
       if (!allowed) {
-        return this.log("not installing proxy, because", featureName, "was not enabled");
+        return this.log.info("not installing proxy, because", featureName, "was not enabled");
       }
       const ctx = { ...this.messaging.messagingContext, featureName };
       const messaging = new Messaging(ctx, config2);
       this.proxies.set(featureName, messaging);
-      this.log("did install proxy for ", featureName);
+      this.log.info("did install proxy for ", featureName);
       reply(new DidInstall({ id }));
     }
     /**
@@ -14919,8 +15453,8 @@ ul.messages {
     async proxyRequest(request, reply) {
       const { id, featureName, method, params } = request;
       const proxy = this.proxies.get(featureName);
-      if (!proxy) return this.log("proxy was not installed for ", featureName);
-      this.log("will proxy", request);
+      if (!proxy) return this.log.info("proxy was not installed for ", featureName);
+      this.log.info("will proxy", request);
       try {
         const result = await proxy.request(method, params);
         const responseEvent = new ProxyResponse({
@@ -14947,8 +15481,8 @@ ul.messages {
     proxySubscription(subscription, reply) {
       const { id, featureName, subscriptionName } = subscription;
       const proxy = this.proxies.get(subscription.featureName);
-      if (!proxy) return this.log("proxy was not installed for", featureName);
-      this.log("will setup subscription", subscription);
+      if (!proxy) return this.log.info("proxy was not installed for", featureName);
+      this.log.info("will setup subscription", subscription);
       const prev = this.subscriptions.get(id);
       if (prev) {
         this.removeSubscription(id);
@@ -14969,7 +15503,7 @@ ul.messages {
      */
     removeSubscription(id) {
       const unsubscribe = this.subscriptions.get(id);
-      this.log(`will remove subscription`, id);
+      this.log.info(`will remove subscription`, id);
       unsubscribe?.();
       this.subscriptions.delete(id);
     }
@@ -14978,17 +15512,9 @@ ul.messages {
      */
     proxyNotification(notification) {
       const proxy = this.proxies.get(notification.featureName);
-      if (!proxy) return this.log("proxy was not installed for", notification.featureName);
-      this.log("will proxy notification", notification);
+      if (!proxy) return this.log.info("proxy was not installed for", notification.featureName);
+      this.log.info("will proxy notification", notification);
       proxy.notify(notification.method, notification.params);
-    }
-    /**
-     * @param {Parameters<console['log']>} args
-     */
-    log(...args) {
-      if (this.isDebug) {
-        console.log("[isolated]", ...args);
-      }
     }
     load(_args2) {
     }
@@ -15078,6 +15604,7 @@ ul.messages {
     ddg_feature_duckPlayer: DuckPlayerFeature,
     ddg_feature_duckPlayerNative: duck_player_native_default,
     ddg_feature_brokerProtection: BrokerProtection,
+    ddg_feature_breakageReporting: BreakageReporting,
     ddg_feature_performanceMetrics: PerformanceMetrics,
     ddg_feature_clickToLoad: ClickToLoad,
     ddg_feature_messageBridge: message_bridge_default,
@@ -15123,6 +15650,14 @@ ul.messages {
       }
     });
     historyMethodProxy.overload();
+    const historyMethodProxyReplace = new DDGProxy(urlChangedInstance, History.prototype, "replaceState", {
+      apply(target, thisArg, args) {
+        const changeResult = DDGReflect.apply(target, thisArg, args);
+        handleURLChange("replace");
+        return changeResult;
+      }
+    });
+    historyMethodProxyReplace.overload();
     window.addEventListener("popstate", () => {
       handleURLChange("traverse");
     });
@@ -15150,6 +15685,9 @@ ul.messages {
       if (featuresToLoad.includes(featureName)) {
         const ContentFeature2 = ddg_platformFeatures_default["ddg_feature_" + featureName];
         const featureInstance = new ContentFeature2(featureName, importConfig, args);
+        if (!featureInstance.getFeatureSettingEnabled("additionalCheck", "enabled")) {
+          continue;
+        }
         featureInstance.callLoad();
         features.push({ featureName, featureInstance });
       }
@@ -15167,6 +15705,9 @@ ul.messages {
     const resolvedFeatures = await Promise.all(features);
     resolvedFeatures.forEach(({ featureInstance, featureName }) => {
       if (!isFeatureBroken(args, featureName) || alwaysInitExtensionFeatures(args, featureName)) {
+        if (!featureInstance.getFeatureSettingEnabled("additionalCheck", "enabled")) {
+          return;
+        }
         featureInstance.callInit(args);
         if (featureInstance.listenForUrlChanges || featureInstance.urlChanged) {
           registerForURLChanges((navigationType) => {
@@ -15191,7 +15732,7 @@ ul.messages {
   async function updateFeaturesInner(args) {
     const resolvedFeatures = await Promise.all(features);
     resolvedFeatures.forEach(({ featureInstance, featureName }) => {
-      if (!isFeatureBroken(initArgs, featureName) && featureInstance.update) {
+      if (!isFeatureBroken(initArgs, featureName) && featureInstance.listenForUpdateChanges) {
         featureInstance.update(args);
       }
     });

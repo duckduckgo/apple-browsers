@@ -40,11 +40,9 @@ final class PinnedTabsManager {
         if firePixel {
             PixelKit.fire(PinnedTabsPixel.userPinnedTab, frequency: .dailyAndStandard)
         }
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
-            WebExtensionManager.shared.eventsListener.didChangeTabProperties([.pinned], for: tab)
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didChangeTabProperties([.pinned], for: tab)
         }
-#endif
     }
 
     func unpinTab(at index: Int, published: Bool = false, firePixel: Bool = true) -> Tab? {
@@ -61,11 +59,9 @@ final class PinnedTabsManager {
         if firePixel {
             PixelKit.fire(PinnedTabsPixel.userUnpinnedTab, frequency: .dailyAndStandard)
         }
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
-            WebExtensionManager.shared.eventsListener.didChangeTabProperties([.pinned], for: tab)
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didChangeTabProperties([.pinned], for: tab)
         }
-#endif
         return tab
     }
 
@@ -91,11 +87,12 @@ final class PinnedTabsManager {
         Set(tabCollection.tabs.compactMap { $0.url?.host })
     }
 
-    func setUp(with collection: TabCollection) {
+    func setUp(movingTabsFrom collection: TabCollection) {
         tabCollection.removeAll()
         for tab in collection.tabs {
             tabCollection.append(tab: tab)
         }
+        collection.clearAfterMerge()
     }
 
     init(tabCollection: TabCollection = .init()) {

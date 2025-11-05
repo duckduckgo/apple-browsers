@@ -38,12 +38,12 @@ final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, Popover
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let featureFlagger: FeatureFlagger
     private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
-    private let pixelHandler: (PrivacyProPixel) -> Void
+    private let pixelHandler: (SubscriptionPixel) -> Void
 
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          featureFlagger: FeatureFlagger,
          vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
-         pixelHandler: @escaping (PrivacyProPixel) -> Void = { PixelKit.fire($0) }) {
+         pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) }) {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
@@ -80,8 +80,8 @@ final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, Popover
         let swiftUIView = VPNUpsellPopoverView(viewModel: viewModel).fixedSize()
         let hostingController = NSHostingController(rootView: swiftUIView)
 
-        // Force layout and set frame explicitly to ensure proper positioning
-        hostingController.loadView()
+        // Access view to trigger loading, then force layout for proper sizing
+        _ = hostingController.view
         hostingController.view.layoutSubtreeIfNeeded()
         hostingController.view.frame = CGRect(origin: .zero, size: hostingController.view.intrinsicContentSize)
 
@@ -91,7 +91,7 @@ final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, Popover
         show(newPopover, positionedBelow: view)
 
         // Fire pixel when popover is shown
-        pixelHandler(.privacyProToolbarButtonPopoverShown)
+        pixelHandler(.subscriptionToolbarButtonPopoverShown)
     }
 
     func dismiss() {

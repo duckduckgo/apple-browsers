@@ -100,7 +100,7 @@ final class APIServiceTests: XCTestCase {
             _ = try await apiService.fetch(request: request)
             XCTFail("Expected an error to be thrown")
         } catch {
-            guard let error = error as? APIRequestV2.Error,
+            guard let error = error as? APIRequestV2Error,
                   case .urlSession = error else {
                 XCTFail("Unexpected error thrown: \(error.localizedDescription).")
                 return
@@ -132,7 +132,7 @@ final class APIServiceTests: XCTestCase {
             _ = try await apiService.fetch(request: request)
             XCTFail("Expected an error to be thrown")
         } catch {
-            guard let error = error as? APIRequestV2.Error,
+            guard let error = error as? APIRequestV2Error,
                   case .unsatisfiedRequirement(let requirement) = error,
                   requirement == APIResponseConstraints.allowHTTPNotModified
             else {
@@ -168,7 +168,7 @@ final class APIServiceTests: XCTestCase {
             _ = try await apiService.fetch(request: request)
             XCTFail("Expected an error to be thrown")
         } catch {
-            guard let error = error as? APIRequestV2.Error,
+            guard let error = error as? APIRequestV2Error,
                   case .unsatisfiedRequirement(let requirement) = error,
                   requirement == APIResponseConstraints.requireETagHeader
             else {
@@ -204,7 +204,7 @@ final class APIServiceTests: XCTestCase {
             _ = try await apiService.fetch(request: request)
             XCTFail("Expected an error to be thrown")
         } catch {
-            guard let error = error as? APIRequestV2.Error,
+            guard let error = error as? APIRequestV2Error,
                   case .unsatisfiedRequirement(let requirement) = error,
                   requirement == APIResponseConstraints.requireUserAgent
             else {

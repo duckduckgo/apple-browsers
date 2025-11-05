@@ -38,5 +38,23 @@
 			<string>Não é possível sincronizar a tua palavra-passe para %2$@ porque um dos campos excede o limite de carateres.</string>
 		</dict>
 	</dict>
+	<key>creditcards.invalid.objects.present.description</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@cards@</string>
+		<key>cards</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Não é possível sincronizar o teu cartão de crédito %2$@ e mais 1 cartão porque alguns dos campos excedem o limite de carateres.</string>
+			<key>other</key>
+			<string>Não é possível sincronizar o cartão de crédito %2$@ e mais %1$d cartões porque alguns dos campos excedem o limite de carateres.</string>
+			<key>zero</key>
+			<string>Não é possível sincronizar o cartão de crédito %2$@ porque um dos campos excede o limite de carateres.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -31,8 +31,8 @@ final class TabBarRemoteMessageViewModel: ObservableObject {
         self.tabBarRemoteActiveMessage = activeRemoteMessageModel
 
         cancellable = tabBarRemoteActiveMessage.remoteMessagePublisher
-            .sink(receiveValue: { model in
-                guard !isFireWindow else { return }
+            .sink(receiveValue: { [weak self] model in
+                guard let self, !isFireWindow else { return }
 
                 guard let model = model else {
                     self.remoteMessage = nil

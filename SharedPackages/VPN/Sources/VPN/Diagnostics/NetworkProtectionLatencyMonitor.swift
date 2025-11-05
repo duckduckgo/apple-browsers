@@ -90,7 +90,7 @@ public actor NetworkProtectionLatencyMonitor {
     // MARK: - Start/Stop monitoring
 
     public func start(serverIP: IPv4Address, callback: @escaping (Result) -> Void) {
-        Logger.networkProtectionLatencyMonitor.log("⚫️ Starting latency monitor")
+        Logger.networkProtectionLatencyMonitor.info("⚫️ Starting latency monitor")
 
         lastLatencyReported = Date()
 
@@ -99,12 +99,13 @@ public actor NetworkProtectionLatencyMonitor {
             .scan(ExponentialGeometricAverage()) { measurements, latency in
                 if latency >= 0 {
                     measurements.addMeasurement(latency)
-                    Logger.networkProtectionMemory.debug("⚫️ Latency: \(latency, privacy: .public) milliseconds")
+                    Logger.networkProtectionLatencyMonitor.info("⚫️ Latency: \(latency, privacy: .public) milliseconds")
                 } else {
+                    Logger.networkProtectionLatencyMonitor.error("⚫️ Got unexpected latency value of \(latency, privacy: .public), returning error")
                     callback(.error)
                 }
 
-                Logger.networkProtectionMemory.debug("⚫️ Average: \(measurements.average, privacy: .public) milliseconds")
+                Logger.networkProtectionLatencyMonitor.info("⚫️ Average: \(measurements.average, privacy: .public) milliseconds")
 
                 return measurements
             }
@@ -115,7 +116,10 @@ public actor NetworkProtectionLatencyMonitor {
                     if let self,
                        await now.timeIntervalSince1970 - self.lastLatencyReported.timeIntervalSince1970 >= Self.reportThreshold {
                         callback(.quality(quality))
+                        Logger.networkProtectionLatencyMonitor.info("⚫️ Latency report threshold met, reporting latency quality '\(quality.rawValue, privacy: .public)'")
                         await self.updateLastLatencyReported(date: now)
+                    } else {
+                        Logger.networkProtectionLatencyMonitor.info("⚫️ Latency report threshold not met, skipping report")
                     }
                 }
             }
@@ -146,9 +150,11 @@ public actor NetworkProtectionLatencyMonitor {
 
         switch result {
         case .success(let pingResult):
+            let calculatedLatency = pingResult.time * 1000
+            Logger.networkProtectionLatencyMonitor.info("⚫️ Ping got latency of \(calculatedLatency, privacy: .public)")
             latencySubject.send(pingResult.time * 1000)
         case .failure(let error):
-            Logger.networkProtectionMemory.error("⚫️ Ping error: \(error.localizedDescription, privacy: .public)")
+            Logger.networkProtectionLatencyMonitor.error("⚫️ Ping error: \(error.localizedDescription, privacy: .public)")
             latencySubject.send(Self.unknownLatency)
         }
     }

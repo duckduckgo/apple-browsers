@@ -26,7 +26,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
 
     var reporter: OnboardingPixelReporter!
     var onboardingState: MockContextualOnboardingState!
-    var eventSent: PixelKitEventV2?
+    var eventSent: PixelKitEvent?
     var frequency: PixelKit.Frequency?
     var userDefaults: UserDefaults?
 

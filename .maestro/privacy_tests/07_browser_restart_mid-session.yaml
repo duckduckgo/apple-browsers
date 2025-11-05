@@ -103,6 +103,7 @@ tags:
 - launchApp:
     arguments:
       clearState: false
+      isRunningUITests: true
 - assertVisible:
     text: "Pay"    
 - tapOn:

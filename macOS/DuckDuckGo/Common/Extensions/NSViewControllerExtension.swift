@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AppKitExtensions
 
 extension NSViewController {
 
@@ -96,6 +97,40 @@ extension NSViewController {
     func _preview_hidingWindowControlsOnAppear() -> Self { // swiftlint:disable:this identifier_name
         Preview_ViewControllerWindowObserver().attach(to: self)
         return self
+    }
+
+    func addKeyEquivalent(_ keyEquivalent: NSEvent.KeyEquivalent, perform action: @escaping @MainActor (NSEvent) -> Bool) {
+        let keyEquivalentView = view.subviews.last(where: { $0 is KeyEquivalentView }) as? KeyEquivalentView ?? {
+            let keyEquivalentView = KeyEquivalentView()
+            self.view.addSubview(keyEquivalentView)
+            return keyEquivalentView
+        }()
+        keyEquivalentView.addKeyEquivalent(keyEquivalent, action: action)
+    }
+
+    func addKeyEquivalent(_ characters: String, modifierFlags: NSEvent.ModifierFlags, perform action: @escaping @MainActor (NSEvent) -> Bool) {
+        addKeyEquivalent(.init(characters: characters, modifierFlags: modifierFlags), perform: action)
+    }
+
+    enum Key {
+        case backspace
+        case tab
+        case left
+        case right
+        case escape
+
+        var keyEquivalentElement: KeyEquivalentElement {
+            switch self {
+            case .backspace: return .backspace
+            case .tab: return .tab
+            case .left: return .left
+            case .right: return .right
+            case .escape: return .escape
+            }
+        }
+    }
+    func addKeyEquivalent(_ key: Key, modifierFlags: NSEvent.ModifierFlags, perform action: @escaping @MainActor (NSEvent) -> Bool) {
+        addKeyEquivalent(.init(keyEquivalentElement: key.keyEquivalentElement, modifierFlags: modifierFlags), perform: action)
     }
 
 }

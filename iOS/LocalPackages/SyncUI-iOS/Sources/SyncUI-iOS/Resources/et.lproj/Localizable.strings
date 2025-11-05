@@ -35,7 +35,7 @@
 "connect.with.server.sheet.button" = "Lülita sünkroonimine ja varundamine sisse";
 
 /* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "See loob DuckDuckGo turvalises serveris krüptitud varukoopia sinu järjehoidjatest ja paroolidest, mida saab sünkroonida sinu teiste seadmetega.";
+"connect.with.server.sheet.description.part1" = "\"See loob krüptitud varukoopia sinu järjehoidjatest ja autofill andmetest DuckDuckGo turvalises serveris, mida saab sünkroonida sinu teiste seadmetega.\"";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Krüptimisvõti salvestatakse ainult sinu seadmesse, DuckDuckGo ei pääse sellele juurde.";
@@ -53,7 +53,13 @@
 "credentials.invalid.objects.present.description" = "credentials.invalid.objects.present.description";
 
 /* Alert title for invalid logins being filtered out of synced data */
-"credentials.invalid.objects.present.title" = "Mõned sisselogimisandmed ei sünkroonita teatud väljade liiga pika sisu tõttu.";
+"credentials.invalid.objects.present.title" = "Mõned paroolid ei sünkroonita teatud väljade liiga pika sisu tõttu.";
+
+/* Do not translate - stringsdict entry */
+"creditcards.invalid.objects.present.description" = "creditcards.invalid.objects.present.description";
+
+/* Alert title for invalid credit cards being filtered out of synced data */
+"creditCards.invalid.objects.present.title" = "\"Mõned krediitkaardid ei sünkroonita teatud väljade liiga pika sisu tõttu.\"";
 
 /* Delete Server Data - Button */
 "delete.server.data" = "Lülita välja ja kustuta serveri andmed ...";
@@ -130,8 +136,11 @@
 /* Button title for sync credentials limits exceeded warning to go to manage passwords */
 "prefrences.sync.credentials-limit-exceeded-action" = "Halda paroole…";
 
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Halda krediitkaarte…";
+
 /* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Teie järjehoidjad ja paroolid valmistatakse sünkroonimiseks ette. See peaks võtma vaid hetke.";
+"preparing.to.sync.sheet.description" = "Teie järjehoidjad ja automaattäitmise andmed valmistatakse sünkroonimiseks ette. See peaks võtma vaid hetke.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Ühendamine ...";
@@ -254,7 +263,7 @@
 "sync.get.other.devices.screen.title" = "Hangi DuckDuckGo";
 
 /* Message included when sharing a url via the system share sheet */
-"sync.get.other.devices.share.link.message" = "Installi DuckDuckGo brauser oma seadmetesse, et alustada oma järjehoidjate ja paroolide turvalise sünkroonimisega:";
+"sync.get.other.devices.share.link.message" = "Installi DuckDuckGo brauser oma seadmetesse, et alustada oma järjehoidjate ja automaattäitmise andmete turvalise sünkroonimisega:";
 
 /* Sync Menu Path */
 "sync.menu.path" = "Seaded > Sünkroonimine ja varundamine > Sünkrooni teise seadmega";

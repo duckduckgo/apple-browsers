@@ -101,7 +101,8 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
             firePixel: {
                 self.firePixelCallCount += 1
                 self.firePixelHandler($0, $1)
-            }
+            },
+            tabCrashAggregator: TabCrashAggregator()
         )
 
         tabCrashRecoveryExtension.tabCrashErrorPayloadPublisher

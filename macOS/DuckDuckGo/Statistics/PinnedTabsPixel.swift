@@ -21,7 +21,7 @@ import PixelKit
 /**
  * This enum keeps pixels related to pinned tabs
  */
-enum PinnedTabsPixel: PixelKitEventV2 {
+enum PinnedTabsPixel: PixelKitEvent {
 
     case userPinnedTab
     case userUnpinnedTab
@@ -45,7 +45,4 @@ enum PinnedTabsPixel: PixelKitEventV2 {
         nil
     }
 
-    var error: (any Error)? {
-        nil
-    }
 }

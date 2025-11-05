@@ -62,7 +62,7 @@ class BookmarksStateValidationTests: XCTestCase {
             BookmarkUtils.prepareFoldersStructure(in: context)
         }
 
-        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore) { error in
+        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore) { error, _  in
             XCTFail("Did not expect error: \(error)")
         }
 
@@ -70,20 +70,20 @@ class BookmarksStateValidationTests: XCTestCase {
 
         let testContext = dbStack.makeContext(concurrencyType: .privateQueueConcurrencyType)
         testContext.performAndWait {
-            XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost))
+            XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost, isBackground: false))
             validator.validateBookmarksStructure(context: testContext)
         }
     }
 
     func testWhenDatabaseIsEmptyButItHasNotBeenInitiatedThenThereIsNoError() {
 
-        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore) { error in
+        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore) { error, _ in
             XCTFail("Did not expect error: \(error)")
         }
 
         let testContext = dbStack.makeContext(concurrencyType: .privateQueueConcurrencyType)
         testContext.performAndWait {
-            XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost))
+            XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost, isBackground: false))
         }
     }
 
@@ -92,7 +92,7 @@ class BookmarksStateValidationTests: XCTestCase {
         let expectation1 = expectation(description: "Lost structure Error raised")
         let expectation2 = expectation(description: "Broken structure Error raised")
 
-        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore) { error in
+        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore) { error, _ in
             switch error {
             case .bookmarksStructureLost:
                 expectation1.fulfill()
@@ -107,7 +107,7 @@ class BookmarksStateValidationTests: XCTestCase {
 
         let testContext = dbStack.makeContext(concurrencyType: .privateQueueConcurrencyType)
         testContext.performAndWait {
-            XCTAssertFalse(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost))
+            XCTAssertFalse(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost, isBackground: false))
             validator.validateBookmarksStructure(context: testContext)
         }
 
@@ -130,15 +130,15 @@ class BookmarksStateValidationTests: XCTestCase {
 
         let expectation = expectation(description: "Broken structure Error raised")
 
-        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore) { error in
+        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore) { error, params in
             switch error {
-            case .bookmarksStructureBroken(let errorInfo):
+            case .bookmarksStructureBroken:
                 expectation.fulfill()
 
-                XCTAssertEqual(errorInfo[FavoritesFolderID.unified.rawValue], "0")
-                XCTAssertEqual(errorInfo[FavoritesFolderID.mobile.rawValue], "1")
-                XCTAssertEqual(errorInfo[FavoritesFolderID.desktop.rawValue], "1")
-                XCTAssertEqual(errorInfo[BookmarkEntity.Constants.rootFolderID], "0")
+                XCTAssertEqual(params?[FavoritesFolderID.unified.rawValue], "0")
+                XCTAssertEqual(params?[FavoritesFolderID.mobile.rawValue], "1")
+                XCTAssertEqual(params?[FavoritesFolderID.desktop.rawValue], "1")
+                XCTAssertEqual(params?[BookmarkEntity.Constants.rootFolderID], "0")
             default:
                 XCTFail("Did not expect error: \(error)")
             }
@@ -148,7 +148,7 @@ class BookmarksStateValidationTests: XCTestCase {
 
         let testContext = dbStack.makeContext(concurrencyType: .privateQueueConcurrencyType)
         testContext.performAndWait {
-            XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost))
+            XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost, isBackground: false))
             validator.validateBookmarksStructure(context: testContext)
         }
 
@@ -170,15 +170,15 @@ class BookmarksStateValidationTests: XCTestCase {
 
         let expectation = expectation(description: "Broken structure Error raised")
 
-        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore) { error in
+        let validator = BookmarksStateValidator(keyValueStore: mockKeyValueStore) { error, params in
             switch error {
-            case .bookmarksStructureBroken(let errorInfo):
+            case .bookmarksStructureBroken:
                 expectation.fulfill()
 
-                XCTAssertEqual(errorInfo[FavoritesFolderID.unified.rawValue], "1")
-                XCTAssertEqual(errorInfo[FavoritesFolderID.mobile.rawValue], "1")
-                XCTAssertEqual(errorInfo[FavoritesFolderID.desktop.rawValue], "1")
-                XCTAssertEqual(errorInfo[BookmarkEntity.Constants.rootFolderID], "2")
+                XCTAssertEqual(params?[FavoritesFolderID.unified.rawValue], "1")
+                XCTAssertEqual(params?[FavoritesFolderID.mobile.rawValue], "1")
+                XCTAssertEqual(params?[FavoritesFolderID.desktop.rawValue], "1")
+                XCTAssertEqual(params?[BookmarkEntity.Constants.rootFolderID], "2")
             default:
                 XCTFail("Did not expect error: \(error)")
             }
@@ -188,7 +188,7 @@ class BookmarksStateValidationTests: XCTestCase {
 
         let testContext = dbStack.makeContext(concurrencyType: .privateQueueConcurrencyType)
         testContext.performAndWait {
-            XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost))
+            XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost, isBackground: false))
             validator.validateBookmarksStructure(context: testContext)
         }
 

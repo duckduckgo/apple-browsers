@@ -76,14 +76,12 @@ extension SyncSettingsView {
         Section {
             Button(UserText.syncAndBackUpThisDeviceLink) {
                 Task { @MainActor in
-                    if await model.commonAuthenticate() {
-                        isSyncWithSetUpSheetVisible = true
-                    }
+                    await model.presentSyncWithSetUpSheetIfNeeded()
                 }
             }
-            .sheet(isPresented: $isSyncWithSetUpSheetVisible, content: {
+            .sheet(isPresented: $model.isSyncWithSetUpSheetVisible, content: {
                 SyncWithServerView(model: model, onCancel: {
-                    isSyncWithSetUpSheetVisible = false
+                    model.isSyncWithSetUpSheetVisible = false
                 })
             })
             .disabled(!model.isAccountCreationAvailable)
@@ -252,9 +250,9 @@ extension SyncSettingsView {
                     Text(UserText.unifiedFavoritesInstruction)
                         .daxFootnoteRegular()
                         .foregroundColor(.secondary)
-                        .accessibility(identifier: "UnifiedFavoritesToggle")
                 }
             }
+            .accessibility(identifier: "UnifiedFavoritesToggle")
         } header: {
             Text(UserText.optionsSectionHeader)
         }
@@ -272,6 +270,8 @@ extension SyncSettingsView {
                 return model.syncBookmarksPausedTitle
             case .credentials:
                 return model.syncCredentialsPausedTitle
+            case .creditCards:
+                return model.syncCreditCardsPausedTitle
             }
         }
         var explanation: String? {
@@ -280,6 +280,8 @@ extension SyncSettingsView {
                 return model.syncBookmarksPausedDescription
             case .credentials:
                 return model.syncCredentialsPausedDescription
+            case .creditCards:
+                return model.syncCreditCardsPausedDescription
             }
         }
         var buttonTitle: String? {
@@ -288,6 +290,8 @@ extension SyncSettingsView {
                 return model.syncBookmarksPausedButtonTitle
             case .credentials:
                 return model.syncCredentialsPausedButtonTitle
+            case .creditCards:
+                return model.syncCreditCardsPausedButtonTitle
             }
         }
         if let title, let explanation, let buttonTitle {
@@ -297,6 +301,8 @@ extension SyncSettingsView {
                     model.manageBookmarks()
                 case .credentials:
                     model.manageLogins()
+                case .creditCards:
+                    model.manageCreditCards()
                 }
             }
         }
@@ -317,6 +323,8 @@ extension SyncSettingsView {
                 return UserText.invalidBookmarksPresentTitle
             case .credentials:
                 return UserText.invalidCredentialsPresentTitle
+            case .creditCards:
+                return UserText.invalidCreditCardsPresentTitle
             }
         }
         var description: String {
@@ -336,6 +344,13 @@ extension SyncSettingsView {
                     firstInvalidCredentialTitle,
                     numberOfOtherInvalidItems: model.invalidCredentialsTitles.count - 1
                 )
+            case .creditCards:
+                assert(!model.invalidCreditCardsTitles.isEmpty)
+                let firstInvalidCreditCardTitle = model.invalidCreditCardsTitles.first ?? ""
+                return UserText.invalidCreditCardsPresentDescription(
+                    firstInvalidCreditCardTitle,
+                    numberOfOtherInvalidItems: model.invalidCreditCardsTitles.count - 1
+                )
             }
         }
         var actionTitle: String {
@@ -344,6 +359,8 @@ extension SyncSettingsView {
                 return UserText.bookmarksLimitExceededAction
             case .credentials:
                 return UserText.credentialsLimitExceededAction
+            case .creditCards:
+                return UserText.creditCardsLimitExceededAction
             }
         }
         SyncWarningMessageView(title: title, message: description, buttonTitle: actionTitle) {
@@ -352,6 +369,8 @@ extension SyncSettingsView {
                 model.manageBookmarks()
             case .credentials:
                 model.manageLogins()
+            case .creditCards:
+                model.manageCreditCards()
             }
         }
     }
@@ -385,6 +404,7 @@ extension SyncSettingsView {
     enum LimitedItemType {
         case bookmarks
         case credentials
+        case creditCards
     }
 }
 

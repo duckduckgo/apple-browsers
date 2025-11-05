@@ -21,11 +21,13 @@ import Foundation
 import CoreData
 import Bookmarks
 import Persistence
+import UIKit
 
 public protocol BookmarksStateValidation {
 
     func validateInitialState(context: NSManagedObjectContext,
-                              validationError: BookmarksStateValidator.ValidationError) -> Bool
+                              validationError: BookmarksStateValidator.ValidationError,
+                              isBackground: Bool) -> Bool
 
     func validateBookmarksStructure(context: NSManagedObjectContext)
 }
@@ -39,34 +41,39 @@ public class BookmarksStateValidator: BookmarksStateValidation {
     public enum ValidationError {
         case bookmarksStructureLost
         case bookmarksStructureNotRecovered
-        case bookmarksStructureBroken(additionalParams: [String: String])
+        case bookmarksStructureBroken
         case validatorError(Error)
     }
 
     let keyValueStore: KeyValueStoring
-    let errorHandler: (ValidationError) -> Void
+    let errorHandler: (ValidationError, [String: String]?) -> Void
 
     public init(keyValueStore: KeyValueStoring,
-                errorHandler: @escaping (ValidationError) -> Void) {
+                errorHandler: @escaping (ValidationError, [String: String]?) -> Void) {
         self.keyValueStore = keyValueStore
         self.errorHandler = errorHandler
     }
 
     public func validateInitialState(context: NSManagedObjectContext,
-                                     validationError: ValidationError) -> Bool {
+                                     validationError: ValidationError,
+                                     isBackground: Bool) -> Bool {
         guard keyValueStore.object(forKey: Constants.bookmarksDBIsInitialized) != nil else { return true }
 
         let fetch = BookmarkEntity.fetchRequest()
         do {
             let count = try context.count(for: fetch)
             if count == 0 {
-                errorHandler(validationError)
+                switch validationError {
+                case .bookmarksStructureLost:
+                    errorHandler(.bookmarksStructureLost, ["is-background": String(isBackground)])
+                default:
+                    errorHandler(validationError, nil)
+                }
                 return false
             }
         } catch {
-            errorHandler(.validatorError(error))
+            errorHandler(.validatorError(error), nil)
         }
-
         return true
     }
 
@@ -95,10 +102,11 @@ public class BookmarksStateValidator: BookmarksStateValidation {
 
                 additionalParams["is-marked-as-initialized"] = isMarkedAsInitialized ? "true" : "false"
 
-                errorHandler(.bookmarksStructureBroken(additionalParams: additionalParams))
+                errorHandler(.bookmarksStructureBroken, additionalParams)
             }
         } catch {
-            errorHandler(.validatorError(error))
+            errorHandler(.validatorError(error), nil)
         }
     }
+
 }

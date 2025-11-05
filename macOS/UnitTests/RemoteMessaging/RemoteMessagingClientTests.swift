@@ -25,6 +25,7 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 import SubscriptionTestingUtilities
 import BrowserServicesKit
+import BrowserServicesKitTestsUtils
 
 struct MockRemoteMessagingStoreProvider: RemoteMessagingStoreProviding {
     func makeRemoteMessagingStore(database: CoreDataDatabase, availabilityProvider: RemoteMessagingAvailabilityProviding) -> RemoteMessagingStoring {
@@ -122,23 +123,26 @@ final class RemoteMessagingClientTests: XCTestCase {
     }
 
     private func makeClient() {
+        let appearancePreferences = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
         client = RemoteMessagingClient(
             remoteMessagingDatabase: remoteMessagingDatabase,
             configFetcher: MockRemoteMessagingConfigFetcher(),
             configMatcherProvider: RemoteMessagingConfigMatcherProvider(
                 bookmarksDatabase: bookmarksDatabase,
-                appearancePreferences: AppearancePreferences(
-                    persistor: AppearancePreferencesPersistorMock(),
-                    privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                    featureFlagger: MockFeatureFlagger()
-                ),
+                appearancePreferences: appearancePreferences,
+                startupPreferences: StartupPreferences(persistor: StartupPreferencesPersistorMock(), appearancePreferences: appearancePreferences),
                 pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
                 internalUserDecider: MockInternalUserDecider(),
                 statisticsStore: MockStatisticsStore(),
+                featureDiscovery: MockFeatureDiscovery(),
                 variantManager: MockVariantManager(),
                 subscriptionManager: subscriptionAuthV1toV2Bridge,
                 featureFlagger: MockFeatureFlagger(),
-                visualStyle: VisualStyle.current
+                themeManager: MockThemeManager()
             ),
             remoteMessagingAvailabilityProvider: availabilityProvider
         )

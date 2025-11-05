@@ -24,6 +24,8 @@ import SwiftUI
 import BrowserServicesKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import Combine
+import DDGSync
 
 protocol AutofillSettingsViewModelDelegate: AnyObject {
     func navigateToPasswords(viewModel: AutofillSettingsViewModel)
@@ -42,6 +44,7 @@ final class AutofillSettingsViewModel: ObservableObject {
     private let keyValueStore: KeyValueStoringDictionaryRepresentable
     private let source: AutofillSettingsSource
     private let featureFlagger: FeatureFlagger
+    private var syncCancellables = Set<AnyCancellable>()
 
     enum AutofillType {
         case passwords
@@ -107,7 +110,9 @@ final class AutofillSettingsViewModel: ObservableObject {
          autofillNeverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AppDependencyProvider.shared.autofillNeverPromptWebsitesManager,
          secureVault: (any AutofillSecureVault)? = nil,
          source: AutofillSettingsSource,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         syncService: DDGSyncing,
+         syncDataProviders: SyncDataProviders) {
         self.autofillNeverPromptWebsitesManager = autofillNeverPromptWebsitesManager
         self.appSettings = appSettings
         self.keyValueStore = keyValueStore
@@ -117,11 +122,25 @@ final class AutofillSettingsViewModel: ObservableObject {
 
         savePasswordsEnabled = appSettings.autofillCredentialsEnabled
         updatePasswordsCount()
+        syncDataProviders.credentialsAdapter.syncDidCompletePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updatePasswordsCount()
+            }
+            .store(in: &syncCancellables)
 
         showCreditCards = featureFlagger.isFeatureOn(.autofillCreditCards)
         if showCreditCards {
             updateCreditCardsCount()
+            syncDataProviders.creditCardsAdapter?.syncDidCompletePublisher
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    self?.updateCreditCardsCount()
+                }
+                .store(in: &syncCancellables)
         }
+
+        syncService.scheduler.requestSyncImmediately()
     }
 
     func initSecureVaultIfRequired() {

@@ -48,6 +48,7 @@ struct Background: BackgroundHandling {
 
         services.dbpService.onBackground()
         services.vpnService.suspend()
+        services.aiChatService.suspend()
         services.authenticationService.suspend()
         services.autoClearService.suspend()
         services.autofillService.suspend()
@@ -55,6 +56,17 @@ struct Background: BackgroundHandling {
         services.reportingService.suspend()
 
         appDependencies.mainCoordinator.onBackground()
+
+        updateApplicationShortcutItems()
+    }
+
+    private func updateApplicationShortcutItems() {
+        Task { @MainActor in
+            UIApplication.shared.shortcutItems = [
+                services.aiChatService.shortcutItem(),
+                await services.vpnService.shortcutItem()
+            ].compactMap { $0 }
+        }
     }
 
 }

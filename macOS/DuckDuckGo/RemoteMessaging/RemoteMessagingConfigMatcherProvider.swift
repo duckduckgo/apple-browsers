@@ -34,66 +34,70 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         database: CoreDataDatabase,
         bookmarksDatabase: CoreDataDatabase,
         appearancePreferences: AppearancePreferences,
-        startupPreferencesPersistor: @escaping @autoclosure () -> StartupPreferencesPersistor = StartupPreferencesUserDefaultsPersistor(),
+        startupPreferences: StartupPreferences,
         duckPlayerPreferencesPersistor: @escaping @autoclosure () -> DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
         pinnedTabsManagerProvider: PinnedTabsManagerProviding,
         internalUserDecider: InternalUserDecider,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         featureFlagger: FeatureFlagger,
-        visualStyle: VisualStyleProviding
+        themeManager: ThemeManaging
     ) {
         self.init(
             bookmarksDatabase: bookmarksDatabase,
             appearancePreferences: appearancePreferences,
-            startupPreferencesPersistor: startupPreferencesPersistor(),
+            startupPreferences: startupPreferences,
             duckPlayerPreferencesPersistor: duckPlayerPreferencesPersistor(),
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
             internalUserDecider: internalUserDecider,
             statisticsStore: LocalStatisticsStore(pixelDataStore: LocalPixelDataStore(database: database)),
+            featureDiscovery: DefaultFeatureDiscovery(),
             variantManager: DefaultVariantManager(database: database),
             subscriptionManager: subscriptionManager,
             featureFlagger: featureFlagger,
-            visualStyle: visualStyle
+            themeManager: themeManager
         )
     }
 
     init(
         bookmarksDatabase: CoreDataDatabase,
         appearancePreferences: AppearancePreferences,
-        startupPreferencesPersistor: @escaping @autoclosure () -> StartupPreferencesPersistor = StartupPreferencesUserDefaultsPersistor(),
+        startupPreferences: StartupPreferences,
         duckPlayerPreferencesPersistor: @escaping @autoclosure () -> DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
         pinnedTabsManagerProvider: PinnedTabsManagerProviding,
         internalUserDecider: InternalUserDecider,
         statisticsStore: @escaping @autoclosure () -> StatisticsStore,
+        featureDiscovery: @escaping @autoclosure () -> FeatureDiscovery,
         variantManager: @escaping @autoclosure () -> VariantManager,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         featureFlagger: FeatureFlagger,
-        visualStyle: VisualStyleProviding
+        themeManager: ThemeManaging
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appearancePreferences = appearancePreferences
-        self.startupPreferencesPersistor = startupPreferencesPersistor
+        self.startupPreferences = startupPreferences
         self.duckPlayerPreferencesPersistor = duckPlayerPreferencesPersistor
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.internalUserDecider = internalUserDecider
         self.statisticsStore = statisticsStore
+        self.featureDiscovery = featureDiscovery
         self.variantManager = variantManager
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
     }
 
     let bookmarksDatabase: CoreDataDatabase
     let appearancePreferences: AppearancePreferences
-    let startupPreferencesPersistor: () -> StartupPreferencesPersistor
+    let startupPreferences: StartupPreferences
     let duckPlayerPreferencesPersistor: () -> DuckPlayerPreferencesPersistor
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
     let internalUserDecider: InternalUserDecider
     let statisticsStore: () -> StatisticsStore
+    let featureDiscovery: () -> FeatureDiscovery
     let variantManager: () -> VariantManager
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     let featureFlagger: FeatureFlagger
-    let visualStyle: VisualStyleProviding
+    let themeManager: ThemeManaging
 
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
@@ -105,38 +109,39 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             favoritesCount = BookmarkUtils.numberOfFavorites(for: appearancePreferences.favoritesDisplayMode, in: context)
         }
 
-        let isPrivacyProSubscriber = subscriptionManager.isUserAuthenticated
-        let isPrivacyProEligibleUser = subscriptionManager.canPurchase
+        let isDuckDuckGoSubscriber = subscriptionManager.isUserAuthenticated
+        let isSubscriptionEligibleUser = subscriptionManager.canPurchase
 
         let activationDateStore = DefaultWaitlistActivationDateStore(source: .netP)
         let daysSinceNetworkProtectionEnabled = activationDateStore.daysSinceActivation() ?? -1
 
         let autofillUsageStore = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
 
-        var privacyProDaysSinceSubscribed = -1
-        var privacyProDaysUntilExpiry = -1
-        var isPrivacyProSubscriptionActive = false
-        var isPrivacyProSubscriptionExpiring = false
-        var isPrivacyProSubscriptionExpired = false
-        var privacyProPurchasePlatform: String?
+        var subscriptionDaysSinceSubscribed = -1
+        var subscriptionDaysUntilExpiry = -1
+        var isSubscriptionActive = false
+        var isSubscriptionExpiring = false
+        var isSubscriptionExpired = false
+        var subscriptionPurchasePlatform: String?
         let surveyActionMapper: RemoteMessagingSurveyActionMapping
 
         let statisticsStore = self.statisticsStore()
+        let featureDiscovery = self.featureDiscovery()
 
         do {
             let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
-            privacyProDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
-            privacyProDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
-            privacyProPurchasePlatform = subscription.platform.rawValue
+            subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
+            subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
+            subscriptionPurchasePlatform = subscription.platform.rawValue
 
             switch subscription.status {
             case .autoRenewable, .gracePeriod:
-                isPrivacyProSubscriptionActive = true
+                isSubscriptionActive = true
             case .notAutoRenewable:
-                isPrivacyProSubscriptionActive = true
-                isPrivacyProSubscriptionExpiring = true
+                isSubscriptionActive = true
+                isSubscriptionExpiring = true
             case .expired, .inactive:
-                isPrivacyProSubscriptionExpired = true
+                isSubscriptionExpired = true
             case .unknown:
                 break // Not supported in RMF
             }
@@ -186,23 +191,24 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                      isInternalUser: internalUserDecider.isInternalUser,
                                                      isInstalledMacAppStore: isInstalledMacAppStore),
             userAttributeMatcher: UserAttributeMatcher(statisticsStore: statisticsStore,
+                                                       featureDiscovery: featureDiscovery,
                                                        variantManager: variantManager(),
                                                        bookmarksCount: bookmarksCount,
                                                        favoritesCount: favoritesCount,
-                                                       appTheme: appearancePreferences.currentThemeName.rawValue,
+                                                       appTheme: appearancePreferences.themeAppearance.rawValue,
                                                        daysSinceNetPEnabled: daysSinceNetworkProtectionEnabled,
-                                                       isPrivacyProEligibleUser: isPrivacyProEligibleUser,
-                                                       isPrivacyProSubscriber: isPrivacyProSubscriber,
-                                                       privacyProDaysSinceSubscribed: privacyProDaysSinceSubscribed,
-                                                       privacyProDaysUntilExpiry: privacyProDaysUntilExpiry,
-                                                       privacyProPurchasePlatform: privacyProPurchasePlatform,
-                                                       isPrivacyProSubscriptionActive: isPrivacyProSubscriptionActive,
-                                                       isPrivacyProSubscriptionExpiring: isPrivacyProSubscriptionExpiring,
-                                                       isPrivacyProSubscriptionExpired: isPrivacyProSubscriptionExpired,
+                                                       isSubscriptionEligibleUser: isSubscriptionEligibleUser,
+                                                       isDuckDuckGoSubscriber: isDuckDuckGoSubscriber,
+                                                       subscriptionDaysSinceSubscribed: subscriptionDaysSinceSubscribed,
+                                                       subscriptionDaysUntilExpiry: subscriptionDaysUntilExpiry,
+                                                       subscriptionPurchasePlatform: subscriptionPurchasePlatform,
+                                                       isSubscriptionActive: isSubscriptionActive,
+                                                       isSubscriptionExpiring: isSubscriptionExpiring,
+                                                       isSubscriptionExpired: isSubscriptionExpired,
                                                        dismissedMessageIds: dismissedMessageIds,
                                                        shownMessageIds: shownMessageIds,
                                                        pinnedTabsCount: pinnedTabsCount,
-                                                       hasCustomHomePage: startupPreferencesPersistor().launchToCustomHomePage,
+                                                       hasCustomHomePage: startupPreferences.launchToCustomHomePage,
                                                        isDuckPlayerOnboarded: duckPlayerPreferencesPersistor.youtubeOverlayAnyButtonPressed,
                                                        isDuckPlayerEnabled: duckPlayerPreferencesPersistor.duckPlayerModeBool != false,
                                                        isCurrentFreemiumPIRUser: isCurrentFreemiumDBPUser,

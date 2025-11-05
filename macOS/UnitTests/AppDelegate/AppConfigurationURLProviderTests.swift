@@ -25,8 +25,7 @@ fileprivate extension AppConfigurationURLProvider {
     init() {
         self.init(
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger(),
-            customPrivacyConfiguration: nil
+            featureFlagger: MockFeatureFlagger()
         )
     }
 }

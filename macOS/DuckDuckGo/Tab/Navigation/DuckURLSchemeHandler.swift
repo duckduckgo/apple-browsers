@@ -366,12 +366,6 @@ private extension DuckURLSchemeHandler {
     }
 }
 
-extension URL {
-    var isHistory: Bool {
-        return isDuckURLScheme && host == "history"
-    }
-}
-
 private extension URL {
 
     enum URLType {

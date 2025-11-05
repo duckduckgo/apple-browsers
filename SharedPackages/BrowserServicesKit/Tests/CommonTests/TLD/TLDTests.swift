@@ -23,11 +23,8 @@ final class TLDTests: XCTestCase {
 
     let tld = TLD()
 
-    func testWhenJsonAccessedThenReturnsValidJson() {
-        let tlds = try? JSONDecoder().decode([String].self, from: tld.json.data(using: .utf8)!)
-
-        XCTAssertNotNil(tlds)
-        XCTAssertFalse(tlds?.isEmpty ?? true)
+    func testThatTLDSSetIsLoaded() {
+        XCTAssertFalse(TLD.tlds.isEmpty)
     }
 
     func testWhenHostMultiPartTopLevelWithSubdomainThenDomainCorrect() {
@@ -89,15 +86,6 @@ final class TLDTests: XCTestCase {
         XCTAssertNil(tld.domain("abcdefgh"))
     }
 
-    func testWhenTLDInstantiatedThenLoadsTLDData() {
-        XCTAssertFalse(tld.tlds.isEmpty)
-    }
-
-    func testWhenTLDIsExampleThenItIsMatched() {
-        XCTAssertEqual("something.example", tld.domain("something.example"))
-        XCTAssertEqual("example", tld.domain("example"))
-    }
-
     func testWhenStringURLHasNoSubdomainThenSecondLevelDomainCorrect() {
         XCTAssertEqual("example", tld.extractSecondLevelDomain(fromStringURL: "https://example.com"))
         XCTAssertEqual("bbc", tld.extractSecondLevelDomain(fromStringURL: "https://bbc.co.uk"))
@@ -122,6 +110,59 @@ final class TLDTests: XCTestCase {
 
     func testWhenStringURLIsIncorrectThenSecondLevelDomainIsNotFound() {
         XCTAssertEqual(nil, tld.extractSecondLevelDomain(fromStringURL: "https://abcderfg"))
+    }
+
+    // MARK: - eTLD Tests
+
+    func testWhenHostMultiPartTopLevelWithSubdomainThenETLDCorrect() {
+        XCTAssertEqual("co.uk", tld.eTLD("www.bbc.co.uk"))
+        XCTAssertEqual("co.uk", tld.eTLD("other.bbc.co.uk"))
+        XCTAssertEqual("co.uk", tld.eTLD("multi.part.bbc.co.uk"))
+    }
+
+    func testWhenHostDotComWithSubdomainThenETLDCorrect() {
+        XCTAssertEqual("com", tld.eTLD("www.example.com"))
+        XCTAssertEqual("com", tld.eTLD("other.example.com"))
+        XCTAssertEqual("com", tld.eTLD("multi.part.example.com"))
+    }
+
+    func testWhenHostIsTopLevelDotComThenETLDIsSame() {
+        XCTAssertEqual("com", tld.eTLD("example.com"))
+    }
+
+    func testWhenHostIsMalformedThenETLDIsFixed() {
+        XCTAssertEqual("com", tld.eTLD(".example.com"))
+    }
+
+    func testWhenHostIsTLDThenETLDIsFound() {
+        XCTAssertEqual("com", tld.eTLD("com"))
+        XCTAssertEqual("co.uk", tld.eTLD("co.uk"))
+    }
+
+    func testWhenHostIsMultiPartTLDThenETLDIsFound() {
+        XCTAssertEqual(nil, tld.eTLD("za"))
+        XCTAssertEqual("co.za", tld.eTLD("co.za"))
+    }
+
+    func testWhenHostIsIncorrectThenETLDIsNil() {
+        XCTAssertNil(tld.eTLD("abcdefgh"))
+    }
+
+    func testWhenHostIsNilThenETLDIsNil() {
+        XCTAssertNil(tld.eTLD(nil))
+    }
+
+    func testWhenHostHasComplexMultiPartTLDThenETLDCorrect() {
+        // Test cases with multi-part TLDs
+        XCTAssertEqual("edu.au", tld.eTLD("university.edu.au"))
+        XCTAssertEqual("gov.uk", tld.eTLD("department.gov.uk"))
+        XCTAssertEqual("ac.uk", tld.eTLD("subdomain.university.ac.uk"))
+    }
+
+    func testWhenHostHasPortThenETLDIgnoresPort() {
+        // The eTLD function should work with hosts that might have ports
+        XCTAssertEqual("com", tld.eTLD("example.com:8080"))
+        XCTAssertEqual("co.uk", tld.eTLD("bbc.co.uk:443"))
     }
 
 }

@@ -55,10 +55,18 @@ final class AddBookmarkPopover: NSPopover {
         fatalError("BookmarksPopover: Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        // Check that our content view controller deallocates
+        contentViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     private func setupBookmarkAddController() {
         guard let bookmark else { return }
         let viewModel = AddBookmarkPopoverViewModel(bookmark: bookmark, bookmarkManager: bookmarkManager)
-        contentViewController = NSHostingController(rootView: AddBookmarkPopoverView(model: viewModel))
+        let syncButtonViewModel = DismissableSyncDeviceButtonModel(source: .bookmarkAdded, keyValueStore: UserDefaults.standard)
+        contentViewController = NSHostingController(rootView: AddBookmarkPopoverView(model: viewModel, syncButtonModel: syncButtonViewModel))
         viewModel.buttonClicked = { [weak self] in
             self?.performClose(nil)
         }

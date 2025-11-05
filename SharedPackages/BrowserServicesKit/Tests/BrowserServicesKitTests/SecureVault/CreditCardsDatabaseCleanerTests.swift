@@ -1,0 +1,177 @@
+//
+//  CreditCardsDatabaseCleanerTests.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import XCTest
+import Common
+import GRDB
+import SecureStorage
+import SecureStorageTestsUtils
+@testable import BrowserServicesKit
+
+final class MockCreditCardsEventMapper: EventMapping<CreditCardsCleanupError> {
+    static var errors: [Error] = []
+
+    public init() {
+        super.init { event, _, _, _ in
+            Self.errors.append(event.cleanupError)
+        }
+    }
+
+    override init(mapping: @escaping EventMapping<CreditCardsCleanupError>.Mapping) {
+        fatalError("Use init()")
+    }
+}
+
+final class CreditCardsDatabaseCleanerTests: XCTestCase {
+    let simpleL1Key = "simple-key".data(using: .utf8)!
+    var databaseLocation: URL!
+    var databaseProvider: DefaultAutofillDatabaseProvider!
+
+    var secureVaultFactory: AutofillVaultFactory!
+    var secureVault: (any AutofillSecureVault)!
+
+    var location: URL!
+    var databaseCleaner: CreditCardsDatabaseCleaner!
+    var eventMapper: MockCreditCardsEventMapper!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+
+        databaseLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".db")
+        databaseProvider = try DefaultAutofillDatabaseProvider(file: databaseLocation, key: simpleL1Key)
+        secureVaultFactory = AutofillVaultFactory.testFactory(databaseProvider: databaseProvider)
+        secureVault = try secureVaultFactory.makeVault(reporter: nil)
+        _ = try secureVault.authWith(password: "abcd".data(using: .utf8)!)
+
+        eventMapper = MockCreditCardsEventMapper()
+        MockCreditCardsEventMapper.errors.removeAll()
+    }
+
+    override func tearDownWithError() throws {
+        try deleteDbFile()
+        try super.tearDownWithError()
+    }
+
+    func testWhenSyncIsActiveThenCleanupIsCancelled() throws {
+        let expectation = expectation(description: "removeSyncMetadataPendingDeletion")
+        expectation.isInverted = true
+        let removeSyncMetadataPendingDeletion: (Database) throws -> Int = { _ in
+            expectation.fulfill()
+            return 0
+        }
+
+        databaseCleaner = CreditCardsDatabaseCleaner(
+            secureVaultFactory: secureVaultFactory,
+            secureVaultErrorReporter: MockSecureVaultErrorReporter(),
+            errorEvents: eventMapper,
+            removeSyncMetadataPendingDeletion: removeSyncMetadataPendingDeletion
+        )
+
+        databaseCleaner.isSyncActive = { true }
+
+        databaseCleaner.removeSyncableCreditCardsMetadataPendingDeletion()
+        waitForExpectations(timeout: 1)
+        XCTAssertEqual(MockCreditCardsEventMapper.errors.count, 1)
+        let error = try XCTUnwrap(MockCreditCardsEventMapper.errors.first)
+        XCTAssertTrue(error is CreditCardsCleanupCancelledError)
+    }
+
+    func testWhenThereAreNoConflictsThenCleanerContextIsSavedOnce() throws {
+        databaseCleaner = CreditCardsDatabaseCleaner(
+            secureVaultFactory: secureVaultFactory,
+            secureVaultErrorReporter: MockSecureVaultErrorReporter(),
+            errorEvents: eventMapper
+        )
+
+        try secureVault.storeCreditCard(
+            title: "Card 1",
+            cardNumber: "4111111111111111",
+            cardholderName: "John Doe",
+            expirationMonth: 12,
+            expirationYear: 2025
+        )
+        try secureVault.storeCreditCard(
+            title: "Card 2",
+            cardNumber: "5555555555554444",
+            cardholderName: "Jane Doe",
+            expirationMonth: 6,
+            expirationYear: 2026
+        )
+
+        var syncableCreditCardsMetadata = try databaseProvider.db.read { database in
+            try SecureVaultModels.SyncableCreditCardsRecord.fetchAll(database)
+        }
+
+        XCTAssertEqual(syncableCreditCardsMetadata.count, 2)
+
+        let cardId = try XCTUnwrap(syncableCreditCardsMetadata.first?.objectId)
+        try secureVault.deleteCreditCardFor(cardId: cardId)
+
+        syncableCreditCardsMetadata = try databaseProvider.db.read { database in
+            try SecureVaultModels.SyncableCreditCardsRecord.fetchAll(database)
+        }
+
+        XCTAssertEqual(syncableCreditCardsMetadata.count, 2)
+
+        databaseCleaner.removeSyncableCreditCardsMetadataPendingDeletion()
+
+        syncableCreditCardsMetadata = try databaseProvider.db.read { database in
+            try SecureVaultModels.SyncableCreditCardsRecord.fetchAll(database)
+        }
+
+        XCTAssertTrue(MockCreditCardsEventMapper.errors.isEmpty)
+        XCTAssertEqual(syncableCreditCardsMetadata.count, 1)
+    }
+
+    func deleteDbFile() throws {
+        do {
+            let dbFileContainer = databaseLocation.deletingLastPathComponent()
+            for file in try FileManager.default.contentsOfDirectory(atPath: dbFileContainer.path) {
+                guard ["db", "bak"].contains((file as NSString).pathExtension) else { continue }
+                try FileManager.default.removeItem(atPath: dbFileContainer.appendingPathComponent(file).path)
+            }
+
+        } catch let error as NSError {
+            // File not found
+            if error.domain != NSCocoaErrorDomain || error.code != 4 {
+                throw error
+            }
+        }
+    }
+}
+
+extension AutofillSecureVault {
+    func storeCreditCard(
+        title: String? = nil,
+        cardNumber: String,
+        cardholderName: String? = nil,
+        cardSecurityCode: String? = nil,
+        expirationMonth: Int? = nil,
+        expirationYear: Int? = nil
+    ) throws {
+        let creditCard = SecureVaultModels.CreditCard(
+            title: title,
+            cardNumber: cardNumber,
+            cardholderName: cardholderName,
+            cardSecurityCode: cardSecurityCode,
+            expirationMonth: expirationMonth,
+            expirationYear: expirationYear
+        )
+        try storeCreditCard(creditCard)
+    }
+}

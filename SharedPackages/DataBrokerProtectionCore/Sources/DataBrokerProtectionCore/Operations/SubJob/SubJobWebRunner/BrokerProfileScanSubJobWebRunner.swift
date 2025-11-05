@@ -35,8 +35,8 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
 
     public let privacyConfig: PrivacyConfigurationManaging
     public let prefs: ContentScopeProperties
-    public let query: BrokerProfileQueryData
-    public let emailService: EmailServiceProtocol
+    public let context: SubJobContextProviding
+    public let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     public let captchaService: CaptchaServiceProtocol
     public let cookieHandler: CookieHandler
     public let stageCalculator: StageDurationCalculator
@@ -51,12 +51,14 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public var postLoadingSiteStartTime: Date?
     public let executionConfig: BrokerJobExecutionConfig
+    public let featureFlagger: DBPFeatureFlagging
 
     public init(privacyConfig: PrivacyConfigurationManaging,
                 prefs: ContentScopeProperties,
-                query: BrokerProfileQueryData,
-                emailService: EmailServiceProtocol,
+                context: SubJobContextProviding,
+                emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
+                featureFlagger: DBPFeatureFlagging,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
                 operationAwaitTime: TimeInterval = 3,
                 clickAwaitTime: TimeInterval = 0,
@@ -67,8 +69,8 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     ) {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
-        self.query = query
-        self.emailService = emailService
+        self.context = context
+        self.emailConfirmationDataService = emailConfirmationDataService
         self.captchaService = captchaService
         self.operationAwaitTime = operationAwaitTime
         self.stageCalculator = stageDurationCalculator
@@ -77,6 +79,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         self.cookieHandler = cookieHandler
         self.pixelHandler = pixelHandler
         self.executionConfig = executionConfig
+        self.featureFlagger = featureFlagger
     }
 
     @MainActor
@@ -103,13 +106,18 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                 }
 
                 task = Task {
-                    await initialize(handler: webViewHandler, isFakeBroker: query.dataBroker.isFakeBroker, showWebView: showWebView)
                     do {
-                        let scanStep = try query.dataBroker.scanStep()
+                        try await initialize(handler: webViewHandler, isFakeBroker: context.dataBroker.isFakeBroker, showWebView: showWebView)
+                    } catch {
+                        failed(with: error)
+                    }
+
+                    do {
+                        let scanStep = try context.dataBroker.scanStep()
                         if let actionsHandler = actionsHandler {
                             self.actionsHandler = actionsHandler
                         } else {
-                            self.actionsHandler = ActionsHandler(step: scanStep)
+                            self.actionsHandler = ActionsHandler.forScan(scanStep)
                         }
                         if self.shouldRunNextStep() {
                             await executeNextStep()
@@ -133,22 +141,6 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         await executeNextStep()
     }
 
-    public func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
-        /// Certain brokers force a page reload with a random time interval when the user lands on the search result
-        /// page. The first time the action runs the C-S-S context is lost as the page is reloading and C-S-S fails
-        /// to respond to the native message. We will try to run the action one more time after the page has loaded
-        /// and the C-S-S context is present again to receive the native message.
-        ///
-        /// To minimize the impact of this change, we set the number of retries to 1 for now.
-        ///
-        /// https://app.asana.com/1/137249556945/project/481882893211075/task/1210079565270206?focus=true
-        if action is ExpectationAction, !stageCalculator.isRetrying {
-            retriesCountOnError = 1
-        }
-
-        return false
-    }
-
     public func executeNextStep() async {
         resetRetriesCount()
         Logger.action.debug(loggerContext(), message: "Waiting \(self.operationAwaitTime) seconds...")
@@ -157,6 +149,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
 
         let shouldContinue = self.shouldRunNextStep()
         if let action = actionsHandler?.nextAction(), shouldContinue {
+            stageCalculator.setLastAction(action)
             Logger.action.debug(loggerContext(for: action), message: "Next action")
             await runNextAction(action)
         } else {
@@ -171,6 +164,6 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     }
 
     private func loggerContext(for action: Action? = nil) -> PIRActionLogContext {
-        .init(stepType: .scan, broker: query.dataBroker, attemptId: stageCalculator.attemptId, action: action)
+        .init(stepType: .scan, broker: context.dataBroker, attemptId: stageCalculator.attemptId, action: action)
     }
 }

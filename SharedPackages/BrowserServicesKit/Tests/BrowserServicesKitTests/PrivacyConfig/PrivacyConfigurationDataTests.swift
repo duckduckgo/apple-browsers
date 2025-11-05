@@ -204,4 +204,21 @@ class PrivacyConfigurationDataTests: XCTestCase {
         XCTAssertEqual(rulesMap["example2.com/path/"], ["<all>"])
         XCTAssertEqual(rulesMap["example2.com/resource.json"], ["<all>"])
     }
+
+    func testThatExcludedFeaturesAreExcluded() throws {
+        // Load the JSON from the file.
+        let jsonData = data.fromJsonFile("Resources/privacy-config-example.json")
+        let originalConfig = try PrivacyConfigurationData(data: jsonData)
+
+        // Verify that features that we'll exclude later in the test are present in the original config
+        XCTAssertFalse(originalConfig.trackerAllowlist.entries.isEmpty)
+        XCTAssertTrue(originalConfig.features.keys.contains("duckPlayer"))
+
+        // Re-Encode the original config with excluded features
+        let encodedJsonDataWithExcludedFeatures = try originalConfig.toJSONData(excludeFeatures: ["trackerAllowlist", "duckPlayer"])
+        let roundTrippedConfigWithExcludedFeatures = try PrivacyConfigurationData(data: encodedJsonDataWithExcludedFeatures)
+
+        XCTAssertTrue(roundTrippedConfigWithExcludedFeatures.trackerAllowlist.entries.isEmpty)
+        XCTAssertFalse(roundTrippedConfigWithExcludedFeatures.features.keys.contains("duckPlayer"))
+    }
 }

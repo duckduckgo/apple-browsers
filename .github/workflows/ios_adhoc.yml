@@ -73,6 +73,11 @@ jobs:
           APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         run: |
+          app_version="$(cut -d ' ' -f 3 < Configuration/Version.xcconfig)"
+          build_number="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig)"
+          echo "app_version=${app_version}" >> $GITHUB_ENV
+          echo "build_number=${build_number}" >> $GITHUB_ENV
+          
           lane_to_use="adhoc"
           if [[ "${{ github.event.inputs.build-type }}" == "Release" ]]; then
             lane_to_use="release_adhoc"
@@ -83,6 +88,18 @@ jobs:
           else
             bundle exec fastlane ${lane_to_use}
           fi
+
+      - name: Measure App Size
+        if: steps.archive-and-upload.outcome == 'success'
+        continue-on-error: true
+        uses: ./.github/actions/measure-app-size
+        with:
+          report-file: "iOS/App Thinning Size Report.txt"
+          download-size-pixel-name: "m_ci_apple_ios_adhoc_download_size"
+          installation-size-pixel-name: "m_ci_apple_ios_adhoc_installation_size"
+          app-version: ${{ env.app_version }}
+          build-number: ${{ env.build_number }}
+          suffix: ${{ github.event.inputs.suffix }}
 
       - name: Report job duration
         if: success() || (always() && steps.archive-and-upload.outcome == 'failure')

@@ -67,7 +67,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             duckPlayerStorage: MockDuckPlayerStorage(),
             configurationURLProvider: MockConfigurationURLProvider()
         )
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter())
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, subscriptionDataReporter: MockSubscriptionDataReporter())
         let tabsModel = TabsModel(desktop: true)
         onboardingPixelReporter = OnboardingPixelReporterMock()
         let tabsPersistence = try TabsModelPersistence()
@@ -83,7 +83,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             tabsModel: tabsModel,
             tabsPersistence: tabsPersistence,
             syncPausedStateManager: CapturingSyncPausedStateManager(),
-            privacyProDataReporter: MockPrivacyProDataReporter(),
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
             variantManager: MockVariantManager(),
             contextualOnboardingPresenter: ContextualOnboardingPresenterMock(),
             contextualOnboardingLogic: ContextualOnboardingLogicMock(),

@@ -39,6 +39,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     emailManager: emailManager,
                     bookmarksCount: 10,
@@ -46,19 +47,21 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     appTheme: "light",
                     isWidgetInstalled: false,
                     daysSinceNetPEnabled: -1,
-                    isPrivacyProEligibleUser: false,
-                    isPrivacyProSubscriber: false,
-                    privacyProDaysSinceSubscribed: -1,
-                    privacyProDaysUntilExpiry: -1,
-                    privacyProPurchasePlatform: nil,
-                    isPrivacyProSubscriptionActive: false,
-                    isPrivacyProSubscriptionExpiring: false,
-                    isPrivacyProSubscriptionExpired: false,
+                    isSubscriptionEligibleUser: false,
+                    isDuckDuckGoSubscriber: false,
+                    subscriptionDaysSinceSubscribed: -1,
+                    subscriptionDaysUntilExpiry: -1,
+                    subscriptionPurchasePlatform: nil,
+                    isSubscriptionActive: false,
+                    isSubscriptionExpiring: false,
+                    isSubscriptionExpired: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
-                    enabledFeatureFlags: []
+                    enabledFeatureFlags: [],
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -123,7 +126,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             mediumMessage(matchingRules: [], exclusionRules: [2]),
             mediumMessage(matchingRules: [], exclusionRules: [3])
         ], rules: [
-            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]),
+            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]),
             RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [
                 LocaleMatchingAttribute(value: [LocaleMatchingAttribute.localeIdentifierAsJsonFormat(Locale.current.identifier)], fallback: nil)
             ]),
@@ -136,28 +139,31 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
     func testWhenMatchingMessageShouldBeExcludedThenReturnNull() {
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
                     appTheme: "light",
                     isWidgetInstalled: false,
                     daysSinceNetPEnabled: -1,
-                    isPrivacyProEligibleUser: false,
-                    isPrivacyProSubscriber: false,
-                    privacyProDaysSinceSubscribed: -1,
-                    privacyProDaysUntilExpiry: -1,
-                    privacyProPurchasePlatform: nil,
-                    isPrivacyProSubscriptionActive: false,
-                    isPrivacyProSubscriptionExpiring: false,
-                    isPrivacyProSubscriptionExpired: false,
+                    isSubscriptionEligibleUser: false,
+                    isDuckDuckGoSubscriber: false,
+                    subscriptionDaysSinceSubscribed: -1,
+                    subscriptionDaysUntilExpiry: -1,
+                    subscriptionPurchasePlatform: nil,
+                    isSubscriptionActive: false,
+                    isSubscriptionExpiring: false,
+                    isSubscriptionExpired: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
-                    enabledFeatureFlags: []
+                    enabledFeatureFlags: [],
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -166,7 +172,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         let remoteConfig = RemoteConfigModel(messages: [
             mediumMessage(matchingRules: [1], exclusionRules: [2])
         ], rules: [
-            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]),
+            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]),
             RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [LocaleMatchingAttribute(value: ["en-US"], fallback: nil)])
         ])
 
@@ -181,14 +187,14 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             mediumMessage(matchingRules: [1], exclusionRules: [2, 4]),
             mediumMessage(matchingRules: [1], exclusionRules: [4])
         ], rules: [
-            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]),
+            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]),
             RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [
                 EmailEnabledMatchingAttribute(value: true, fallback: nil), BookmarksMatchingAttribute(max: 10, fallback: nil)
             ]),
             RemoteConfigRule(id: 3, targetPercentile: nil, attributes: [
                 EmailEnabledMatchingAttribute(value: true, fallback: nil), BookmarksMatchingAttribute(max: 10, fallback: nil)
             ]),
-            RemoteConfigRule(id: 4, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]),
+            RemoteConfigRule(id: 4, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]),
             RemoteConfigRule(id: 5, targetPercentile: nil, attributes: [EmailEnabledMatchingAttribute(value: true, fallback: nil)])
         ])
 
@@ -201,7 +207,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             mediumMessage(matchingRules: [1], exclusionRules: [2]),
             mediumMessage(matchingRules: [1], exclusionRules: [])
         ], rules: [
-            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]),
+            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]),
             RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [
                 LocaleMatchingAttribute(value: [LocaleMatchingAttribute.localeIdentifierAsJsonFormat(Locale.current.identifier)], fallback: nil)
             ])
@@ -214,7 +220,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         let remoteConfig = RemoteConfigModel(messages: [
             mediumMessage(matchingRules: [1], exclusionRules: [2])
         ], rules: [
-            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]),
+            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]),
             RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [EmailEnabledMatchingAttribute(value: false, fallback: nil)])
         ])
 
@@ -225,7 +231,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         let remoteConfig = RemoteConfigModel(messages: [
             mediumMessage(matchingRules: [1], exclusionRules: [])
         ], rules: [
-            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         ])
 
         XCTAssertEqual(matcher.evaluate(remoteConfig: remoteConfig), mediumMessage(matchingRules: [1], exclusionRules: []))
@@ -236,7 +242,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             mediumMessage(matchingRules: [2], exclusionRules: []),
             mediumMessage(matchingRules: [1, 2], exclusionRules: [])
         ], rules: [
-            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]),
+            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]),
             RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [EmailEnabledMatchingAttribute(value: false, fallback: nil)])
         ])
 
@@ -248,25 +254,28 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 10,
                     favoritesCount: 0,
                     appTheme: "light",
                     isWidgetInstalled: false,
                     daysSinceNetPEnabled: -1,
-                    isPrivacyProEligibleUser: false,
-                    isPrivacyProSubscriber: false,
-                    privacyProDaysSinceSubscribed: -1,
-                    privacyProDaysUntilExpiry: -1,
-                    privacyProPurchasePlatform: nil,
-                    isPrivacyProSubscriptionActive: false,
-                    isPrivacyProSubscriptionExpiring: false,
-                    isPrivacyProSubscriptionExpired: false,
+                    isSubscriptionEligibleUser: false,
+                    isDuckDuckGoSubscriber: false,
+                    subscriptionDaysSinceSubscribed: -1,
+                    subscriptionDaysUntilExpiry: -1,
+                    subscriptionPurchasePlatform: nil,
+                    isSubscriptionActive: false,
+                    isSubscriptionExpiring: false,
+                    isSubscriptionExpired: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
-                    enabledFeatureFlags: []
+                    enabledFeatureFlags: [],
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -276,7 +285,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             mediumMessage(matchingRules: [1], exclusionRules: []),
             mediumMessage(id: "2", matchingRules: [1], exclusionRules: [])
         ], rules: [
-            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         ])
 
         XCTAssertEqual(matcher.evaluate(remoteConfig: remoteConfig), mediumMessage(id: "2", matchingRules: [1], exclusionRules: []))
@@ -297,28 +306,31 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         let os = ProcessInfo().operatingSystemVersion
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
                     appTheme: "light",
                     isWidgetInstalled: false,
                     daysSinceNetPEnabled: -1,
-                    isPrivacyProEligibleUser: false,
-                    isPrivacyProSubscriber: false,
-                    privacyProDaysSinceSubscribed: -1,
-                    privacyProDaysUntilExpiry: -1,
-                    privacyProPurchasePlatform: nil,
-                    isPrivacyProSubscriptionActive: false,
-                    isPrivacyProSubscriptionExpiring: false,
-                    isPrivacyProSubscriptionExpired: false,
+                    isSubscriptionEligibleUser: false,
+                    isDuckDuckGoSubscriber: false,
+                    subscriptionDaysSinceSubscribed: -1,
+                    subscriptionDaysUntilExpiry: -1,
+                    subscriptionPurchasePlatform: nil,
+                    isSubscriptionActive: false,
+                    isSubscriptionExpiring: false,
+                    isSubscriptionExpired: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
-                    enabledFeatureFlags: []
+                    enabledFeatureFlags: [],
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -345,28 +357,31 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
                     appTheme: "light",
                     isWidgetInstalled: false,
                     daysSinceNetPEnabled: -1,
-                    isPrivacyProEligibleUser: false,
-                    isPrivacyProSubscriber: false,
-                    privacyProDaysSinceSubscribed: -1,
-                    privacyProDaysUntilExpiry: -1,
-                    privacyProPurchasePlatform: nil,
-                    isPrivacyProSubscriptionActive: false,
-                    isPrivacyProSubscriptionExpiring: false,
-                    isPrivacyProSubscriptionExpired: false,
+                    isSubscriptionEligibleUser: false,
+                    isDuckDuckGoSubscriber: false,
+                    subscriptionDaysSinceSubscribed: -1,
+                    subscriptionDaysUntilExpiry: -1,
+                    subscriptionPurchasePlatform: nil,
+                    isSubscriptionActive: false,
+                    isSubscriptionExpiring: false,
+                    isSubscriptionExpired: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
-                    enabledFeatureFlags: []
+                    enabledFeatureFlags: [],
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -378,7 +393,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             RemoteConfigRule(
                 id: 1,
                 targetPercentile: RemoteConfigTargetPercentile(before: 0.3),
-                attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]
+                attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]
             )
         ])
 
@@ -391,28 +406,31 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
                     appTheme: "light",
                     isWidgetInstalled: false,
                     daysSinceNetPEnabled: -1,
-                    isPrivacyProEligibleUser: false,
-                    isPrivacyProSubscriber: false,
-                    privacyProDaysSinceSubscribed: -1,
-                    privacyProDaysUntilExpiry: -1,
-                    privacyProPurchasePlatform: nil,
-                    isPrivacyProSubscriptionActive: false,
-                    isPrivacyProSubscriptionExpiring: false,
-                    isPrivacyProSubscriptionExpired: false,
+                    isSubscriptionEligibleUser: false,
+                    isDuckDuckGoSubscriber: false,
+                    subscriptionDaysSinceSubscribed: -1,
+                    subscriptionDaysUntilExpiry: -1,
+                    subscriptionPurchasePlatform: nil,
+                    isSubscriptionActive: false,
+                    isSubscriptionExpiring: false,
+                    isSubscriptionExpired: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
-                    enabledFeatureFlags: []
+                    enabledFeatureFlags: [],
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -424,7 +442,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             RemoteConfigRule(
                 id: 1,
                 targetPercentile: RemoteConfigTargetPercentile(before: 0.3),
-                attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]
+                attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]
             )
         ])
 
@@ -437,28 +455,31 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
                     appTheme: "light",
                     isWidgetInstalled: false,
                     daysSinceNetPEnabled: -1,
-                    isPrivacyProEligibleUser: false,
-                    isPrivacyProSubscriber: false,
-                    privacyProDaysSinceSubscribed: -1,
-                    privacyProDaysUntilExpiry: -1,
-                    privacyProPurchasePlatform: nil,
-                    isPrivacyProSubscriptionActive: false,
-                    isPrivacyProSubscriptionExpiring: false,
-                    isPrivacyProSubscriptionExpired: false,
+                    isSubscriptionEligibleUser: false,
+                    isDuckDuckGoSubscriber: false,
+                    subscriptionDaysSinceSubscribed: -1,
+                    subscriptionDaysUntilExpiry: -1,
+                    subscriptionPurchasePlatform: nil,
+                    isSubscriptionActive: false,
+                    isSubscriptionExpiring: false,
+                    isSubscriptionExpired: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
-                    enabledFeatureFlags: []
+                    enabledFeatureFlags: [],
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -470,7 +491,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             RemoteConfigRule(
                 id: 1,
                 targetPercentile: RemoteConfigTargetPercentile(before: 0.5),
-                attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]
+                attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]
             )
         ])
 
@@ -483,28 +504,31 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
                     appTheme: "light",
                     isWidgetInstalled: false,
                     daysSinceNetPEnabled: -1,
-                    isPrivacyProEligibleUser: false,
-                    isPrivacyProSubscriber: false,
-                    privacyProDaysSinceSubscribed: -1,
-                    privacyProDaysUntilExpiry: -1,
-                    privacyProPurchasePlatform: nil,
-                    isPrivacyProSubscriptionActive: false,
-                    isPrivacyProSubscriptionExpiring: false,
-                    isPrivacyProSubscriptionExpired: false,
+                    isSubscriptionEligibleUser: false,
+                    isDuckDuckGoSubscriber: false,
+                    subscriptionDaysSinceSubscribed: -1,
+                    subscriptionDaysUntilExpiry: -1,
+                    subscriptionPurchasePlatform: nil,
+                    isSubscriptionActive: false,
+                    isSubscriptionExpiring: false,
+                    isSubscriptionExpired: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
-                    enabledFeatureFlags: []
+                    enabledFeatureFlags: [],
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -516,7 +540,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             RemoteConfigRule(
                 id: 1,
                 targetPercentile: RemoteConfigTargetPercentile(before: 0.5),
-                attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]
+                attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]
             )
         ])
 

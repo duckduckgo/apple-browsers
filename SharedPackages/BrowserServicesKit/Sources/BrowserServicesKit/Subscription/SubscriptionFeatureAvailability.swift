@@ -24,6 +24,8 @@ public protocol SubscriptionFeatureAvailability {
     var isPaidAIChatEnabled: Bool { get }
     /// Indicates whether the alternate Stripe payment flow is supported for subscriptions.
     var isSupportsAlternateStripePaymentFlowEnabled: Bool { get }
+    var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool { get }
+    var isSubscriptionRestoreWidePixelMeasurementEnabled: Bool { get }
 }
 
 public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAvailability {
@@ -32,6 +34,8 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
     private let purchasePlatform: SubscriptionEnvironment.PurchasePlatform
     private let paidAIChatFlagStatusProvider: () -> Bool
     private let supportsAlternateStripePaymentFlowStatusProvider: () -> Bool
+    private let isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: () -> Bool
+    private let isSubscriptionRestoreWidePixelMeasurementEnabledProvider: () -> Bool
 
     /// Initializes a new instance of `DefaultSubscriptionFeatureAvailability`.
     ///
@@ -40,14 +44,19 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
     ///   - purchasePlatform: The platform through which purchases are made (App Store or Stripe).
     ///   - paidAIChatFlagStatusProvider: A closure that returns whether paid AI chat features are enabled.
     ///   - supportsAlternateStripePaymentFlowStatusProvider: A closure that returns whether the alternate Stripe payment flow is supported.
+    ///   - isSubscriptionRestoreWidePixelMeasurementEnabledProvider: A closure that returns whether the restore wide pixel measurement is supported.
     public init(privacyConfigurationManager: PrivacyConfigurationManaging,
                 purchasePlatform: SubscriptionEnvironment.PurchasePlatform,
                 paidAIChatFlagStatusProvider: @escaping () -> Bool,
-                supportsAlternateStripePaymentFlowStatusProvider: @escaping () -> Bool) {
+                supportsAlternateStripePaymentFlowStatusProvider: @escaping () -> Bool,
+                isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: @escaping () -> Bool,
+                isSubscriptionRestoreWidePixelMeasurementEnabledProvider: @escaping () -> Bool = { false })  {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.purchasePlatform = purchasePlatform
         self.paidAIChatFlagStatusProvider = paidAIChatFlagStatusProvider
         self.supportsAlternateStripePaymentFlowStatusProvider = supportsAlternateStripePaymentFlowStatusProvider
+        self.isSubscriptionPurchaseWidePixelMeasurementEnabledProvider = isSubscriptionPurchaseWidePixelMeasurementEnabledProvider
+        self.isSubscriptionRestoreWidePixelMeasurementEnabledProvider = isSubscriptionRestoreWidePixelMeasurementEnabledProvider
     }
 
     public var isSubscriptionPurchaseAllowed: Bool {
@@ -75,7 +84,15 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
         supportsAlternateStripePaymentFlowStatusProvider()
     }
 
-// MARK: - Conditions
+    public var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool {
+        isSubscriptionPurchaseWidePixelMeasurementEnabledProvider()
+    }
+
+    public var isSubscriptionRestoreWidePixelMeasurementEnabled: Bool {
+        isSubscriptionRestoreWidePixelMeasurementEnabledProvider()
+    }
+
+    // MARK: - Conditions
 
     private var isInternalUser: Bool {
         privacyConfigurationManager.internalUserDecider.isInternalUser

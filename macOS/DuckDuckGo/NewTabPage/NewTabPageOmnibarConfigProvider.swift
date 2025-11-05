@@ -23,6 +23,7 @@ import NewTabPage
 import os.log
 import Persistence
 import PixelKit
+import Common
 
 protocol NewTabPageAIChatShortcutSettingProviding: AnyObject {
     var isAIChatShortcutEnabled: Bool { get set }
@@ -75,11 +76,18 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     private enum Key: String {
         case newTabPageOmnibarMode
+        case showCustomizePopover
+        case customizePopoverPresentationCount
+    }
+
+    private enum Constants: Int {
+        case maxNumberOfPopoverPresentations = 5
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
     private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     private let firePixel: (PixelKitEvent) -> Void
+    private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
 
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
@@ -134,5 +142,39 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> {
         aiChatShortcutSettingProvider.isAIChatSettingVisiblePublisher
+    }
+
+    var showCustomizePopover: Bool {
+        get {
+#if REVIEW
+            if AppVersion.runType == .uiTests {
+                return false
+            }
+#endif
+            if !shouldShowCustomizePopover {
+                return false
+            } else {
+                return (try? keyValueStore.object(forKey: Key.showCustomizePopover.rawValue) as? Bool) ?? true
+            }
+        }
+        set {
+            try? keyValueStore.set(newValue, forKey: Key.showCustomizePopover.rawValue)
+            showCustomizePopoverSubject.send(newValue)
+        }
+    }
+
+    var showCustomizePopoverPublisher: AnyPublisher<Bool, Never> {
+        showCustomizePopoverSubject.eraseToAnyPublisher()
+    }
+
+    var customizePopoverPresentationCount: Int {
+        get { (try? keyValueStore.object(forKey: Key.customizePopoverPresentationCount.rawValue) as? Int) ?? 0 }
+        set { try? keyValueStore.set(newValue, forKey: Key.customizePopoverPresentationCount.rawValue) }
+    }
+
+    private var shouldShowCustomizePopover: Bool {
+        customizePopoverPresentationCount <= Constants.maxNumberOfPopoverPresentations.rawValue &&
+        OnboardingActionsManager.isOnboardingFinished &&
+        Application.appDelegate.onboardingContextualDialogsManager.state == .onboardingCompleted
     }
 }

@@ -36,21 +36,21 @@ final class TabCleanupPreparer: NSObject, WKNavigationDelegate {
     private var numberOfTabs = 0
     private var processedTabs = 0
 
-    private var completion: (() -> Void)?
+    private var completion: (@MainActor () -> Void)?
 
     @MainActor
-    func prepareTabsForCleanup(_ tabs: [TabViewModel],
-                               completion: @escaping () -> Void) {
-        guard !tabs.isEmpty else {
-            completion()
-            return
-        }
+    func prepareTabsForCleanup(_ tabs: [TabViewModel]) async {
+        guard !tabs.isEmpty else { return }
 
         assert(self.completion == nil)
-        self.completion = completion
+        await withCheckedContinuation { continuation in
+            self.completion = {
+                continuation.resume()
+            }
 
-        numberOfTabs = tabs.count
-        tabs.forEach { $0.prepareForDataClearing(caller: self) }
+            numberOfTabs = tabs.count
+            tabs.forEach { $0.prepareForDataClearing(caller: self) }
+        }
     }
 
     private func notifyIfDone() {

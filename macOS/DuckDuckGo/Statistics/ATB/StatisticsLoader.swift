@@ -36,6 +36,8 @@ final class StatisticsLoader {
     private let usageSegmentation: UsageSegmenting
     private let parser = AtbParser()
     private var isAppRetentionRequestInProgress = false
+    var isSearchRetentionRequestInProgress = false
+    var isDuckAIRetentionRequestInProgress = false
     private let fireSearchExperimentPixels: () -> Void
     private let fireAppRetentionExperimentPixels: () -> Void
 
@@ -55,13 +57,16 @@ final class StatisticsLoader {
         self.fireAppRetentionExperimentPixels = fireAppRetentionExperimentPixels
     }
 
-    func refreshRetentionAtb(isSearch: Bool, completion: @escaping Completion = {}) {
+    func refreshRetentionAtbOnNavigation(isSearch: Bool,
+                                         isDuckAI: Bool,
+                                         completion: @escaping Completion = {})
+    {
         load {
             dispatchPrecondition(condition: .onQueue(.main))
 
-            if isSearch {
+            if isSearch && !isDuckAI {
                 self.refreshSearchRetentionAtb {
-                    self.refreshRetentionAtb(isSearch: false) {
+                    self.refreshRetentionAtbOnNavigation(isSearch: false, isDuckAI: false) {
                         completion()
                     }
                 }
@@ -72,11 +77,34 @@ final class StatisticsLoader {
                     self.fireDailyOsVersionCounterPixel()
                 }
                 self.fireDockPixel()
-            } else if !self.statisticsStore.isAppRetentionFiredToday {
+            }
+            if !self.statisticsStore.isAppRetentionFiredToday {
                 self.refreshAppRetentionAtb(completion: completion)
                 self.fireAppRetentionExperimentPixels()
             } else {
                 self.fireAppRetentionExperimentPixels()
+                completion()
+            }
+        }
+    }
+
+    func refreshRetentionAtbOnDuckAiPromptSubmition(completion: @escaping Completion = {}) {
+        load {
+            dispatchPrecondition(condition: .onQueue(.main))
+
+            let group = DispatchGroup()
+            group.enter()
+            group.enter()
+
+            self.refreshSearchRetentionAtb {
+                group.leave()
+            }
+
+            self.refreshDuckAIRetentionAtb {
+                group.leave()
+            }
+
+            group.notify(queue: .main) {
                 completion()
             }
         }
@@ -154,6 +182,11 @@ final class StatisticsLoader {
     func refreshSearchRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
 
+        guard !isSearchRetentionRequestInProgress else {
+            completion()
+            return
+        }
+
         guard let atbWithVariant = statisticsStore.atbWithVariant,
               let searchRetentionAtb = statisticsStore.searchRetentionAtb ?? statisticsStore.atb
         else {
@@ -166,10 +199,13 @@ final class StatisticsLoader {
 
         Logger.atb.debug("Requesting search retention ATB")
 
+        isSearchRetentionRequestInProgress = true
+
         let url = URL.searchAtb(atbWithVariant: atbWithVariant, setAtb: searchRetentionAtb, isSignedIntoEmailProtection: emailManager.isSignedIn)
         let configuration = APIRequest.Configuration(url: url)
         let request = APIRequest(configuration: configuration, urlSession: URLSession.session(useMainThreadCallbackQueue: true))
         request.fetch { (response, error) in
+            self.isSearchRetentionRequestInProgress = false
             if let error = error {
                 Logger.atb.error("Search atb request failed with error \(error.localizedDescription)")
                 completion()
@@ -226,6 +262,50 @@ final class StatisticsLoader {
                 self.statisticsStore.lastAppRetentionRequestDate = Date()
                 self.storeUpdateVersionIfPresent(atb)
                 self.updateUsageSegmentationWithAtb(atb, activityType: .appUse)
+            }
+
+            completion()
+        }
+    }
+
+    func refreshDuckAIRetentionAtb(completion: @escaping Completion = {}) {
+        dispatchPrecondition(condition: .onQueue(.main))
+
+        guard !isDuckAIRetentionRequestInProgress else {
+            completion()
+            return
+        }
+
+        guard let atbWithVariant = statisticsStore.atbWithVariant else {
+            requestInstallStatistics {
+                self.updateUsageSegmentationAfterInstall(activityType: .duckAI)
+                completion()
+            }
+            return
+        }
+
+        Logger.atb.debug("Requesting Duck.ai retention ATB")
+
+        let duckAIRetentionAtb = statisticsStore.duckAIRetentionAtb
+
+        let url = URL.duckAIAtb(atbWithVariant: atbWithVariant, setAtb: duckAIRetentionAtb)
+        let configuration = APIRequest.Configuration(url: url)
+        let request = APIRequest(configuration: configuration, urlSession: URLSession.session(useMainThreadCallbackQueue: true))
+        isDuckAIRetentionRequestInProgress = true
+        request.fetch { (response, error) in
+            self.isDuckAIRetentionRequestInProgress = false
+            if let error = error {
+                Logger.atb.error("Duck.ai atb request failed with error \(error.localizedDescription)")
+                completion()
+                return
+            }
+
+            Logger.atb.debug("Duck.ai retention ATB request succeeded")
+
+            if let data = response?.data, let atb  = try? self.parser.convert(fromJsonData: data) {
+                self.statisticsStore.duckAIRetentionAtb = atb.version
+                self.storeUpdateVersionIfPresent(atb)
+                self.updateUsageSegmentationWithAtb(atb, activityType: .duckAI)
             }
 
             completion()

@@ -56,6 +56,8 @@ public struct BrokerProfileQueryData: Sendable {
     }
 }
 
+extension BrokerProfileQueryData: SubJobContextProviding {}
+
 public extension BrokerProfileQueryData {
     func namesOfBrokersScannedIncludingMirrorSites() -> [String] {
         guard scanJobData.lastRunDate != nil else {

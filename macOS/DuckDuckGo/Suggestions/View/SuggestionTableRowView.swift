@@ -22,7 +22,7 @@ final class SuggestionTableRowView: NSTableRowView {
 
     static let identifier = "SuggestionTableRowView"
 
-    var visualStyle: VisualStyleProviding?
+    var theme: ThemeStyleProviding?
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -41,7 +41,7 @@ final class SuggestionTableRowView: NSTableRowView {
             updateCellView()
             updateBackgroundColor()
 
-            layer?.cornerRadius = visualStyle?.addressBarStyleProvider.suggestionHighlightCornerRadius ?? 3
+            layer?.cornerRadius = theme?.addressBarStyleProvider.suggestionHighlightCornerRadius ?? 3
         }
     }
 
@@ -53,8 +53,10 @@ final class SuggestionTableRowView: NSTableRowView {
     }
 
     private func updateBackgroundColor() {
-        let accentColor: NSColor = isBurner ? .burnerAccent : .controlAccentColor
-        backgroundColor = isSelected ? accentColor : .clear
+        let mouseOverColor: NSColor = theme?.palette.accentPrimary ?? .controlAccentColor
+        let selectedColor: NSColor = isBurner ? .burnerAccent : mouseOverColor
+
+        backgroundColor = isSelected ? selectedColor : .clear
     }
 
     private func updateCellView() {

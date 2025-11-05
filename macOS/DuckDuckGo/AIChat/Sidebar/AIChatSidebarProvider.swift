@@ -16,7 +16,10 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
+import FeatureFlags
+import BrowserServicesKit
 
 typealias TabIdentifier = String
 typealias AIChatSidebarsByTab = [TabIdentifier: AIChatSidebar]
@@ -27,17 +30,17 @@ protocol AIChatSidebarProviding: AnyObject {
     /// The width of the chat sidebar in points.
     var sidebarWidth: CGFloat { get }
 
-    /// Returns the existing cached chat sidebar instance for the specified tab, if one exists.
+    /// Returns the existing cached sidebar view controller for the specified tab, if one exists.
     /// - Parameter tabID: The unique identifier of the tab
-    /// - Returns: An `AIChatSidebar` instance associated with the tab, or `nil` if no sidebar exists
-    func getSidebar(for tabID: TabIdentifier) -> AIChatSidebar?
+    /// - Returns: An `AIChatSidebarViewController` instance associated with the tab, or `nil` if no view controller exists
+    func getSidebarViewController(for tabID: TabIdentifier) -> AIChatSidebarViewController?
 
-    /// Creates and caches a new chat sidebar instance for the specified tab.
+    /// Creates and caches a new sidebar view controller for the specified tab.
     /// - Parameters:
     ///   - tabID: The unique identifier of the tab
     ///   - burnerMode: The burner mode configuration for the sidebar
-    /// - Returns: A newly created `AIChatSidebar` instance
-    func makeSidebar(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebar
+    /// - Returns: A newly created `AIChatSidebarViewController` instance
+    func makeSidebarViewController(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebarViewController
 
     /// Checks if a sidebar is currently being displayed for the specified tab.
     /// - Parameter tabID: The unique identifier of the tab
@@ -56,6 +59,9 @@ protocol AIChatSidebarProviding: AnyObject {
     /// This dictionary maintains the state of all chat sidebars across different browser tabs.
     var sidebarsByTab: AIChatSidebarsByTab { get }
 
+    /// Publishes events whenever `sidebarsByTab` gets updated.
+    var sidebarsByTabPublisher: AnyPublisher<AIChatSidebarsByTab, Never> { get }
+
     /// Restores the sidebar provider's state from a previously saved model.
     /// This method cleans up all existing sidebars and replaces the current model with the provided one.
     /// - Parameter model: The sidebar model to restore, containing tab IDs mapped to their chat sidebars
@@ -68,35 +74,80 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
         static let sidebarWidth: CGFloat = 400
     }
 
+    private let featureFlagger: FeatureFlagger
+
     var sidebarWidth: CGFloat { Constants.sidebarWidth }
 
-    private(set) var sidebarsByTab: AIChatSidebarsByTab
+    @Published private(set) var sidebarsByTab: AIChatSidebarsByTab
 
-    init(sidebarsByTab: AIChatSidebarsByTab? = nil) {
+    var sidebarsByTabPublisher: AnyPublisher<AIChatSidebarsByTab, Never> {
+        $sidebarsByTab.dropFirst().eraseToAnyPublisher()
+    }
+
+    private var shouldKeepSession: Bool {
+        featureFlagger.isFeatureOn(.aiChatKeepSession)
+    }
+
+    init(sidebarsByTab: AIChatSidebarsByTab? = nil,
+         featureFlagger: FeatureFlagger) {
         self.sidebarsByTab = sidebarsByTab ?? [:]
+        self.featureFlagger = featureFlagger
     }
 
-    func getSidebar(for tabID: TabIdentifier) -> AIChatSidebar? {
-        return sidebarsByTab[tabID]
+    func getSidebarViewController(for tabID: TabIdentifier) -> AIChatSidebarViewController? {
+        return sidebarsByTab[tabID]?.sidebarViewController
     }
 
-    func makeSidebar(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebar {
+    func makeSidebarViewController(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebarViewController {
+        let sidebar = getCurrentSidebar(for: tabID, burnerMode: burnerMode)
+
+        if let existingViewController = sidebar.sidebarViewController {
+            return existingViewController
+        }
+
+        let sidebarViewController = AIChatSidebarViewController(currentAIChatURL: sidebar.currentAIChatURL, burnerMode: burnerMode)
+        if let restorationData = sidebar.restorationData {
+            sidebarViewController.setAIChatRestorationData(restorationData)
+        }
+        sidebar.sidebarViewController = sidebarViewController
+
+        return sidebarViewController
+    }
+
+    private func getCurrentSidebar(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebar {
+        let aiChatRemoteSettings = AIChatRemoteSettings()
+        var currentSidebar = sidebarsByTab[tabID]
+
+        if let existingSidebar = currentSidebar,
+           let hiddenAt = existingSidebar.hiddenAt,
+           hiddenAt.minutesSinceNow() > aiChatRemoteSettings.sessionTimeoutMinutes {
+            // If the sidebar was hidden past the session timeout setting unload it and create a new one
+            existingSidebar.unloadViewController(persistingState: shouldKeepSession)
+            sidebarsByTab.removeValue(forKey: tabID)
+
+            currentSidebar = nil
+        }
+
+        return currentSidebar ?? makeSidebar(for: tabID, burnerMode: burnerMode)
+    }
+
+    private func makeSidebar(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebar {
         let sidebar = AIChatSidebar(burnerMode: burnerMode)
         sidebarsByTab[tabID] = sidebar
         return sidebar
     }
 
     func isShowingSidebar(for tabID: TabIdentifier) -> Bool {
-        return getSidebar(for: tabID) != nil
+        sidebarsByTab[tabID]?.isPresented ?? false
     }
 
     func handleSidebarDidClose(for tabID: TabIdentifier) {
-        guard let tabSidebar = getSidebar(for: tabID) else {
-            return
+        sidebarsByTab[tabID]?.unloadViewController(persistingState: shouldKeepSession) // This already calls setHidden() internally
+
+        // If keep session is disables always remove sidebar data model
+        if !shouldKeepSession {
+            sidebarsByTab.removeValue(forKey: tabID)
         }
-        tabSidebar.sidebarViewController.stopLoading()
-        tabSidebar.sidebarViewController.removeCompletely()
-        sidebarsByTab.removeValue(forKey: tabID)
     }
 
     func cleanUp(for currentTabIDs: [TabIdentifier]) {
@@ -104,6 +155,7 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
 
         for tabID in tabIDsForRemoval {
             handleSidebarDidClose(for: tabID)
+            sidebarsByTab.removeValue(forKey: tabID)
         }
     }
 

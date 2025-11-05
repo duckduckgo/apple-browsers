@@ -38,15 +38,15 @@ public extension APIResponseV2 {
         decoder.dateDecodingStrategy = .millisecondsSince1970
 
         guard let data = self.data else {
-            throw APIRequestV2.Error.emptyResponseBody
+            throw APIRequestV2Error.emptyResponseBody
         }
 
         Logger.networking.debug("Decoding APIResponse body as \(T.self)")
         switch T.self {
         case is String.Type:
             guard let resultString = String(data: data, encoding: .utf8) as? T else {
-                let error = APIRequestV2.Error.invalidDataType
-                Logger.networking.error("Error: \(error.localizedDescription)")
+                let error = APIRequestV2Error.invalidDataType
+                Logger.networking.error("Error: \(String(describing: error), privacy: .public)")
                 throw error
             }
             return resultString

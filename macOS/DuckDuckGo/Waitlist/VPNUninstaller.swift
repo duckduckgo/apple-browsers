@@ -75,7 +75,7 @@ final class VPNUninstaller: VPNUninstalling {
         }
     }
 
-    enum IPCUninstallAttempt: PixelKitEventV2 {
+    enum IPCUninstallAttempt: PixelKitEvent {
         case prevented
         case begin
         case cancelled(_ reason: UninstallCancellationReason)
@@ -113,17 +113,6 @@ final class VPNUninstaller: VPNUninstalling {
             }
         }
 
-        var error: Error? {
-            switch self {
-            case .prevented,
-                    .begin,
-                    .cancelled,
-                    .success:
-                return nil
-            case .failure(let error):
-                return error
-            }
-        }
     }
 
     private let ipcServiceLauncher: IPCServiceLauncher

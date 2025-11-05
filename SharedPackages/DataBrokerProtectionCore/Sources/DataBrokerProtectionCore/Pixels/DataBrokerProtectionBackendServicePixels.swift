@@ -25,6 +25,8 @@ public enum BackendServiceCallSite: String {
     case getEmail
     case submitCaptchaInformationRequest
     case submitCaptchaToBeResolvedRequest
+    case fetchEmailData
+    case deleteEmailData
 }
 
 public protocol DataBrokerProtectionBackendServicePixels {

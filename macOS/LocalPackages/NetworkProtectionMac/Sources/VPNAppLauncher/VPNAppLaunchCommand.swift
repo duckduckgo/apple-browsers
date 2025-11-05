@@ -29,7 +29,7 @@ public enum VPNAppLaunchCommand: Codable, AppLaunchCommand {
     case showSettings
     case showVPNLocations
     case moveAppToApplications
-    case showPrivacyPro
+    case showSubscription
 
     var commandURL: String? {
         switch self {
@@ -51,7 +51,7 @@ public enum VPNAppLaunchCommand: Codable, AppLaunchCommand {
             return "networkprotection://show-settings/locations"
         case .moveAppToApplications:
             return "networkprotection://move-app-to-applications"
-        case .showPrivacyPro:
+        case .showSubscription:
             return "networkprotection://show-privacy-pro"
         }
     }

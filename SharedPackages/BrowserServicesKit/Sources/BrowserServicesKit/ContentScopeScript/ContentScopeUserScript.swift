@@ -45,22 +45,26 @@ public struct ContentScopeExperimentData: Encodable, Equatable {
 
 public final class ContentScopeProperties: Encodable {
     public let globalPrivacyControlValue: Bool
-    public let debug: Bool = false
+    public let debug: Bool
     public let sessionKey: String
     public let messageSecret: String
     public let languageCode: String
-    public let platform = ContentScopePlatform()
+    public let platform: ContentScopePlatform
     public let features: [String: ContentScopeFeature]
     public var currentCohorts: [ContentScopeExperimentData]
 
     public init(gpcEnabled: Bool,
                 sessionKey: String,
                 messageSecret: String,
+                isInternalUser: Bool = false,
+                debug: Bool = false,
                 featureToggles: ContentScopeFeatureToggles,
                 currentCohorts: [ContentScopeExperimentData] = []) {
         self.globalPrivacyControlValue = gpcEnabled
+        self.debug = debug
         self.sessionKey = sessionKey
         self.messageSecret = messageSecret
+        self.platform = ContentScopePlatform(isInternal: isInternalUser, version: AppVersion.shared.versionNumber)
         languageCode = Locale.current.languageCode ?? "en"
         features = [
             "autofill": ContentScopeFeature(featureToggles: featureToggles)
@@ -181,12 +185,21 @@ public struct ContentScopePlatform: Encodable {
     #else
     let name = "unknown"
     #endif
+
+    let `internal`: Bool
+    let version: String
+
+    init(isInternal: Bool = false, version: String = "") {
+        self.internal = isInternal
+        self.version = version
+    }
 }
 
 public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessaging, UserScriptWithContentScope {
 
     public var broker: UserScriptMessageBroker
     public let isIsolated: Bool
+    public let allowedNonisolatedFeatures: [String]
     public var messageNames: [String] = []
     public weak var delegate: ContentScopeUserScriptDelegate?
 
@@ -198,21 +211,23 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
     public init(_ privacyConfigManager: PrivacyConfigurationManaging,
                 properties: ContentScopeProperties,
                 isIsolated: Bool = false,
+                allowedNonisolatedFeatures: [String] = [],
                 privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
-    ) {
+    ) throws {
         self.isIsolated = isIsolated
+        self.allowedNonisolatedFeatures = allowedNonisolatedFeatures
         let contextName = self.isIsolated ? MessageName.contentScopeScriptsIsolated.rawValue : MessageName.contentScopeScripts.rawValue
 
-        broker = UserScriptMessageBroker(context: contextName)
+        broker = UserScriptMessageBroker(context: contextName, requiresRunInPageContentWorld: !isIsolated)
 
         messageNames = [contextName]
 
-        source = ContentScopeUserScript.generateSource(
-                privacyConfigManager,
-                properties: properties,
-                isolated: isIsolated,
-                config: broker.messagingConfig(),
-                privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator
+        source = try ContentScopeUserScript.generateSource(
+            privacyConfigManager,
+            properties: properties,
+            isolated: isIsolated,
+            config: broker.messagingConfig(),
+            privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator
         )
     }
 
@@ -221,7 +236,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                                       isolated: Bool,
                                       config: WebkitMessagingConfig,
                                       privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
-    ) -> String {
+    ) throws -> String {
         let privacyConfigJsonData = privacyConfigurationJSONGenerator?.privacyConfiguration ?? privacyConfigurationManager.currentConfig
         guard let privacyConfigJson = String(data: privacyConfigJsonData, encoding: .utf8),
               let userUnprotectedDomains = try? JSONEncoder().encode(privacyConfigurationManager.privacyConfig.userUnprotectedDomains),
@@ -236,7 +251,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
 
         let jsInclude = isolated ? "contentScopeIsolated" : "contentScope"
 
-        return loadJS(jsInclude, from: ContentScopeScripts.Bundle, withReplacements: [
+        return try loadJS(jsInclude, from: ContentScopeScripts.Bundle, withReplacements: [
             "$CONTENT_SCOPE$": privacyConfigJson,
             "$USER_UNPROTECTED_DOMAINS$": userUnprotectedDomainsString,
             "$USER_PREFERENCES$": jsonPropertiesString,
@@ -257,7 +272,7 @@ extension ContentScopeUserScript: WKScriptMessageHandlerWithReply {
                                       didReceive message: WKScriptMessage) async -> (Any?, String?) {
         propagateDebugFlag(message)
         // Don't propagate the message for ContentScopeScript non isolated context
-        if message.name == MessageName.contentScopeScripts.rawValue {
+        if message.name == MessageName.contentScopeScripts.rawValue && !isAllowedNonisolatedFeature(message) {
             return (nil, nil)
         }
         // Propagate the message for ContentScopeScriptIsolated and other context like "dbpui"
@@ -269,6 +284,16 @@ extension ContentScopeUserScript: WKScriptMessageHandlerWithReply {
             // forward uncaught errors to the client
             return (nil, error.localizedDescription)
         }
+    }
+
+    private func isAllowedNonisolatedFeature(_ message: WKScriptMessage) -> Bool {
+        guard !allowedNonisolatedFeatures.isEmpty else {
+            return false
+        }
+        guard let featureName = (message.messageBody as? [String: Any])?["featureName"] as? String else {
+            return false
+        }
+        return allowedNonisolatedFeatures.contains(featureName)
     }
 
     @MainActor

@@ -186,13 +186,15 @@ public struct DBPUIDataBroker: Codable, Hashable {
     public let date: Double?
     public let parentURL: String?
     public let optOutUrl: String
+    public let removedAt: Double?
 
-    public init(name: String, url: String, date: Double? = nil, parentURL: String?, optOutUrl: String) {
+    public init(name: String, url: String, date: Double? = nil, parentURL: String?, optOutUrl: String, removedAt: Double? = nil) {
         self.name = name
         self.url = url
         self.date = date
         self.parentURL = parentURL
         self.optOutUrl = optOutUrl
+        self.removedAt = removedAt
     }
 
     public func hash(into hasher: inout Hasher) {
@@ -207,6 +209,7 @@ public extension DBPUIDataBroker {
         self.date = date?.timeIntervalSince1970
         parentURL = dataBroker.parent
         optOutUrl = dataBroker.optOutUrl
+        removedAt = dataBroker.removedAt?.timeIntervalSince1970
     }
 
     init(from mirrorSite: MirrorSite, parentBroker: DataBroker, withDate date: Date? = nil) {
@@ -215,6 +218,7 @@ public extension DBPUIDataBroker {
         self.date = date?.timeIntervalSince1970
         parentURL = parentBroker.url
         optOutUrl = parentBroker.optOutUrl
+        removedAt = (mirrorSite.removedAt ?? parentBroker.removedAt)?.timeIntervalSince1970
     }
 
     static func brokerWithMirrorSites(from broker: DataBroker, withDate date: Date? = nil) -> [Self] {
@@ -273,11 +277,8 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
 
 extension DBPUIDataBrokerProfileMatch {
     public init(optOutJobData: OptOutJobData,
-                dataBrokerName: String,
-                dataBrokerURL: String,
-                dataBrokerParentURL: String?,
-                parentBrokerOptOutJobData: [OptOutJobData]?,
-                optOutUrl: String) {
+                dataBroker: DBPUIDataBroker,
+                parentBrokerOptOutJobData: [OptOutJobData]?) {
         let extractedProfile = optOutJobData.extractedProfile
 
         /*
@@ -313,7 +314,7 @@ extension DBPUIDataBrokerProfileMatch {
         } ?? false
 
         self.init(id: extractedProfile.id,
-                  dataBroker: DBPUIDataBroker(name: dataBrokerName, url: dataBrokerURL, parentURL: dataBrokerParentURL, optOutUrl: optOutUrl),
+                  dataBroker: dataBroker,
                   name: extractedProfile.fullName ?? "No name",
                   addresses: extractedProfile.addresses?.map { DBPUIUserProfileAddress(addressCityState: $0) } ?? [],
                   alternativeNames: extractedProfile.alternativeNames ?? [String](),
@@ -323,18 +324,6 @@ extension DBPUIDataBrokerProfileMatch {
                   estimatedRemovalDate: estimatedRemovalDate?.timeIntervalSince1970,
                   removedDate: extractedProfile.removedDate?.timeIntervalSince1970,
                   hasMatchingRecordOnParentBroker: hasFoundParentMatch)
-    }
-
-    public init(optOutJobData: OptOutJobData,
-                dataBroker: DataBroker,
-                parentBrokerOptOutJobData: [OptOutJobData]?,
-                optOutUrl: String) {
-        self.init(optOutJobData: optOutJobData,
-                  dataBrokerName: dataBroker.name,
-                  dataBrokerURL: dataBroker.url,
-                  dataBrokerParentURL: dataBroker.parent,
-                  parentBrokerOptOutJobData: parentBrokerOptOutJobData,
-                  optOutUrl: optOutUrl)
     }
 
     /// Generates an array of `DBPUIDataBrokerProfileMatch` objects from the provided query data.
@@ -364,9 +353,8 @@ extension DBPUIDataBrokerProfileMatch {
 
                 // Create a profile match for the current data broker and append it to the list of profiles.
                 profiles.append(DBPUIDataBrokerProfileMatch(optOutJobData: optOutJobData,
-                                                            dataBroker: dataBroker,
-                                                            parentBrokerOptOutJobData: parentBrokerOptOutJobData,
-                                                            optOutUrl: dataBroker.optOutUrl))
+                                                            dataBroker: DBPUIDataBroker(from: dataBroker),
+                                                            parentBrokerOptOutJobData: parentBrokerOptOutJobData))
 
                 // Handle mirror sites associated with the data broker.
                 if !dataBroker.mirrorSites.isEmpty {
@@ -374,11 +362,8 @@ extension DBPUIDataBrokerProfileMatch {
                     let mirrorSitesMatches = dataBroker.mirrorSites.compactMap { mirrorSite in
                         if mirrorSite.isExtant() {
                             return DBPUIDataBrokerProfileMatch(optOutJobData: optOutJobData,
-                                                               dataBrokerName: mirrorSite.name,
-                                                               dataBrokerURL: mirrorSite.url,
-                                                               dataBrokerParentURL: dataBroker.parent,
-                                                               parentBrokerOptOutJobData: parentBrokerOptOutJobData,
-                                                               optOutUrl: dataBroker.optOutUrl)
+                                                               dataBroker: DBPUIDataBroker(from: mirrorSite, parentBroker: dataBroker),
+                                                               parentBrokerOptOutJobData: parentBrokerOptOutJobData)
                         }
                         return nil
                     }

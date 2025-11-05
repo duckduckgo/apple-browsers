@@ -70,7 +70,7 @@ open class DefaultConfigurationManager: NSObject {
         NSFileCoordinator.addFilePresenter(self)
     }
 
-    deinit {
+    public func tearDown() {
         NSFileCoordinator.removeFilePresenter(self)
     }
 

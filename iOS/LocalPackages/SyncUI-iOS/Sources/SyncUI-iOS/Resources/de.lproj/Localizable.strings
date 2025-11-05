@@ -35,7 +35,7 @@
 "connect.with.server.sheet.button" = "„Synchronisieren und sichern“ aktivieren";
 
 /* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "Dadurch wird ein verschlüsseltes Backup deiner Lesezeichen und Passwörter auf dem sicheren Server von DuckDuckGo erstellt, der mit deinen anderen Geräten synchronisiert werden kann.";
+"connect.with.server.sheet.description.part1" = "Dadurch wird ein verschlüsseltes Backup deiner Lesezeichen und Autofill-Daten auf dem sicheren Server von DuckDuckGo erstellt, das mit deinen anderen Geräten synchronisiert werden kann.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Der Verschlüsselungsschlüssel wird nur auf deinem Gerät gespeichert, DuckDuckGo kann nicht darauf zugreifen.";
@@ -53,7 +53,13 @@
 "credentials.invalid.objects.present.description" = "credentials.invalid.objects.present.description";
 
 /* Alert title for invalid logins being filtered out of synced data */
-"credentials.invalid.objects.present.title" = "Einige Anmeldungen werden nicht synchronisiert, weil der Inhalt bestimmter Felder zu lang ist.";
+"credentials.invalid.objects.present.title" = "Einige Passwörter werden nicht synchronisiert, weil der Inhalt bestimmter Felder zu lang ist.";
+
+/* Do not translate - stringsdict entry */
+"creditcards.invalid.objects.present.description" = "creditcards.invalid.objects.present.description";
+
+/* Alert title for invalid credit cards being filtered out of synced data */
+"creditCards.invalid.objects.present.title" = "Einige Kreditkarten werden nicht synchronisiert, weil der Inhalt bestimmter Felder zu lang ist.";
 
 /* Delete Server Data - Button */
 "delete.server.data" = "Serverdaten deaktivieren und löschen ...";
@@ -130,8 +136,11 @@
 /* Button title for sync credentials limits exceeded warning to go to manage passwords */
 "prefrences.sync.credentials-limit-exceeded-action" = "Passwörter verwalten …";
 
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Kreditkarten verwalten …";
+
 /* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Deine Lesezeichen und Passwörter werden für die Synchronisation vorbereitet. Das sollte nur einen Moment dauern.";
+"preparing.to.sync.sheet.description" = "Deine Lesezeichen und Autofill-Daten werden für die Synchronisation vorbereitet. Das sollte nur einen Moment dauern.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Verbinden ...";
@@ -254,7 +263,7 @@
 "sync.get.other.devices.screen.title" = "DuckDuckGo herunterladen";
 
 /* Message included when sharing a url via the system share sheet */
-"sync.get.other.devices.share.link.message" = "Installiere den DuckDuckGo-Browser auf deinen Geräten, um deine Lesezeichen und Passwörter sicher zu synchronisieren:";
+"sync.get.other.devices.share.link.message" = "Installiere den DuckDuckGo-Browser auf deinen Geräten, um deine Lesezeichen sicher zu synchronisieren und Daten automatisch auszufüllen:";
 
 /* Sync Menu Path */
 "sync.menu.path" = "Einstellungen > Synchronisieren und sichern > Mit einem anderen Gerät synchronisieren";
@@ -278,7 +287,7 @@
 "sync.with.another.device.footer" = "Deine Daten sind Ende-zu-Ende-verschlüsselt. DuckDuckGo hat keinen Zugriff auf den Verschlüsselungsschlüssel.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Lesezeichen und Passwörter sicher zwischen deinen Geräten synchronisieren.";
+"sync.with.another.device.message" = "Lesezeichen und Autofill-Daten sicher zwischen deinen Geräten synchronisieren.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Synchronisierung beginnen";

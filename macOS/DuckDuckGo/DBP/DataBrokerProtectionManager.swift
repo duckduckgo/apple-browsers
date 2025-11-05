@@ -131,7 +131,9 @@ public final class DataBrokerProtectionManager {
 extension DataBrokerProtectionManager: DataBrokerProtectionDataManagerDelegate {
 
     public func dataBrokerProtectionDataManagerDidUpdateData() {
-        loginItemInterface.profileSaved()
+        Task {
+            await loginItemInterface.profileSaved()
+        }
     }
 
     public func dataBrokerProtectionDataManagerDidDeleteData() {

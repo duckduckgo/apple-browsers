@@ -22,6 +22,12 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Combine
 
+protocol NavigationActionBarViewAnimationDelegate: AnyObject {
+    func animateActionBarView(_ view: NavigationActionBarView,
+                              animations: @escaping () -> Void,
+                              completion: ((UIViewAnimatingPosition) -> Void)?)
+}
+
 final class NavigationActionBarView: UIView {
     
     // MARK: - Constants
@@ -39,6 +45,18 @@ final class NavigationActionBarView: UIView {
     }
     
     // MARK: - Properties
+
+    var isShowingGradient: Bool = true {
+        didSet {
+            backgroundGradientView.isHidden = !isShowingGradient
+            solidView.isHidden = !isShowingGradient
+        }
+    }
+
+    weak var animationDelegate: NavigationActionBarViewAnimationDelegate?
+
+    let isFloating: Bool
+
     private let viewModel: NavigationActionBarViewModel
     private var cancellables = Set<AnyCancellable>()
 
@@ -52,12 +70,13 @@ final class NavigationActionBarView: UIView {
     private let solidView = UIView()
 
     // MARK: - Initialization
-    init(viewModel: NavigationActionBarViewModel) {
+    init(viewModel: NavigationActionBarViewModel, isFloating: Bool) {
         self.viewModel = viewModel
+        self.isFloating = isFloating
         super.init(frame: .init(x: 0, y: 0, width: 300, height: 100))
         setupUI()
         setupBindings()
-        updateUI()
+        updateUI(animated: false)
     }
     
     required init?(coder: NSCoder) {
@@ -70,7 +89,6 @@ final class NavigationActionBarView: UIView {
     
     // MARK: - Setup
     private func setupUI() {
-        // Setup stack views
         mainStackView.axis = .horizontal
         mainStackView.spacing = Constants.buttonSpacing
         mainStackView.alignment = .fill
@@ -83,12 +101,10 @@ final class NavigationActionBarView: UIView {
 
         solidView.backgroundColor = UIColor(designSystemColor: .surface).withAlphaComponent(0.8)
 
-        // Setup buttons
         setupMicrophoneButton()
         setupNewLineButton()
         setupSearchButton()
         
-        // Add to stack views
         rightStackView.addArrangedSubview(microphoneButton)
         rightStackView.addArrangedSubview(newLineButton)
         rightStackView.addArrangedSubview(searchButton)
@@ -101,44 +117,60 @@ final class NavigationActionBarView: UIView {
         mainStackView.addArrangedSubview(rightStackView)
         
         // Add to view
-        addSubview(solidView)
-        addSubview(backgroundGradientView)
+        if isFloating {
+            addSubview(solidView)
+            addSubview(backgroundGradientView)
+        } else {
+            // If embed in another container,
+            // using layout margins prevents padding from influencing the layout if there are no buttons visible
+            rightStackView.layoutMargins = .init(top: 4, left: 8, bottom: 8, right: 8)
+        }
         addSubview(mainStackView)
         
-        // Setup constraints
         solidView.translatesAutoresizingMaskIntoConstraints = false
         mainStackView.translatesAutoresizingMaskIntoConstraints = false
         backgroundGradientView.translatesAutoresizingMaskIntoConstraints = false
-        
-        let mainStackMinHeightConstraint = mainStackView.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.buttonSize)
+
+        let mainStackPadding = isFloating ? Constants.padding : 0
+
         NSLayoutConstraint.activate([
-            // Main stack view constraints
-            mainStackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Constants.padding),
-            mainStackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Constants.padding),
-            mainStackView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: Constants.padding),
-            mainStackView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor, constant: -Constants.padding),
-            mainStackMinHeightConstraint,
-
-            // Background gradient should align with the keyboard (or bottom safe area)
-            backgroundGradientView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            backgroundGradientView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            backgroundGradientView.topAnchor.constraint(equalTo: mainStackView.topAnchor),
-            backgroundGradientView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor),
-
-            // Position the solid view under gradient and extend to the bottom of the view
-            solidView.topAnchor.constraint(equalTo: backgroundGradientView.bottomAnchor),
-            solidView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            solidView.leadingAnchor.constraint(equalTo: backgroundGradientView.leadingAnchor),
-            solidView.trailingAnchor.constraint(equalTo: backgroundGradientView.trailingAnchor),
+            mainStackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: mainStackPadding),
+            mainStackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -mainStackPadding),
+            mainStackView.topAnchor.constraint(greaterThanOrEqualTo: safeAreaLayoutGuide.topAnchor, constant: mainStackPadding),
 
             // Button size constraints
+            microphoneButton.widthAnchor.constraint(equalTo: microphoneButton.heightAnchor, multiplier: 1.0),
             microphoneButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            microphoneButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            newLineButton.widthAnchor.constraint(equalTo: newLineButton.heightAnchor, multiplier: 1.0),
             newLineButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            newLineButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            searchButton.widthAnchor.constraint(equalTo: searchButton.heightAnchor, multiplier: 1.0),
             searchButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
-            searchButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize)
         ])
+
+        if isFloating {
+            NSLayoutConstraint.activate([
+                // Ensure minimum height, so that gradient is visible
+                mainStackView.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.buttonSize),
+
+                // Stick to the keyboard's top
+                mainStackView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor, constant: -mainStackPadding),
+
+                // Background gradient should align with the keyboard (or bottom safe area)
+                backgroundGradientView.leadingAnchor.constraint(equalTo: leadingAnchor),
+                backgroundGradientView.trailingAnchor.constraint(equalTo: trailingAnchor),
+                backgroundGradientView.topAnchor.constraint(equalTo: mainStackView.topAnchor),
+                backgroundGradientView.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor),
+
+                // Position the solid view under gradient and extend to the bottom of the view
+                solidView.topAnchor.constraint(equalTo: backgroundGradientView.bottomAnchor),
+                solidView.bottomAnchor.constraint(equalTo: bottomAnchor),
+                solidView.leadingAnchor.constraint(equalTo: backgroundGradientView.leadingAnchor),
+                solidView.trailingAnchor.constraint(equalTo: backgroundGradientView.trailingAnchor),
+            ])
+        } else {
+            // Anchor to superview safe area. Not floating means it's in a externally controlled container
+            mainStackView.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor).isActive = true
+        }
     }
 
     private func setupMicrophoneButton() {
@@ -147,12 +179,13 @@ final class NavigationActionBarView: UIView {
     }
     
     private func setupNewLineButton() {
-        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
-        let returnImage = UIImage(systemName: "return", withConfiguration: config)
-        newLineButton.setIcon(returnImage)
+        newLineButton.isShadowHidden = !isFloating
+        newLineButton.setIcon(DesignSystemImages.Glyphs.Size24.enter)
         newLineButton.setColors(
-            foreground: UIColor(designSystemColor: .textPrimary),
-            background: UIColor(designSystemColor: .surface)
+            foreground: UIColor(designSystemColor: .icons),
+            background: UIColor(designSystemColor: .surfaceTertiary),
+            pressedForeground: UIColor(designSystemColor: .icons),
+            pressedBackground: UIColor(designSystemColor: .surface)
         )
         newLineButton.addTarget(self, action: #selector(newLineTapped), for: .touchUpInside)
     }
@@ -212,22 +245,48 @@ final class NavigationActionBarView: UIView {
     }
 
     // MARK: - UI Updates
-    private func updateUI() {
-        updateMicrophoneButton()
-        updateSearchButton()
-        updateButtonVisibility()
+    private func updateUI(animated: Bool = true) {
+        self.updateMicrophoneButton()
+        self.updateSearchButton()
+
+        UIView.performWithoutAnimation {
+            self.updateButtonVisibility()
+            self.updateButtonsStackVisibility()
+
+            // This makes stackviews position their arranged subviews properly
+            // so they are not sliding from the side during animation.
+            self.layoutIfNeeded()
+        }
+
+        if animated, let animationDelegate {
+            // Signal parent controller to update views so that all constraints are
+            // re-layouted in one animation block.
+            animationDelegate.animateActionBarView(self, animations: {}, completion: nil)
+        }
+    }
+
+    private func updateButtonsStackVisibility() {
+        guard !isFloating else { return }
+
+        let allButtonsHidden = rightStackView.arrangedSubviews.allSatisfy(\.isHidden)
+        rightStackView.isHidden = allButtonsHidden
+        rightStackView.alpha = allButtonsHidden ? 0.0 : 1.0
+        rightStackView.isLayoutMarginsRelativeArrangement = !allButtonsHidden
     }
 
     private func updateMicrophoneButton() {
         let isEnabled = viewModel.isVoiceSearchEnabled
+        microphoneButton.isShadowHidden = !isFloating
         microphoneButton.alpha = isEnabled ? 1.0 : 0.5
         microphoneButton.isEnabled = isEnabled
         microphoneButton.setColors(
-            foreground: UIColor(designSystemColor: .textPrimary),
-            background: UIColor(designSystemColor: .surface)
+            foreground: UIColor(designSystemColor: .icons),
+            background: UIColor(designSystemColor: .surfaceTertiary),
+            pressedForeground: UIColor(designSystemColor: .icons),
+            pressedBackground: UIColor(designSystemColor: .surface)
         )
     }
-    
+
     private func updateSearchButton() {
         let hasText = viewModel.hasText
         let isValidURL = viewModel.isCurrentTextValidURL
@@ -240,11 +299,14 @@ final class NavigationActionBarView: UIView {
                 return DesignSystemImages.Glyphs.Size24.arrowRightSmall
             }
         }()
-        
+
+        searchButton.isShadowHidden = !isFloating
         searchButton.setIcon(icon)
         searchButton.setColors(
-            foreground: hasText ? .white : UIColor(designSystemColor: .textPlaceholder),
-            background: hasText ? UIColor(designSystemColor: .accent) : UIColor(designSystemColor: .surface)
+            foreground: UIColor(designSystemColor: .accentContentPrimary),
+            background: UIColor(designSystemColor: .accent),
+            pressedForeground: UIColor(designSystemColor: .accentContentPrimary),
+            pressedBackground: UIColor(designSystemColor: .accentTertiary)
         )
         searchButton.isEnabled = hasText
         
@@ -254,14 +316,19 @@ final class NavigationActionBarView: UIView {
     }
     
     private func updateButtonVisibility() {
+        let hasText = viewModel.hasText
+
         let shouldShowMicButton = viewModel.shouldShowMicButton
         microphoneButton.isHidden = !shouldShowMicButton
-        
-        let shouldShowNewLineButton = viewModel.isKeyboardVisible && viewModel.hasText
+        microphoneButton.alpha = shouldShowMicButton ? 1.0 : 0.0
+
+        let shouldShowNewLineButton = viewModel.isKeyboardVisible && viewModel.hasText && !viewModel.isSearchMode
         newLineButton.isHidden = !shouldShowNewLineButton
-        
+        newLineButton.alpha = shouldShowNewLineButton ? 1.0 : 0.0
+
         let shouldShowSearchButton = viewModel.hasText
         searchButton.isHidden = !shouldShowSearchButton
+        searchButton.alpha = shouldShowSearchButton ? (hasText ? 1.0 : 0.5) : 0.0
     }
 
     // MARK: - Touch Handling
@@ -296,6 +363,15 @@ private class CircularButton: UIButton {
 
     private let secondShadowLayer = CALayer()
     private var definedBackgroundColor: UIColor?
+    private var definedForegroundColor: UIColor?
+    private var definedPressedBackgroundColor: UIColor?
+    private var definedPressedForegroundColor: UIColor?
+
+    var isShadowHidden: Bool = false {
+        didSet {
+            updateShadowVisibility()
+        }
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -311,13 +387,11 @@ private class CircularButton: UIButton {
         layer.cornerRadius = NavigationActionBarView.Constants.buttonSize / 2
         layer.masksToBounds = false
         
-        // Add shadows
         layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
         layer.shadowOpacity = 1.0
         layer.shadowOffset = CGSize(width: 0, height: NavigationActionBarView.Constants.shadowOffset1Y)
         layer.shadowRadius = NavigationActionBarView.Constants.shadowRadius1
         
-        // Add second shadow layer
         secondShadowLayer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
         secondShadowLayer.shadowOpacity = 1.0
         secondShadowLayer.shadowOffset = CGSize(width: 0, height: NavigationActionBarView.Constants.shadowOffset2Y)
@@ -327,12 +401,30 @@ private class CircularButton: UIButton {
         
         imageView?.contentMode = .scaleAspectFit
         adjustsImageWhenHighlighted = false
+
+        updateShadowVisibility()
+    }
+
+    private func updateShadowVisibility() {
+        if isShadowHidden {
+            layer.shadowOpacity = 0.0
+            secondShadowLayer.shadowOpacity = 0.0
+        } else {
+            layer.shadowOpacity = 1.0
+            secondShadowLayer.shadowOpacity = 1.0
+        }
     }
 
     override var isHighlighted: Bool {
         didSet {
             UIView.animate(withDuration: 0.15) {
-                self.backgroundColor = self.isHighlighted ? self.definedBackgroundColor?.withAlphaComponent(0.8) : self.definedBackgroundColor
+                if self.isHighlighted {
+                    self.backgroundColor = self.definedPressedBackgroundColor ?? self.definedBackgroundColor?.withAlphaComponent(0.8)
+                    self.imageView?.tintColor = self.definedPressedForegroundColor ?? self.definedForegroundColor
+                } else {
+                    self.backgroundColor = self.definedBackgroundColor
+                    self.imageView?.tintColor = self.definedForegroundColor
+                }
             }
         }
     }
@@ -342,8 +434,12 @@ private class CircularButton: UIButton {
         imageView?.tintColor = UIColor(designSystemColor: .textPrimary)
     }
     
-    func setColors(foreground: UIColor, background: UIColor) {
+    func setColors(foreground: UIColor, background: UIColor, pressedForeground: UIColor? = nil, pressedBackground: UIColor? = nil) {
+        definedForegroundColor = foreground
         definedBackgroundColor = background
+        definedPressedForegroundColor = pressedForeground
+        definedPressedBackgroundColor = pressedBackground
+        
         backgroundColor = background
         imageView?.tintColor = foreground
         setTitleColor(foreground, for: .normal)

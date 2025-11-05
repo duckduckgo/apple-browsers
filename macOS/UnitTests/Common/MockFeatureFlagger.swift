@@ -34,4 +34,8 @@ extension MockFeatureFlagger {
         }
     }
 
+    func enableFeatures(_ features: [FeatureFlag]) {
+        enabledFeatureFlags = features
+    }
+
 }

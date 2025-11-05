@@ -17,6 +17,7 @@
 //
 
 import Bookmarks
+import Common
 import CoreData
 import DDGSync
 import Foundation
@@ -105,7 +106,8 @@ extension BookmarkEntity {
 
     func update(with syncable: SyncableBookmarkAdapter,
                 in context: NSManagedObjectContext,
-                decryptedUsing decrypt: (String) throws -> String) throws {
+                decryptedUsing decrypt: (String) throws -> String,
+                metricsEvents: EventMapping<MetricsEvent>? = nil) throws {
         guard !syncable.isDeleted else {
             context.delete(self)
             return

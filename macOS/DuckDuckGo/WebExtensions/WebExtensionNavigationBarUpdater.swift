@@ -16,28 +16,26 @@
 //  limitations under the License.
 //
 
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-
 import WebKit
 
 @available(macOS 15.4, *)
 @MainActor
 final class WebExtensionNavigationBarUpdater {
 
-    private let container: NSStackView
+    private let getContainer: @MainActor () -> NSStackView?
     private var buttons = Set<MouseOverButton>()
-    private let webExtensionManager: WebExtensionManager
+    private let webExtensionManager: WebExtensionManaging
 
-    init(container: NSStackView, webExtensionManager: WebExtensionManager = .shared) {
-        self.container = container
+    init(webExtensionManager: WebExtensionManaging, container getContainer: @escaping @autoclosure @MainActor () -> NSStackView?) {
+        self.getContainer = getContainer
         self.webExtensionManager = webExtensionManager
     }
 
     /// Starts updating in the background.
     ///
     func startUpdating() async {
-        Task { [weak self] in
-            await self?.runUpdateLoop()
+        Task {
+            await runUpdateLoop()
         }
     }
 
@@ -46,17 +44,28 @@ final class WebExtensionNavigationBarUpdater {
     /// This won't return until updates end, so be very mindful of where this is called.
     ///
     func runUpdateLoop() async {
-        for await _ in webExtensionManager.extensionUpdates {
-            let loadedExtensions = webExtensionManager.loadedExtensions
-            removeButtons(forExtensionsRemovedFrom: loadedExtensions)
-            addButtons(forExtensionsAddedTo: loadedExtensions)
+        // We run this once initially to make sure we're up to date
+        if let container = getContainer() {
+            updateLoadedExtensions(in: container)
+        } else {
+            return
+        }
 
-            container.needsDisplay = true
+        for await _ in webExtensionManager.extensionUpdates {
+            guard let container = getContainer() else { return }
+            updateLoadedExtensions(in: container)
         }
     }
 
-    private func removeButtons(forExtensionsRemovedFrom loadedExtensions: Set<WKWebExtensionContext>) {
+    private func updateLoadedExtensions(in container: NSStackView) {
+        let loadedExtensions = webExtensionManager.loadedExtensions
+        removeButtons(forExtensionsRemovedFrom: loadedExtensions)
+        addButtons(to: container, forExtensionsAddedTo: loadedExtensions)
 
+        container.needsDisplay = true
+    }
+
+    private func removeButtons(forExtensionsRemovedFrom loadedExtensions: Set<WKWebExtensionContext>) {
         for button in buttons {
             guard let identifier = button.identifier?.rawValue,
                   !loadedExtensions.contains(where: { $0.uniqueIdentifier == identifier }) else {
@@ -69,7 +78,7 @@ final class WebExtensionNavigationBarUpdater {
         }
     }
 
-    private func addButtons(forExtensionsAddedTo loadedExtensions: Set<WKWebExtensionContext>) {
+    private func addButtons(to container: NSStackView, forExtensionsAddedTo loadedExtensions: Set<WKWebExtensionContext>) {
         let buttonIdentifiers = buttons.compactMap {
             $0.identifier?.rawValue
         }
@@ -83,5 +92,3 @@ final class WebExtensionNavigationBarUpdater {
         }
     }
 }
-
-#endif

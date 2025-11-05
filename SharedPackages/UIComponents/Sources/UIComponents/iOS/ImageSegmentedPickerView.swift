@@ -43,11 +43,11 @@ public struct ImageSegmentedPickerConfiguration {
     ///   - backgroundColor: The picker's background color. Defaults to backdrop color.
     ///   - selectedBackgroundColor: The selected indicator's background color. Defaults to tertiary background color.
     public init(
-        font: Font = .system(size: 16, weight: .medium),
+        font: Font = .system(size: 14, weight: .medium), /// Color not specified in the design system
         selectedTextColor: Color = .init(designSystemColor: .textPrimary),
         unselectedTextColor: Color = .init(designSystemColor: .textPrimary),
         backgroundColor: Color = .init(designSystemColor: .backdrop),
-        selectedBackgroundColor: Color = .init(designSystemColor: .backgroundTertiary)
+        selectedBackgroundColor: Color = .init(designSystemColor: .surface)
     ) {
         self.font = font
         self.selectedTextColor = selectedTextColor
@@ -65,6 +65,9 @@ public class ImageSegmentedPickerViewModel: ObservableObject {
     @Published public var selectedItem: ImageSegmentedPickerItem
     let configuration: ImageSegmentedPickerConfiguration
     @Published public var scrollProgress: CGFloat?
+    /// If true, `scrollProgress` is expected to be driven by an external ScrollView and we avoid implicit animations.
+    /// If false, we animate transitions when `scrollProgress` changes (e.g., programmatic selection changes).
+    @Published public var isScrollProgressDriven: Bool
 
     /// Creates a new ViewModel for the image segmented picker.
     ///
@@ -77,12 +80,14 @@ public class ImageSegmentedPickerViewModel: ObservableObject {
         items: [ImageSegmentedPickerItem],
         selectedItem: ImageSegmentedPickerItem,
         configuration: ImageSegmentedPickerConfiguration = ImageSegmentedPickerConfiguration(),
-        scrollProgress: CGFloat? = nil
+        scrollProgress: CGFloat? = nil,
+        isScrollProgressDriven: Bool = true
     ) {
         self.items = items
         self.selectedItem = selectedItem
         self.configuration = configuration
         self.scrollProgress = scrollProgress
+        self.isScrollProgressDriven = isScrollProgressDriven
     }
 
     /// Updates the selected item.
@@ -132,8 +137,8 @@ public class ImageSegmentedPickerViewModel: ObservableObject {
 /// ```
 public struct ImageSegmentedPickerView: View {
     private enum Constants {
-        static let outerHeight: CGFloat = 40
-        static let innerHeight: CGFloat = 36
+        static let outerHeight: CGFloat = 38
+        static let innerHeight: CGFloat = 34
         static let innerHorizontalPadding: CGFloat = 2
     }
 
@@ -157,8 +162,8 @@ public struct ImageSegmentedPickerView: View {
                     .fill(viewModel.configuration.selectedBackgroundColor)
                     .frame(width: geo.size.width / CGFloat(viewModel.items.count), height: Constants.innerHeight)
                     .offset(x: currentOffset)
-                    .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 0.5, x: 0, y: 0.5)
-                    .animation(viewModel.scrollProgress == nil ? .easeInOut(duration: 0.2) : nil, value: currentOffset)
+                    .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 4, x: 0, y: 4)
+                    .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 2, x: 0, y: 1)
 
                 HStack(spacing: 0) {
                     ForEach(Array(viewModel.items.enumerated()), id: \.element.id) { index, item in
@@ -181,9 +186,15 @@ public struct ImageSegmentedPickerView: View {
                     currentOffset = calculateCurrentOffset(geometry: geo)
                 }
             }
+            // Selection changes are reflected via scrollProgress when provided by the host.
             .onChange(of: viewModel.scrollProgress) { _ in
-                if viewModel.scrollProgress != nil {
+                guard viewModel.scrollProgress != nil else { return }
+                if viewModel.isScrollProgressDriven {
                     currentOffset = calculateCurrentOffset(geometry: geo)
+                } else {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.9, blendDuration: 0.1)) {
+                        currentOffset = calculateCurrentOffset(geometry: geo)
+                    }
                 }
             }
         }

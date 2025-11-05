@@ -110,7 +110,7 @@ struct SettingsAIFeaturesView: View {
                     }
                     .listRowBackground(Color(designSystemColor: .surface))
                 } else {
-                    Section(header: Text(UserText.settingsAiChatShortcuts)) {
+                    Section(header: Text(UserText.aiChatSettingsBrowserShortcutsSectionTitle)) {
                         SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
                                          accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
 
@@ -125,32 +125,60 @@ struct SettingsAIFeaturesView: View {
                         SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
                                          accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
                     }
+                    
+                    if viewModel.shouldShowSERPSettingsFollowUpQuestions {
+                        Section(header: Text(UserText.aiChatSettingsAllowFollowUpQuestionsSectionTitle),
+                                footer: Text(UserText.aiChatSettingsAllowFollowUpQuestionsDescription)) {
+                            SettingsCellView(label: UserText.aiChatSettingsAllowFollowUpQuestionsToggle,
+                                             accessory: .toggle(isOn: viewModel.serpSettingsFollowUpQuestionsBinding))
+                        }
+                    }
                 }
             }
 
-            Section {
-                SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
-                                 subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
-                                 image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist),
-                                 action: { viewModel.openAssistSettings() },
-                                 webLinkIndicator: true,
-                                 isButton: true)
+            if !viewModel.openedFromSERPSettingsButton {
+                Section {
+                    if viewModel.embedSERPSettings {
+                        NavigationLink(destination: SERPSettingsView(page: .searchAssist).environmentObject(viewModel)) {
+                            SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
+                                             subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
+                                             image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist))
+                        }
+                        .listRowBackground(Color(designSystemColor: .surface))
+                    } else {
+                        SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
+                                         subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
+                                         image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist),
+                                         action: { viewModel.openAssistSettings() },
+                                         webLinkIndicator: true,
+                                         isButton: true)
+                    }
+                }
             }
         }.applySettingsListModifiers(title: UserText.settingsAiFeatures,
                                      displayMode: .inline,
                                      viewModel: viewModel)
+        .navigationBarBackButtonHidden(viewModel.openedFromSERPSettingsButton)
+        .navigationBarItems(trailing: viewModel.openedFromSERPSettingsButton ?
+            AnyView(Button(UserText.navigationTitleDone) {
+                viewModel.onRequestDismissSettings?()
+            }.foregroundColor(Color(designSystemColor: .textPrimary))) : AnyView(EmptyView()))
 
 
         .onAppear {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisplayed,
                                          withAdditionalParameters: viewModel.featureDiscovery.addToParams([:], forFeature: .aiChat))
+            // Fire funnel pixel for first time viewing settings page with new input option
+            if let aiChatSettings = viewModel.aiChatSettings as? AIChatSettings {
+                aiChatSettings.processSettingsViewedFunnelStep()
+            }
         }
     }
 }
 
 private extension SettingsAIFeaturesView {
     var footerAttributedString: AttributedString {
-        var base = AttributedString(UserText.settingsAiExperimentalPickerFooterDescription + " ")
+        var base = AttributedString(UserText.settingsAIPickerFooterDescription + " ")
         var link = AttributedString(UserText.subscriptionFeedback)
         link.foregroundColor = Color(designSystemColor: .accent)
         link.link = FooterAction.shareFeedback.url

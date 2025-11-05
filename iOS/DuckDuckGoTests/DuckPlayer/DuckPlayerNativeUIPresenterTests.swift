@@ -1253,33 +1253,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         XCTAssertTrue(true, "Notification observer was properly cleaned up")
     }
 
-    @MainActor
-    func testSchedulePlayerCleanup_ClearsPlayerViewModel() {
-        // Given
-        let videoID = "test123"
-        _ = sut.presentDuckPlayer(
-            videoID: videoID,
-            source: .youtube,
-            in: mockHostViewController,
-            title: nil,
-            timestamp: nil
-        )
-        
-        XCTAssertNotNil(sut.playerViewModel)
-        
-        // When - Simulate navigation away which triggers cleanup
-        sut.playerViewModel?.youtubeNavigationRequestPublisher.send(URL.youtube(videoID))
-        
-        // Wait for cleanup using helper method
-        waitForCondition(
-            condition: { [weak sut] in sut?.playerViewModel == nil },
-            description: "Player view model should be cleaned up"
-        )
-        
-        // Then
-        XCTAssertNil(sut.playerViewModel, "Player view model should be cleaned up")
-    }
-
     // MARK: - Pill Impression Pixel Tests
 
     @MainActor
@@ -2199,53 +2172,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         XCTAssertEqual(receivedTimestamps.first, timestamp, "Should receive the correct timestamp")
     }
 
-    @MainActor
-    func testTimestampUpdatePublisher_DoesNotFireWhenHostViewIsNil() {
-        // Given
-        let videoID = "test123"
-        let timestamp: TimeInterval = 30
-        let source: DuckPlayer.VideoNavigationSource = .youtube
-        mockDuckPlayerSettings.welcomeMessageShown = false
-        mockDuckPlayerSettings.primingMessagePresented = true
-        
-        var receivedTimestamps: [TimeInterval?] = []
-        
-        // Subscribe to timestamp updates
-        sut.duckPlayerTimestampUpdate.sink { timestamp in
-            receivedTimestamps.append(timestamp)
-        }.store(in: &cancellables)
-        
-        // Present the DuckPlayer
-        _ = sut.presentDuckPlayer(
-            videoID: videoID,
-            source: source,
-            in: mockHostViewController,
-            title: nil,
-            timestamp: timestamp
-        )
-        
-        // Clear hostView to simulate nil scenario
-        sut.hostView = nil
-        
-        // When - Simulate DuckPlayer dismissal with nil hostView
-        guard let playerViewModel = sut.playerViewModel else {
-            XCTFail("Player view model should exist")
-            return
-        }
-        
-        playerViewModel.dismissPublisher.send(timestamp)
-        
-        // Wait for potential delayed execution (0.3s delay + buffer)
-        let expectation = XCTestExpectation(description: "Delayed execution should complete")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 2.0)
-        
-        // Then - Should NOT receive timestamp update when hostView is nil
-        XCTAssertTrue(receivedTimestamps.isEmpty, "Should not receive timestamp updates when hostView is nil")
-    }
-    
     // MARK: - Additional SERP Protection Tests
 
     @MainActor

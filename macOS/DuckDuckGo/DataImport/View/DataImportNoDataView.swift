@@ -39,6 +39,9 @@ struct DataImportNoDataView: View {
                     .bold()
 
                 Text(UserText.importNoDataPasswordsSubtitle(from: source))
+            case .creditCards:
+                Text("We couldn't find any credit cards.", comment: "Data import error message: Credit cards weren't found.")
+                    .bold()
             }
         }
     }

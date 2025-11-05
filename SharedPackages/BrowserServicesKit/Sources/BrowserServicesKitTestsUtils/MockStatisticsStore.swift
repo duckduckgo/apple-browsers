@@ -27,6 +27,7 @@ public class MockStatisticsStore: StatisticsStore {
     public var atb: String?
     public var searchRetentionAtb: String?
     public var appRetentionAtb: String?
+    public var duckAIRetentionAtb: String?
 
     public var hasInstallStatistics: Bool {
         return atb != nil

@@ -55,7 +55,7 @@ enum NavigationEngagementPixel {
     }
 }
 
-extension NavigationEngagementPixel: PixelKitEventV2 {
+extension NavigationEngagementPixel: PixelKitEvent {
 
     var name: String {
         switch self {
@@ -78,7 +78,4 @@ extension NavigationEngagementPixel: PixelKitEventV2 {
         nil
     }
 
-    var error: (any Error)? {
-        nil
-    }
 }

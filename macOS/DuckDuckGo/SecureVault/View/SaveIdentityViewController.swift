@@ -74,6 +74,10 @@ final class SaveIdentityViewController: NSViewController {
         do {
             try AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared).storeIdentity(identity)
             PixelKit.fire(GeneralPixel.autofillItemSaved(kind: .identity))
+
+            if let syncService = NSApp.delegateTyped.syncService {
+                syncService.scheduler.requestSyncImmediately()
+            }
         } catch {
             Logger.general.error("Failed to store identity \(error.localizedDescription)")
             PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))

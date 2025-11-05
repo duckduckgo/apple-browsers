@@ -40,7 +40,7 @@ enum UnifiedFeedbackFlowCategory: String, FeedbackCategoryProviding {
     var displayName: String {
         switch self {
         case .browserFeedback: return UserText.settingsBrowserFeedback
-        case .ppro: return UserText.settingsSubscriptionFeedback(isSubscriptionRebrandingOn: AppDependencyProvider.shared.featureFlagger.isFeatureOn(.subscriptionRebranding))
+        case .ppro: return UserText.settingsSubscriptionFeedback
         }
     }
 }
@@ -77,7 +77,7 @@ enum UnifiedFeedbackCategory: String, FeedbackCategoryProviding {
     }
 }
 
-enum PrivacyProFeedbackSubcategory: String, FeedbackCategoryProviding, FeedbackFAQProviding {
+enum SubscriptionFeedbackSubcategory: String, FeedbackCategoryProviding, FeedbackFAQProviding {
     case otp
     case somethingElse
 

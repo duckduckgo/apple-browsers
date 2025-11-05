@@ -20,6 +20,7 @@ import Foundation
 import Common
 import os.log
 import BrowserServicesKit
+import PixelKit
 
 public protocol BrokerProfileJobDependencyProviding {
     var database: DataBrokerProtectionRepository { get }
@@ -30,10 +31,12 @@ public protocol BrokerProfileJobDependencyProviding {
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
     var eventsHandler: EventMapping<JobEvent> { get }
     var dataBrokerProtectionSettings: DataBrokerProtectionSettings { get }
-    var emailService: EmailServiceProtocol { get }
+    var emailConfirmationDataService: EmailConfirmationDataServiceProvider { get }
     var captchaService: CaptchaServiceProtocol { get }
     var vpnBypassService: VPNBypassFeatureProvider? { get }
     var jobSortPredicate: BrokerJobDataComparators.Predicate { get }
+    var featureFlagger: DBPFeatureFlagging { get }
+    var wideEvent: WideEventManaging? { get }
 
     func createScanRunner(profileQuery: BrokerProfileQueryData,
                           stageDurationCalculator: StageDurationCalculator,
@@ -53,10 +56,12 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public let eventsHandler: EventMapping<JobEvent>
     public let dataBrokerProtectionSettings: DataBrokerProtectionSettings
-    public let emailService: EmailServiceProtocol
+    public let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     public let captchaService: CaptchaServiceProtocol
     public let vpnBypassService: VPNBypassFeatureProvider?
     public let jobSortPredicate: BrokerJobDataComparators.Predicate
+    public let featureFlagger: DBPFeatureFlagging
+    public let wideEvent: WideEventManaging?
 
     public init(database: any DataBrokerProtectionRepository,
                 contentScopeProperties: ContentScopeProperties,
@@ -66,10 +71,12 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 eventsHandler: EventMapping<JobEvent>,
                 dataBrokerProtectionSettings: DataBrokerProtectionSettings,
-                emailService: EmailServiceProtocol,
+                emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
+                featureFlagger: DBPFeatureFlagging,
                 vpnBypassService: VPNBypassFeatureProvider? = nil,
-                jobSortPredicate: @escaping BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default
+                jobSortPredicate: @escaping BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default,
+                wideEvent: WideEventManaging? = nil
     ) {
         self.database = database
         self.contentScopeProperties = contentScopeProperties
@@ -79,10 +86,12 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         self.pixelHandler = pixelHandler
         self.eventsHandler = eventsHandler
         self.dataBrokerProtectionSettings = dataBrokerProtectionSettings
-        self.emailService = emailService
+        self.emailConfirmationDataService = emailConfirmationDataService
         self.captchaService = captchaService
         self.vpnBypassService = vpnBypassService
         self.jobSortPredicate = jobSortPredicate
+        self.featureFlagger = featureFlagger
+        self.wideEvent = wideEvent
     }
 
     public func createScanRunner(profileQuery: BrokerProfileQueryData,
@@ -91,9 +100,10 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         return BrokerProfileScanSubJobWebRunner(
             privacyConfig: self.privacyConfig,
             prefs: self.contentScopeProperties,
-            query: profileQuery,
-            emailService: self.emailService,
+            context: profileQuery,
+            emailConfirmationDataService: self.emailConfirmationDataService,
             captchaService: self.captchaService,
+            featureFlagger: self.featureFlagger,
             stageDurationCalculator: stageDurationCalculator,
             pixelHandler: self.pixelHandler,
             executionConfig: self.executionConfig,
@@ -107,12 +117,14 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         return BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: self.privacyConfig,
             prefs: self.contentScopeProperties,
-            query: profileQuery,
-            emailService: self.emailService,
+            context: profileQuery,
+            emailConfirmationDataService: self.emailConfirmationDataService,
             captchaService: self.captchaService,
+            featureFlagger: self.featureFlagger,
             stageCalculator: stageDurationCalculator,
             pixelHandler: self.pixelHandler,
             executionConfig: self.executionConfig,
+            actionsHandlerMode: .optOut,
             shouldRunNextStep: shouldRunNextStep
         )
     }

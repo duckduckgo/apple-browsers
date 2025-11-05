@@ -34,7 +34,8 @@ extension WindowsManager {
         }
 
         if let aiChatSidebarsByTab = state.aiChatSidebarsByTab {
-            Application.appDelegate.aiChatSidebarProvider.restoreState(aiChatSidebarsByTab)
+            let presentedSidebars = aiChatSidebarsByTab.filter { (_, value) in value.isPresented }
+            Application.appDelegate.aiChatSidebarProvider.restoreState(presentedSidebars)
         }
 
         if includeWindows {
@@ -63,14 +64,14 @@ extension WindowsManager {
     }
 
     private class func setUpWindow(from item: WindowRestorationItem, includeRegularTabs: Bool) {
-        let tabCollectionViewModel = includeRegularTabs ? item.model : TabCollectionViewModel()
+        let tabCollectionViewModel = includeRegularTabs ? item.model : TabCollectionViewModel(tabCollection: TabCollection())
         guard let window = openNewWindow(with: tabCollectionViewModel, showWindow: !item.isMiniaturized, isMiniaturized: item.isMiniaturized) else { return }
         window.setContentSize(item.frame.size)
         window.setFrameOrigin(item.frame.origin)
 
         let pinnedTabsManager = (window.windowController as? MainWindowController)?.mainViewController.tabCollectionViewModel.pinnedTabsManager
         if let pinnedTabs = item.pinnedTabs, let pinnedTabsManager, pinnedTabsManager !== Application.appDelegate.pinnedTabsManager {
-            pinnedTabsManager.setUp(with: pinnedTabs)
+            pinnedTabsManager.setUp(movingTabsFrom: pinnedTabs)
         }
     }
 
@@ -88,7 +89,7 @@ extension WindowControllersManager {
     }
 
     func restorePinnedTabs(_ collection: TabCollection) {
-        Application.appDelegate.pinnedTabsManager.setUp(with: collection)
+        Application.appDelegate.pinnedTabsManager.setUp(movingTabsFrom: collection)
     }
 
 }

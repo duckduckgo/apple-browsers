@@ -244,10 +244,20 @@ final class PasswordManagementItemListModel: ObservableObject {
     }
 
     private var shouldDisplaySyncPromoRow: Bool {
-        syncPromoManager.shouldPresentPromoFor(.passwords) &&
-        (sortDescriptor.category == .allItems || sortDescriptor.category == .logins) &&
-        emptyState == .none &&
-        filter.isEmpty
+        guard emptyState == .none && filter.isEmpty else {
+            return false
+        }
+
+        switch sortDescriptor.category {
+        case .allItems:
+            return syncPromoManager.shouldPresentPromoFor(.autofill)
+        case .logins:
+            return syncPromoManager.shouldPresentPromoFor(.passwords)
+        case .cards:
+            return syncPromoManager.shouldPresentPromoFor(.creditCards)
+        case .identities:
+            return syncPromoManager.shouldPresentPromoFor(.identities)
+        }
     }
 
     @Published var sortDescriptor = SecureVaultSorting.default {
@@ -301,11 +311,32 @@ final class PasswordManagementItemListModel: ObservableObject {
     }
 
     var emptyStateMessageDescription: String {
-        autofillPreferences.isAutoLockEnabled ? UserText.pmEmptyStateDefaultDescription : UserText.pmEmptyStateDefaultDescriptionAutolockOff
+        if sortDescriptor.category == .logins {
+            return autofillPreferences.isAutoLockEnabled ? UserText.pmEmptyStatePasswordsDefaultDescription : UserText.pmEmptyStatePasswordsDefaultDescriptionAutolockOff
+        } else {
+            return autofillPreferences.isAutoLockEnabled ? UserText.pmEmptyStateDefaultDescription : UserText.pmEmptyStateDefaultDescriptionAutolockOff
+        }
     }
 
     var emptyStateMessageLinkText: String {
         UserText.learnMore
+    }
+
+    var emptyStateImportButtonText: String {
+        sortDescriptor.category == .logins ? UserText.pmEmptyStateDefaultButtonTitle : UserText.pmEmptyStateDefaultButtonTitleAllItems
+    }
+
+    var emptyStateSyncButtonText: String {
+        switch sortDescriptor.category {
+        case .logins:
+            return UserText.pmEmptyStateSecondaryButtonTitlePasswords
+        case .cards:
+            return UserText.pmEmptyStateSecondaryButtonTitleCreditCards
+        case .identities:
+            return UserText.pmEmptyStateSecondaryButtonTitleIdentities
+        case .allItems:
+            return UserText.pmEmptyStateSecondaryButtonTitleAllItems
+        }
     }
 
     var emptyStateMessageLinkURL: URL {

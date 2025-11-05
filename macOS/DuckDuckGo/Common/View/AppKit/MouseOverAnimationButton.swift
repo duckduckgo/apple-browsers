@@ -86,9 +86,20 @@ final class MouseOverAnimationButton: AddressBarButton {
     private var animationViewCache: AnimationViews?
 
     private func loadAnimationViews() {
-        guard let animationNames = animationNames,
-              let aquaAnimationView = LottieAnimationView(named: animationNames.aqua),
-              let darkAnimationView = LottieAnimationView(named: animationNames.dark) else {
+        guard let animationNames = animationNames else {
+            assertionFailure("Missing animationNames")
+            return
+        }
+        let aquaAnimationView: LottieAnimationView?
+        let darkAnimationView: LottieAnimationView?
+        if AppVersion.runType.requiresEnvironment {
+            aquaAnimationView = LottieAnimationView(named: animationNames.aqua)
+            darkAnimationView = LottieAnimationView(named: animationNames.dark)
+        } else {
+            aquaAnimationView = LottieAnimationView()
+            darkAnimationView = LottieAnimationView()
+        }
+        guard let aquaAnimationView, let darkAnimationView else {
             assertionFailure("Missing animation names or animation files in the bundle")
             return
         }

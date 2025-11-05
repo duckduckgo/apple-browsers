@@ -25,6 +25,7 @@ import SwiftUI
 import UIKit
 import Configuration
 import SystemSettingsPiPTutorial
+import DataBrokerProtection_iOS
 
 enum DebugScreen: Identifiable {
 
@@ -40,6 +41,9 @@ enum DebugScreen: Identifiable {
         let keyValueStore: ThrowingKeyValueStoring
         let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
         let daxDialogManager: DaxDialogsManaging
+        let databaseDelegate: DBPIOSInterface.DatabaseDelegate?
+        let debuggingDelegate: DBPIOSInterface.DebuggingDelegate?
+        let runPrequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
 
     }
 

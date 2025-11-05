@@ -492,7 +492,7 @@ extension TransparentProxyProvider {
         case wake
     }
 
-    public enum StartAttemptStep: PixelKitEventV2 {
+    public enum StartAttemptStep: PixelKitEvent {
         /// Attempt to start the proxy begins
         case begin
 
@@ -519,14 +519,5 @@ extension TransparentProxyProvider {
             return nil
         }
 
-        public var error: Error? {
-            switch self {
-            case .begin,
-                    .success:
-                return nil
-            case .failure(let error):
-                return error
-            }
-        }
     }
 }

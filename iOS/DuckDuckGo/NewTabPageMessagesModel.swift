@@ -30,18 +30,18 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let homePageMessagesConfiguration: HomePageMessagesConfiguration
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring.Type
-    private let privacyProDataReporter: PrivacyProDataReporting?
+    private let subscriptionDataReporter: SubscriptionDataReporting?
     private let navigator: MessageNavigator
 
     init(homePageMessagesConfiguration: HomePageMessagesConfiguration,
          notificationCenter: NotificationCenter = .default,
          pixelFiring: PixelFiring.Type = Pixel.self,
-         privacyProDataReporter: PrivacyProDataReporting? = nil,
+         subscriptionDataReporter: SubscriptionDataReporting? = nil,
          navigator: MessageNavigator) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
         self.notificationCenter = notificationCenter
         self.pixelFiring = pixelFiring
-        self.privacyProDataReporter = privacyProDataReporter
+        self.subscriptionDataReporter = subscriptionDataReporter
         self.navigator = navigator
     }
 
@@ -97,7 +97,7 @@ final class NewTabPageMessagesModel: ObservableObject {
             didAppear(message)
 
             return HomeMessageViewModelBuilder.build(for: remoteMessage,
-                                                     with: privacyProDataReporter,
+                                                     with: subscriptionDataReporter,
                                                      navigator: navigator) { @MainActor [weak self] action in
                 guard let action,
                       let self else { return }
@@ -147,7 +147,7 @@ final class NewTabPageMessagesModel: ObservableObject {
 
     private func additionalParameters(for messageID: String) -> [String: String] {
         let defaultParameters = [PixelParameters.message: "\(messageID)"]
-        return privacyProDataReporter?.mergeRandomizedParameters(for: .messageID(messageID),
+        return subscriptionDataReporter?.mergeRandomizedParameters(for: .messageID(messageID),
                                                                  with: defaultParameters) ?? defaultParameters
     }
 }

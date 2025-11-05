@@ -20,7 +20,7 @@
 import PixelKit
 import UIKit
 
-enum AutoconsentPixel: PixelKitEventV2, PixelKitEventWithCustomPrefix {
+enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
     
     case acInit
     case missedPopup
@@ -93,10 +93,7 @@ enum AutoconsentPixel: PixelKitEventV2, PixelKitEventWithCustomPrefix {
         }
     }
 
-    var error: (any Error)? {
-        nil
-    }
-    
+        
     var namePrefix: String {
 #if os(macOS)
         return "m_mac"

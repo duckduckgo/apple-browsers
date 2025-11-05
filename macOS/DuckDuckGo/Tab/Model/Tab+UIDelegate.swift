@@ -430,4 +430,5 @@ extension Tab: WKInspectorDelegate {
             PixelKit.fire(GeneralPixel.pictureInPictureVideoPlayback, frequency: .dailyAndCount)
         }
     }
+
 }

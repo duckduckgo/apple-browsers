@@ -33,7 +33,7 @@ struct SubscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping {
     private let featureFlagger: FeatureFlagger
 
     /// Indicates whether free trials are currently enabled.
-    /// This is determined by checking if the privacy pro free trial feature flag is enabled.
+    /// This is determined by checking if the Subscription free trial feature flag is enabled.
     var areFreeTrialsEnabled: Bool {
         return featureFlagger.isFeatureOn(for: FeatureFlag.privacyProFreeTrial, allowOverride: true)
     }

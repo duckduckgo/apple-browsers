@@ -34,10 +34,10 @@ class BookmarksMigrationTests: XCTestCase {
         
         let containerLocation = MockBookmarksDatabase.tempDBDir()
         try FileManager.default.createDirectory(at: containerLocation, withIntermediateDirectories: true)
-        
-        sourceStack = LegacyBookmarksCoreDataStorage(storeURL: containerLocation.appendingPathComponent("OldBookmarks.sqlite"),
-                                                    createIfNeeded: true)
-        sourceStack.loadStoreAndCaches()
+
+        sourceStack = try LegacyBookmarksCoreDataStorage(storeURL: containerLocation.appendingPathComponent("OldBookmarks.sqlite"),
+                                                          createIfNeeded: true)
+        try sourceStack.loadStoreAndCaches()
         try await prepareDB(with: sourceStack)
     }
     
@@ -88,7 +88,7 @@ class BookmarksMigrationTests: XCTestCase {
     
     func testWhenThereIsNoDatabaseThenLegacyStackIsNotCreated() {
         let tempURL = MockBookmarksDatabase.tempDBDir().appendingPathComponent("OldBookmarks.sqlite")
-        let legacyStore = LegacyBookmarksCoreDataStorage(storeURL: tempURL)
+        let legacyStore = try? LegacyBookmarksCoreDataStorage(storeURL: tempURL)
         XCTAssertNil(legacyStore)
     }
     
@@ -97,14 +97,14 @@ class BookmarksMigrationTests: XCTestCase {
         let context = destinationStack.makeContext(concurrencyType: .mainQueueConcurrencyType)
         XCTAssertNil(BookmarkUtils.fetchRootFolder(context))
         
-        LegacyBookmarksStoreMigration.migrate(from: nil, to: context)
+        try LegacyBookmarksStoreMigration.migrate(from: nil, to: context)
         
         XCTAssertNotNil(BookmarkUtils.fetchRootFolder(context))
         XCTAssertEqual(BookmarkUtils.fetchFavoritesFolders(withUUIDs: Set(FavoritesFolderID.allCases.map(\.rawValue)), in: context).count, 1)
         
         // Simulate subsequent app instantiations
-        LegacyBookmarksStoreMigration.migrate(from: nil, to: context)
-        LegacyBookmarksStoreMigration.migrate(from: nil, to: context)
+        try LegacyBookmarksStoreMigration.migrate(from: nil, to: context)
+        try LegacyBookmarksStoreMigration.migrate(from: nil, to: context)
         
         let countRequest = BookmarkEntity.fetchRequest()
         countRequest.predicate = NSPredicate(value: true)
@@ -113,10 +113,10 @@ class BookmarksMigrationTests: XCTestCase {
         XCTAssertEqual(count, 2)
     }
     
-    func testWhenRegularMigrationIsNeededThenItIsDoneAndDataIsDeduplicated() {
+    func testWhenRegularMigrationIsNeededThenItIsDoneAndDataIsDeduplicated() throws {
         
         let context = destinationStack.makeContext(concurrencyType: .mainQueueConcurrencyType)
-        LegacyBookmarksStoreMigration.migrate(from: sourceStack, to: context)
+        try LegacyBookmarksStoreMigration.migrate(from: sourceStack, to: context)
         
         XCTAssertNotNil(BookmarkUtils.fetchRootFolder(context))
         XCTAssertEqual(

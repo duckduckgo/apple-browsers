@@ -37,6 +37,22 @@ public protocol NewTabPageSectionsVisibilityProviding: AnyObject {
     var isProtectionsReportVisiblePublisher: AnyPublisher<Bool, Never> { get }
 }
 
+public protocol NewTabPageStateProviding: AnyObject {
+    @MainActor
+    func getState() -> [WindowNewTabPageStateData]?
+    var stateChangedPublisher: AnyPublisher<Void, Never> { get }
+}
+
+public struct WindowNewTabPageStateData {
+    let tabs: NewTabPageDataModel.Tabs
+    let webView: WKWebView
+
+    public init(tabs: NewTabPageDataModel.Tabs, webView: WKWebView) {
+        self.tabs = tabs
+        self.webView = webView
+    }
+}
+
 public protocol NewTabPageLinkOpening {
     func openLink(_ target: NewTabPageDataModel.OpenAction.Target) async
 }
@@ -50,25 +66,31 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
     private var cancellables = Set<AnyCancellable>()
     private let sectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding
     private let sectionsVisibilityProvider: NewTabPageSectionsVisibilityProviding
+    private let omnibarConfigProvider: NewTabPageOmnibarConfigProviding
     private let customBackgroundProvider: NewTabPageCustomBackgroundProviding
     private let contextMenuPresenter: NewTabPageContextMenuPresenting
     private let linkOpener: NewTabPageLinkOpening
     private let eventMapper: EventMapping<NewTabPageConfigurationEvent>?
+    private let stateProvider: NewTabPageStateProviding
 
     public init(
         sectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding,
         sectionsVisibilityProvider: NewTabPageSectionsVisibilityProviding,
+        omnibarConfigProvider: NewTabPageOmnibarConfigProviding,
         customBackgroundProvider: NewTabPageCustomBackgroundProviding,
         contextMenuPresenter: NewTabPageContextMenuPresenting = DefaultNewTabPageContextMenuPresenter(),
         linkOpener: NewTabPageLinkOpening,
-        eventMapper: EventMapping<NewTabPageConfigurationEvent>?
+        eventMapper: EventMapping<NewTabPageConfigurationEvent>?,
+        stateProvider: NewTabPageStateProviding
     ) {
         self.sectionsAvailabilityProvider = sectionsAvailabilityProvider
         self.sectionsVisibilityProvider = sectionsVisibilityProvider
+        self.omnibarConfigProvider = omnibarConfigProvider
         self.customBackgroundProvider = customBackgroundProvider
         self.contextMenuPresenter = contextMenuPresenter
         self.linkOpener = linkOpener
         self.eventMapper = eventMapper
+        self.stateProvider = stateProvider
         super.init()
 
         Publishers.Merge3(
@@ -81,6 +103,16 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
                 self?.notifyWidgetConfigsDidChange()
             }
             .store(in: &cancellables)
+
+        stateProvider.stateChangedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                Task { @MainActor in
+                    self.notifyTabStateDidChange()
+                }
+            }
+            .store(in: &cancellables)
     }
 
     enum MessageName: String, CaseIterable {
@@ -91,6 +123,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         case reportPageException
         case widgetsSetConfig = "widgets_setConfig"
         case widgetsOnConfigUpdated = "widgets_onConfigUpdated"
+        case tabsOnDataUpdate = "tabs_onDataUpdate"
     }
 
     public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
@@ -108,13 +141,14 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         var widgets: [NewTabPageDataModel.NewTabPageConfiguration.Widget] = [
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
+            .init(id: .subscriptionWinBackBanner),
             .init(id: .nextSteps),
             .init(id: .favorites),
             .init(id: .protections)
         ]
 
         if sectionsAvailabilityProvider.isOmnibarAvailable {
-            widgets.insert(.init(id: .omnibar), at: 2)
+            widgets.insert(.init(id: .omnibar), at: 3)
         }
 
         return widgets
@@ -139,33 +173,71 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
     }
 
     @MainActor
+    private func notifyTabStateDidChange() {
+        guard let states = stateProvider.getState() else { return }
+        for state in states {
+            pushMessage(
+                named: MessageName.tabsOnDataUpdate.rawValue,
+                params: state.tabs,
+                to: state.webView
+            )
+        }
+    }
+
+    private func makeShowDuckAIMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: UserText.newTabPageContextMenuShowDuckAI,
+                              action: sectionsVisibilityProvider.isOmnibarVisible ? #selector(self.toggleDuckAI(_:)) : nil,
+                              keyEquivalent: "")
+        if sectionsVisibilityProvider.isOmnibarVisible {
+            item.target = self
+        }
+        item.representedObject = nil
+        item.state = omnibarConfigProvider.isAIChatShortcutEnabled ? .on : .off
+        item.isEnabled = sectionsVisibilityProvider.isOmnibarVisible
+        item.withAccessibilityIdentifier("HomePage.Views.Menu.ShowDuckAI")
+        return item
+    }
+
+    @MainActor
     private func showContextMenu(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        guard let params: NewTabPageDataModel.ContextMenuParams = DecodableHelper.decode(from: params) else { return nil }
+        let menu = NSMenu {
+            // Show only when the search box is available
+            if sectionsAvailabilityProvider.isOmnibarAvailable {
+                NSMenuItem(title: UserText.newTabPageContextMenuSearch,
+                           action: #selector(self.toggleVisibility(_:)),
+                           target: self,
+                           representedObject: NewTabPageDataModel.WidgetId.omnibar,
+                           state: sectionsVisibilityProvider.isOmnibarVisible ? .on : .off)
+                .withAccessibilityIdentifier("HomePage.Views.Menu.Search")
+            }
 
-        let menu = NSMenu()
+            NSMenuItem(title: UserText.newTabPageContextMenuFavorites,
+                       action: #selector(self.toggleVisibility(_:)),
+                       target: self,
+                       representedObject: NewTabPageDataModel.WidgetId.favorites,
+                       state: sectionsVisibilityProvider.isFavoritesVisible ? .on: .off)
+            .withAccessibilityIdentifier("HomePage.Views.Menu.Favorites")
 
-        for menuItem in params.visibilityMenuItems {
-            switch menuItem.id {
-            case .omnibar:
-                let item = NSMenuItem(title: menuItem.title, action: #selector(self.toggleVisibility(_:)), keyEquivalent: "")
-                item.target = self
-                item.representedObject = menuItem.id
-                item.state = sectionsVisibilityProvider.isOmnibarVisible ? .on : .off
-                menu.addItem(item)
-            case .favorites:
-                let item = NSMenuItem(title: menuItem.title, action: #selector(self.toggleVisibility(_:)), keyEquivalent: "")
-                item.target = self
-                item.representedObject = menuItem.id
-                item.state = sectionsVisibilityProvider.isFavoritesVisible ? .on : .off
-                menu.addItem(item)
-            case .protections:
-                let item = NSMenuItem(title: menuItem.title, action: #selector(self.toggleVisibility(_:)), keyEquivalent: "")
-                item.target = self
-                item.representedObject = menuItem.id
-                item.state = sectionsVisibilityProvider.isProtectionsReportVisible ? .on : .off
-                menu.addItem(item)
-            default:
-                break
+            NSMenuItem(title: UserText.newTabPageContextMenuProtectionsReport,
+                       action: #selector(self.toggleVisibility(_:)),
+                       target: self,
+                       representedObject: NewTabPageDataModel.WidgetId.protections,
+                       state: sectionsVisibilityProvider.isProtectionsReportVisible ? .on: .off)
+            .withAccessibilityIdentifier("HomePage.Views.Menu.ProtectionsReport")
+
+            // The separator won't be presented if it's the last menu item
+            NSMenuItem.separator()
+
+            // Show only when the search box is available and Duck.ai settings are visible
+            if sectionsAvailabilityProvider.isOmnibarAvailable && omnibarConfigProvider.isAIChatSettingVisible {
+
+                makeShowDuckAIMenuItem()
+
+                NSMenuItem(title: UserText.newTabPageContextMenuOpenDuckAISettings,
+                           action: #selector(self.openDuckAISettings(_:)),
+                           target: self,
+                           representedObject: nil)
+                .withAccessibilityIdentifier("HomePage.Views.Menu.OpenDuckAISettings")
             }
         }
 
@@ -189,6 +261,16 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         }
     }
 
+    @objc private func toggleDuckAI(_ sender: NSMenuItem) {
+        omnibarConfigProvider.isAIChatShortcutEnabled.toggle()
+    }
+
+    @objc private func openDuckAISettings(_ sender: NSMenuItem) {
+        Task { @MainActor [weak self] in
+            await self?.linkOpener.openLink(.duckAISettings)
+        }
+    }
+
     @MainActor
     private func initialSetup(params: Any, original: WKScriptMessage) async throws -> Encodable? {
 #if DEBUG || REVIEW
@@ -200,6 +282,10 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         let widgets = fetchWidgets()
         let widgetConfigs = fetchWidgetConfigs()
         let customizerData = customBackgroundProvider.customizerData
+        let tabs = stateProvider
+            .getState()?
+            .first(where: { $0.webView === original.webView })?
+            .tabs
         let config = NewTabPageDataModel.NewTabPageConfiguration(
             widgets: widgets,
             widgetConfigs: widgetConfigs,
@@ -207,7 +293,8 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             locale: Bundle.main.preferredLocalizations.first ?? "en",
             platform: .init(name: "macos"),
             settings: .init(customizerDrawer: .init(state: .enabled)),
-            customizer: customizerData
+            customizer: customizerData,
+            tabs: tabs
         )
         return config
     }

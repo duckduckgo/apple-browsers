@@ -48,7 +48,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(URLRequest(url: urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -93,7 +93,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -144,7 +144,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -178,7 +178,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         var frameID: UInt64!
         responder(at: 0).onNavigationAction = { [urls] navAction, _ in
@@ -207,7 +207,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             webView.evaluateJavaScript("window.frames[0].location.href = '\(urls.local1.string)'")
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local1, defaultHeaders + ["Referer": urls.local.separatedString]), .other, from: history[1], src: frame(main(responderIdx: 0).handle.frameID, urls.local), targ: frame(frameID, urls.local3)),
@@ -254,7 +254,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -321,7 +321,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -370,7 +370,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(URLRequest(url: urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
     }
 
 }

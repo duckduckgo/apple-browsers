@@ -61,7 +61,7 @@ public final class AccountManagerMock: AccountManager {
         self.externalID = externalID
     }
 
-    public func signOut(skipNotification: Bool) {
+    public func signOut(skipNotification: Bool, userInitiated: Bool) {
         signOutCalled = true
         self.authToken = nil
         self.accessToken = nil

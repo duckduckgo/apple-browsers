@@ -1,7 +1,7 @@
 {
   "name": "Spokeo",
   "url": "spokeo.com",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "addedDatetime": 1692572400000,
   "optOutUrl": "https://spokeo.com/optout",
   "mirrorSites": [
@@ -162,7 +162,7 @@
             {
               "type": "text",
               "selector": "body",
-              "expect": "We've received your request to remove this listing"
+              "expect": "We've received your request to remove"
             }
           ]
         }

@@ -18,6 +18,13 @@
 //
 
 import Core
+import AIChat
+
+/// Type representing the type of tab, e.g. `web` or `aiChat`
+enum TabType {
+    case web
+    case aiChat
+}
 
 protocol TabObserver: AnyObject {
  
@@ -37,6 +44,8 @@ public class Tab: NSObject, NSCoding {
         static let viewed = "viewed"
         static let desktop = "desktop"
         static let lastViewedDate = "lastViewedDate"
+        static let daxEasterEggLogoURL = "daxEasterEggLogoURL"
+        static let type = "type"
     }
 
     private var observersHolder = [WeaklyHeldTabObserver]()
@@ -70,17 +79,45 @@ public class Tab: NSObject, NSCoding {
             notifyObservers()
         }
     }
+    
+    /// Returns true if the tab is a `web` tab with a link
+    var isWebTabWithLink: Bool {
+        guard let link else { return false }
+        return isWebTab
+    }
+    
+    /// Returns true if the tab is a `web` tab
+    var isWebTab: Bool {
+        type == .web
+    }
+    
+    /// Returns true if the tab is a `aiChat` tab
+    var isAITab: Bool {
+        type == .aiChat
+    }
+    
+    /// URL of the Dax Easter Egg logo for this tab, displayed in the privacy icon and used for full-screen presentation.
+    var daxEasterEggLogoURL: String? {
+        didSet {
+            Logger.daxEasterEgg.debug("Tab model - Setting logo URL: \(self.daxEasterEggLogoURL ?? "nil") for tab [\(self.uid)]")
+        }
+    }
+
+    /// Type of tab: web or AI Chat
+    var type: TabType = .web
 
     public init(uid: String? = nil,
                 link: Link? = nil,
                 viewed: Bool = false,
                 desktop: Bool = AppWidthObserver.shared.isLargeWidth,
-                lastViewedDate: Date? = nil) {
+                lastViewedDate: Date? = nil,
+                daxEasterEggLogoURL: String? = nil) {
         self.uid = uid ?? UUID().uuidString
         self.link = link
         self.viewed = viewed
         self.isDesktop = desktop
         self.lastViewedDate = lastViewedDate
+        self.daxEasterEggLogoURL = daxEasterEggLogoURL
     }
 
     public convenience required init?(coder decoder: NSCoder) {
@@ -89,15 +126,26 @@ public class Tab: NSObject, NSCoding {
         let viewed = decoder.containsValue(forKey: NSCodingKeys.viewed) ? decoder.decodeBool(forKey: NSCodingKeys.viewed) : true
         let desktop = decoder.containsValue(forKey: NSCodingKeys.desktop) ? decoder.decodeBool(forKey: NSCodingKeys.desktop) : false
         let lastViewedDate = decoder.containsValue(forKey: NSCodingKeys.lastViewedDate) ? decoder.decodeObject(forKey: NSCodingKeys.lastViewedDate) as? Date : nil
-        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate)
+        let daxEasterEggLogoURL = decoder.decodeObject(forKey: NSCodingKeys.daxEasterEggLogoURL) as? String
+        let tabType = decoder.containsValue(forKey: NSCodingKeys.type) ? (decoder.decodeInteger(forKey: NSCodingKeys.type) == 1 ? TabType.aiChat : TabType.web) : TabType.web
+
+        Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
+        
+        self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL)
+
+        self.type = tabType
     }
 
     public func encode(with coder: NSCoder) {
+        Logger.daxEasterEgg.debug("Tab encode - Saving logo URL: \(self.daxEasterEggLogoURL ?? "nil") for tab [\(self.uid)]")
+        
         coder.encode(uid, forKey: NSCodingKeys.uid)
         coder.encode(link, forKey: NSCodingKeys.link)
         coder.encode(viewed, forKey: NSCodingKeys.viewed)
         coder.encode(isDesktop, forKey: NSCodingKeys.desktop)
         coder.encode(lastViewedDate, forKey: NSCodingKeys.lastViewedDate)
+        coder.encode(daxEasterEggLogoURL, forKey: NSCodingKeys.daxEasterEggLogoURL)
+        coder.encode(type == .aiChat ? 1 : 0, forKey: NSCodingKeys.type)
     }
 
     public override func isEqual(_ other: Any?) -> Bool {

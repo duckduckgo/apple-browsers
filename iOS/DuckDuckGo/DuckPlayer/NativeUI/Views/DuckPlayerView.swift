@@ -20,6 +20,7 @@
 import DesignResourcesKit
 import Foundation
 import SwiftUI
+import UIComponents
 
 struct DuckPlayerView: View {
     @Environment(\.dismiss) var dismiss

@@ -24,7 +24,7 @@ extension NSWindow {
     }
 }
 
-final class PopUpWindow: NSPanel {
+final class PopUpWindow: NSWindow {
 
     override var canBecomeKey: Bool {
         return true
@@ -57,6 +57,7 @@ final class PopUpWindow: NSPanel {
         hasShadow = true
         titleVisibility = .hidden
         titlebarAppearsTransparent = true
+        collectionBehavior = .fullScreenNone
         hidesOnDeactivate = false
         // the window will be draggable using custom drag areas defined by WindowDraggingView
         isMovable = false

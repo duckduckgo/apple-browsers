@@ -24,7 +24,7 @@ final class PixelKitParametersTests: XCTestCase {
 
     /// Test events for convenience
     ///
-    private enum TestEvent: PixelKitEventV2 {
+    private enum TestEvent: PixelKitEvent {
         case errorEvent(error: Error)
 
         var name: String {
@@ -38,12 +38,6 @@ final class PixelKitParametersTests: XCTestCase {
             nil
         }
 
-        var error: Error? {
-            switch self {
-            case .errorEvent(let error):
-                error
-            }
-        }
     }
 
     /// Test that when firing pixels that include multiple levels of underlying error information, all levels

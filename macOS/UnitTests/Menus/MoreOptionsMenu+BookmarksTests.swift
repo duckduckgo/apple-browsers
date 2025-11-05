@@ -24,7 +24,7 @@ final class MoreOptionsMenu_BookmarksTests: XCTestCase {
     @MainActor
     func testWhenBookmarkSubmenuIsInitThenBookmarkAllTabsKeyIsCmdShiftD() throws {
         // GIVEN
-        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
+        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(isPopup: false), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
 
         // WHEN
         let result = try XCTUnwrap(sut.item(withTitle: UserText.bookmarkAllTabs))
@@ -82,7 +82,7 @@ final class MockMoreOpationsMenuIconProvider: MoreOptionsMenuIconsProviding {
     var deleteBrowsingDataIcon: NSImage = .logo
     var syncIcon: NSImage = .logo
     var emailProtectionIcon: NSImage = .logo
-    var privacyProIcon: NSImage = .logo
+    var subscriptionIcon: NSImage = .logo
     var fireproofSiteIcon: NSImage = .logo
     var removeFireproofIcon: NSImage = .logo
     var findInPageIcon: NSImage = .logo
@@ -93,7 +93,7 @@ final class MockMoreOpationsMenuIconProvider: MoreOptionsMenuIconsProviding {
     var browserFeedbackIcon: NSImage = .logo
     var reportBrokenSiteIcon: NSImage = .logo
     var paidAIChat: NSImage = .logo
-    var sendPrivacyProFeedbackIcon: NSImage = .logo
+    var sendSubscriptionFeedbackIcon: NSImage = .logo
     var passwordsSubMenuIcon: NSImage = .logo
     var identitiesIcon: NSImage = .logo
     var creditCardsIcon: NSImage = .logo

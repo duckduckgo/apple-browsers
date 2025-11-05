@@ -38,10 +38,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case tunnelWakeAttempt(_ step: TunnelWakeAttemptStep)
         case tunnelStartOnDemandWithoutAccessToken
         case reportTunnelFailure(result: NetworkProtectionTunnelFailureMonitor.Result)
-        case reportLatency(result: NetworkProtectionLatencyMonitor.Result)
+        case reportLatency(result: NetworkProtectionLatencyMonitor.Result, location: VPNSettings.SelectedLocation)
         case rekeyAttempt(_ step: RekeyAttemptStep)
         case failureRecoveryAttempt(_ step: FailureRecoveryStep)
         case serverMigrationAttempt(_ step: ServerMigrationAttemptStep)
+
+        case adapterEndTemporaryShutdownStateAttemptFailure(Error)
+        case adapterEndTemporaryShutdownStateRecoverySuccess
+        case adapterEndTemporaryShutdownStateRecoveryFailure(Error)
     }
 
     public enum AttemptStep: CustomDebugStringConvertible {
@@ -102,6 +106,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case startingTunnelWithoutAuthToken(internalError: Error?)
         case couldNotGenerateTunnelConfiguration(internalError: Error)
         case simulateTunnelFailureError
+        case settingsMissing
         case simulateSubscriptionExpiration
         case tokenReset
 
@@ -122,6 +127,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 return "Failed to generate a tunnel configuration: \(internalError.localizedDescription)"
             case .simulateTunnelFailureError:
                 return "Simulated a tunnel error as requested"
+            case .settingsMissing:
+                return "VPN settings are missing or invalid"
             case .simulateSubscriptionExpiration:
                 return nil
             case .tokenReset:
@@ -137,8 +144,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             case .startingTunnelWithoutAuthToken: return 0
             case .couldNotGenerateTunnelConfiguration: return 1
             case .simulateTunnelFailureError: return 2
-            case .simulateSubscriptionExpiration: return 3
-            case .tokenReset: return 4
+            case .settingsMissing: return 3
+            case .simulateSubscriptionExpiration: return 4
+            case .tokenReset: return 5
                 // Subscription Errors - 100+
             case .vpnAccessRevoked: return 100
             case .vpnAccessRevokedDetectedByMonitorCheck: return 101
@@ -150,6 +158,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         public var errorUserInfo: [String: Any] {
             switch self {
             case .simulateTunnelFailureError,
+                    .settingsMissing,
                     .vpnAccessRevokedDetectedByMonitorCheck,
                     .simulateSubscriptionExpiration,
                     .tokenReset,
@@ -180,8 +189,39 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - WireGuard
 
+    private lazy var wireGuardAdapterEventMapper: EventMapping<WireGuardAdapterEvent> = .init(mapping: { [weak self] event, _, _, _ in
+        guard let self else { return }
+
+        switch event {
+        case .endTemporaryShutdownStateAttemptFailure(let error):
+            Logger.networkProtection.error("Adapter failed to exit temporary shutdown: \(error.localizedDescription)")
+            self.providerEvents.fire(.adapterEndTemporaryShutdownStateAttemptFailure(error))
+        case .endTemporaryShutdownStateRecoveryFailure(let error):
+            Logger.networkProtection.error("Adapter recovery from temporary shutdown failed: \(error.localizedDescription)")
+            self.providerEvents.fire(.adapterEndTemporaryShutdownStateRecoveryFailure(error))
+        case .endTemporaryShutdownStateRecoverySuccess:
+            Logger.networkProtection.log("Adapter recovery from temporary shutdown succeeded")
+            self.providerEvents.fire(.adapterEndTemporaryShutdownStateRecoverySuccess)
+        }
+
+        if settings.showDebugVPNEventNotifications {
+            let notificationText: String
+
+            switch event {
+            case .endTemporaryShutdownStateAttemptFailure(let error):
+                notificationText = "VPN failed to end temporary shutdown: \(error.localizedDescription)"
+            case .endTemporaryShutdownStateRecoveryFailure(let error):
+                notificationText = "VPN failed to recover from extended temporary shutdown: \(error.localizedDescription)"
+            case .endTemporaryShutdownStateRecoverySuccess:
+                notificationText = "VPN recovered after extended temporary shutdown"
+            }
+
+            notificationsPresenter.showDebugEventNotification(message: notificationText)
+        }
+    })
+
     private lazy var adapter: WireGuardAdapter = {
-        WireGuardAdapter(with: self, wireGuardInterface: self.wireGuardInterface) { logLevel, message in
+        WireGuardAdapter(with: self, wireGuardInterface: self.wireGuardInterface, eventMapper: wireGuardAdapterEventMapper) { logLevel, message in
             if logLevel == .error {
                 Logger.networkProtectionWireGuard.error("🔴 Received error from adapter: \(message, privacy: .public)")
             } else {
@@ -279,7 +319,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private lazy var keyStore = NetworkProtectionKeychainKeyStore(keychainType: keychainType,
                                                                   errorEvents: debugEvents)
 
-    private let tokenHandlerProvider: () -> any SubscriptionTokenHandling
+    public let tokenHandlerProvider: () -> any SubscriptionTokenHandling
     @objc
     public static var isUsingAuthV2: Bool {
         get {
@@ -516,19 +556,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     open func load(options: StartupOptions) async throws {
         Logger.networkProtection.log("Loading startup options")
         loadKeyValidity(from: options)
-        loadSelectedEnvironment(from: options)
-        loadSelectedServer(from: options)
-        loadSelectedLocation(from: options)
-        loadDNSSettings(from: options)
         loadTesterEnabled(from: options)
-#if os(macOS)
-        loadAuthVersion(from: options)
-        if !Self.isUsingAuthV2 {
-            try await loadAuthToken(from: options)
-        } else {
-            try await loadTokenContainer(from: options)
-        }
-#endif
     }
 
     open func loadVendorOptions(from provider: NETunnelProviderProtocol?) throws {
@@ -536,10 +564,16 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     private func loadKeyValidity(from options: StartupOptions) {
-        switch options.keyValidity {
-        case .set(let validity):
-            Task { @MainActor in
-                await keyExpirationTester.setKeyValidity(validity)
+        switch options.vpnSettings {
+        case .set(let settingsSnapshot):
+            if case .custom(let validity) = settingsSnapshot.registrationKeyValidity {
+                Task { @MainActor in
+                    await keyExpirationTester.setKeyValidity(validity)
+                }
+            } else {
+                Task { @MainActor in
+                    await keyExpirationTester.setKeyValidity(nil)
+                }
             }
         case .useExisting:
             break
@@ -547,50 +581,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             Task { @MainActor in
                 await keyExpirationTester.setKeyValidity(nil)
             }
-        }
-    }
-
-    private func loadSelectedEnvironment(from options: StartupOptions) {
-        switch options.selectedEnvironment {
-        case .set(let selectedEnvironment):
-            settings.selectedEnvironment = selectedEnvironment
-        case .useExisting:
-            break
-        case .reset:
-            settings.selectedEnvironment = .default
-        }
-    }
-
-    private func loadSelectedServer(from options: StartupOptions) {
-        switch options.selectedServer {
-        case .set(let selectedServer):
-            settings.selectedServer = selectedServer
-        case .useExisting:
-            break
-        case .reset:
-            settings.selectedServer = .automatic
-        }
-    }
-
-    private func loadSelectedLocation(from options: StartupOptions) {
-        switch options.selectedLocation {
-        case .set(let selectedLocation):
-            settings.selectedLocation = selectedLocation
-        case .useExisting:
-            break
-        case .reset:
-            settings.selectedServer = .automatic
-        }
-    }
-
-    private func loadDNSSettings(from options: StartupOptions) {
-        switch options.dnsSettings {
-        case .set(let dnsSettings):
-            settings.dnsSettings = dnsSettings
-        case .useExisting:
-            break
-        case .reset:
-            settings.dnsSettings = .ddg(blockRiskyDomains: settings.isBlockRiskyDomainsOn)
         }
     }
 
@@ -604,78 +594,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             isConnectionTesterEnabled = true
         }
     }
-
-#if os(macOS)
-    private func loadAuthVersion(from options: StartupOptions) {
-        switch options.isAuthV2Enabled {
-        case .set(let newAuthVersion):
-            Logger.networkProtection.log("Set new isAuthV2Enabled")
-            Self.isUsingAuthV2 = newAuthVersion
-        case .useExisting:
-            Logger.networkProtection.log("Use existing isAuthV2Enabled")
-        case .reset:
-            Logger.networkProtection.log("Reset isAuthV2Enabled")
-        }
-        Logger.networkProtection.log("Load isAuthV2Enabled: \(Self.isUsingAuthV2, privacy: .public)")
-    }
-
-    private func loadAuthToken(from options: StartupOptions) async throws {
-        let tokenHandlerProvider = tokenHandlerProvider()
-        Logger.networkProtection.log("Load auth token")
-        switch options.authToken {
-        case .set(let newAuthToken):
-            Logger.networkProtection.log("Set new token")
-            if let currentAuthToken = try? await tokenHandlerProvider.getToken(), currentAuthToken == newAuthToken {
-                Logger.networkProtection.log("Token unchanged, using the current one")
-                return
-            }
-
-            try await tokenHandlerProvider.adoptToken(newAuthToken)
-        case .useExisting:
-            Logger.networkProtection.log("Use existing token")
-            do {
-                try await tokenHandlerProvider.getToken()
-            } catch {
-                throw TunnelError.startingTunnelWithoutAuthToken(internalError: error)
-            }
-        case .reset:
-            Logger.networkProtection.log("Reset token")
-            // This case should in theory not be possible, but it's ideal to have this in place
-            // in case an error in the controller on the client side allows it.
-            try? await tokenHandlerProvider.removeToken()
-            throw TunnelError.tokenReset
-        }
-    }
-
-    private func loadTokenContainer(from options: StartupOptions) async throws {
-        let tokenHandlerProvider = tokenHandlerProvider()
-        Logger.networkProtection.log("Load token container")
-        switch options.tokenContainer {
-        case .set(let newTokenContainer):
-            Logger.networkProtection.log("Set new token container")
-            do {
-                try await tokenHandlerProvider.adoptToken(newTokenContainer)
-            } catch {
-                Logger.networkProtection.fault("Error adopting token container: \(error, privacy: .public)")
-                throw TunnelError.startingTunnelWithoutAuthToken(internalError: error)
-            }
-        case .useExisting:
-            Logger.networkProtection.log("Use existing token container")
-            do {
-                try await tokenHandlerProvider.getToken()
-            } catch {
-                Logger.networkProtection.fault("Error loading token container: \(error, privacy: .public)")
-                throw TunnelError.startingTunnelWithoutAuthToken(internalError: error)
-            }
-        case .reset:
-            Logger.networkProtection.log("Reset token")
-            // This case should in theory not be possible, but it's ideal to have this in place
-            // in case an error in the controller on the client side allows it.
-            try await tokenHandlerProvider.removeToken()
-            throw TunnelError.tokenReset
-        }
-    }
-#endif
 
     // MARK: - Observing Changes
 
@@ -724,6 +642,15 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @MainActor
     open override func startTunnel(options: [String: NSObject]? = nil) async throws {
+        do {
+            try await startTunnelInternal(options: options)
+        } catch {
+            throw error.sanitizedForXPC()
+        }
+    }
+
+    @MainActor
+    private func startTunnelInternal(options: [String: NSObject]? = nil) async throws {
         Logger.networkProtection.log("🚀 Starting tunnel")
 
         // It's important to have this as soon as possible since it helps setup PixelKit
@@ -1570,11 +1497,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
 
         await latencyMonitor.start(serverIP: ip) { [weak self] result in
+            guard let self else { return }
+
             switch result {
             case .error:
-                self?.providerEvents.fire(.reportLatency(result: .error))
+                self.providerEvents.fire(.reportLatency(result: .error, location: self.settings.selectedLocation))
             case .quality(let quality):
-                self?.providerEvents.fire(.reportLatency(result: .quality(quality)))
+                self.providerEvents.fire(.reportLatency(result: .quality(quality), location: self.settings.selectedLocation))
             }
         }
     }

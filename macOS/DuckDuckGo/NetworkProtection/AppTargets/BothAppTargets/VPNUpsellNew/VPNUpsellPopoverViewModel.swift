@@ -82,7 +82,7 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
     private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
     private let urlOpener: @MainActor (URL) -> Void
     private let onDismiss: () -> Void
-    private let pixelHandler: (PrivacyProPixel) -> Void
+    private let pixelHandler: (SubscriptionPixel) -> Void
 
     private let coreFeatures: [Feature] = [
         .hideIPAddress,
@@ -97,7 +97,7 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
             Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
          },
          onDismiss: @escaping () -> Void,
-         pixelHandler: @escaping (PrivacyProPixel) -> Void = { PixelKit.fire($0) })
+         pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) })
     {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -143,7 +143,7 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
     }
 
     func showSubscriptionLandingPage() {
-        pixelHandler(.privacyProToolbarButtonPopoverProceedButtonClicked)
+        pixelHandler(.subscriptionToolbarButtonPopoverProceedButtonClicked)
         onDismiss()
 
         guard let components = SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.vpnUpsell.rawValue),
@@ -158,7 +158,7 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
     }
 
     func dismiss() {
-        pixelHandler(.privacyProToolbarButtonPopoverDismissButtonClicked)
+        pixelHandler(.subscriptionToolbarButtonPopoverDismissButtonClicked)
         vpnUpsellVisibilityManager.dismissUpsell()
         onDismiss()
     }

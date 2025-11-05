@@ -35,7 +35,7 @@
 "connect.with.server.sheet.button" = "Ativar a sincronização e cópia de segurança";
 
 /* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "Cria uma cópia de segurança encriptada dos teus marcadores e palavras-passe no servidor seguro do DuckDuckGo, que pode ser sincronizada com os teus restantes dispositivos.";
+"connect.with.server.sheet.description.part1" = "Cria uma cópia de segurança encriptada dos teus marcadores e dados de preenchimento automático no servidor seguro do DuckDuckGo, que pode ser sincronizada com os teus restantes dispositivos.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "A chave de encriptação é armazenada apenas no teu dispositivo. O DuckDuckGo não consegue aceder à chave.";
@@ -53,7 +53,13 @@
 "credentials.invalid.objects.present.description" = "credentials.invalid.objects.present.description";
 
 /* Alert title for invalid logins being filtered out of synced data */
-"credentials.invalid.objects.present.title" = "Alguns dados de início de sessão não estão a sincronizar devido ao conteúdo excessivamente longo em certos campos.";
+"credentials.invalid.objects.present.title" = "Algumas palavras-passe não estão a sincronizar devido ao conteúdo excessivamente longo em determinados campos.";
+
+/* Do not translate - stringsdict entry */
+"creditcards.invalid.objects.present.description" = "creditcards.invalid.objects.present.description";
+
+/* Alert title for invalid credit cards being filtered out of synced data */
+"creditCards.invalid.objects.present.title" = "Alguns cartões de crédito não estão a sincronizar devido ao conteúdo excessivamente longo em determinados campos.";
 
 /* Delete Server Data - Button */
 "delete.server.data" = "Desativar e eliminar dados do servidor...";
@@ -130,8 +136,11 @@
 /* Button title for sync credentials limits exceeded warning to go to manage passwords */
 "prefrences.sync.credentials-limit-exceeded-action" = "Gerir palavras-passe…";
 
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Gerir cartões de crédito…";
+
 /* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Os teus marcadores e palavras-passe estão a ser preparados para sincronização. Deve demorar apenas alguns segundos.";
+"preparing.to.sync.sheet.description" = "Os teus marcadores e dados de preenchimento automático estão a ser preparados para sincronização. Deve demorar apenas alguns segundos.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "A ligar…";
@@ -254,7 +263,7 @@
 "sync.get.other.devices.screen.title" = "Instala o DuckDuckGo";
 
 /* Message included when sharing a url via the system share sheet */
-"sync.get.other.devices.share.link.message" = "Instala o navegador DuckDuckGo nos teus dispositivos para começares a sincronizar os teus marcadores e palavras-passe em segurança:";
+"sync.get.other.devices.share.link.message" = "Instala o navegador DuckDuckGo nos teus dispositivos para começares a sincronizar em segurança os teus marcadores e dados de preenchimento automático:";
 
 /* Sync Menu Path */
 "sync.menu.path" = "Definições > Sincronização e cópia de segurança > Sincronizar com outro dispositivo";
@@ -278,7 +287,7 @@
 "sync.with.another.device.footer" = "Os teus dados são encriptados de ponta a ponta e o DuckDuckGo não tem acesso à chave de encriptação.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Sincroniza os marcadores e palavras-passe entre os teus dispositivos em segurança.";
+"sync.with.another.device.message" = "Sincroniza os marcadores e os dados de preenchimento automático entre os teus dispositivos com segurança.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Iniciar a sincronização";

@@ -53,8 +53,48 @@ final class SwitchBarHandlerTests: XCTestCase {
     private func createSUT() {
         sut = SwitchBarHandler(
             voiceSearchHelper: mockVoiceSearchHelper,
-            storage: mockStorage
+            storage: mockStorage, aiChatSettings: MockAIChatSettingsProvider(),
+            sessionStateMetrics: SessionStateMetrics(storage: mockStorage)
         )
+    }
+
+    func testVoiceButtonNotVisible_WhenNoTextAndTopBar() {
+        sut.updateBarPosition(isTop: true)
+        mockVoiceSearchHelper.isVoiceSearchEnabled = true
+        sut.clearText()
+
+        XCTAssertFalse(sut.buttonState.showsVoiceButton)
+    }
+
+    func testVoiceButtonVisible_WhenNoTextAndBottomBar() {
+        sut.updateBarPosition(isTop: false)
+        mockVoiceSearchHelper.isVoiceSearchEnabled = true
+        sut.clearText()
+        
+        XCTAssertTrue(sut.buttonState.showsVoiceButton)
+    }
+
+    func testVoiceButtonNotVisible_WhenHasTextAndBottomBar() {
+        sut.updateBarPosition(isTop: false)
+        mockVoiceSearchHelper.isVoiceSearchEnabled = true
+        sut.updateCurrentText("some text")
+        
+        XCTAssertFalse(sut.buttonState.showsVoiceButton)
+    }
+
+    func testVoiceButtonNotVisible_WhenHasTextAndTopBar() {
+        sut.updateBarPosition(isTop: true)
+        mockVoiceSearchHelper.isVoiceSearchEnabled = true
+        sut.updateCurrentText("some text")
+        
+        XCTAssertFalse(sut.buttonState.showsVoiceButton)
+    }
+
+    func testVoiceButtonNotVisible_WhenDisabled() {
+        mockVoiceSearchHelper.isVoiceSearchEnabled = false
+        sut.clearText()
+
+        XCTAssertFalse(sut.buttonState.showsVoiceButton)
     }
 
     // MARK: - Toggle State Persistence Tests

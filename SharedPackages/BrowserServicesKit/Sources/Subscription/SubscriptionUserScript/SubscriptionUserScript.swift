@@ -30,7 +30,7 @@ protocol SubscriptionUserScriptHandling {
     /// Returns a handshake message reporting capabilities of the app.
     func handshake(params: Any, message: UserScriptMessage) async throws -> DataModel.HandshakeResponse
 
-    /// Returns the details of Privacy Pro subscription.
+    /// Returns the details of DuckDuckGo subscription.
     func subscriptionDetails(params: Any, message: UserScriptMessage) async throws -> DataModel.SubscriptionDetails
 
     // Returns the AuthToken of the subscription.
@@ -187,7 +187,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
 }
 
 ///
-/// This user script is responsible for providing Privacy Pro subscription data to the calling website.
+/// This user script is responsible for providing DuckDuckGo subscription data to the calling website.
 ///
 public final class SubscriptionUserScript: NSObject, Subfeature {
 
@@ -296,7 +296,7 @@ extension SubscriptionUserScript {
 
             static let notSubscribed: Self = .init(isSubscribed: false, billingPeriod: nil, startedAt: nil, expiresOrRenewsAt: nil, paymentPlatform: nil, status: nil)
 
-            init(_ subscription: PrivacyProSubscription) {
+            init(_ subscription: DuckDuckGoSubscription) {
                 isSubscribed = true
                 billingPeriod = subscription.billingPeriod.rawValue
                 startedAt = Int(subscription.startedAt.timeIntervalSince1970 * 1000)

@@ -46,6 +46,7 @@ public enum DataModel {
         case friday
         case saturday
         case older
+        case allSites = "sites"
     }
 
     public struct HistoryRangeWithCount: Codable, Equatable {
@@ -60,19 +61,38 @@ public enum DataModel {
 
     public enum HistoryQueryKind: Codable, Equatable {
         case searchTerm(String)
-        case domainFilter(String)
+        case domainFilter(Set<String>)
         case rangeFilter(HistoryRange)
+        case dateFilter(Date)
+        case visits([VisitIdentifier])
 
         enum CodingKeys: CodingKey {
             case term, range, domain
         }
 
+        public var historyRange: HistoryRange? {
+            guard case .rangeFilter(let range) = self else { return nil }
+            return range
+        }
+
         public init(from decoder: any Decoder) throws {
+            if let singleValueContainer = try? decoder.singleValueContainer(),
+               let value = try? singleValueContainer.decode(Date.self) {
+                self = .dateFilter(value)
+                return
+            } else if var unkeyedContainer = try? decoder.unkeyedContainer(),
+                      let value = try? unkeyedContainer.decode([VisitIdentifier].self) {
+                self = .visits(value)
+                return
+            }
+
             let container: KeyedDecodingContainer<CodingKeys> = try decoder.container(keyedBy: CodingKeys.self)
             if let term = try container.decodeIfPresent(String.self, forKey: CodingKeys.term) {
                 self = .searchTerm(term)
-            } else if let domain = try container.decodeIfPresent(String.self, forKey: CodingKeys.domain) {
-                self = .domainFilter(domain)
+            } else if let domain = try? container.decodeIfPresent(String.self, forKey: CodingKeys.domain) {
+                self = .domainFilter([domain])
+            } else if let domains = try container.decodeIfPresent([String].self, forKey: CodingKeys.domain) {
+                self = .domainFilter(Set(domains))
             } else if let range = try container.decodeIfPresent(HistoryRange.self, forKey: CodingKeys.range) {
                 self = .rangeFilter(range)
             } else {
@@ -81,14 +101,22 @@ public enum DataModel {
         }
 
         public func encode(to encoder: any Encoder) throws {
-            var container: KeyedEncodingContainer<CodingKeys> = encoder.container(keyedBy: CodingKeys.self)
+            lazy var container: KeyedEncodingContainer<CodingKeys> = encoder.container(keyedBy: CodingKeys.self)
             switch self {
             case .searchTerm(let searchTerm):
                 try container.encode(searchTerm, forKey: CodingKeys.term)
-            case .domainFilter(let domain):
-                try container.encode(domain, forKey: CodingKeys.domain)
+            case .domainFilter(let domains) where domains.count == 1:
+                try container.encode(domains.first!, forKey: CodingKeys.domain)
+            case .domainFilter(let domains):
+                try container.encode(domains, forKey: CodingKeys.domain)
             case .rangeFilter(let range):
                 try container.encode(range, forKey: CodingKeys.range)
+            case .dateFilter(let date):
+                var container = encoder.singleValueContainer()
+                try container.encode(date)
+            case .visits(let visits):
+                var container = encoder.unkeyedContainer()
+                try container.encode(visits)
             }
         }
     }

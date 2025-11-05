@@ -448,12 +448,19 @@ extension EmailSignupViewController: SecureVaultManagerDelegate {
                                                             messageSecret: "",
                                                             featureToggles: ContentScopeFeatureToggles.supportedFeaturesOniOS)
 
-        let runtimeConfig = DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
-                                                                  properties: contentScopeProperties)
-            .build()
-            .buildRuntimeConfigResponse()
-        
-        completionHandler(runtimeConfig)
+        do {
+            let runtimeConfig = try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+                                                                          properties: contentScopeProperties)
+                .build()
+                .buildRuntimeConfigResponse()
+
+            completionHandler(runtimeConfig)
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to build DefaultAutofillSourceProvider: \(error.localizedDescription)")
+        }
     }
   
     func secureVaultManager(_: SecureVaultManager, didReceivePixel pixel: AutofillUserScript.JSPixel) {

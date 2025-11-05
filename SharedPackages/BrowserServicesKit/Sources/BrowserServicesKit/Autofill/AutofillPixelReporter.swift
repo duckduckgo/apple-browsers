@@ -64,9 +64,9 @@ public class AutofillUsageStore {
 
     public enum Keys {
         static public let autofillSearchDauDateKey = "com.duckduckgo.app.autofill.SearchDauDate"
-        static let autofillFillDateKey = "com.duckduckgo.app.autofill.FillDate"
+        static public let autofillFillDateKey = "com.duckduckgo.app.autofill.FillDate"
         static let autofillOnboardedUserKey = "com.duckduckgo.app.autofill.OnboardedUser"
-        static let autofillLastActiveKey = "com.duckduckgo.app.autofill.LastActive"
+        static public let autofillLastActiveKey = "com.duckduckgo.app.autofill.LastActive"
         static public let autofillDauMigratedKey = "com.duckduckgo.app.autofill.DauDataMigrated"
     }
 

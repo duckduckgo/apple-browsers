@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "5DD6B386-4B33-4E94-A430-2C8DBC3DD9CC",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AttributedMetricTests",
+        "name" : "AttributedMetricTests"
+      }
+    }
+  ],
+  "version" : 1
+}

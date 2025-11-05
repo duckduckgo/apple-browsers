@@ -48,13 +48,17 @@ class MainViewFactory {
                                     voiceSearchHelper: VoiceSearchHelperProtocol,
                                     featureFlagger: FeatureFlagger,
                                     suggestionTrayDependencies: SuggestionTrayDependencies? = nil,
-                                    appSettings: AppSettings) -> MainViewCoordinator {
+                                    appSettings: AppSettings,
+                                    daxEasterEggPresenter: DaxEasterEggPresenting = DaxEasterEggPresenter(),
+                                    mobileCustomization: MobileCustomization) -> MainViewCoordinator {
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
                                                       aiChatSettings: aiChatSettings,
                                                       suggestionTrayDependencies: suggestionTrayDependencies,
-                                                      appSettings: appSettings)
+                                                      appSettings: appSettings,
+                                                      daxEasterEggPresenter: daxEasterEggPresenter,
+                                                      mobileCustomization: mobileCustomization)
 
         let factory = MainViewFactory(parentController: parentController,
                                       omnibarDependencies: omnibarDependencies,

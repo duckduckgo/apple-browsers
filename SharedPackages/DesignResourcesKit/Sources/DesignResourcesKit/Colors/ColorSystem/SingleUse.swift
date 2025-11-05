@@ -46,4 +46,6 @@ extension Color {
 
     // UnifiedFeedback fields background
     static let x1C1C1E = Color(0x1C1C1E)
+
+    static let xF7F7F7 = Color(0xF7F7F7)
 }

@@ -49,7 +49,9 @@ tags:
 - assertVisible: ".*Example Domain.*"
 
 - stopApp
-- launchApp
+- launchApp:
+    arguments:
+        isRunningUITests: true
 
 - tapOn: "Tab Switcher"
 - tapOn:

@@ -69,6 +69,12 @@ public enum SyncError: Error, Equatable {
     case credentialsMetadataMissingBeforeFirstSync
     case receivedCredentialsWithoutUUID
 
+    case creditCardsMetadataMissingBeforeFirstSync
+    case receivedCreditCardsWithoutUUID
+
+    case identitiesMetadataMissingBeforeFirstSync
+    case receivedIdentitiesWithoutUUID
+
     case emailProtectionUsernamePresentButTokenMissing
     case settingsMetadataNotPresent
 
@@ -170,6 +176,14 @@ public enum SyncError: Error, Equatable {
             return [syncErrorString: "failedToDecodeSecureStoreData"]
         case .pollingDidTimeOut:
             return [syncErrorString: "pollingDidTimeOut"]
+        case .creditCardsMetadataMissingBeforeFirstSync:
+            return [syncErrorString: "creditCardsMetadataMissingBeforeFirstSync"]
+        case .receivedCreditCardsWithoutUUID:
+            return [syncErrorString: "receivedCreditCardsWithoutUUID"]
+        case .identitiesMetadataMissingBeforeFirstSync:
+            return [syncErrorString: "identitiesMetadataMissingBeforeFirstSync"]
+        case .receivedIdentitiesWithoutUUID:
+            return [syncErrorString: "receivedIdentitiesWithoutUUID"]
         }
     }
 }
@@ -224,6 +238,12 @@ extension SyncError: CustomNSError {
         case .failedToDecodeSecureStoreData: return 31
 
         case .pollingDidTimeOut: return 35
+
+        case .creditCardsMetadataMissingBeforeFirstSync: return 36
+        case .receivedCreditCardsWithoutUUID: return 37
+
+        case .identitiesMetadataMissingBeforeFirstSync: return 38
+        case .receivedIdentitiesWithoutUUID: return 39
         }
     }
 

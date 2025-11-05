@@ -16,43 +16,62 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
-
-import Foundation
-import Common
-import WebKit
-import os.log
 import BrowserServicesKit
+import Common
+import CryptoKit
+import Foundation
+import OSLog
+import WebKit
 
-@available(macOS 15.4, *)
 protocol WebExtensionManaging {
 
-    typealias WebExtensionIdentifier = String
-
-    var areExtenstionsEnabled: Bool { get }
+    @available(macOS 15.4, *)
     var hasInstalledExtensions: Bool { get }
+
+    @available(macOS 15.4, *)
     var loadedExtensions: Set<WKWebExtensionContext> { get }
 
+    @available(macOS 15.4, *)
     @MainActor
     func loadInstalledExtensions() async
 
     // Adding and removing extensions
+    @available(macOS 15.4, *)
     var webExtensionPaths: [String] { get }
+
+    @available(macOS 15.4, *)
     func installExtension(path: String) async
+
+    @available(macOS 15.4, *)
     func uninstallExtension(path: String) throws
 
+    @available(macOS 15.4, *)
     @discardableResult
     func uninstallAllExtensions() -> [Result<Void, Error>]
 
     // Provides the extension name for the extension resource base path
+    @available(macOS 15.4, *)
     func extensionName(from path: String) -> String?
 
+    @available(macOS 15.4, *)
+    func extensionContext(for url: URL) -> WKWebExtensionContext?
+
     // Controller for tabs
+    @available(macOS 15.4, *)
     var controller: WKWebExtensionController { get }
 
     // Listening of events
+    @available(macOS 15.4, *)
     var eventsListener: WebExtensionEventsListening { get }
 
+    @available(macOS 15.4, *)
+    var extensionUpdates: AsyncStream<Void> { get }
+
+    @available(macOS 15.4, *)
+    func context(forPath path: String) -> WKWebExtensionContext?
+
+    @available(macOS 15.4, *)
+    func toolbarButton(for context: WKWebExtensionContext) -> MouseOverButton
 }
 
 // Manages the initialization and ownership of key components: web extensions, contexts, and the controller
@@ -63,67 +82,65 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         case failedToUnloadWebExtension(_ error: Error)
     }
 
-    static let shared = WebExtensionManager()
-
     private var continuation: AsyncStream<Void>.Continuation?
     private(set) lazy var extensionUpdates = AsyncStream<Void> { [weak self] continuation in
         self?.continuation = continuation
     }
 
-    init(webExtensionPathsCache: WebExtensionPathsCaching = WebExtensionPathsCache(),
+    @MainActor
+    init(installationStore: WebExtensionPathsStoring = WebExtensionPathsStore(),
          webExtensionLoader: WebExtensionLoading = WebExtensionLoader(),
-         internalUserDecider: InternalUserDecider = NSApp.delegateTyped.internalUserDecider,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         autofillPreferences: AutofillPreferences = AutofillPreferences()
+    ) {
 
-        self.controller = WKWebExtensionController()
-        self.pathsCache = webExtensionPathsCache
-        self.internalUserDecider = internalUserDecider
-        self.featureFlagger = featureFlagger
+        self.installationStore = installationStore
         self.loader = webExtensionLoader
+        self.autofillPreferences = autofillPreferences
+
+        let controllerConfiguration = WKWebExtensionController.Configuration.default()
+        controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = UserAgent.brandedDefaultSuffix
+        controller = WKWebExtensionController(configuration: controllerConfiguration)
 
         super.init()
 
-        eventsListener.controller = controller
+        controller.delegate = self
         internalSiteHandler.dataSource = self
     }
 
-    private let internalUserDecider: InternalUserDecider
-    private let featureFlagger: FeatureFlagger
-
-    var areExtenstionsEnabled: Bool {
-        return internalUserDecider.isInternalUser && featureFlagger.isFeatureOn(.webExtensions)
+    static var areExtensionsEnabled: Bool {
+        NSApp.delegateTyped.webExtensionManager != nil
     }
 
-    // Caches paths to selected web extensions
-    var pathsCache: WebExtensionPathsCaching
+    // Registers extension installation paths for persistence
+    var installationStore: WebExtensionPathsStoring
 
     // Loads web extensions after selection or application start
     var loader: WebExtensionLoading
 
-    // Context manages the extension's permissions and allows it to inject content, run background logic, show popovers, and display other web-based UI to the user.
+    // Extension contexts
     var contexts: [WKWebExtensionContext] {
         Array(controller.extensionContexts)
     }
 
     // Controller manages a set of loaded extension contexts
-    var controller: WKWebExtensionController
+    let controller: WKWebExtensionController
 
     // Events listening
     var eventsListener: WebExtensionEventsListening = WebExtensionEventsListener()
 
-    // Handles native messaging
-    let nativeMessagingHandler = NativeMessagingHandler()
-
     // Handles internal sites of web extenions
     let internalSiteHandler = WebExtensionInternalSiteHandler()
 
+    // Used just for migration of internal users from Bitwarden web extension back to the internal password manager
+    let autofillPreferences: AutofillPreferences
+
     // MARK: - Adding and removing extensions
     var webExtensionPaths: [String] {
-        pathsCache.cache
+        installationStore.paths
     }
 
     var hasInstalledExtensions: Bool {
-        controller.extensions.count > 0
+        installationStore.paths.count > 0
     }
 
     var loadedExtensions: Set<WKWebExtensionContext> {
@@ -131,13 +148,13 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     }
 
     func installExtension(path: String) async {
-        pathsCache.add(path)
+        installationStore.add(path)
 
         do {
-            try await loader.loadWebExtension(path: path, into: controller)
+            let loadResult = try await loader.loadWebExtension(path: path, into: controller)
         } catch {
             // This is temporary.  The actual handling of this error should be done outside of this manager.
-            assertionFailure("Failed to unload web extension \(path): \(error)")
+            assertionFailure("Failed to load web extension \(path): \(error)")
         }
 
         continuation?.yield()
@@ -145,7 +162,7 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
 
     @discardableResult
     func uninstallAllExtensions() -> [Result<Void, Error>] {
-        pathsCache.cache.map { path in
+        installationStore.paths.map { path in
             do {
                 try uninstallExtension(path: path)
                 return .success(())
@@ -156,7 +173,7 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     }
 
     func uninstallExtension(path: String) throws {
-        pathsCache.remove(path)
+        installationStore.remove(path)
 
         do {
             try loader.unloadExtension(at: path, from: controller)
@@ -167,6 +184,21 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         continuation?.yield()
     }
 
+    // Migrating internal users from Bitwarden web extension to the native password manager
+    private func uninstallBitwardenExtensionIfNeeded() {
+        guard autofillPreferences.selectedPasswordManager == "bitwardenExtension" else {
+            return
+        }
+
+        autofillPreferences.passwordManager = .duckduckgo
+
+        let bitwardenExtensionPath = WebExtensionIdentifier.bitwarden.defaultPath
+
+        if webExtensionPaths.contains(bitwardenExtensionPath) {
+            try? uninstallExtension(path: bitwardenExtensionPath)
+        }
+    }
+
     func extensionName(from path: String) -> String? {
         if let extensionURL = URL(string: path) {
             return extensionURL.lastPathComponent
@@ -174,25 +206,35 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         return nil
     }
 
+    private func identifierHash(forPath path: String) -> String {
+        let identifier = Data(path.utf8)
+        let hash = SHA256.hash(data: identifier)
+        let hashString = hash.compactMap { String(format: "%02x", $0) }.joined()
+
+        return hashString
+    }
+
     // MARK: - Lifecycle
 
     @MainActor
     func loadInstalledExtensions() async {
-        guard areExtenstionsEnabled else { return }
+        eventsListener.controller = controller
 
-        // Load extensions
-        let results = await loader.loadWebExtensions(from: pathsCache.cache, into: controller)
+        uninstallBitwardenExtensionIfNeeded()
+
+        let results = await loader.loadWebExtensions(from: installationStore.paths, into: controller)
         continuation?.yield()
 
         for result in results {
-            if case .failure(let failure) = result {
+            switch result {
+            case .success:
+                continue
+            case .failure(let failure):
                 // If this is blocking from starting up the app, disable this
                 // assertion then go to Debug Menu > Web Extensions > Uninstall all extensions
-                assertionFailure("Failed to load web extension \(pathsCache.cache): \(failure)")
+                assertionFailure("Failed to load web extension: \(failure)")
             }
         }
-
-        controller.delegate = self
     }
 
     // MARK: - UI
@@ -264,6 +306,16 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         return button
     }
 
+    func extensionContext(for url: URL) -> WKWebExtensionContext? {
+        return contexts.first { context in
+            url.absoluteString.hasPrefix(context.baseURL.absoluteString)
+        }
+    }
+
+    func context(forPath path: String) -> WKWebExtensionContext? {
+        let identifierHash = identifierHash(forPath: path)
+        return contexts.first { $0.uniqueIdentifier == identifierHash }
+    }
 }
 
 @available(macOS 15.4, *)
@@ -291,7 +343,7 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
     func webExtensionController(_ controller: WKWebExtensionController, openNewWindowUsing configuration: WKWebExtension.WindowConfiguration, for extensionContext: WKWebExtensionContext) async throws -> (any WKWebExtensionWindow)? {
 
         // Extract options
-        let tabs = configuration.tabURLs.map { Tab(content: .contentFromURL($0, source: .ui)) }
+        let tabs = configuration.tabURLs.map { Tab(content: .contentFromURL($0, source: .ui), webViewConfiguration: extensionContext.webViewConfiguration) }
         let burnerMode = BurnerMode(isBurner: configuration.shouldBePrivate)
         let tabCollectionViewModel = TabCollectionViewModel(
             tabCollection: TabCollection(tabs: tabs),
@@ -384,20 +436,18 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
 
         popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
     }
+/*
+    // Implement to support native messaging API
 
-    func webExtensionController(_ controller: WKWebExtensionController, sendMessage message: Any, toApplicationWithIdentifier applicationIdentifier: String?, for extensionContext: WKWebExtensionContext, replyHandler: ((Any?, (any Error)?) -> Void)) {
-        // Uncomment when sending messages is implemented in the NativeMessagingHandler
-//        try nativeMessagingHandler.webExtensionController(controller,
-//                                                          sendMessage: message,
-//                                                          to: applicationIdentifier,
-//                                                          for: extensionContext)
-        replyHandler(nil, nil)
+    func webExtensionController(_ controller: WKWebExtensionController, sendMessage message: Any, toApplicationWithIdentifier applicationIdentifier: String?, for extensionContext: WKWebExtensionContext) async throws -> Any? {
+
     }
 
-    private func webExtensionController(_ controller: WKWebExtensionController!, connectUsingMessagePort port: WKWebExtension.MessagePort!, for extensionContext: WKWebExtensionContext!) async throws {
-        try await nativeMessagingHandler.webExtensionController(controller, connectUsingMessagePort: port, for: extensionContext)
+    func webExtensionController(_ controller: WKWebExtensionController, connectUsing port: WKWebExtension.MessagePort, for extensionContext: WKWebExtensionContext) async throws {
+
     }
 
+*/
 }
 
 @available(macOS 15.4, *)
@@ -415,5 +465,3 @@ extension WebExtensionManager: WebExtensionInternalSiteHandlerDataSource {
     }
 
 }
-
-#endif

@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import Combine
 import DesignResourcesKitIcons
+import DesignResourcesKit
 import UIComponents
 
 class SwitchBarViewController: UIViewController {
@@ -28,14 +29,33 @@ class SwitchBarViewController: UIViewController {
         static let segmentedControlHeight: CGFloat = 36
         static let segmentedControlTopPadding: CGFloat = 20
         static let textEntryViewTopPadding: CGFloat = 16
+        static let textEntryViewReducedTopPadding: CGFloat = 8
         static let textEntryViewSidePadding: CGFloat = 16
         static let backButtonHorizontalPadding: CGFloat = 16
         static let backButtonSize: CGFloat = 44
+        static let separatorHeight: CGFloat = 0.5
+        static let separatorTopPadding: CGFloat = 8
     }
 
     private var segmentedPickerHostingController: UIHostingController<PickerWrapper>?
     let textEntryViewController: SwitchBarTextEntryViewController
     let backButton = BrowserChromeButton()
+    private lazy var topSeparatorView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(singleUseColor: .inputContentSeparator)
+        return view
+    }()
+
+    var isFocused: Bool {
+        textEntryViewController.isFocused
+    }
+
+    var showsSeparator: Bool {
+        didSet {
+            updateSeparatorVisibility()
+        }
+    }
+    private let usesReducedTopPadding: Bool
 
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
@@ -59,9 +79,11 @@ class SwitchBarViewController: UIViewController {
     private var pickerViewModel: ImageSegmentedPickerViewModel!
 
     // MARK: - Initialization
-    init(switchBarHandler: SwitchBarHandling) {
+    init(switchBarHandler: SwitchBarHandling, showsSeparator: Bool, reduceTopPaddings: Bool) {
         self.switchBarHandler = switchBarHandler
         self.textEntryViewController = SwitchBarTextEntryViewController(handler: switchBarHandler)
+        self.showsSeparator = showsSeparator
+        self.usesReducedTopPadding = reduceTopPaddings
         super.init(nibName: nil, bundle: nil)
         
         let currentToggleState = switchBarHandler.currentToggleState
@@ -144,6 +166,11 @@ class SwitchBarViewController: UIViewController {
         view.addSubview(textEntryViewController.view)
         textEntryViewController.didMove(toParent: self)
 
+        if showsSeparator {
+            view.addSubview(topSeparatorView)
+            topSeparatorView.translatesAutoresizingMaskIntoConstraints = false
+        }
+
         backButton.translatesAutoresizingMaskIntoConstraints = false
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
         textEntryViewController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -155,12 +182,25 @@ class SwitchBarViewController: UIViewController {
 
         guard let segmentedPickerView = segmentedPickerHostingController?.view else { return }
 
+        if showsSeparator {
+            NSLayoutConstraint.activate([
+                topSeparatorView.heightAnchor.constraint(equalToConstant: Constants.separatorHeight),
+                topSeparatorView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+                topSeparatorView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+                topSeparatorView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+                segmentedPickerView.topAnchor.constraint(equalTo: topSeparatorView.bottomAnchor, constant: Constants.separatorTopPadding),
+            ])
+        } else {
+            segmentedPickerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
+        }
+
+        let textEntryTopPadding = usesReducedTopPadding ? Constants.textEntryViewReducedTopPadding : Constants.textEntryViewTopPadding
         NSLayoutConstraint.activate([
-            segmentedPickerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+
             segmentedPickerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             segmentedPickerView.heightAnchor.constraint(equalToConstant: Constants.segmentedControlHeight),
 
-            textEntryViewController.view.topAnchor.constraint(equalTo: segmentedPickerView.bottomAnchor, constant: Constants.textEntryViewTopPadding),
+            textEntryViewController.view.topAnchor.constraint(equalTo: segmentedPickerView.bottomAnchor, constant: textEntryTopPadding),
             textEntryViewController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Constants.textEntryViewSidePadding),
             textEntryViewController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -Constants.textEntryViewSidePadding),
             textEntryViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
@@ -170,6 +210,39 @@ class SwitchBarViewController: UIViewController {
             backButton.heightAnchor.constraint(equalToConstant: Constants.backButtonSize),
             backButton.widthAnchor.constraint(equalToConstant: Constants.backButtonSize)
         ])
+    }
+
+    private func updateSeparatorVisibility() {
+        guard let segmentedPickerView = segmentedPickerHostingController?.view else { return }
+
+        var selection: UITextRange?
+        if textEntryViewController.isFirstResponder {
+            selection = textEntryViewController.currentTextSelection
+        }
+
+        // For simplicity, just remove from superviews and recreate constraints.
+        // It should animate to new position automatically, preserving state
+        segmentedPickerView.removeFromSuperview()
+        view.addSubview(segmentedPickerView)
+
+        backButton.removeFromSuperview()
+        view.addSubview(backButton)
+
+        textEntryViewController.view.removeFromSuperview()
+        view.addSubview(textEntryViewController.view)
+
+        topSeparatorView.removeFromSuperview()
+        if showsSeparator {
+            view.addSubview(topSeparatorView)
+        }
+
+        setupConstraints()
+
+        if let selection {
+            textEntryViewController.focusTextField()
+            textEntryViewController.currentTextSelection = selection
+        }
+
     }
 
     // MARK: - Actions
@@ -193,6 +266,6 @@ private struct PickerWrapper: View {
 
     var body: some View {
         ImageSegmentedPickerView(viewModel: viewModel)
-            .frame(width: 230)
+            .frame(width: 216)
     }
 }

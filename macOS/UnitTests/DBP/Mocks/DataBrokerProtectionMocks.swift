@@ -44,7 +44,7 @@ final class MockAccountManager: AccountManager, SubscriptionAuthenticationStateP
     func storeAccount(token: String, email: String?, externalID: String?) {
     }
 
-    func signOut(skipNotification: Bool) {
+    func signOut(skipNotification: Bool, userInitiated: Bool) {
     }
 
     func signOut() {

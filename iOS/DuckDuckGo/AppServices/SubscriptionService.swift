@@ -38,7 +38,10 @@ final class SubscriptionService {
         subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                  purchasePlatform: .appStore,
                                                                                  paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
-                                                                                 supportsAlternateStripePaymentFlowStatusProvider: { featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow) })
+                                                                                 supportsAlternateStripePaymentFlowStatusProvider: { featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow) },
+                                                                                 isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) },
+                                                                                 isSubscriptionRestoreWidePixelMeasurementEnabledProvider: {
+                                                                                    featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) })
         Task {
             await subscriptionManagerV1?.loadInitialData()
             await subscriptionManagerV2?.loadInitialData()
@@ -50,7 +53,7 @@ final class SubscriptionService {
     func resume() {
         subscriptionManagerV1?.refreshCachedSubscriptionAndEntitlements { isSubscriptionActive in // only for v1
             if isSubscriptionActive {
-                DailyPixel.fire(pixel: .privacyProSubscriptionActive, withAdditionalParameters: [AuthVersion.key: AuthVersion.v1.rawValue])
+                DailyPixel.fire(pixel: .subscriptionActive, withAdditionalParameters: [AuthVersion.key: AuthVersion.v1.rawValue])
             }
         }
         Task {

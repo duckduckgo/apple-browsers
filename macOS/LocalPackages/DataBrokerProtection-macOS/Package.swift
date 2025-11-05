@@ -38,6 +38,7 @@ let package = Package(
         .package(path: "../NetworkProtectionMac"),
         .package(path: "../FeatureFlags"),
         .package(path: "../VPN"),
+        .package(path: "../LoginItems"),
     ],
     targets: [
         .target(
@@ -56,6 +57,7 @@ let package = Package(
                 .product(name: "VPN", package: "VPN"),
                 .product(name: "NetworkProtectionIPC", package: "NetworkProtectionMac"),
                 .product(name: "NetworkProtectionProxy", package: "NetworkProtectionMac"),
+                .product(name: "LoginItems", package: "LoginItems"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

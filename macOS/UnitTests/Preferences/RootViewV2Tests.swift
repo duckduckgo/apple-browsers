@@ -20,6 +20,7 @@ import Combine
 import Subscription
 import SubscriptionTestingUtilities
 import XCTest
+import PixelKitTestingUtilities
 
 @testable import DuckDuckGo_Privacy_Browser
 @testable import SubscriptionUI
@@ -31,12 +32,14 @@ final class RootViewV2Tests: XCTestCase {
     var subscriptionUIHandler: SubscriptionUIHandlerMock!
     var showTabCalled: Bool = false
     var showTabContent: Tab.TabContent?
+    var mockWinBackOfferVisibilityManager: MockWinBackOfferVisibilityManager!
 
     override func setUpWithError() throws {
         let ddsSyncing = MockDDGSyncing(authState: .active, isSyncInProgress: false)
         let vpnGatekeeper = MockVPNFeatureGatekeeper(canStartVPN: false, isInstalled: false, isVPNVisible: false, onboardStatusPublisher: Just(.completed).eraseToAnyPublisher())
+        mockWinBackOfferVisibilityManager = MockWinBackOfferVisibilityManager()
 
-        sidebarModel = PreferencesSidebarModel(privacyConfigurationManager: MockPrivacyConfigurationManaging(), featureFlagger: MockFeatureFlagger(), syncService: ddsSyncing, vpnGatekeeper: vpnGatekeeper, includeDuckPlayer: false, includeAIChat: true, subscriptionManager: SubscriptionAuthV1toV2BridgeMock())
+        sidebarModel = PreferencesSidebarModel(privacyConfigurationManager: MockPrivacyConfigurationManaging(), featureFlagger: MockFeatureFlagger(), syncService: ddsSyncing, vpnGatekeeper: vpnGatekeeper, includeDuckPlayer: false, includeAIChat: true, subscriptionManager: SubscriptionAuthV1toV2BridgeMock(), aiFeaturesStatusProvider: MockAIChatPreferences(), winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager)
         subscriptionManager = SubscriptionManagerMockV2()
         subscriptionUIHandler = SubscriptionUIHandlerMock( didPerformActionCallback: { _ in })
         showTabCalled = false
@@ -50,6 +53,7 @@ final class RootViewV2Tests: XCTestCase {
         subscriptionUIHandler = nil
         showTabCalled = false
         showTabContent = nil
+        mockWinBackOfferVisibilityManager = nil
     }
 
     func testMakePaidAIChatViewModel() throws {
@@ -60,6 +64,8 @@ final class RootViewV2Tests: XCTestCase {
             subscriptionUIHandler: subscriptionUIHandler,
             featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: MockRemoteAISettings(),
+            wideEvent: WideEventMock(),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
             showTab: { _ in },
             )
 
@@ -77,7 +83,9 @@ final class RootViewV2Tests: XCTestCase {
             subscriptionManager: subscriptionManager,
             subscriptionUIHandler: subscriptionUIHandler,
             featureFlagger: MockFeatureFlagger(),
-            aiChatURLSettings: mockRemoteAISettings
+            aiChatURLSettings: mockRemoteAISettings,
+            wideEvent: WideEventMock(),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
@@ -110,7 +118,8 @@ final class RootViewV2Tests: XCTestCase {
             subscriptionManager: subscriptionManager,
             subscriptionUIHandler: subscriptionUIHandler,
             featureFlagger: MockFeatureFlagger(),
-            aiChatURLSettings: MockRemoteAISettings()
+            aiChatURLSettings: MockRemoteAISettings(),
+            wideEvent: WideEventMock()
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
@@ -130,6 +139,43 @@ final class RootViewV2Tests: XCTestCase {
             // Success
         } else {
             XCTFail("Expected subscription tab content")
+        }
+    }
+
+    @MainActor
+    func testPurchaseSubscriptionViewModel_WinBackOfferPixel() throws {
+        // Given
+        let expectation = expectation(description: "Wait for pixel to be fired")
+        var capturedPixel: SubscriptionPixel?
+
+        mockWinBackOfferVisibilityManager.isOfferAvailable = true
+        let rootView = Preferences.RootViewV2(
+            model: sidebarModel,
+            subscriptionManager: subscriptionManager,
+            subscriptionUIHandler: subscriptionUIHandler,
+            featureFlagger: MockFeatureFlagger(),
+            aiChatURLSettings: MockRemoteAISettings(),
+            wideEvent: WideEventMock(),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
+            showTab: { _ in },
+            pixelHandler: { pixel, _ in
+                capturedPixel = pixel
+                expectation.fulfill()
+            }
+        )
+
+        let model = rootView.purchaseSubscriptionModel!
+
+        // When
+        model.purchaseAction()
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertNotNil(capturedPixel, "Should have fired a pixel")
+        if case .subscriptionWinBackOfferSettingsPageCTAClicked = capturedPixel! {
+            // Correct pixel fired
+        } else {
+            XCTFail("Should fire subscriptionWinBackOfferSettingsPageCTAClicked pixel")
         }
     }
 

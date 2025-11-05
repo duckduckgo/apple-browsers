@@ -40,10 +40,11 @@ final class UserContentUpdating {
     struct NewContent: UserContentControllerNewContent {
         let rulesUpdate: ContentBlockerRulesManager.UpdateEvent
         let sourceProvider: ScriptSourceProviding
+        let contentScopePreferences: ContentScopePreferences
 
         var makeUserScripts: @MainActor (ScriptSourceProviding) -> UserScripts {
-            { sourceProvider in
-                UserScripts(with: sourceProvider)
+            { [contentScopePreferences] sourceProvider in
+                UserScripts(with: sourceProvider, contentScopePreferences: contentScopePreferences)
             }
         }
     }
@@ -82,6 +83,7 @@ final class UserContentUpdating {
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          experimentManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
          tld: TLD,
+         featureFlagger: FeatureFlagger,
          onboardingNavigationDelegate: OnboardingNavigating,
          appearancePreferences: AppearancePreferences,
          startupPreferences: StartupPreferences,
@@ -89,7 +91,8 @@ final class UserContentUpdating {
          bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
          historyCoordinator: HistoryDataSource,
          fireproofDomains: DomainFireproofStatusProviding,
-         fireCoordinator: FireCoordinator
+         fireCoordinator: FireCoordinator,
+         contentScopePreferences: ContentScopePreferences
     ) {
         func onNotificationWithInitial(_ name: Notification.Name) -> AnyPublisher<Notification, Never> {
             return NotificationCenter.default.publisher(for: name)
@@ -116,6 +119,7 @@ final class UserContentUpdating {
                                                       trackerDataManager: trackerDataManager,
                                                       experimentManager: experimentManager(),
                                                       tld: tld,
+                                                      featureFlagger: featureFlagger,
                                                       onboardingNavigationDelegate: onboardingNavigationDelegate,
                                                       appearancePreferences: appearancePreferences,
                                                       startupPreferences: startupPreferences,
@@ -125,7 +129,7 @@ final class UserContentUpdating {
                                                       fireproofDomains: fireproofDomains,
                                                       fireCoordinator: fireCoordinator,
                                                       newTabPageActionsManager: self?.newTabPageActionsManager)
-            return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider)
+            return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider, contentScopePreferences: contentScopePreferences)
         }
 
         let updatesStream = AsyncStream { continuation in
@@ -136,6 +140,7 @@ final class UserContentUpdating {
                 .map { $0.0 } // drop gpcEnabled value: $0.1
                 .combineLatest(onNotificationWithInitial(.autofillUserSettingsDidChange), combine)
                 .combineLatest(onNotificationWithInitial(.autofillScriptDebugSettingsDidChange), combine)
+                .combineLatest(onNotificationWithInitial(.contentScopeDebugStateDidChange), combine)
                 .combineLatest($isDependenciesProviderInitialized.removeDuplicates())
                 .filter { (_, isInitialized) in isInitialized } // only proceed if provider was initialized
                 .sink { (value, _) in

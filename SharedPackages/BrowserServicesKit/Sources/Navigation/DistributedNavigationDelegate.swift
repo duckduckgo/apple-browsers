@@ -26,6 +26,7 @@ public final class DistributedNavigationDelegate: NSObject {
 
     internal var responders = ResponderChain()
     private var customDelegateMethodHandlers = [Selector: any AnyResponderRef]()
+    private let isPerformanceReportingEnabled: Bool
 
     /// approved navigation before `navigationDidStart` event received (useful for authentication challenge and redirect events)
     @MainActor
@@ -76,8 +77,10 @@ public final class DistributedNavigationDelegate: NSObject {
     private var currentHistoryItemIdentity: HistoryItemIdentity? { nil }
 #endif
 
-    public override init() {
+    public init(isPerformanceReportingEnabled: Bool) {
         dispatchPrecondition(condition: .onQueue(.main))
+        self.isPerformanceReportingEnabled = isPerformanceReportingEnabled
+        super.init()
 #if !_MAIN_FRAME_NAVIGATION_ENABLED
         _=WKWebView.swizzleLoadMethodOnce
 #endif
@@ -952,6 +955,22 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
         Logger.navigation.log("renderingProgressDidChange: \(progressEvents)")
         for responder in responders {
             responder.renderingProgressDidChange(progressEvents: progressEvents)
+        }
+    }
+#endif
+
+#if PRIVATE_NAVIGATION_PERFORMANCE_ENABLED
+    @MainActor
+    @objc(_webView:didGeneratePageLoadTiming:)
+    @available(macOS 15.2, *)
+    public func webView(_ webView: WKWebView, didGeneratePageLoadTiming timing: NSObject) {
+        guard isPerformanceReportingEnabled else { return }
+
+        // Create wrapper that extracts data from WebKit's private _WKPageLoadTiming object
+        let pageLoadTiming = WKPageLoadTiming(timing)
+
+        for responder in responders {
+            responder.didGeneratePageLoadTiming(pageLoadTiming)
         }
     }
 #endif

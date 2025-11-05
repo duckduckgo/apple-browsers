@@ -122,7 +122,7 @@ struct HomeMessageViewModel {
     
     let onDidClose: (ButtonAction?) async -> Void
     let onDidAppear: () -> Void
-    let onAttachAdditionalParameters: ((_ useCase: PrivacyProDataReportingUseCase, _ params: [String: String]) -> [String: String])?
+    let onAttachAdditionalParameters: ((_ useCase: SubscriptionDataReportingUseCase, _ params: [String: String]) -> [String: String])?
 
     func mapActionToViewModel(remoteAction: RemoteAction,
                               buttonAction: HomeMessageViewModel.ButtonAction,

@@ -17,6 +17,8 @@
 //
 
 import SwiftUI
+import SwiftUIExtensions
+import DesignResourcesKitIcons
 
 struct AddEditBookmarkView: View {
     let title: String
@@ -32,6 +34,10 @@ struct AddEditBookmarkView: View {
     let isURLFieldHidden: Bool
 
     let addFolderAction: () -> Void
+
+    @Binding var shouldShowSyncButton: Bool
+    let syncButtonAction: () -> Void
+    let dismissSyncButtonAction: () -> Void
 
     let otherActionTitle: String
     let isOtherActionDisabled: Bool
@@ -92,6 +98,19 @@ struct AddEditBookmarkView: View {
                 )
             }
         )
+        if shouldShowSyncButton {
+            Divider()
+            DismissableButton(
+                title: UserText.Bookmarks.Dialog.Action.syncBookmarks,
+                dismissButtonImage: DesignSystemImages.Glyphs.Size16.close,
+                backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+                mainAction: syncButtonAction,
+                dismissAction: dismissSyncButtonAction
+            )
+            .padding(.bottom, 15)
+            .padding(.top, 8)
+            .padding(.horizontal, 20)
+        }
     }
 
 }

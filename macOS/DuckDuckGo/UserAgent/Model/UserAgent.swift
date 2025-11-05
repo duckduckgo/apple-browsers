@@ -57,6 +57,7 @@ extension UserAgent {
         "Safari/\(webKitVersion)"
     static let webViewDefault = ""
     static let brandedDefault = "\(Self.safari) \(ddgVersion)"
+    static let brandedDefaultSuffix = "Version/\(safariVersion) " + "Safari/\(webKitVersion) " + ddgVersion
     static let `default` = UserAgent.brandedDefault
 
     static func `for`(_ url: URL?,

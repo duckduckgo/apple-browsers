@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import History
 import HistoryView
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -37,25 +38,14 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
         return await visitsBatch(query, source, limit, offset)
     }
 
-    func deleteVisits(for identifiers: [VisitIdentifier]) async {
-        deleteVisitsForIdentifierCalls.append(identifiers)
-    }
-
-    func burnVisits(for identifiers: [VisitIdentifier]) async {
-        burnVisitsForIdentifiersCalls.append(identifiers)
-    }
-
-    func countVisibleVisits(matching query: DataModel.HistoryQueryKind) async -> Int {
-        countVisibleVisitsCalls.append(query)
-        return await countVisibleVisits(query)
-    }
-
-    func deleteVisits(matching query: DataModel.HistoryQueryKind) async {
+    func deleteVisits(matching query: DataModel.HistoryQueryKind, and deleteChats: Bool) async {
         deleteVisitsMatchingQueryCalls.append(query)
+        clearChatHistoryCallCount += deleteChats ? 1 : 0
     }
 
-    func burnVisits(matching query: DataModel.HistoryQueryKind) async {
+    func burnVisits(matching query: DataModel.HistoryQueryKind, and burnChats: Bool) async {
         burnVisitsMatchingQueryCalls.append(query)
+        clearChatHistoryCallCount += burnChats ? 1 : 0
     }
 
     func titles(for urls: [URL]) -> [URL: String] {
@@ -63,19 +53,35 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
         return titlesForURLs(urls)
     }
 
+    func cookieDomains(matching query: DataModel.HistoryQueryKind) async -> Set<String> {
+        cookieDomainsMatchingQueryCalls.append(query)
+        return await cookieDomainsMatchingQuery(query)
+    }
+
+    func cookieDomains(for identifiers: [VisitIdentifier]) async -> Set<String> {
+        cookieDomainsForIdentifiersCalls.append(identifiers)
+        return await cookieDomainsForIdentifiers(identifiers)
+    }
+
+    func visits(matching query: DataModel.HistoryQueryKind) async -> [Visit] {
+        visitsMatchingQueryCalls.append(query)
+        return await visitsMatchingQuery(query)
+    }
+
+    func preferredURL(forSiteDomain domain: String) -> URL? {
+        URL(string: "https://\(domain)")
+    }
+
+    // Removed dialog-result forwarding: this is now handled by FireCoordinator
+
     // swiftlint:disable:next identifier_name
     var _ranges: [DataModel.HistoryRangeWithCount] = []
     var rangesCallCount: Int = 0
     var resetCacheCallCount: Int = 0
-
-    var countVisibleVisitsCalls: [DataModel.HistoryQueryKind] = []
-    var countVisibleVisits: (DataModel.HistoryQueryKind) async -> Int = { _ in return 0 }
+    var clearChatHistoryCallCount: Int = 0
 
     var deleteVisitsMatchingQueryCalls: [DataModel.HistoryQueryKind] = []
     var burnVisitsMatchingQueryCalls: [DataModel.HistoryQueryKind] = []
-
-    var deleteVisitsForIdentifierCalls: [[VisitIdentifier]] = []
-    var burnVisitsForIdentifiersCalls: [[VisitIdentifier]] = []
 
     var visitsBatchCalls: [VisitsBatchCall] = []
     var visitsBatch: (DataModel.HistoryQueryKind, DataModel.HistoryQuerySource, Int, Int) async -> DataModel.HistoryItemsBatch = { _, _, _, _ in .init(finished: true, visits: []) }
@@ -83,10 +89,63 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
     var titlesForURLsCalls: [[URL]] = []
     var titlesForURLs: ([URL]) -> [URL: String] = { _ in [:] }
 
+    var cookieDomainsMatchingQueryCalls: [DataModel.HistoryQueryKind] = []
+    var cookieDomainsMatchingQuery: (DataModel.HistoryQueryKind) async -> Set<String> = { _ in return [] }
+
+    var cookieDomainsForIdentifiersCalls: [[VisitIdentifier]] = []
+    var cookieDomainsForIdentifiers: ([VisitIdentifier]) async -> Set<String> = { _ in return [] }
+
+    var visitsMatchingQueryCalls: [DataModel.HistoryQueryKind] = []
+    var visitsMatchingQuery: (DataModel.HistoryQueryKind) async -> [Visit] = { _ in return [] }
+
     struct VisitsBatchCall: Equatable {
         let query: DataModel.HistoryQueryKind
         let source: DataModel.HistoryQuerySource
         let limit: Int
         let offset: Int
+    }
+}
+
+extension CapturingHistoryViewDataProvider {
+
+    /// Generate deterministic test data and return it.
+    /// - Parameters:
+    ///   - domainsCount: Number of distinct domains to generate (minimum 1).
+    ///   - visitsPerDomain: Number of visits to generate per domain (minimum 1).
+    /// - Returns: Tuple with generated entries and visits.
+    @MainActor
+    func configureWithGeneratedTestData(domainsCount: Int, visitsPerDomain: Int) -> (historyEntries: [HistoryEntry], visits: [Visit]) {
+        let domainCount = max(1, domainsCount)
+        let perDomain = max(1, visitsPerDomain)
+
+        let today = Date()
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today)!
+        let twoDaysAgo = Calendar.current.date(byAdding: .day, value: -2, to: today)!
+        let dayBuckets: [Date] = [today, yesterday, twoDaysAgo]
+
+        // Domains: site1.com, site2.com, ...
+        let domains: [String] = (1...domainCount).map { "site\($0).com" }
+
+        // Build entries and visits
+        var entries: [HistoryEntry] = []
+        var visits: [Visit] = []
+        var titlesByURL: [URL: String] = [:]
+
+        for (idx, domain) in domains.enumerated() {
+            let lastVisit = dayBuckets[idx % dayBuckets.count]
+            let url = URL(string: "https://\(domain)")!
+            let title = "\(domain) Home"
+            var entry = HistoryEntry(identifier: UUID(), url: url, failedToLoad: false, numberOfTotalVisits: perDomain, lastVisit: lastVisit, visits: [], numberOfTrackersBlocked: 0, blockedTrackingEntities: [], trackersFound: false)
+            entry.title = title
+            entries.append(entry)
+            titlesByURL[url] = title
+
+            for i in 0..<perDomain {
+                let d = dayBuckets[i % dayBuckets.count]
+                visits.append(Visit(date: d, identifier: url, historyEntry: entry))
+            }
+        }
+
+        return (entries, visits)
     }
 }

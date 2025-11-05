@@ -22,7 +22,7 @@ import PixelKit
 final class SharingMenu: NSMenu {
 
     enum Location: Equatable {
-        case mainMenu, moreOptionsMenu, addressBarTextField
+        case mainMenu, moreOptionsMenu, addressBarTextField, navigationBar
     }
 
     let location: Location
@@ -61,7 +61,7 @@ final class SharingMenu: NSMenu {
 
         let sharingData = DuckPlayer.shared.sharingData(for: tabViewModel.title, url: url) ?? (tabViewModel.title, url)
 
-        return (sharingData.title, [url])
+        return (sharingData.title, [sharingData.url])
     }
 
     @objc func openSharingPreferences(_ sender: NSMenuItem) {

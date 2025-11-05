@@ -163,8 +163,8 @@ public struct PixelParameters {
     public static let fromOnboarding = "from_onboarding"
 
     // Subscription
-    public static let privacyProKeychainAccessType = "access_type"
-    public static let privacyProKeychainError = "error"
+    public static let subscriptionKeychainAccessType = "access_type"
+    public static let subscriptionKeychainError = "error"
 
     // Sync
     public static let connectedDevices = "connected_devices"
@@ -185,6 +185,12 @@ public struct PixelParameters {
 
     // Default Browser Prompt
     public static let defaultBrowserPromptNumberOfModalsShown = "numberOfModalsShown"
+
+    // UserScript
+    public static let jsFile = "jsFile"
+
+    // New Address Bar Picker
+    public static let selection = "selection"
 }
 
 public struct PixelValues {
@@ -198,6 +204,11 @@ public class Pixel {
         static let phone = "phone"
     }
 
+    public enum BuildTarget: String {
+        case app
+        case vpn
+    }
+
     public static var isDryRun = false
 
     private static var isInternalUser: Bool {
@@ -205,15 +216,15 @@ public class Pixel {
     }
 
     public static let defaultPixelUserAgent: String = {
-        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
         // Strip patch version component as per https://app.asana.com/0/69071770703008/1209176655620013/f
-        let trimmedOSVersion = "\(osVersion.majorVersion).\(osVersion.minorVersion)"
+        let trimmedOSVersion = AppVersion.shared.osVersionMajorMinor
         return DefaultUserAgentManager.duckduckGoUserAgent(for: AppVersion.shared, osVersion: trimmedOSVersion)
     }()
 
     public enum QueryParameters: Codable {
         case atb
         case appVersion
+        case isInternalUser
     }
     
     
@@ -282,7 +293,7 @@ public class Pixel {
         if isDebugBuild {
             newParams[PixelParameters.test] = PixelValues.test
         }
-        if isInternalUser {
+        if isInternalUser && includedParameters.contains(.isInternalUser) {
             newParams[PixelParameters.isInternalUser] = "true"
         }
 

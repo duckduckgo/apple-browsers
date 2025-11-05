@@ -20,11 +20,6 @@
 import Foundation
 import PrivacyDashboard
 
-// We only support chat for now.  More options will be added in a future customisation project.
-enum OmniBarAccessoryType {
-    case chat
-}
-
 protocol OmniBar: AnyObject {
     var barView: any OmniBarView { get }
 
@@ -40,7 +35,7 @@ protocol OmniBar: AnyObject {
     func updateQuery(_ query: String?)
     func refreshText(forUrl url: URL?, forceFullURL: Bool)
 
-    func beginEditing()
+    func beginEditing(animated: Bool)
     func endEditing()
 
     func showSeparator()
@@ -63,8 +58,6 @@ protocol OmniBar: AnyObject {
     func removeTextSelection()
     func selectTextToEnd(_ offset: Int)
 
-    func updateAccessoryType(_ type: OmniBarAccessoryType)
-
     func showOrScheduleCookiesManagedNotification(isCosmetic: Bool)
 
     func showOrScheduleOnboardingPrivacyIconAnimation()
@@ -75,8 +68,20 @@ protocol OmniBar: AnyObject {
     func hidePrivacyIcon()
     func resetPrivacyIcon(for url: URL?)
 
+    func refreshCustomizableButton()
+
+    /// Sets the dynamic Dax Easter Egg logo URL for display in the omnibar privacy icon.
+    /// When a URL is provided, the privacy icon will load and display the dynamic logo image.
+    /// When nil is provided, the privacy icon resets to the default static Dax logo.
+    ///
+    /// - Parameter logoURL: Absolute URL string of the dynamic logo to display, or nil to reset to default
+    func setDaxEasterEggLogoURL(_ logoURL: String?)
+
     func cancelAllAnimations()
     func completeAnimationForDaxDialog()
+
+    /// Enters AI Chat full mode, showing AI Chat-specific UI in the omnibar
+    func enterAIChatMode()
 }
 
 extension OmniBar {

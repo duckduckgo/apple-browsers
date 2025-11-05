@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import SwiftUI
+#if os(iOS)
+import UIKit
+#endif
 
-public enum DevicePlatform {
+public enum DevicePlatform: String {
     public static var isMac: Bool {
         #if os(macOS)
         return true
@@ -56,4 +57,18 @@ public enum DevicePlatform {
             return "unknown"
         }
     }
+
+    public static var currentPlatform: DevicePlatform {
+        #if os(iOS)
+        return .iOS
+        #elseif os(macOS)
+        return .macOS
+        #else
+        return .unknown
+        #endif
+    }
+
+    case macOS
+    case iOS
+    case unknown
 }

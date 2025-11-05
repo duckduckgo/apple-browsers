@@ -18,19 +18,23 @@
 
 import SwiftUI
 
+@available(*, deprecated, message: "Soon to be replaced by PinnedTabsCollectionView!")
 struct PinnedTabsView: View {
-    private let tabStyleProvider: TabStyleProviding = NSApp.delegateTyped.visualStyle.tabStyleProvider
-
     @ObservedObject var model: PinnedTabsViewModel
     @State private var draggedTab: Tab?
+    @ObservedObject var themeManager: ThemeManager
+
+    var tabStyleProvider: TabStyleProviding {
+        themeManager.theme.tabStyleProvider
+    }
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 0) {
             ForEach(model.items) { item in
-                PinnedTabView(tabStyleProvider: tabStyleProvider,
-                              model: item,
+                PinnedTabView(model: item,
                               showsHover: draggedTab == nil)
                     .environmentObject(model)
+                    .environmentObject(themeManager)
                     .frame(maxWidth: tabStyleProvider.pinnedTabWidth,
                            maxHeight: tabStyleProvider.pinnedTabHeight)
                     .zIndex(model.selectedItem == item ? 1 : 0)

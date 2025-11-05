@@ -23,11 +23,15 @@ import Core
 @UIApplicationMain class AppDelegate: UIResponder, UIApplicationDelegate {
 
     private let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
+    private let initTime = CFAbsoluteTimeGetCurrent()
 
     var window: UIWindow?
 
     /// See: `Launching.swift`
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        let timeDiff = CFAbsoluteTimeGetCurrent() - initTime
+        Pixel.fire(pixel: .debugAppDelegateInitToLaunchTime, withAdditionalParameters: ["time_diff": String(timeDiff)])
+
         let isTesting: Bool = ProcessInfo().arguments.contains("testing")
         appStateMachine.handle(.didFinishLaunching(isTesting: isTesting))
         return true
@@ -85,9 +89,9 @@ import Core
     // MARK: - Debug
     /// These are public to allow access via Debug menu. Otherwise they shouldn't be called from outside.
     /// Avoid abusing this pattern. Inject dependencies where needed instead of relying on global access.
-    var debugPrivacyProDataReporter: PrivacyProDataReporting? {
+    var debugSubscriptionDataReporter: SubscriptionDataReporting? {
         if case .foreground(let foregroundHandling) = appStateMachine.currentState {
-            return (foregroundHandling as? Foreground)?.services.reportingService.privacyProDataReporter
+            return (foregroundHandling as? Foreground)?.services.reportingService.subscriptionDataReporter
         }
         return nil
     }

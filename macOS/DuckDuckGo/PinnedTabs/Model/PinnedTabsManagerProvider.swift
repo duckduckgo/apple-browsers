@@ -73,13 +73,13 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
     }
 
     @MainActor
-    private var windowControllerManager: WindowControllersManagerProtocol {
+    private var windowControllersManager: WindowControllersManagerProtocol {
         Application.appDelegate.windowControllersManager
     }
 
     @MainActor
     private var perWindowPinnedTabsManagers: [PinnedTabsManager] {
-        windowControllerManager.allTabCollectionViewModels
+        windowControllersManager.allTabCollectionViewModels
             .compactMap { $0.pinnedTabsManager }
             .filter { $0 !== sharedPinnedTabsManager }
     }
@@ -115,7 +115,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
     func pinnedTabsManager(for tab: Tab) -> PinnedTabsManager? {
         switch pinnedTabsMode {
         case .separate:
-            return windowControllerManager.allTabCollectionViewModels.first(where: { $0.tabs.contains(tab) || $0.pinnedTabs.contains(tab) })?.pinnedTabsManager
+            return windowControllersManager.allTabCollectionViewModels.first(where: { $0.tabs.contains(tab) || $0.pinnedTabs.contains(tab) })?.pinnedTabsManager
         case .shared:
             return sharedPinnedTabsManager
         }
@@ -138,11 +138,11 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
     @MainActor
     private func getNewPerWindowPinnedTabsManager(shouldMigrate: Bool, tabCollectionViewModel: TabCollectionViewModel, forceActive: Bool? = nil) -> PinnedTabsManager {
         let newPinnedTabsManager = PinnedTabsManager()
-        let isFirstWindow = windowControllerManager.mainWindowControllers.isEmpty
-        var isActiveWindow: Bool = forceActive ?? (windowControllerManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel === tabCollectionViewModel)
+        let isFirstWindow = windowControllersManager.mainWindowControllers.isEmpty
+        var isActiveWindow: Bool = forceActive ?? (windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel === tabCollectionViewModel)
 
         if isFirstWindow, !shouldMigrate, let cachedTabs = closedWindowPinnedTabCache {
-            newPinnedTabsManager.setUp(with: cachedTabs)
+            newPinnedTabsManager.setUp(movingTabsFrom: cachedTabs)
             closedWindowPinnedTabCache = nil
         }
 
@@ -156,8 +156,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
     @MainActor
     private func migrateShared(to newPinnedTabsManager: PinnedTabsManager) {
         for tab in sharedPinnedTabsManager.tabCollection.tabs {
-            guard let url = tab.url else { continue }
-            let newTab = Tab(content: .url(url, source: .ui))
+            let newTab = Tab(content: tab.content)
             newPinnedTabsManager.pin(newTab, firePixel: false)
         }
         sharedPinnedTabsManager.tabCollection.removeAll()
@@ -184,7 +183,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
     func cacheClosedWindowPinnedTabsIfNeeded(pinnedTabsManager: PinnedTabsManager?) {
         guard let pinnedTabsManager,
               pinnedTabsMode == .separate,
-                windowControllerManager.mainWindowControllers.count == 1 else { return }
+                windowControllersManager.mainWindowControllers.count == 1 else { return }
         closedWindowPinnedTabCache = pinnedTabsManager.tabCollection.duplicate()
     }
 }

@@ -26,11 +26,11 @@ public final class SubscriptionFeatureFlagMapping: FeatureFlaggerMapping<Subscri
     public init(internalUserDecider: InternalUserDecider, subscriptionEnvironment: SubscriptionEnvironment, subscriptionUserDefaults: UserDefaults) {
         super.init { feature in
             switch feature {
-            case .usePrivacyProUSARegionOverride:
+            case .useSubscriptionUSARegionOverride:
                 return (internalUserDecider.isInternalUser &&
                         subscriptionEnvironment.serviceEnvironment == .staging &&
                         subscriptionUserDefaults.storefrontRegionOverride == .usa)
-            case .usePrivacyProROWRegionOverride:
+            case .useSubscriptionROWRegionOverride:
                 return (internalUserDecider.isInternalUser &&
                         subscriptionEnvironment.serviceEnvironment == .staging &&
                         subscriptionUserDefaults.storefrontRegionOverride == .restOfWorld)

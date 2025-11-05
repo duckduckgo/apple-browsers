@@ -22,48 +22,63 @@ import BrowserServicesKit
 
 protocol OverlayWindowManaging {
 
-    func displayBlankSnapshotWindow()
+    func displayBlankSnapshotWindow(for reason: BlankSnapshotOverlayReason)
+    func removeBlankSnapshotWindow(for reason: BlankSnapshotOverlayReason)
+
     func displayOverlay(with viewController: UIViewController)
-    func removeOverlay()
-    func removeNonAuthenticationOverlay()
+    func removeAnyOverlay()
+
+}
+
+struct BlankSnapshotOverlayReason: OptionSet {
+
+    let rawValue: Int
+
+    static let autoClearing   = BlankSnapshotOverlayReason(rawValue: 1 << 0)
+    static let authentication = BlankSnapshotOverlayReason(rawValue: 1 << 1)
 
 }
 
 final class OverlayWindowManager: OverlayWindowManaging {
 
     private var overlayWindow: UIWindow?
+    private var activeReasons: BlankSnapshotOverlayReason = []
 
     private let window: UIWindow
     private let appSettings: AppSettings
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let featureFlagger: FeatureFlagger
     private let aiChatSettings: AIChatSettings
+    private let mobileCustomization: MobileCustomization
 
     init(window: UIWindow,
          appSettings: AppSettings,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          featureFlagger: FeatureFlagger,
-         aiChatSettings: AIChatSettings) {
+         aiChatSettings: AIChatSettings,
+         mobileCustomization: MobileCustomization) {
         self.window = window
         self.appSettings = appSettings
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
+        self.mobileCustomization = mobileCustomization
     }
 
-    func displayBlankSnapshotWindow() {
+    func displayBlankSnapshotWindow(for reason: BlankSnapshotOverlayReason) {
+        activeReasons.insert(reason)
         let blankSnapshotViewController = BlankSnapshotViewController(addressBarPosition: appSettings.currentAddressBarPosition,
                                                                       aiChatSettings: aiChatSettings,
                                                                       voiceSearchHelper: voiceSearchHelper,
                                                                       featureFlagger: featureFlagger,
-                                                                      appSettings: appSettings)
+                                                                      appSettings: appSettings,
+                                                                      mobileCustomization: mobileCustomization)
         blankSnapshotViewController.delegate = self
         displayOverlay(with: blankSnapshotViewController)
     }
 
     func displayOverlay(with viewController: UIViewController) {
         guard overlayWindow == nil else { return }
-
         overlayWindow = UIWindow(frame: window.frame)
         overlayWindow?.windowLevel = .alert
         overlayWindow?.rootViewController = viewController
@@ -72,28 +87,25 @@ final class OverlayWindowManager: OverlayWindowManaging {
         window.isHidden = true
     }
 
-    func removeOverlay() {
-        if overlayWindow == nil {
-            tryToObtainOverlayWindow()
-        }
+    func removeAnyOverlay() {
+        guard let overlay = overlayWindow ?? obtainOverlayWindow() else { return }
+        overlay.isHidden = true
+        overlayWindow = nil
+        window.makeKeyAndVisible()
+        activeReasons = []
+    }
 
-        if let overlay = overlayWindow {
-            overlay.isHidden = true
-            overlayWindow = nil
-            window.makeKeyAndVisible()
+    func removeBlankSnapshotWindow(for reason: BlankSnapshotOverlayReason) {
+        guard !(overlayWindow?.rootViewController is AuthenticationViewController) else { return }
+        activeReasons.remove(reason)
+        if activeReasons.isEmpty {
+            removeAnyOverlay()
         }
     }
 
-    func removeNonAuthenticationOverlay() {
-        if !(overlayWindow?.rootViewController is AuthenticationViewController) {
-            removeOverlay()
-        }
-    }
-
-    private func tryToObtainOverlayWindow() {
-        for window in UIApplication.shared.foregroundSceneWindows where window.rootViewController is BlankSnapshotViewController {
-            overlayWindow = window
-            return
+    private func obtainOverlayWindow() -> UIWindow? {
+        UIApplication.shared.foregroundSceneWindows.first {
+            $0.rootViewController is BlankSnapshotViewController
         }
     }
 
@@ -102,7 +114,7 @@ final class OverlayWindowManager: OverlayWindowManaging {
 extension OverlayWindowManager: BlankSnapshotViewRecoveringDelegate {
 
     func recoverFromPresenting(controller: BlankSnapshotViewController) {
-        removeOverlay()
+        removeAnyOverlay()
     }
 
 }

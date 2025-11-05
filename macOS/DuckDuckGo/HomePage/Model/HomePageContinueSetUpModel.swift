@@ -413,15 +413,15 @@ extension HomePage.Models {
 
             switch self {
             case .defaultBrowser:
-                return .defaultApp128.resized(to: iconSize)!
+                return .defaultApp128.resized(to: iconSize)
             case .dock:
-                return .dock128.resized(to: iconSize)!
+                return .dock128.resized(to: iconSize)
             case .importBookmarksAndPasswords:
-                return .import128.resized(to: iconSize)!
+                return .import128.resized(to: iconSize)
             case .duckplayer:
-                return .cleanTube128.resized(to: iconSize)!
+                return .cleanTube128.resized(to: iconSize)
             case .emailProtection:
-                return .inbox128.resized(to: iconSize)!
+                return .inbox128.resized(to: iconSize)
             }
         }
     }
@@ -437,17 +437,5 @@ extension HomePage.Models {
         static func height(for rowCount: Int) -> CGFloat {
             (itemHeight + verticalSpacing) * CGFloat(rowCount) - verticalSpacing
         }
-    }
-}
-
-// MARK: - Remote Messaging
-
-extension AppVersion {
-    public var majorAndMinorOSVersion: String {
-        let components = osVersion.split(separator: ".")
-        guard components.count >= 2 else {
-            return majorVersionNumber
-        }
-        return "\(components[0]).\(components[1])"
     }
 }

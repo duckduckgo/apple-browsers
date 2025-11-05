@@ -23,6 +23,7 @@ public enum UsageActivityType: String {
 
     case search
     case appUse = "app_use"
+    case duckAI = "duckai"
 
 }
 
@@ -92,6 +93,7 @@ private extension UsageActivityType {
         switch self {
         case .appUse: return storage.appUseAtbs
         case .search: return storage.searchAtbs
+        case .duckAI: return storage.duckAIAtbs
         }
     }
 
@@ -102,6 +104,8 @@ private extension UsageActivityType {
             storage.appUseAtbs = atbs
         case .search:
             storage.searchAtbs = atbs
+        case .duckAI:
+            storage.duckAIAtbs = atbs
         }
     }
 

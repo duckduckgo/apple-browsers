@@ -6,7 +6,6 @@ on:
       report:
         description: Private API check report
         required: true
-        default: ''
         type: string
 
 jobs:

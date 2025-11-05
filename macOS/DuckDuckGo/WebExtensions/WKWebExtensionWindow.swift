@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-#if WEB_EXTENSIONS_ENABLED
+import WebKit
 
 @available(macOS 15.4, *)
 @MainActor
@@ -43,8 +43,44 @@ extension MainWindowController: WKWebExtensionWindow {
     }
 
     func setWindowState(_ state: WKWebExtension.WindowState, for context: WKWebExtensionContext) async throws {
-        assertionFailure("not supported yet")
-        throw WebExtensionWindowError.notSupported
+        guard let window else {
+            return
+        }
+
+        func isFullScreen(_ window: NSWindow) -> Bool {
+            window.styleMask.contains(.fullScreen)
+        }
+
+        switch state {
+        case .normal:
+            if isFullScreen(window) { window.toggleFullScreen(nil) }
+            if window.isMiniaturized { window.deminiaturize(nil) }
+            if window.isZoomed { window.zoom(nil) }
+            window.makeKeyAndOrderFront(nil)
+
+        case .minimized:
+            if !window.isMiniaturized {
+                window.miniaturize(nil)
+            }
+
+        case .maximized:
+            if isFullScreen(window) { window.toggleFullScreen(nil) }
+            if window.isMiniaturized { window.deminiaturize(nil) }
+            if !window.isZoomed {
+                window.zoom(nil)
+            } else if let vf = window.screen?.visibleFrame {
+                window.setFrame(vf, display: true, animate: false)
+            }
+            window.makeKeyAndOrderFront(nil)
+
+        case .fullscreen:
+            if !isFullScreen(window) {
+                window.toggleFullScreen(nil)
+            }
+
+        default:
+            break
+        }
     }
 
     func isPrivate(for context: WKWebExtensionContext) -> Bool {
@@ -60,19 +96,14 @@ extension MainWindowController: WKWebExtensionWindow {
     }
 
     func setFrame(_ frame: CGRect, for context: WKWebExtensionContext) async throws {
-        assertionFailure("not supported yet")
-        throw WebExtensionWindowError.notSupported
+        window?.setFrame(frame, display: true)
     }
 
     func focus(for context: WKWebExtensionContext) async throws {
-        assertionFailure("not supported yet")
-        throw WebExtensionWindowError.notSupported
+        window?.makeKeyAndOrderFront(nil)
     }
 
     func close(for context: WKWebExtensionContext) async throws {
         close()
     }
-
 }
-
-#endif

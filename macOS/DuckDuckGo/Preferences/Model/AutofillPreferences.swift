@@ -125,8 +125,30 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
 
 #if APPSTORE
     var passwordManager: PasswordManager {
-        get { return .duckduckgo }
-        set {}
+        get {
+            guard #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled else {
+                // Roll back to original behavior if web extensions are not supported
+                // (mostly as a safety measure for disabling the feature flag)
+                return .duckduckgo
+            }
+
+            let passwordManager = PasswordManager(rawValue: selectedPasswordManager) ?? .duckduckgo
+
+            guard passwordManager != .bitwarden else {
+                return .duckduckgo
+            }
+
+            return passwordManager
+        }
+        set {
+            guard #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled else {
+                // Roll back to original behavior if web extensions are not supported
+                // (mostly as a safety measure for disabling the feature flag)
+                return
+            }
+
+            selectedPasswordManager = newValue.rawValue
+        }
     }
 #else
     var passwordManager: PasswordManager {
@@ -141,7 +163,7 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
 #endif
 
     @UserDefaultsWrapper(key: .selectedPasswordManager, defaultValue: PasswordManager.duckduckgo.rawValue)
-    private var selectedPasswordManager: String
+    private(set) var selectedPasswordManager: String
 
     @UserDefaultsWrapper(key: .autofillDebugScriptEnabled, defaultValue: false)
     private var debugScriptEnabledWrapped: Bool

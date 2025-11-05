@@ -25,6 +25,7 @@ enum PinnableView: String {
     case downloads
     case homeButton
     case networkProtection
+    case share
 }
 
 protocol PinningManager {
@@ -108,6 +109,7 @@ final class LocalPinningManager: PinningManager {
         case .homeButton: return ""
         case .networkProtection:
             return isPinned(.networkProtection) ? UserText.hideNetworkProtectionShortcut : UserText.showNetworkProtectionShortcut
+        case .share: return isPinned(.share) ? UserText.hideShareShortcut : UserText.showShareShortcut
         }
     }
 

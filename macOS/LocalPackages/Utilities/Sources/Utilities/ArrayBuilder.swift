@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import AppKit
+import Foundation
 
 @resultBuilder
 public struct ArrayBuilder<Element> {

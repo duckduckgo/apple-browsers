@@ -27,7 +27,7 @@ struct SmallOmniBarState {
         let showBackButton = false
         let showForwardButton = false
         let showBookmarksButton = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = true
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -35,7 +35,7 @@ struct SmallOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -64,7 +64,7 @@ struct SmallOmniBarState {
         let showBackButton = false
         let showForwardButton = false
         let showBookmarksButton = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -72,7 +72,7 @@ struct SmallOmniBarState {
         let showClear = true
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -101,7 +101,7 @@ struct SmallOmniBarState {
         let showBackButton = false
         let showForwardButton = false
         let showBookmarksButton = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = true
         let allowsTrackersAnimation = false
         let showSearchLoupe = true
@@ -110,7 +110,7 @@ struct SmallOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showDismiss = false
@@ -138,7 +138,7 @@ struct SmallOmniBarState {
         let showBackButton = false
         let showForwardButton = false
         let showBookmarksButton = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = true
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -146,7 +146,7 @@ struct SmallOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -176,7 +176,7 @@ struct SmallOmniBarState {
         let showBackButton = false
         let showForwardButton = false
         let showBookmarksButton = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -184,7 +184,7 @@ struct SmallOmniBarState {
         let showClear = true
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -214,7 +214,7 @@ struct SmallOmniBarState {
         let showBackButton = false
         let showForwardButton = false
         let showBookmarksButton = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = true
         let showSearchLoupe = false
@@ -222,8 +222,13 @@ struct SmallOmniBarState {
         let showBackground = true
         let showClear = false
         var showAbort: Bool { isLoading }
-        var showRefresh: Bool { !isLoading }
-        let showShare: Bool = true
+        var showRefresh: Bool { return !isLoading && dependencies.isRefreshButtonEnabled }
+        var showCustomizableButton: Bool {
+            guard dependencies.mobileCustomization.state.isEnabled else {
+                return true
+            }
+            return dependencies.mobileCustomization.state.currentAddressBarButton != .none
+        }
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -251,7 +256,7 @@ struct SmallOmniBarState {
         let showBackButton = false
         let showForwardButton = false
         let showBookmarksButton = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -259,7 +264,7 @@ struct SmallOmniBarState {
         let showClear = true
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showDismiss = true
@@ -291,5 +296,9 @@ extension OmnibarDependencyProvider {
 
     var shouldShowSearchLoupeIfPossible: Bool {
         return false
+    }
+    
+    var isRefreshButtonEnabled: Bool {
+        return appSettings.currentRefreshButtonPosition.isEnabledForAddressBar
     }
 }

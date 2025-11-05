@@ -26,19 +26,19 @@ final class ReportingService {
 
     let marketplaceAdPostbackManager = MarketplaceAdPostbackManager()
     let onboardingPixelReporter = OnboardingPixelReporter()
-    let privacyProDataReporter: PrivacyProDataReporting
+    let subscriptionDataReporter: SubscriptionDataReporting
     let featureFlagging: FeatureFlagger
 
     var syncService: SyncService? {
         didSet {
             guard let syncService else { return }
-            privacyProDataReporter.injectSyncService(syncService.sync)
+            subscriptionDataReporter.injectSyncService(syncService.sync)
         }
     }
 
     init(fireproofing: Fireproofing, featureFlagging: FeatureFlagger) {
         self.featureFlagging = featureFlagging
-        privacyProDataReporter = PrivacyProDataReporter(fireproofing: fireproofing)
+        subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)
         NotificationCenter.default.addObserver(forName: .didFetchConfigurationOnForeground,
                                                object: nil,
                                                queue: .main) { _ in
@@ -64,9 +64,36 @@ final class ReportingService {
         reportAdAttribution()
         reportWidgetUsage()
         onboardingPixelReporter.fireEnqueuedPixelsIfNeeded()
+        reportUserNotificationAuthStatus()
     }
 
-    private func reportWidgetUsage() {
+    func setupStorageForMarketPlacePostback() {
+        marketplaceAdPostbackManager.updateReturningUserValue()
+    }
+
+    // MARK: - Resume
+
+    func resume() {
+        Task {
+            await subscriptionDataReporter.saveWidgetAdded()
+        }
+        reportFailedCompilationsPixelIfNeeded()
+        AppDependencyProvider.shared.persistentPixel.sendQueuedPixels { _ in }
+    }
+
+    // MARK: - Suspend
+
+    func suspend() {
+        subscriptionDataReporter.saveApplicationLastSessionEnded()
+    }
+
+}
+
+// MARK: - Pixels
+
+private extension ReportingService {
+    
+    func reportWidgetUsage() {
         guard featureFlagging.isFeatureOn(.widgetReporting) else { return }
         WidgetCenter.shared.getCurrentConfigurations { result in
             switch result {
@@ -86,27 +113,24 @@ final class ReportingService {
         }
     }
 
-    private func reportAdAttribution() {
+    func reportAdAttribution() {
         Task.detached(priority: .background) {
             await AdAttributionPixelReporter.shared.reportAttributionIfNeeded()
         }
     }
-
-    func setupStorageForMarketPlacePostback() {
-        marketplaceAdPostbackManager.updateReturningUserValue()
-    }
-
-    // MARK: - Resume
-
-    func resume() {
-        Task {
-            await privacyProDataReporter.saveWidgetAdded()
+    
+    func reportUserNotificationAuthStatus() {
+        Task.detached(priority: .utility) {
+            let status = await UNUserNotificationCenter.current().authorizationStatus()
+            // We only care about authorized or denined at the moment for provisional notification
+            guard status == .authorized || status == .denied else { return }
+            DailyPixel.fire(pixel: .userNotificationAuthorizationStatusDaily, withAdditionalParameters: [
+                "status": status.stringValue
+            ])
         }
-        fireFailedCompilationsPixelIfNeeded()
-        AppDependencyProvider.shared.persistentPixel.sendQueuedPixels { _ in }
     }
-
-    private func fireFailedCompilationsPixelIfNeeded() {
+    
+    func reportFailedCompilationsPixelIfNeeded() {
         let store = FailedCompilationsStore()
         if store.hasAnyFailures {
             DailyPixel.fire(pixel: .compilationFailed, withAdditionalParameters: store.summary) { error in
@@ -115,11 +139,4 @@ final class ReportingService {
             }
         }
     }
-
-    // MARK: - Suspend
-
-    func suspend() {
-        privacyProDataReporter.saveApplicationLastSessionEnded()
-    }
-
 }

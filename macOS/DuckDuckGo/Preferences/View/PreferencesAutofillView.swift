@@ -100,7 +100,7 @@ extension Preferences {
                         }
                     }
 
-                    if model.passwordManager != .bitwarden {
+                    if shouldShowImportExportButtons {
                         VStack {
                             Button(UserText.importPasswords) {
                                 model.openImportPasswordsWindow()
@@ -120,6 +120,7 @@ extension Preferences {
                             bitwardenStatusView(for: bitwardenManager.status)
                         }
                     }
+
                 }
 #endif
 
@@ -195,6 +196,20 @@ extension Preferences {
             }, label: {})
             .pickerStyle(.radioGroup)
             .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
+        }
+
+        // MARK: - Password Manager Availability Methods
+
+        private var shouldShowBitwardenNativeOption: Bool {
+            #if !APPSTORE
+            return true
+            #else
+            return false
+            #endif
+        }
+
+        private var shouldShowImportExportButtons: Bool {
+            return model.passwordManager == .duckduckgo
         }
 
         @ViewBuilder private func bitwardenStatusView(for status: BWStatus) -> some View {

@@ -25,12 +25,15 @@ struct PinnedTabView: View, DropDelegate {
         static let cornerRadius: CGFloat = 10
     }
 
-    let tabStyleProvider: TabStyleProviding
-
     @ObservedObject var model: Tab
     @EnvironmentObject var collectionModel: PinnedTabsViewModel
+    @EnvironmentObject var themeManager: ThemeManager
 
     @Environment(\.controlActiveState) private var controlActiveState
+
+    private var tabStyleProvider: TabStyleProviding {
+        themeManager.theme.tabStyleProvider
+    }
 
     // Hover highlight is disabled while another tab is dragged
     var showsHover: Bool
@@ -57,6 +60,7 @@ struct PinnedTabView: View, DropDelegate {
                 )
                 .environmentObject(model)
                 .environmentObject(model.crashIndicatorModel)
+                .environmentObject(themeManager)
             }
             .buttonStyle(TouchDownButtonStyle())
             .contextMenu { contextMenu }
@@ -99,7 +103,7 @@ struct PinnedTabView: View, DropDelegate {
               ].first(where: { item.registeredTypeIdentifiers.contains($0) }) else { return false }
 
         item.loadItem(forTypeIdentifier: typeIdentifier) { (result, _) in
-            guard let url = result as? URL ?? ((result as? Data)?.utf8String() ?? result as? String).flatMap(URL.makeURL(from:)) else { return }
+            guard let url = result as? URL ?? ((result as? Data)?.utf8String() ?? result as? String).flatMap({ URL.makeURL(from: $0, enableMetrics: false) }) else { return }
             DispatchQueue.main.async {
                 model.setUrl(url, source: .userEntered(url.absoluteString, downloadRequested: false))
             }
@@ -141,6 +145,7 @@ struct PinnedTabView: View, DropDelegate {
             guard let model = model else { return }
             collectionModel?.duplicate(model)
         }
+        .disabled(model.content.canBeDuplicated == false)
 
         Button(UserText.unpinTab) { [weak collectionModel, weak model] in
             guard let model = model else { return }
@@ -172,6 +177,11 @@ struct PinnedTabView: View, DropDelegate {
                 model?.killWebContentProcess()
             } label: {
                 Text(verbatim: Tab.crashTabMenuOptionTitle)
+            }
+            Button { [weak model] in
+                model?.killWebContentProcessMultipleTimes()
+            } label: {
+                Text(verbatim: Tab.crashTabMenuOptionTitleMultipleTimes)
             }
         }
     }
@@ -268,7 +278,12 @@ struct PinnedTabInnerView: View {
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var model: Tab
     @EnvironmentObject var tabCrashIndicatorModel: TabCrashIndicatorModel
+    @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.controlActiveState) private var controlActiveState
+
+    private var colorsProvider: ColorsProviding {
+        themeManager.theme.colorsProvider
+    }
 
     var body: some View {
         ZStack {
@@ -300,13 +315,13 @@ struct PinnedTabInnerView: View {
             if isSelected && showSShaped {
                 PinnedTabRampView(rampWidth: rampSize,
                                   rampHeight: rampSize,
-                                  foregroundColor: .surfacePrimary)
+                                  foregroundColor: Color(colorsProvider.navigationBackgroundColor))
                 .position(x: 2, y: height - (rampSize / 2))
 
                 PinnedTabRampView(rampWidth: rampSize,
                                   rampHeight: rampSize,
                                   isFlippedHorizontally: true,
-                                  foregroundColor: .surfacePrimary)
+                                  foregroundColor: Color(colorsProvider.navigationBackgroundColor))
                 .position(x: width + rampSize + 2, y: height - (rampSize / 2))
             }
         }
@@ -407,8 +422,7 @@ struct PinnedTabInnerView: View {
             error: model.error,
             actualFavicon: model.favicon,
             isBurner: model.burnerMode.isBurner,
-            featureFlagger: NSApp.delegateTyped.featureFlagger,
-            visualStyle: NSApp.delegateTyped.visualStyle
+            featureFlagger: NSApp.delegateTyped.featureFlagger
         )
     }
 

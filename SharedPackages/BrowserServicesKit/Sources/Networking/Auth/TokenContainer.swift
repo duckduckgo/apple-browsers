@@ -18,10 +18,11 @@
 
 import Foundation
 import JWTKit
+import Common
 
 /// Container for both access and refresh tokens
 ///
-/// WARNING: Specialised for Privacy Pro Subscription, abstract for other use cases.
+/// WARNING: Specialised for Subscription, abstract for other use cases.
 ///
 /// This is the object that should be stored in the keychain and used to make authenticated requests
 /// The decoded tokens are used to determine the user's entitlements
@@ -63,8 +64,24 @@ extension TokenContainer {
     }
 }
 
-public enum TokenPayloadError: Error {
+public enum TokenPayloadError: DDGError {
     case invalidTokenScope
+
+    public var description: String {
+        switch self {
+        case .invalidTokenScope:
+            return "Invalid token scope"
+        }
+    }
+
+    public static var errorDomain: String { "com.duckduckgo.networking.TokenPayloadError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .invalidTokenScope:
+            return 11300
+        }
+    }
 }
 
 public struct JWTAccessToken: JWTPayload, Equatable {

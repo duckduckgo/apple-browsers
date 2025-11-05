@@ -105,7 +105,7 @@ public final class TestRunHelper: NSObject {
         NSObject.perform(NSSelectorFromString("enableAutoreleaseTracking"))
 
         // swizzle WKWebViewConfiguration.init to use a shared process pool
-        _=WKWebViewConfiguration.swizzleInitOnce
+        WKWebViewConfiguration.swizzleInitOnce(processPool: self.processPool)
         _=WKWebView.swizzleInstallScreenTimeWebpageControllerIfNeededOnce
 
         // swizzle NSView.init to track loaded views

@@ -194,9 +194,9 @@ final class FireTests: XCTestCase {
         let faviconManager = FaviconManagerMock()
 
         let pinnedTabs: [Tab] = [
-            .init(content: .url("https://duck.com/".url!, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration()),
-            .init(content: .url("https://spreadprivacy.com/".url!, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration()),
-            .init(content: .url("https://wikipedia.org/".url!, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration())
+            makeTab(url: "https://duck.com/".url!),
+            makeTab(url: "https://spreadprivacy.com/".url!),
+            makeTab(url: "https://wikipedia.org/".url!),
         ]
         pinnedTabsManagerProvider.newPinnedTabsManager = PinnedTabsManager(tabCollection: .init(tabs: pinnedTabs))
 
@@ -541,6 +541,8 @@ final class FireTests: XCTestCase {
         await fulfillment(of: [burningExpectation], timeout: 5)
     }
 
+    // MARK: - Helpers
+
     @MainActor
     func preparePersistedState(withFileName fileName: String) -> FileStore {
         let fileStore = FileStoreMock()
@@ -554,16 +556,20 @@ final class FireTests: XCTestCase {
         return fileStore
     }
 
+    @MainActor
+    private func makeTab(url: URL) -> Tab {
+        Tab(content: .url(url, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration(), extensionsBuilder: TestTabExtensionsBuilder())
+    }
+
 }
 
 fileprivate extension TabCollectionViewModel {
 
     @MainActor
     static func makeTabCollectionViewModel(with pinnedTabsManagerProvider: PinnedTabsManagerProviding) -> TabCollectionViewModel {
-
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(), pinnedTabsManagerProvider: pinnedTabsManagerProvider)
-        tabCollectionViewModel.append(tab: Tab(content: .none))
-        tabCollectionViewModel.append(tab: Tab(content: .none))
+        tabCollectionViewModel.append(tab: Tab(content: .none, extensionsBuilder: TestTabExtensionsBuilder()))
+        tabCollectionViewModel.append(tab: Tab(content: .none, extensionsBuilder: TestTabExtensionsBuilder()))
         return tabCollectionViewModel
     }
 

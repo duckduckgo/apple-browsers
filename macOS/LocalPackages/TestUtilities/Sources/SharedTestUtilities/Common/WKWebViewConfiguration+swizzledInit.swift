@@ -23,6 +23,7 @@ public extension WKWebViewConfiguration {
     private static var processPoolGetter: (() -> WKProcessPool?)?
 
     static func swizzleInitOnce(processPool: @escaping @autoclosure () -> WKProcessPool?) {
+        guard processPoolGetter == nil else { return }
         processPoolGetter = processPool
         _=swizzleInitOnce
     }

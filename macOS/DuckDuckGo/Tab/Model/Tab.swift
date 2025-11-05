@@ -1163,8 +1163,8 @@ protocol NewWindowPolicyDecisionMaker {
             .store(in: &webViewCancellables)
 
         // background tab loading should start immediately
-        DispatchQueue.main.async {
-            self.reloadIfNeeded(source: .loadInBackgroundIfNeeded(shouldLoadInBackground: shouldLoadInBackground))
+        DispatchQueue.main.async { [weak self] in
+            self?.reloadIfNeeded(source: .loadInBackgroundIfNeeded(shouldLoadInBackground: shouldLoadInBackground))
         }
     }
 

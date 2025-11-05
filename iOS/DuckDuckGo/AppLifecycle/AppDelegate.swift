@@ -23,7 +23,6 @@ import Core
 @UIApplicationMain class AppDelegate: UIResponder, UIApplicationDelegate {
 
     let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
-    private let initTime = CFAbsoluteTimeGetCurrent()
 
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
         // Called when a new scene session is being created.
@@ -42,8 +41,6 @@ import Core
 
     /// See: `Launching.swift`
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        let timeDiff = CFAbsoluteTimeGetCurrent() - initTime
-        Pixel.fire(pixel: .appInitToLaunchTime, withAdditionalParameters: ["time_diff": String(timeDiff)])
         let isTesting: Bool = ProcessInfo().arguments.contains("testing")
         appStateMachine.handle(.didFinishLaunching(isTesting: isTesting))
         if !Bundle.main.supportsScenes {

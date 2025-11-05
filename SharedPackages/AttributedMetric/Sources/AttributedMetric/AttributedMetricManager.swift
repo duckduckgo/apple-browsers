@@ -39,7 +39,7 @@ public protocol DateProviding {
     var debugDate: Date? { get set }
 }
 
-public struct DefaultDateProvider: DateProviding {
+public class DefaultDateProvider: DateProviding {
     public init() {}
 
     public func now() -> Date {
@@ -49,6 +49,7 @@ public struct DefaultDateProvider: DateProviding {
             return Date()
         }
     }
+
     public var debugDate: Date?
 }
 
@@ -450,33 +451,37 @@ public final class AttributedMetricManager {
                   true, // is subscribed
                   _):
                 // At each app startup, check the subscription state. If the a month=0 pixel was sent, the user is no longer on a free trial, and the state is autoRenewable or notAutoRenewable, send this pixel with month=1.
-                guard let bucket = try? bucketModifier.bucket(value: 1, pixelName: .userSubscribed) else {
-                    Logger.attributedMetric.error("Failed to bucket length value")
-                    return
-                }
-                pixelKit.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
-                                                                   installDate: originOrInstall.installDate,
-                                                                   length: bucket.value,
-                                                                   bucketVersion: bucket.version),
-                              frequency: .legacyDailyNoSuffix)
-            case (_, _,
-                  true, // is subscribed
-                  true // 1 month pixel sent
-            ):
-                // At each app startup, check the subscription state. If the a month=1 pixel was sent, the state is autoRenewable or notAutoRenewable, and the subscription has been active for more than a month, send this pixel with month=2+.
-                guard let bucket = try? bucketModifier.bucket(value: 2, pixelName: .userSubscribed) else {
-                    Logger.attributedMetric.error("Failed to bucket length value")
-                    return
-                }
-                if QuantisedTimePast.daysBetween(from: subscriptionDate, to: now) >= Constants.daysInAMonth {
+                do {
+                    let bucket = try bucketModifier.bucket(value: 1, pixelName: .userSubscribed)
                     pixelKit.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
                                                                        installDate: originOrInstall.installDate,
                                                                        length: bucket.value,
                                                                        bucketVersion: bucket.version),
                                   frequency: .legacyDailyNoSuffix)
+                } catch {
+                    Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
+                }
+            case (_,
+                  _,
+                  true, // is subscribed
+                  true // 1 month pixel sent
+            ):
+                // At each app startup, check the subscription state. If the a month=1 pixel was sent, the state is autoRenewable or notAutoRenewable, and the subscription has been active for more than a month, send this pixel with month=2+.
+                do {
+                    let bucket = try bucketModifier.bucket(value: 2, pixelName: .userSubscribed)
+                    if QuantisedTimePast.daysBetween(from: subscriptionDate, to: now) >= Constants.daysInAMonth {
+                        pixelKit.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
+                                                                           installDate: originOrInstall.installDate,
+                                                                           length: bucket.value,
+                                                                           bucketVersion: bucket.version),
+                                      frequency: .legacyDailyNoSuffix)
+                    }
+                } catch {
+                    Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
                 }
             default:
-                break
+                Logger.attributedMetric.error("Unexpected case")
+                assertionFailure("Unexpected case")
             }
         }
     }

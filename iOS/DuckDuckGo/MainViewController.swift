@@ -3966,9 +3966,6 @@ extension MainViewController {
         case .bookmarks:
             self.segueToBookmarks()
 
-        case .aiChat:
-            self.openAIChat()
-
         case .passwords:
             self.launchAutofillLogins(with: currentTab?.url, currentTabUid: currentTab?.tabModel.uid, source: .customizedToolbarButton, selectedAccount: nil)
 

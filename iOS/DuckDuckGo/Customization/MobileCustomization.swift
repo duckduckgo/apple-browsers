@@ -62,8 +62,6 @@ class MobileCustomization {
                 "New Tab"
             case .bookmarks:
                 "Bookmarks"
-            case .aiChat:
-                "Duck.ai"
             case .fire:
                 "Clear Tabs and Data"
             case .vpn:
@@ -103,8 +101,6 @@ class MobileCustomization {
                 DesignSystemImages.Glyphs.Size24.add
             case .bookmarks:
                 DesignSystemImages.Glyphs.Size24.bookmarks
-            case .aiChat:
-                DesignSystemImages.Glyphs.Size24.aiChat
             case .fire:
                 DesignSystemImages.Glyphs.Size24.fireSolid
             case .vpn:
@@ -136,8 +132,6 @@ class MobileCustomization {
                 DesignSystemImages.Glyphs.Size16.add
             case .bookmarks:
                 DesignSystemImages.Glyphs.Size16.bookmarks
-            case .aiChat:
-                DesignSystemImages.Glyphs.Size16.aiChat
             case .fire:
                 DesignSystemImages.Glyphs.Size16.fireSolid
             case .vpn:
@@ -169,9 +163,6 @@ class MobileCustomization {
         case fire
         case vpn
         case passwords
-
-        // Excluded for now
-        case aiChat
     }
 
     static let addressBarDefault: Button = .share

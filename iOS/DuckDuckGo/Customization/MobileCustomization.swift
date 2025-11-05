@@ -168,8 +168,9 @@ class MobileCustomization {
     static let addressBarDefault: Button = .share
     static let toolbarDefault: Button = .fire
 
-    static let addressBarButtons: [Button?] = {
+    static let addressBarButtons: [Button] = {
         let sortedButtons: [Button] = [
+            .share,
             .addEditBookmark,
             .addEditFavorite,
             .fire,
@@ -177,13 +178,12 @@ class MobileCustomization {
             .zoom,
         ].sorted(by: descriptionComparison)
 
-        return [.share] // default
-            + sortedButtons
-            + [nil, Button.none] // none is at the end after the divider
+        return sortedButtons + [Button.none] // none is last in the list
     } ()
 
     static let toolbarButtons: [Button] = {
         let sortedButtons: [Button] = [
+            .fire,
             .bookmarks,
             .home,
             .newTab,
@@ -193,9 +193,7 @@ class MobileCustomization {
             .downloads,
         ].sorted(by: descriptionComparison)
 
-        return [.fire] // default
-            + sortedButtons
-
+        return sortedButtons
     }()
 
     var state: State {

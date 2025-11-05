@@ -103,24 +103,36 @@ struct SettingsAppearanceView: View {
     @ViewBuilder
     func addressBarButtonSetting() -> some View {
 
-        SettingsPickerCellView(
-            useImprovedPicker: true,
-            label: "Address Bar",
+        NavigationLink(destination: PickerWithHeaderView(
+            title: "Address Bar Button",
+            headerImage: Image(.customAddressBarButtonPreview),
             options: MobileCustomization.addressBarButtons,
+            defaultOption: MobileCustomization.addressBarDefault,
             selectedOption: viewModel.selectedAddressBarButton,
-            iconProvider: buttonIconProvider)
+            iconProvider: buttonIconProvider)) {
+
+            SettingsCellView(label: "Address Bar",
+                             accessory: .rightDetail(viewModel.selectedAddressBarButton.wrappedValue.description))
+        }
+        .listRowBackground(Color(designSystemColor: .surface))
 
     }
 
     @ViewBuilder
     func toolbarButtonSetting() -> some View {
 
-        SettingsPickerCellView(
-            useImprovedPicker: true,
-            label: "Toolbar",
+        NavigationLink(destination: PickerWithHeaderView(
+            title: "Toolbar Button",
+            headerImage: Image(.customToolbarButtonPreview),
             options: MobileCustomization.toolbarButtons,
+            defaultOption: MobileCustomization.toolbarDefault,
             selectedOption: viewModel.selectedToolbarButton,
-            iconProvider: buttonIconProvider)
+            iconProvider: buttonIconProvider)) {
+
+            SettingsCellView(label: "Toolbar",
+                             accessory: .rightDetail(viewModel.selectedToolbarButton.wrappedValue.description))
+        }
+        .listRowBackground(Color(designSystemColor: .surface))
 
     }
 
@@ -162,3 +174,54 @@ struct SettingsAppearanceView: View {
     }
 
 }
+
+private struct PickerWithHeaderView<T: Hashable & CustomStringConvertible>: View {
+
+    let title: String
+    let headerImage: Image
+    let options: [T]
+    let defaultOption: T
+    @Binding var selectedOption: T
+    let iconProvider: ((T) -> Image?)?
+
+    init(title: String, headerImage: Image, options: [T], defaultOption: T, selectedOption: Binding<T>, iconProvider: ((T) -> Image?)?) {
+        self.title = title
+        self.headerImage = headerImage
+        self.options = options
+        self.defaultOption = defaultOption
+        self._selectedOption = selectedOption
+        self.iconProvider = iconProvider
+    }
+
+    var body: some View {
+        List(selection: Binding<T?>(get: {
+            nil
+        }, set: {
+            selectedOption = $0 ?? options[0]
+        })) {
+            Section {
+                ForEach(options, id: \.self) { option in
+                    HStack {
+                        iconProvider?(option)
+                        Text(option.description)
+                        if selectedOption == option {
+                            Spacer()
+                            Image(uiImage: DesignSystemImages.Glyphs.Size24.checkSmall)
+                                .foregroundStyle(Color(designSystemColor: .accent))
+                        }
+                    }
+                    .listRowBackground(Color(designSystemColor: .surface))
+                }
+                .navigationTitle(Text(title))
+            } header: {
+                HStack {
+                    Spacer()
+                    headerImage
+                    Spacer()
+                }
+            }
+        }
+    }
+
+}
+

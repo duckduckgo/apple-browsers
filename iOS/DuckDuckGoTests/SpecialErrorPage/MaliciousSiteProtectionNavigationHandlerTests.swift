@@ -174,7 +174,7 @@ final class MaliciousSiteProtectionNavigationHandlerTests {
         #expect(sut.maliciousSiteDetectionTasks[url] != nil)
 
         // WHEN
-        _ = try #require(sut.getMaliciousSiteDectionTask(for: navigationResponse, webView: webView))
+        _ = try #require(sut.getMaliciousSiteDetectionTask(for: navigationResponse, webView: webView))
 
         // THEN
         #expect(sut.maliciousSiteDetectionTasks[url] == nil)
@@ -191,7 +191,7 @@ final class MaliciousSiteProtectionNavigationHandlerTests {
         let navigationResponse = MockNavigationResponse.with(url: url)
 
         // WHEN
-        let result = try #require(sut.getMaliciousSiteDectionTask(for: navigationResponse, webView: webView))
+        let result = try #require(sut.getMaliciousSiteDetectionTask(for: navigationResponse, webView: webView))
 
         // THEN
         #expect(await result.value == .navigationNotHandled)
@@ -214,7 +214,7 @@ final class MaliciousSiteProtectionNavigationHandlerTests {
         let navigationResponse = MockNavigationResponse.with(url: url)
 
         // WHEN
-        let result = try #require(sut.getMaliciousSiteDectionTask(for: navigationResponse, webView: webView))
+        let result = try #require(sut.getMaliciousSiteDetectionTask(for: navigationResponse, webView: webView))
 
         // THEN
         #expect(await result.value == .navigationHandled(.mainFrame(MaliciousSiteDetectionNavigationResponse(navigationAction: navigationAction, errorData: .maliciousSite(kind: threat, url: url)))))
@@ -237,7 +237,7 @@ final class MaliciousSiteProtectionNavigationHandlerTests {
         let navigationResponse = MockNavigationResponse.with(url: url)
 
         // WHEN
-        let result = try #require(sut.getMaliciousSiteDectionTask(for: navigationResponse, webView: webView))
+        let result = try #require(sut.getMaliciousSiteDetectionTask(for: navigationResponse, webView: webView))
 
         // THEN
         #expect(await result.value == .navigationHandled(.iFrame(maliciousURL: url, error: .maliciousSite(kind: threat, url: url))))

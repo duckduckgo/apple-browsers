@@ -46,7 +46,9 @@ final class SpecialErrorPageNavigationHandlerTests {
     }
 
     deinit {
-        WKNavigationResponse.restoreDealloc()
+        // Avoid restoring dealloc here, because the test crashes anyway - this will be removed once the issue
+        // is fixed on the Xcode side:
+        // WKNavigationResponse.restoreDealloc()
     }
 
     @MainActor

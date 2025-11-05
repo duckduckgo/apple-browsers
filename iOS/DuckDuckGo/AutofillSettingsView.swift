@@ -110,6 +110,7 @@ struct AutofillSettingsView: View {
                         }
                     }
                 }
+                .listRowBackground(Color(designSystemColor: .surface))
             }
 
         }

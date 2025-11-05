@@ -71,6 +71,7 @@ class AutofillLoginListViewModel: ObservableObject {
     private let keyValueStore: ThrowingKeyValueStoring
     private let locale: Locale
     private var showBreakageReporter: Bool = false
+    private let extensionPromotionManager: ExtensionPromotionManaging
 
     private lazy var reporterDateFormatter = {
         let dateFormatter = DateFormatter()
@@ -124,7 +125,8 @@ class AutofillLoginListViewModel: ObservableObject {
          privacyConfig: PrivacyConfiguration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig,
          syncService: DDGSyncing,
          keyValueStore: ThrowingKeyValueStoring,
-         locale: Locale = Locale.current) {
+         locale: Locale = Locale.current,
+         extensionPromotionManager: ExtensionPromotionManaging? = nil) {
         self.appSettings = appSettings
         self.tld = tld
         self.secureVault = secureVault
@@ -134,6 +136,7 @@ class AutofillLoginListViewModel: ObservableObject {
         self.syncService = syncService
         self.keyValueStore = keyValueStore
         self.locale = locale
+        self.extensionPromotionManager = extensionPromotionManager ?? ExtensionPromotionManager(keyValueStore: keyValueStore)
 
         if let count = getAccountsCount() {
             authenticationNotRequired = count == 0 || AppDependencyProvider.shared.autofillLoginSession.isSessionValid
@@ -328,6 +331,23 @@ class AutofillLoginListViewModel: ObservableObject {
 
     func dismissImportPromo() {
         autofillCredentialsImportManager.passwordsScreenDidRequestPermanentCredentialsImportPromptDismissal()
+    }
+
+    @MainActor
+    func shouldShowExtensionPromo(completion: @escaping (Bool) -> Void) {
+        guard viewState == .showItems, !isEditing else {
+            completion(false)
+            return
+        }
+
+        extensionPromotionManager.shouldShowPromotion(totalCredentialsCount: accountsCount) { shouldShow in
+            completion(shouldShow)
+        }
+    }
+
+    @MainActor
+    func dismissExtensionPromo() {
+        extensionPromotionManager.markPromotionDismissed()
     }
 
     // MARK: Private Methods

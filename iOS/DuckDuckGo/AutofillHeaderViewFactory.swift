@@ -41,6 +41,7 @@ final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
         case syncPromo(SyncPromoManager.Touchpoint)
         case survey(AutofillSurveyManager.AutofillSurvey)
         case importPromo
+        case extensionPromo
     }
     
     init(delegate: AutofillHeaderViewDelegate?) {
@@ -55,6 +56,8 @@ final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
             return makeSurveyView(survey: survey)
         case .importPromo:
             return makeImportPromoView()
+        case .extensionPromo:
+            return makeExtensionPromoView()
         }
     }
     
@@ -100,6 +103,21 @@ final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
             },
             dismissButtonAction: { [weak delegate] in
                 delegate?.handleDismissAction(for: .importPromo)
+            }
+        )
+
+        let hostingController = UIHostingController(rootView: headerView)
+        hostingController.view.backgroundColor = .clear
+        return hostingController
+    }
+
+    private func makeExtensionPromoView() -> UIHostingController<ExtensionPromotionHeaderView> {
+        let headerView = ExtensionPromotionHeaderView(
+            primaryButtonAction: { [weak delegate] in
+                delegate?.handlePrimaryAction(for: .extensionPromo)
+            },
+            dismissButtonAction: { [weak delegate] in
+                delegate?.handleDismissAction(for: .extensionPromo)
             }
         )
 

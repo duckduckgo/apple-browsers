@@ -136,7 +136,6 @@ final class AutofillLoginListViewController: UIViewController {
         return searchController
     }()
 
-
     private lazy var tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .insetGrouped)
         tableView.delegate = self
@@ -153,6 +152,8 @@ final class AutofillLoginListViewController: UIViewController {
     // This is used to prevent the next Promo from being displayed immediately after one has been dismissed
     private var surveyPromptPresented: Bool = false
     private var importPromoPresented: Bool = false
+    private var syncPromoPresented: Bool = false
+    private var extensionPromoPresented: Bool = false
 
     private lazy var lockedViewBottomConstraint: NSLayoutConstraint = {
         NSLayoutConstraint(item: tableView,
@@ -448,6 +449,14 @@ final class AutofillLoginListViewController: UIViewController {
         }
     }
 
+    private func segueToExtensionManagement() {
+        if #available(iOS 18, *) {
+            let autofillExtensionSettingsViewController = AutofillExtensionSettingsViewController(source: .passwordsPromotion)
+            autofillExtensionSettingsViewController.delegate = self
+            navigationController?.pushViewController(autofillExtensionSettingsViewController, animated: true)
+        }
+    }
+
     private func showSelectedAccountIfRequired() {
         if let account = selectedAccount {
             showAccountDetails(account)
@@ -538,11 +547,13 @@ final class AutofillLoginListViewController: UIViewController {
 
     private func configureObserversBasedOnAuthConfirmationPrompt(isAuthenticating: Bool) {
         if isAuthenticating {
-            addObserver(for: UIApplication.didEnterBackgroundNotification, selector: #selector(appWillResignActiveCallback))
+//            addObserver(for: UIApplication.didEnterBackgroundNotification, selector: #selector(appWillResignActiveCallback))
             removeObserver(for: UIApplication.willResignActiveNotification)
+            removeObserver(for: UIApplication.didEnterBackgroundNotification)
         } else {
             addObserver(for: UIApplication.willResignActiveNotification, selector: #selector(appWillResignActiveCallback))
-            removeObserver(for: UIApplication.didEnterBackgroundNotification)
+            addObserver(for: UIApplication.didEnterBackgroundNotification, selector: #selector(appWillResignActiveCallback))
+//            removeObserver(for: UIApplication.didEnterBackgroundNotification)
         }
     }
 
@@ -711,6 +722,16 @@ final class AutofillLoginListViewController: UIViewController {
         if viewModel.shouldShowSyncPromo(), !surveyPromptPresented, !importPromoPresented {
             if shouldUpdateHeaderView(for: .syncPromo(.passwords)) {
                 configureTableHeaderView(for: .syncPromo(.passwords))
+                syncPromoPresented = true
+            }
+            return
+        }
+
+        viewModel.shouldShowExtensionPromo { [weak self] shouldShowExtensionPromo in
+            guard shouldShowExtensionPromo, let self else { return }
+            if !self.importPromoPresented, !self.surveyPromptPresented, !self.syncPromoPresented, self.shouldUpdateHeaderView(for: .extensionPromo) {
+                self.configureTableHeaderView(for: .extensionPromo)
+                self.extensionPromoPresented = true
             }
             return
         }
@@ -743,6 +764,11 @@ final class AutofillLoginListViewController: UIViewController {
         case .importPromo:
             currentHeaderHostingController = headerViewFactory.makeHeaderView(for: .importPromo)
             if let hostingController = currentHeaderHostingController as? UIHostingController<ImportPromotionHeaderView> {
+                setupTableHeaderView(with: hostingController)
+            }
+        case .extensionPromo:
+            currentHeaderHostingController = headerViewFactory.makeHeaderView(for: .extensionPromo)
+            if let hostingController = currentHeaderHostingController as? UIHostingController<ExtensionPromotionHeaderView> {
                 setupTableHeaderView(with: hostingController)
             }
         }
@@ -1123,6 +1149,8 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
             Pixel.fire(.syncPromoConfirmed, withAdditionalParameters: ["source": touchpoint.rawValue])
         case .importPromo:
             segueToFileImport(source: DataImportViewModel.ImportScreen.promo)
+        case .extensionPromo:
+            segueToExtensionManagement()
         }
     }
 
@@ -1138,6 +1166,19 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
             viewModel.dismissSyncPromo()
         case .importPromo:
             viewModel.dismissImportPromo()
+        case .extensionPromo:
+            viewModel.dismissExtensionPromo()
+        }
+    }
+}
+
+@available(iOS 18, *)
+extension AutofillLoginListViewController: AutofillExtensionSettingsViewControllerDelegate {
+
+    func autofillExtensionSettingsViewController(_ controller: AutofillExtensionSettingsViewController, authDisabled: Bool) {
+        configureObserversBasedOnAuthConfirmationPrompt(isAuthenticating: authDisabled)
+        if !authDisabled {
+            updateTableHeaderView()
         }
     }
 }

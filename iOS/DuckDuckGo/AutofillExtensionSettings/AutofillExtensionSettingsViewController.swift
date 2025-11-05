@@ -21,16 +21,25 @@ import UIKit
 import SwiftUI
 
 @available(iOS 18.0, *)
+protocol AutofillExtensionSettingsViewControllerDelegate: AnyObject {
+    func autofillExtensionSettingsViewController(_ controller: AutofillExtensionSettingsViewController, authDisabled: Bool)
+}
+
+@available(iOS 18.0, *)
 class AutofillExtensionSettingsViewController: UIViewController {
 
     enum Source {
         case autofillSettings
+        case passwordsPromotion
     }
 
     private let source: Source
+    private let viewModel: AutofillExtensionSettingsViewModel
+    weak var delegate: (any AutofillExtensionSettingsViewControllerDelegate)?
 
     init(source: Source) {
         self.source = source
+        self.viewModel = AutofillExtensionSettingsViewModel()
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -46,10 +55,28 @@ class AutofillExtensionSettingsViewController: UIViewController {
         title = UserText.autofillExtensionScreenTitle
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        if isMovingFromParent {
+            print("isMovingFromParent")
+            self.delegate?.autofillExtensionSettingsViewController(self, authDisabled: false)
+        }
+    }
+
     private func setupView() {
-        let controller = UIHostingController(rootView: AutofillExtensionSettingsView(viewModel: AutofillExtensionSettingsViewModel()))
+        viewModel.delegate = self
+        let controller = UIHostingController(rootView: AutofillExtensionSettingsView(viewModel: viewModel))
         controller.view.backgroundColor = .clear
         installChildViewController(controller)
     }
 
+}
+
+@available(iOS 18.0, *)
+extension AutofillExtensionSettingsViewController: AutofillExtensionSettingsViewModelDelegate {
+
+    func autofillExtensionSettingsViewModel(_ viewModel: AutofillExtensionSettingsViewModel, authDisabled: Bool) {
+        delegate?.autofillExtensionSettingsViewController(self, authDisabled: authDisabled)
+    }
 }

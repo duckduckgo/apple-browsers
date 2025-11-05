@@ -1393,6 +1393,8 @@
 		C12726EE2A5FF88C00215B02 /* EmailSignupPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12726ED2A5FF88C00215B02 /* EmailSignupPromptView.swift */; };
 		C12726F02A5FF89900215B02 /* EmailSignupPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12726EF2A5FF89900215B02 /* EmailSignupPromptViewModel.swift */; };
 		C12726F22A5FF8CB00215B02 /* EmailSignupPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12726F12A5FF8CB00215B02 /* EmailSignupPromptViewController.swift */; };
+		C128282D2EB6C30500BA6894 /* ExtensionPromotionHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C128282C2EB6C30500BA6894 /* ExtensionPromotionHeaderView.swift */; };
+		C128282F2EB6CED400BA6894 /* ExtensionPromotionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C128282E2EB6CED400BA6894 /* ExtensionPromotionManager.swift */; };
 		C128BA252DF0847900ADDC5F /* SettingsCompleteSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C128BA242DF0847900ADDC5F /* SettingsCompleteSetupView.swift */; };
 		C138286D2EB57712001AE344 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = C138286C2EB57712001AE344 /* Lottie */; };
 		C138286F2EB57757001AE344 /* confirmation-prompt-128.json in Resources */ = {isa = PBXBuildFile; fileRef = C138286E2EB57757001AE344 /* confirmation-prompt-128.json */; };
@@ -1450,6 +1452,8 @@
 		C18128A32D737D8700807C09 /* AutofillSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18128A02D737D8700807C09 /* AutofillSettingsViewController.swift */; };
 		C18128A42D737D8700807C09 /* AutofillSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C181289F2D737D8700807C09 /* AutofillSettingsView.swift */; };
 		C1836CE12C359EC90016D057 /* AutofillBreakageReportCellContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1836CE02C359EC90016D057 /* AutofillBreakageReportCellContentView.swift */; };
+		C18578952EB7C0340049D2CE /* autofill-extension-dark.json in Resources */ = {isa = PBXBuildFile; fileRef = C18578932EB7C0340049D2CE /* autofill-extension-dark.json */; };
+		C18578A02EB7D0020049D2CE /* autofill-extension-light.json in Resources */ = {isa = PBXBuildFile; fileRef = C185789F2EB7D0020049D2CE /* autofill-extension-light.json */; };
 		C185ED612BD4329700BAE9DC /* ImportPasswordsViaSyncStatusHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C185ED602BD4329700BAE9DC /* ImportPasswordsViaSyncStatusHandler.swift */; };
 		C185ED672BD43DA100BAE9DC /* ImportPasswordsViaSyncStatusHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C185ED632BD438AF00BAE9DC /* ImportPasswordsViaSyncStatusHandlerTests.swift */; };
 		C189966E2E4F45A200246F22 /* Logger+DaxEasterEgg.swift in Sources */ = {isa = PBXBuildFile; fileRef = C189966D2E4F45A200246F22 /* Logger+DaxEasterEgg.swift */; };
@@ -3602,6 +3606,8 @@
 		C12726ED2A5FF88C00215B02 /* EmailSignupPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailSignupPromptView.swift; sourceTree = "<group>"; };
 		C12726EF2A5FF89900215B02 /* EmailSignupPromptViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailSignupPromptViewModel.swift; sourceTree = "<group>"; };
 		C12726F12A5FF8CB00215B02 /* EmailSignupPromptViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailSignupPromptViewController.swift; sourceTree = "<group>"; };
+		C128282C2EB6C30500BA6894 /* ExtensionPromotionHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionPromotionHeaderView.swift; sourceTree = "<group>"; };
+		C128282E2EB6CED400BA6894 /* ExtensionPromotionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionPromotionManager.swift; sourceTree = "<group>"; };
 		C12854D82D08636E00C8353F /* lv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lv; path = lv.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C12854D92D08636E00C8353F /* lv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lv; path = lv.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C128BA242DF0847900ADDC5F /* SettingsCompleteSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCompleteSetupView.swift; sourceTree = "<group>"; };
@@ -3680,6 +3686,8 @@
 		C18128A12D737D8700807C09 /* AutofillSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillSettingsViewModel.swift; sourceTree = "<group>"; };
 		C1836CE02C359EC90016D057 /* AutofillBreakageReportCellContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillBreakageReportCellContentView.swift; sourceTree = "<group>"; };
 		C1836CE42C35A0EA0016D057 /* AutofillBreakageReportTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillBreakageReportTableViewCell.swift; sourceTree = "<group>"; };
+		C18578932EB7C0340049D2CE /* autofill-extension-dark.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "autofill-extension-dark.json"; sourceTree = "<group>"; };
+		C185789F2EB7D0020049D2CE /* autofill-extension-light.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "autofill-extension-light.json"; sourceTree = "<group>"; };
 		C185ED602BD4329700BAE9DC /* ImportPasswordsViaSyncStatusHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPasswordsViaSyncStatusHandler.swift; sourceTree = "<group>"; };
 		C185ED632BD438AF00BAE9DC /* ImportPasswordsViaSyncStatusHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPasswordsViaSyncStatusHandlerTests.swift; sourceTree = "<group>"; };
 		C189966D2E4F45A200246F22 /* Logger+DaxEasterEgg.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+DaxEasterEgg.swift"; sourceTree = "<group>"; };
@@ -4898,6 +4906,7 @@
 		319A37132829A5450079FBCE /* Table */ = {
 			isa = PBXGroup;
 			children = (
+				C128282B2EB6C2DF00BA6894 /* ExtensionPromotion */,
 				C17BDC6B2E16D2B70082485E /* ImportPromotion */,
 				C1935A0C2C88D101001AD72D /* Survey */,
 				31CC224828369B38001654A4 /* AutofillLoginListViewController.swift */,
@@ -7269,6 +7278,15 @@
 			path = KeyboardInputAccessory;
 			sourceTree = "<group>";
 		};
+		C128282B2EB6C2DF00BA6894 /* ExtensionPromotion */ = {
+			isa = PBXGroup;
+			children = (
+				C128282C2EB6C30500BA6894 /* ExtensionPromotionHeaderView.swift */,
+				C128282E2EB6CED400BA6894 /* ExtensionPromotionManager.swift */,
+			);
+			path = ExtensionPromotion;
+			sourceTree = "<group>";
+		};
 		C13EEA1C2D64CFBA001D5DC3 /* DataImport */ = {
 			isa = PBXGroup;
 			children = (
@@ -7333,9 +7351,11 @@
 		C15516042D47D2D9001B94E9 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				C17BDC6F2E16D9290082485E /* password-keys.json */,
+				C18578932EB7C0340049D2CE /* autofill-extension-dark.json */,
+				C185789F2EB7D0020049D2CE /* autofill-extension-light.json */,
 				C15516052D47D2EF001B94E9 /* burst-blob-passwords.json */,
 				C1CC5AE02EB4289300B69D3D /* confirmation-prompt-128.json */,
+				C17BDC6F2E16D9290082485E /* password-keys.json */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -9750,6 +9770,7 @@
 				F4F7F10B25813FE200045D62 /* 02_Water_swirl_really_small.json in Resources */,
 				9880723825FA4E450039EF4B /* menu_light.json in Resources */,
 				85371D242121B9D500920548 /* new_tab.json in Resources */,
+				C18578952EB7C0340049D2CE /* autofill-extension-dark.json in Resources */,
 				85DFEDF724CB1CAB00973FE7 /* ShareSheet.xcassets in Resources */,
 				98DA6B3322243CC3006EA9EB /* Feedback.xcassets in Resources */,
 				1EE411F728587AC50003FE64 /* PrivacyIcon.xcassets in Resources */,
@@ -9758,6 +9779,7 @@
 				6FE3AF472D9ECF6B001AE6B8 /* dark-shield-dot.json in Resources */,
 				8548D96825262C33005AAE49 /* view_highlight.json in Resources */,
 				855ED5142E84226000047A88 /* SharedWidgetAssets.xcassets in Resources */,
+				C18578A02EB7D0020049D2CE /* autofill-extension-light.json in Resources */,
 				85F0E97329952D7A003D5181 /* DuckDuckGo Recovery Document.pdf in Resources */,
 				9880723725FA4E450039EF4B /* menu_dark.json in Resources */,
 				1E162615296D910F0004127F /* cookie-icon-animated-40-dark.json in Resources */,
@@ -10201,6 +10223,7 @@
 				C1CDA3162AFB9C7F006D1476 /* AutofillNeverPromptWebsitesManager.swift in Sources */,
 				D668D9272B6937D2008E2FF2 /* SubscriptionITPViewModel.swift in Sources */,
 				31EEBCD92E2AAB4C00901255 /* NavigationActionBarViewController.swift in Sources */,
+				C128282D2EB6C30500BA6894 /* ExtensionPromotionHeaderView.swift in Sources */,
 				C11D666B2E48BD4300934CB5 /* DaxEasterEggPresenter.swift in Sources */,
 				F1CA3C371F045878005FADB3 /* PrivacyStore.swift in Sources */,
 				985818A02D8C297300993B04 /* AppKeyValueFileStoreService.swift in Sources */,
@@ -10427,6 +10450,7 @@
 				1E8AD1D527C2E22900ABA377 /* DownloadsListSectionViewModel.swift in Sources */,
 				EE0798C52B179936000A4F64 /* NetworkProtectionVPNCountryLabelsModel.swift in Sources */,
 				65DE1D722D9558070013CA0B /* DuckPlayerToastView.swift in Sources */,
+				C128282F2EB6CED400BA6894 /* ExtensionPromotionManager.swift in Sources */,
 				31584616281AFB46004ADB8B /* AutofillLoginDetailsViewController.swift in Sources */,
 				9FA5E44B2BF1AF3400BDEF02 /* SubscriptionContainerViewFactory.swift in Sources */,
 				C1F341C72A6924100032057B /* EmailAddressPromptViewModel.swift in Sources */,

@@ -22,6 +22,11 @@ import AuthenticationServices
 import BrowserServicesKit
 
 @available(iOS 18.0, *)
+protocol AutofillExtensionSettingsViewModelDelegate: AnyObject {
+    func autofillExtensionSettingsViewModel(_ viewModel: AutofillExtensionSettingsViewModel, authDisabled: Bool)
+}
+
+@available(iOS 18.0, *)
 protocol AutofillExtensionSettingsHelping {
     func requestToTurnOnCredentialProviderExtension() async -> Bool
     func openCredentialProviderAppSettings() async throws
@@ -42,16 +47,28 @@ struct DefaultAutofillExtensionSettingsHelper: AutofillExtensionSettingsHelping 
 @MainActor
 final class AutofillExtensionSettingsViewModel: ObservableObject {
 
+    private enum Constants {
+        static let enableRetryThrottleDuration: TimeInterval = 10
+    }
+
     private let credentialStore: ASCredentialIdentityStoring
     private let settingsHelper: any AutofillExtensionSettingsHelping
+    private let enableRetryThrottleDuration: TimeInterval
+    private var throttleExpiresAt: Date?
+    private var enableRetryTimer: Timer?
+    weak var delegate: (any AutofillExtensionSettingsViewModelDelegate)?
 
     @Published var isExtensionEnabled: Bool = false
     @Published var isShowingActivationView: Bool = false
+    @Published private(set) var isEnableRequestThrottled: Bool = false
+
 
     init(credentialStore: ASCredentialIdentityStoring = ASCredentialIdentityStore.shared,
-         settingsHelper: any AutofillExtensionSettingsHelping = DefaultAutofillExtensionSettingsHelper()) {
+         settingsHelper: any AutofillExtensionSettingsHelping = DefaultAutofillExtensionSettingsHelper(),
+         enableRetryThrottleDuration: TimeInterval = Constants.enableRetryThrottleDuration) {
         self.credentialStore = credentialStore
         self.settingsHelper = settingsHelper
+        self.enableRetryThrottleDuration = enableRetryThrottleDuration
         Task { await updateExtensionStatus() }
     }
 
@@ -61,15 +78,71 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
     }
 
     func enableExtension() async {
-        isShowingActivationView = await settingsHelper.requestToTurnOnCredentialProviderExtension()
+        if isEnableRequestThrottled {
+            if let remaining = remainingEnableRequestThrottleInterval, remaining > 0 {
+                await disableExtension()
+                return
+            }
+            clearEnableRequestThrottle()
+        }
+
+        delegate?.autofillExtensionSettingsViewModel(self, authDisabled: true)
+        let result = await settingsHelper.requestToTurnOnCredentialProviderExtension()
+        Logger.autofill.debug("Extension enabled result: \(result)")
         await updateExtensionStatus()
+        if isExtensionEnabled {
+            isShowingActivationView = true
+        } else {
+            if result {
+                await disableExtension()
+            }
+            startEnableRequestThrottle()
+            isShowingActivationView = false
+        }
+        delegate?.autofillExtensionSettingsViewModel(self, authDisabled: false)
     }
 
     func disableExtension() async {
         do {
+            delegate?.autofillExtensionSettingsViewModel(self, authDisabled: true)
             try await settingsHelper.openCredentialProviderAppSettings()
         } catch {
+            delegate?.autofillExtensionSettingsViewModel(self, authDisabled: false)
             Logger.autofill.error("Failed to open credential provider settings: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    var remainingEnableRequestThrottleInterval: TimeInterval? {
+        guard let throttleExpiresAt else {
+            return nil
+        }
+        let remaining = throttleExpiresAt.timeIntervalSinceNow
+        if remaining <= 0 {
+            clearEnableRequestThrottle()
+            return nil
+        }
+        return remaining
+    }
+
+    private func startEnableRequestThrottle() {
+        invalidateEnableRetryTimer()
+        isEnableRequestThrottled = true
+        throttleExpiresAt = Date().addingTimeInterval(enableRetryThrottleDuration)
+
+        enableRetryTimer = Timer.scheduledTimer(withTimeInterval: enableRetryThrottleDuration, repeats: false) { [weak self] _ in
+            guard let self else { return }
+            self.clearEnableRequestThrottle()
+        }
+    }
+
+    private func clearEnableRequestThrottle() {
+        isEnableRequestThrottled = false
+        throttleExpiresAt = nil
+        invalidateEnableRetryTimer()
+    }
+
+    private func invalidateEnableRetryTimer() {
+        enableRetryTimer?.invalidate()
+        enableRetryTimer = nil
     }
 }

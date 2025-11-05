@@ -276,18 +276,22 @@ public final class AttributedMetricManager {
     }
 
     func processActiveSearchDays() {
-        Logger.attributedMetric.log("Calculating search days")
-        guard let timePastFromInstall = timePastFromInstall else { return }
-        let search8Days = dataStorage.search8Days
-        let searchCount = search8Days.countPast7Days
-        switch timePastFromInstall {
-        case .weeks(let count):
-            Logger.attributedMetric.log("\(searchCount, privacy: .public) active search days in the past \(count, privacy: .public) week(s)")
-        default:
+        Logger.attributedMetric.log("Processing active search days")
+        let daysSinceInstalled = daysSinceInstalled
+        var addDaysSinceInstalled: Bool = false
+        switch daysSinceInstalled {
+        case 0:
             return
+        case 1...7:
+            addDaysSinceInstalled = true
+        default:
+            addDaysSinceInstalled = false
         }
 
+        let search8Days = dataStorage.search8Days
+        let searchCount = search8Days.countPast7Days
         guard searchCount > 0 else { return }
+        Logger.attributedMetric.log("\(searchCount, privacy: .public) searches performed in the last week")
         guard let bucket = try? bucketModifier.bucket(value: searchCount, pixelName: .userActivePastWeek) else {
             Logger.attributedMetric.error("Failed to bucket search count value")
             return
@@ -295,7 +299,7 @@ public final class AttributedMetricManager {
         pixelKit.fire(AttributedMetricPixel.userActivePastWeek(origin: originOrInstall.origin,
                                                                installDate: originOrInstall.installDate,
                                                                days: bucket.value,
-                                                               daysSinceInstalled: daysSinceInstalled,
+                                                               daysSinceInstalled: addDaysSinceInstalled ? daysSinceInstalled : nil,
                                                                bucketVersion: bucket.version),
                       frequency: .legacyDailyNoSuffix)
     }

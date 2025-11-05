@@ -62,7 +62,7 @@ let package = Package(
                 // disable code coverage for the ObjC target due to a known SPM linking issue:
                 // https://forums.swift.org/t/undefined-symbols-llvm-profile-runtime-when-building-a-package-with-code-coverage-turned-on/49701
                 .unsafeFlags(["-fno-profile-instr-generate", "-fno-coverage-mapping"]),
-            ],
+            ]
         )
     ]
 )

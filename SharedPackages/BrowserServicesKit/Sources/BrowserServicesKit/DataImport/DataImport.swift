@@ -23,7 +23,11 @@ import SecureStorage
 
 public enum DataImport {
 
-    public enum Source: String, RawRepresentable, CaseIterable, Equatable {
+    public enum Source: String, RawRepresentable, CaseIterable, Equatable, Identifiable {
+        public var id: String {
+            rawValue
+        }
+
         case brave
         case chrome
         case chromium

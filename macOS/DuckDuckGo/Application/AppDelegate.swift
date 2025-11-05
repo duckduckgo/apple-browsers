@@ -88,6 +88,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let watchdog: Watchdog
     private let watchdogSleepMonitor: WatchdogSleepMonitor
+    private var hangReportingFeatureMonitor: HangReportingFeatureMonitor?
 
     let keyValueStore: ThrowingKeyValueStoring
 
@@ -864,11 +865,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         watchdogSleepMonitor = WatchdogSleepMonitor(watchdog: watchdog)
 
 #if !DEBUG
-        // Start UI hang watchdog
-        if featureFlagger.isFeatureOn(.hangReporting) {
-            Task { [watchdog] in
-                await watchdog.start()
-            }
+        if AppVersion.runType == .normal {
+            hangReportingFeatureMonitor = HangReportingFeatureMonitor(
+                privacyConfigurationManager: privacyConfigurationManager,
+                featureFlagger: featureFlagger,
+                watchdog: watchdog
+            )
         }
 #endif
 
@@ -920,15 +922,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSWindow.allowsAutomaticWindowTabbing = false
         // Fix SwifUI context menus and its owner View leaking
         SwiftUIContextMenuRetainCycleFix.setUp()
-
-#if !DEBUG
-        // Start UI hang watchdog
-        if featureFlagger.isFeatureOn(.hangReporting) {
-            Task {
-                await watchdog.start()
-            }
-        }
-#endif
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {

@@ -136,7 +136,7 @@ final class BrowserTabViewController: NSViewController {
          newTabPageActionsManager: @autoclosure @escaping @MainActor () -> NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
          activeRemoteMessageModel: ActiveRemoteMessageModel = NSApp.delegateTyped.activeRemoteMessageModel,
          privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
-         defaultBrowserPreferences: DefaultBrowserPreferences = NSApp.delegateTyped.defaultBrowserPreferences,
+         defaultBrowserPreferences: DefaultBrowserPreferences,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          tld: TLD = NSApp.delegateTyped.tld

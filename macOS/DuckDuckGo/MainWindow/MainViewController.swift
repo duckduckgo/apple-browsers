@@ -178,7 +178,11 @@ final class MainViewController: NSViewController {
             )
         }()
 
-        browserTabViewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
+        browserTabViewController = BrowserTabViewController(
+            tabCollectionViewModel: tabCollectionViewModel,
+            bookmarkManager: bookmarkManager,
+            defaultBrowserPreferences: defaultBrowserPreferences
+        )
         aiChatSidebarPresenter = AIChatSidebarPresenter(
             sidebarHost: browserTabViewController,
             sidebarProvider: aiChatSidebarProvider,

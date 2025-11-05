@@ -205,7 +205,7 @@ class MobileCustomization {
     }
 
     var hasFireButton: Bool {
-        return state.currentToolbarButton == .fire || state.currentToolbarButton == .fire
+        return state.currentToolbarButton == .fire || state.currentAddressBarButton == .fire
     }
 
     var isEnabled: Bool {

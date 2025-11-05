@@ -1,5 +1,5 @@
 //
-//  NewAddressBarPickerPresenter.swift
+//  MockModalPromptCoordinationManager.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -18,25 +18,17 @@
 //
 
 import Foundation
-import Core
+@testable import DuckDuckGo
 
 @MainActor
-protocol NewAddressBarPickerPresenting {
+final class MockModalPromptCoordinationManager: ModalPromptCoordinationManaging {
+    private(set) var didCallPresentModalPromptIfNeeded = false
+    private(set) var capturedPresenter: ModalPromptPresenter?
+    private(set) var callCount = 0
 
-    func presentNewAddressBarPickerIfNeeded()
-
-}
-
-final class NewAddressBarPickerPresenter: NewAddressBarPickerPresenting {
-    private let mainViewController: MainViewController
-
-    init(mainViewController: MainViewController) {
-        self.mainViewController = mainViewController
-    }
-
-    func presentNewAddressBarPickerIfNeeded() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.mainViewController.presentNewAddressBarPickerIfNeeded()
-        }
+    func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) {
+        didCallPresentModalPromptIfNeeded = true
+        capturedPresenter = presenter
+        callCount += 1
     }
 }

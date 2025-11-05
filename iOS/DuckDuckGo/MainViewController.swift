@@ -668,35 +668,6 @@ class MainViewController: UIViewController {
         guard showOnboarding else { return }
         segueToDaxOnboarding()
     }
-    
-    func presentNewAddressBarPickerIfNeeded() {
-        let validator = NewAddressBarPickerDisplayValidator(
-            aiChatSettings: aiChatSettings,
-            tutorialSettings: tutorialSettings,
-            featureFlagger: featureFlagger,
-            experimentalAIChatManager: experimentalAIChatManager,
-            appSettings: appSettings,
-            pickerStorage: NewAddressBarPickerStorage(),
-            launchSourceManager: launchSourceManager
-        )
-        guard validator.shouldDisplayNewAddressBarPicker() else { return }
-
-        if presentedViewController == nil || presentedViewController?.isBeingDismissed == true {
-            let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: aiChatSettings)
-
-            /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1211457477666070?focus=true
-            if #available(iOS 26.0, *), UIDevice.current.userInterfaceIdiom == .pad {
-                pickerViewController.modalPresentationStyle = .formSheet
-            } else {
-                pickerViewController.modalPresentationStyle = .pageSheet
-            }
-            pickerViewController.modalTransitionStyle = .coverVertical
-            pickerViewController.isModalInPresentation = true
-            validator.markPickerDisplayAsSeen()
-
-            self.present(pickerViewController, animated: true)
-        }
-    }
 
     func presentSyncRecoveryPromptIfNeeded() {
         syncRecoveryPromptService = SyncRecoveryPromptService(
@@ -4005,9 +3976,11 @@ extension MainViewController {
         }
 
         browserChrome.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
+        browserChrome.removeBorder()
 
         if !isNewTabPageVisible && state.isEnabled {
             browserChrome.setImage(state.currentToolbarButton.largeIcon)
+            browserChrome.addBorder()
         }
     }
 

@@ -177,7 +177,13 @@
                 "type": "string",
                 "description": "Context name for the update flow",
                 "enum": ["sparkle_update"]
-            }
+            },
+            {
+                "key": "app.internal_user",
+                "type": "string",
+                "description": "Whether the user is flagged as internal",
+                "enum": ["true", "false"]
+            },
         ]
     },
     "m_mac_update_application_success": {

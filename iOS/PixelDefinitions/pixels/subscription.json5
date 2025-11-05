@@ -161,7 +161,6 @@
         "parameters": [
             "widePixelAppName",
             "widePixelAppVersion",
-            "widePixelInternalUser",
             "widePixelPlatform",
             "widePixelType",
             "widePixelFormFactor",
@@ -245,7 +244,6 @@
         "parameters": [
             "widePixelAppName",
             "widePixelAppVersion",
-            "widePixelInternalUser",
             "widePixelPlatform",
             "widePixelType",
             "widePixelFormFactor",

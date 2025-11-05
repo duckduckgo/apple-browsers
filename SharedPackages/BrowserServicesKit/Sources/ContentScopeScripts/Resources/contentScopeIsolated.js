@@ -4804,7 +4804,6 @@
      * @property {boolean} [context.top] - true if the condition applies to the top frame
      * @property {string} [injectName] - the inject name to match against (e.g., "apple-isolated")
      * @property {boolean} [internal] - true if the condition applies to internal builds
-     * @property {boolean} [preview] - true if the condition applies to preview builds
      */
     /**
      * Takes multiple conditional blocks and returns true if any apply.
@@ -4832,8 +4831,7 @@
         minSupportedVersion: this._matchMinSupportedVersion,
         maxSupportedVersion: this._matchMaxSupportedVersion,
         injectName: this._matchInjectNameConditional,
-        internal: this._matchInternalConditional,
-        preview: this._matchPreviewConditional
+        internal: this._matchInternalConditional
       };
       for (const key in conditionBlock) {
         if (!conditionChecks[key]) {
@@ -4934,17 +4932,6 @@
       const isInternal = __privateGet(this, _args)?.platform?.internal;
       if (isInternal === void 0) return false;
       return Boolean(conditionBlock.internal) === Boolean(isInternal);
-    }
-    /**
-     * Takes a condition block and returns true if the preview state matches the condition.
-     * @param {ConditionBlock} conditionBlock
-     * @returns {boolean}
-     */
-    _matchPreviewConditional(conditionBlock) {
-      if (conditionBlock.preview === void 0) return false;
-      const isPreview = __privateGet(this, _args)?.platform?.preview;
-      if (isPreview === void 0) return false;
-      return Boolean(conditionBlock.preview) === Boolean(isPreview);
     }
     /**
      * Takes a condition block and returns true if the platform version satisfies the `minSupportedFeature`

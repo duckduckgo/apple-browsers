@@ -428,6 +428,8 @@ class MockWinbackOfferStore: WinbackOfferStoring {
     func getOfferPresentationDate() -> Date? {
         return offerPresentationDate
     }
+
+    func clearChurnDate() { }
 }
 
 class MockWinBackOfferFeatureFlagProvider: WinBackOfferFeatureFlagProvider {

@@ -395,6 +395,12 @@ private extension JsonToRemoteMessageModelMapper {
     static func mapToCardsList(_ jsonContent: RemoteMessageResponse.JsonContent, surveyActionMapper: RemoteMessagingSurveyActionMapping) throws -> RemoteMessageModelType {
         let validator = MappingValidator(root: jsonContent)
         let titleText = try validator.notEmpty(\.titleText)
+        // Map to placeholder only if defined, otherwise return nil
+        let placeHolderImage: RemotePlaceholder? = if let placeholder = jsonContent.placeholder {
+            mapToPlaceholder(placeholder)
+        } else {
+            nil
+        }
         let listItems = try validator.compactMap(\.listItems) { items throws(MappingError) in
             let mappedItems = try mapToListItems(items, surveyActionMapper: surveyActionMapper)
             return try validator.notEmpty(mappedItems, keyPath: \RemoteMessageResponse.JsonContent.listItems)
@@ -403,7 +409,7 @@ private extension JsonToRemoteMessageModelMapper {
         let primaryAction = try validator.compactMap(\.primaryAction) { action in
             mapToAction(action, surveyActionMapper: surveyActionMapper)
         }
-        return .cardsList(titleText: titleText, items: listItems, primaryActionText: primaryActionText, primaryAction: primaryAction)
+        return .cardsList(titleText: titleText, placeholder: placeHolderImage, items: listItems, primaryActionText: primaryActionText, primaryAction: primaryAction)
     }
 
     static func mapToListItems(_ jsonListItems: [RemoteMessageResponse.JsonListItem], surveyActionMapper: RemoteMessagingSurveyActionMapping) throws(MappingError) -> [RemoteMessageModelType.ListItem] {

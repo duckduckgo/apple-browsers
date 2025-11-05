@@ -91,7 +91,8 @@ final class WhatsNewDisplayModelMapperTests {
             RemoteMessageModelType.ListItem.makeListItem(
                 id: "item-1",
                 titleText: "Privacy Features",
-                descriptionText: "Block trackers automatically"
+                descriptionText: "Block trackers automatically",
+                placeholder: .ddgAnnounce
             )
         ]
         let message = RemoteMessageModel.makeCardsListMessage(items: items)
@@ -108,6 +109,7 @@ final class WhatsNewDisplayModelMapperTests {
 
         // THEN
         #expect(displayModel.items.count == 1)
+        #expect(displayModel.items.first?.icon == "RemoteMessageDDGAnnouncement")
         #expect(displayModel.items.first?.title == "Privacy Features")
         #expect(displayModel.items.first?.description == "Block trackers automatically")
     }

@@ -250,6 +250,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1211708489642640?focus=true
     case tabProgressIndicator
+    
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211388368219934?focus=true
+    case vpnConnectionWidePixelMeasurement
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -274,7 +277,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .fireDialog,
                 .fireDialogIndividualSitesLink,
                 .blurryAddressBarTahoeFix,
-                .pinnedTabsViewRewrite:
+                .pinnedTabsViewRewrite,
+                .vpnConnectionWidePixelMeasurement:
             true
         default:
             false
@@ -362,7 +366,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .blurryAddressBarTahoeFix,
                 .dataImportNewExperience,
                 .pinnedTabsViewRewrite,
-                .tabProgressIndicator:
+                .tabProgressIndicator,
+                .vpnConnectionWidePixelMeasurement:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -548,6 +553,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .pinnedTabsViewRewrite:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.pinnedTabsViewRewrite))
         case .tabProgressIndicator:
+            return .disabled
+        case .vpnConnectionWidePixelMeasurement:
+            // TODO(htang)
             return .disabled
         }
     }

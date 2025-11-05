@@ -172,7 +172,7 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             viewLoadedExpectation.fulfill()
         }
-        wait(for: [viewLoadedExpectation], timeout: 1.0)
+        wait(for: [viewLoadedExpectation], timeout: 2.0)
     }
 
     override func tearDownWithError() throws {

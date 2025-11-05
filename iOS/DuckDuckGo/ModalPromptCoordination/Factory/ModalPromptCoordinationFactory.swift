@@ -38,7 +38,7 @@ enum ModalPromptCoordinationFactory {
 
         let newAddressBarPickerModalPromptProvider = makeNewAddressBarPickerModalPromptProvider(dependency: dependency, isIPad: isIPad)
         let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: dependency.defaultBrowserPromptPresenter)
-        let winBackOfferModalPromptProvider = WinBackOfferModalPromptProvider(presenter: providersDependency.winBackOfferPresenter, coordinator: providersDependency.winBackOfferCoordinator)
+        let winBackOfferModalPromptProvider = WinBackOfferModalPromptProvider(presenter: dependency.winBackOfferPresenter, coordinator: dependency.winBackOfferCoordinator)
         let whatsNewModalPromptProvider = WhatsNewCoordinator(remoteMessageStore: dependency.remoteMessagingStore, remoteMessageActionHandler: dependency.remoteMessagingActionHandler, isIPad: isIPad)
 
         return ModalPromptCoordinationService(

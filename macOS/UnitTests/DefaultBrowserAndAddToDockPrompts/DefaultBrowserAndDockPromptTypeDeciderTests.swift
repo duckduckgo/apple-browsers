@@ -64,6 +64,42 @@ final class DefaultBrowserAndDockPromptTypeDeciderTests {
         #expect(result == nil)
     }
 
+    @Test("Check Return Nil Prompt If Banner Prompt Is Permanently Dismissed")
+    func checkPromptIsNilWhenBannerPromptPermanentlyDismissed() {
+        // GIVEN
+        storeMock.isBannerPermanentlyDismissed = true
+        let activeUserDecider = MockDefaultBrowserAndDockPromptTypeDecider()
+        activeUserDecider.promptTypeToReturn = .active(.popover)
+        let inactiveUserDecider = MockDefaultBrowserAndDockPromptTypeDecider()
+        inactiveUserDecider.promptTypeToReturn = .inactive
+        makeSUT(activeUserPromptDecider: activeUserDecider,
+                inactiveUserPromptDecider: inactiveUserDecider)
+
+        // WHEN
+        let result = sut.promptType()
+
+        // THEN
+        #expect(result == nil)
+    }
+
+    @Test("Check Return Nil Prompt If Prompt Has Been Shown Today")
+    func checkPromptIsNilWhenPromptAlreadyShownToday() {
+        // GIVEN
+        storeMock.popoverShownDate = timeTraveller.getDate().timeIntervalSince1970
+        let activeUserDecider = MockDefaultBrowserAndDockPromptTypeDecider()
+        activeUserDecider.promptTypeToReturn = .active(.banner)
+        let inactiveUserDecider = MockDefaultBrowserAndDockPromptTypeDecider()
+        inactiveUserDecider.promptTypeToReturn = .inactive
+        makeSUT(activeUserPromptDecider: activeUserDecider,
+                inactiveUserPromptDecider: inactiveUserDecider)
+
+        // WHEN
+        let result = sut.promptType()
+
+        // THEN
+        #expect(result == nil)
+    }
+
     @Test("Check Inactive User Prompt Has Priority Over Active User Prompt")
     func checkInactivePromptHasPriorityOverActivePrompt() {
         // GIVEN

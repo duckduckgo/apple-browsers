@@ -61,8 +61,8 @@ final class DefaultBrowserAndDockPromptTypeDecider: DefaultBrowserAndDockPromptT
     }
 
     func promptType() -> DefaultBrowserAndDockPromptPresentationType? {
-        // If user has already seen any prompt today do not show another one.
-        guard !hasAlreadySeenAnyModalToday() else {
+        // If user has permanently disabled prompt or user has already seen any prompt today do not show another one.
+        guard !store.isBannerPermanentlyDismissed, !hasAlreadySeenAnyModalToday() else {
             return nil
         }
 

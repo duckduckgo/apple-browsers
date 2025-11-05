@@ -41,9 +41,6 @@ extension DefaultBrowserAndDockPromptTypeDecider {
             // If Feature is disabled return nil
             guard featureFlagger.isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled else { return nil }
 
-            // If user has permanently disabled prompt return nil
-            guard !store.isBannerPermanentlyDismissed else { return nil }
-
             // If the user has not seen the popover and if they have installed the app at least `bannerAfterPopoverDelayDays` ago, show the popover.
             // If the user has seen the popover but they have not seen the banner and they have seen the popover at least `bannerAfterPopoverDelayDays
             // If the user has seen not dismissed permanently the banner and the have seen the banner at least `bannerRepeatIntervalDays`, show the banner again.

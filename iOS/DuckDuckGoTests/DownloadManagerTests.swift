@@ -25,9 +25,14 @@ import WidgetKit
 
 class DownloadManagerTests: XCTestCase {
     private let downloadManagerTestsHelper = DownloadTestsHelper(downloadsDirectory: DownloadManager().downloadsDirectory)
-    
+
+    override func setUp() {
+        super.setUp()
+        WKNavigationResponse.swizzleDealloc()
+    }
     override func tearDown() {
         super.tearDown()
+        WKNavigationResponse.restoreDealloc()
         downloadManagerTestsHelper.deleteAllFiles()
     }
     

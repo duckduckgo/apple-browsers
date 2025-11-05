@@ -24,16 +24,22 @@ import MaliciousSiteProtection
 @testable import DuckDuckGo
 
 @Suite("Special Error Pages - Malicious Site Protection Navigation Handler Unit Tests", .serialized)
-struct MaliciousSiteProtectionNavigationHandlerTests {
+final class MaliciousSiteProtectionNavigationHandlerTests {
     private var sut: MaliciousSiteProtectionNavigationHandler!
     private var mockMaliciousSiteProtectionManager: MockMaliciousSiteProtectionManager!
     private var webView: MockWebView!
 
     @MainActor
     init() {
+        WKNavigationResponse.swizzleDealloc()
+
         webView = MockWebView()
         mockMaliciousSiteProtectionManager = MockMaliciousSiteProtectionManager()
         sut = MaliciousSiteProtectionNavigationHandler(maliciousSiteProtectionManager: mockMaliciousSiteProtectionManager)
+    }
+
+    deinit {
+        WKNavigationResponse.restoreDealloc()
     }
 
     @MainActor

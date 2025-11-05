@@ -136,6 +136,7 @@ class MockWebView: WKWebView {
 class MockNavigationAction: WKNavigationAction {
     private let _request: URLRequest
     private let _navigationType: WKNavigationType
+    private let _sourceFrame: WKFrameInfo = MockFrameInfo(isMainFrame: true)
     private let _targetFrame: WKFrameInfo?
     var isTargetingMainFrameResult = true
 
@@ -151,6 +152,10 @@ class MockNavigationAction: WKNavigationAction {
 
     override var navigationType: WKNavigationType {
         return _navigationType
+    }
+
+    override var sourceFrame: WKFrameInfo {
+        return _sourceFrame
     }
 
     override var targetFrame: WKFrameInfo? {

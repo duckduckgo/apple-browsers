@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import os.log
 
 /// Protocol for storing attributed metric data with rolling daily counters.
 public protocol AttributedMetricDataStoring {
@@ -120,6 +121,7 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
 
     /// Remove all data stored in UserDefaults
     public func removeAll() {
+        Logger.attributedMetric.log("Removing all data")
         for key in StorageKey.allCases {
             userDefaults.removeObject(forKey: key.rawValue)
         }

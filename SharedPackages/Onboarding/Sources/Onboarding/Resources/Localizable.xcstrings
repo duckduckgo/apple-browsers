@@ -487,6 +487,18 @@
         }
       }
     },
+    "onboarding.highlights.browsers.features.duckplayer.title" : {
+      "comment" : "Message to highlight browser capability of watching YouTube videos without targeted ads",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Play YouTube without targeted ads"
+          }
+        }
+      }
+    },
     "onboarding.highlights.browsers.features.eraseBrowsingData.title" : {
       "comment" : "Message to highlight browser capability of swiftly erase browsing data",
       "extractionState" : "extracted_with_value",

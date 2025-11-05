@@ -28,7 +28,8 @@ struct DefaultBrowserPromptUIProvider: DefaultBrowserPromptUIProviding {
     }
 
     func makeBrowserComparisonChart() -> BrowsersComparisonChart {
-        return BrowsersComparisonChart(privacyFeatures: BrowsersComparisonModel.privacyFeatures, configuration: .defaultBrowserPromptConfiguration)
+        let features = BrowsersComparisonModel.privacyFeatures(for: [.privateSearch, .blockThirdPartyTrackers, .blockCookiePopups, .blockCreepyAds, .eraseBrowsingData])
+        return BrowsersComparisonChart(privacyFeatures: features, configuration: .defaultBrowserPromptConfiguration)
     }
 
 }

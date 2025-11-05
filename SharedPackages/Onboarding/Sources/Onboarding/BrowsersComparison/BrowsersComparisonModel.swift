@@ -20,11 +20,17 @@ import Foundation
 
 public struct BrowsersComparisonModel {
 
+    /// Privacy features for all feature types
     public static let privacyFeatures: [PrivacyFeature] = {
         PrivacyFeature.FeatureType.allCases.map { featureType in
             PrivacyFeature(type: featureType, browsersSupport: browsersSupport(for: featureType))
         }
     }()
+
+    /// Privacy features for the provided list of types
+    public static func privacyFeatures(for types: [PrivacyFeature.FeatureType]) -> [PrivacyFeature] {
+        privacyFeatures.filter { types.contains($0.type) }
+    }
 
     private static func browsersSupport(for feature: PrivacyFeature.FeatureType) -> [PrivacyFeature.BrowserSupport] {
         Browser.allCases.map { browser in
@@ -59,6 +65,13 @@ public struct BrowsersComparisonModel {
                     availability = .unavailable
                 }
             case .eraseBrowsingData:
+                switch browser {
+                case .ddg:
+                    availability = .available
+                case .safari:
+                    availability = .unavailable
+                }
+            case .duckplayer:
                 switch browser {
                 case .ddg:
                     availability = .available
@@ -109,12 +122,13 @@ extension BrowsersComparisonModel.PrivacyFeature {
         let availability: Availability
     }
 
-    enum FeatureType: CaseIterable {
+    public enum FeatureType: CaseIterable {
         case privateSearch
         case blockThirdPartyTrackers
         case blockCookiePopups
         case blockCreepyAds
         case eraseBrowsingData
+        case duckplayer
 
         var title: String {
             switch self {
@@ -128,6 +142,8 @@ extension BrowsersComparisonModel.PrivacyFeature {
                 UserText.BrowsersComparison.Features.creepyAds
             case .eraseBrowsingData:
                 UserText.BrowsersComparison.Features.eraseBrowsingData
+            case .duckplayer:
+                UserText.BrowsersComparison.Features.duckplayer
             }
         }
     }

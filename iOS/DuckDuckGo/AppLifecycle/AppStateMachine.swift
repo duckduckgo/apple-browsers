@@ -137,6 +137,7 @@ protocol TerminatingStateFactory {
 @MainActor
 struct DefaultTerminatingStateFactory: TerminatingStateFactory {
 
+    // swiftlint:disable:next unneeded_synthesized_initializer
     nonisolated init() {}
 
     func makeTerminatingState(error: Error) -> any TerminatingHandling {

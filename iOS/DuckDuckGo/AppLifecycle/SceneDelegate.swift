@@ -24,6 +24,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
 
     private var appStateMachine: AppStateMachine {
+        // swiftlint:disable:next force_cast
         (UIApplication.shared.delegate as! AppDelegate).appStateMachine
     }
 

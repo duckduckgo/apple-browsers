@@ -4,8 +4,14 @@ on:
     types: [labeled, unlabeled, opened, reopened, edited, synchronize]
 
 jobs:
+  should-run-checks:
+    name: Determine if checks should run
+    uses: ./.github/workflows/should-run-pr-checks.yml
+
   swiftlint:
     name: SwiftLint
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
     runs-on: ubuntu-latest
 
     steps:

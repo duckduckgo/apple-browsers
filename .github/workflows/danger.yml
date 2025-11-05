@@ -4,8 +4,13 @@ on:
     types: [labeled, unlabeled, opened, reopened, edited, synchronize]
 
 jobs:
-  build:
+  should-run-checks:
+    name: Determine if checks should run
+    uses: ./.github/workflows/should-run-pr-checks.yml
+  danger:
     name: Danger JS
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

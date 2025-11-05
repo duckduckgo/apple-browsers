@@ -5,8 +5,14 @@ on:
     paths: '.github/**'
 
 jobs:
+  should-run-checks:
+    name: Determine if checks should run
+    uses: ./.github/workflows/should-run-pr-checks.yml
+
   actionlint:
     name: Actionlint
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
     runs-on: ubuntu-latest
 
     steps:

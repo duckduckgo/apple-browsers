@@ -25,12 +25,13 @@ struct Connected: ConnectedHandling {
 
     typealias Dependencies = SceneDependencies
 
-    let launchingContext: Launching.StateContext
+    let appDependencies: AppDependencies
     let sceneDependencies: SceneDependencies
+    let didFinishLaunchingStartTime: CFAbsoluteTime
 
     init(stateContext: Launching.StateContext, actionToHandle: AppAction?, window: UIWindow) {
-        self.launchingContext = stateContext
-        let appDependencies = launchingContext.appDependencies
+        appDependencies = stateContext.appDependencies
+        didFinishLaunchingStartTime = stateContext.didFinishLaunchingStartTime
         let mainCoordinator = appDependencies.mainCoordinator
         let overlayWindowManager = OverlayWindowManager(window: window,
                                                         appSettings: appDependencies.appSettings,
@@ -41,7 +42,7 @@ struct Connected: ConnectedHandling {
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
 
-        let launchTaskManager = launchingContext.appDependencies.launchTaskManager
+        let launchTaskManager = appDependencies.launchTaskManager
         launchTaskManager.register(task: ClearInteractionStateTask(autoClearService: autoClearService,
                                                                    interactionStateSource: mainCoordinator.interactionStateSource,
                                                                    tabManager: mainCoordinator.tabManager))
@@ -60,7 +61,7 @@ struct Connected: ConnectedHandling {
     }
 
     private func logAppLaunchTime() {
-        let launchTime = CFAbsoluteTimeGetCurrent() - launchingContext.didFinishLaunchingStartTime
+        let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
         Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
                    withAdditionalParameters: [PixelParameters.time: String(launchTime)])
     }
@@ -78,8 +79,8 @@ extension Connected {
     }
 
     func makeStateContext(sceneDependencies: SceneDependencies) -> StateContext {
-        .init(didFinishLaunchingStartTime: launchingContext.didFinishLaunchingStartTime,
-              appDependencies: launchingContext.appDependencies,
+        .init(didFinishLaunchingStartTime: didFinishLaunchingStartTime,
+              appDependencies: appDependencies,
               sceneDependencies: sceneDependencies)
     }
 

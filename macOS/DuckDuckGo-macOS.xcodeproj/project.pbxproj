@@ -2326,6 +2326,8 @@
 		846F4CDF2E048A0500266DB7 /* BWIntegration in Frameworks */ = {isa = PBXBuildFile; productRef = 846F4CDE2E048A0500266DB7 /* BWIntegration */; };
 		8477AF2A2EBB3F0E00849EA5 /* AttributedMetricOriginFileProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FBD84552BB3ACFD00220859 /* AttributedMetricOriginFileProviderTests.swift */; };
 		8477AF2B2EBB3F0E00849EA5 /* AttributedMetricOriginFileProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FBD84552BB3ACFD00220859 /* AttributedMetricOriginFileProviderTests.swift */; };
+		8477AF2D2EBB440D00849EA5 /* DownloadsWebViewMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8477AF2C2EBB440D00849EA5 /* DownloadsWebViewMock.swift */; };
+		8477AF2E2EBB440D00849EA5 /* DownloadsWebViewMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8477AF2C2EBB440D00849EA5 /* DownloadsWebViewMock.swift */; };
 		84796D752E67000C007E6F9F /* FireDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84796D742E67000C007E6F9F /* FireDialogView.swift */; };
 		84796D762E67000C007E6F9F /* FireDialogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84796D742E67000C007E6F9F /* FireDialogView.swift */; };
 		848648A12C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */; };
@@ -5083,6 +5085,7 @@
 		84658D402EAA0CBD0018D992 /* MockHistoryViewDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockHistoryViewDataProvider.swift; sourceTree = "<group>"; };
 		846F4CD02E04829D00266DB7 /* TabContent+DisplayedFavicon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TabContent+DisplayedFavicon.swift"; sourceTree = "<group>"; };
 		847642EC2E570E5B00AA33EE /* WindowControllersManagerMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowControllersManagerMock.swift; sourceTree = "<group>"; };
+		8477AF2C2EBB440D00849EA5 /* DownloadsWebViewMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsWebViewMock.swift; sourceTree = "<group>"; };
 		84796D742E67000C007E6F9F /* FireDialogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireDialogView.swift; sourceTree = "<group>"; };
 		848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarMenuViewController.swift; sourceTree = "<group>"; };
 		84A03D2A2DBBE06700A3685B /* DraggingDestinationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraggingDestinationView.swift; sourceTree = "<group>"; };
@@ -10970,6 +10973,7 @@
 			isa = PBXGroup;
 			children = (
 				B693955E26F1C17F0015B914 /* DownloadListCoordinatorTests.swift */,
+				8477AF2C2EBB440D00849EA5 /* DownloadsWebViewMock.swift */,
 			);
 			path = Downloads;
 			sourceTree = "<group>";
@@ -14746,6 +14750,7 @@
 				B62A234129C41D4400D22475 /* HistoryIntegrationTests.swift in Sources */,
 				8434E6B32DB0148C008FFA3D /* BookmarksBarViewModelTests.swift in Sources */,
 				B644B43E29D5682B003FA9AB /* SearchNonexistentDomainTests.swift in Sources */,
+				8477AF2D2EBB440D00849EA5 /* DownloadsWebViewMock.swift in Sources */,
 				3706FEA5293F662100E42796 /* CoreDataEncryptionTesting.xcdatamodeld in Sources */,
 				845063542DB76FC900A60B56 /* DownloadListCoordinatorTests.swift in Sources */,
 				B64CE01F2B8622D700126CA5 /* AddressBarTests.swift in Sources */,
@@ -14786,6 +14791,7 @@
 				4B1AD92125FC474E00261379 /* CoreDataEncryptionTesting.xcdatamodeld in Sources */,
 				8434E6B22DB0148C008FFA3D /* BookmarksBarViewModelTests.swift in Sources */,
 				B62A234029C41D4400D22475 /* HistoryIntegrationTests.swift in Sources */,
+				8477AF2E2EBB440D00849EA5 /* DownloadsWebViewMock.swift in Sources */,
 				B644B43D29D56829003FA9AB /* SearchNonexistentDomainTests.swift in Sources */,
 				845063532DB76FC900A60B56 /* DownloadListCoordinatorTests.swift in Sources */,
 				B64CE01E2B8622D700126CA5 /* AddressBarTests.swift in Sources */,

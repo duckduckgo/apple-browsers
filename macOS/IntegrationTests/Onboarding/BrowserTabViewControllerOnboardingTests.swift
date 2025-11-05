@@ -30,6 +30,15 @@ import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
+class MockDefaultBrowserProvider: DefaultBrowserProvider {
+    var bundleIdentifier: String = "test"
+    var defaultBrowserURL: URL?
+    var isDefault: Bool = false
+
+    func presentDefaultBrowserPrompt() throws {}
+    func openSystemPreferences() {}
+}
+
 @available(macOS 12.0, *)
 final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
@@ -65,7 +74,14 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
             tab = Tab(content: .url(URL.duckDuckGo, credential: nil, source: .appOpenUrl), webViewConfiguration: schemeHandler.webViewConfiguration())
             let tabViewModel = TabViewModel(tab: tab)
-            viewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, onboardingPixelReporter: pixelReporter, onboardingDialogTypeProvider: dialogProvider, onboardingDialogFactory: factory, featureFlagger: featureFlagger)
+            viewController = BrowserTabViewController(
+                tabCollectionViewModel: tabCollectionViewModel,
+                onboardingPixelReporter: pixelReporter,
+                onboardingDialogTypeProvider: dialogProvider,
+                onboardingDialogFactory: factory,
+                featureFlagger: featureFlagger,
+                defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider())
+            )
             viewController.tabViewModel = tabViewModel
             _=viewController.view
             window = MockWindow()

@@ -43,9 +43,9 @@ final class DownloadListCoordinator {
     static let shared: DownloadListCoordinator = {
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
-            return DownloadListCoordinator()
+            return DownloadListCoordinator(downloadManager: Application.appDelegate.downloadManager)
         } else {
-            return DownloadListCoordinator(store: DownloadListStore(database: nil))
+            return DownloadListCoordinator(store: DownloadListStore(database: nil), downloadManager: Application.appDelegate.downloadManager)
         }
 #else
         return DownloadListCoordinator()
@@ -84,7 +84,7 @@ final class DownloadListCoordinator {
     @MainActor private var fireWindowSessionsProgress = [FireWindowSessionRef: Progress]()
 
     init(store: DownloadListStoring = DownloadListStore(database: Application.appDelegate.database.db),
-         downloadManager: FileDownloadManagerProtocol = FileDownloadManager.shared,
+         downloadManager: FileDownloadManagerProtocol,
          clearItemsOlderThan clearDate: Date = .daysAgo(2),
          webViewProvider: (() -> WKWebView?)? = nil) {
 

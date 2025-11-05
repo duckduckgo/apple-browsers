@@ -140,6 +140,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let fireCoordinator: FireCoordinator
     let permissionManager: PermissionManager
     let recentlyClosedCoordinator: RecentlyClosedCoordinating
+    let downloadManager: FileDownloadManagerProtocol
 
     let autoconsentManagement = AutoconsentManagement()
 
@@ -705,7 +706,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         visualizeFireSettingsDecider = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
         startupPreferences = StartupPreferences(persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore), appearancePreferences: appearancePreferences)
         defaultBrowserPreferences = DefaultBrowserPreferences()
-        downloadsPreferences = DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor())
         newTabPageCustomizationModel = NewTabPageCustomizationModel(themeManager: themeManager, appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld,
@@ -881,6 +881,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
 
         recentlyClosedCoordinator = RecentlyClosedCoordinator(windowControllersManager: windowControllersManager, pinnedTabsManagerProvider: pinnedTabsManagerProvider)
+        downloadsPreferences = DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor())
+        downloadManager = FileDownloadManager(preferences: downloadsPreferences)
 
         super.init()
 
@@ -1164,11 +1166,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        if !FileDownloadManager.shared.downloads.isEmpty {
+        if !downloadManager.downloads.isEmpty {
             // if there‘re downloads without location chosen yet (save dialog should display) - ignore them
-            let activeDownloads = Set(FileDownloadManager.shared.downloads.filter { $0.state.isDownloading })
+            let activeDownloads = Set(downloadManager.downloads.filter { $0.state.isDownloading })
             if !activeDownloads.isEmpty {
-                let alert = NSAlert.activeDownloadsTerminationAlert(for: FileDownloadManager.shared.downloads)
+                let alert = NSAlert.activeDownloadsTerminationAlert(for: downloadManager.downloads)
                 let downloadsFinishedCancellable = FileDownloadManager.observeDownloadsFinished(activeDownloads) {
                     // close alert and burn the window when all downloads finished
                     NSApp.stopModal(withCode: .OK)
@@ -1179,7 +1181,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     return .terminateCancel
                 }
             }
-            FileDownloadManager.shared.cancelAll(waitUntilDone: true)
+            downloadManager.cancelAll(waitUntilDone: true)
             DownloadListCoordinator.shared.sync()
         }
 

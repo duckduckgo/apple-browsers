@@ -606,7 +606,14 @@ struct DownloadsErrorBannerView: View {
     store.fetchBlock = { completion in
         completion(.success(previewDownloadListItems))
     }
-    let viewModel = DownloadListViewModel(fireWindowSession: nil, coordinator: DownloadListCoordinator(store: store))
-    return DownloadsViewController(viewModel: viewModel, preferences: DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor()))
+    let downloadsPreferences = DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor())
+    let viewModel = DownloadListViewModel(
+        fireWindowSession: nil,
+        coordinator: DownloadListCoordinator(
+            store: store,
+            downloadManager: FileDownloadManager(preferences: downloadsPreferences)
+        )
+    )
+    return DownloadsViewController(viewModel: viewModel, preferences: downloadsPreferences)
 }() }
 #endif

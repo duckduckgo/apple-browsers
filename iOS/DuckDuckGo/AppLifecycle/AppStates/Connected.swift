@@ -41,11 +41,14 @@ struct Connected: ConnectedHandling {
 
     let appDependencies: AppDependencies
     let sceneDependencies: SceneDependencies
+    let actionToHandle: AppAction?
     let didFinishLaunchingStartTime: CFAbsoluteTime
 
     init(stateContext: Launching.StateContext, actionToHandle: AppAction?, window: UIWindow) {
         appDependencies = stateContext.appDependencies
         didFinishLaunchingStartTime = stateContext.didFinishLaunchingStartTime
+        self.actionToHandle = actionToHandle
+
         let mainCoordinator = appDependencies.mainCoordinator
         let overlayWindowManager = OverlayWindowManager(window: window,
                                                         appSettings: appDependencies.appSettings,
@@ -67,6 +70,54 @@ struct Connected: ConnectedHandling {
 
         configure(window, with: mainCoordinator)
         logAppLaunchTime()
+    }
+
+    /// Temporary logic to handle cases where the window is disconnected and later reconnected.
+    /// Ensures the main coordinator’s main view controller is reattached to the new window.
+    /// If confirmed this scenario never occurs, this code should be removed.
+    init(stateContext: Foreground.StateContext, actionToHandle: AppAction?, window: UIWindow) {
+        appDependencies = stateContext.appDependencies
+        didFinishLaunchingStartTime = 0
+        self.actionToHandle = actionToHandle
+
+        let mainCoordinator = appDependencies.mainCoordinator
+        let overlayWindowManager = OverlayWindowManager(window: window,
+                                                        appSettings: appDependencies.appSettings,
+                                                        voiceSearchHelper: appDependencies.voiceSearchHelper,
+                                                        featureFlagger: appDependencies.featureFlagger,
+                                                        aiChatSettings: appDependencies.aiChatSettings,
+                                                        mobileCustomization: mainCoordinator.controller.mobileCustomization)
+        let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
+        let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
+        let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
+        sceneDependencies = SceneDependencies(screenshotService: screenshotService,
+                                              authenticationService: authenticationService,
+                                              autoClearService: autoClearService)
+        configure(window, with: mainCoordinator)
+    }
+
+    /// Temporary logic to handle cases where the window is disconnected and later reconnected.
+    /// Ensures the main coordinator’s main view controller is reattached to the new window.
+    /// If confirmed this scenario never occurs, this code should be removed.
+    init(stateContext: Background.StateContext, actionToHandle: AppAction?, window: UIWindow) {
+        appDependencies = stateContext.appDependencies
+        didFinishLaunchingStartTime = 0
+        self.actionToHandle = actionToHandle
+
+        let mainCoordinator = appDependencies.mainCoordinator
+        let overlayWindowManager = OverlayWindowManager(window: window,
+                                                        appSettings: appDependencies.appSettings,
+                                                        voiceSearchHelper: appDependencies.voiceSearchHelper,
+                                                        featureFlagger: appDependencies.featureFlagger,
+                                                        aiChatSettings: appDependencies.aiChatSettings,
+                                                        mobileCustomization: mainCoordinator.controller.mobileCustomization)
+        let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
+        let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
+        let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
+        sceneDependencies = SceneDependencies(screenshotService: screenshotService,
+                                              authenticationService: authenticationService,
+                                              autoClearService: autoClearService)
+        configure(window, with: mainCoordinator)
     }
 
     private func configure(_ window: UIWindow, with mainCoordinator: MainCoordinator) { ThemeManager.shared.updateUserInterfaceStyle(window: window)

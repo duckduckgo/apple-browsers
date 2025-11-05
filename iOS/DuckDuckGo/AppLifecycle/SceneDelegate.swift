@@ -31,6 +31,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         if let windowScene = scene as? UIWindowScene {
             let window = UIWindow(windowScene: windowScene)
+            self.window = window
             appStateMachine.handle(.willConnectToWindow(window: window))
         }
 
@@ -40,14 +41,17 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             // We should be supporting opening multiple URLs at once
             appStateMachine.handle(.openURL(urlContext.url))
         }
-
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
-        // Called as the scene is being released by the system.
-        // This occurs shortly after the scene enters the background, or when its session is discarded.
-        // Release any resources associated with this scene that can be re-created the next time the scene connects.
-        // The scene may re-connect later, as its session was not necessarily discarded (see `application:didDiscardSceneSessions` instead).
+        /// This should never be triggered in our single window configuration unless the user explicitly terminates the app.
+        /// To support recovery in such cases, we temporarily allow transitions from `Foreground` and `Background`
+        /// back to `Connected`, where:
+        /// - The main view controller is reattached to the new window.
+        /// - Services depending on the previous window are recreated.
+        ///
+        /// A tracking pixel is sent on consecutive reconnects to verify that this scenario occurs in practice.
+        /// If confirmed to never happen, these temporary transitions should be removed.
     }
 
     /// See: `Foreground.swift` -> `onTransition()`

@@ -105,6 +105,7 @@ protocol ForegroundHandling {
     func handle(_ action: AppAction)
 
     func makeBackgroundState() -> any BackgroundHandling
+    func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling
 
 }
 
@@ -116,6 +117,7 @@ protocol BackgroundHandling {
     func didReturn()
 
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling
+    func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling
 
 }
 
@@ -250,6 +252,10 @@ final class AppStateMachine {
             currentState = .background(background)
         case .willResignActive:
             foreground.willLeave()
+        case .willConnectToWindow(let window):
+            DailyPixel.fireDailyAndCount(pixel: .sceneDidDisconnectAndAttemptedToReconnect,
+                                         withAdditionalParameters: [PixelParameters.osVersion: UIDevice.current.systemVersion])
+            currentState = .connected(foreground.makeConnectedState(window: window, actionToHandle: actionToHandle))
         default:
             handleUnexpectedEvent(event, for: .foreground(foreground))
         }
@@ -268,6 +274,10 @@ final class AppStateMachine {
             actionToHandle = nil
         case .willEnterForeground:
             background.willLeave()
+        case .willConnectToWindow(let window):
+            DailyPixel.fireDailyAndCount(pixel: .sceneDidDisconnectAndAttemptedToReconnect,
+                                         withAdditionalParameters: [PixelParameters.osVersion: UIDevice.current.systemVersion])
+            currentState = .connected(background.makeConnectedState(window: window, actionToHandle: actionToHandle))
         default:
             handleUnexpectedEvent(event, for: .background(background))
         }

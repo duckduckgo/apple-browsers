@@ -28,6 +28,7 @@ public struct PixelParameters {
     public static let duration = "dur"
     static let test = "test"
     public static let appVersion = "appVersion"
+    public static let osVersion = "osVersion"
 
     public static let autocompleteBookmarkCapable = "bc"
     public static let autocompleteIncludedLocalResults = "sb"

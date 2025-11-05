@@ -122,4 +122,14 @@ extension Background {
                    actionToHandle: actionToHandle)
     }
 
+    /// Temporary logic to handle cases where the window is disconnected and later reconnected.
+    /// Ensures the main coordinator’s main view controller is reattached to the new window.
+    /// If confirmed this scenario never occurs, this code should be removed.
+    func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling {
+        Connected(stateContext: Launching.StateContext(didFinishLaunchingStartTime: 0,
+                                                       appDependencies: appDependencies),
+                  actionToHandle: actionToHandle,
+                  window: window)
+    }
+
 }

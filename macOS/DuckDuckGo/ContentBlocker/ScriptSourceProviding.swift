@@ -35,6 +35,7 @@ protocol ScriptSourceProviding {
     var surrogatesConfig: SurrogatesUserScriptConfig? { get }
     var privacyConfigurationManager: PrivacyConfigurationManaging { get }
     var autofillSourceProvider: AutofillUserScriptSourceProvider? { get }
+    var autoconsentManagement: AutoconsentManagement { get }
     var sessionKey: String? { get }
     var messageSecret: String? { get }
     var onboardingActionsManager: OnboardingActionsManaging? { get }
@@ -66,6 +67,7 @@ protocol ScriptSourceProviding {
         historyCoordinator: Application.appDelegate.historyCoordinator,
         fireproofDomains: Application.appDelegate.fireproofDomains,
         fireCoordinator: Application.appDelegate.fireCoordinator,
+        autoconsentManagement: Application.appDelegate.autoconsentManagement,
         newTabPageActionsManager: nil
     )
 }
@@ -92,6 +94,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
     let historyCoordinator: HistoryDataSource
     let windowControllersManager: WindowControllersManagerProtocol
+    let autoconsentManagement: AutoconsentManagement
 
     @MainActor
     init(configStorage: ConfigurationStoring,
@@ -110,6 +113,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          historyCoordinator: HistoryDataSource,
          fireproofDomains: DomainFireproofStatusProviding,
          fireCoordinator: FireCoordinator,
+         autoconsentManagement: AutoconsentManagement,
          newTabPageActionsManager: NewTabPageActionsManager?
     ) {
 
@@ -124,6 +128,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.bookmarkManager = bookmarkManager
         self.historyCoordinator = historyCoordinator
         self.windowControllersManager = windowControllersManager
+        self.autoconsentManagement = autoconsentManagement
 
         self.newTabPageActionsManager = newTabPageActionsManager
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()

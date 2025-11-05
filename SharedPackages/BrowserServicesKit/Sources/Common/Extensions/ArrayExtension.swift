@@ -18,9 +18,9 @@
 
 import Foundation
 
-extension Array where Element: Hashable {
+public extension Array where Element: Hashable {
 
-    public func removingDuplicates<T: Hashable>(byKey key: (Element) -> T) -> [Element] {
+    func removingDuplicates<T: Hashable>(byKey key: (Element) -> T) -> [Element] {
          var result = [Element]()
          var seen = Set<T>()
          for value in self where seen.insert(key(value)).inserted {
@@ -29,9 +29,28 @@ extension Array where Element: Hashable {
          return result
      }
 
-    public func chunked(into size: Int) -> [[Element]] {
+    func chunked(into size: Int) -> [[Element]] {
         return stride(from: 0, to: count, by: size).map {
             Array(self[$0 ..< Swift.min($0 + size, count)])
+        }
+    }
+
+}
+
+public extension Sequence {
+
+    func chunkedSequence(into size: Int) -> AnySequence<[Element]> {
+        precondition(size > 0, "size must be > 0")
+        var iterator = makeIterator()
+        return AnySequence {
+            return AnyIterator {
+                var buffer: [Element] = []
+                buffer.reserveCapacity(size)
+                while buffer.count < size, let next = iterator.next() {
+                    buffer.append(next)
+                }
+                return buffer.isEmpty ? nil : buffer
+            }
         }
     }
 

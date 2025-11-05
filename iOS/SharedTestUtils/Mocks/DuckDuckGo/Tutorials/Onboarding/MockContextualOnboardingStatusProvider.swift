@@ -1,7 +1,8 @@
 //
-//  SequenceExtensions.swift
+//  MockContextualOnboardingStatusProvider.swift
+//  DuckDuckGo
 //
-//  Copyright © 2021 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,11 +18,12 @@
 //
 
 import Foundation
+@testable import DuckDuckGo
 
-extension Sequence {
+final class MockContextualOnboardingStatusProvider: ContextualDaxDialogStatusProvider {
+    var hasSeenOnboarding: Bool = false
 
-    func map<T>(_ keyPath: KeyPath<Element, T>) -> [T] {
-        return map { $0[keyPath: keyPath] }
+    init(hasSeenOnboarding: Bool) {
+        self.hasSeenOnboarding = hasSeenOnboarding
     }
-
 }

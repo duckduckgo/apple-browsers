@@ -117,6 +117,7 @@ class HistoryCoordinatingMock: HistoryCoordinating, SuggestionContainer.HistoryP
 extension HistoryCoordinatingMock: HistoryGroupingDataSource {}
 
 extension HistoryCoordinatingMock: HistoryDataSource {
+    @MainActor
     func delete(_ visits: [History.Visit]) async {
         await withCheckedContinuation { continuation in
             burnVisits(visits) {

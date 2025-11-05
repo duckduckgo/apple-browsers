@@ -550,6 +550,8 @@ class TabViewController: UIViewController {
         decorate()
         addTextZoomObserver()
         setupAIChatViewContainer()
+        updateContainerVisibility()
+
         subscribeToEmailProtectionSignOutNotification()
         registerForDownloadsNotifications()
         registerForAddressBarLocationNotifications()
@@ -563,6 +565,11 @@ class TabViewController: UIViewController {
         
         // Link DuckPlayer to current Tab
         duckPlayerNavigationHandler.setHostViewController(self)
+        
+        // Restore AI Chat view controller if this tab is an AI Chat tab
+        if tabModel.isAITab {
+            loadAIChat()
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -1679,7 +1686,25 @@ extension TabViewController: WKNavigationDelegate {
             completion(image)
         }
     }
+
     
+    /// Prepares a tab preview for ai chat tabs
+    /// 
+    /// - Parameter completion: Handles the rendered preview image
+    func prepareAIChatPreview(completion: @escaping (UIImage?) -> Void) {
+        DispatchQueue.main.async { [weak self] in
+            guard let container = self?.aiChatViewContainer,
+                  container.bounds.height > 0 && container.bounds.width > 0 else { completion(nil); return }
+
+            let renderer = UIGraphicsImageRenderer(size: container.bounds.size)
+            let image = renderer.image { _ in
+                container.drawHierarchy(in: container.bounds, afterScreenUpdates: true)
+            }
+
+            completion(image)
+        }
+    }
+
     private func updatePreview() {
         preparePreview { image in
             if let image = image {

@@ -897,12 +897,7 @@ final class FeedbackSubMenu: NSMenu {
                                  featureFlagger: FeatureFlagger,
                                  moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         removeAllItems()
-
-        if featureFlagger.isFeatureOn(.newFeedbackForm) {
-            newFlow(moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
-        } else {
-            legacyFlow(moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
-        }
+        feedbackFlow(moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
 
         if authenticationStateProvider.isUserAuthenticated {
             addItem(.separator())
@@ -921,7 +916,7 @@ final class FeedbackSubMenu: NSMenu {
         }
     }
 
-    private func newFlow(moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
+    private func feedbackFlow(moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         let reportBrokenSiteItem = NSMenuItem(title: UserText.reportBrokenSite,
                                               action: #selector(AppDelegate.openReportBrokenSite(_:)),
                                               keyEquivalent: "")
@@ -941,21 +936,6 @@ final class FeedbackSubMenu: NSMenu {
                                                 keyEquivalent: "")
             .withImage(DesignSystemImages.Glyphs.Size16.windowNew)
         addItem(requestANewFeatureItem)
-    }
-
-    private func legacyFlow(moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
-        let browserFeedbackItem = NSMenuItem(title: UserText.browserFeedback,
-                                             action: #selector(sendFeedback(_:)),
-                                             keyEquivalent: "")
-            .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.browserFeedbackIcon)
-        addItem(browserFeedbackItem)
-
-        let reportBrokenSiteItem = NSMenuItem(title: UserText.reportBrokenSite,
-                                              action: #selector(AppDelegate.openReportBrokenSite(_:)),
-                                              keyEquivalent: "")
-            .withImage(moreOptionsMenuIconsProvider.reportBrokenSiteIcon)
-        addItem(reportBrokenSiteItem)
     }
 
     @MainActor

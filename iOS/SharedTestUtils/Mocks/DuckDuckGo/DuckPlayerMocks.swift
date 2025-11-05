@@ -144,7 +144,7 @@ class MockNavigationAction: WKNavigationAction {
         self._request = request
         self._navigationType = navigationType
         self._targetFrame = targetFrame
-        self._sourceFrame = MockFrameInfo(isMainFrame: false, request: request)
+        self._sourceFrame = MockFrameInfo(isMainFrame: true, request: request)
     }
 
     override var request: URLRequest {
@@ -177,6 +177,7 @@ class MockFrameInfo: WKFrameInfo {
         return _isMainFrame
     }
 
+    // swiftlint:disable identifier_name
     override var request: URLRequest {
         if let _request {
             return _request
@@ -184,6 +185,7 @@ class MockFrameInfo: WKFrameInfo {
             return super.request
         }
     }
+    // swiftlint:enable identifier_name
 
 }
 

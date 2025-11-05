@@ -44,9 +44,9 @@ public class RollingEightDays<T: Codable & Equatable>: RollingArray<T> {
     }
 
     public override func encode(to encoder: Encoder) throws {
-        try super.encode(to: encoder)
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(lastDay, forKey: .lastDay)
+        try super.encode(to: encoder)
     }
 
     /// Checks if the given date is the same calendar day as the last recorded day.
@@ -183,7 +183,7 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
                 lastDay: \(dateString)
                 values: [\(valuesDescription)]
                 past7DaysAverage: \(past7DaysAverage)
-                countPast7Days: \(countPast7Days))
+                countPast7Days: \(countPast7Days)
                 """
     }
 }

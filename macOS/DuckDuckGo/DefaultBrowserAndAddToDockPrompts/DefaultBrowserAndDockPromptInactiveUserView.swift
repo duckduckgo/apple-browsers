@@ -46,15 +46,13 @@ struct DefaultBrowserAndDockPromptInactiveUserView: View {
 
             VStack(spacing: Metrics.Chart.verticalSpacing) {
                 Spacer()
+
                 BrowsersComparisonChart(privacyFeatures: privacyFeatures, configuration: configuration)
+
                 HStack {
                     Spacer()
-                    Button(dismissButtonLabel) {
-                        dismissButtonAction()
-                    }
-                    Button(primaryButtonLabel) {
-                        primaryButtonAction()
-                    }
+                    OnboardingSecondaryCTAButton(title: dismissButtonLabel, action: dismissButtonAction)
+                    OnboardingPrimaryCTAButton(title: primaryButtonLabel, action: primaryButtonAction)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -75,7 +73,7 @@ private enum Metrics {
     enum Chart {
         static let verticalSpacing: CGFloat = 44
         static let fontSize: CGFloat = 13
-        static let fontWeight: Font.Weight = .bold
+        static let fontWeight: Font.Weight = .medium
     }
 }
 

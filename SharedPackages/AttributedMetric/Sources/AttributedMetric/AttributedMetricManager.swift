@@ -108,8 +108,7 @@ public final class AttributedMetricManager {
     // MARK: - Private
 
     var isEnabled: Bool {
-        //featureFlagger.isFeatureOn(for: AttributedMetricFeatureFlag.attributedMetrics)
-        true
+        featureFlagger.isFeatureOn(for: AttributedMetricFeatureFlag.attributedMetrics)
     }
 
     var daysSinceInstalled: Int {

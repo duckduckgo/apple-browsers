@@ -40,6 +40,10 @@ protocol ContextualDaxDialogDisabling {
     func disableContextualDaxDialogs()
 }
 
+protocol ContextualDaxDialogStatusProvider {
+    var hasSeenOnboarding: Bool { get }
+}
+
 protocol ContextualOnboardingLogic {
     var shouldShowPrivacyButtonPulse: Bool { get }
     var shouldShowFireButtonPulse: Bool { get }
@@ -76,7 +80,7 @@ protocol ContextualOnboardingLogic {
     func overrideShownFlagFor(_ spec: DaxDialogs.BrowsingSpec, flag: Bool)
 }
 
-typealias DaxDialogsManaging = ContextualOnboardingLogic & SubscriptionPromotionCoordinating & NewTabDialogSpecProvider & ContextualDaxDialogDisabling
+typealias DaxDialogsManaging = ContextualOnboardingLogic & SubscriptionPromotionCoordinating & NewTabDialogSpecProvider & ContextualDaxDialogDisabling & ContextualDaxDialogStatusProvider
 
 protocol SubscriptionPromotionCoordinating {
     /// Indicates whether the Subscription promotion dialog is currently being displayed
@@ -94,7 +98,7 @@ extension ContentBlockerRulesManager: EntityProviding {
     
 }
 
-final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
+final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, ContextualDaxDialogStatusProvider {
     
     struct MajorTrackers {
         
@@ -271,6 +275,10 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     private var shouldDisplayFinalContextualBrowsingDialog: Bool {
         !finalDaxDialogSeen &&
         visitedSiteAndFireButtonSeen
+    }
+
+    var hasSeenOnboarding: Bool {
+        !isEnabled
     }
 
     var isShowingSearchSuggestions: Bool {

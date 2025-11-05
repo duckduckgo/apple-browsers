@@ -249,12 +249,14 @@ extension TabSwitcherViewController {
         } else {
             interfaceMode = isEditing ? .editingRegularSize : .regularSize
         }
+        
+        let showAIChatButton = !aichatFullModeFeature.isAvailable && aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled
 
         barsHandler.update(interfaceMode,
                            selectedTabsCount: selectedTabs.count,
                            totalTabsCount: tabsModel.count,
                            containsWebPages: tabsModel.tabs.contains(where: { $0.link != nil }),
-                           showAIChatButton: aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled)
+                           showAIChatButton: showAIChatButton)
 
         titleBarView.topItem?.leftBarButtonItems = barsHandler.topBarLeftButtonItems
         titleBarView.topItem?.rightBarButtonItems = barsHandler.topBarRightButtonItems

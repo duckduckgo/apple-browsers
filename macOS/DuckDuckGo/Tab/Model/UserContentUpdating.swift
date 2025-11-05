@@ -92,6 +92,7 @@ final class UserContentUpdating {
          historyCoordinator: HistoryDataSource,
          fireproofDomains: DomainFireproofStatusProviding,
          fireCoordinator: FireCoordinator,
+         autoconsentManagement: AutoconsentManagement,
          contentScopePreferences: ContentScopePreferences
     ) {
         func onNotificationWithInitial(_ name: Notification.Name) -> AnyPublisher<Notification, Never> {
@@ -128,6 +129,7 @@ final class UserContentUpdating {
                                                       historyCoordinator: historyCoordinator,
                                                       fireproofDomains: fireproofDomains,
                                                       fireCoordinator: fireCoordinator,
+                                                      autoconsentManagement: autoconsentManagement,
                                                       newTabPageActionsManager: self?.newTabPageActionsManager)
             return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider, contentScopePreferences: contentScopePreferences)
         }

@@ -733,9 +733,11 @@ final class MoreOptionsMenuTests: XCTestCase {
                                   moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
                                   featureFlagger: MockFeatureFlagger())
 
-        XCTAssertTrue(sut.items.count == 2)
-        XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
-        XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
+        XCTAssertTrue(sut.items.count == 4)
+        XCTAssertEqual(sut.item(at: 0)?.title, UserText.reportBrokenSite)
+        XCTAssertEqual(sut.item(at: 1)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 2)?.title, UserText.reportBrowserProblem)
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.requestNewFeature)
     }
 
     func testCorrectItemsAreShown_whenNotInternalUserAndSubscriptionUser() {
@@ -745,11 +747,13 @@ final class MoreOptionsMenuTests: XCTestCase {
                                   moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
                                   featureFlagger: MockFeatureFlagger())
 
-        XCTAssertTrue(sut.items.count == 4)
-        XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
-        XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
-        XCTAssertEqual(sut.item(at: 2)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 3)?.title, UserText.sendSubscriptionFeedback)
+        XCTAssertTrue(sut.items.count == 6)
+        XCTAssertEqual(sut.item(at: 0)?.title, UserText.reportBrokenSite)
+        XCTAssertEqual(sut.item(at: 1)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 2)?.title, UserText.reportBrowserProblem)
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.requestNewFeature)
+        XCTAssertEqual(sut.item(at: 4)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 5)?.title, UserText.sendSubscriptionFeedback)
     }
 
     func testCorrectItemsAreShown_whenInternalUserAndNotSubscriptionUser() {
@@ -759,11 +763,13 @@ final class MoreOptionsMenuTests: XCTestCase {
                                   moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
                                   featureFlagger: MockFeatureFlagger())
 
-        XCTAssertTrue(sut.items.count == 4)
-        XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
-        XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
-        XCTAssertEqual(sut.item(at: 2)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 3)?.title, "Copy Version")
+        XCTAssertTrue(sut.items.count == 6)
+        XCTAssertEqual(sut.item(at: 0)?.title, UserText.reportBrokenSite)
+        XCTAssertEqual(sut.item(at: 1)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 2)?.title, UserText.reportBrowserProblem)
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.requestNewFeature)
+        XCTAssertEqual(sut.item(at: 4)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 5)?.title, "Copy Version")
     }
 
     func testCorrectItemsAreShown_whenInternalUserAndSubscriptionUser() {
@@ -773,18 +779,19 @@ final class MoreOptionsMenuTests: XCTestCase {
                                   moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
                                   featureFlagger: MockFeatureFlagger())
 
-        XCTAssertTrue(sut.items.count == 6)
-        XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
-        XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
-        XCTAssertEqual(sut.item(at: 2)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 3)?.title, UserText.sendSubscriptionFeedback)
+        XCTAssertTrue(sut.items.count == 8)
+        XCTAssertEqual(sut.item(at: 0)?.title, UserText.reportBrokenSite)
+        XCTAssertEqual(sut.item(at: 1)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 2)?.title, UserText.reportBrowserProblem)
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.requestNewFeature)
         XCTAssertEqual(sut.item(at: 4)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 5)?.title, "Copy Version")
+        XCTAssertEqual(sut.item(at: 5)?.title, UserText.sendSubscriptionFeedback)
+        XCTAssertEqual(sut.item(at: 6)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 7)?.title, "Copy Version")
     }
 
     func testCorrectItemsAreShown_whenNewFeedbackFeatureFlagIsOn() {
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.newFeedbackForm]
         let sut = FeedbackSubMenu(targetting: self,
                                   authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: true),
                                   internalUserDecider: MockInternalUserDecider(isInternalUser: true),

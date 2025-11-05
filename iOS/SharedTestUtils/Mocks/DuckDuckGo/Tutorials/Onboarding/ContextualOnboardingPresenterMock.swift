@@ -136,6 +136,8 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
 
 // Use to fill parameter list in injection.
 class DummyDaxDialogsManager: DaxDialogsManaging {
+    var hasSeenOnboarding: Bool = false
+
     var isShowingFireDialog: Bool = false
 
     var shouldShowPrivacyButtonPulse: Bool = false

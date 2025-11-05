@@ -765,6 +765,7 @@ extension DefaultOmniBarView {
     private func showAIChatOmnibar() {
         aiChatBrandingView?.isHidden = false
         searchAreaView.textField.isHidden = true
+
         aiChatLeadingSpacingConstraint?.isActive = true
         aiChatTrailingSpacingConstraint?.isActive = true
         aiChatLeftButton.isHidden = false

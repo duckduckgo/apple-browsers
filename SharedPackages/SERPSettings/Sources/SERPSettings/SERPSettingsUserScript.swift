@@ -280,7 +280,7 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     ///
     /// The parameters dictionary can contain:
     /// - `"return": "privateSearch"` - Navigating back from Privacy Settings on SERP after tapping 'Save & Exit' (macOS only)
-    /// - `"return": "aiFeatures"` -Navigating back from Privacy Settings on SERP after tapping 'Save & Exit' (macOS only)
+    /// - `"return": "aiFeatures"` - Navigating back from Privacy Settings on SERP after tapping 'Save & Exit' (macOS only)
     /// - `"screen": "aiFeatures"` - Navigate directly to AI settings after user tapped 'Open Duck.Ai Settings' on the SERP
     ///
     /// - Parameters:

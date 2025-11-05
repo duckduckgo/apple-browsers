@@ -77100,6 +77100,30 @@
         }
       }
     },
+    "sad.att.add-to-dock.inactive-user.message" : {
+      "comment" : "Body of a modal view inviting inactive users to add DuckDuckGo to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add DuckDuckGo to your dock for quick access to protections other browsers don't provide."
+          }
+        }
+      }
+    },
+    "sad.att.add-to-dock.inactive-user.primary" : {
+      "comment" : "Button primary action title that appears on a modal inviting inactive users to add DuckDuckGo to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add To Dock"
+          }
+        }
+      }
+    },
     "sad.att.add-to-dock.popover.message" : {
       "comment" : "Body of the popover that invites users to add DuckDuckGo to their Dock",
       "extractionState" : "extracted_with_value",
@@ -77336,6 +77360,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Больше не спрашивать"
+          }
+        }
+      }
+    },
+    "sad.att.both.inactive-user.message" : {
+      "comment" : "Body of a modal view inviting inactive users to set DuckDuckGo as their default browser and add to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add DuckDuckGo to your Dock and set it as your default browser to protect more of what you do online."
+          }
+        }
+      }
+    },
+    "sad.att.both.inactive-user.primary" : {
+      "comment" : "Button primary action title that appears on a modal inviting inactive users to set DuckDuckGo as their default browser and add to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add & Set As Default"
           }
         }
       }
@@ -77580,6 +77628,18 @@
         }
       }
     },
+    "sad.att.inactive-user.dismiss" : {
+      "comment" : "Button action title that appears on a prompt that dismisses the prompt.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No Thanks"
+          }
+        }
+      }
+    },
     "sad.att.set-as-default.banner.message" : {
       "comment" : "Body of the banner view that invites users to set DuckDuckGo as their default browser",
       "extractionState" : "extracted_with_value",
@@ -77636,6 +77696,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "DuckDuckGo не назначен вашим браузером по умолчанию. Почему бы не поднять уровень защиты?"
+          }
+        }
+      }
+    },
+    "sad.att.set-as-default.inactive-user.message" : {
+      "comment" : "Body of a modal view inviting inactive users to set DuckDuckGo as their default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Make DuckDuckGo your default browser to protect more of what you do online."
+          }
+        }
+      }
+    },
+    "sad.att.set-as-default.inactive-user.primary" : {
+      "comment" : "Button primary action title that appears on a modal inviting inactive users to set DuckDuckGo as their default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set As Default"
           }
         }
       }

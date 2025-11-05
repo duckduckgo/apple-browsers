@@ -94,10 +94,31 @@ private enum Metrics {
 }
 
 #Preview("Set As Default") {
-    let setAsDefault = DefaultBrowserAndDockPromptInactiveUserViewModel(message: "Make DuckDuckGo your default browser to protect more of what you do online.",
-                                                                        primaryButtonLabel: "Set As Default",
-                                                                        dismissButtonLabel: "No Thanks",
-                                                                        primaryButtonAction: {},
-                                                                        dismissButtonAction: {})
+    let setAsDefault = DefaultBrowserAndDockPromptInactiveUserViewModel(
+        message: UserText.setAsDefaultInactiveUserPromptMessage,
+        primaryButtonLabel: UserText.setAsDefaultInactiveUserPrimaryAction,
+        dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
+        primaryButtonAction: {},
+        dismissButtonAction: {})
     return DefaultBrowserAndDockPromptInactiveUserView(viewModel: setAsDefault)
+}
+
+#Preview("Add To Dock") {
+    let addToDock = DefaultBrowserAndDockPromptInactiveUserViewModel(
+        message: UserText.addToDockInactiveUserPromptMessage,
+        primaryButtonLabel: UserText.addToDockInactiveUserPrimaryAction,
+        dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
+        primaryButtonAction: {},
+        dismissButtonAction: {})
+    return DefaultBrowserAndDockPromptInactiveUserView(viewModel: addToDock)
+}
+
+#Preview("Add & Set As Default") {
+    let addToDockAndSetAsDefault = DefaultBrowserAndDockPromptInactiveUserViewModel(
+        message: UserText.bothSetAsDefaultAndAddToDockInactiveUserPromptMessage,
+        primaryButtonLabel: UserText.bothSetAsDefaultAndAddToDockInactiveUserPrimaryAction,
+        dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
+        primaryButtonAction: {},
+        dismissButtonAction: {})
+    return DefaultBrowserAndDockPromptInactiveUserView(viewModel: addToDockAndSetAsDefault)
 }

@@ -164,7 +164,7 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         // Given
         mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
         mockStore.churnDate = Date().addingTimeInterval(-7 * .day) // Churned 7 days ago
-        mockStore.offerPresentationDate = Date().addingTimeInterval(-4 * .day) // Presented 4 days ago (last day of 5-day window)
+        mockStore.offerPresentationDate = Date().addingTimeInterval(-3 * .day) // Presented 3 days ago (urgency window)
 
         // When
         let shouldShow = manager.shouldShowUrgencyMessage
@@ -177,7 +177,7 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         // Given
         mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
         let now = Date()
-        let presentationDate = now.addingTimeInterval(.days(-4) + .seconds(25))
+        let presentationDate = now.addingTimeInterval(.days(-3) + .seconds(25))
         mockStore.offerPresentationDate = presentationDate
         manager = WinBackOfferVisibilityManager(
             subscriptionManager: mockSubscriptionManager,

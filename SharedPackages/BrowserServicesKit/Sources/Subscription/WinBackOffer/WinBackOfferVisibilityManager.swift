@@ -100,9 +100,9 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
         let now = dateProvider()
         let offerEndDate = presentationDate.addingTimeInterval(Constants.offerAvailabilityPeriod)
-        let startOfLastDay = calendar.startOfDay(for: offerEndDate.addingTimeInterval(.days(-1)))
-        // Show urgency throughout the final calendar day of the offer window
-        return now >= startOfLastDay
+        let startOfUrgencyMessaging = calendar.startOfDay(for: offerEndDate.addingTimeInterval(.days(-2)))
+        // Show urgency message 2 days before the offer end
+        return now >= startOfUrgencyMessaging
     }
 
     public var shouldShowLaunchMessage: Bool {

@@ -38,8 +38,10 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     override func setUpWithError() throws {
         reporter = CapturingOnboardingPixelReporter()
         windowControllersManager = WindowControllersManagerMock()
+        featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.contextualOnboarding, .newTabPagePerTab, .fireDialog]
         fireCoordinator = FireCoordinator(tld: TLD(),
-                                          featureFlagger: Application.appDelegate.featureFlagger,
+                                          featureFlagger: featureFlagger,
                                           historyCoordinating: HistoryCoordinatingMock(),
                                           visualizeFireAnimationDecider: nil,
                                           onboardingContextualDialogsManager: nil,
@@ -50,8 +52,6 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
                                           historyProvider: MockHistoryViewDataProvider())
         factory = DefaultContextualDaxDialogViewFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
         delegate = CapturingOnboardingNavigationDelegate()
-        featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.contextualOnboarding, .newTabPagePerTab]
     }
 
     @MainActor override func tearDownWithError() throws {

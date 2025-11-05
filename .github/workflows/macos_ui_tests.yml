@@ -322,8 +322,8 @@ jobs:
 
   test-report:
     name: Report test results
-    if: always()
-    needs: [setup-tests, ui-tests]
+    if: always() && needs.should-run-checks.outputs.should_run == 'true'
+    needs: [should-run-checks, setup-tests, ui-tests]
     runs-on: ubuntu-latest
 
     steps:

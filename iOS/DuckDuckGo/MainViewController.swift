@@ -3966,7 +3966,7 @@ extension MainViewController {
         case .bookmarks:
             self.segueToBookmarks()
 
-        case .duckAi:
+        case .aiChat:
             self.openAIChat()
 
         case .passwords:

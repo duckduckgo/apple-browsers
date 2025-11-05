@@ -117,7 +117,7 @@ final class DefaultBrowserAndDockPromptTypeDeciderTests {
         #expect(result == .inactive)
     }
 
-    @Test("Check Active User Prompt Is Checked If Inactive User Prompt Is Nil")
+    @Test("Check Active User Prompt Is Returned If Inactive User Prompt Is Nil")
     func checkActiveUserPromptIsReturnedWhenInactiveUserPromptIsNil() {
         // GIVEN
         let activeUserDecider = MockDefaultBrowserAndDockPromptTypeDecider()
@@ -283,7 +283,6 @@ final class DefaultBrowserAndDockPromptTypeDeciderTests {
         featureFlaggerMock.inactiveModalNumberOfInactiveDays = 7
         userActivityProviderMock.inactiveDaysToReturn = 0
         let installDate = Date(timeIntervalSince1970: 1747699200) // 20 May 2025 12:00:00 AM
-        storeMock.inactiveUserModalShownDate = installDate.advanced(by: .days(28)).timeIntervalSince1970
         timeTraveller.setNowDate(installDate)
         let activeUserDecider = MockDefaultBrowserAndDockPromptTypeDecider()
         activeUserDecider.promptTypeToReturn = nil

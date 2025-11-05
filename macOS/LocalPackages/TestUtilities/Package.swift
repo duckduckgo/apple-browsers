@@ -21,12 +21,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "TestsExtensions",
+    name: "",
     platforms: [
         .macOS("11.4")
     ],
     products: [
-        .library(name: "NoARCObjCTestsExtensions", targets: ["NoARCObjCTestsExtensions"]),
+        .library(name: "NoARCObjC", targets: ["NoARCObjCTestUtilities"]),
         .library(name: "SharedTestUtilities", targets: ["SharedTestUtilities"]),
         .library(name: "SharedSandboxTestUtilities", targets: ["SharedSandboxTestUtilities"]),
     ],
@@ -38,7 +38,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "NoARCObjCTestsExtensions",
+            name: "NoARCObjCTestUtilities",
             dependencies: [],
             sources: [
                 "NSObject+AutoreleaseTracking.m",

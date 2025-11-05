@@ -180,8 +180,7 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
         for missedFile in missedFiles.sorted(by: { $0.string < $1.string }) where !missedFile.string.hasSuffix(".xcstrings") && !missedFile.string.hasSuffix(".plist") {
             let error = FileNotInTargetSourcesFolderError(
                 targets: Set(fileTargets[missedFile]!.map(\.displayName)),
-                filePath: missedFile.string,
-                //                expectedFolder: expectedSourcesFolder
+                filePath: missedFile.string
             )
             errors.append(error)
         }

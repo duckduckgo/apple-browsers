@@ -82,7 +82,7 @@ final class WinBackOfferDebugViewModel: ObservableObject {
     func resetWinBackOffer() {
         debugStore.reset()
         simulatedToday = debugStore.simulatedTodayDate
-        winbackOfferStore.storeChurnDate(Date(timeIntervalSince1970: 0))
+        winbackOfferStore.clearChurnDate()
         winbackOfferStore.setHasRedeemedOffer(false)
         winbackOfferStore.storeOfferPresentationDate(nil)
         winbackOfferStore.didDismissUrgencyMessage = false

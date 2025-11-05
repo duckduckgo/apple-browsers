@@ -125,7 +125,7 @@ final class WinBackOfferDebugMenu: NSMenuItem {
     @objc
     func resetWinBackOffer() {
         debugStore.reset()
-        winbackOfferStore.storeChurnDate(Date(timeIntervalSince1970: 0))
+        winbackOfferStore.clearChurnDate()
         winbackOfferStore.setHasRedeemedOffer(false)
         winbackOfferStore.storeOfferPresentationDate(nil)
         winbackOfferStore.didDismissUrgencyMessage = false

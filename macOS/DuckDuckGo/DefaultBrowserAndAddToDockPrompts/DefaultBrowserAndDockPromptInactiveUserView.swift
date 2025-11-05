@@ -19,22 +19,38 @@
 import SwiftUI
 import Onboarding
 
-struct DefaultBrowserAndDockPromptInactiveUserView: View {
-    private let privacyFeatures = BrowsersComparisonModel.privacyFeatures
-    private let configuration = BrowsersComparisonChart.Configuration(fontSize: Metrics.Chart.fontSize,
-                                                                      fontWeight: Metrics.Chart.fontWeight,
-                                                                      showFeatureIcons: true)
-
+final class DefaultBrowserAndDockPromptInactiveUserViewModel {
     let message: String
     let primaryButtonLabel: String
     let dismissButtonLabel: String
     let primaryButtonAction: () -> Void
     let dismissButtonAction: () -> Void
 
+    init(message: String,
+         primaryButtonLabel: String,
+         dismissButtonLabel: String,
+         primaryButtonAction: @escaping () -> Void,
+         dismissButtonAction: @escaping () -> Void) {
+        self.message = message
+        self.primaryButtonLabel = primaryButtonLabel
+        self.dismissButtonLabel = dismissButtonLabel
+        self.primaryButtonAction = primaryButtonAction
+        self.dismissButtonAction = dismissButtonAction
+    }
+}
+
+struct DefaultBrowserAndDockPromptInactiveUserView: View {
+    private let privacyFeatures = BrowsersComparisonModel.privacyFeatures
+    private let configuration = BrowsersComparisonChart.Configuration(fontSize: Metrics.Chart.fontSize,
+                                                                      fontWeight: Metrics.Chart.fontWeight,
+                                                                      showFeatureIcons: true)
+
+    let viewModel: DefaultBrowserAndDockPromptInactiveUserViewModel
+
     var body: some View {
         HStack(spacing: .zero) {
             VStack(alignment: .center) {
-                Text(message)
+                Text(viewModel.message)
                     .font(.title.weight(.bold))
                     .multilineTextAlignment(.center)
                     .padding(.top, Metrics.padding)
@@ -51,8 +67,8 @@ struct DefaultBrowserAndDockPromptInactiveUserView: View {
 
                 HStack {
                     Spacer()
-                    OnboardingSecondaryCTAButton(title: dismissButtonLabel, action: dismissButtonAction)
-                    OnboardingPrimaryCTAButton(title: primaryButtonLabel, action: primaryButtonAction)
+                    OnboardingSecondaryCTAButton(title: viewModel.dismissButtonLabel, action: viewModel.dismissButtonAction)
+                    OnboardingPrimaryCTAButton(title: viewModel.primaryButtonLabel, action: viewModel.primaryButtonAction)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -77,10 +93,11 @@ private enum Metrics {
     }
 }
 
-#Preview {
-    DefaultBrowserAndDockPromptInactiveUserView(message: "Make DuckDuckGo your default browser to protect more of what you do online.",
-                                                primaryButtonLabel: "Set As Default",
-                                                dismissButtonLabel: "No Thanks",
-                                                primaryButtonAction: {},
-                                                dismissButtonAction: {})
+#Preview("Set As Default") {
+    let setAsDefault = DefaultBrowserAndDockPromptInactiveUserViewModel(message: "Make DuckDuckGo your default browser to protect more of what you do online.",
+                                                                        primaryButtonLabel: "Set As Default",
+                                                                        dismissButtonLabel: "No Thanks",
+                                                                        primaryButtonAction: {},
+                                                                        dismissButtonAction: {})
+    return DefaultBrowserAndDockPromptInactiveUserView(viewModel: setAsDefault)
 }

@@ -202,8 +202,8 @@ private extension RemoteMessageModelType {
         switch self {
         case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
             return self
-        case let .cardsList(titleText, _, primaryActionText, primaryAction):
-            return .cardsList(titleText: titleText, items: items, primaryActionText: primaryActionText, primaryAction: primaryAction)
+        case let .cardsList(titleText, placeholder, _, primaryActionText, primaryAction):
+            return .cardsList(titleText: titleText, placeholder: placeholder, items: items, primaryActionText: primaryActionText, primaryAction: primaryAction)
         }
     }
 

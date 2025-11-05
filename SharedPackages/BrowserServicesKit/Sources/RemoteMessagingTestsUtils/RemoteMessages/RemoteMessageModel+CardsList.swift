@@ -24,12 +24,14 @@ public extension RemoteMessageModel {
     static func makeCardsListMessage(
         id: String = "test-message-id",
         titleText: String = "List Title",
+        placeholder: RemotePlaceholder? = nil,
         items: [RemoteMessageModelType.ListItem] = [],
         primaryActionText: String = "Done",
         primaryAction: RemoteAction = .dismiss
     ) -> RemoteMessageModel {
         let content: RemoteMessageModelType = .cardsList(
             titleText: titleText,
+            placeholder: placeholder,
             items: items,
             primaryActionText: primaryActionText,
             primaryAction: primaryAction

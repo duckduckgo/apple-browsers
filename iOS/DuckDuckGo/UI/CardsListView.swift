@@ -32,7 +32,7 @@ extension RemoteMessagingUI {
 
     struct CardsListDisplayModel {
         struct Item {
-            let icon: Image
+            let icon: String
             let title: String
             let description: String
             let disclosureIcon: Image?
@@ -40,6 +40,7 @@ extension RemoteMessagingUI {
         }
 
         let screenTitle: String
+        let icon: String?
         let items: [CardsListDisplayModel.Item]
         let onAppear: (() -> Void)?
         let primaryAction: (title: String, action: () -> Void)?
@@ -56,43 +57,20 @@ extension RemoteMessagingUI {
 
         var body: some View {
             VStack(spacing: Metrics.CardsList.componentsVerticalSpacing) {
-                Text(displayModel.screenTitle)
-                    .font(.system(size: Metrics.CardsList.titleFontSize, weight: .bold))
-                    .kerning(Metrics.CardsList.titleKerning)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(Color.primary)
+                VStack(spacing: Metrics.CardsList.contentInset) {
+                    Header(icon: displayModel.icon, title: displayModel.screenTitle)
 
-                ScrollView(showsIndicators: false) {
-                    LazyVStack(spacing: Metrics.CardsList.cardsVerticalSpacing) {
-                        ForEach(displayModel.items.indices, id: \.self) { index in
-                            CardView(displayModel: displayModel.items[index], background: AnyView(backgroundView(forItemAt: index)))
-                        }
-                    }
+                    Content(items: displayModel.items)
                 }
 
-                Spacer()
-
                 if let primaryAction = displayModel.primaryAction {
-                    Button(action: primaryAction.action) {
-                        Text(verbatim: primaryAction.title)
-                    }
-                    .buttonStyle(PrimaryButtonStyle())
-                    .padding(.bottom, Metrics.CardsList.buttonBottomPadding)
+                    Footer(title: primaryAction.title, action: primaryAction.action)
                 }
             }
             .padding(.horizontal, Metrics.CardsList.contentHorizontalPadding)
             .background(Color(singleUseColor: .whatsNewBackground))
             .onFirstAppear {
                 displayModel.onAppear?()
-            }
-        }
-
-        @ViewBuilder
-        private func backgroundView(forItemAt index: Int) -> some View {
-            if index == 0 {
-                CardGradient()
-            } else {
-                Color(designSystemColor: .surface)
             }
         }
     }
@@ -110,7 +88,7 @@ extension RemoteMessagingUI {
         var body: some View {
             HStack(alignment: .top, spacing: Metrics.Card.contentHorizontalSpacing) {
                 VStack(alignment: .leading) {
-                    displayModel.icon
+                    Image(displayModel.icon)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: Metrics.Card.iconSize.width, height: Metrics.Card.iconSize.height)
@@ -149,9 +127,78 @@ extension RemoteMessagingUI {
 
 }
 
+// MARK: - Header
+
+private extension RemoteMessagingUI.CardsListView {
+
+    struct Header: View {
+        let icon: String?
+        let title: String
+
+        var body: some View {
+            VStack(alignment: .center, spacing: 24.0) {
+                logoImage
+
+                Text(title)
+                    .font(.system(size: Metrics.CardsList.titleFontSize, weight: .bold))
+                    .kerning(Metrics.CardsList.titleKerning)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color.primary)
+            }
+        }
+
+        @ViewBuilder
+        private var logoImage: some View {
+            if let icon {
+                Image(icon)
+                    .scaledToFit()
+            } else {
+                EmptyView()
+            }
+        }
+    }
+
+    struct Content: View {
+        let items: [RemoteMessagingUI.CardsListDisplayModel.Item]
+
+        var body: some View {
+            ScrollView(showsIndicators: false) {
+                LazyVStack(spacing: Metrics.CardsList.cardsVerticalSpacing) {
+                    ForEach(items.indices, id: \.self) { index in
+                        RemoteMessagingUI.CardView(displayModel: items[index], background: AnyView(backgroundView(forItemAt: index)))
+                    }
+                }
+            }
+        }
+
+        @ViewBuilder
+        private func backgroundView(forItemAt index: Int) -> some View {
+            if index == 0 {
+                CardGradient()
+            } else {
+                Color(designSystemColor: .surface)
+            }
+        }
+    }
+
+    struct Footer: View {
+        let title: String
+        let action: () -> Void
+
+        var body: some View {
+            Button(action: action) {
+                Text(verbatim: title)
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .padding(.bottom, Metrics.CardsList.buttonBottomPadding)
+        }
+    }
+
+}
+
 // MARK: - Card Gradient
 
-extension RemoteMessagingUI {
+extension RemoteMessagingUI.CardsListView {
 
     struct CardGradient: View {
         @Environment(\.colorScheme) var colorScheme
@@ -170,7 +217,7 @@ extension RemoteMessagingUI {
 
 }
 
-private extension RemoteMessagingUI.CardGradient {
+private extension RemoteMessagingUI.CardsListView.CardGradient {
 
     // Autogenerated from Figma
     struct LightGradient: View {
@@ -238,7 +285,9 @@ private enum Metrics {
     enum CardsList {
         @MainActor
         static let contentHorizontalPadding: CGFloat = MetricBuilder<CGFloat>.init(iPhone: 24.0, iPad: 48.0).build()
-        static let componentsVerticalSpacing: CGFloat = 20.0
+        static let componentsVerticalSpacing: CGFloat = 24.0
+        @MainActor
+        static let contentInset: CGFloat = MetricBuilder<CGFloat>.init(iPhone: 24.0, iPad: 48.0).build()
         static let titleFontSize: CGFloat = 28.0
         static let titleKerning: CGFloat = 0.38
         static let cardsVerticalSpacing: CGFloat = 12.0
@@ -282,6 +331,7 @@ struct CardsList_Previews: PreviewProvider {
 
         return .init(displayModel: .init(
             screenTitle: "What’s New",
+            icon: "RemoteMessageDDGAnnouncement",
             items: listItems,
             onAppear: nil,
             primaryAction: action
@@ -290,21 +340,21 @@ struct CardsList_Previews: PreviewProvider {
 
     static let items: [RemoteMessagingUI.CardsListDisplayModel.Item] = [
         .init(
-            icon: Image("RemoteImageAI"),
+            icon: "RemoteImageAI",
             title: "Hide AI Images in Search",
             description: "Easily hide AI images in your search results with the \"AI images\" search filter.",
             disclosureIcon: chevron,
             onTapAction: nil
         ),
         .init(
-            icon: Image("RemoteRadar"),
+            icon: "RemoteRadar",
             title: "Enhanced Scam Blocker",
             description: "Browse confidently with protection against even more sneaky online threats.",
             disclosureIcon: chevron,
             onTapAction: nil
         ),
         .init(
-            icon: Image("RemoteKeyImport"),
+            icon: "RemoteKeyImport",
             title: "Import From Safari",
             description: "Add your saved bookmarks and passwords in seconds!",
             disclosureIcon: chevron,

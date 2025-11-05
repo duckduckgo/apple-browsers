@@ -82,6 +82,11 @@ class BrowserChromeButton: UIButton {
         border?.backgroundColor = nil
     }
 
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesCancelled(touches, with: event)
+        border?.backgroundColor = nil
+    }
+
     func removeBorder() {
         border?.removeFromSuperview()
         applyConfiguration()

@@ -23,29 +23,6 @@ import class UIKit.UIDevice
 @testable import DuckDuckGo
 
 struct OnboardingManagerTests {
-
-    static func expectedIPhoneSteps(isReturningUser: Bool) -> [OnboardingIntroStep] {
-        [
-            .introDialog(isReturningUser: isReturningUser),
-            .browserComparison,
-            .addToDockPromo,
-            .appIconSelection,
-            .addressBarPositionSelection
-        ]
-    }
-
-    static func expectedIPhoneStepsWithSearchExperience(isReturningUser: Bool) -> [OnboardingIntroStep] {
-        expectedIPhoneSteps(isReturningUser: isReturningUser) + [.searchExperienceSelection]
-    }
-
-    static func expectedIPadSteps(isReturningUser: Bool) -> [OnboardingIntroStep] {
-        [
-            .introDialog(isReturningUser: isReturningUser),
-            .browserComparison,
-            .appIconSelection
-        ]
-    }
-
     struct OnboardingStepsNewUser {
         let variantManagerMock = MockVariantManager(
             currentVariant: VariantIOS(
@@ -60,7 +37,7 @@ struct OnboardingManagerTests {
         func checkOnboardingSteps_iPhone_onboardingSearchExperience_off() async throws {
             // GIVEN
             let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: variantManagerMock, isIphone: true)
-            let expectedSteps = OnboardingManagerTests.expectedIPhoneSteps(isReturningUser: false)
+            let expectedSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
 
             // WHEN
             let result = sut.newUserSteps(isIphone: true)
@@ -75,7 +52,7 @@ struct OnboardingManagerTests {
             let featureFlagger = MockFeatureFlagger()
             featureFlagger.enabledFeatureFlags = [.onboardingSearchExperience]
             let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: featureFlagger, variantManager: variantManagerMock, isIphone: true)
-            let expectedSteps = OnboardingManagerTests.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+            let expectedSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
 
             // WHEN
             let result = sut.newUserSteps(isIphone: true)
@@ -88,7 +65,7 @@ struct OnboardingManagerTests {
         func checkOnboardingSteps_iPad() {
             // GIVEN
             let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: variantManagerMock, isIphone: false)
-            let expectedSteps = OnboardingManagerTests.expectedIPadSteps(isReturningUser: false)
+            let expectedSteps = OnboardingStepsHelper.expectedIPadSteps(isReturningUser: false)
 
             // WHEN
             let result = sut.newUserSteps(isIphone: false)
@@ -113,7 +90,7 @@ struct OnboardingManagerTests {
         func checkOnboardingSteps_iPhone_onboardingSearchExperience_off() async throws {
             // GIVEN
             let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: variantManagerMock, isIphone: true)
-            let expectedSteps = OnboardingManagerTests.expectedIPhoneSteps(isReturningUser: true)
+            let expectedSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
 
             // WHEN
             let result = sut.returningUserSteps(isIphone: true)
@@ -128,7 +105,7 @@ struct OnboardingManagerTests {
             let featureFlagger = MockFeatureFlagger()
             featureFlagger.enabledFeatureFlags = [.onboardingSearchExperience]
             let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: featureFlagger, variantManager: variantManagerMock, isIphone: true)
-            let expectedSteps = OnboardingManagerTests.expectedIPhoneStepsWithSearchExperience(isReturningUser: true)
+            let expectedSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: true)
 
             // WHEN
             let result = sut.returningUserSteps(isIphone: true)
@@ -141,7 +118,7 @@ struct OnboardingManagerTests {
         func checkOnboardingSteps_iPad() {
             // GIVEN
             let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: variantManagerMock, isIphone: false)
-            let expectedSteps = OnboardingManagerTests.expectedIPadSteps(isReturningUser: true)
+            let expectedSteps = OnboardingStepsHelper.expectedIPadSteps(isReturningUser: true)
 
             // WHEN
             let result = sut.returningUserSteps(isIphone: false)
@@ -175,7 +152,7 @@ struct OnboardingManagerTests {
         func checkOnboardingStepsNewUser() {
             // GIVEN
             let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: variantManagerMock, isIphone: true)
-            let expectedSteps = OnboardingManagerTests.expectedIPhoneSteps(isReturningUser: false)
+            let expectedSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
 
             // WHEN
             let result = sut.onboardingSteps
@@ -188,7 +165,7 @@ struct OnboardingManagerTests {
         func checkOnboardingStepsReturningUser() {
             // GIVEN
             let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: variantManagerMockRU, isIphone: true)
-            let expectedSteps = OnboardingManagerTests.expectedIPhoneSteps(isReturningUser: true)
+            let expectedSteps = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: true)
 
             // WHEN
             let result = sut.onboardingSteps

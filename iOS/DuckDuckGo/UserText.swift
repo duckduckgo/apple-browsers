@@ -1912,7 +1912,7 @@ public struct UserText {
 
         enum SearchExperience {
             public static let title = NSLocalizedString("onboarding.highlights.searchExperience.title", value: "Choose your search experience", comment: "The title of the onboarding dialog popup to select the preferred search experience.")
-            public static let cta = NSLocalizedString("onboarding.highlights.addressBarPosition.cta", value: "Next", comment: "The title of the CTA to progress to the next onboarding screen.")
+            public static let cta = NSLocalizedString("onboarding.highlights.searchExperience.cta", value: "Next", comment: "The title of the CTA to progress to the next onboarding screen.")
         }
 
         enum ContextualOnboarding {

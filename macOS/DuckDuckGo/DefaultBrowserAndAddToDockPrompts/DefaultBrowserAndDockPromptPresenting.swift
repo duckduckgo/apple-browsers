@@ -198,6 +198,23 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         return NSHostingController(rootView: contentView)
     }
 
+    private func createInactiveUserModal(with type: DefaultBrowserAndDockPromptType) {
+        let content = DefaultBrowserAndDockPromptContent.inactive(type)
+        let viewModel = DefaultBrowserAndDockPromptInactiveUserViewModel(
+            message: content.message,
+            primaryButtonLabel: content.primaryButtonTitle,
+            dismissButtonLabel: content.secondaryButtonTitle,
+            primaryButtonAction: {
+                // TODO: Add primary action
+            },
+            dismissButtonAction: {
+                // TODO: Add dismiss action
+            })
+        let contentView = DefaultBrowserAndDockPromptInactiveUserView(viewModel: viewModel)
+
+        // TODO: Show the modal view
+    }
+
     private func dismissBanner() {
         self.clearStatusUpdateData()
         self.bannerDismissedSubject.send()

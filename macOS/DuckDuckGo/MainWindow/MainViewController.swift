@@ -494,13 +494,10 @@ final class MainViewController: NSViewController {
         }
 
         // Update once the view is added to a window.
-        var observation: NSKeyValueObservation?
-        observation = view.observe(\.window) { [weak selectedTabViewModel] view, _ in
+        view.observe(\.window) { [weak selectedTabViewModel] view, _ in
             guard view.window != nil else { return }
-            observation?.invalidate()
             updateWindowTitle(selectedTabViewModel?.title ?? "")
-        }
-        observation?.store(in: &tabViewModelCancellables)
+        }.store(in: &tabViewModelCancellables)
 
         selectedTabViewModel.$title
             .receive(on: DispatchQueue.main)

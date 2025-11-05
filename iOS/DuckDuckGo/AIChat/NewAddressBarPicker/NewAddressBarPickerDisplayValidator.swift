@@ -27,7 +27,6 @@ import RemoteMessaging
 
 protocol NewAddressBarPickerDisplayValidating {
     func shouldDisplayNewAddressBarPicker() -> Bool
-    func markPickerDisplayAsSeen()
 }
 
 struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating {
@@ -35,31 +34,25 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     // MARK: - Dependencies
     
     private let aiChatSettings: AIChatSettingsProvider
-    private let tutorialSettings: TutorialSettings
     private let featureFlagger: FeatureFlagger
     private let experimentalAIChatManager: ExperimentalAIChatManager
     private let appSettings: AppSettings
-    private let pickerStorage: NewAddressBarPickerStorage
-    private let launchSourceManager: LaunchSourceManaging
+    private let pickerStorage: NewAddressBarPickerStorageReading
 
     // MARK: - Initialization
     
     init(
         aiChatSettings: AIChatSettingsProvider,
-        tutorialSettings: TutorialSettings,
         featureFlagger: FeatureFlagger,
         experimentalAIChatManager: ExperimentalAIChatManager,
         appSettings: AppSettings,
         pickerStorage: NewAddressBarPickerStorage,
-        launchSourceManager: LaunchSourceManaging
     ) {
         self.aiChatSettings = aiChatSettings
-        self.tutorialSettings = tutorialSettings
         self.featureFlagger = featureFlagger
         self.experimentalAIChatManager = experimentalAIChatManager
         self.appSettings = appSettings
         self.pickerStorage = pickerStorage
-        self.launchSourceManager = launchSourceManager
     }
     
     // MARK: - Public Interface
@@ -76,9 +69,6 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
 
         guard isMainDuckAIEnabled else { return false }
         Logger.addressBarPicker.info("✓ Main DuckAI is enabled")
-
-        guard isOnboardingCompletedOrSkipped else { return false }
-        Logger.addressBarPicker.info("✓ Onboarding is completed or skipped")
         
         guard isFeatureFlagEnabled else { return false }
         Logger.addressBarPicker.info("✓ Feature flag is enabled")
@@ -92,25 +82,14 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         guard !hasForceChoiceBeenShown else { return false }
         Logger.addressBarPicker.info("✓ Force choice has not been shown yet")
 
-        guard !isLaunchedFromExternalSource else { return false }
-        Logger.addressBarPicker.info("✓ App was not launched from external source")
-
         Logger.addressBarPicker.info("All conditions passed - picker can be shown")
         return true
-    }
-
-    func markPickerDisplayAsSeen() {
-        pickerStorage.markAsShown()
     }
 
     // MARK: - Show Criteria Variables
     
     private var isMainDuckAIEnabled: Bool {
         aiChatSettings.isAIChatEnabled
-    }
-    
-    private var isOnboardingCompletedOrSkipped: Bool {
-        tutorialSettings.hasSeenOnboarding
     }
     
     private var isFeatureFlagEnabled: Bool {
@@ -131,10 +110,6 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         pickerStorage.hasBeenShown
     }
 
-    private var isLaunchedFromExternalSource: Bool {
-        launchSourceManager.source != .standard
-    }
-
     private var isRunningUITests: Bool {
         ProcessInfo.isRunningUITests
     }
@@ -142,8 +117,17 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
 
 // MARK: - Storage
 
-struct NewAddressBarPickerStorage {
-    
+protocol NewAddressBarPickerStorageReading {
+    var hasBeenShown: Bool { get }
+}
+
+protocol NewAddressBarPickerStorageWriting {
+    func markAsShown()
+}
+
+typealias NewAddressBarPickerStorage = NewAddressBarPickerStorageReading & NewAddressBarPickerStorageWriting
+
+struct NewAddressBarPickerStore: NewAddressBarPickerStorage {
     private let keyValueStore: KeyValueStoring
     
     private enum Key {

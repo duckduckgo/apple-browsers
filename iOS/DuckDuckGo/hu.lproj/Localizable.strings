@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Adatvédelem engedélyezése";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Lapok bezárása és adattörlés";
+"action.title.forgetAll" = "Lapok és adatok törlése";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Lapok és adatok törölve";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Lapok, adatok és Duck.ai-csevegések törlése";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Megnyitás a háttérben";
@@ -2827,6 +2830,12 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Letiltásával megakadályozhatod, hogy a hivatkozások automatikusan megnyíljanak más telepített alkalmazásokban.";
 
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Lapok és adatok törlése";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Lapok, adatok és Duck.ai-csevegések törlése";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Keresési javaslatok";
 
@@ -2871,6 +2880,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Testreszabás";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Törli az összes lapot, Duck.ai-csevegést és minden olyan webhely adatát, amit nem tettél tűzállóvá.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Törli az összes lapot és minden olyan webhely adatát, amit nem tettél tűzállóvá.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Adattörlés";

@@ -12,5 +12,19 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor", "first_daily_count"],
         "parameters": ["appVersion"]
+    },
+    "m_ios_aichat_history_delete_successful": {
+        "description": "Fired when Duck.ai chat history is deleted successfully via fire button",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "m_ios_aichat_history_delete_failed": {
+        "description": "Fired when Duck.ai chat history fails to be deleted via fire button",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
     }
 }

@@ -103,6 +103,7 @@ struct SettingsSubscriptionView: View {
                     .foregroundColor(Color.init(designSystemColor: .accent))
                     .padding(.leading, 32.0)
             }, action: {
+                Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedOutOfferCTAClicked)
                 subscriptionNavigationCoordinator.redirectURLComponents = winBackURLComponents
                 subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
             }, isButton: true, shouldShowWinBackOffer: true)
@@ -129,6 +130,9 @@ struct SettingsSubscriptionView: View {
                     SettingsCellView(label: UserText.settingsPProIHaveASubscription).padding(.leading, 32.0)
                 }
             }
+        }
+        .onFirstAppear {
+            Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedOutOfferShown)
         }
     }
 
@@ -268,6 +272,7 @@ struct SettingsSubscriptionView: View {
 
     @ViewBuilder
     private var subscribeWithWinBackOfferView: some View {
+        Group {
         disabledFeaturesView
 
         // Subscribe with Win-back offer
@@ -275,9 +280,12 @@ struct SettingsSubscriptionView: View {
             let settingsView = SubscriptionSettingsView(configuration: SubscriptionSettingsViewConfiguration.expired,
                                                         settingsViewModel: settingsViewModel,
                                                         takeWinBackOffer: {
+                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsCTAClicked)
                 subscriptionNavigationCoordinator.redirectURLComponents = winBackURLComponents
                 subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
-            })
+            }).onFirstAppear {
+                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsShown)
+            }
                 .environmentObject(subscriptionNavigationCoordinator)
             NavigationLink(destination: settingsView) {
                 SettingsCellView(
@@ -291,9 +299,12 @@ struct SettingsSubscriptionView: View {
             let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.expired,
                                                           settingsViewModel: settingsViewModel,
                                                           takeWinBackOffer: {
+                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsCTAClicked)
                 subscriptionNavigationCoordinator.redirectURLComponents = winBackURLComponents
                 subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
-            })
+            }).onFirstAppear {
+                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsShown)
+            }
                 .environmentObject(subscriptionNavigationCoordinator)
             NavigationLink(destination: settingsView) {
                 SettingsCellView(
@@ -303,6 +314,10 @@ struct SettingsSubscriptionView: View {
                     shouldShowWinBackOffer: true
                 )
             }
+        }
+        }
+        .onFirstAppear {
+            Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedInOfferShown)
         }
     }
 
@@ -369,7 +384,8 @@ struct SettingsSubscriptionView: View {
 
             let destination: LazyView<AnyView> = {
                 if settingsViewModel.isPIREnabled, let vcProvider = settingsViewModel.dataBrokerProtectionViewControllerProvider {
-                    return LazyView(AnyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)))
+                    return LazyView(AnyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
+                        .edgesIgnoringSafeArea(.bottom)))
                 } else {
                     statusIndicator = .on
                     return LazyView(AnyView(SubscriptionPIRMoveToDesktopView()))

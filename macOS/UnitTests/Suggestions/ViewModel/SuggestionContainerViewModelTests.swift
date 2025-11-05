@@ -84,6 +84,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         XCTAssertNil(suggestionContainerViewModel.selectedSuggestionViewModel)
     }
 
+    @MainActor
     func testWhenSuggestionIsSelectedThenSelectedSuggestionViewModelMatchesSuggestion() {
         suggestionContainer.getSuggestions(for: "Test")
         suggestionLoadingMock.completion?(SuggestionResult.aSuggestionResult, nil )
@@ -130,6 +131,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         waitForExpectations(timeout: 1, handler: nil)
     }
 
+    @MainActor
     func testWhenClearSelectionIsCalledThenNoSuggestonIsSeleted() {
         suggestionContainer.getSuggestions(for: "Test")
         suggestionLoadingMock.completion?(SuggestionResult.aSuggestionResult, nil )
@@ -151,6 +153,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         waitForExpectations(timeout: 1, handler: nil)
     }
 
+    @MainActor
     func testSelectNextIfPossible() {
         suggestionContainer.getSuggestions(for: "Test")
         suggestionLoadingMock.completion?(SuggestionResult.aSuggestionResult, nil )
@@ -169,6 +172,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         XCTAssertNil(suggestionContainerViewModel.selectionIndex)
     }
 
+    @MainActor
     func testSelectPreviousIfPossible() {
         suggestionContainer.getSuggestions(for: "Test")
         suggestionLoadingMock.completion?(SuggestionResult.aSuggestionResult, nil )
@@ -187,6 +191,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         XCTAssertNil(suggestionContainerViewModel.selectionIndex)
     }
 
+    @MainActor
     func testWhenUserAppendsText_suggestionsLoadingInitiatedAndTopHitIsSelected() {
         XCTAssertFalse(suggestionLoadingMock.getSuggestionsCalled)
         suggestionContainerViewModel.setUserStringValue("duck", userAppendedStringToTheEnd: true)
@@ -208,6 +213,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         wait(for: [selectedSuggestionViewModelExpectation], timeout: 0)
     }
 
+    @MainActor
     func testWhenUserAppendsSpace_suggestionsLoadingInitiatedWithoutTopSuggestionSelection() {
         suggestionContainerViewModel.setUserStringValue("duck ", userAppendedStringToTheEnd: true)
         XCTAssertTrue(suggestionLoadingMock.getSuggestionsCalled)
@@ -224,6 +230,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         waitForMainQueueToFlush(for: 1)
     }
 
+    @MainActor
     func testWhenUserInsertsTextInTheMiddle_suggestionsLoadingInitiatedWithoutTopSuggestionSelection() {
         suggestionContainerViewModel.setUserStringValue("duck", userAppendedStringToTheEnd: false)
         XCTAssertTrue(suggestionLoadingMock.getSuggestionsCalled)
@@ -240,6 +247,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         waitForMainQueueToFlush(for: 1)
     }
 
+    @MainActor
     func testWhenNoTopHitsLoaded_topSuggestionIsNotSelected() {
         suggestionContainerViewModel.setUserStringValue("duck", userAppendedStringToTheEnd: true)
         XCTAssertTrue(suggestionLoadingMock.getSuggestionsCalled)
@@ -256,6 +264,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         waitForMainQueueToFlush(for: 1)
     }
 
+    @MainActor
     func testWhenSuggestionsLoadedAfterUserModifiesText_oldSuggestionsAreNotSelected() {
         suggestionContainerViewModel.setUserStringValue("duc", userAppendedStringToTheEnd: true)
         XCTAssertTrue(suggestionLoadingMock.getSuggestionsCalled)
@@ -276,6 +285,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         waitForMainQueueToFlush(for: 1)
     }
 
+    @MainActor
     func testWhenOldSuggestionsLoadedAfterUserContinuesTypingText_topHitSuggestionsIsSelectedWithCorrectUserEnteredText() {
         suggestionContainerViewModel.setUserStringValue("duc", userAppendedStringToTheEnd: true)
         XCTAssertTrue(suggestionLoadingMock.getSuggestionsCalled)
@@ -301,6 +311,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         wait(for: [selectedSuggestionViewModelExpectation], timeout: 0)
     }
 
+    @MainActor
     func testWhenUserClearsText_suggestionsLoadingIsCancelled() {
         suggestionContainerViewModel.setUserStringValue("duck", userAppendedStringToTheEnd: true)
         XCTAssertTrue(suggestionLoadingMock.getSuggestionsCalled)

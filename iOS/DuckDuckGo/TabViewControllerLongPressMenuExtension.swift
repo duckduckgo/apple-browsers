@@ -121,7 +121,8 @@ extension TabViewController {
             specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
             featureDiscovery: featureDiscovery,
             keyValueStore: keyValueStore,
-            daxDialogsManager: daxDialogsManager)
+            daxDialogsManager: daxDialogsManager,
+            aiChatSettings: aiChatSettings)
 
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()

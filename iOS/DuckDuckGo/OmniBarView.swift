@@ -26,7 +26,6 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
 
     // Original omnibar accessors
     var textField: TextFieldWithInsets! { get }
-    var accessoryType: OmniBarAccessoryType { get set }
     var privacyInfoContainer: PrivacyInfoContainerView! { get }
     var notificationContainer: OmniBarNotificationContainerView! { get }
     var searchContainer: UIView! { get }
@@ -39,12 +38,11 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     var settingsButton: UIButton! { get }
     var cancelButton: UIButton! { get }
     var bookmarksButton: UIButton! { get }
-    var accessoryButton: UIButton! { get }
+    var aiChatButton: UIButton! { get }
     var menuButton: UIButton! { get }
 
-    // To move quickly I'm adding share button rather than removing refresh in case we have to roll back
     var refreshButton: UIButton! { get }
-    var shareButton: UIButton! { get }
+    var customizableButton: UIButton! { get }
 
     var leftIconContainerView: UIView! { get }
 
@@ -73,12 +71,21 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     var onSettingsButtonPressed: (() -> Void)? { get set }
     var onCancelPressed: (() -> Void)? { get set }
     var onRefreshPressed: (() -> Void)? { get set }
-    var onSharePressed: (() -> Void)? { get set }
+    var onCustomizableButtonPressed: (() -> Void)? { get set }
     var onBackPressed: (() -> Void)? { get set }
     var onForwardPressed: (() -> Void)? { get set }
     var onBookmarksPressed: (() -> Void)? { get set }
-    var onAccessoryPressed: (() -> Void)? { get set }
+    var onAIChatPressed: (() -> Void)? { get set }
     var onDismissPressed: (() -> Void)? { get set }
+    
+    /// Callback triggered when the AI Chat left button is tapped
+    var onAIChatLeftButtonPressed: (() -> Void)? { get set }
+
+    /// Callback triggered when the AI Chat right button is tapped
+    var onAIChatRightButtonPressed: (() -> Void)? { get set }
+
+    /// Callback triggered when the omnibar branding area is tapped while in AI Chat mode
+    var onAIChatBrandingPressed: (() -> Void)? { get set }
 
     // static function is needed to allow creation of DefaultOmniBarView from xib
     static func create() -> Self
@@ -95,13 +102,14 @@ protocol OmniBarStatusUpdateable: AnyObject {
     var isSettingsButtonHidden: Bool { get set }
     var isCancelButtonHidden: Bool { get set }
     var isRefreshButtonHidden: Bool { get set }
-    var isShareButtonHidden: Bool { get set }
+    var isCustomizableButtonHidden: Bool { get set }
     var isVoiceSearchButtonHidden: Bool { get set }
     var isAbortButtonHidden: Bool { get set }
     var isBackButtonHidden: Bool { get set }
     var isForwardButtonHidden: Bool { get set }
     var isBookmarksButtonHidden: Bool { get set }
-    var isAccessoryButtonHidden: Bool { get set }
+    var isAIChatButtonHidden: Bool { get set }
     var isSearchLoupeHidden: Bool { get set }
     var isDismissButtonHidden: Bool { get set }
+    var isFullAIChatHidden: Bool { get set }
 }

@@ -91,18 +91,41 @@ final class OptOutSubmissionWideEventRecorderTests: XCTestCase {
             profileQueryId: profileQueryId,
             extractedProfileId: extractedProfileId
         )
-        let notResumed = OptOutSubmissionWideEventRecorder.resumeIfPossible(
-            wideEvent: wideEventMock,
-            identifier: otherIdentifier
+        XCTAssertNil(
+            OptOutSubmissionWideEventRecorder.resumeIfPossible(
+                wideEvent: wideEventMock,
+                identifier: otherIdentifier
+            )
         )
-        XCTAssertNil(notResumed)
 
-        let resumedRecorder = OptOutSubmissionWideEventRecorder.resumeIfPossible(
+        let completionExpectation = expectation(description: "wide event completed")
+        wideEventMock.onComplete = { data, status in
+            guard let data = data as? OptOutSubmissionWideEventData else {
+                XCTFail("Unexpected data type")
+                return
+            }
+
+            XCTAssertEqual(status, .success)
+            XCTAssertEqual(data.submissionInterval?.start, self.recordFoundDate)
+            completionExpectation.fulfill()
+        }
+
+        let resumedRecorder = OptOutSubmissionWideEventRecorder.startIfPossible(
             wideEvent: wideEventMock,
-            identifier: identifier
+            identifier: identifier,
+            dataBrokerURL: "broker.com",
+            dataBrokerVersion: "1.0",
+            recordFoundDate: recordFoundDate.addingTimeInterval(50) // this won't affect the stored interval
         )
 
         XCTAssertNotNil(resumedRecorder)
+        resumedRecorder?.markCompleted(at: Date(timeIntervalSince1970: 200))
+
+        wait(for: [completionExpectation], timeout: 1.0)
+
+        let updatedData = wideEventMock.updates.last as? OptOutSubmissionWideEventData
+        XCTAssertEqual(updatedData?.submissionInterval?.start, recordFoundDate)
+        XCTAssertEqual(updatedData?.submissionInterval?.end, Date(timeIntervalSince1970: 200))
         XCTAssertEqual(wideEventMock.started.count, 1)
     }
 
@@ -137,20 +160,15 @@ final class OptOutSubmissionWideEventRecorderTests: XCTestCase {
             extractedProfileId: extractedProfileId
         )
 
-        var providerCalled = false
         let recorder = OptOutSubmissionWideEventRecorder.startIfPossible(
             wideEvent: wideEventMock,
             identifier: identifier,
             dataBrokerURL: "broker.com",
             dataBrokerVersion: "1.0",
-            recordFoundDateProvider: {
-                providerCalled = true
-                return self.recordFoundDate
-            }
+            recordFoundDate: recordFoundDate
         )
 
         XCTAssertNotNil(recorder)
-        XCTAssertTrue(providerCalled)
         let data = wideEventMock.started.first as? OptOutSubmissionWideEventData
         XCTAssertEqual(data?.submissionInterval?.start, recordFoundDate)
     }

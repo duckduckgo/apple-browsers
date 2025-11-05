@@ -343,7 +343,10 @@ extension MainViewController {
                                                   systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                   runPrerequisitesDelegate: dbpIOSPublicInterface,
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
-                                                  winBackOfferVisibilityManager: winBackOfferVisibilityManager)
+                                                  winBackOfferVisibilityManager: winBackOfferVisibilityManager,
+                                                  mobileCustomization: mobileCustomization)
+
+        settingsViewModel.autoClearActionDelegate = self
         Pixel.fire(pixel: .settingsPresented)
 
         func doLaunch() {

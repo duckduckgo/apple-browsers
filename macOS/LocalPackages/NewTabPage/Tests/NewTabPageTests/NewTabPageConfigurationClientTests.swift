@@ -130,6 +130,7 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
         XCTAssertEqual(configuration.widgets, [
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
+            .init(id: .subscriptionWinBackBanner),
             .init(id: .omnibar),
             .init(id: .nextSteps),
             .init(id: .favorites),
@@ -150,6 +151,7 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
         XCTAssertEqual(configuration.widgets, [
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
+            .init(id: .subscriptionWinBackBanner),
             .init(id: .nextSteps),
             .init(id: .favorites),
             .init(id: .protections),

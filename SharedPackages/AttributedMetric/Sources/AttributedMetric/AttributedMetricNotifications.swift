@@ -17,32 +17,10 @@
 //
 
 import Foundation
-#if os(iOS)
-import UIKit
-#elseif os(macOS)
-import AppKit
-#endif
 
-extension AttributedMetricManager {
-
-    func registerNotifications() {
-
-        // App start
-#if os(iOS)
-        // NOTE: Remove this and use ForegroundHandling in iOS
-        NotificationCenter.default
-            .publisher(for: UIApplication.willEnterForegroundNotification)
-            .sink { [weak self] _ in
-                self?.process(trigger: .appDidStart)
-            }
-            .store(in: &cancellables)
-#elseif os(macOS)
-        NotificationCenter.default
-            .publisher(for: NSApplication.didBecomeActiveNotification)
-            .sink { [weak self] _ in
-                self?.process(trigger: .appDidStart)
-            }
-            .store(in: &cancellables)
-#endif
-    }
+public extension NSNotification.Name {
+    private static let domain = "com.duckduckgo.attributedMetric."
+    static let userDidPerformDDGSearch = Notification.Name("\(Self.domain)userDidPerformDDGSearch")
+    static let userDidSendDuckAIChatMessage = Notification.Name("\(Self.domain)userDidSendDuckAIChatMessage")
+    static let userDidSyncDevice = Notification.Name("\(Self.domain)userDidSyncDevice")
 }

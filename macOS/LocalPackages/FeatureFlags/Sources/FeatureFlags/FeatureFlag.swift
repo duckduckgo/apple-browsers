@@ -160,9 +160,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1210625630564796?focus=true
     case newTabPageOmnibar
 
-    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1210733970843912?focus=true
-    case newFeedbackForm
-
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210561963620632?focus=true
     case vpnToolbarUpsell
 
@@ -241,6 +238,18 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211757211733009?focus=true
+    case dataImportNewExperience
+
+    /// https://app.asana.com/1/137249556945/project/492600419927320/task/1210863200265479?focus=true
+    case scheduledDefaultBrowserAndDockPromptsInactiveUser
+
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1209949983074592?focus=true
+    case pinnedTabsViewRewrite
+
+    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1211708489642640?focus=true
+    case tabProgressIndicator
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -265,7 +274,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .fireDialog,
                 .fireDialogIndividualSitesLink,
                 .historyViewSitesSection,
-                .blurryAddressBarTahoeFix:
+                .blurryAddressBarTahoeFix,
+                .pinnedTabsViewRewrite:
             true
         default:
             false
@@ -325,7 +335,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newTabPageOmnibar,
                 .newTabPagePerTab,
                 .newTabPageTabIDs,
-                .newFeedbackForm,
                 .vpnToolbarUpsell,
                 .supportsAlternateStripePaymentFlow,
                 .restoreSessionPrompt,
@@ -351,7 +360,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatDataClearing,
                 .dataImportNewSafariFilePicker,
                 .serpSettings,
-                .blurryAddressBarTahoeFix:
+                .blurryAddressBarTahoeFix,
+                .dataImportNewExperience,
+                .pinnedTabsViewRewrite,
+                .tabProgressIndicator:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -362,7 +374,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .credentialsImportPromotionForExistingUsers,
                 .scheduledSetDefaultBrowserAndAddToDockPrompts,
                 .cpmCountPixel,
-                .fireDialogIndividualSitesLink:
+                .fireDialogIndividualSitesLink,
+                .scheduledDefaultBrowserAndDockPromptsInactiveUser:
             return false
         }
     }
@@ -477,8 +490,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:
             return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.omnibar))
-        case .newFeedbackForm:
-            return .remoteReleasable(.feature(.feedbackForm))
         case .vpnToolbarUpsell:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnToolbarUpsell))
         case .newTabPagePerTab:
@@ -531,6 +542,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .blurryAddressBarTahoeFix:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
+        case .dataImportNewExperience:
+            return .disabled
+        case .scheduledDefaultBrowserAndDockPromptsInactiveUser:
+            return .remoteDevelopment(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
+        case .pinnedTabsViewRewrite:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.pinnedTabsViewRewrite))
+        case .tabProgressIndicator:
+            return .disabled
         }
     }
 }

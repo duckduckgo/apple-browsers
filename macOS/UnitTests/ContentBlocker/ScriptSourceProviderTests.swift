@@ -85,6 +85,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             historyCoordinator: HistoryCoordinatingMock(),
             fireproofDomains: MockFireproofDomains(domains: []),
             fireCoordinator: fireCoordinator,
+            autoconsentManagement: AutoconsentManagement(),
             newTabPageActionsManager: nil
         )
 

@@ -118,6 +118,7 @@ struct UserAgent {
         static let closestUserAgentConfigKey = "closestUserAgent"
         static let ddgFixedUserAgentConfigKey = "ddgFixedUserAgent"
         static let useUpdatedSafariVersionsKey = "useUpdatedSafariVersions"
+        static let safariVersionMappingsKey = "safariVersionMappings"
 
         static let uaVersionsKey = "versions"
         static let uaStateKey = "state"
@@ -138,9 +139,16 @@ struct UserAgent {
     private let statistics: StatisticsStore
     private let isTesting: Bool = ProcessInfo().arguments.contains("testing")
 
-    init(defaultAgent: String = Constants.fallbackDefaultAgent, statistics: StatisticsStore = StatisticsUserDefaults()) {
-        let defaultAgent: String = UserAgent.shouldUseUpdatedSafariVersions() ? defaultAgent.replacingOccurrences(of: "OS 19_0", with: "OS 18_6") : defaultAgent
-        let version = UserAgent.getVersion(fromAgent: defaultAgent)
+    init(defaultAgent: String = Constants.fallbackDefaultAgent,
+         statistics: StatisticsStore = StatisticsUserDefaults(),
+         privacyConfig: PrivacyConfiguration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig,
+         deviceVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion) {
+        let defaultAgent = Self.remapSafariOSVersion(agent: defaultAgent,
+                                                     config: privacyConfig,
+                                                     deviceVersion: deviceVersion)
+        let version = UserAgent.getVersion(fromAgent: defaultAgent,
+                                           privacyConfig: privacyConfig,
+                                           deviceVersion: deviceVersion)
         versionComponent = UserAgent.createVersionComponent(withVersion: version)
         baseAgent = UserAgent.createBaseAgent(fromAgent: defaultAgent, versionComponent: versionComponent)
         baseDesktopAgent = UserAgent.createBaseDesktopAgent(fromAgent: defaultAgent, versionComponent: versionComponent)
@@ -149,11 +157,32 @@ struct UserAgent {
         self.statistics = statistics
     }
 
-    private static func shouldUseUpdatedSafariVersions() -> Bool {
+    private static func shouldUseUpdatedSafariVersions(forConfig config: PrivacyConfiguration) -> Bool {
         // Enable iOS 26 Safari UA quirks
-        let config = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
         let uaSettings = config.settings(for: .customUserAgent)
         return uaSettings[Constants.useUpdatedSafariVersionsKey] as? Bool ?? false
+    }
+
+    // Based on privacy config values, we remap os version part (the one with underscores) to a different one to match Safari closely.
+    public static func remapSafariOSVersion(agent: String, config: PrivacyConfiguration, deviceVersion: OperatingSystemVersion) -> String {
+        guard shouldUseUpdatedSafariVersions(forConfig: config),
+              deviceVersion.majorVersion == 26,
+              let mapping = config.settings(for: .customUserAgent)[Constants.safariVersionMappingsKey] as? [String: String] else { return agent }
+
+        var components: [String] = [deviceVersion.majorVersion, deviceVersion.minorVersion, deviceVersion.patchVersion].map { "\($0)" }
+        var replacement: String?
+        while !components.isEmpty, replacement == nil {
+            replacement = mapping[components.joined(separator: ".")]
+            components = components.dropLast()
+        }
+
+        guard let replacement else { return agent }
+
+        let regex = try? NSRegularExpression(pattern: Regex.osVersion)
+        let match = regex?.firstMatch(in: agent, options: [], range: NSRange(location: 0, length: agent.count))
+
+        guard let range = match?.range(at: 1) else { return agent }
+        return (agent as NSString).replacingCharacters(in: range, with: replacement)
     }
 
     private func omitApplicationSites(forConfig config: PrivacyConfiguration) -> [String] {
@@ -200,6 +229,7 @@ struct UserAgent {
 
     public func agent(forUrl url: URL?,
                       isDesktop: Bool,
+                      deviceVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion,
                       privacyConfig: PrivacyConfiguration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig) -> String {
 
         guard privacyConfig.isEnabled(featureKey: .customUserAgent) else { return oldLogic(forUrl: url,
@@ -212,33 +242,33 @@ struct UserAgent {
 
         if ddgFixedSites(forConfig: privacyConfig).contains(where: { domain in
             url?.isPart(ofDomain: domain) ?? false
-        }) { return ddgFixedLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig) }
+        }) { return ddgFixedLogic(forUrl: url, isDesktop: isDesktop, deviceVersion: deviceVersion, privacyConfig: privacyConfig) }
 
         if closestUserAgentVersions(forConfig: privacyConfig).contains(statistics.atbWeek ?? "") {
             if canUseClosestLogic {
-                return closestLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
+                return closestLogic(forUrl: url, isDesktop: isDesktop, deviceVersion: deviceVersion, privacyConfig: privacyConfig)
             } else {
                 return oldLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
             }
         }
 
         if ddgFixedUserAgentVersions(forConfig: privacyConfig).contains(statistics.atbWeek ?? "") {
-            return ddgFixedLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
+            return ddgFixedLogic(forUrl: url, isDesktop: isDesktop, deviceVersion: deviceVersion, privacyConfig: privacyConfig)
         }
 
         switch defaultPolicy(forConfig: privacyConfig) {
         case .ddg: return oldLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
-        case .ddgFixed: return ddgFixedLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
+        case .ddgFixed: return ddgFixedLogic(forUrl: url, isDesktop: isDesktop, deviceVersion: deviceVersion, privacyConfig: privacyConfig)
         case .closest:
             if canUseClosestLogic {
-                return closestLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
+                return closestLogic(forUrl: url, isDesktop: isDesktop, deviceVersion: deviceVersion, privacyConfig: privacyConfig)
             } else {
                 return oldLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
             }
         case .brand:
             var ua: String
             if canUseClosestLogic {
-                ua = closestLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
+                ua = closestLogic(forUrl: url, isDesktop: isDesktop, deviceVersion: deviceVersion, privacyConfig: privacyConfig)
             } else {
                 ua = oldLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
             }
@@ -268,6 +298,7 @@ struct UserAgent {
 
     private func ddgFixedLogic(forUrl url: URL?,
                                isDesktop: Bool,
+                               deviceVersion: OperatingSystemVersion,
                                privacyConfig: PrivacyConfiguration) -> String {
         let omittedSites = omitApplicationSites(forConfig: privacyConfig)
         let omitApplicationComponent = omittedSites.contains { domain in
@@ -276,7 +307,7 @@ struct UserAgent {
         let resolvedApplicationComponent = !omitApplicationComponent ? applicationComponent : nil
 
         if canUseClosestLogic {
-            var defaultSafari = closestLogic(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
+            var defaultSafari = closestLogic(forUrl: url, isDesktop: isDesktop, deviceVersion: deviceVersion, privacyConfig: privacyConfig)
             // If the UA should have DuckDuckGo append it prior to Safari
             if let resolvedApplicationComponent {
                 if let index = defaultSafari.range(of: "Safari")?.lowerBound {
@@ -291,9 +322,14 @@ struct UserAgent {
 
     private func closestLogic(forUrl url: URL?,
                               isDesktop: Bool,
+                              deviceVersion: OperatingSystemVersion,
                               privacyConfig: PrivacyConfiguration) -> String {
         if isDesktop {
-            return "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 Safari/605.1.15"
+            if deviceVersion.majorVersion >= 26 && Self.shouldUseUpdatedSafariVersions(forConfig: privacyConfig) {
+                return "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) \(versionComponent) Safari/605.1.15"
+            } else {
+                return "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 Safari/605.1.15"
+            }
         }
         return "Mozilla/5.0 (" + deviceProfile + ") AppleWebKit/605.1.15 (KHTML, like Gecko) \(versionComponent) Mobile/15E148 Safari/604.1"
     }
@@ -331,11 +367,12 @@ struct UserAgent {
             .joined(separator: " ")
     }
 
-    private static func getVersion(fromAgent agent: String) -> String {
-        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
-        if osVersion.majorVersion >= 26 && shouldUseUpdatedSafariVersions() {
+    private static func getVersion(fromAgent agent: String,
+                                   privacyConfig: PrivacyConfiguration,
+                                   deviceVersion: OperatingSystemVersion) -> String {
+        if deviceVersion.majorVersion >= 26 && shouldUseUpdatedSafariVersions(forConfig: privacyConfig) {
             // Use actual device iOS version major.minor components
-            return "\(osVersion.majorVersion).\(osVersion.minorVersion)"
+            return "\(deviceVersion.majorVersion).\(deviceVersion.minorVersion)"
         }
 
         let regex = try? NSRegularExpression(pattern: Regex.osVersion)

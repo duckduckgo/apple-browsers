@@ -1,8 +1,7 @@
 //
-//  OmnibarAccessoryHandling.swift
-//  DuckDuckGo
+//  WinBackOfferURL.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,17 +17,12 @@
 //
 
 import Foundation
-import AIChat
 import BrowserServicesKit
+import Subscription
 
-protocol OmnibarAccessoryHandling {
-    func omnibarAccessory(for url: URL?) -> OmniBarAccessoryType
-}
-
-struct OmnibarAccessoryHandler: OmnibarAccessoryHandling {
-    let settings: AIChatSettingsProvider
-
-    func omnibarAccessory(for url: URL?) -> OmniBarAccessoryType {
-        .chat
+enum WinBackOfferURL {
+    static func subscriptionURL(for origin: SubscriptionFunnelOrigin) -> URL? {
+        let subscriptionURL = SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: origin.rawValue, featurePage: SubscriptionURL.FeaturePage.winback)
+        return subscriptionURL?.url
     }
 }

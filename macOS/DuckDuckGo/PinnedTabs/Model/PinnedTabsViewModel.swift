@@ -21,6 +21,7 @@ import Combine
 import Common
 import os.log
 
+@available(*, deprecated, message: "PinnedTabsView will soon be replaced by PinnedTabsCollectionView. This ViewModel is soon to be removed!")
 final class PinnedTabsViewModel: ObservableObject {
 
     @Published var items: [Tab] = [] {

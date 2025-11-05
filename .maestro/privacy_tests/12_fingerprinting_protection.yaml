@@ -43,10 +43,8 @@ tags:
 - tapOn: "Done"
 
 # Clear all tabs and data
-- tapOn: "Close Tabs and Clear Data"
-- tapOn:
-      id: "alert.forget-data.confirm"
-- waitForAnimationToEnd
+- runFlow: 
+    file: ../shared/use_firebutton.yaml
 
 # Navigate to fingerprinting test page
 - assertVisible:
@@ -85,6 +83,5 @@ tags:
 - tapOn: "Done"
 
 # Clear all tabs and data
-- tapOn: "Close Tabs and Clear Data"
-- tapOn:
-      id: "alert.forget-data.confirm"
+- runFlow: 
+    file: ../shared/use_firebutton.yaml

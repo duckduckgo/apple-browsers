@@ -26,36 +26,6 @@ import SetDefaultBrowserCore
 @Suite("Default Browser Prompt - Prompt Activity Key Value Files Store")
 struct DefaultBrowserPromptActivityKeyValueFilesStoreTests {
 
-    @Test("Check Last Modal Shown Date Is Persisted Correctly")
-    func whenLastModalShownDateIsSavedThenStoreItInStorage() throws {
-        // GIVEN
-        let now = Date(timeIntervalSince1970: 1751005822) // 27 June 2025 6:30:22 AM GMT
-        let storageMock = try MockKeyValueFileStore()
-        let sut = DefaultBrowserPromptActivityKeyValueFilesStore(keyValueFilesStore: storageMock, eventMapper: .init { _, _, _, _ in })
-        #expect(storageMock.underlyingDict[DefaultBrowserPromptActivityKeyValueFilesStore.StorageKey.lastModalShownDate.rawValue] == nil)
-
-        // WHEN
-        sut.lastModalShownDate = now.timeIntervalSince1970
-
-        // THEN
-        #expect(storageMock.underlyingDict[DefaultBrowserPromptActivityKeyValueFilesStore.StorageKey.lastModalShownDate.rawValue] as? TimeInterval == now.timeIntervalSince1970)
-    }
-
-    @Test("Check Last Modal Shown Date Is Retrieved Correctly")
-    func whenLastModalShownDateIsRetrievedThenReturnValueInStorage() throws {
-        // GIVEN
-        let now = Date(timeIntervalSince1970: 1751005822) // 27 June 2025 6:30:22 AM GMT
-        let storageMock = try MockKeyValueFileStore()
-        let sut = DefaultBrowserPromptActivityKeyValueFilesStore(keyValueFilesStore: storageMock, eventMapper: .init { _, _, _, _ in })
-        storageMock.underlyingDict[DefaultBrowserPromptActivityKeyValueFilesStore.StorageKey.lastModalShownDate.rawValue] = now.timeIntervalSince1970
-
-        // WHEN
-        let result = sut.lastModalShownDate
-
-        // THEN
-        #expect(result == now.timeIntervalSince1970)
-    }
-
     @Test("Check Modal Shown Occurrences Is Persisted Correctly")
     func whenModalShownOccurrencesIsSavedThenStoreItInStorage() throws {
         // GIVEN

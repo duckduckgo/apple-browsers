@@ -19,9 +19,28 @@
 
 import BrowserServicesKit
 import Persistence
+import DesignResourcesKitIcons
+import UIKit
 
-/// Handles logic and persistence of customization options.
+/// Handles logic and persistence of customization options.  iPad is not supported so this returns false for `isEnabled` on iPad.
 class MobileCustomization {
+
+    protocol Delegate: AnyObject {
+        func canEditBookmark() -> Bool
+        func canEditFavorite() -> Bool
+    }
+
+    struct State {
+
+        var isEnabled: Bool
+        var currentToolbarButton: MobileCustomization.Button
+        var currentAddressBarButton: MobileCustomization.Button
+
+        static let `default` = State(isEnabled: false,
+                                     currentToolbarButton: MobileCustomization.toolbarDefault,
+                                     currentAddressBarButton: MobileCustomization.addressBarDefault)
+
+    }
 
     enum Button: String, CustomStringConvertible {
 
@@ -29,9 +48,9 @@ class MobileCustomization {
             switch self {
             case .share:
                 "Share"
-            case .addRemoveBookmark:
+            case .addEditBookmark:
                 "Add Bookmark"
-            case .addRemoveFavorite:
+            case .addEditFavorite:
                 "Add Favorite"
             case .zoom:
                 "Zoom"
@@ -53,13 +72,89 @@ class MobileCustomization {
                 "Passwords"
             case .voiceSearch:
                 "Voice Search"
+            case .downloads:
+                "Downloads"
+            }
+        }
+
+        var altLargeIcon: UIImage? {
+            switch self {
+            case .addEditBookmark: DesignSystemImages.Glyphs.Size24.bookmarkSolid
+            case .addEditFavorite: DesignSystemImages.Glyphs.Size24.favoriteSolid
+            default: nil
+            }
+        }
+
+        var largeIcon: UIImage? {
+            switch self {
+            case .share:
+                DesignSystemImages.Glyphs.Size24.shareApple
+            case .addEditBookmark:
+                DesignSystemImages.Glyphs.Size24.bookmark
+            case .addEditFavorite:
+                DesignSystemImages.Glyphs.Size24.favorite
+            case .zoom:
+                DesignSystemImages.Glyphs.Size24.typeSize
+            case .none:
+                nil
+            case .home:
+                DesignSystemImages.Glyphs.Size24.home
+            case .newTab:
+                DesignSystemImages.Glyphs.Size24.add
+            case .bookmarks:
+                DesignSystemImages.Glyphs.Size24.bookmarks
+            case .duckAi:
+                DesignSystemImages.Glyphs.Size24.aiChat
+            case .fire:
+                DesignSystemImages.Glyphs.Size24.fireSolid
+            case .vpn:
+                DesignSystemImages.Glyphs.Size24.vpn
+            case .passwords:
+                DesignSystemImages.Glyphs.Size24.key
+            case .voiceSearch:
+                DesignSystemImages.Glyphs.Size24.microphone
+            case .downloads:
+                DesignSystemImages.Glyphs.Size24.downloads
+            }
+        }
+
+        var smallIcon: UIImage? {
+            switch self {
+            case .share:
+                DesignSystemImages.Glyphs.Size16.shareApple
+            case .addEditBookmark:
+                DesignSystemImages.Glyphs.Size16.bookmark
+            case .addEditFavorite:
+                DesignSystemImages.Glyphs.Size16.favorite
+            case .zoom:
+                DesignSystemImages.Glyphs.Size16.typeSize
+            case .none:
+                nil
+            case .home:
+                DesignSystemImages.Glyphs.Size16.home
+            case .newTab:
+                DesignSystemImages.Glyphs.Size16.add
+            case .bookmarks:
+                DesignSystemImages.Glyphs.Size16.bookmarks
+            case .duckAi:
+                DesignSystemImages.Glyphs.Size16.aiChat
+            case .fire:
+                DesignSystemImages.Glyphs.Size16.fireSolid
+            case .vpn:
+                DesignSystemImages.Glyphs.Size16.vpnOn
+            case .passwords:
+                DesignSystemImages.Glyphs.Size16.keyLogin
+            case .voiceSearch:
+                DesignSystemImages.Glyphs.Size16.microphone
+            case .downloads:
+                DesignSystemImages.Glyphs.Size16.downloads
             }
         }
 
         // Generally address bar specific
         case share
-        case addRemoveBookmark
-        case addRemoveFavorite
+        case addEditBookmark
+        case addEditFavorite
         case voiceSearch
         case zoom
         case none
@@ -69,6 +164,7 @@ class MobileCustomization {
         case newTab
         case bookmarks
         case duckAi
+        case downloads
 
         // Shared
         case fire
@@ -81,8 +177,8 @@ class MobileCustomization {
 
     static let addressBarButtons: [Button?] = {
         let sortedButtons: [Button] = [
-            .addRemoveBookmark,
-            .addRemoveFavorite,
+            .addEditBookmark,
+            .addEditFavorite,
             .fire,
             .vpn,
             .zoom,
@@ -101,16 +197,27 @@ class MobileCustomization {
             .newTab,
             .passwords,
             .share,
-            .vpn
+            .vpn,
+            .downloads,
         ].sorted(by: descriptionComparison)
 
         return [.fire] // default
             + sortedButtons
 
     }()
-    /// Is customization enabled as a feature?
-    let isEnabled: Bool
-    let keyValueStore: ThrowingKeyValueStoring
+
+    var state: State {
+        State(isEnabled: featureFlagger.isFeatureOn(.mobileCustomization) && !isPad,
+              currentToolbarButton: current(forKey: .toolbarButton, Self.toolbarDefault),
+              currentAddressBarButton: current(forKey: .addressBarButton, Self.addressBarDefault))
+    }
+
+    private let featureFlagger: FeatureFlagger
+    private let keyValueStore: ThrowingKeyValueStoring
+    private let isPad: Bool
+    private let postChangeNotification: (State) -> Void
+
+    public weak var delegate: Delegate?
 
     static func descriptionComparison(lhs: CustomStringConvertible, rhs: CustomStringConvertible) -> Bool {
         lhs.description.localizedCaseInsensitiveCompare(rhs.description) == .orderedAscending
@@ -123,9 +230,17 @@ class MobileCustomization {
 
     }
 
-    init(isEnabled: Bool, keyValueStore: ThrowingKeyValueStoring) {
-        self.isEnabled = isEnabled
+    init(featureFlagger: FeatureFlagger,
+         keyValueStore: ThrowingKeyValueStoring,
+         isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
+         postChangeNotification: @escaping ((State) -> Void) = {
+            NotificationCenter.default.post(name: AppUserDefaults.Notifications.customizationSettingsChanged, object: $0)
+        }
+    ) {
+        self.featureFlagger = featureFlagger
         self.keyValueStore = keyValueStore
+        self.isPad = isPad
+        self.postChangeNotification = postChangeNotification
     }
 
     private func current(forKey key: StorageKeys, _ defaultButton: Button) -> Button {
@@ -136,58 +251,33 @@ class MobileCustomization {
         }
     }
 
-    public var currentAddressBarButton: Button {
-        get {
-            current(forKey: .addressBarButton, Self.addressBarDefault)
-        }
-
-        set {
-            try? keyValueStore.set(newValue.rawValue, forKey: StorageKeys.addressBarButton.rawValue)
-        }
+    func persist(_ state: State) {
+        setCurrentToolbarButton(state.currentToolbarButton)
+        setCurrentAddressBarButton(state.currentAddressBarButton)
+        postChangeNotification(state)
     }
 
-    public var currentToolbarButton: Button {
-        get {
-            current(forKey: .toolbarButton, Self.toolbarDefault)
+    private func setCurrentToolbarButton(_ button: Button) {
+        try? keyValueStore.set(button.rawValue, forKey: StorageKeys.toolbarButton.rawValue)
+    }
+
+    private func setCurrentAddressBarButton(_ button: Button) {
+        try? keyValueStore.set(button.rawValue, forKey: StorageKeys.addressBarButton.rawValue)
+    }
+
+    func largeIconForButton(_ button: Button) -> UIImage? {
+
+        switch button {
+        case .addEditBookmark:
+            return delegate?.canEditBookmark() == true ? button.altLargeIcon : button.largeIcon
+
+        case .addEditFavorite:
+            return delegate?.canEditFavorite() == true ? button.altLargeIcon : button.largeIcon
+
+        default:
+            return button.largeIcon
         }
 
-        set {
-            try? keyValueStore.set(newValue.rawValue, forKey: StorageKeys.toolbarButton.rawValue)
-        }
     }
 
-}
-
-// Using FeatureFlagger
-extension MobileCustomization {
-
-    /// @param featureFlagger - the app's feature flagger
-    /// @param keyValueStore - the app's key value store
-    static func load(featureFlagger: FeatureFlagger, keyValueStore: ThrowingKeyValueStoring) -> MobileCustomization {
-        return MobileCustomization(
-            isEnabled: featureFlagger.isFeatureOn(.mobileCustomization),
-            keyValueStore: keyValueStore)
-    }
-
-}
-
-// For SettingsState defaults
-extension MobileCustomization {
-
-    static var defaults: MobileCustomization {
-        MobileCustomization(
-            isEnabled: false,
-            keyValueStore: NilKeyValueStore()
-        )
-    }
-
-    private struct NilKeyValueStore: ThrowingKeyValueStoring {
-        func object(forKey defaultName: String) throws -> Any? {
-            return nil
-        }
-        
-        func set(_ value: Any?, forKey defaultName: String) throws { }
-
-        func removeObject(forKey defaultName: String) throws { }
-    }
 }

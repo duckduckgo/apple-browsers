@@ -56,6 +56,9 @@ extension Tab: NavigationResponder {
 
             .weak(self),
 
+            // browsing history
+            .weak(nullable: self.history),
+
             // Duck Player overlay navigations handling
             .weak(nullable: self.duckPlayer),
 
@@ -86,9 +89,6 @@ extension Tab: NavigationResponder {
             .weak(nullable: self.specialErrorPage),
 
             .weak(nullable: self.downloads),
-
-            // browsing history
-            .weak(nullable: self.history),
 
             // Find In Page
             .weak(nullable: self.findInPage),

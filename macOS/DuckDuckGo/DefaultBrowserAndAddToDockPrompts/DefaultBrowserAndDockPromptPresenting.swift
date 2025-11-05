@@ -83,17 +83,23 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         switch type {
         case .active(.banner):
             guard let banner = getBanner() else { return }
-            // Ensure that only one prompt is displayed at a time. Dismiss the popover if the banner is about to be shown to the user.
-            popover?.close()
+            // Ensure that only one prompt is displayed at a time by dismissing any visible prompt first.
+            dismissAllPrompts()
             bannerViewHandler(banner)
         case .active(.popover):
             guard let view = popoverAnchorProvider() else { return }
-
+            // Ensure that only one prompt is displayed at a time by dismissing any visible prompt first.
+            dismissAllPrompts()
             showPopover(below: view)
         case .inactive:
             // https://app.asana.com/1/137249556945/project/1209825025475019/task/1210864105873351?focus=true
+            // Guard that the inactive user prompt is available to be shown.
+
+            // Ensure that only one prompt is displayed at a time by dismissing any visible prompt first.
+            dismissAllPrompts()
+
+            // https://app.asana.com/1/137249556945/project/1209825025475019/task/1210864105873351?focus=true
             // Show new inactive user prompt.
-            break
         }
 
         // Keep track of what type of prompt is shown.
@@ -117,10 +123,8 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
                 if let currentShownPrompt {
                     self.coordinator.dismissAction(.statusUpdate(prompt: currentShownPrompt))
                 }
-                self.clearStatusUpdateData()
-                // Dismiss the prompt
-                popover?.close()
-                bannerDismissedSubject.send()
+                clearStatusUpdateData()
+                dismissAllPrompts()
             }
 
         statusUpdateNotifier.startNotifyingStatus(interval: 1.0)
@@ -194,6 +198,13 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
     private func dismissBanner() {
         self.clearStatusUpdateData()
         self.bannerDismissedSubject.send()
+    }
+
+    private func dismissAllPrompts() {
+        popover?.close()
+        bannerDismissedSubject.send()
+        // https://app.asana.com/1/137249556945/project/1209825025475019/task/1210864105873351?focus=true
+        // Dismiss new inactive user prompt.
     }
 
     private func clearStatusUpdateData() {

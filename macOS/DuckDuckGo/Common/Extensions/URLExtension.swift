@@ -658,27 +658,6 @@ extension URL {
         }
     }
 
-#if DEBUG && APPSTORE
-    /// sandbox extension URL access should be stopped after SecurityScopedFileURLController is deallocated - this function validates it and breaks if the file is still writable
-    func ensureUrlIsNotWritable(or handler: () -> Void) {
-        let fm = FileManager.default
-        // is the URL ~/Downloads?
-        if self.resolvingSymlinksInPath() == fm.urls(for: .downloadsDirectory, in: .userDomainMask).first!.resolvingSymlinksInPath() {
-            assert(isWritableLocation())
-            return
-        }
-        // is parent directory writable (e.g. ~/Downloads)?
-        if fm.isWritableFile(atPath: self.deletingLastPathComponent().path)
-            // trashed files are still accessible for some reason even after stopping access
-            || fm.isInTrash(self)
-            // other file is being saved at the same URL
-            || NSURL.activeSecurityScopedUrlUsages.contains(where: { $0.url !== self as NSURL && $0.url == self as NSURL })
-            || !isWritableLocation() { return }
-
-        handler()
-    }
-#endif
-
     // MARK: - System Settings
 
     static var fullDiskAccess = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!

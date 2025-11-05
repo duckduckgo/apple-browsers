@@ -386,7 +386,6 @@ final class NavigationBarViewController: NSViewController {
         setupNetworkProtectionButton()
 
         subscribeToThemeChanges()
-        subscribeToSelectedTabViewModel()
         listenToPasswordManagerNotifications()
         listenToMessageNotifications()
         listenToFeedbackFormNotifications()
@@ -444,6 +443,8 @@ final class NavigationBarViewController: NSViewController {
     }
 
     override func viewWillAppear() {
+        // Subscribe in viewWillAppear to prevent leaks in tests
+        subscribeToSelectedTabViewModel()
         // should be called when the view is about to appear,
         // otherwise the progress indicator gets misplaced
         subscribeToDownloads()
@@ -1068,6 +1069,7 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func subscribeToSelectedTabViewModel() {
+        guard selectedTabViewModelCancellable == nil else { return }
         selectedTabViewModelCancellable = tabCollectionViewModel.$selectedTabViewModel.receive(on: DispatchQueue.main).sink { [weak self] _ in
             self?.subscribeToNavigationActionFlags()
             self?.subscribeToCredentialsToSave()
@@ -1084,6 +1086,7 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func subscribeToDownloads() {
+        guard downloadsCancellables.isEmpty else { return }
         // show Downloads button on download completion for downloads started from non-Fire window
         downloadListCoordinator.updates
             .filter { update in

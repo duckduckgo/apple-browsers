@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Combine
 import PersistenceTestingUtils
 import PixelKitTestingUtilities
+import SharedTestUtilities
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AppStateRestorationManagerTests: XCTestCase {

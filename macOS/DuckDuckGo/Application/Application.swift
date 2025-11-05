@@ -37,12 +37,6 @@ final class Application: NSApplication {
         // See SecurityScopedFileURLController.swift
         NSURL.swizzleStartStopAccessingSecurityScopedResourceOnce()
 
-#if DEBUG
-        if [.unitTests, .integrationTests].contains(AppVersion.runType) {
-            (NSClassFromString("TestRunHelper") as? NSObject.Type)!.perform(NSSelectorFromString("sharedInstance"))
-        }
-#endif
-
         let delegate = AppDelegate()
         self.delegate = delegate
         Application.appDelegate = delegate

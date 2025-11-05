@@ -19,10 +19,12 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FeatureFlags
 import History
 import HistoryView
 import Onboarding
 import PrivacyDashboard
+import SharedTestUtilities
 import struct SwiftUI.AnyView
 import XCTest
 
@@ -47,7 +49,10 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         autoreleasepool {
             let tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
             featureFlagger = MockFeatureFlagger()
-            featureFlagger.enabledFeatureFlags = [.contextualOnboarding, .newTabPagePerTab]
+            featureFlagger.featuresStub = [
+                FeatureFlag.contextualOnboarding.rawValue: true,
+                FeatureFlag.newTabPagePerTab.rawValue: true
+            ]
             pixelReporter = CapturingOnboardingPixelReporter()
             dialogProvider = MockDialogsProvider()
             factory = CapturingDialogFactory(expectation: expectation)
@@ -90,7 +95,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     func testWhenNavigationCompletedAndFeatureIsOffThenTurnOffFeature() throws {
-        featureFlagger.enabledFeatureFlags = [.newTabPagePerTab]
+        featureFlagger.featuresStub = [FeatureFlag.newTabPagePerTab.rawValue: true]
         let expectation = self.expectation(description: "Wait for turnOffFeatureCalled to be called")
         dialogProvider.turnOffFeatureCalledExpectation = expectation
 

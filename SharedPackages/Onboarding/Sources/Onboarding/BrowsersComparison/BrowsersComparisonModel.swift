@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import DesignResourcesKitIcons
 
 public struct BrowsersComparisonModel {
 
@@ -144,6 +145,23 @@ extension BrowsersComparisonModel.PrivacyFeature {
                 UserText.BrowsersComparison.Features.eraseBrowsingData
             case .duckplayer:
                 UserText.BrowsersComparison.Features.duckplayer
+            }
+        }
+
+        var icon: DesignSystemImage {
+            switch self {
+            case .privateSearch:
+                DesignSystemImages.Color.Size24.findSearch
+            case .blockThirdPartyTrackers:
+                DesignSystemImages.Color.Size24.shield
+            case .blockCookiePopups:
+                DesignSystemImages.Color.Size24.cookieBlocked
+            case .blockCreepyAds:
+                DesignSystemImages.Color.Size24.adsBlocked
+            case .eraseBrowsingData:
+                DesignSystemImages.Color.Size24.fire
+            case .duckplayer:
+                DesignSystemImages.Color.Size24.videoPlayer
             }
         }
     }

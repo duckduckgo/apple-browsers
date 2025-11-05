@@ -20,6 +20,10 @@ import SwiftUI
 import Onboarding
 
 struct DefaultBrowserAndDockPromptInactiveUserView: View {
+    private let privacyFeatures = BrowsersComparisonModel.privacyFeatures
+    private let configuration = BrowsersComparisonChart.Configuration(fontSize: Metrics.Chart.fontSize,
+                                                                      fontWeight: Metrics.Chart.fontWeight,
+                                                                      showFeatureIcons: true)
 
     let message: String
     let primaryButtonLabel: String
@@ -42,7 +46,7 @@ struct DefaultBrowserAndDockPromptInactiveUserView: View {
 
             VStack(spacing: Metrics.Chart.verticalSpacing) {
                 Spacer()
-                BrowsersComparisonChart(privacyFeatures: BrowsersComparisonModel.privacyFeatures)
+                BrowsersComparisonChart(privacyFeatures: privacyFeatures, configuration: configuration)
                 HStack {
                     Spacer()
                     Button(dismissButtonLabel) {
@@ -70,6 +74,8 @@ private enum Metrics {
 
     enum Chart {
         static let verticalSpacing: CGFloat = 44
+        static let fontSize: CGFloat = 13
+        static let fontWeight: Font.Weight = .bold
     }
 }
 

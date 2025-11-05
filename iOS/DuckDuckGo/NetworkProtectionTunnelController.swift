@@ -559,7 +559,7 @@ private extension NetworkProtectionTunnelController {
 // MARK: - Error Description Helper
 
 private extension Error {
-    func contextualizedDescription() -> String {
-        return (self as? NetworkProtectionTunnelController.StartError)?.caseDescription ?? String(describing: self)
+    func contextualizedDescription() -> String? {
+        return (self as? NetworkProtectionTunnelController.StartError)?.caseDescription
     }
 }

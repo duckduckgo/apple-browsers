@@ -40,6 +40,7 @@ class AutofillDebugViewController: UITableViewController {
         case resetAutofillSurveys = 210
         case viewAllCredentials = 211
         case resetAutofillImportPromos = 212
+        case resetAutofillExtensionPromos = 213
     }
 
     let defaults = AppUserDefaults()
@@ -150,6 +151,14 @@ class AutofillDebugViewController: UITableViewController {
                 importState.credentialsImportPromptPresentationCount = 0
                 try? keyValueStore.set(nil, forKey: SettingsViewModel.Constants.didDismissImportPasswordsKey)
                 ActionMessageView.present(message: "Import Prompts reset")
+            } else if cell.tag == Row.resetAutofillExtensionPromos.rawValue {
+                guard let keyValueStore = keyValueStore else {
+                    ActionMessageView.present(message: "Failed to reset Import Prompts")
+                    return
+                }
+                let extensionPromotionManager = ExtensionPromotionManager(keyValueStore: keyValueStore)
+                extensionPromotionManager.resetPromotionDismissal()
+                ActionMessageView.present(message: "Extension Promos reset")
             }
         }
     }

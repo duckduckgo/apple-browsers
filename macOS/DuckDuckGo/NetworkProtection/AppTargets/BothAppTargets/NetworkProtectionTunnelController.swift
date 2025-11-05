@@ -110,6 +110,12 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     @UserDefaultsWrapper(key: .networkProtectionOnboardingStatusRawValue, defaultValue: OnboardingStatus.default.rawValue, defaults: .netP)
     private(set) var onboardingStatusRawValue: OnboardingStatus.RawValue
+    
+    @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartTime, defaultValue: nil, defaults: .netP)
+    private var vpnConnectionWideEventBrowserStartTime: TimeInterval?
+    
+    @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartError, defaultValue: nil, defaults: .netP)
+    private var vpnConnectionWideEventBrowserStartError: Error?
 
     // MARK: - Tunnel Manager
 

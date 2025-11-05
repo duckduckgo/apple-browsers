@@ -59,6 +59,13 @@ final class NetworkProtectionIPCTunnelController {
     private let pixelKit: PixelFiring?
     private let errorRecorder: VPNOperationErrorRecorder
     private let knownFailureStore: NetworkProtectionKnownFailureStore
+    
+    // MARK: - User Defaults
+    @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartTime, defaultValue: nil, defaults: .netP)
+    private var vpnConnectionWideEventBrowserStartTime: TimeInterval?
+    
+    @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartError, defaultValue: nil, defaults: .netP)
+    private var vpnConnectionWideEventBrowserStartError: Error?
 
     init(featureGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
          loginItemsManager: LoginItemsManaging = LoginItemsManager(),

@@ -356,7 +356,7 @@ final class WideEventTests: XCTestCase {
         parameters["global.sample_rate"] = "1.0"
         parameters["app.name"] = typed.appData.name
         parameters["app.version"] = typed.appData.version
-        if let formFactor = typed.appData.formFactor { parameters["global.form_factor"] = formFactor }
+        if let formFactor = typed.appData.formFactor { parameters["app.form_factor"] = formFactor }
         parameters["feature.name"] = MockWideEventData.pixelName
         if let name = typed.contextData.name { parameters["context.name"] = name }
 

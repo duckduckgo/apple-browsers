@@ -26,7 +26,7 @@ let package = Package(
         .macOS("11.4")
     ],
     products: [
-        .library(name: "NoARCObjC", targets: ["NoARCObjCTestUtilities"]),
+        .library(name: "NoARCObjCTestUtilities", targets: ["NoARCObjCTestUtilities"]),
         .library(name: "SharedTestUtilities", targets: ["SharedTestUtilities"]),
         .library(name: "SharedSandboxTestUtilities", targets: ["SharedSandboxTestUtilities"]),
     ],

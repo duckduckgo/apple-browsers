@@ -34,7 +34,7 @@ class BrowserChromeButton: UIButton {
         }
     }
 
-    private var border: UIView?
+    private weak var border: UIView?
 
     init(_ type: ButtonType = .primary) {
         self.type = type
@@ -50,20 +50,41 @@ class BrowserChromeButton: UIButton {
         applyConfiguration()
     }
 
-    func addBorder() {
+    func addBorder(borderFrame: CGRect = CGRect(x: 0, y: 0, width: 80, height: 40)) {
         border?.removeFromSuperview()
-        let view = UIView(frame: CGRect(x: 0, y: 0, width: 80, height: 40))
+        let view = UIView(frame: borderFrame)
         view.center = self.center
         view.layer.borderWidth = 1.5
         view.layer.cornerRadius = 14
         view.backgroundColor = .clear
         border = view
         addSubview(view)
+        applyConfiguration()
         setNeedsDisplay()
+    }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        if let border {
+            let converted = convert(point, to: border)
+            return border.hitTest(converted, with: event) ?? super.hitTest(point, with: event)
+        }
+
+        return super.hitTest(point, with: event)
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        border?.backgroundColor = type.backgroundColor(for: .highlighted)
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesEnded(touches, with: event)
+        border?.backgroundColor = nil
     }
 
     func removeBorder() {
         border?.removeFromSuperview()
+        applyConfiguration()
         setNeedsDisplay()
     }
 
@@ -100,7 +121,12 @@ class BrowserChromeButton: UIButton {
             var newConfiguration = button.configuration ?? defaultConfiguration
 
             newConfiguration.baseForegroundColor = type.foregroundColor(for: button.state)
-            newConfiguration.baseBackgroundColor = type.backgroundColor(for: button.state)
+
+            if button.state == .highlighted && self.border != nil {
+                newConfiguration.baseBackgroundColor = .clear
+            } else {
+                newConfiguration.baseBackgroundColor = type.backgroundColor(for: button.state)
+            }
 
             UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
                 button.configuration = newConfiguration

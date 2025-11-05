@@ -22,10 +22,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  should-run-checks:
+    name: Determine if checks should run
+    uses: ./.github/workflows/should-run-pr-checks.yml
 
   unit-tests:
 
       name: Run unit tests (macOS)
+
+      needs: should-run-checks
+      if: needs.should-run-checks.outputs.should_run == 'true'
 
       runs-on: macos-15
       timeout-minutes: 30
@@ -190,6 +196,9 @@ jobs:
 
       name: Run unit tests (iOS)
 
+      needs: should-run-checks
+      if: needs.should-run-checks.outputs.should_run == 'true'
+
       runs-on: macos-15
       timeout-minutes: 30
 
@@ -241,7 +250,7 @@ jobs:
         run: |
           echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
           echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
-          
+
           while xcodebuild -resolvePackageDependencies \
             -scheme BrowserServicesKit-Package \
             -destination '${{ steps.select-simulator.outputs.destination }}' \

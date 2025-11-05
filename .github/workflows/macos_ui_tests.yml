@@ -50,8 +50,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  should-run-checks:
+    name: Determine if checks should run
+    uses: ./.github/workflows/should-run-pr-checks.yml
+
   create-notarized-app:
     name: Build Notarized Review app
+
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
+
     uses: ./.github/workflows/macos_build_notarized.yml
     with:
       release-type: review
@@ -64,6 +72,10 @@ jobs:
   setup-tests:
     name: Set up tests list
     runs-on: macos-15
+
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
+
     outputs:
       runner: ${{ steps.define-runners.outputs.runner }}
       include: ${{ steps.define-runners.outputs.include }}

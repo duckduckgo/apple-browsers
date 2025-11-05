@@ -145,6 +145,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Feature flag for a macOS Tahoe fix only
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
+
+    /// Pinned Tabs AppKit Rewrite Feature Flag
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1209949983074592?focus=true
+    case pinnedTabsViewRewrite
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

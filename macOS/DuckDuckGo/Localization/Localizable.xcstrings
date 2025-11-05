@@ -32930,7 +32930,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chiudi le schede e cancella i dati e le chat"
+            "value" : "Chiudi le schede, cancella i dati e le chat"
           }
         },
         "nl" : {
@@ -38703,7 +38703,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Seiten"
+            "value" : "Websites"
           }
         },
         "en" : {
@@ -68903,10 +68903,58 @@
       "comment" : "Support link text displayed beneath the feedback form description",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brauchst du Hilfe? [Support kontaktieren.](https://duckduckgo.com/subscription-support)"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Need help? [Contact support.](https://duckduckgo.com/subscription-support)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Necesitas ayuda? [Contacta con el servicio de soporte.](https://duckduckgo.com/subscription-support)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Besoin d'aide ? [Contactez le support.](https://duckduckgo.com/subscription-support)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai bisogno di aiuto? [Contatta l'assistenza.](https://duckduckgo.com/subscription-support)"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hulp nodig? [Neem contact op met support.](https://duckduckgo.com/subscription-support)"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potrzebujesz pomocy? [Skontaktuj się z pomocą techniczną.](https://duckduckgo.com/subscription-support)"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Precisas de ajuda? [Contacta o suporte.](https://duckduckgo.com/subscription-support)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нужна помощь? [Обратитесь в службу поддержки.](https://duckduckgo.com/subscription-support)"
           }
         }
       }
@@ -84927,49 +84975,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "heute"
+            "value" : "today"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hoy"
+            "value" : "today"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "aujourd'hui"
+            "value" : "today"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "oggi"
+            "value" : "today"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "vandaag"
+            "value" : "today"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "dzisiaj"
+            "value" : "today"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hoje"
+            "value" : "today"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "сегодня"
+            "value" : "today"
           }
         }
       }
@@ -93476,10 +93524,58 @@
       "comment" : "Notification that the DuckDuckGo VPN was uninstalled",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die DuckDuckGo-VPN wurde deinstalliert"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "DuckDuckGo VPN was uninstalled"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se ha desinstalado DuckDuckGo VPN"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le VPN DuckDuckGo a été désinstallé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo VPN è stata disinstallata"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo VPN is verwijderd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo VPN został odinstalowany"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A VPN DuckDuckGo foi desinstalada"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервис DuckDuckGo VPN удален"
           }
         }
       }
@@ -94888,49 +94984,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "gestern"
+            "value" : "yesterday"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ayer"
+            "value" : "yesterday"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hier"
+            "value" : "yesterday"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ieri"
+            "value" : "yesterday"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "gisteren"
+            "value" : "yesterday"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "wczoraj"
+            "value" : "yesterday"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ontem"
+            "value" : "yesterday"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "вчера"
+            "value" : "yesterday"
           }
         }
       }

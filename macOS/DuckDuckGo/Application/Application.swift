@@ -46,6 +46,7 @@ final class Application: NSApplication {
             bookmarkManager: delegate.bookmarkManager,
             historyCoordinator: delegate.historyCoordinator,
             faviconManager: delegate.faviconManager,
+            defaultBrowserPreferences: delegate.defaultBrowserPreferences,
             aiChatMenuConfig: delegate.aiChatMenuConfiguration,
             internalUserDecider: delegate.internalUserDecider,
             appearancePreferences: delegate.appearancePreferences,

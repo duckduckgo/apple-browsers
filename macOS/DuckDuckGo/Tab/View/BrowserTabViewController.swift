@@ -87,6 +87,10 @@ final class BrowserTabViewController: NSViewController {
     private let featureFlagger: FeatureFlagger
     private let windowControllersManager: WindowControllersManagerProtocol
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let defaultBrowserPreferences: DefaultBrowserPreferences
+    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+
     private let tld: TLD
 
     private var tabViewModelCancellables = Set<AnyCancellable>()
@@ -132,6 +136,9 @@ final class BrowserTabViewController: NSViewController {
          newTabPageActionsManager: @autoclosure @escaping @MainActor () -> NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
          activeRemoteMessageModel: ActiveRemoteMessageModel = NSApp.delegateTyped.activeRemoteMessageModel,
          privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
+         defaultBrowserPreferences: DefaultBrowserPreferences = NSApp.delegateTyped.defaultBrowserPreferences,
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge = NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
+         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          tld: TLD = NSApp.delegateTyped.tld
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -145,6 +152,10 @@ final class BrowserTabViewController: NSViewController {
         self.newTabPageActionsManager = newTabPageActionsManager
         self.activeRemoteMessageModel = activeRemoteMessageModel
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.defaultBrowserPreferences = defaultBrowserPreferences
+        self.subscriptionManager = subscriptionManager
+        self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+
         self.tld = tld
         containerStackView = NSStackView()
 
@@ -1155,7 +1166,10 @@ final class BrowserTabViewController: NSViewController {
                 syncService: syncService,
                 tabCollectionViewModel: tabCollectionViewModel,
                 privacyConfigurationManager: privacyConfigurationManager,
-                featureFlagger: featureFlagger
+                featureFlagger: featureFlagger,
+                defaultBrowserPreferences: defaultBrowserPreferences,
+                subscriptionManager: subscriptionManager,
+                winBackOfferVisibilityManager: winBackOfferVisibilityManager
             )
             preferencesViewController.delegate = self
             self.preferencesViewController = preferencesViewController

@@ -86,6 +86,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        historyCoordinator: CapturingHistoryDataSource(),
                                        fireproofDomains: MockFireproofDomains(domains: []),
                                        fireCoordinator: fireCoordinator,
+                                       autoconsentManagement: AutoconsentManagement(),
                                        contentScopePreferences: ContentScopePreferences())
         /// Set it to any value to trigger `didSet` that unblocks updates stream
         updating.userScriptDependenciesProvider = nil

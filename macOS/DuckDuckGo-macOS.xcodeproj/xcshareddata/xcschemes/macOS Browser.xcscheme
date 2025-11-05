@@ -304,6 +304,16 @@
                ReferencedContainer = "container:../SharedPackages/SystemFrameworksExtensions">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SERPSettingsTests"
+               BuildableName = "SERPSettingsTests"
+               BlueprintName = "SERPSettingsTests"
+               ReferencedContainer = "container:../SharedPackages/SERPSettings">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

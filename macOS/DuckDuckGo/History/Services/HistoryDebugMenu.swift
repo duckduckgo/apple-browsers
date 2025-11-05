@@ -81,11 +81,12 @@ final class HistoryDebugMenu: NSMenu {
         guard let (maxVisitsPerDay, pool) = sender.representedObject as? (Int, FakeURLsPool) else {
             return
         }
-        Task.detached {
+        DispatchQueue.main.async {
             self.populateHistory(maxVisitsPerDay, pool.urls)
         }
     }
 
+    @MainActor
     private func populateHistory(_ maxVisitsPerDay: Int, _ urls: [URL]) {
         var date = Date()
         let endDate = Date.monthAgo

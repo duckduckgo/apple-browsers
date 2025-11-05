@@ -72,7 +72,8 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
              didClickManageEmail,
              didOpenSubscriptionSettings,
              didClickChangePlanOrBilling,
-             didClickRemoveSubscription
+             didClickRemoveSubscription,
+             openWinBackOfferLandingPage
     }
 
     public init(userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
@@ -149,7 +150,7 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
     @MainActor
     func purchaseAction() {
         if winBackOfferVisibilityManager.isOfferAvailable {
-
+            userEventHandler(.openWinBackOfferLandingPage)
         } else {
             userEventHandler(.openURL(.purchase))
         }

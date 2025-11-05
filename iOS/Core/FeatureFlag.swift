@@ -170,9 +170,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210860792084465?focus=true
     case showAIChatAddressBarChoiceScreen
 
-    /// https://app.asana.com/1/137249556945/project/1210947754188321/task/1210869716452616?focus=true
-    case refreshButtonPosition
-
     /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211394727337421?focus=true
     case newDeviceSyncPrompt
     
@@ -202,6 +199,15 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211677325883310?focus=true
     case vpnMenuItem
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211660503405838?focus=true
+    case forgetAllInSettings
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210927932064918?focus=true
+    case duckAiDataClearing
+    
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1211652685709096?focus=true
+    case fullDuckAIMode
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -217,13 +223,13 @@ extension FeatureFlag: FeatureFlagDescribing {
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .daxEasterEggLogos,
              .subscriptionPurchaseWidePixelMeasurement,
-             .refreshButtonPosition,
              .newDeviceSyncPrompt,
              .subscriptionRestoreWidePixelMeasurement,
              .authV2WideEventEnabled,
              .embeddedSERPSettings,
              .syncCreditCards,
-             .unifiedURLPredictor:
+             .unifiedURLPredictor,
+             .forgetAllInSettings:
             true
         default:
             false
@@ -274,7 +280,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dbpRemoteBrokerDelivery,
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
-             .refreshButtonPosition,
              .newDeviceSyncPrompt,
              .serpSettingsFollowUpQuestions,
              .subscriptionRestoreWidePixelMeasurement,
@@ -284,7 +289,10 @@ extension FeatureFlag: FeatureFlagDescribing {
              .syncCreditCards,
              .unifiedURLPredictor,
              .mobileCustomization,
-             .vpnMenuItem:
+             .vpnMenuItem,
+             .forgetAllInSettings,
+             .duckAiDataClearing,
+             .fullDuckAIMode:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -468,8 +476,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.daxEasterEggLogos))
         case .subscriptionPurchaseWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
-        case .refreshButtonPosition:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.refreshButtonPosition))
         case .showAIChatAddressBarChoiceScreen:
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
         case .newDeviceSyncPrompt:
@@ -492,6 +498,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.customization))
         case .vpnMenuItem:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnMenuItem))
+        case .forgetAllInSettings:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.forgetAllInSettings))
+        case .duckAiDataClearing:
+            return .remoteReleasable(.feature(.duckAiDataClearing))
+        case .fullDuckAIMode:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
         }
     }
 }

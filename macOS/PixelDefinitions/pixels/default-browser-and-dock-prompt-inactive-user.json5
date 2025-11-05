@@ -1,0 +1,72 @@
+{
+    "m_mac_set-as-default-add-to-dock_inactive-user_modal-shown": {
+        "description": "Fired when the modal prompt for inactive users to set DDG as the default browser and/or add it to the dock is shown.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "contentType",
+                "description": "Indicates the type of prompt shown",
+                "enum": ["set-as-default", "add-to-dock", "set-as-default-and-add-to-dock"]
+            }
+        ]
+    },
+    "m_mac_set-as-default-add-to-dock_inactive-user_modal-cancel-action": {
+        "description": "Fired when the modal prompt for inactive users is dismissed, e.g. by clicking on the 'No Thanks' button.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "contentType",
+                "description": "Indicates the type of prompt shown",
+                "enum": ["set-as-default", "add-to-dock", "set-as-default-and-add-to-dock"]
+            }
+        ]
+    },
+    "m_mac_set-as-default-add-to-dock_inactive-user_modal-confirm-action": {
+        "description": "Fired when the primary action button on the modal prompt for inactive users is clicked.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "contentType",
+                "description": "Indicates the type of prompt shown",
+                "enum": ["set-as-default", "add-to-dock", "set-as-default-and-add-to-dock"]
+            }
+        ]
+    },
+    "m_mac_debug_set-as-default-add-to-dock_inactive-user_failed-to-retrieve-modal-shown": {
+        "description": "Fired when we fail to retrieve the flag to determine whether we have already shown the modal prompt for inactive users.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+    "m_mac_debug_set-as-default-add-to-dock_inactive-user_failed-to-save-modal-shown": {
+        "description": "Fired when we fail to save the flag to indicate we have already shown the modal prompt for inactive users.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+    "m_mac_debug_set-as-default-add-to-dock_inactive-user_failed-to-retrieve-current-activity": {
+        "description": "Fired when we fail to retrieve the current user activity, used to determine a user's eligibility for the inactive user prompt.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    },
+    "m_mac_debug_set-as-default-add-to-dock_inactive-user_failed-to-save-current-activity": {
+        "description": "Fired when we fail to save the current user activity, used to determine a user's eligibility for the inactive user prompt.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode"]
+    }
+}

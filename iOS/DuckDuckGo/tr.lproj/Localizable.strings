@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Gizlilik Korumasını Etkinleştir";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Sekmeleri Kapat ve Verileri Temizle";
+"action.title.forgetAll" = "Sekmeleri ve Verileri Temizle";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Sekmeler ve veriler temizlendi";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Sekmeleri, Verileri ve Duck.ai Sohbetlerini Temizle";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Arka Planda Aç";
@@ -2333,7 +2336,7 @@
 "new.address.bar.picker.search.only" = "Yalnızca Arama";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "AI Sohbetine Daha Kolay Erişmek İster misiniz?";
+"new.address.bar.picker.subheadline.private" = "Gizli AI sohbetine daha kolay erişmek ister misiniz?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Adres çubuğu seçeneği";
@@ -2827,6 +2830,12 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Bağlantıların yüklenmiş olan diğer uygulamalarda otomatik olarak açılmasını önlemek için devre dışı bırakın.";
 
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Sekmeleri ve Verileri Temizle";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Sekmeleri, Verileri ve Duck.ai Sohbetlerini Temizle";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Arama Önerileri";
 
@@ -2848,6 +2857,12 @@
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Tarayıcı Geri Bildirimi";
 
+/* Settings screen footer text explaining that Fire Button also clears AI chat history */
+"settings.clear.aichat.history.footer" = "Fire Button, sabitlenmiş sohbetler dahil olmak üzere Duck.ai geçmişini de silecektir.";
+
+/* Settings screen cell text for clearing AI chat history */
+"settings.clear.aichat.history.title" = "Duck.ai Sohbetlerini Temizle";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Verileri Otomatik Olarak Temizle";
 
@@ -2865,6 +2880,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Özelleştir";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Tüm sekmeleri, Duck.ai sohbetlerini ve fireproof uygulanmayan sitelere ait verileri temizler.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Tüm sekmeleri ve fireproof uygulanmayan sitelere ait verileri temizler.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Veri Temizleme";

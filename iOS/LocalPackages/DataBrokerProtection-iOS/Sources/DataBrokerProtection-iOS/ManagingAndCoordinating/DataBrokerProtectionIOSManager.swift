@@ -106,8 +106,14 @@ public class DBPIOSInterface {
         func handleBGProcessingTask(task: BGTask)
     }
 
-    protocol WeeklyPixelsDelegate: AnyObject {
+    protocol PixelsDelegate: AnyObject {
+        func tryToFireEngagementPixels()
         func tryToFireWeeklyPixels()
+        func tryToFireStatsPixels()
+    }
+
+    protocol DBPWideEventsDelegate: AnyObject {
+        func sweepWideEvents()
     }
 
     protocol OptOutEmailConfirmationHandlingDelegate: AnyObject {
@@ -125,7 +131,7 @@ public final class DataBrokerProtectionIOSManager {
         static let defaultMinBackgroundTaskWaitTime: TimeInterval = .minutes(15)
     }
 
-    private static let backgroundTaskIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
+    public static let backgroundTaskIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
 
     private let database: DataBrokerProtectionRepository
     private var queueManager: JobQueueManaging
@@ -134,6 +140,7 @@ public final class DataBrokerProtectionIOSManager {
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let iOSPixelsHandler: EventMapping<IOSPixels>
+    private let engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let quickLinkOpenURLHandler: (URL) -> Void
     private let maxBackgroundTaskWaitTime: TimeInterval
@@ -141,7 +148,8 @@ public final class DataBrokerProtectionIOSManager {
     private let feedbackViewCreator: () -> (any View)
     private let featureFlagger: DBPFeatureFlagging
     private let settings: DataBrokerProtectionSettings
-    private let subscriptionManager: DataBrokerProtectionSubscriptionManager
+    private let subscriptionManager: DataBrokerProtectionSubscriptionManaging
+    private let wideEventSweeper: DBPWideEventSweeper?
     private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
             directoryName: DatabaseConstants.directoryName,
@@ -160,6 +168,19 @@ public final class DataBrokerProtectionIOSManager {
                                        authenticationManager: authenticationManager,
                                        localBrokerProvider: localBrokerService)
     }()
+    private lazy var engagementPixels = DataBrokerProtectionEngagementPixels(
+        database: jobDependencies.database,
+        handler: jobDependencies.pixelHandler,
+        repository: engagementPixelsRepository
+    )
+    private lazy var eventPixels = DataBrokerProtectionEventPixels(
+        database: jobDependencies.database,
+        handler: jobDependencies.pixelHandler
+    )
+    private lazy var statsPixels = DataBrokerProtectionStatsPixels(
+        database: jobDependencies.database,
+        handler: jobDependencies.pixelHandler
+    )
 
     init(queueManager: JobQueueManaging,
          jobDependencies: BrokerProfileJobDependencyProviding,
@@ -175,7 +196,9 @@ public final class DataBrokerProtectionIOSManager {
          feedbackViewCreator: @escaping () -> (any View),
          featureFlagger: DBPFeatureFlagging,
          settings: DataBrokerProtectionSettings,
-         subscriptionManager: DataBrokerProtectionSubscriptionManager
+         subscriptionManager: DataBrokerProtectionSubscriptionManaging,
+         wideEvent: WideEventManaging?,
+         engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults(userDefaults: .dbp)
     ) {
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
@@ -183,6 +206,7 @@ public final class DataBrokerProtectionIOSManager {
         self.authenticationManager = authenticationManager
         self.sharedPixelsHandler = sharedPixelsHandler
         self.iOSPixelsHandler = iOSPixelsHandler
+        self.engagementPixelsRepository = engagementPixelsRepository
         self.privacyConfigManager = privacyConfigManager
         self.database = database
         self.quickLinkOpenURLHandler = quickLinkOpenURLHandler
@@ -192,10 +216,13 @@ public final class DataBrokerProtectionIOSManager {
         self.featureFlagger = featureFlagger
         self.settings = settings
         self.subscriptionManager = subscriptionManager
+        self.wideEventSweeper = wideEvent.map { DBPWideEventSweeper(wideEvent: $0) }
 
         self.queueManager.delegate = self
 
         registerBackgroundTaskHandler()
+        Logger.dataBrokerProtection.debug("PIR wide event sweep requested (iOS setup)")
+        sweepWideEvents()
     }
 }
 
@@ -208,11 +235,22 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
     }
 
     public func appDidBecomeActive() {
-        tryToFireWeeklyPixels()
-        
+        guard authenticationManager.isUserAuthenticated else { return }
+
+        fireMonitoringPixels()
+
         Task {
             await checkForEmailConfirmationData()
         }
+    }
+
+    func fireMonitoringPixels() {
+        tryToFireEngagementPixels()
+        tryToFireWeeklyPixels()
+        tryToFireStatsPixels()
+        
+        Logger.dataBrokerProtection.debug("PIR wide event sweep requested (app active)")
+        sweepWideEvents()
     }
 }
 
@@ -415,13 +453,24 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.OptOutEmailConfirmatio
 
 // MARK: - Private protocol implementations
 
-extension DataBrokerProtectionIOSManager: DBPIOSInterface.WeeklyPixelsDelegate {
+extension DataBrokerProtectionIOSManager: DBPIOSInterface.PixelsDelegate {
+    func tryToFireEngagementPixels() {
+        engagementPixels.fireEngagementPixel()
+    }
+
     func tryToFireWeeklyPixels() {
-        let eventPixels = DataBrokerProtectionEventPixels(
-            database: jobDependencies.database,
-            handler: jobDependencies.pixelHandler
-        )
         eventPixels.tryToFireWeeklyPixels()
+    }
+
+    func tryToFireStatsPixels() {
+        statsPixels.tryToFireStatsPixels()
+        statsPixels.fireCustomStatsPixelsIfNeeded()
+    }
+}
+
+extension DataBrokerProtectionIOSManager: DBPIOSInterface.DBPWideEventsDelegate {
+    func sweepWideEvents() {
+        wideEventSweeper?.sweep()
     }
 }
 

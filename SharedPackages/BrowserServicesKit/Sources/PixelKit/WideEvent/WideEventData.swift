@@ -156,7 +156,7 @@ public struct WideEventAppData: Codable {
     /// Whether the event was sent by an instance of the app with the internal flag set.
     public var internalUser: Bool?
 
-    public init(name: String = AppVersion.shared.name,
+    public init(name: String = Self.defaultAppName(),
                 version: String = AppVersion.shared.versionNumber,
                 formFactor: String? = nil,
                 internalUser: Bool? = nil) {
@@ -169,6 +169,17 @@ public struct WideEventAppData: Codable {
         self.formFactor = formFactor // Ignore the form factor on macOS, but allow it to be overridden for testing
         #endif
         self.internalUser = internalUser
+    }
+
+    /// Returns the appropriate app name for the current platform.
+    /// - macOS: Uses CFBundleName (the bundle name)
+    /// - iOS: Uses CFBundleExecutable (the product name, which maps to Xcode targets)
+    public static func defaultAppName() -> String {
+        #if os(iOS)
+        return AppVersion.shared.productName
+        #else
+        return AppVersion.shared.name
+        #endif
     }
 }
 

@@ -20,6 +20,10 @@ import Cocoa
 
 extension NSWindow {
 
+    var titlebarView: NSView? {
+        standardWindowButton(.closeButton)?.superview
+    }
+
     var frameInWindowCoordinates: NSRect {
         NSRect(origin: .zero, size: frame.size)
     }

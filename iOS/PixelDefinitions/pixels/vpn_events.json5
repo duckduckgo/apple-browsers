@@ -1,0 +1,23 @@
+{
+    "m_netp_adapter_end_temporary_shutdown_state_attempt_failure": {
+        "description": "Fired when the VPN adapter fails to end its temporary shutdown state on the first attempt",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_netp_adapter_end_temporary_shutdown_state_recovery_success": {
+        "description": "Fired when the VPN adapter successfully recovers and ends its temporary shutdown state after an initial failure",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_netp_adapter_end_temporary_shutdown_state_recovery_failure": {
+        "description": "Fired when the VPN adapter fails to recover and end its temporary shutdown state after an initial failure",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    }
+}

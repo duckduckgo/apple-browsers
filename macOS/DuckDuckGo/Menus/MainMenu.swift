@@ -802,7 +802,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Reset configuration to default", action: #selector(AppDelegate.resetPrivacyConfigurationToDefault))
             }
             NSMenuItem(title: "Remote Messaging Framework")
-                .submenu(RemoteMessagingDebugMenu())
+                .submenu(RemoteMessagingDebugMenu(configurationURLProvider: configurationURLProvider))
             NSMenuItem(title: "User Scripts") {
                 NSMenuItem(title: "Remove user scripts from selected tab", action: #selector(MainViewController.removeUserScripts))
             }
@@ -888,7 +888,9 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
+#if SPARKLE
             NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu())
+#endif
             if AppVersion.runType.requiresEnvironment {
                 NSMenuItem(title: "SAD/ATT Prompts").submenu(DefaultBrowserAndDockPromptDebugMenu())
                 WinBackOfferDebugMenu(winbackOfferStore: Application.appDelegate.winbackOfferStore,

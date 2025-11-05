@@ -277,7 +277,7 @@ final class DataBrokerProtectionProfileTests: XCTestCase {
     }
 }
 
-extension ProfileQuery: @retroactive Comparable {
+extension ProfileQuery: Comparable {
 
     public static func < (lhs: ProfileQuery, rhs: ProfileQuery) -> Bool {
         if lhs.firstName != rhs.firstName {

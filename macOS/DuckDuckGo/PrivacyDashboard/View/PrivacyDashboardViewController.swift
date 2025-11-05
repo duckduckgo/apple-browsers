@@ -43,7 +43,6 @@ final class PrivacyDashboardViewController: NSViewController {
     private let privacyDashboardController: PrivacyDashboardController
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let contentBlocking: ContentBlockingProtocol
-    private let featureFlagger: FeatureFlagger
 
     public let rulesUpdateObserver: ContentBlockingRulesUpdateObserver
 
@@ -83,8 +82,7 @@ final class PrivacyDashboardViewController: NSViewController {
     init(privacyInfo: PrivacyInfo? = nil,
          entryPoint: PrivacyDashboardEntryPoint = .dashboard,
          contentBlocking: ContentBlockingProtocol,
-         permissionManager: PermissionManagerProtocol,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         permissionManager: PermissionManagerProtocol) {
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: contentBlocking.privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
         let toggleReportingManager = ToggleReportingManager(feature: toggleReportingFeature)
@@ -96,7 +94,6 @@ final class PrivacyDashboardViewController: NSViewController {
         self.contentBlocking = contentBlocking
         // swiftlint:disable:next force_cast
         self.rulesUpdateObserver = ContentBlockingRulesUpdateObserver(userContentUpdating: (contentBlocking as! AppContentBlocking).userContentUpdating)
-        self.featureFlagger = featureFlagger
 
         brokenSiteReporter = {
             BrokenSiteReporter(pixelHandler: { parameters in
@@ -282,13 +279,7 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
 
     func privacyDashboardControllerDidRequestShowGeneralFeedback(_ privacyDashboardController: PrivacyDashboardController) {
         dismiss()
-
-        if featureFlagger.isFeatureOn(.newFeedbackForm) {
-            NSApp.delegateTyped.openReportABrowserProblem(nil)
-        } else {
-            NSApp.delegateTyped.openFeedback(nil)
-        }
-
+        NSApp.delegateTyped.openReportABrowserProblem(nil)
     }
 
     func privacyDashboardController(_ privacyDashboardController: PrivacyDashboardController,

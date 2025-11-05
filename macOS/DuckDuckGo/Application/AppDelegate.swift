@@ -137,6 +137,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let fireCoordinator: FireCoordinator
     let permissionManager: PermissionManager
 
+    let autoconsentManagement = AutoconsentManagement()
+
     private var updateProgressCancellable: AnyCancellable?
 
     @MainActor
@@ -174,14 +176,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let newTabPageCustomizationModel: NewTabPageCustomizationModel
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
-    let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
+    let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionAuthV1toV2Bridge,
         featureFlagger: featureFlagger,
         vpnUpsellVisibilityManager: vpnUpsellVisibilityManager
     )
-    let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
-    let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let themeManager: ThemeManager
 
     let wideEvent: WideEventManaging
@@ -270,7 +270,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     lazy var winBackOfferPromptPresenter: WinBackOfferPromptPresenting = {
-        return WinBackOfferPromptPresenter(visibilityManager: winBackOfferVisibilityManager)
+        return WinBackOfferPromptPresenter(visibilityManager: winBackOfferVisibilityManager,
+                                          subscriptionManager: subscriptionAuthV1toV2Bridge)
     }()
 
     lazy var winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator = {
@@ -728,6 +729,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 fireproofDomains: fireproofDomains,
                 fireCoordinator: fireCoordinator,
                 tld: tld,
+                autoconsentManagement: autoconsentManagement,
                 contentScopePreferences: contentScopePreferences
             )
             privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
@@ -752,6 +754,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fireproofDomains: fireproofDomains,
             fireCoordinator: fireCoordinator,
             tld: tld,
+            autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences
         )
         privacyFeatures = AppPrivacyFeatures(
@@ -777,31 +780,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         let onboardingManager = onboardingContextualDialogsManager
-        defaultBrowserAndDockPromptKeyValueStore = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStore)
-        DefaultBrowserAndDockPromptStoreMigrator(
-            oldStore: DefaultBrowserAndDockPromptLegacyStore(),
-            newStore: defaultBrowserAndDockPromptKeyValueStore
-        ).migrateIfNeeded()
-
-        defaultBrowserAndDockPromptFeatureFlagger = DefaultBrowserAndDockPromptFeatureFlag(
-            privacyConfigManager: privacyConfigurationManager,
-            featureFlagger: featureFlagger
-        )
-
-        let defaultBrowserAndDockPromptDecider = DefaultBrowserAndDockPromptTypeDecider(
-            featureFlagger: defaultBrowserAndDockPromptFeatureFlagger,
-            store: defaultBrowserAndDockPromptKeyValueStore,
-            installDateProvider: { LocalStatisticsStore().installDate },
-            dateProvider: defaultBrowserAndDockPromptDateProvider
-        )
-        let coordinator = DefaultBrowserAndDockPromptCoordinator(
-            promptTypeDecider: defaultBrowserAndDockPromptDecider,
-            store: defaultBrowserAndDockPromptKeyValueStore,
-            isOnboardingCompleted: { onboardingManager.state == .onboardingCompleted },
-            dateProvider: defaultBrowserAndDockPromptDateProvider
-        )
-        let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier()
-        defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier)
+        defaultBrowserAndDockPromptService = DefaultBrowserAndDockPromptService(featureFlagger: featureFlagger,
+                                                                                privacyConfigManager: privacyConfigurationManager,
+                                                                                keyValueStore: keyValueStore,
+                                                                                isOnboardingCompletedProvider: { onboardingManager.state == .onboardingCompleted })
 
         if AppVersion.runType.requiresEnvironment {
             remoteMessagingClient = RemoteMessagingClient(
@@ -910,13 +892,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 #elseif SPARKLE
         if AppVersion.runType != .uiTests {
-            let updateController = SparkleUpdateController(internalUserDecider: internalUserDecider)
+            let updateController = SparkleUpdateController(
+                internalUserDecider: internalUserDecider
+            )
             self.updateController = updateController
             stateRestorationManager.subscribeToAutomaticAppRelaunching(using: updateController.willRelaunchAppPublisher)
         }
 #endif
 
-        appIconChanger = AppIconChanger(internalUserDecider: internalUserDecider)
+        appIconChanger = AppIconChanger(internalUserDecider: internalUserDecider, appearancePreferences: appearancePreferences)
 
         // Configure Event handlers
         let tunnelController = NetworkProtectionIPCTunnelController(ipcClient: vpnXPCClient)
@@ -1152,6 +1136,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task { @MainActor in
             vpnAppEventsHandler.applicationDidBecomeActive()
         }
+
+        defaultBrowserAndDockPromptService.applicationDidBecomeActive()
     }
 
     private func fireDailyActiveUserPixel() {
@@ -1196,6 +1182,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             FileDownloadManager.shared.cancelAll(waitUntilDone: true)
             DownloadListCoordinator.shared.sync()
         }
+
+        // Cancel any active update tracking flow
+        updateController?.handleAppTermination()
+
         stateRestorationManager?.applicationWillTerminate()
 
         // Handling of "Burn on quit"

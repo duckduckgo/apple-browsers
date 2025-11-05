@@ -20,16 +20,19 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct SettingsDataClearingView: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
+    @State private var isShowingBurnAlert: Bool = false
 
     var body: some View {
         List {
             Section {
                 // Fire Button Animation
-                SettingsPickerCellView(label: UserText.settingsFirebutton,
+                SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
+                                       label: UserText.settingsFirebutton,
                                        options: FireButtonAnimationType.allCases,
                                        selectedOption: viewModel.fireButtonAnimationBinding)
             }
@@ -50,6 +53,37 @@ struct SettingsDataClearingView: View {
                                   disclosureIndicator: true,
                                   isButton: true)
             }
+
+            if viewModel.isAIChatEnabled && viewModel.isDuckAiDataClearingEnabled {
+                Section {
+                    SettingsCellView(label: UserText.settingsClearAIChatHistory,
+                                     accessory: .toggle(isOn: viewModel.autoClearAIChatHistoryBinding))
+                } footer: {
+                    Text(UserText.settingsClearAIChatHistoryFooter)
+                }
+            }
+            
+            if viewModel.isForgetAllInSettingsEnabled {
+                Section(footer: Text(footnoteText)) {
+                    SettingsCellView(action: {
+                        Pixel.fire(pixel: .forgetAllPressedSettings)
+                        isShowingBurnAlert = true
+                    }, customView: {
+                        AnyView(
+                            HStack(alignment: .center) {
+                                Image(uiImage: DesignSystemImages.Glyphs.Size24.fireSolid)
+                                    .tintIfAvailable(Color(designSystemColor: .icons))
+                                Text(forgetAllTitle)
+                                    .foregroundStyle(Color(designSystemColor: .accent))
+                                Spacer()
+                            }
+                        )
+                    }, isButton: true)
+                    .accessibilityIdentifier("Settings.DataClearing.Button.ForgetAll")
+                    .forgetDataConfirmationDialog(isPresented: $isShowingBurnAlert,
+                                                  onConfirm: viewModel.forgetAll)
+                }
+            }
         }
         .applySettingsListModifiers(title: UserText.dataClearing,
                                     displayMode: .inline,
@@ -57,5 +91,17 @@ struct SettingsDataClearingView: View {
         .onFirstAppear {
             Pixel.fire(pixel: .settingsDataClearingOpen)
         }
+    }
+
+    private var forgetAllTitle: String {
+        let shouldIncludeAIChat = viewModel.appSettings.autoClearAIChatHistory
+
+        return shouldIncludeAIChat ? UserText.actionForgetAllWithAIChat : UserText.actionForgetAll
+    }
+
+    private var footnoteText: String {
+        let shouldIncludeAIChat = viewModel.appSettings.autoClearAIChatHistory
+
+        return shouldIncludeAIChat ? UserText.settingsDataClearingForgetAllWithAiChatFootnote : UserText.settingsDataClearingForgetAllFootnote
     }
 }

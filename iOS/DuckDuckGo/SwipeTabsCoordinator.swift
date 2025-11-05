@@ -53,13 +53,10 @@ class SwipeTabsCoordinator: NSObject {
         coordinator.navigationBarCollectionView
     }
 
-    private let omnibarAccessoryHandler: OmnibarAccessoryHandler
-
     init(coordinator: MainViewCoordinator,
          tabPreviewsSource: TabPreviewsSource,
          appSettings: AppSettings,
          omnibarDependencies: OmnibarDependencyProvider,
-         omnibarAccessoryHandler: OmnibarAccessoryHandler,
          selectTab: @escaping (Int) -> Void,
          newTab: @escaping () -> Void,
          onSwipeStarted: @escaping () -> Void) {
@@ -68,7 +65,6 @@ class SwipeTabsCoordinator: NSObject {
         self.tabPreviewsSource = tabPreviewsSource
         self.appSettings = appSettings
         self.omnibarDependencies = omnibarDependencies
-        self.omnibarAccessoryHandler = omnibarAccessoryHandler
         self.selectTab = selectTab
         self.newTab = newTab
         self.onSwipeStarted = onSwipeStarted
@@ -353,8 +349,10 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar = coordinator.omniBar
         } else {
             // Strong reference while we use the omnibar
+            let tab = tabsModel.safeGetTabAt(indexPath.row)
+            let url = tab?.link?.url
+
             let controller = cell.controller ?? OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
-            let url = tabsModel.safeGetTabAt(indexPath.row)?.link?.url
 
             coordinator.parentController?.addChild(controller)
 
@@ -363,14 +361,13 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar?.showSeparator()
             cell.omniBar?.adjust(for: appSettings.currentAddressBarPosition)
 
-            if let url = tabsModel.safeGetTabAt(indexPath.row)?.link?.url {
+            if tab?.isAITab == true {
+                cell.omniBar?.enterAIChatMode()
+            } else if let url {
                 cell.omniBar?.startBrowsing()
-                cell.omniBar?.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: url))
                 cell.omniBar?.resetPrivacyIcon(for: url)
             } else {
                 cell.omniBar?.stopBrowsing()
-                // It's always chat just now (this might change in the future) and this prevents a flash when on new tab
-                cell.omniBar?.updateAccessoryType(.chat)
             }
 
             cell.omniBar?.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)

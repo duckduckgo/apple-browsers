@@ -53,6 +53,11 @@ final class SiteThemeColorManager {
     }
 
     func updateThemeColor() {
+        guard isCurrentTabShowingAIChat == false else {
+            resetThemeColor()
+            return
+        }
+
         guard isCurrentTabShowingDaxPlayer == false else {
             return
         }
@@ -76,7 +81,7 @@ final class SiteThemeColorManager {
     private func startObservingThemeColor() {
         themeColorObservation = tabViewController?.webView?.observe(\.themeColor, options: [.initial, .new]) { [weak self] webView, change in
 
-            guard let self, self.isCurrentTabShowingDaxPlayer == false else {
+            guard let self, self.isCurrentTabShowingAIChat == false, self.isCurrentTabShowingDaxPlayer == false else {
                 return
             }
 
@@ -104,7 +109,7 @@ final class SiteThemeColorManager {
     private var shouldApplyColorToCurrentTab: Bool {
         // We do not support top address bar position in this 1st iteration
         appSettings.currentAddressBarPosition == .bottom
-        && !(isCurrentTabShowingError || isCurrentTabShowingDaxPlayer)
+        && !(isCurrentTabShowingError || isCurrentTabShowingDaxPlayer || isCurrentTabShowingAIChat)
     }
 
     private var isCurrentTabShowingError: Bool {
@@ -113,6 +118,10 @@ final class SiteThemeColorManager {
 
     private var isCurrentTabShowingDaxPlayer: Bool {
         currentTabViewController()?.url?.isDuckPlayer == true
+    }
+
+    private var isCurrentTabShowingAIChat: Bool {
+        currentTabViewController()?.tabModel.isAITab == true
     }
 
     private func updateThemeColor(_ color: UIColor) {

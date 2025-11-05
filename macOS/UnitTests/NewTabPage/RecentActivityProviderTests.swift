@@ -90,12 +90,14 @@ final class RecentActivityProviderTests: XCTestCase {
         visibilityProvider = nil
     }
 
+    @MainActor
     func testWhenHistoryIsEmptyThenActivityIsEmpty() throws {
         historyCoordinator.history = []
 
         XCTAssertEqual(provider.refreshActivity(), [])
     }
 
+    @MainActor
     func testWhenHistoryEntryHasVisitsToRootURLThenActivityHasNoHistory() throws {
         let uuid = UUID()
         let url = try XCTUnwrap("https://example.com".url)
@@ -122,6 +124,7 @@ final class RecentActivityProviderTests: XCTestCase {
         )
     }
 
+    @MainActor
     func testWhenHistoryEntryHasVisitsToNonRootURLThenActivityHasOneEntryWithHistory() throws {
         let uuid = UUID()
         let url = try XCTUnwrap("https://example.com".url)
@@ -150,6 +153,7 @@ final class RecentActivityProviderTests: XCTestCase {
         )
     }
 
+    @MainActor
     func testWhenHistoryEntryHasVisitsToDifferentNonRootURLsOfTheSameDomainThenActivityHasOneEntryWithHistory() throws {
         let uuid = UUID()
         let url = try XCTUnwrap("https://example.com".url)
@@ -183,6 +187,7 @@ final class RecentActivityProviderTests: XCTestCase {
         )
     }
 
+    @MainActor
     func testThatHistoryEntryDisplaysSumOfBlockedTrackersForVisitsToAllURLsOfTheSameDomain() throws {
         let uuid = UUID()
         let url = try XCTUnwrap("https://example.com".url)
@@ -221,6 +226,7 @@ final class RecentActivityProviderTests: XCTestCase {
         )
     }
 
+    @MainActor
     func testThatHistoryEntryFiltersOutEmptyTrackerCompanies() throws {
         let uuid = UUID()
         let url = try XCTUnwrap("https://example.com".url)
@@ -255,6 +261,7 @@ final class RecentActivityProviderTests: XCTestCase {
         )
     }
 
+    @MainActor
     func testWhenHistoryEntryHasVisitsToTwoDifferentDomainsThenActivityHasTwoEntries() throws {
         let uuid = UUID()
         let url1 = try XCTUnwrap("https://example.com".url)
@@ -303,6 +310,7 @@ final class RecentActivityProviderTests: XCTestCase {
         )
     }
 
+    @MainActor
     func testThatHistoryEntryThatFailedToLoadIsFilteredOutInActivity() throws {
         let uuid = UUID()
         let url = try XCTUnwrap("https://example.com".url)
@@ -315,6 +323,7 @@ final class RecentActivityProviderTests: XCTestCase {
         XCTAssertEqual(provider.refreshActivity(), [])
     }
 
+    @MainActor
     func testWhenHistoryEntryHasTrackerStatsThenActivityHasEntryWithTrackerStats() throws {
         let uuid = UUID()
         let url = try XCTUnwrap("https://example.com".url)
@@ -341,6 +350,7 @@ final class RecentActivityProviderTests: XCTestCase {
         )
     }
 
+    @MainActor
     func testThatHistoryEntryForDDGSearchHasPrettifiedTitle() throws {
         let uuid = UUID()
         let url = try XCTUnwrap(URL.makeSearchUrl(from: "hello"))

@@ -133,12 +133,34 @@ struct Launching: LaunchingHandling {
             featureFlagger: featureFlagger,
             privacyConfigManager: privacyConfigurationManager,
             keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
-            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
-            isOnboardingCompletedProvider: { !daxDialogs.isEnabled }
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager
         )
 
         // Has to be intialised after configuration.start in case values need to be migrated
         aiChatSettings = AIChatSettings()
+
+        // Initialise modal prompts coordination
+        let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
+            launchSourceManager: launchSourceManager,
+            daxDialogs: daxDialogs,
+            keyValueFileStoreService: appKeyValueFileStoreService.keyValueFilesStore,
+            privacyConfigurationManager: privacyConfigurationManager,
+            providersDependency: .init(
+                newAddressBarPicker: .init(
+                    featureFlagger: featureFlagger,
+                    appSettings: appSettings,
+                    aiChatSettings: aiChatSettings,
+                    experimentalAIChatManager: ExperimentalAIChatManager()
+                ),
+                defaultBrowserPrompt: .init(
+                    presenter: defaultBrowserPromptService.presenter
+                ),
+                winBackOffer: .init(
+                    presenter: winBackOfferService.presenter,
+                    coordinator: winBackOfferService.coordinator
+                )
+            )
+        )
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
@@ -160,12 +182,12 @@ struct Launching: LaunchingHandling {
                                               customConfigurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
                                               didFinishLaunchingStartTime: isAppLaunchedInBackground ? nil : didFinishLaunchingStartTime,
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
-                                              defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                                               systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
                                               daxDialogsManager: daxDialogs,
                                               dbpIOSPublicInterface: dbpService.dbpIOSPublicInterface,
                                               launchSourceManager: launchSourceManager,
-                                              winBackOfferService: winBackOfferService)
+                                              winBackOfferService: winBackOfferService,
+                                              modalPromptCoordinationService: modalPromptCoordinationService)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
@@ -180,7 +202,8 @@ struct Launching: LaunchingHandling {
                                                         appSettings: appSettings,
                                                         voiceSearchHelper: voiceSearchHelper,
                                                         featureFlagger: featureFlagger,
-                                                        aiChatSettings: aiChatSettings)
+                                                        aiChatSettings: aiChatSettings,
+                                                        mobileCustomization: mainCoordinator.controller.mobileCustomization)
         let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)

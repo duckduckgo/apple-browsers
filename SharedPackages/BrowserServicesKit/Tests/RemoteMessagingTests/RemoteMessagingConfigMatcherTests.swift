@@ -39,6 +39,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     emailManager: emailManager,
                     bookmarksCount: 10,
@@ -141,6 +142,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                 deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
@@ -252,6 +254,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 10,
                     favoritesCount: 0,
@@ -306,6 +309,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                 deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
@@ -356,6 +360,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                 deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
@@ -404,6 +409,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                 deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
@@ -452,6 +458,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                 deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
@@ -500,6 +507,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                 deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,

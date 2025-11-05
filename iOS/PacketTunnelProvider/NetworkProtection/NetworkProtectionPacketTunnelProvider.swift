@@ -295,6 +295,12 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             vpnLogger.logStartingWithoutAuthToken()
             DailyPixel.fireDailyAndCount(pixel: .networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+        case .adapterEndTemporaryShutdownStateAttemptFailure(let error):
+            DailyPixel.fireDailyAndCount(pixel: .networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure, error: error)
+        case .adapterEndTemporaryShutdownStateRecoverySuccess:
+            DailyPixel.fireDailyAndCount(pixel: .networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess)
+        case .adapterEndTemporaryShutdownStateRecoveryFailure(let error):
+            DailyPixel.fireDailyAndCount(pixel: .networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure, error: error)
         }
     }
 

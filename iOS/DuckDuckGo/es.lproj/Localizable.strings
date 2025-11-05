@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Activar la protección de privacidad";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Cerrar pestañas y borrar datos";
+"action.title.forgetAll" = "Borrar datos y pestañas";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Pestañas y datos borrados";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Borrar pestañas, datos y chats de Duck.ai";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Abrir en segundo plano";
@@ -2333,7 +2336,7 @@
 "new.address.bar.picker.search.only" = "Solo buscar";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "¿Quieres un acceso más fácil al chat de IA?";
+"new.address.bar.picker.subheadline.private" = "¿Quieres un acceso más fácil al chat privado de IA?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Opción de la barra de direcciones";
@@ -2827,6 +2830,12 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Desactivar para evitar que los enlaces se abran automáticamente en otras aplicaciones instaladas.";
 
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Borrar datos y pestañas";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Borra pestañas, datos y chats de Duck.ai";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sugerencias de búsqueda";
 
@@ -2848,6 +2857,12 @@
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Comentarios sobre el navegador";
 
+/* Settings screen footer text explaining that Fire Button also clears AI chat history */
+"settings.clear.aichat.history.footer" = "Fire Button también eliminará el historial de Duck.ai, incluidos los chats anclados.";
+
+/* Settings screen cell text for clearing AI chat history */
+"settings.clear.aichat.history.title" = "Borra chats de Duck.ai";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Borrar datos automáticamente";
 
@@ -2865,6 +2880,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Personalizar";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Borra todas las pestañas, los chats de Duck.ai y los datos de los sitios que no hayas protegido con Fireproof.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Borrar todas las pestañas y los datos de los sitios no protegidos con Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Eliminación de datos";

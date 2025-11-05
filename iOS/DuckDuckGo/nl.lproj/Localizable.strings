@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Privacybescherming inschakelen";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Tabbladen sluiten en gegevens wissen";
+"action.title.forgetAll" = "Tabbladen en gegevens wissen";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Tabbladen en gegevens gewist";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Tabbladen, gegevens en Duck.ai-chats wissen";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Openen op de achtergrond";
@@ -2333,7 +2336,7 @@
 "new.address.bar.picker.search.only" = "Alleen zoeken";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "Wil je eenvoudiger toegang tot AI Chat?";
+"new.address.bar.picker.subheadline.private" = "Wil je eenvoudiger toegang\ntot privé AI-chat?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Optie voor adresbalk";
@@ -2827,6 +2830,12 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Uitschakelen om te voorkomen dat links automatisch geopend worden in andere geïnstalleerde apps.";
 
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Tabbladen en gegevens wissen";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Tabbladen, gegevens en Duck.ai-chats wissen";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Zoeksuggesties";
 
@@ -2848,6 +2857,12 @@
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Browserfeedback";
 
+/* Settings screen footer text explaining that Fire Button also clears AI chat history */
+"settings.clear.aichat.history.footer" = "Fire Button verwijdert ook de Duck.ai-geschiedenis, inclusief vastgepinde chats.";
+
+/* Settings screen cell text for clearing AI chat history */
+"settings.clear.aichat.history.title" = "Duck.ai chats wissen";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Gegevens automatisch wissen";
 
@@ -2865,6 +2880,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Aanpassen";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Sluit alle tabbladen, Duck.ai-chats en wist gegevens van sites die je niet Fireproof hebt gemaakt.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Wist alle tabbladen en gegevens van sites die je niet Fireproof hebt gemaakt.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Gegevens wissen";

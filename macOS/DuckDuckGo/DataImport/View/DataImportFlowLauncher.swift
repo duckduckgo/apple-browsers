@@ -21,19 +21,37 @@ import DDGSync
 import BrowserServicesKit
 import FeatureFlags
 
-/// Protocol for launching data import flows.
+/// Protocol for re-launching data import flows from within data import
 ///
 /// Provides functionality to initiate data import flows with customizable
 /// presentation options and data type selection.
-protocol DataImportFlowLaunching {
+protocol DataImportFlowRelaunching {
     /// Launches the data import flow with the specified configuration
     /// - Parameters:
     ///   - model: The view model containing import data and state
     ///   - title: The title to display in the import dialog
     ///   - isDataTypePickerExpanded: Whether the data type picker should start expanded
     @MainActor
-    func launchDataImport(
+    func relaunchDataImport(
         model: DataImportViewModel,
+        title: String,
+        isDataTypePickerExpanded: Bool
+    )
+}
+
+/// Protocol for re-launching legacy data import flows from within legacy data import
+///
+/// Provides functionality to initiate data import flows with customizable
+/// presentation options and data type selection.
+protocol LegacyDataImportFlowRelaunching {
+    /// Launches the data import flow with the specified configuration
+    /// - Parameters:
+    ///   - model: The view model containing import data and state
+    ///   - title: The title to display in the import dialog
+    ///   - isDataTypePickerExpanded: Whether the data type picker should start expanded
+    @MainActor
+    func relaunchDataImport(
+        model: LegacyDataImportViewModel,
         title: String,
         isDataTypePickerExpanded: Bool
     )
@@ -44,41 +62,79 @@ protocol DataImportFlowLaunching {
 /// Manages the presentation of data import dialogs with support for sync feature
 /// integration and customizable UI configurations. Handles the coordination between
 /// data import functionality and sync features when available.
-final class DataImportFlowLauncher: DataImportFlowLaunching {
+final class DataImportFlowLauncher: LegacyDataImportFlowRelaunching, DataImportFlowRelaunching {
     @MainActor
-    func launchDataImport(
+    func relaunchDataImport(
         model: DataImportViewModel,
         title: String,
         isDataTypePickerExpanded: Bool
     ) {
-        launchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded, in: nil)
-    }
-
-    @MainActor
-    func launchDataImport(
-        model: DataImportViewModel = DataImportViewModel(),
-        title: String = UserText.importDataTitle,
-        isDataTypePickerExpanded: Bool,
-        in window: NSWindow? = nil,
-        completion: (() -> Void)? = nil
-    ) {
-        let ddgSync = NSApp.delegateTyped.syncService
-        let syncFeatureVisibility: DataImportView.SyncFeatureVisibility
-        let featureFlagger = NSApp.delegateTyped.featureFlagger
-        if
-            case .inactive = ddgSync?.authState,
-            let deviceSyncLauncher = DeviceSyncCoordinator(),
-            featureFlagger.isNewSyncEntryPointsFeatureOn {
-            syncFeatureVisibility = .show(syncLauncher: deviceSyncLauncher)
-        } else {
-            syncFeatureVisibility = .hide
-        }
         DataImportView(
             model: model,
             importFlowLauncher: self,
             title: title,
             isDataTypePickerExpanded: isDataTypePickerExpanded,
             syncFeatureVisibility: syncFeatureVisibility
+        ).show()
+    }
+
+    @MainActor
+    func relaunchDataImport(
+        model: LegacyDataImportViewModel,
+        title: String,
+        isDataTypePickerExpanded: Bool
+    ) {
+        LegacyDataImportView(
+            model: model,
+            importFlowLauncher: self,
+            title: title,
+            isDataTypePickerExpanded: isDataTypePickerExpanded,
+            syncFeatureVisibility: syncFeatureVisibility
+        ).show()
+    }
+
+    @MainActor
+    func launchDataImport(
+        title: String = UserText.importDataTitle,
+        isDataTypePickerExpanded: Bool,
+        in window: NSWindow? = nil,
+        onFinished: @escaping () -> Void = {},
+        onCancelled: @escaping () -> Void = {},
+        completion: (() -> Void)? = nil
+    ) {
+        let featureFlagger = NSApp.delegateTyped.featureFlagger
+        guard featureFlagger.isFeatureOn(.dataImportNewExperience) else {
+            let viewModel = LegacyDataImportViewModel(onFinished: onFinished, onCancelled: onCancelled)
+            LegacyDataImportView(
+                model: viewModel,
+                importFlowLauncher: self,
+                title: title,
+                isDataTypePickerExpanded: isDataTypePickerExpanded,
+                syncFeatureVisibility: syncFeatureVisibility
+            ).show(in: window, completion: completion)
+            return
+        }
+        let viewModel = DataImportViewModel(onFinished: onFinished, onCancelled: onCancelled)
+        DataImportView(
+            model: viewModel,
+            importFlowLauncher: self,
+            title: title,
+            isDataTypePickerExpanded: isDataTypePickerExpanded,
+            syncFeatureVisibility: syncFeatureVisibility
         ).show(in: window, completion: completion)
+    }
+
+    @MainActor
+    private var syncFeatureVisibility: SyncFeatureVisibility {
+        let ddgSync = NSApp.delegateTyped.syncService
+        let featureFlagger = NSApp.delegateTyped.featureFlagger
+        if
+            case .inactive = ddgSync?.authState,
+            let deviceSyncLauncher = DeviceSyncCoordinator(),
+            featureFlagger.isNewSyncEntryPointsFeatureOn {
+            return .show(syncLauncher: deviceSyncLauncher)
+        } else {
+            return .hide
+        }
     }
 }

@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Povolit ochranu soukromí";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Zavřít karty a vymazat data";
+"action.title.forgetAll" = "Vymazat karty a data";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Karty a data vymazány";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Vymazat karty, data a chaty Duck.ai";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Otevřít na pozadí";
@@ -2333,7 +2336,7 @@
 "new.address.bar.picker.search.only" = "Jen vyhledávání";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "Chceš mít AI chat hned po ruce?";
+"new.address.bar.picker.subheadline.private" = "Chceš mít soukromý AI chat hned po ruce?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Možnost adresního řádku";
@@ -2827,6 +2830,12 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Zakažte, chcete-li zabránit automatickému otevírání odkazů v jiných nainstalovaných aplikacích.";
 
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Vymazat karty a data";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Vymazat karty, data a chaty Duck.ai";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Návrhy vyhledávání";
 
@@ -2848,6 +2857,12 @@
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Zpětná vazba k prohlížeči";
 
+/* Settings screen footer text explaining that Fire Button also clears AI chat history */
+"settings.clear.aichat.history.footer" = "Tlačítko Fire Button taky smaže historii Duck.ai, včetně připnutých chatů.";
+
+/* Settings screen cell text for clearing AI chat history */
+"settings.clear.aichat.history.title" = "Vymazat chaty Duck.ai";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automaticky vymazat data";
 
@@ -2865,6 +2880,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Přizpůsobit";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Vymaže všechny karty, chaty Duck.ai a data všech webů, které nechrání funkce Fireproof.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Vymaže všechny karty a data všech webů, které nechrání funkce Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Vymazání dat";

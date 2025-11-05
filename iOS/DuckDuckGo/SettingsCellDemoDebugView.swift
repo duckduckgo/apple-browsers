@@ -30,6 +30,25 @@ struct SettingsCellDemoDebugView: View {
         var description: String {
             return self.rawValue
         }
+
+        static let withDivider: [SampleOption?] = [
+            .optionOne,
+            .optionTwo,
+            nil,
+            .optionThree
+        ]
+
+        static func imageProvider(_ option: SampleOption) -> Image? {
+            switch option {
+            case .optionOne:
+                Image(systemName: "1.square")
+            case .optionTwo:
+                Image(systemName: "2.square")
+            case .optionThree:
+                Image(systemName: "3.square")
+            }
+        }
+
     }
 
     @State var selectedOption: SampleOption = .optionOne
@@ -93,7 +112,12 @@ struct SettingsCellDemoDebugView: View {
                                  subtitle: "Subtitle goes here",
                                  accessory: .toggle(isOn: .constant(true)))
 
-                SettingsPickerCellView(label: "Proin tempor urna", options: SampleOption.allCases, selectedOption: $selectedOption)
+                SettingsPickerCellView(useImprovedPicker: false,
+                                       label: "Legacy picker", options: SampleOption.allCases, selectedOption: $selectedOption)
+
+                SettingsPickerCellView(useImprovedPicker: true,
+                                       label: "Improved Picker", options: SampleOption.withDivider, selectedOption: $selectedOption,
+                                       iconProvider: SampleOption.imageProvider)
 
                 SettingsCustomCell(content: customCellContent)
 

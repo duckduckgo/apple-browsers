@@ -15,6 +15,20 @@ on:
         description: "Run one or more UITestCases (optional, space-separated, e.g. 'AutocompleteTests' or 'AutocompleteTests BookmarksTests')"
         type: string
         required: false
+  workflow_call:
+    inputs:
+      all_os_versions:
+        description: "Whether to test all OS versions or only the latest"
+        type: boolean
+        default: true
+      branch:
+        description: "Branch name"
+        required: false
+        type: string
+      single_test_class:
+        description: "Run one or more UITestCases (optional, space-separated, e.g. 'AutocompleteTests' or 'AutocompleteTests BookmarksTests')"
+        type: string
+        required: false
   schedule:
     - cron: '0 3 * * 1-5' # 3AM UTC offsetted to legacy to avoid action-junit-report@v4 bug
   push:
@@ -28,7 +42,11 @@ on:
       - '.xcode-version'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # When this workflow is called by another workflow (e.g. code freeze), `github.workflow` contains the name of the calling workflow,
+  # and the value of `${{ github.workflow }}-${{ github.ref }}` would be the same for PR Checks and UI Tests, which would prevent them
+  # from being run concurrently. We're adding a suffix here to tell PR Checks and UI Tests apart and allow for running the two
+  # side by side in the code freeze workflow.
+  group: ${{ github.workflow }}-${{ github.ref }}-ui-tests
   cancel-in-progress: true
 
 jobs:
@@ -38,7 +56,7 @@ jobs:
     with:
       release-type: review
       create-dmg: false
-      branch: ${{ github.sha }}
+      branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
     secrets: inherit
 
@@ -55,6 +73,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch || github.sha }}
 
       - name: Start measuring duration
         id: start-duration
@@ -129,6 +149,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
+        ref: ${{ inputs.branch || github.sha }}
 
     - name: Install screenresolution
       if: matrix.runner == 'macos-15-xlarge'
@@ -296,6 +317,8 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch || github.sha }}
 
     - name: Download test reports
       uses: actions/download-artifact@v4
@@ -333,6 +356,9 @@ jobs:
     steps:
     - name: Check out the code
       uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch || github.sha }}
+
     - name: Create Asana task when workflow failed
       uses: duckduckgo/native-github-asana-sync@v1.1
       with:

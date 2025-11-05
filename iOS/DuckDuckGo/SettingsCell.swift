@@ -100,14 +100,14 @@ struct SettingsCellView: View, Identifiable {
     ///   - action: The closure to execute when the view is tapped. (If not embedded in a NavigationLink)
     ///   - customView: A closure that returns the custom view (`AnyView`) to be displayed in the cell.
     ///   - enabled: A Boolean value that determines whether the cell is enabled.
-    init(action: @escaping () -> Void = {}, @ViewBuilder customView: () -> AnyView, enabled: Bool = true) {
+    init(action: @escaping () -> Void = {}, @ViewBuilder customView: () -> AnyView, enabled: Bool = true, isButton: Bool = false) {
         self.label = "" // Not used for custom cell
         self.action = action
         self.enabled = enabled
         self.accessory = .custom(customView())
         self.disclosureIndicator = false
         self.webLinkIndicator = false
-        self.isButton = false
+        self.isButton = isButton
         self.isGreyedOut = false
         self.shouldShowWinBackOffer = false
     }
@@ -237,7 +237,45 @@ struct SettingsCellView: View, Identifiable {
 }
 
 /// Encapsulates a Picker with options derived from a generic type that conforms to CustomStringConvertible.
-struct SettingsPickerCellView<T: CaseIterable & Hashable & CustomStringConvertible>: View {
+struct SettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
+
+    /// This should be gated behind a feature flag passed in from the view model unless your new UI is already behind a feature flag.
+    let useImprovedPicker: Bool
+    let label: String
+    let options: [T?]
+    @Binding var selectedOption: T
+
+    let iconProvider: ((T) -> Image?)?
+
+    @Environment(\.isEnabled) private var isEnabled: Bool
+
+    /// Initializes a SettingsPickerCellView.
+    /// Use a custom picker that mimics the MenuPickerStyle
+    /// But with specific design
+    /// - Parameters:
+    ///   - label: The label to display above the Picker.
+    ///   - options: An array of options of generic type `T` that conforms to CustomStringConvertible.
+    ///   - selectedOption: A binding to a state variable that represents the selected option.
+    init(useImprovedPicker: Bool, label: String, options: [T?], selectedOption: Binding<T>, iconProvider: ((T) -> Image?)? = nil) {
+        self.useImprovedPicker = useImprovedPicker
+        self.label = label
+        self.options = options
+        self._selectedOption = selectedOption
+        self.iconProvider = iconProvider
+    }
+
+    var body: some View {
+        if useImprovedPicker {
+            ImprovedSettingsPickerCellView(label: label, options: options, selectedOption: $selectedOption, iconProvider: iconProvider)
+        } else {
+            LegacySettingsPickerCellView(label: label, options: options.compactMap { $0 }, selectedOption: $selectedOption)
+        }
+    }
+
+}
+
+private struct LegacySettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
+
     let label: String
     let options: [T]
     @Binding var selectedOption: T
@@ -298,6 +336,85 @@ struct SettingsPickerCellView<T: CaseIterable & Hashable & CustomStringConvertib
                 }
             }
         }
+    }
+}
+
+private struct ImprovedSettingsPickerCellView<T: Hashable & CustomStringConvertible>: View {
+
+    let label: String
+    let options: [T?]
+    @Binding var selectedOption: T
+
+    let iconProvider: ((T) -> Image?)?
+
+    @Environment(\.isEnabled) private var isEnabled: Bool
+
+    /// Initializes a SettingsPickerCellView.
+    /// Use a custom picker that mimics the MenuPickerStyle
+    /// But with specific design
+    /// - Parameters:
+    ///   - label: The label to display above the Picker.
+    ///   - options: An array of options of generic type `T` that conforms to CustomStringConvertible.
+    ///   - selectedOption: A binding to a state variable that represents the selected option.
+    init(label: String, options: [T?], selectedOption: Binding<T>, iconProvider: ((T) -> Image?)? = nil) {
+        self.label = label
+        self.options = options
+        self._selectedOption = selectedOption
+        self.iconProvider = iconProvider
+    }
+
+    var body: some View {
+        HStack {
+            Text(label)
+                .daxBodyRegular()
+                .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary): Color(designSystemColor: .textSecondary))
+            Spacer()
+            Menu {
+                ForEach(options, id: \.self) { option in
+
+                    if let option {
+                        getButtonWithAction(action: { self.selectedOption = option },
+                                            option: option.description,
+                                            selected: option == selectedOption,
+                                            icon: iconProvider?(option))
+                    } else {
+                        Divider()
+                    }
+
+                }
+            } label: {
+                HStack {
+                    Text(selectedOption.description)
+                        .daxSubheadRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(Font.system(.footnote).weight(.bold))
+                        .foregroundColor(Color(UIColor.tertiaryLabel))
+                        .padding(.trailing, -2)
+                }
+            }
+        }
+        .listRowBackground(Color(designSystemColor: .surface))
+    }
+
+    private func getButtonWithAction(action: @escaping () -> Void,
+                                     option: String,
+                                     selected: Bool,
+                                     icon: Image?) -> some View {
+        return Toggle(isOn: Binding<Bool>(get: {
+            selected
+        }, set: { _ in
+            action()
+        }), label: {
+            Label(title: {
+                Text(option)
+            }, icon: {
+                if let icon {
+                    icon
+                }
+            })
+        })
     }
 }
 

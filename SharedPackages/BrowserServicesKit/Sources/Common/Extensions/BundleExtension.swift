@@ -27,6 +27,7 @@ public extension Bundle {
         public static let buildNumber = kCFBundleVersionKey as String
         public static let versionNumber = "CFBundleShortVersionString"
         public static let displayName = "CFBundleDisplayName"
+        public static let executableName = kCFBundleExecutableKey as String
         public static let documentTypes = "CFBundleDocumentTypes"
         public static let typeExtensions = "CFBundleTypeExtensions"
 

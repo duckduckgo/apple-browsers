@@ -60,6 +60,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             winBackOfferService: .mocked)
         let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { true })
         hvc = NewTabPageViewController(
+            isFocussedState: false,
             tab: Tab(),
             interactionModel: MockFavoritesListInteracting(),
             homePageMessagesConfiguration: homePageConfiguration,

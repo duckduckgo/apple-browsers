@@ -24,7 +24,6 @@ appId: com.duckduckgo.mobile.ios
 - evalScript: "${output.videosTabLabel = 'Videos'}"
 - evalScript: "${output.openAutomaticallyLabel = 'Open Automatically'}"
 - evalScript: "${output.letMeChooseLabel = 'Let me choose'}"
-- evalScript: "${output.closeTabsAndClearDataLabel = 'Close Tabs and Clear Data'}"
 # Toggle states
 - evalScript: "${output.toggleOff = '0'}"
 - evalScript: "${output.toggleOn = '1'}"

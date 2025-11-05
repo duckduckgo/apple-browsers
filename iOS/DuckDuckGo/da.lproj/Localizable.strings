@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Aktiver Beskyttelse af privatlivet";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Luk faner og ryd data";
+"action.title.forgetAll" = "Ryd faner og data";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Faner og data ryddet";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Ryd faner, data og Duck.ai-chats";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Åbn i baggrunden";
@@ -2333,7 +2336,7 @@
 "new.address.bar.picker.search.only" = "Kun søgning";
 
 /* Headline for the new address bar picker modal */
-"new.address.bar.picker.subheadline" = "Vil du have nemmere adgang til AI-chat?";
+"new.address.bar.picker.subheadline.private" = "Vil du have nemmere adgang til privat AI-chat?";
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Indstilling af adresselinje";
@@ -2827,6 +2830,12 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Deaktiver for at forhindre, at links automatisk åbnes i andre installerede apps.";
 
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Ryd faner og data";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Ryd faner, data og Duck.ai-chats";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Søgeforslag";
 
@@ -2848,6 +2857,12 @@
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Browserfeedback";
 
+/* Settings screen footer text explaining that Fire Button also clears AI chat history */
+"settings.clear.aichat.history.footer" = "Fire Button sletter også Duck.ai-historik, inklusive fastgjorte chats.";
+
+/* Settings screen cell text for clearing AI chat history */
+"settings.clear.aichat.history.title" = "Ryd Duck.ai-chats";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Ryd data automatisk";
 
@@ -2865,6 +2880,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Tilpas";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Rydder alle faner, Duck.ai-chats og data for websteder, du ikke har sikret med Fireproof.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Rydder alle faner og data for websteder, du ikke har sikret med Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datarydning";

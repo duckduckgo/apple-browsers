@@ -684,8 +684,9 @@ extension AppDelegate {
         }
     }
 
+    @MainActor
     @objc func resetPinnedTabs(_ sender: Any?) {
-        for pinnedTabsManager in Application.appDelegate.pinnedTabsManagerProvider.currentPinnedTabManagers {
+        for pinnedTabsManager in pinnedTabsManagerProvider.currentPinnedTabManagers {
             pinnedTabsManager.tabCollection.removeAll()
         }
     }

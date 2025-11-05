@@ -26,9 +26,11 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
     private var tabsPreferences: TabsPreferences!
     private var cancellables: Set<AnyCancellable> = []
 
+    @MainActor
     override func setUp() {
         tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor())
-        provider = PinnedTabsManagerProvider(tabsPreferences: tabsPreferences)
+        provider = PinnedTabsManagerProvider(tabsPreferences: tabsPreferences, sharedPinedTabsManager: Application.appDelegate.pinnedTabsManager)
+        provider.windowControllersManager = Application.appDelegate.windowControllersManager
         clearSharedPinnedTabs()
     }
 

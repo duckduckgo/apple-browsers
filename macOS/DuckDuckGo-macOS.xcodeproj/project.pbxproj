@@ -3598,6 +3598,8 @@
 		CCAED3B92EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDeciding.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAED3B22EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDeciding.swift */; };
 		CCAED3592EB8E0C700C7368E /* MockDefaultBrowserAndDockPromptUserActivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAED3582EB8E0BE00C7368E /* MockDefaultBrowserAndDockPromptUserActivityProvider.swift */; };
 		CCAED35A2EB8E0C700C7368E /* MockDefaultBrowserAndDockPromptUserActivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAED3582EB8E0BE00C7368E /* MockDefaultBrowserAndDockPromptUserActivityProvider.swift */; };
+		CCA0EB212EBBCD56006944CF /* DefaultBrowserAndDockPromptInactiveUserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA0EB202EBBCD56006944CF /* DefaultBrowserAndDockPromptInactiveUserView.swift */; };
+		CCA0EB222EBBCD56006944CF /* DefaultBrowserAndDockPromptInactiveUserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA0EB202EBBCD56006944CF /* DefaultBrowserAndDockPromptInactiveUserView.swift */; };
 		CCB36B132E56383500DBFE3A /* UserScriptError+Pixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB36B122E56382E00DBFE3A /* UserScriptError+Pixel.swift */; };
 		CCB36B142E56383500DBFE3A /* UserScriptError+Pixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB36B122E56382E00DBFE3A /* UserScriptError+Pixel.swift */; };
 		CCC87D6D2E1412D70091344D /* ChromiumTopSitesReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC87D6C2E1412D00091344D /* ChromiumTopSitesReader.swift */; };
@@ -5922,6 +5924,7 @@
 		CCAED3B12EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDecider+InactiveUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DefaultBrowserAndDockPromptTypeDecider+InactiveUser.swift"; sourceTree = "<group>"; };
 		CCAED3B22EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDeciding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptTypeDeciding.swift; sourceTree = "<group>"; };
 		CCAED3582EB8E0BE00C7368E /* MockDefaultBrowserAndDockPromptUserActivityProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserAndDockPromptUserActivityProvider.swift; sourceTree = "<group>"; };
+		CCA0EB202EBBCD56006944CF /* DefaultBrowserAndDockPromptInactiveUserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptInactiveUserView.swift; sourceTree = "<group>"; };
 		CCB36B122E56382E00DBFE3A /* UserScriptError+Pixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserScriptError+Pixel.swift"; sourceTree = "<group>"; };
 		CCC87D6C2E1412D00091344D /* ChromiumTopSitesReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumTopSitesReader.swift; sourceTree = "<group>"; };
 		CCC87D722E1429570091344D /* ChromiumTopSitesReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumTopSitesReaderTests.swift; sourceTree = "<group>"; };
@@ -11221,6 +11224,7 @@
 				BBC7BDA82D5B82A20037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift */,
 				9F1556742DDC0DFD00A35DBA /* DefaultBrowserAndDockPromptFeatureFlagger.swift */,
 				9FFBEE7C2DDF02CE0058B11A /* DefaultBrowserAndDockPromptStatusUpdateNotifier.swift */,
+				CCA0EB202EBBCD56006944CF /* DefaultBrowserAndDockPromptInactiveUserView.swift */,
 			);
 			path = DefaultBrowserAndAddToDockPrompts;
 			sourceTree = "<group>";
@@ -13407,6 +13411,7 @@
 				4B9DB0392A983B24000927DB /* JoinedWaitlistView.swift in Sources */,
 				3706FEBF293F6EFF00E42796 /* BWError.swift in Sources */,
 				3706FAC6293F65D500E42796 /* ConnectBitwardenViewController.swift in Sources */,
+				CCA0EB212EBBCD56006944CF /* DefaultBrowserAndDockPromptInactiveUserView.swift in Sources */,
 				BB0DA4E32DB1C4A000AB9C29 /* AddressBarIconsProviding.swift in Sources */,
 				1DDC84FC2B8356CE00670238 /* PreferencesDefaultBrowserView.swift in Sources */,
 				3706FAC8293F65D500E42796 /* AppTrackerDataSetProvider.swift in Sources */,
@@ -16280,6 +16285,7 @@
 				C11198312C898AB500F0272C /* FreemiumDBPFirstProfileSavedNotifier.swift in Sources */,
 				AA8EDF2424923E980071C2E8 /* URLExtension.swift in Sources */,
 				B634DBDF293C8F7F00C3C99E /* Tab+UIDelegate.swift in Sources */,
+				CCA0EB222EBBCD56006944CF /* DefaultBrowserAndDockPromptInactiveUserView.swift in Sources */,
 				B6F1B02E2BCE6B47005E863C /* TunnelControllerProvider.swift in Sources */,
 				BB25827B2E9EC778002B8DB5 /* SERPSettingsProvider.swift in Sources */,
 				37AFCE8127DA2CA600471A10 /* PreferencesViewController.swift in Sources */,

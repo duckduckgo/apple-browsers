@@ -494,6 +494,7 @@ private extension RemoteMessagingUI.CardsListDisplayModel {
 
     static let mock = RemoteMessagingUI.CardsListDisplayModel(
         screenTitle: "Test",
+        icon: nil,
         items: [],
         onAppear: {},
         primaryAction: (title: "OK", action: {})

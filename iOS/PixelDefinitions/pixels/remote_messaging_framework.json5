@@ -12,7 +12,8 @@
                 "description": "The identifier for the message, sourced from the remote message configuration",
                 "type": "string"
             }
-        ]
+        ],
+        "privacyReview": ["https://app.asana.com/1/137249556945/project/69071770703008/task/1207725476477177?focus=true"]
     },
     "m_remote_message_shown": {
         "description": "Triggered when a remote message is displayed to the user, regardless of whether it’s their first time seeing it",
@@ -105,8 +106,7 @@
             {
                 "key": "success",
                 "description": "Indicates whether the user utilised one of the actions. `False` means the user closed the share action sheet without taking any action",
-                "type": "boolean",
-                "enum": [true, false]
+                "type": "boolean"
             }
         ]
     },

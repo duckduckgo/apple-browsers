@@ -25,8 +25,6 @@ import Core
     let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
 
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
-        // Called when a new scene session is being created.
-        // Use this method to select a configuration to create the new scene with.
         UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
     }
 
@@ -82,18 +80,6 @@ import Core
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         appStateMachine.handle(.openURL(url))
         return true
-    }
-
-    func application(_ application: UIApplication, performFetchWithCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-        Logger.lifecycle.debug(#function)
-        AppConfigurationFetch().start(isBackgroundFetch: true) { result in
-            switch result {
-            case .noData:
-                completionHandler(.noData)
-            case .assetsUpdated:
-                completionHandler(.newData)
-            }
-        }
     }
 
     func application(_ application: UIApplication, willContinueUserActivityWithType userActivityType: String) -> Bool {

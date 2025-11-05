@@ -113,7 +113,7 @@ public struct WinbackOfferStore: WinbackOfferStoring {
         }
         return didRedeem
     }
-    
+
     public func clearChurnDate() {
         try? deleteData(forKey: .churnDate)
     }

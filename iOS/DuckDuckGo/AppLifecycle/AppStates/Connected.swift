@@ -20,6 +20,20 @@
 import UIKit
 import Core
 
+/// Represents the state where the scene has been connected and is ready for initial setup.
+/// - Usage:
+///   - This state is typically associated with the `scene(_:willConnectTo:options:)` method in `SceneDelegate`.
+///   - The app transitions to this state after launching, when the scene is first created and attached to the app session.
+///   - During this state, initial scene-specific configurations and UI setups should be performed.
+///   - As part of this state, the `MainViewController` is set as the `rootViewController` of the scene's `UIWindow`.
+/// - Transitions:
+///   - `Foreground`: Standard transition when the app completes its launch process and becomes active.
+///   - `Background`: Occurs when the app is launched but transitions directly to the background, e.g:
+///     - The app is protected by a FaceID lock mechanism (introduced in iOS 18.0). If the user opens the app
+///       but does not authenticate and then leaves.
+///     - The app is launched by the system for background execution but does not immediately become active.
+/// - Notes:
+///   - Avoid performing heavy or blocking operations during this phase to ensure smooth app startup.
 @MainActor
 struct Connected: ConnectedHandling {
 

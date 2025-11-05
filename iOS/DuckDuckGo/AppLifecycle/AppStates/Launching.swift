@@ -27,13 +27,9 @@ import Subscription
 /// - Usage:
 ///   - This state is typically associated with the `application(_:didFinishLaunchingWithOptions:)` method.
 ///   - It is responsible for performing the app's initial setup, including configuring dependencies and preparing the UI.
-///   - As part of this state, the `MainViewController` is created and set as the `rootViewController` of the app's primary `UIWindow`.
+///   - As part of this state, the `MainViewController` is created.
 /// - Transitions:
-///   - `Foreground`: Standard transition when the app completes its launch process and becomes active.
-///   - `Background`: Occurs when the app is launched but transitions directly to the background, e.g:
-///     - The app is protected by a FaceID lock mechanism (introduced in iOS 18.0). If the user opens the app
-///       but does not authenticate and then leaves.
-///     - The app is launched by the system for background execution but does not immediately become active.
+///   - `Connected`: Standard transition when the app completes its launch setup and the scene is connected.
 /// - Notes:
 ///   - Avoid performing heavy or blocking operations during this phase to ensure smooth app startup.
 @MainActor

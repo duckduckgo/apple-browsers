@@ -208,6 +208,9 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1211652685709096?focus=true
     case fullDuckAIMode
+
+    /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
+    case attributedMetrics
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -292,7 +295,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .vpnMenuItem,
              .forgetAllInSettings,
              .duckAiDataClearing,
-             .fullDuckAIMode:
+             .fullDuckAIMode,
+             .attributedMetrics:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -504,6 +508,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.duckAiDataClearing))
         case .fullDuckAIMode:
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
+        case .attributedMetrics:
+            return .remoteReleasable(.feature(.attributedMetrics))
         }
     }
 }

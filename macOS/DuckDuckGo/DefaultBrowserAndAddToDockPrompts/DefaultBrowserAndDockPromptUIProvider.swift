@@ -45,5 +45,3 @@ private extension BrowsersComparisonChart.Configuration {
         static let fontWeight: Font.Weight = .medium
     }
 }
-
-

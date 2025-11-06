@@ -100,7 +100,7 @@ private extension NewTabPageView {
             })
         }
         .if(dismissKeyboardOnScroll, transform: {
-            // Prevent recreating geomery reader when keyboard is shown/hidden.
+            // Prevent recreating geometry reader when keyboard is shown/hidden.
             $0.ignoresSafeArea(.keyboard)
         })
     }

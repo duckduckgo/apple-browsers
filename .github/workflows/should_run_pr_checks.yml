@@ -12,7 +12,7 @@ name: Should Run PR Checks
 # Usage:
 #   jobs:
 #     should-run-checks:
-#       uses: ./.github/workflows/should-run-pr-checks.yml
+#       uses: ./.github/workflows/should_run_pr_checks.yml
 #     other-job:
 #       needs: [should-run-checks]
 #       if: needs.should-run-checks.outputs.should_run == 'true'

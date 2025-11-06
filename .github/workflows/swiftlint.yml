@@ -6,7 +6,7 @@ on:
 jobs:
   should-run-checks:
     name: Determine if checks should run
-    uses: ./.github/workflows/should-run-pr-checks.yml
+    uses: ./.github/workflows/should_run_pr_checks.yml
 
   swiftlint:
     name: SwiftLint

@@ -278,9 +278,8 @@ public final class KeychainManager: KeychainManaging {
     /// This enables automatic retry of operations that were queued when the keychain was unavailable.
     private func setupKeychainAvailabilityNotifications() {
         Logger.keychainManager.log("Set up keychain availability and recovery notifications")
-        #if canImport(UIKit)
 
-        // On iOS, listen for app becoming active and protected data becoming available
+#if canImport(UIKit)
         Publishers.MergeMany(
             NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification),
             NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification),
@@ -291,10 +290,7 @@ public final class KeychainManager: KeychainManaging {
             self?.processWritingBacklog()
         }
         .store(in: &cancellables)
-
-        #elseif canImport(AppKit)
-
-        // On macOS, listen for app becoming active and workspace session becoming active
+#elseif canImport(AppKit)
         Publishers.MergeMany(
             NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification),
             NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification),
@@ -306,9 +302,9 @@ public final class KeychainManager: KeychainManaging {
             self?.processWritingBacklog()
         }
         .store(in: &cancellables)
-        #else
+#else
         Logger.keychainManager.log("Keychain notifications not supported on this platform")
-        #endif
+#endif
     }
 
     /// Processes all items in the writing backlog by attempting to store them in the keychain.

@@ -149,7 +149,7 @@ struct SettingsAppearanceView: View {
                                         displayMode: .inline,
                                         viewModel: viewModel)
 
-        NavigationLink(destination: destination , isActive: $showToolbarSettings) {
+        NavigationLink(destination: destination, isActive: $showToolbarSettings) {
 
             if let image = viewModel.selectedToolbarButton.wrappedValue.smallIcon {
                 SettingsCellView(label: "Toolbar", accessory: .image(Image(uiImage: image)))

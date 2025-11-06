@@ -49,7 +49,7 @@ struct ExtensionPromotionHeaderView: View {
                             .daxButton()
                     }
                 }
-                .buttonStyle(PrimaryButtonStyle())
+                .buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: false))
                 .frame(maxWidth: 360)
                 .padding(.top, 24)
                 .padding(.bottom, 16)
@@ -70,14 +70,14 @@ struct ExtensionPromotionHeaderView: View {
             .accessibilityIdentifier("Button_DismissExtensionPromo")
         }
         .background(
-            RoundedRectangle(cornerRadius: 8.0)
+            RoundedRectangle(cornerRadius: 24.0)
                 .foregroundColor(Color(designSystemColor: .surface))
+                .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 8)
         )
         .onAppear {
             isAnimating = true
         }
         .padding(.horizontal, 20)
-        .padding(.bottom, 30)
     }
 
     private struct AnimationView: View {

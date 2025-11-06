@@ -412,6 +412,7 @@ class RemoteMessagingStoreTests: XCTestCase {
                     isSubscriptionActive: false,
                     isSubscriptionExpiring: false,
                     isSubscriptionExpired: false,
+                    subscriptionFreeTrialActive: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],

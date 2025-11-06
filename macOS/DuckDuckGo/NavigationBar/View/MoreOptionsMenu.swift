@@ -70,6 +70,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let tabCollectionViewModel: TabCollectionViewModel
     private let bookmarkManager: BookmarkManager
     private let historyCoordinator: HistoryGroupingDataSource
+    private let recentlyClosedCoordinator: RecentlyClosedCoordinating
     private let emailManager: EmailManager
     private let fireproofDomains: FireproofDomains
     private let passwordManagerCoordinator: PasswordManagerCoordinating
@@ -111,6 +112,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     init(tabCollectionViewModel: TabCollectionViewModel,
          bookmarkManager: BookmarkManager,
          historyCoordinator: HistoryGroupingDataSource,
+         recentlyClosedCoordinator: RecentlyClosedCoordinating,
          emailManager: EmailManager = EmailManager(),
          fireproofDomains: FireproofDomains,
          passwordManagerCoordinator: PasswordManagerCoordinator,
@@ -124,7 +126,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          freemiumDBPPresenter: FreemiumDBPPresenter = DefaultFreemiumDBPPresenter(),
          appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
          dockCustomizer: DockCustomization? = nil,
-         defaultBrowserPreferences: DefaultBrowserPreferences = .shared,
+         defaultBrowserPreferences: DefaultBrowserPreferences,
          notificationCenter: NotificationCenter = .default,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
@@ -139,6 +141,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.historyCoordinator = historyCoordinator
+        self.recentlyClosedCoordinator = recentlyClosedCoordinator
         self.emailManager = emailManager
         self.fireproofDomains = fireproofDomains
         self.passwordManagerCoordinator = passwordManagerCoordinator
@@ -581,7 +584,14 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         if featureFlagger.isFeatureOn(.historyView) {
             addItem(withTitle: UserText.mainMenuHistory, action: nil, keyEquivalent: "")
                 .withImage(moreOptionsMenuIconsProvider.historyIcon)
-                .withSubmenu(HistoryMenu(location: .moreOptionsMenu, historyGroupingDataSource: historyCoordinator, featureFlagger: featureFlagger))
+                .withSubmenu(
+                    HistoryMenu(
+                        location: .moreOptionsMenu,
+                        historyGroupingDataSource: historyCoordinator,
+                        recentlyClosedCoordinator: recentlyClosedCoordinator,
+                        featureFlagger: featureFlagger
+                    )
+                )
         }
 
         let loginsSubMenu = LoginsSubMenu(targetting: self,

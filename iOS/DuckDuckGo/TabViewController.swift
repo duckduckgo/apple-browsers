@@ -44,6 +44,7 @@ import Navigation
 import Subscription
 import WKAbstractions
 import AIChat
+import SERPSettings
 
 class TabViewController: UIViewController {
 
@@ -237,6 +238,8 @@ class TabViewController: UIViewController {
     var storedSpecialErrorPageUserScript: SpecialErrorPageUserScript?
     let syncService: DDGSyncing
 
+    let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
+
     private let daxDialogsDebouncer = Debouncer(mode: .common)
     var pullToRefreshViewAdapter: PullToRefreshViewAdapter?
 
@@ -373,6 +376,7 @@ class TabViewController: UIViewController {
                                    bookmarksDatabase: CoreDataDatabase,
                                    historyManager: HistoryManaging,
                                    syncService: DDGSyncing,
+                                   contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
                                    duckPlayer: DuckPlayerControlling?,
                                    subscriptionDataReporter: SubscriptionDataReporting,
                                    contextualOnboardingPresenter: ContextualOnboardingPresenting,
@@ -397,6 +401,7 @@ class TabViewController: UIViewController {
                               bookmarksDatabase: bookmarksDatabase,
                               historyManager: historyManager,
                               syncService: syncService,
+                              contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
                               duckPlayer: duckPlayer,
                               subscriptionDataReporter: subscriptionDataReporter,
                               contextualOnboardingPresenter: contextualOnboardingPresenter,
@@ -465,6 +470,7 @@ class TabViewController: UIViewController {
                    bookmarksDatabase: CoreDataDatabase,
                    historyManager: HistoryManaging,
                    syncService: DDGSyncing,
+                   contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
                    certificateTrustEvaluator: CertificateTrustEvaluating = CertificateTrustEvaluator(),
                    duckPlayer: DuckPlayerControlling?,
                    subscriptionDataReporter: SubscriptionDataReporting,
@@ -491,6 +497,7 @@ class TabViewController: UIViewController {
         self.historyManager = historyManager
         self.historyCapture = HistoryCapture(historyManager: historyManager)
         self.syncService = syncService
+        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.certificateTrustEvaluator = certificateTrustEvaluator
         self.duckPlayer = duckPlayer
         self.subscriptionDataReporter = subscriptionDataReporter
@@ -514,6 +521,7 @@ class TabViewController: UIViewController {
         
         self.aiChatSettings = aiChatSettings
         self.aiChatViewControllerManager = AIChatViewControllerManager(
+            contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             experimentalAIChatManager: .init(featureFlagger: featureFlagger),
             featureFlagger: featureFlagger,
             featureDiscovery: featureDiscovery,
@@ -706,7 +714,7 @@ class TabViewController: UIViewController {
                        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil) {
         instrumentation.willPrepareWebView()
 
-        let userContentController = UserContentController()
+        let userContentController = UserContentController(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher)
         configuration.userContentController = userContentController
         userContentController.delegate = self
 
@@ -998,29 +1006,22 @@ class TabViewController: UIViewController {
         guard url.isDuckDuckGoSearch else { return false }
         
         var shouldReissue = !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
-        
-        // SerpSettingsFollowUpQuestions takes precedence over duckAISearchParameter
-        // If it's enabled, don't evaluate shouldReissue
-        if !featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) {
-            // Only check DuckAI params if the feature flag is enabled
-            if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-                let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-                shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
-            }
+
+        // Only check DuckAI params if the feature flag is enabled
+        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+            shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
         }
         return shouldReissue
     }
     
     private func reissueSearchWithRequiredParams(for url: URL) {
         var mobileSearch = url.applyingStatsParams()
-        
-        // SerpSettingsFollowUpQuestions takes precedence over duckAISearchParameter
+
         // If it's enabled, don't evaluate shouldReissue
-        if !featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) {
-            if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-                let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-                mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
-            }
+        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+            mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
         }
         
         reissueNavigationWithSearchHeaderParams(for: mobileSearch)
@@ -2876,6 +2877,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.autoconsentUserScript.delegate = self
         userScripts.contentScopeUserScript.delegate = self
         userScripts.serpSettingsUserScript.delegate = self
+        userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
         
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages
@@ -3725,8 +3727,9 @@ extension WKWebView {
 extension UserContentController {
 
     @MainActor
-    public convenience init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
-        self.init(assetsPublisher: ContentBlocking.shared.contentBlockingUpdating.userContentBlockingAssets,
+    convenience init(contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
+                     privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
+        self.init(assetsPublisher: contentBlockingAssetsPublisher,
                   privacyConfigurationManager: privacyConfigurationManager)
     }
 
@@ -3906,22 +3909,9 @@ extension TabViewController {
 }
 
 extension TabViewController: SERPSettingsUserScriptDelegate {
-    
 
-    func serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
-        guard let mainVC = parent as? MainViewController else { return }
-        mainVC.segueToSettingsPrivateSearch {
-            mainVC.closeTab(self.tabModel)
-            mainVC.showBars()
-        }
-    }
-    
-    func serpSettingsUserScriptDidRequestToCloseTabAndOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
-        guard let mainVC = parent as? MainViewController else { return }
-        mainVC.segueToSettingsAIChat(openedFromSERPSettingsButton: false) { // false because we're reopening previously closed settings
-            mainVC.closeTab(self.tabModel)
-            mainVC.showBars()
-        }
+    func serpSettingsUserScriptDidRequestToCloseTab(_ userScript: SERPSettingsUserScript) {
+        // macOS Only
     }
 
     func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {

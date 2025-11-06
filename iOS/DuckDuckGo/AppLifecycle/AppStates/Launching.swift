@@ -156,12 +156,16 @@ struct Launching: LaunchingHandling {
                 )
             )
         )
+        
+        let contentBlockingService = ContentBlockingService(appSettings: appSettings,
+                                                            fireproofing: fireproofing)
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
 
         mainCoordinator = try MainCoordinator(syncService: syncService,
+                                              contentBlockingService: contentBlockingService,
                                               bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                               remoteMessagingService: remoteMessagingService,
                                               daxDialogs: configuration.onboardingConfiguration.daxDialogs,
@@ -207,7 +211,8 @@ struct Launching: LaunchingHandling {
         // 2. Persist throughout the app's runtime
         // 3. Provide core functionality across different parts of the app
 
-        services = AppServices(syncService: syncService,
+        services = AppServices(contentBlockingService: contentBlockingService,
+                               syncService: syncService,
                                vpnService: vpnService,
                                dbpService: dbpService,
                                autofillService: autofillService,

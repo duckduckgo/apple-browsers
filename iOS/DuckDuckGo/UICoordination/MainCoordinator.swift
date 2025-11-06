@@ -57,6 +57,7 @@ final class MainCoordinator {
     private let launchSourceManager: LaunchSourceManaging
 
     init(syncService: SyncService,
+         contentBlockingService: ContentBlockingService,
          bookmarksDatabase: CoreDataDatabase,
          remoteMessagingService: RemoteMessagingService,
          daxDialogs: DaxDialogs,
@@ -106,6 +107,7 @@ final class MainCoordinator {
                                 bookmarksDatabase: bookmarksDatabase,
                                 historyManager: historyManager,
                                 syncService: syncService.sync,
+                                contentBlockingAssetsPublisher: contentBlockingService.updating.userContentBlockingAssets,
                                 subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                 contextualOnboardingPresenter: contextualOnboardingPresenter,
                                 contextualOnboardingLogic: daxDialogs,
@@ -128,6 +130,7 @@ final class MainCoordinator {
                                         homePageConfiguration: homePageConfiguration,
                                         syncService: syncService.sync,
                                         syncDataProviders: syncService.syncDataProviders,
+                                        contentBlockingAssetsPublisher: contentBlockingService.updating.userContentBlockingAssets,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         previewsSource: previewsSource,
                                         tabManager: tabManager,

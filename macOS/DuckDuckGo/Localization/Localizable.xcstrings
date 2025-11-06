@@ -94873,55 +94873,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Letzter Tag, um 25 % zu sparen!"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Last day to save 25%!"
+            "value" : "Last chance to save 25%!"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "¡Último día para ahorrar un 25 %!"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Dernier jour pour économiser 25 % !"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ultimo giorno per risparmiare il 25%!"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Alleen vandaag nog 25% korting!"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ostatni dzień, aby zaoszczędzić 25%!"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Último dia para poupar 25%!"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Скидка 25%: последний день акции!"
           }
         }

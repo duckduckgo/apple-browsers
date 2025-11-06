@@ -234,7 +234,7 @@ public enum FeatureFlag: String, CaseIterable {
     case cpmCountPixel
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211708648644692?focus=true
-    case serpSettings
+    case storeSerpSettings
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
@@ -358,7 +358,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncIdentities,
                 .aiChatDataClearing,
                 .dataImportNewSafariFilePicker,
-                .serpSettings,
+                .storeSerpSettings,
                 .blurryAddressBarTahoeFix,
                 .dataImportNewExperience,
                 .pinnedTabsViewRewrite,
@@ -537,8 +537,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.duckAiDataClearing))
         case .cpmCountPixel:
             return .internalOnly()
-        case .serpSettings:
-            return .disabled
+        case .storeSerpSettings:
+            return .remoteReleasable(.feature(.storeSerpSettings))
         case .blurryAddressBarTahoeFix:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .dataImportNewExperience:

@@ -180,6 +180,10 @@ final class MainWindowController: NSWindowController {
     }
 
     private func setupToolbar() {
+#if DEBUG
+        // animation retains the toolbar in tests
+        if [.unitTests, .integrationTests].contains(AppVersion.runType) { return }
+#endif
         // Empty toolbar ensures that window buttons are centered vertically
         window?.toolbar = NSToolbar()
         window?.toolbar?.showsBaselineSeparator = true

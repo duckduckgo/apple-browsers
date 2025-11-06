@@ -271,7 +271,7 @@ final class Fire: FireProtocol {
         self.windowControllersManager = windowControllersManager ?? Application.appDelegate.windowControllersManager
         self.faviconManagement = faviconManagement ?? NSApp.delegateTyped.faviconManager
         self.fireproofDomains = fireproofDomains ?? NSApp.delegateTyped.fireproofDomains
-        self.recentlyClosedCoordinator = recentlyClosedCoordinator ?? RecentlyClosedCoordinator.shared
+        self.recentlyClosedCoordinator = recentlyClosedCoordinator ?? NSApp.delegateTyped.recentlyClosedCoordinator
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider ?? Application.appDelegate.pinnedTabsManagerProvider
         self.bookmarkManager = bookmarkManager ?? NSApp.delegateTyped.bookmarkManager
         self.syncService = syncService ?? NSApp.delegateTyped.syncService

@@ -17,12 +17,13 @@
 //  limitations under the License.
 //
 
-import XCTest
-@testable import DuckDuckGo
-@testable import Core
-@testable import BrowserServicesKit
-import WebKit
 import Common
+import WebKit
+import XCTest
+
+@testable import BrowserServicesKit
+@testable import Core
+@testable import DuckDuckGo
 
 final class AutoconsentBackgroundTests: XCTestCase {
 

@@ -205,7 +205,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
 
-        guard featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) else {
+        guard featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) || [.unitTests, .integrationTests].contains(AppVersion.runType) else {
             initializePinnedTabsLegacyView(pinnedTabCollection: pinnedTabCollection, themeManager: themeManager)
             return
         }

@@ -34,6 +34,7 @@ struct AppDependencies {
 
 struct AppServices {
 
+    let contentBlockingService: ContentBlockingService
     let syncService: SyncService
     let vpnService: VPNService
     let dbpService: DBPService

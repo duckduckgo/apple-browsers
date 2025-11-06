@@ -404,10 +404,10 @@ final class TabBarItemCellView: NSView {
     private func layoutForNormalMode() {
         var minX: CGFloat = 12
 
-        if displaysTabsProgressIndicator {
+        if displaysTabsProgressIndicator && faviconView.isShown {
             faviconView.frame = NSRect(x: minX, y: bounds.midY - 8, width: 16, height: 16)
             minX = faviconView.frame.maxX + 4
-        } else if faviconImageView.isShown {
+        } else if !displaysTabsProgressIndicator && faviconImageView.isShown {
             faviconImageView.frame = NSRect(x: minX, y: bounds.midY - 8, width: 16, height: 16)
             minX = faviconImageView.frame.maxX + 4
         }

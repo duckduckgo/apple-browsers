@@ -17,7 +17,6 @@
 //
 
 import SwiftUI
-import Onboarding
 
 final class DefaultBrowserAndDockPromptInactiveUserViewModel {
     let message: String
@@ -40,13 +39,10 @@ final class DefaultBrowserAndDockPromptInactiveUserViewModel {
 }
 
 struct DefaultBrowserAndDockPromptInactiveUserView: View {
-    private let privacyFeatures = BrowsersComparisonModel.privacyFeatures
-    private let configuration = BrowsersComparisonChart.Configuration(fontSize: Metrics.Chart.fontSize,
-                                                                      fontWeight: Metrics.Chart.fontWeight,
-                                                                      showFeatureIcons: true,
-                                                                      showBottomDivider: false)
 
     let viewModel: DefaultBrowserAndDockPromptInactiveUserViewModel
+
+    let browsersComparisonChart: AnyView
 
     var body: some View {
         HStack(spacing: .zero) {
@@ -69,7 +65,7 @@ struct DefaultBrowserAndDockPromptInactiveUserView: View {
             VStack(spacing: Metrics.Chart.verticalSpacing) {
                 Spacer()
 
-                BrowsersComparisonChart(privacyFeatures: privacyFeatures, configuration: configuration)
+                browsersComparisonChart
 
                 HStack {
                     Spacer()
@@ -106,7 +102,9 @@ private enum Metrics {
         dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
         primaryButtonAction: {},
         dismissButtonAction: {})
-    return DefaultBrowserAndDockPromptInactiveUserView(viewModel: setAsDefault)
+    return DefaultBrowserAndDockPromptInactiveUserView(
+        viewModel: setAsDefault,
+        browsersComparisonChart: AnyView(DefaultBrowserAndDockPromptUIProvider().makeBrowserComparisonChart()))
         .preferredColorScheme(.light)
 }
 
@@ -117,7 +115,9 @@ private enum Metrics {
         dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
         primaryButtonAction: {},
         dismissButtonAction: {})
-    return DefaultBrowserAndDockPromptInactiveUserView(viewModel: setAsDefault)
+    return DefaultBrowserAndDockPromptInactiveUserView(
+        viewModel: setAsDefault,
+        browsersComparisonChart: AnyView(DefaultBrowserAndDockPromptUIProvider().makeBrowserComparisonChart()))
         .preferredColorScheme(.dark)
 }
 
@@ -128,7 +128,9 @@ private enum Metrics {
         dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
         primaryButtonAction: {},
         dismissButtonAction: {})
-    return DefaultBrowserAndDockPromptInactiveUserView(viewModel: addToDock)
+    return DefaultBrowserAndDockPromptInactiveUserView(
+        viewModel: addToDock,
+        browsersComparisonChart: AnyView(DefaultBrowserAndDockPromptUIProvider().makeBrowserComparisonChart()))
 }
 
 #Preview("Add & Set As Default") {
@@ -138,5 +140,7 @@ private enum Metrics {
         dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
         primaryButtonAction: {},
         dismissButtonAction: {})
-    return DefaultBrowserAndDockPromptInactiveUserView(viewModel: addToDockAndSetAsDefault)
+    return DefaultBrowserAndDockPromptInactiveUserView(
+        viewModel: addToDockAndSetAsDefault,
+        browsersComparisonChart: AnyView(DefaultBrowserAndDockPromptUIProvider().makeBrowserComparisonChart()))
 }

@@ -100,19 +100,57 @@ struct SettingsAppearanceView: View {
         return Image(uiImage: icon)
     }
 
+    func descriptionForOption(_ button: MobileCustomization.Button) -> String {
+        switch button {
+        case .share:
+            "Share"
+        case .addEditBookmark:
+            "Add Bookmark"
+        case .addEditFavorite:
+            "Add Favorite"
+        case .zoom:
+            "Zoom"
+        case .none:
+            "None"
+        case .home:
+            "Home"
+        case .newTab:
+            "New Tab"
+        case .bookmarks:
+            "Bookmarks"
+        case .fire:
+            viewModel.isAIChatEnabled ? UserText.settingsAutoClearTabsAndDataWithAIChat :  UserText.settingsAutoClearTabsAndData
+        case .vpn:
+            "VPN"
+        case .passwords:
+            "Passwords"
+        case .voiceSearch:
+            "Voice Search"
+        case .downloads:
+            "Downloads"
+        }
+    }
+
     @ViewBuilder
     func addressBarButtonSetting() -> some View {
+
+        let options = MobileCustomization.addressBarButtons.sorted(by: descriptionComparison)
 
         NavigationLink(destination: PickerWithHeaderView(
             title: "Address Bar Button",
             headerImage: Image(.customAddressBarButtonPreview),
-            options: MobileCustomization.addressBarButtons,
+            options: options,
             defaultOption: MobileCustomization.addressBarDefault,
             selectedOption: viewModel.selectedAddressBarButton,
+            descriptionForOption: descriptionForOption,
             iconProvider: buttonIconProvider)) {
 
-            SettingsCellView(label: "Address Bar",
-                             accessory: .rightDetail(viewModel.selectedAddressBarButton.wrappedValue.description))
+            if let image = viewModel.selectedAddressBarButton.wrappedValue.smallIcon {
+                SettingsCellView(label: "Address Bar", accessory: .image(Image(uiImage: image)))
+            } else {
+                SettingsCellView(label: "Address Bar", accessory: .rightDetail("None"))
+            }
+
         }
         .listRowBackground(Color(designSystemColor: .surface))
 
@@ -121,16 +159,22 @@ struct SettingsAppearanceView: View {
     @ViewBuilder
     func toolbarButtonSetting() -> some View {
 
+        let options = MobileCustomization.toolbarButtons.sorted(by: descriptionComparison)
         NavigationLink(destination: PickerWithHeaderView(
             title: "Toolbar Button",
             headerImage: Image(.customToolbarButtonPreview),
-            options: MobileCustomization.toolbarButtons,
+            options: options,
             defaultOption: MobileCustomization.toolbarDefault,
             selectedOption: viewModel.selectedToolbarButton,
+            descriptionForOption: descriptionForOption,
             iconProvider: buttonIconProvider)) {
 
-            SettingsCellView(label: "Toolbar",
-                             accessory: .rightDetail(viewModel.selectedToolbarButton.wrappedValue.description))
+            if let image = viewModel.selectedToolbarButton.wrappedValue.smallIcon {
+                SettingsCellView(label: "Toolbar", accessory: .image(Image(uiImage: image)))
+            } else {
+                FailedAssertionView("Expected image for selection")
+                SettingsCellView(label: "Toolbar", accessory: .rightDetail("None"))
+            }
         }
         .listRowBackground(Color(designSystemColor: .surface))
 
@@ -173,24 +217,37 @@ struct SettingsAppearanceView: View {
         }
     }
 
+    func descriptionComparison(lhs: MobileCustomization.Button, rhs: MobileCustomization.Button) -> Bool {
+        if lhs == .none { return false } // Always put none at the end
+        return descriptionForOption(lhs).localizedCaseInsensitiveCompare(descriptionForOption(rhs)) == .orderedAscending
+    }
+
 }
 
-private struct PickerWithHeaderView<T: Hashable & CustomStringConvertible>: View {
+private struct PickerWithHeaderView<T: Hashable>: View {
 
     let title: String
     let headerImage: Image
     let options: [T]
     let defaultOption: T
     @Binding var selectedOption: T
+    let descriptionForOption: (T) -> String
     let iconProvider: ((T) -> Image?)?
 
-    init(title: String, headerImage: Image, options: [T], defaultOption: T, selectedOption: Binding<T>, iconProvider: ((T) -> Image?)?) {
+    init(title: String,
+         headerImage: Image,
+         options: [T],
+         defaultOption: T,
+         selectedOption: Binding<T>,
+         descriptionForOption: @escaping (T) -> String,
+         iconProvider: ((T) -> Image?)?) {
         self.title = title
         self.headerImage = headerImage
         self.options = options
         self.defaultOption = defaultOption
         self._selectedOption = selectedOption
         self.iconProvider = iconProvider
+        self.descriptionForOption = descriptionForOption
     }
 
     var body: some View {
@@ -210,11 +267,17 @@ private struct PickerWithHeaderView<T: Hashable & CustomStringConvertible>: View
                 ForEach(options, id: \.self) { option in
                     HStack {
                         iconProvider?(option)
-                        Text(option.description)
+
+                        Text(verbatim: descriptionForOption(option))
+                            .lineLimit(1)
+                            .layoutPriority(1)
+
                         if selectedOption == option {
                             Spacer()
                             Image(uiImage: DesignSystemImages.Glyphs.Size24.checkSmall)
                                 .foregroundStyle(Color(designSystemColor: .accent))
+                        } else {
+                            Spacer(minLength: 24)
                         }
                     }
                     .listRowBackground(Color(designSystemColor: .surface))

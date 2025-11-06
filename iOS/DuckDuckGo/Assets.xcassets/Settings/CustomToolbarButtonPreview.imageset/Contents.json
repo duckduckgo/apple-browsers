@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "TB-Light.pdf",
+      "filename" : "AB-Light.pdf",
       "idiom" : "universal"
     },
     {
@@ -11,7 +11,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "TB-Dark.pdf",
+      "filename" : "AB-Dark.pdf",
       "idiom" : "universal"
     }
   ],

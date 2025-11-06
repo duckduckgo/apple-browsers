@@ -120,7 +120,8 @@ struct Connected: ConnectedHandling {
         configure(window, with: mainCoordinator)
     }
 
-    private func configure(_ window: UIWindow, with mainCoordinator: MainCoordinator) { ThemeManager.shared.updateUserInterfaceStyle(window: window)
+    private func configure(_ window: UIWindow, with mainCoordinator: MainCoordinator) {
+        ThemeManager.shared.updateUserInterfaceStyle(window: window)
         window.rootViewController = mainCoordinator.controller
         window.makeKeyAndVisible()
         mainCoordinator.start()

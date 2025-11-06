@@ -3920,6 +3920,15 @@ extension MainViewController {
 
     func applyCustomizationForAddressBar(_ state: MobileCustomization.State) {
         omniBar.refreshCustomizableButton()
+        if state.isEnabled {
+            omniBar.barView.customizableButton.menu = UIMenu(children: [
+                UIAction(title: "Customize", image: DesignSystemImages.Glyphs.Size16.options) { [weak self] _ in
+                    // TODO self?.segueToCustomizeAddressBarSettings()
+                }
+            ])
+        } else {
+            omniBar.barView.customizableButton.menu = nil
+        }
     }
 
     @objc private func performCustomizationActionForToolbar() {
@@ -3980,7 +3989,18 @@ extension MainViewController {
         if !isNewTabPageVisible && state.isEnabled {
             browserChrome.setImage(state.currentToolbarButton.largeIcon)
             browserChrome.addBorder()
+            browserChrome.menu = UIMenu(children: [
+                UIAction(title: "Customize", image: DesignSystemImages.Glyphs.Size16.options) { [weak self] _ in
+                    self?.segueToCustomizeToolbarSettings()
+                }
+            ])
+        } else {
+            browserChrome.menu = nil
         }
+    }
+
+    private func segueToCustomizeToolbarSettings() {
+        
     }
 
     private func handleCustomizableAddressBarButtonPressed() {

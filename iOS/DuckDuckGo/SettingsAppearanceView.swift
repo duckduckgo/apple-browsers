@@ -107,8 +107,6 @@ struct SettingsAppearanceView: View {
 
         } header: {
             Text(UserText.addressBar)
-        } footer: {
-            Text(verbatim: "Note: Reload button should work as expected. Address button state is persisted but NOT applied to the UI.")
         }
 
         Section {

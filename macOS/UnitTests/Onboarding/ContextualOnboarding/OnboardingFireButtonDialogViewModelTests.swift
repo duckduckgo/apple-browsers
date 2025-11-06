@@ -19,6 +19,7 @@
 import Common
 import History
 import HistoryView
+import SharedTestUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -50,8 +51,10 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         reporter = CapturingOnboardingPixelReporter()
 
         windowControllersManager = WindowControllersManagerMock()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.contextualOnboarding, .newTabPagePerTab, .fireDialog]
         fireCoordinator = FireCoordinator(tld: TLD(),
-                                          featureFlagger: Application.appDelegate.featureFlagger,
+                                          featureFlagger: featureFlagger,
                                           historyCoordinating: HistoryCoordinatingMock(),
                                           visualizeFireAnimationDecider: nil,
                                           onboardingContextualDialogsManager: nil,

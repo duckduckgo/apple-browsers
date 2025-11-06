@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import Combine
-import Navigation
-import XCTest
 import BrowserServicesKit
+import Combine
+import FeatureFlags
+import Navigation
+import SharedTestUtilities
+import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -116,7 +118,7 @@ final class TabTests: XCTestCase {
         let internalUserDecider = MockInternalUserDecider()
         internalUserDecider.isInternalUser = false
 
-        let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider)
+        let featureFlagger = MockFeatureFlagger(internalUserDecider: internalUserDecider)
 
         let tab = Tab(content: .newtab, featureFlagger: featureFlagger)
         XCTAssertFalse(tab.canKillWebContentProcess)
@@ -126,7 +128,7 @@ final class TabTests: XCTestCase {
         let internalUserDecider = MockInternalUserDecider()
         internalUserDecider.isInternalUser = true
 
-        let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider)
+        let featureFlagger = MockFeatureFlagger(internalUserDecider: internalUserDecider)
 
         let tab = Tab(content: .newtab, featureFlagger: featureFlagger)
         XCTAssertFalse(tab.canKillWebContentProcess)
@@ -136,7 +138,7 @@ final class TabTests: XCTestCase {
         let internalUserDecider = MockInternalUserDecider()
         internalUserDecider.isInternalUser = true
 
-        let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider, enabledFeatureFlags: [.tabCrashDebugging])
+        let featureFlagger = MockFeatureFlagger(internalUserDecider: internalUserDecider, featuresStub: [FeatureFlag.tabCrashDebugging.rawValue: true])
 
         let tab = Tab(content: .newtab, featureFlagger: featureFlagger)
         XCTAssertTrue(tab.canKillWebContentProcess)

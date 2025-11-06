@@ -86,6 +86,7 @@ public enum PrivacyFeature: String {
     case attributedMetrics
     case dataImport
     case duckAiDataClearing
+    case storeSerpSettings
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.

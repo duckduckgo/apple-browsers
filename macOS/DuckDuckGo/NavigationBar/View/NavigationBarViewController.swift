@@ -152,6 +152,7 @@ final class NavigationBarViewController: NSViewController {
     private let featureFlagger: FeatureFlagger
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
+    private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let showTab: (Tab.TabContent) -> Void
 
     let themeManager: ThemeManaging
@@ -219,6 +220,7 @@ final class NavigationBarViewController: NSViewController {
                        vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = NSApp.delegateTyped.vpnUpsellVisibilityManager,
                        vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
                        sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
+                       defaultBrowserPreferences: DefaultBrowserPreferences,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
                                Application.appDelegate.windowControllersManager.showTab(with: content)
@@ -247,6 +249,7 @@ final class NavigationBarViewController: NSViewController {
                 vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
                 vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
                 sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
+                defaultBrowserPreferences: defaultBrowserPreferences,
                 showTab: showTab
             )
         }!
@@ -273,6 +276,7 @@ final class NavigationBarViewController: NSViewController {
         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
         sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
+        defaultBrowserPreferences: DefaultBrowserPreferences,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
@@ -305,6 +309,7 @@ final class NavigationBarViewController: NSViewController {
         self.themeManager = themeManager
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
+        self.defaultBrowserPreferences = defaultBrowserPreferences
         self.showTab = showTab
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
         self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
@@ -386,7 +391,6 @@ final class NavigationBarViewController: NSViewController {
         setupNetworkProtectionButton()
 
         subscribeToThemeChanges()
-        subscribeToSelectedTabViewModel()
         listenToPasswordManagerNotifications()
         listenToMessageNotifications()
         listenToFeedbackFormNotifications()
@@ -444,6 +448,8 @@ final class NavigationBarViewController: NSViewController {
     }
 
     override func viewWillAppear() {
+        // Subscribe in viewWillAppear to prevent leaks in tests
+        subscribeToSelectedTabViewModel()
         // should be called when the view is about to appear,
         // otherwise the progress indicator gets misplaced
         subscribeToDownloads()
@@ -1068,6 +1074,7 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func subscribeToSelectedTabViewModel() {
+        guard selectedTabViewModelCancellable == nil else { return }
         selectedTabViewModelCancellable = tabCollectionViewModel.$selectedTabViewModel.receive(on: DispatchQueue.main).sink { [weak self] _ in
             self?.subscribeToNavigationActionFlags()
             self?.subscribeToCredentialsToSave()
@@ -1084,6 +1091,7 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func subscribeToDownloads() {
+        guard downloadsCancellables.isEmpty else { return }
         // show Downloads button on download completion for downloads started from non-Fire window
         downloadListCoordinator.updates
             .filter { update in
@@ -1320,6 +1328,7 @@ final class NavigationBarViewController: NSViewController {
                                    subscriptionManager: subscriptionManager,
                                    freemiumDBPFeature: freemiumDBPFeature,
                                    dockCustomizer: dockCustomization,
+                                   defaultBrowserPreferences: defaultBrowserPreferences,
                                    isUsingAuthV2: subscriptionManager is DefaultSubscriptionManagerV2)
 
         menu.actionDelegate = self

@@ -196,6 +196,7 @@ class DesktopUserAttributeMatcherTests: XCTestCase {
             isSubscriptionActive: true,
             isSubscriptionExpiring: false,
             isSubscriptionExpired: false,
+            subscriptionFreeTrialActive: false,
             dismissedMessageIds: dismissedMessageIds,
             shownMessageIds: [],
             pinnedTabsCount: 3,

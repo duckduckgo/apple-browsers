@@ -73,6 +73,7 @@ file_header:
 
 # General Config
 excluded:
+  - doc-bot
   - SharedPackages/*/Package.swift
   - SharedPackages/*/.build
   - SharedPackages/BrowserServicesKit/scripts/

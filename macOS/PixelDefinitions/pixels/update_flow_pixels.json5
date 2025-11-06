@@ -183,7 +183,7 @@
                 "type": "string",
                 "description": "Whether the user is flagged as internal",
                 "enum": ["true", "false"]
-            },
+            }
         ]
     },
     "m_mac_update_application_success": {

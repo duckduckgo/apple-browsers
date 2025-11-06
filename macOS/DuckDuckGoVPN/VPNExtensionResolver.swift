@@ -19,8 +19,8 @@
 import BrowserServicesKit
 import FeatureFlags
 import Foundation
-import NetworkProtection
 import NetworkProtectionUI
+import VPN
 import VPNAppState
 
 final class VPNExtensionResolver {

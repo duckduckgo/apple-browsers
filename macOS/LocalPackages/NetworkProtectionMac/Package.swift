@@ -32,7 +32,6 @@ let package = Package(
         .library(name: "NetworkProtectionUI", targets: ["NetworkProtectionUI"]),
         .library(name: "VPNAppLauncher", targets: ["VPNAppLauncher"]),
         .library(name: "VPNAppState", targets: ["VPNAppState"]),
-        .library(name: "VPNExtensionManagement", targets: ["VPNExtensionManagement"]),
         .library(name: "VPNNotifications", targets: ["VPNNotifications"]),
     ],
     dependencies: [
@@ -50,12 +49,6 @@ let package = Package(
 
         .target(
             name: "VPNAppState",
-            swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
-            ]),
-
-        .target(
-            name: "VPNExtensionManagement",
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]),
@@ -82,7 +75,6 @@ let package = Package(
             dependencies: [
                 "AppInfoRetriever",
                 "VPNAppState",
-                "VPNExtensionManagement",
                 .product(name: "VPN", package: "VPN"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
             ],

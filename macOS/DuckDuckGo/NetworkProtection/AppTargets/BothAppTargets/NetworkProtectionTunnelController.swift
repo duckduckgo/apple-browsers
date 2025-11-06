@@ -774,7 +774,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     @available(macOS 12, *)
     func waitForStartSuccess(_ tunnelManager: NETunnelProviderManager, timeout: TimeInterval = 10) async throws {
-        let deadline = Date().addingTimeInterval(timeout)
         let notificationCenter = NotificationCenter.default
         let statusChange = NSNotification.Name.NEVPNStatusDidChange
 
@@ -783,29 +782,41 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             return
         }
 
-        // Create an async stream for status change notifications
-        for await notification in notificationCenter.notifications(named: statusChange) {
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            let targetConnection = tunnelManager.connection
 
-            if Date() >= deadline {
+            group.addTask {
+                try Task.checkCancellation()
+
+                for await notification in notificationCenter.notifications(named: statusChange) {
+                    try Task.checkCancellation()
+
+                    guard let connection = notification.object as? NEVPNConnection,
+                          connection === targetConnection else {
+                        continue
+                    }
+
+                    switch connection.status {
+                    case .connected:
+                        try await self.enableOnDemand(tunnelManager: tunnelManager)
+                        return
+                    case .disconnecting:
+                        // We check the disconnecting status because "disconnected" is a valid initial status
+                        // and results in false negatives.
+                        throw StartMonitoringError.startTunnelDisconnectedSilently
+                    default:
+                        continue
+                    }
+                }
+            }
+
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
                 throw StartMonitoringError.startTunnelTimedOut
             }
 
-            guard let connection = notification.object as? NEVPNConnection else {
-                continue
-            }
-            let status = connection.status
-
-            switch status {
-            case .connected:
-                try await enableOnDemand(tunnelManager: tunnelManager)
-                return
-            case .disconnecting:
-                // We check the disconnecting status because "disconnected" is a valid initial status
-                // and results in false negatives.
-                throw StartMonitoringError.startTunnelDisconnectedSilently
-            default:
-                continue
-            }
+            try await group.next()
+            group.cancelAll()
         }
     }
 

@@ -210,7 +210,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             dismissButtonAction: {
                 // TODO: Add dismiss action
             })
-        let contentView = DefaultBrowserAndDockPromptInactiveUserView(viewModel: viewModel)
+        let contentView = DefaultBrowserAndDockPromptInactiveUserView(viewModel: viewModel, browsersComparisonChart: uiProvider.makeBrowserComparisonChart())
 
         // TODO: Show the modal view
     }

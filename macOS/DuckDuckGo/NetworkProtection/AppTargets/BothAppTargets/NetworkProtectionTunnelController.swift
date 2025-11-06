@@ -573,6 +573,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     ///
     /// Handles all the top level error management logic.
     ///
+    @MainActor
     func start() async {
         Logger.networkProtection.log("🚀 Start VPN")
         VPNOperationErrorRecorder().beginRecordingControllerStart()
@@ -614,6 +615,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
     }
 
+    @MainActor
     private func start(isFirstAttempt: Bool) async throws {
         if await extensionResolver.isUsingSystemExtension {
             try await activateSystemExtension { [weak self] in
@@ -671,6 +673,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
     }
 
+    @MainActor
     private func start(_ tunnelManager: NETunnelProviderManager) async throws {
 
         let options = try await prepateStartupOptions()
@@ -777,16 +780,17 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         let notificationCenter = NotificationCenter.default
         let statusChange = NSNotification.Name.NEVPNStatusDidChange
 
-        if tunnelManager.connection.status == .connected {
-            try await enableOnDemand(tunnelManager: tunnelManager)
-            return
-        }
-
         try await withThrowingTaskGroup(of: Void.self) { group in
             let targetConnection = tunnelManager.connection
 
             group.addTask {
                 try Task.checkCancellation()
+
+                // Check status after subscribing to catch fast connections
+                if targetConnection.status == .connected {
+                    try await self.enableOnDemand(tunnelManager: tunnelManager)
+                    return
+                }
 
                 for await notification in notificationCenter.notifications(named: statusChange) {
                     try Task.checkCancellation()
@@ -800,7 +804,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                     case .connected:
                         try await self.enableOnDemand(tunnelManager: tunnelManager)
                         return
-                    case .disconnecting:
+                    case .disconnecting, .disconnected:
                         // We check the disconnecting status because "disconnected" is a valid initial status
                         // and results in false negatives.
                         throw StartMonitoringError.startTunnelDisconnectedSilently

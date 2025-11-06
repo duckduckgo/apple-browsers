@@ -592,11 +592,88 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(pixelReporterMock.didCallMeasureAddToDockPromoDismissCTAAction)
     }
 
+    // MARK: - Search Experience Selection
+
+    func testWhenStateChangesToChooseSearchExperienceThenPixelReporterMeasureSearchExperienceSelectionImpression() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .addressBarPositionSelection)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureSearchExperienceSelectionImpression)
+
+        // WHEN
+        sut.selectAddressBarPositionAction()
+
+        // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureSearchExperienceSelectionImpression)
+    }
+
+    func testWhenSelectSearchExperienceActionIsCalledAndAIChatIsEnabledThenPixelReporterMeasureChooseAIChat() {
+        // GIVEN
+        let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
+        mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection, onboardingSearchExperienceProvider: mockSearchExperienceProvider)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseAIChat)
+
+        // WHEN
+        sut.selectSearchExperienceAction()
+
+        // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseAIChat)
+    }
+
+    func testWhenSelectSearchExperienceActionIsCalledAndAIChatIsDisabledThenPixelReporterMeasureChooseSearchOnly() {
+        // GIVEN
+        let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
+        mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = false
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection, onboardingSearchExperienceProvider: mockSearchExperienceProvider)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseSearchOnly)
+
+        // WHEN
+        sut.selectSearchExperienceAction()
+
+        // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseSearchOnly)
+    }
+
+    func testWhenSelectAddressBarPositionActionIsCalledAndIsIphoneFlowWithSearchExperienceThenViewStateChangesToChooseSearchExperienceDialogAndProgressIs5Of5() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .addressBarPositionSelection)
+
+        // WHEN
+        sut.selectAddressBarPositionAction()
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseSearchExperienceDialog, step: .init(currentStep: 5, totalSteps: 5))))
+    }
+
+    func testWhenSelectSearchExperienceActionIsCalledAndIsIphoneFlowWithSearchExperienceThenOnCompletingOnboardingIntroIsCalled() {
+        // GIVEN
+        var didCallOnCompletingOnboardingIntro = false
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneStepsWithSearchExperience(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection)
+        sut.onCompletingOnboardingIntro = {
+            didCallOnCompletingOnboardingIntro = true
+        }
+        XCTAssertFalse(didCallOnCompletingOnboardingIntro)
+
+        // WHEN
+        sut.selectSearchExperienceAction()
+
+        // THEN
+        XCTAssertTrue(didCallOnCompletingOnboardingIntro)
+    }
+
 }
 
 extension OnboardingIntroViewModelTests {
 
-    func makeSUT(currentOnboardingStep: OnboardingIntroStep = .introDialog(isReturningUser: false)) -> OnboardingIntroViewModel {
+    func makeSUT(
+        currentOnboardingStep: OnboardingIntroStep = .introDialog(isReturningUser: false),
+        onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
+    ) -> OnboardingIntroViewModel {
         OnboardingIntroViewModel(
             defaultBrowserManager: defaultBrowserManagerMock,
             contextualDaxDialogs: contextualDaxDialogs,
@@ -604,6 +681,7 @@ extension OnboardingIntroViewModelTests {
             onboardingManager: onboardingManagerMock,
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
             currentOnboardingStep: currentOnboardingStep,
+            onboardingSearchExperienceProvider: onboardingSearchExperienceProvider,
             appIconProvider: appIconProvider,
             addressBarPositionProvider: addressBarPositionProvider
         )

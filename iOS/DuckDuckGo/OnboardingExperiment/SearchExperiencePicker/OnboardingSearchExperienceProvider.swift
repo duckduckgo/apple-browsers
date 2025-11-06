@@ -47,7 +47,6 @@ final class OnboardingSearchExperience: OnboardingSearchExperienceProvider {
 
     func storeAIChatSearchInputDuringOnboardingChoice(enable: Bool) {
         storage.set(enable, forKey: .didEnableAIChatSearchInputDuringOnboardingKey)
-#warning("🇳🇴 implement pixels")
     }
 }
 

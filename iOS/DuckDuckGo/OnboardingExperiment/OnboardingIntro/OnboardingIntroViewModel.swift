@@ -96,6 +96,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     private let pixelReporter: LinearOnboardingPixelReporting
     private let onboardingManager: OnboardingManaging
     private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
+    private let onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider
     private let appIconProvider: () -> AppIcon
     private let addressBarPositionProvider: () -> AddressBarPosition
 
@@ -103,6 +104,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         let onboardingManager = OnboardingManager()
         let defaultBrowserInfoStore = DefaultBrowserInfoStore()
         let defaultBrowserEventMapper = DefaultBrowserPromptManagerDebugPixelHandler()
+        let onboardingSearchExperienceProvider = OnboardingSearchExperience()
         self.init(
             defaultBrowserManager: DefaultBrowserManager(defaultBrowserInfoStore: defaultBrowserInfoStore, defaultBrowserEventMapper: defaultBrowserEventMapper),
             contextualDaxDialogs: daxDialogsManager,
@@ -110,6 +112,7 @@ final class OnboardingIntroViewModel: ObservableObject {
             onboardingManager: onboardingManager,
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
             currentOnboardingStep: onboardingManager.onboardingSteps.first ?? .introDialog(isReturningUser: false),
+            onboardingSearchExperienceProvider: onboardingSearchExperienceProvider,
             appIconProvider: { AppIconManager.shared.appIcon },
             addressBarPositionProvider: { AppUserDefaults().currentAddressBarPosition }
         )
@@ -122,6 +125,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         onboardingManager: OnboardingManaging,
         systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
         currentOnboardingStep: OnboardingIntroStep,
+        onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider,
         appIconProvider: @escaping () -> AppIcon,
         addressBarPositionProvider: @escaping () -> AddressBarPosition
     ) {
@@ -130,6 +134,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         self.pixelReporter = pixelReporter
         self.onboardingManager = onboardingManager
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
+        self.onboardingSearchExperienceProvider = onboardingSearchExperienceProvider
         self.appIconProvider = appIconProvider
         self.addressBarPositionProvider = addressBarPositionProvider
 
@@ -198,6 +203,11 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func selectSearchExperienceAction() {
+        if onboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding {
+            pixelReporter.measureChooseAIChat()
+        } else {
+            pixelReporter.measureChooseSearchOnly()
+        }
         makeNextViewState()
     }
 
@@ -283,8 +293,7 @@ private extension OnboardingIntroViewModel {
         case .chooseAddressBarPositionDialog:
             pixelReporter.measureAddressBarPositionSelectionImpression()
         case .chooseSearchExperienceDialog:
-#warning("TODO, implement pixel")
-            break
+            pixelReporter.measureSearchExperienceSelectionImpression()
         }
     }
 

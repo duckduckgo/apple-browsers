@@ -24,7 +24,7 @@ import SwiftUIExtensions
 public final class DefaultBrowserAndDockPromptPopoverViewModel {
     let title: String?
     let message: String
-    let image: NSImage?
+    let image: NSImage
     let buttonText: String
     let buttonAction: () -> Void
     let secondaryButtonText: String?
@@ -32,7 +32,7 @@ public final class DefaultBrowserAndDockPromptPopoverViewModel {
 
     public init(title: String?,
                 message: String,
-                image: NSImage?,
+                image: NSImage,
                 buttonText: String,
                 buttonAction: @escaping () -> Void,
                 secondaryButtonText: String?,
@@ -56,10 +56,8 @@ struct DefaultBrowserAndDockPromptPopoverView: View {
 
     var body: some View {
         VStack {
-            if let image = viewModel.image {
-                Image(nsImage: image)
-                    .padding(.bottom, 8)
-            }
+            Image(nsImage: viewModel.image)
+                .padding(.bottom, 8)
 
             VStack(alignment: .center, spacing: 12) {
                 if let title = viewModel.title {

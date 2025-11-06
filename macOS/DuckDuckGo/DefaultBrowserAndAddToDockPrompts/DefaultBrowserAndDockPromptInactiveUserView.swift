@@ -20,17 +20,20 @@ import SwiftUI
 
 final class DefaultBrowserAndDockPromptInactiveUserViewModel {
     let message: String
+    let image: NSImage
     let primaryButtonLabel: String
     let dismissButtonLabel: String
     let primaryButtonAction: () -> Void
     let dismissButtonAction: () -> Void
 
     init(message: String,
+         image: NSImage,
          primaryButtonLabel: String,
          dismissButtonLabel: String,
          primaryButtonAction: @escaping () -> Void,
          dismissButtonAction: @escaping () -> Void) {
         self.message = message
+        self.image = image
         self.primaryButtonLabel = primaryButtonLabel
         self.dismissButtonLabel = dismissButtonLabel
         self.primaryButtonAction = primaryButtonAction
@@ -56,7 +59,7 @@ struct DefaultBrowserAndDockPromptInactiveUserView: View {
                         .padding(.top, Metrics.padding)
                         .padding(.horizontal, Metrics.Message.horizontalPadding)
                     Spacer()
-                    Image(.daxSearch)
+                    Image(nsImage: viewModel.image)
                 }
                 .padding([.top, .horizontal], Metrics.padding)
             }
@@ -99,6 +102,7 @@ private enum Metrics {
 #Preview("Set As Default (Light)") {
     let setAsDefault = DefaultBrowserAndDockPromptInactiveUserViewModel(
         message: UserText.setAsDefaultInactiveUserPromptMessage,
+        image: .daxSearch,
         primaryButtonLabel: UserText.setAsDefaultInactiveUserPrimaryAction,
         dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
         primaryButtonAction: {},
@@ -112,6 +116,7 @@ private enum Metrics {
 #Preview("Set As Default (Dark)") {
     let setAsDefault = DefaultBrowserAndDockPromptInactiveUserViewModel(
         message: UserText.setAsDefaultInactiveUserPromptMessage,
+        image: .daxSearch,
         primaryButtonLabel: UserText.setAsDefaultInactiveUserPrimaryAction,
         dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
         primaryButtonAction: {},
@@ -125,6 +130,7 @@ private enum Metrics {
 #Preview("Add To Dock") {
     let addToDock = DefaultBrowserAndDockPromptInactiveUserViewModel(
         message: UserText.addToDockInactiveUserPromptMessage,
+        image: .daxSearch,
         primaryButtonLabel: UserText.addToDockInactiveUserPrimaryAction,
         dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
         primaryButtonAction: {},
@@ -137,6 +143,7 @@ private enum Metrics {
 #Preview("Add & Set As Default") {
     let addToDockAndSetAsDefault = DefaultBrowserAndDockPromptInactiveUserViewModel(
         message: UserText.bothSetAsDefaultAndAddToDockInactiveUserPromptMessage,
+        image: .daxSearch,
         primaryButtonLabel: UserText.bothSetAsDefaultAndAddToDockInactiveUserPrimaryAction,
         dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
         primaryButtonAction: {},

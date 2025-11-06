@@ -47,7 +47,7 @@ enum DefaultBrowserAndDockPromptContent {
         }
     }
 
-    var icon: NSImage? {
+    var icon: NSImage {
         switch self {
         case let .popover(content):
             switch content {
@@ -56,8 +56,8 @@ enum DefaultBrowserAndDockPromptContent {
             }
         case .banner:
             return .daxBannerView
-        default:
-            return nil
+        case .inactive:
+            return .daxSearch
         }
     }
 

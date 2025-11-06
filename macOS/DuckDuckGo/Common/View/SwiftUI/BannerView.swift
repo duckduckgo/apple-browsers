@@ -29,7 +29,7 @@ final class BannerMessageViewController: NSHostingController<BannerView> {
     let viewModel: BannerViewModel
 
     init(message: String,
-         image: NSImage?,
+         image: NSImage,
          primaryAction: TitledButtonAction,
          secondaryAction: TitledButtonAction?,
          closeAction: @escaping () -> Void) {
@@ -49,13 +49,13 @@ final class BannerMessageViewController: NSHostingController<BannerView> {
 
 final class BannerViewModel: ObservableObject {
     @Published var message: String
-    @Published var image: NSImage?
+    @Published var image: NSImage
     @Published var primaryAction: TitledButtonAction
     @Published var secondaryAction: TitledButtonAction?
     @Published var closeAction: () -> Void
 
     public init(message: String,
-                image: NSImage?,
+                image: NSImage,
                 primaryAction: TitledButtonAction,
                 secondaryAction: TitledButtonAction?,
                 closeAction: @escaping () -> Void) {
@@ -79,9 +79,7 @@ struct BannerView: View {
         VStack {
             Spacer()
             HStack(spacing: 12) {
-                if let image = viewModel.image {
-                    Image(nsImage: image)
-                }
+                Image(nsImage: viewModel.image)
 
                 Text(viewModel.message)
 

@@ -21,16 +21,19 @@ import AppKit
 
 final class TabFaviconView: NSView {
 
-    private var imageWidthConstraint: NSLayoutConstraint?
-    private var imageHeightConstraint: NSLayoutConstraint?
-    private let imageView = {
-        let imageView = NSImageView()
-        imageView.imageScaling = .scaleProportionallyDown
-        return imageView
-    }()
+    private let imageView = NSImageView()
 
     var displaysImage: Bool {
         imageView.image != nil
+    }
+
+    var image: NSImage? {
+        get {
+            imageView.image
+        }
+        set {
+            imageView.image = newValue
+        }
     }
 
     var imageTintColor: NSColor? {
@@ -45,15 +48,12 @@ final class TabFaviconView: NSView {
     override init(frame: NSRect) {
         super.init(frame: frame)
         setupSubviews()
+        setupImageView()
         setupConstraints()
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    func updateImage(_ image: NSImage?) {
-        imageView.image = image
     }
 }
 
@@ -63,18 +63,21 @@ private extension TabFaviconView {
         addSubview(imageView)
     }
 
-    func setupConstraints() {
-        let imageWidthConstraint = imageView.widthAnchor.constraint(equalTo: widthAnchor)
-        let imageHeightConstraint = imageView.heightAnchor.constraint(equalTo: heightAnchor)
-        let imageCenterXConstraint = imageView.centerXAnchor.constraint(equalTo: centerXAnchor)
-        let imageCenterYConstraint = imageView.centerYAnchor.constraint(equalTo: centerYAnchor)
+    func setupImageView() {
+        imageView.imageScaling = .scaleProportionallyDown
+    }
 
+    func setupConstraints() {
         imageView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            imageCenterXConstraint, imageCenterYConstraint, imageWidthConstraint, imageHeightConstraint
+            imageView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            imageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            imageView.widthAnchor.constraint(equalToConstant: TabFaviconMetrics.defaultImageSize.width),
+            imageView.heightAnchor.constraint(equalToConstant: TabFaviconMetrics.defaultImageSize.height)
         ])
-
-        self.imageWidthConstraint = imageWidthConstraint
-        self.imageHeightConstraint = imageHeightConstraint
     }
+}
+
+private enum TabFaviconMetrics {
+    static let defaultImageSize = NSSize(width: 16, height: 16)
 }

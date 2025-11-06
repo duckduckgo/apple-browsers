@@ -899,7 +899,7 @@ final class TabBarViewItem: NSCollectionViewItem {
         clearSubscriptions()
         usedPermissions = Permissions()
         isLeftToSelected = false
-        cell.faviconView.updateImage(nil)
+        cell.faviconView.image = nil
         cell.titleTextField.stringValue = ""
     }
 
@@ -1034,7 +1034,7 @@ final class TabBarViewItem: NSCollectionViewItem {
 
     private func updateFavicon(_ favicon: NSImage?) {
         cell.needsLayout = true
-        cell.faviconView.updateImage(favicon)
+        cell.faviconView.image = favicon
         cell.faviconView.isHidden = (favicon == nil)
         if isPinned && cell.faviconView.isHidden == true {
             cell.faviconPlaceholderView.isHidden = false

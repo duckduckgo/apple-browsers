@@ -56,7 +56,6 @@
         "parameters": [
             "widePixelAppName",
             "widePixelAppVersion",
-            "widePixelInternalUser",
             "widePixelPlatform",
             "widePixelType",
             "widePixelSampleRate",

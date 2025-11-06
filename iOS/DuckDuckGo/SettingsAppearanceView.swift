@@ -124,31 +124,31 @@ struct SettingsAppearanceView: View {
     func descriptionForOption(_ button: MobileCustomization.Button) -> String {
         switch button {
         case .share:
-            "Share"
+            UserText.actionShare
         case .addEditBookmark:
-            "Add Bookmark"
+            UserText.keyCommandAddBookmark
         case .addEditFavorite:
-            "Add Favorite"
+            UserText.keyCommandAddFavorite
         case .zoom:
-            "Zoom"
+            UserText.textZoomMenuItem
         case .none:
             "Hide This Button"
         case .home:
             "Home"
         case .newTab:
-            "New Tab"
+            UserText.keyCommandNewTab
         case .bookmarks:
-            "Bookmarks"
+            UserText.actionOpenBookmarks
         case .fire:
             viewModel.isAIChatEnabled ? UserText.settingsAutoClearTabsAndDataWithAIChat :  UserText.settingsAutoClearTabsAndData
         case .vpn:
-            "VPN"
+            UserText.actionVPN
         case .passwords:
-            "Passwords"
+            UserText.actionOpenPasswords
         case .voiceSearch:
             "Voice Search"
         case .downloads:
-            "Downloads"
+            UserText.downloadsScreenTitle
         }
     }
 

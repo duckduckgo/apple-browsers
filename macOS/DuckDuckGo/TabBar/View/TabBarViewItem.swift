@@ -459,11 +459,11 @@ final class TabBarItemCellView: NSView {
         // shift all shown elements from center
         var x = (bounds.width - totalWidth) / 2
 
-        if displaysTabsProgressIndicator {
+        if displaysTabsProgressIndicator && faviconView.isShown {
             assert(closeButton.isHidden)
             faviconView.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
             x = faviconView.frame.maxX + spacing
-        } else if faviconImageView.isShown {
+        } else if !displaysTabsProgressIndicator && faviconImageView.isShown {
             assert(closeButton.isHidden)
             faviconImageView.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
             x = faviconImageView.frame.maxX + spacing

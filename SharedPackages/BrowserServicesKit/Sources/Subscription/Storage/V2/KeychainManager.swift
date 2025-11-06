@@ -273,17 +273,21 @@ public final class KeychainManager: KeychainManaging {
 
     // MARK: - Notification Handling
 
-    /// Sets up platform-specific notifications to detect when the keychain becomes available.
-    /// 
+    /// Sets up platform-specific notifications to detect when the keychain becomes available, when the app goes in background or is terminated.
     /// This enables automatic retry of operations that were queued when the keychain was unavailable.
     private func setupKeychainAvailabilityNotifications() {
         Logger.keychainManager.log("Set up keychain availability and recovery notifications")
 
 #if canImport(UIKit)
         Publishers.MergeMany(
-            NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification),
+            // Foreground notifications
             NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification),
-            NotificationCenter.default.publisher(for: UIApplication.protectedDataDidBecomeAvailableNotification)
+            NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification),
+            NotificationCenter.default.publisher(for: UIApplication.protectedDataDidBecomeAvailableNotification),
+            // Background notification
+            NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification),
+            // Termination notification
+            NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)
         )
         .receive(on: accessQueue)
         .sink { [weak self] _ in
@@ -292,10 +296,13 @@ public final class KeychainManager: KeychainManaging {
         .store(in: &cancellables)
 #elseif canImport(AppKit)
         Publishers.MergeMany(
+            // Foreground notifications
             NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification),
+            NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.sessionDidBecomeActiveNotification),
+            // Background notification
             NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification),
-            NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification),
-            NotificationCenter.default.publisher(for: NSWorkspace.sessionDidBecomeActiveNotification)
+            // Termination notification
+            NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)
         )
         .receive(on: accessQueue)
         .sink { [weak self] _ in

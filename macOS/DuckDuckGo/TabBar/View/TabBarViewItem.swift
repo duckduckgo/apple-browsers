@@ -1088,7 +1088,7 @@ final class TabBarViewItem: NSCollectionViewItem {
     private func updateFavicon(_ favicon: NSImage?) {
         cell.needsLayout = true
 
-        /// When `faviconView` we'll never display `faviconPlaceholderView`
+        /// When using `faviconView`, we'll never display `faviconPlaceholderView`.
         if cell.displaysTabsProgressIndicator {
             cell.faviconView.image = favicon
             return

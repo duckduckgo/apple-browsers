@@ -24,8 +24,9 @@ import OSLog
 
 public extension URL {
 
-    private static let base: String = ProcessInfo.processInfo.environment["BASE_URL", default: "https://duckduckgo.com"]
+    private static let base: String = ProcessInfo.processInfo.environment["BASE_URL", default: "https://euw-serp-dev-testing2.duckduckgo.com"]
     private static let duckAiBase: String = ProcessInfo.processInfo.environment["DUCKAI_BASE_URL", default: "https://duck.ai"]
+
     private static let staticBase: String = "https://staticcdn.duckduckgo.com"
 
     static let ddg = URL(string: URL.base)!

@@ -200,6 +200,13 @@ private struct PickerWithHeaderView<T: Hashable & CustomStringConvertible>: View
             selectedOption = $0 ?? options[0]
         })) {
             Section {
+                HStack {
+                    Spacer()
+                    headerImage
+                    Spacer()
+                }
+                .listRowBackground(Color(designSystemColor: .surface))
+
                 ForEach(options, id: \.self) { option in
                     HStack {
                         iconProvider?(option)
@@ -213,12 +220,6 @@ private struct PickerWithHeaderView<T: Hashable & CustomStringConvertible>: View
                     .listRowBackground(Color(designSystemColor: .surface))
                 }
                 .navigationTitle(Text(title))
-            } header: {
-                HStack {
-                    Spacer()
-                    headerImage
-                    Spacer()
-                }
             }
         }
     }

@@ -420,7 +420,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case .healthOverview:
             let rows = healthOverviewRows
             let rowViewModel = rows[indexPath.row]
-            let cell = dequeueCell(identifier: identifier, style: rowViewModel.style)
+            let cell = dequeueCell(identifier: rowViewModel.style.rawValue, style: rowViewModel.style)
 
             cell.textLabel?.text = rowViewModel.title
             cell.textLabel?.textColor = rowViewModel.textColor

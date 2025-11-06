@@ -123,6 +123,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         var isSubscriptionExpiring = false
         var isSubscriptionExpired = false
         var subscriptionPurchasePlatform: String?
+        var subscriptionFreeTrialActive = false
         let surveyActionMapper: RemoteMessagingSurveyActionMapping
 
         let statisticsStore = self.statisticsStore()
@@ -133,6 +134,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
             subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
             subscriptionPurchasePlatform = subscription.platform.rawValue
+            subscriptionFreeTrialActive = subscription.hasActiveTrialOffer
 
             switch subscription.status {
             case .autoRenewable, .gracePeriod:
@@ -205,6 +207,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isSubscriptionActive: isSubscriptionActive,
                                                        isSubscriptionExpiring: isSubscriptionExpiring,
                                                        isSubscriptionExpired: isSubscriptionExpired,
+                                                       subscriptionFreeTrialActive: subscriptionFreeTrialActive,
                                                        dismissedMessageIds: dismissedMessageIds,
                                                        shownMessageIds: shownMessageIds,
                                                        pinnedTabsCount: pinnedTabsCount,

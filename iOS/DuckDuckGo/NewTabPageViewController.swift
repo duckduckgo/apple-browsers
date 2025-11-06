@@ -49,6 +49,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let internalUserCommands: URLBasedDebugCommands
 
     init(isFocussedState: Bool,
+         dismissKeyboardOnScroll: Bool,
          tab: Tab,
          interactionModel: FavoritesListInteracting,
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
@@ -79,6 +80,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate))
 
         super.init(rootView: NewTabPageView(narrowLayoutInLandscape: narrowLayoutInLandscape,
+                                            dismissKeyboardOnScroll: dismissKeyboardOnScroll,
                                             viewModel: self.newTabPageViewModel,
                                             messagesModel: self.messagesModel,
                                             favoritesViewModel: self.favoritesModel))

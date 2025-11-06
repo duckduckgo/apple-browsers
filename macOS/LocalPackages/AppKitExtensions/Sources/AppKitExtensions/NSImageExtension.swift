@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Common
 
 extension NSImage {
 
@@ -125,5 +126,48 @@ extension NSImage {
         paddedImage.isTemplate = self.isTemplate
 
         return paddedImage
+    }
+
+    public func resized(to size: NSSize) -> NSImage {
+        let image = NSImage(size: size)
+        let targetRect = NSRect(x: 0, y: 0, width: size.width, height: size.height)
+        let currentRect = NSRect(x: 0, y: 0, width: self.size.width, height: self.size.height)
+
+        image.lockFocus()
+        let graphicsContext = NSGraphicsContext.current
+        graphicsContext?.imageInterpolation = .high
+        self.draw(in: targetRect, from: currentRect, operation: .copy, fraction: 1)
+        image.unlockFocus()
+
+        return image
+    }
+
+    public func resizedToFaviconSize() -> NSImage {
+        if size.width > NSSize.faviconSize.width ||
+            size.height > NSSize.faviconSize.height {
+            return resized(to: .faviconSize)
+        }
+        return self
+    }
+
+    public func tinted(with color: NSColor) -> NSImage {
+        guard let image = self.copy() as? NSImage else {
+            return self
+        }
+
+        image.lockFocus()
+
+        color.set()
+        let imageRect = NSRect(origin: .zero, size: image.size)
+        imageRect.fill(using: .sourceAtop)
+
+        image.unlockFocus()
+
+        return image
+    }
+
+    public func ciImage(with size: NSSize?) -> CIImage {
+        var rect = NSRect(origin: .zero, size: size ?? self.size)
+        return CIImage(cgImage: self.cgImage(forProposedRect: &rect, context: nil, hints: nil)!)
     }
 }

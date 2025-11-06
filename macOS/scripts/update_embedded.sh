@@ -143,10 +143,10 @@ performDBPBrokerUpdate() {
 
 performUpdate $TDS_URL \
 		"$base_dir/DuckDuckGo/ContentBlocker/AppTrackerDataSetProvider.swift" \
-		"$base_dir/DuckDuckGo/ContentBlocker/trackerData.json"
+		"$base_dir/DuckDuckGo/ContentBlocker/Resources/trackerData.json"
 performUpdate $CONFIG_URL \
 		"$base_dir/DuckDuckGo/ContentBlocker/AppPrivacyConfigurationDataProvider.swift" \
-		"$base_dir/DuckDuckGo/ContentBlocker/macos-config.json"
+		"$base_dir/DuckDuckGo/ContentBlocker/Resources/macos-config.json"
 
 performDBPBrokerUpdate "$DBP_BROKER_URL" \
 		"$base_dir/../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/JSON/"

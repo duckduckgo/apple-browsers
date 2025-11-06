@@ -51,141 +51,33 @@ Our typography system is **based on system styles** rather than hardcoded sizes.
 
 ### UIKit Usage
 
-DRK defines **static functions on UIFont** for all typography:
+DRK defines **static functions on UIFont** for all typography.
 
-```swift
-// ✅ CORRECT: Use DRK typography functions directly
-let titleLabel = UILabel()
-titleLabel.font = UIFont.daxTitle1()
-titleLabel.text = "Main Title"
-
-let bodyLabel = UILabel()
-bodyLabel.font = UIFont.daxBody()
-bodyLabel.text = "Body content that scales with dynamic type"
-
-let captionLabel = UILabel()
-captionLabel.font = UIFont.daxCaption()
-titleLabel.text = "Small caption text"
-```
+**Example:** See [uikit-typography-usage.swift](design-system-designresourceskit/uikit-typography-usage.swift)
 
 #### Available Typography Styles
 
-```swift
-// Large titles and headers
-UIFont.daxTitle1()      // Largest title
-UIFont.daxTitle2()      // Secondary title
-UIFont.daxTitle3()      // Tertiary title
-
-// Body text
-UIFont.daxBody()        // Standard body text
-UIFont.daxBodySemibold() // Emphasized body text
-
-// Small text
-UIFont.daxCaption()     // Caption text
-UIFont.daxFootnote()    // Footnote text
-
-// Special cases
-UIFont.daxCallout()     // Callout text
-UIFont.daxSubheadline() // Subheading text
-```
+**Example:** See [uikit-typography-styles.swift](design-system-designresourceskit/uikit-typography-styles.swift)
 
 #### Best Practices for UIKit
 
-```swift
-// ✅ CORRECT: Use typography directly without modification
-class FeatureViewController: UIViewController {
-    @IBOutlet weak var titleLabel: UILabel!
-    @IBOutlet weak var bodyLabel: UILabel!
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        // Typography is automatically configured for dynamic type
-        titleLabel.font = UIFont.daxTitle2()
-        bodyLabel.font = UIFont.daxBody()
-        
-        // Colors should also come from design system
-        titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
-        bodyLabel.textColor = UIColor(designSystemColor: .textSecondary)
-    }
-}
-
-// ❌ INCORRECT: Don't modify or override DRK fonts
-titleLabel.font = UIFont.daxBody().withSize(18) // Don't override size
-bodyLabel.font = UIFont.systemFont(ofSize: 16)  // Don't use system fonts
-```
+**Example:** See [uikit-typography-best-practices.swift](design-system-designresourceskit/uikit-typography-best-practices.swift)
 
 ### SwiftUI Usage
 
-DRK provides **view modifiers and extensions** for SwiftUI that should be used instead of direct font access:
+DRK provides **view modifiers and extensions** for SwiftUI that should be used instead of direct font access.
 
-```swift
-// ✅ CORRECT: Use DRK view modifiers
-struct ContentView: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Main Title")
-                .daxTitle1()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-            
-            Text("Secondary heading")
-                .daxTitle3()
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-            
-            Text("Body content that automatically supports dynamic type and accessibility features.")
-                .daxBody()
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-            
-            Text("Small caption text")
-                .daxCaption()
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-        }
-        .padding()
-    }
-}
-
-// ❌ INCORRECT: Don't use .font() modifier
-Text("Title")
-    .font(.title2) // This makes it harder to spot design system violations
-
-Text("Body")
-    .font(Font(UIFont.daxBody())) // Don't access UIFont directly
-```
+**Example:** See [swiftui-typography-usage.swift](design-system-designresourceskit/swiftui-typography-usage.swift)
 
 #### Available SwiftUI Typography Modifiers
 
-```swift
-// View modifiers for typography
-.daxTitle1()        // Largest title
-.daxTitle2()        // Secondary title  
-.daxTitle3()        // Tertiary title
-.daxBody()          // Standard body text
-.daxBodySemibold()  // Emphasized body text
-.daxCaption()       // Caption text
-.daxFootnote()      // Footnote text
-.daxCallout()       // Callout text
-.daxSubheadline()   // Subheading text
-```
+**Example:** See [swiftui-typography-modifiers.swift](design-system-designresourceskit/swiftui-typography-modifiers.swift)
 
 #### SwiftUI Code Review Guidelines
 
-**When reviewing PRs**: Look for `.font()` usage as a red flag:
+**When reviewing PRs**: Look for `.font()` usage as a red flag.
 
-```swift
-// 🚨 RED FLAG: Using .font() likely indicates design system violation
-Text("Title")
-    .font(.title) // Should be .daxTitle2() or similar
-
-Text("Body")  
-    .font(.system(size: 16)) // Should be .daxBody()
-
-// ✅ CORRECT: Using DRK modifiers
-Text("Title")
-    .daxTitle2()
-
-Text("Body")
-    .daxBody()
-```
+**Example:** See [swiftui-code-review-red-flags.swift](design-system-designresourceskit/swiftui-code-review-red-flags.swift)
 
 ### Emergency Escape Hatch (Avoid!)
 
@@ -215,39 +107,12 @@ Our color system uses **semantic naming** rather than literal colors (e.g., "pri
 ### Color Categories
 
 #### Text Colors
-```swift
-// UIKit
-label.textColor = UIColor(designSystemColor: .textPrimary)    // Main text
-label.textColor = UIColor(designSystemColor: .textSecondary)  // Supporting text
-label.textColor = UIColor(designSystemColor: .textLink)       // Interactive text
+**UIKit Example:** See [colors-text-uikit.swift](design-system-designresourceskit/colors-text-uikit.swift)
 
-// SwiftUI
-Text("Primary text")
-    .foregroundColor(Color(designSystemColor: .textPrimary))
-
-Text("Secondary text")
-    .foregroundColor(Color(designSystemColor: .textSecondary))
-
-Text("Link text")
-    .foregroundColor(Color(designSystemColor: .textLink))
-```
+**SwiftUI Example:** See [colors-text-swiftui.swift](design-system-designresourceskit/colors-text-swiftui.swift)
 
 #### Background Colors
-```swift
-// UIKit
-view.backgroundColor = UIColor(designSystemColor: .background)  // Main app background
-view.backgroundColor = UIColor(designSystemColor: .surface)     // Card/panel background
-view.backgroundColor = UIColor(designSystemColor: .panel)       // Secondary panel
-
-// SwiftUI
-VStack {
-    // Content
-}
-.background(Color(designSystemColor: .background))
-
-Rectangle()
-    .fill(Color(designSystemColor: .surface))
-```
+**Example:** See [colors-background.swift](design-system-designresourceskit/colors-background.swift)
 
 #### Control Colors
 ```swift
@@ -292,40 +157,16 @@ Image(systemName: "heart.fill")
 
 ### Anti-patterns: What NOT to Do
 
-```swift
-// ❌ NEVER: Hardcoded colors
-view.backgroundColor = UIColor.black
-text.foregroundColor = Color.blue
-button.setTitleColor(UIColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1.0), for: .normal)
-
-// ❌ NEVER: System colors for app content
-view.backgroundColor = UIColor.systemBackground  // Use .background instead
-label.textColor = UIColor.label                 // Use .textPrimary instead
-
-// ❌ NEVER: Manual dark mode handling
-@Environment(\.colorScheme) var colorScheme
-let textColor = colorScheme == .dark ? Color.white : Color.black // Use semantic colors!
-
-// ✅ CORRECT: Always use semantic design system colors
-view.backgroundColor = UIColor(designSystemColor: .background)
-label.textColor = UIColor(designSystemColor: .textPrimary)
-```
+**Example:** See [colors-anti-patterns.swift](design-system-designresourceskit/colors-anti-patterns.swift)
 
 ## Enforcement and Code Review
 
 ### Automated Enforcement
 
 #### Danger Integration
-**Asset catalog enforcement**: We use [Danger](https://danger.systems/) to prevent new colors being added directly to iOS app asset catalogs:
+**Asset catalog enforcement**: We use [Danger](https://danger.systems/) to prevent new colors being added directly to iOS app asset catalogs.
 
-```ruby
-# Dangerfile example
-if git.added_files.any? { |file| file.include?("Assets.xcassets") && file.include?("colorset") }
-  fail("🚨 New colors detected in asset catalog. Use DesignResourcesKit instead!")
-end
-```
-
-This ensures all colors go through the design system rather than being added ad-hoc.
+**Example:** See [danger-integration.rb](design-system-designresourceskit/danger-integration.rb)
 
 ### Manual Code Review Checklist
 
@@ -336,23 +177,9 @@ This ensures all colors go through the design system rather than being added ad-
 - **No `.font()` modifiers** in SwiftUI (red flag for design system violations)
 - **Semantic naming**: Colors described by purpose, not appearance
 
-#### 🚨 Red flags in PRs:
-```swift
-// RED FLAGS - should be caught in review
-.font(.title)                           // Should use .daxTitle2()
-UIColor.black                          // Should use design system color
-Color(red: 0.1, green: 0.2, blue: 0.3) // Should use semantic color
-UIColor.systemBlue                     // Should use .accent or appropriate semantic color
-```
+#### Code Review Examples
 
-#### ✅ Good patterns to approve:
-```swift
-// GOOD PATTERNS - approve these
-Text("Title").daxTitle2()
-UIFont.daxBody()
-UIColor(designSystemColor: .textPrimary)
-Color(designSystemColor: .background)
-```
+**Example:** See [code-review-checklist.swift](design-system-designresourceskit/code-review-checklist.swift)
 
 ### Opportunistic Improvements
 
@@ -365,29 +192,7 @@ Color(designSystemColor: .background)
 
 #### Example: Opportunistic Refactoring
 
-```swift
-// BEFORE: Legacy hardcoded styling
-class OldViewController: UIViewController {
-    @IBOutlet weak var titleLabel: UILabel!
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        titleLabel.font = UIFont.systemFont(ofSize: 24, weight: .bold)
-        titleLabel.textColor = UIColor.black
-    }
-}
-
-// AFTER: Updated to use design system
-class OldViewController: UIViewController {
-    @IBOutlet weak var titleLabel: UILabel!
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        titleLabel.font = UIFont.daxTitle2()
-        titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
-    }
-}
-```
+**Example:** See [opportunistic-refactoring.swift](design-system-designresourceskit/opportunistic-refactoring.swift)
 
 ## Components
 
@@ -403,22 +208,9 @@ We primarily use **system components** rather than custom ones, following iOS de
 ### Existing Custom Components
 
 #### Blue Button (Reusable)
-Our primary custom component used across multiple screens:
+Our primary custom component used across multiple screens.
 
-```swift
-// Current usage (likely not yet in DRK)
-class DuckBlueButton: UIButton {
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        backgroundColor = UIColor(designSystemColor: .buttonPrimaryBackground)
-        setTitleColor(UIColor(designSystemColor: .buttonPrimaryText), for: .normal)
-        titleLabel?.font = UIFont.daxBody()
-        layer.cornerRadius = 8
-    }
-}
-
-// Future: Should be moved to DRK as reusable component
-```
+**Example:** See [blue-button-component.swift](design-system-designresourceskit/blue-button-component.swift)
 
 **Candidate for DRK**: This button is used in multiple places and should be extracted into DesignResourcesKit as a reusable component.
 
@@ -471,30 +263,7 @@ struct FormFieldView: View {
 6. **Update existing usages** to use the new component
 7. **Document the component** with usage examples
 
-```swift
-// Example: Converting blue button to DRK component
-public struct DRKPrimaryButton: View {
-    let title: String
-    let action: () -> Void
-    
-    public init(title: String, action: @escaping () -> Void) {
-        self.title = title
-        self.action = action
-    }
-    
-    public var body: some View {
-        Button(action: action) {
-            Text(title)
-                .daxBody()
-                .foregroundColor(Color(designSystemColor: .buttonPrimaryText))
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
-        }
-        .background(Color(designSystemColor: .buttonPrimaryBackground))
-        .cornerRadius(8)
-    }
-}
-```
+**Example:** See [component-creation-example.swift](design-system-designresourceskit/component-creation-example.swift)
 
 ## Modularization Strategy
 
@@ -533,12 +302,9 @@ public struct DRKPrimaryButton: View {
 
 ### Updating DRK Version
 
-**In consuming app (iOS/macOS)**:
+**In consuming app (iOS/macOS):**
 
-```swift
-// Package.swift or Xcode package manager
-.package(url: "https://github.com/duckduckgo/DesignResourcesKit", from: "1.2.0")
-```
+**Example:** See [updating-drk-version.swift](design-system-designresourceskit/updating-drk-version.swift)
 
 **Testing DRK changes**:
 - Test in both **light and dark modes**
@@ -548,17 +314,9 @@ public struct DRKPrimaryButton: View {
 
 ### Local Development
 
-**For iterating on DRK**:
+**For iterating on DRK:**
 
-```bash
-# Clone both repositories
-git clone https://github.com/duckduckgo/DesignResourcesKit
-git clone https://github.com/duckduckgo/apple-browsers
-
-# Use local package for development
-# In Xcode: File > Add Package Dependencies > Add Local...
-# Point to local DesignResourcesKit directory
-```
+**Example:** See [local-development.sh](design-system-designresourceskit/local-development.sh)
 
 ## Resources and References
 
@@ -597,4 +355,4 @@ git clone https://github.com/duckduckgo/apple-browsers
 
 ---
 
-**Remember**: The design system is only as strong as our commitment to using it. Every PR is an opportunity to improve consistency and user experience. 
+**Remember**: The design system is only as strong as our commitment to using it. Every PR is an opportunity to improve consistency and user experience.

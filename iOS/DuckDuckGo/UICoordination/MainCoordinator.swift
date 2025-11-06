@@ -53,11 +53,11 @@ final class MainCoordinator {
 
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let featureFlagger: FeatureFlagger
-    private let defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
-    private let winBackOfferPresenter: WinBackOfferPresenting
+    private let modalPromptCoordinationService: ModalPromptCoordinationService
     private let launchSourceManager: LaunchSourceManaging
 
     init(syncService: SyncService,
+         contentBlockingService: ContentBlockingService,
          bookmarksDatabase: CoreDataDatabase,
          remoteMessagingService: RemoteMessagingService,
          daxDialogs: DaxDialogs,
@@ -74,17 +74,16 @@ final class MainCoordinator {
          customConfigurationURLProvider: CustomConfigurationURLProviding,
          didFinishLaunchingStartTime: CFAbsoluteTime?,
          keyValueStore: ThrowingKeyValueStoring,
-         defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          daxDialogsManager: DaxDialogsManaging,
          dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
          launchSourceManager: LaunchSourceManaging,
-         winBackOfferService: WinBackOfferService
+         winBackOfferService: WinBackOfferService,
+         modalPromptCoordinationService: ModalPromptCoordinationService
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
-        self.defaultBrowserPromptPresenter = defaultBrowserPromptPresenter
-        self.winBackOfferPresenter = winBackOfferService.presenter
+        self.modalPromptCoordinationService = modalPromptCoordinationService
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
@@ -108,6 +107,7 @@ final class MainCoordinator {
                                 bookmarksDatabase: bookmarksDatabase,
                                 historyManager: historyManager,
                                 syncService: syncService.sync,
+                                contentBlockingAssetsPublisher: contentBlockingService.updating.userContentBlockingAssets,
                                 subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                 contextualOnboardingPresenter: contextualOnboardingPresenter,
                                 contextualOnboardingLogic: daxDialogs,
@@ -130,6 +130,7 @@ final class MainCoordinator {
                                         homePageConfiguration: homePageConfiguration,
                                         syncService: syncService.sync,
                                         syncDataProviders: syncService.syncDataProviders,
+                                        contentBlockingAssetsPublisher: contentBlockingService.updating.userContentBlockingAssets,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         previewsSource: previewsSource,
                                         tabManager: tabManager,
@@ -216,17 +217,15 @@ final class MainCoordinator {
         controller.presentNetworkProtectionStatusSettingsModal()
     }
 
+    func presentModalPromptIfNeeded() {
+        modalPromptCoordinationService.presentModalPromptIfNeeded(from: controller)
+    }
+
     // MARK: App Lifecycle handling
 
     func onForeground() {
         controller.showBars()
         controller.onForeground()
-
-        // Present Win-Back Offer Prompt if user is eligible.
-        winBackOfferPresenter.tryPresentWinBackOfferPrompt(from: controller)
-
-        // Present Default Browser Prompt if user is eligible.
-        defaultBrowserPromptPresenter.tryPresentDefaultModalPrompt(from: controller)
     }
 
     func onBackground() {

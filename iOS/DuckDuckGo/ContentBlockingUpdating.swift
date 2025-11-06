@@ -23,10 +23,6 @@ import Core
 import Combine
 import WebKit
 
-extension ContentBlocking {
-    var contentBlockingUpdating: ContentBlockingUpdating { .shared }
-}
-
 protocol ContentBlockerRulesManagerProtocol: CompiledRuleListsSource {
     var updatesPublisher: AnyPublisher<ContentBlockerRulesManager.UpdateEvent, Never> { get }
 }
@@ -37,7 +33,6 @@ extension ContentBlockerRulesIdentifier.Difference {
 }
 
 public final class ContentBlockingUpdating {
-    static let shared = ContentBlockingUpdating()
 
     private typealias Update = ContentBlockerRulesManager.UpdateEvent
     struct NewContent: UserContentControllerNewContent {
@@ -55,10 +50,10 @@ public final class ContentBlockingUpdating {
 
     private(set) var userContentBlockingAssets: AnyPublisher<NewContent, Never>!
 
-    init(appSettings: AppSettings = AppUserDefaults(),
-         contentBlockerRulesManager: ContentBlockerRulesManagerProtocol = ContentBlocking.shared.contentBlockingManager,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         fireproofing: Fireproofing = UserDefaultsFireproofing.xshared) {
+    init(appSettings: AppSettings,
+         contentBlockerRulesManager: ContentBlockerRulesManagerProtocol,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         fireproofing: Fireproofing) {
 
         let makeValue: (Update) -> NewContent = { rulesUpdate in
             let sourceProvider = DefaultScriptSourceProvider(appSettings: appSettings,

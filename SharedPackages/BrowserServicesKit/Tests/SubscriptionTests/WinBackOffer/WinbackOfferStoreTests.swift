@@ -109,48 +109,51 @@ final class WinbackOfferStoreTests: XCTestCase {
 
     // MARK: - First day modal
 
-    func testWhenFirstDayModalShownIsNotSet_ItReturnsFalse() {
-        // When
-        let shown = store.firstDayModalShown
-
+    func testInitiallyLaunchPresentationDateIsNil() {
         // Then
-        XCTAssertFalse(shown)
+        XCTAssertNil(store.getOfferPresentationDate())
     }
 
-    func testWhenSettingFirstDayModalShownToTrue_ItReturnsTrue() {
+    func testSettingTheLaunchPresentationDate() {
         // When
-        store.firstDayModalShown = true
+        let date = Date()
+        store.storeOfferPresentationDate(date)
 
         // Then
-        XCTAssertTrue(store.firstDayModalShown)
+        let retrievedDate = store.getOfferPresentationDate()
+        XCTAssertNotNil(retrievedDate)
+        XCTAssertEqual(retrievedDate!.timeIntervalSince1970, date.timeIntervalSince1970, accuracy: 1.0)
     }
 
-    func testWhenSettingFirstDayModalShownToFalse_ItReturnsFalse() {
+    func testClearingTheLaunchpresentationDate() {
         // Given
-        store.firstDayModalShown = true
+        store.storeOfferPresentationDate(Date())
 
         // When
-        store.firstDayModalShown = false
+        store.storeOfferPresentationDate(nil)
 
         // Then
-        XCTAssertFalse(store.firstDayModalShown)
+        XCTAssertNil(store.getOfferPresentationDate())
     }
 
     // MARK: - Integration
 
-    func testItCanStoreAndRetrieveMultipleValues() {
+    func testItCanStoreAndRetrieveMultipleValues() throws {
         // Given
         let churnDate = Date(timeIntervalSince1970: 1704067200)
+        let launchPromptDate = Date()
 
         // When
         store.storeChurnDate(churnDate)
         store.setHasRedeemedOffer(true)
-        store.firstDayModalShown = true
+        store.storeOfferPresentationDate(launchPromptDate)
 
         // Then
-        XCTAssertEqual(store.getChurnDate()!.timeIntervalSince1970, churnDate.timeIntervalSince1970, accuracy: 1.0)
+        let churnDateResult = try XCTUnwrap(store.getChurnDate())
+        XCTAssertEqual(churnDateResult.timeIntervalSince1970, churnDate.timeIntervalSince1970, accuracy: 1.0)
         XCTAssertTrue(store.hasRedeemedOffer())
-        XCTAssertTrue(store.firstDayModalShown)
+        let launchPromptDateResult = try XCTUnwrap(store.getOfferPresentationDate())
+        XCTAssertEqual(launchPromptDateResult.timeIntervalSince1970, launchPromptDate.timeIntervalSince1970, accuracy: 1.0)
     }
 }
 

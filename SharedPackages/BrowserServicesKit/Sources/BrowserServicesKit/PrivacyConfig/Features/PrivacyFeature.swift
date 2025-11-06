@@ -276,6 +276,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Signals that the iOS app should display duck.ai chats in "full mode" i.e in a tab, not a sheet
     case fullDuckAIMode
+
+    /// Allows to present Search Experience choice screen during onboarding
+    case onboardingSearchExperience
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

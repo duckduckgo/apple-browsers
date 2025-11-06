@@ -36,6 +36,7 @@ final class WinBackOfferDebugViewModel: ObservableObject {
     @Published var urgencyMessageDate: Date?
     @Published var hasRedeemed: Bool = false
     @Published var launchPromptPresentationDate: Date?
+    @Published var nextEligibleDate: Date?
 
     init(keyValueStore: ThrowingKeyValueStoring) {
         let store = WinbackOfferStore(keyValueStore: keyValueStore)
@@ -52,6 +53,18 @@ final class WinBackOfferDebugViewModel: ObservableObject {
         winbackOfferStore.setHasRedeemedOffer(false)
         winbackOfferStore.storeOfferPresentationDate(nil)
         winbackOfferStore.didDismissUrgencyMessage = false
+        updateState()
+    }
+
+    /// Simulate a churn event after redeeming the offer, preserving the redeemed flag.
+    func simulateChurnAfterRedemption() {
+        let effectiveDate = debugStore.simulatedTodayDate
+        winbackOfferStore.storeChurnDate(effectiveDate)
+
+        if !winbackOfferStore.hasRedeemedOffer() {
+            winbackOfferStore.setHasRedeemedOffer(true)
+        }
+
         updateState()
     }
 
@@ -154,6 +167,7 @@ final class WinBackOfferDebugViewModel: ObservableObject {
             urgencyMessageDate = nil
             hasRedeemed = false
             launchPromptPresentationDate = nil
+            nextEligibleDate = nil
             return
         }
 
@@ -163,7 +177,7 @@ final class WinBackOfferDebugViewModel: ObservableObject {
         if let presentationDate = winbackOfferStore.getOfferPresentationDate() {
             offerStartDate = presentationDate
             offerEndDate = presentationDate.addingTimeInterval(.days(5)) // 5 days availability after launch prompt is shown
-            urgencyMessageDate = offerEndDate?.addingTimeInterval(.days(-1)) // Last day
+            urgencyMessageDate = offerEndDate?.addingTimeInterval(.days(-2)) // Urgency messaging begins 2 days before offer end
             launchPromptPresentationDate = presentationDate
         } else {
             offerStartDate = nil
@@ -173,6 +187,14 @@ final class WinBackOfferDebugViewModel: ObservableObject {
         }
 
         hasRedeemed = winbackOfferStore.hasRedeemedOffer()
+
+        if hasRedeemed {
+            let cooldown = TimeInterval.days(270)
+            let availabilityOffset = TimeInterval.days(3)
+            nextEligibleDate = storedChurnDate.addingTimeInterval(cooldown + availabilityOffset)
+        } else {
+            nextEligibleDate = nil
+        }
     }
 }
 
@@ -245,6 +267,12 @@ struct WinBackOfferDebugView: View {
                 }) {
                     Text(verbatim: "Jump to Cooldown Expiry")
                 }
+
+                Button(action: {
+                    viewModel.simulateChurnAfterRedemption()
+                }) {
+                    Text(verbatim: "Simulate Churn After Redemption")
+                }
             }
 
             Section(header: Text(verbatim: "Current State")) {
@@ -254,7 +282,7 @@ struct WinBackOfferDebugView: View {
                     LabeledRow(label: "Churn Date", value: Self.dateFormatter.string(from: churnDate))
 
                     if let eligibilityDate = viewModel.eligibilityDate {
-                        LabeledRow(label: "Eligible Since", value: Self.dateFormatter.string(from: eligibilityDate))
+                        LabeledRow(label: "Offer starts on", value: Self.dateFormatter.string(from: eligibilityDate))
                     }
 
                     if let presentationDate = viewModel.launchPromptPresentationDate {
@@ -272,10 +300,14 @@ struct WinBackOfferDebugView: View {
                     }
 
                     if let urgencyMessageDate = viewModel.urgencyMessageDate {
-                        LabeledRow(label: "Urgency Message", value: Self.dateFormatter.string(from: urgencyMessageDate))
+                        LabeledRow(label: "Urgency message starts", value: Self.dateFormatter.string(from: urgencyMessageDate))
                     }
 
                     LabeledRow(label: "Redeemed", value: viewModel.hasRedeemed ? "Yes" : "No")
+
+                    if viewModel.hasRedeemed, let nextEligibleDate = viewModel.nextEligibleDate {
+                        LabeledRow(label: "Next eligible on", value: Self.dateFormatter.string(from: nextEligibleDate))
+                    }
                 } else {
                     Text(verbatim: "No churn simulated")
                         .foregroundColor(.secondary)

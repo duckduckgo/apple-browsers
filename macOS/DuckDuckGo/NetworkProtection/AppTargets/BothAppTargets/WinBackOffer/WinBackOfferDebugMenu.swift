@@ -32,6 +32,7 @@ final class WinBackOfferDebugMenu: NSMenuItem {
     private let offerEndDateMenuItem = NSMenuItem(title: "")
     private let modalPresentationDateMenuItem = NSMenuItem(title: "")
     private let urgencyMessageDateMenuItem = NSMenuItem(title: "")
+    private let nextEligibleDateMenuItem = NSMenuItem(title: "")
     private let storageStateMenuItem = NSMenuItem(title: "")
 
     private static let dateFormatter: DateFormatter = {
@@ -51,12 +52,14 @@ final class WinBackOfferDebugMenu: NSMenuItem {
         self.debugStore = WinBackOfferDebugStore(keyValueStore: keyValueStore)
         super.init(title: "Win-back Offer", action: nil, keyEquivalent: "")
         self.submenu = makeSubmenu()
+        nextEligibleDateMenuItem.isHidden = true
     }
 
     private func makeSubmenu() -> NSMenu {
         let menu = NSMenu(title: "")
 
         menu.addItem(NSMenuItem(title: "Simulate Churn", action: #selector(simulateChurn), target: self))
+        menu.addItem(NSMenuItem(title: "Simulate Churn After Redemption", action: #selector(simulateChurnAfterRedemption), target: self))
         menu.addItem(NSMenuItem(title: "Simulate Cooldown Expiry", action: #selector(simulateCooldownExpiry), target: self))
         menu.addItem(.separator())
 
@@ -71,6 +74,7 @@ final class WinBackOfferDebugMenu: NSMenuItem {
         menu.addItem(offerEndDateMenuItem)
         menu.addItem(modalPresentationDateMenuItem)
         menu.addItem(urgencyMessageDateMenuItem)
+        menu.addItem(nextEligibleDateMenuItem)
         menu.addItem(storageStateMenuItem)
 
         menu.delegate = self
@@ -86,6 +90,18 @@ final class WinBackOfferDebugMenu: NSMenuItem {
         winbackOfferStore.setHasRedeemedOffer(false)
         winbackOfferStore.storeOfferPresentationDate(nil)
         winbackOfferStore.didDismissUrgencyMessage = false
+        updateMenuItemsState()
+    }
+
+    @objc
+    func simulateChurnAfterRedemption() {
+        let effectiveDate = debugStore.simulatedTodayDate
+        winbackOfferStore.storeChurnDate(effectiveDate)
+
+        if !winbackOfferStore.hasRedeemedOffer() {
+            winbackOfferStore.setHasRedeemedOffer(true)
+        }
+
         updateMenuItemsState()
     }
 
@@ -141,27 +157,28 @@ final class WinBackOfferDebugMenu: NSMenuItem {
         guard let churnDate = winbackOfferStore.getChurnDate(),
               churnDate.timeIntervalSince1970 > 0 else {
             churnDateMenuItem.title = "Churn Date: Not set"
-            eligibilityDateMenuItem.title = "Eligible Since: N/A"
+            eligibilityDateMenuItem.title = "Offer starts on: N/A"
             offerStartDateMenuItem.title = "Offer Window Start: N/A"
             offerEndDateMenuItem.title = "Offer Window Ends: N/A"
             modalPresentationDateMenuItem.title = "Launch Prompt Shown: No"
-            urgencyMessageDateMenuItem.title = "Urgency Message: N/A"
+            urgencyMessageDateMenuItem.title = "Urgency message starts: N/A"
+            nextEligibleDateMenuItem.isHidden = true
             storageStateMenuItem.title = "Storage: No churn simulated"
             return
         }
 
         churnDateMenuItem.title = "Churn Date: \(Self.dateFormatter.string(from: churnDate))"
         let eligibilityDate = churnDate.addingTimeInterval(3 * 24 * 60 * 60)
-        eligibilityDateMenuItem.title = "Eligible Since: \(Self.dateFormatter.string(from: eligibilityDate))"
+        eligibilityDateMenuItem.title = "Offer starts on: \(Self.dateFormatter.string(from: eligibilityDate))"
 
         if let presentationDate = winbackOfferStore.getOfferPresentationDate() {
             let offerEndDate = presentationDate.addingTimeInterval(5 * 24 * 60 * 60)
-            let urgencyMessageDate = offerEndDate.addingTimeInterval(-1 * 24 * 60 * 60)
+            let urgencyMessageDate = offerEndDate.addingTimeInterval(-2 * 24 * 60 * 60)
 
             offerStartDateMenuItem.title = "Offer Window Start: \(Self.dateFormatter.string(from: presentationDate))"
             offerEndDateMenuItem.title = "Offer Window Ends: \(Self.dateFormatter.string(from: offerEndDate))"
             modalPresentationDateMenuItem.title = "Launch Prompt Shown: \(Self.dateFormatter.string(from: presentationDate))"
-            urgencyMessageDateMenuItem.title = "Urgency Message: \(Self.dateFormatter.string(from: urgencyMessageDate))"
+            urgencyMessageDateMenuItem.title = "Urgency message starts: \(Self.dateFormatter.string(from: urgencyMessageDate))"
         } else {
             offerStartDateMenuItem.title = "Offer Window Start: Not started"
             offerEndDateMenuItem.title = "Offer Window Ends: N/A"
@@ -172,6 +189,16 @@ final class WinBackOfferDebugMenu: NSMenuItem {
         let hasRedeemed = winbackOfferStore.hasRedeemedOffer()
         let presentationDate = winbackOfferStore.getOfferPresentationDate()
         storageStateMenuItem.title = "Storage: Redeemed=\(hasRedeemed), LaunchPromptPresented=\(presentationDate != nil)"
+
+        if hasRedeemed {
+            let cooldown = TimeInterval.days(270)
+            let availabilityOffset = TimeInterval.days(3)
+            let nextEligibleDate = churnDate.addingTimeInterval(cooldown + availabilityOffset)
+            nextEligibleDateMenuItem.title = "Next eligible on: \(Self.dateFormatter.string(from: nextEligibleDate))"
+            nextEligibleDateMenuItem.isHidden = false
+        } else {
+            nextEligibleDateMenuItem.isHidden = true
+        }
     }
 
     private func showDatePickerAlert(onValueChange: @escaping (Date?) -> Void) {

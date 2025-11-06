@@ -61,7 +61,7 @@ class BrowserChromeButton: UIButton {
         view.backgroundColor = .clear
         border = view
         addSubview(view)
-        applyConfiguration()
+        applyConfiguration(animated: false)
         setNeedsDisplay()
     }
 
@@ -92,8 +92,13 @@ class BrowserChromeButton: UIButton {
     func removeBorder() {
         guard let border else { return }
         border.removeFromSuperview()
-        applyConfiguration()
+        applyConfiguration(animated: false)
         setNeedsDisplay()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        border?.center = center
     }
 
     func setImage(_ image: UIImage?) {
@@ -111,7 +116,7 @@ class BrowserChromeButton: UIButton {
         }
     }
 
-    func applyConfiguration() {
+    func applyConfiguration(animated: Bool = true) {
         let image = configuration?.image
         let defaultConfiguration = defaultConfiguration()
 
@@ -136,9 +141,13 @@ class BrowserChromeButton: UIButton {
                 newConfiguration.baseBackgroundColor = type.backgroundColor(for: button.state)
             }
 
-            UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
+            if animated {
+                UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
+                    button.configuration = newConfiguration
+                }.startAnimation()
+            } else {
                 button.configuration = newConfiguration
-            }.startAnimation()
+            }
         }
     }
 

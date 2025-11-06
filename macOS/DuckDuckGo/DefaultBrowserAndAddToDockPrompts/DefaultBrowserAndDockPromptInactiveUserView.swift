@@ -68,21 +68,24 @@ struct DefaultBrowserAndDockPromptInactiveUserView: View {
                 browsersComparisonChart
 
                 HStack {
-                    Spacer()
                     OnboardingSecondaryCTAButton(title: viewModel.dismissButtonLabel, action: viewModel.dismissButtonAction)
                     OnboardingPrimaryCTAButton(title: viewModel.primaryButtonLabel, action: viewModel.primaryButtonAction)
+                        .layoutPriority(1) // Resist compression to avoid multiline label if possible
                 }
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(Metrics.padding)
             .background(Color(designSystemColor: .surfaceCanvas))
         }
-            .frame(width: 868, height: 508)
+        .frame(width: Metrics.width, height: Metrics.height)
     }
 }
 
 private enum Metrics {
     static let padding: CGFloat = 24
+    static let width: CGFloat = 868
+    static let height: CGFloat = 508
 
     enum Message {
         static let horizontalPadding: CGFloat = 30
@@ -90,8 +93,6 @@ private enum Metrics {
 
     enum Chart {
         static let verticalSpacing: CGFloat = 50
-        static let fontSize: CGFloat = 13
-        static let fontWeight: Font.Weight = .medium
     }
 }
 

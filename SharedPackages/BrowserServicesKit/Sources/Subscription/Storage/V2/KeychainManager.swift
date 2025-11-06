@@ -163,7 +163,7 @@ public final class KeychainManager: KeychainManaging {
     }
 
     public func store(data: Data, forKey key: String) throws {
-        _ = try accessQueue.sync {
+        return try accessQueue.sync {
             try internalStore(data: data, forKey: key)
         }
     }

@@ -233,25 +233,27 @@ extension Preferences {
                     }
                 }
 
-                PreferencePaneSection {
-                    VStack(alignment: .leading) {
-                        TextAndImageMenuItemHeader(UserText.hideAIGeneratedImagesSettings,
-                                                   image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
-                                                   bottomPadding: 2)
+                if model.shouldShowHideAIGeneratedImagesSection {
+                    PreferencePaneSection {
+                        VStack(alignment: .leading) {
+                            TextAndImageMenuItemHeader(UserText.hideAIGeneratedImagesSettings,
+                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
+                                                       bottomPadding: 2)
 
-                        TextMenuItemCaption(UserText.hideAIGeneratedImagesSettingsDescription)
-                            .padding(.bottom, 6)
-                        Button {
-                            model.openSearchAssistSettings()
-                        } label: {
-                            HStack {
-                                Text(UserText.searchAIFeaturesSettingsLink)
-                                Image(.externalAppScheme)
+                            TextMenuItemCaption(UserText.hideAIGeneratedImagesSettingsDescription)
+                                .padding(.bottom, 6)
+                            Button {
+                                model.openSearchAssistSettings()
+                            } label: {
+                                HStack {
+                                    Text(UserText.searchAIFeaturesSettingsLink)
+                                    Image(.externalAppScheme)
+                                }
+                                .foregroundColor(Color.linkBlue)
+                                .cursor(.pointingHand)
                             }
-                            .foregroundColor(Color.linkBlue)
-                            .cursor(.pointingHand)
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
             }

@@ -542,7 +542,6 @@ final class DownloadListCoordinator {
         return tab.webView
     }
 
-
     @MainActor
     func cleanupInactiveDownloads(for fireWindowSession: FireWindowSessionRef?) {
         Logger.fileDownload.debug("coordinator: cleanupInactiveDownloads")

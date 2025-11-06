@@ -16,9 +16,7 @@
 //  limitations under the License.
 //
 
-import Foundation
 import AppKit
-
 final class TabFaviconView: NSView {
 
     private let imageView = NSImageView()

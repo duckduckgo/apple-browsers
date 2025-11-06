@@ -24,6 +24,7 @@ import Cocoa
 import Combine
 import Common
 import Configuration
+import ContentScopeScripts
 import CoreData
 import Crashes
 import DataBrokerProtection_macOS
@@ -37,7 +38,6 @@ import Lottie
 import MetricKit
 import Network
 import Networking
-import VPN
 import NetworkProtectionIPC
 import NewTabPage
 import os.log
@@ -50,9 +50,10 @@ import ServiceManagement
 import Subscription
 import SyncDataProviders
 import UserNotifications
+import Utilities
+import VPN
 import VPNAppState
 import WebKit
-import ContentScopeScripts
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -87,12 +88,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let watchdog: Watchdog
     private let watchdogSleepMonitor: WatchdogSleepMonitor
+    private var hangReportingFeatureMonitor: HangReportingFeatureMonitor?
 
     let keyValueStore: ThrowingKeyValueStoring
 
     let faviconManager: FaviconManager
     let pinnedTabsManager = PinnedTabsManager()
-    let pinnedTabsManagerProvider: PinnedTabsManagerProviding!
+    let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider
@@ -122,6 +124,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let appearancePreferences: AppearancePreferences
     let dataClearingPreferences: DataClearingPreferences
     let startupPreferences: StartupPreferences
+    let defaultBrowserPreferences: DefaultBrowserPreferences
 
     let database: Database!
     let bookmarkDatabase: BookmarkDatabase
@@ -135,6 +138,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
     let fireCoordinator: FireCoordinator
     let permissionManager: PermissionManager
+    let recentlyClosedCoordinator: RecentlyClosedCoordinating
+
+    let autoconsentManagement = AutoconsentManagement()
 
     private var updateProgressCancellable: AnyCancellable?
 
@@ -173,14 +179,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let newTabPageCustomizationModel: NewTabPageCustomizationModel
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
-    let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
+    let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionAuthV1toV2Bridge,
         featureFlagger: featureFlagger,
         vpnUpsellVisibilityManager: vpnUpsellVisibilityManager
     )
-    let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
-    let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let themeManager: ThemeManager
 
     let wideEvent: WideEventManaging
@@ -513,7 +517,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         bookmarkDragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
-        pinnedTabsManagerProvider = PinnedTabsManagerProvider()
+        pinnedTabsManagerProvider = PinnedTabsManagerProvider(sharedPinedTabsManager: pinnedTabsManager)
 
 #if DEBUG || REVIEW
         let defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
@@ -656,6 +660,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagger: featureFlagger
         )
         self.windowControllersManager = windowControllersManager
+        pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
 
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(
             tabShower: windowControllersManager,
@@ -698,6 +703,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         visualizeFireSettingsDecider = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
         startupPreferences = StartupPreferences(persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore), appearancePreferences: appearancePreferences)
+        defaultBrowserPreferences = DefaultBrowserPreferences()
         newTabPageCustomizationModel = NewTabPageCustomizationModel(themeManager: themeManager, appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld,
@@ -728,6 +734,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 fireproofDomains: fireproofDomains,
                 fireCoordinator: fireCoordinator,
                 tld: tld,
+                autoconsentManagement: autoconsentManagement,
                 contentScopePreferences: contentScopePreferences
             )
             privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
@@ -752,6 +759,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fireproofDomains: fireproofDomains,
             fireCoordinator: fireCoordinator,
             tld: tld,
+            autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences
         )
         privacyFeatures = AppPrivacyFeatures(
@@ -777,31 +785,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         let onboardingManager = onboardingContextualDialogsManager
-        defaultBrowserAndDockPromptKeyValueStore = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStore)
-        DefaultBrowserAndDockPromptStoreMigrator(
-            oldStore: DefaultBrowserAndDockPromptLegacyStore(),
-            newStore: defaultBrowserAndDockPromptKeyValueStore
-        ).migrateIfNeeded()
-
-        defaultBrowserAndDockPromptFeatureFlagger = DefaultBrowserAndDockPromptFeatureFlag(
-            privacyConfigManager: privacyConfigurationManager,
-            featureFlagger: featureFlagger
-        )
-
-        let defaultBrowserAndDockPromptDecider = DefaultBrowserAndDockPromptTypeDecider(
-            featureFlagger: defaultBrowserAndDockPromptFeatureFlagger,
-            store: defaultBrowserAndDockPromptKeyValueStore,
-            installDateProvider: { LocalStatisticsStore().installDate },
-            dateProvider: defaultBrowserAndDockPromptDateProvider
-        )
-        let coordinator = DefaultBrowserAndDockPromptCoordinator(
-            promptTypeDecider: defaultBrowserAndDockPromptDecider,
-            store: defaultBrowserAndDockPromptKeyValueStore,
-            isOnboardingCompleted: { onboardingManager.state == .onboardingCompleted },
-            dateProvider: defaultBrowserAndDockPromptDateProvider
-        )
-        let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier()
-        defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier)
+        defaultBrowserAndDockPromptService = DefaultBrowserAndDockPromptService(featureFlagger: featureFlagger,
+                                                                                privacyConfigManager: privacyConfigurationManager,
+                                                                                keyValueStore: keyValueStore,
+                                                                                isOnboardingCompletedProvider: { onboardingManager.state == .onboardingCompleted })
 
         if AppVersion.runType.requiresEnvironment {
             remoteMessagingClient = RemoteMessagingClient(
@@ -882,13 +869,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         watchdogSleepMonitor = WatchdogSleepMonitor(watchdog: watchdog)
 
 #if !DEBUG
-        // Start UI hang watchdog
-        if featureFlagger.isFeatureOn(.hangReporting) {
-            Task { [watchdog] in
-                await watchdog.start()
-            }
+        if AppVersion.runType == .normal {
+            hangReportingFeatureMonitor = HangReportingFeatureMonitor(
+                privacyConfigurationManager: privacyConfigurationManager,
+                featureFlagger: featureFlagger,
+                watchdog: watchdog
+            )
         }
 #endif
+
+        recentlyClosedCoordinator = RecentlyClosedCoordinator(windowControllersManager: windowControllersManager, pinnedTabsManagerProvider: pinnedTabsManagerProvider)
 
         super.init()
 
@@ -938,15 +928,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSWindow.allowsAutomaticWindowTabbing = false
         // Fix SwifUI context menus and its owner View leaking
         SwiftUIContextMenuRetainCycleFix.setUp()
-
-#if !DEBUG
-        // Start UI hang watchdog
-        if featureFlagger.isFeatureOn(.hangReporting) {
-            Task {
-                await watchdog.start()
-            }
-        }
-#endif
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -976,7 +957,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         configurationManager.start()
         _ = DownloadListCoordinator.shared
-        _ = RecentlyClosedCoordinator.shared
 
         let isFirstLaunch = LocalStatisticsStore().atb == nil
 
@@ -1154,6 +1134,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task { @MainActor in
             vpnAppEventsHandler.applicationDidBecomeActive()
         }
+
+        defaultBrowserAndDockPromptService.applicationDidBecomeActive()
     }
 
     private func fireDailyActiveUserPixel() {

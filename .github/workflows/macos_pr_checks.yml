@@ -49,7 +49,11 @@ on:
         required: true
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # When this workflow is called by another workflow (e.g. code freeze), `github.workflow` contains the name of the calling workflow,
+  # and the value of `${{ github.workflow }}-${{ github.ref }}` would be the same for PR Checks and UI Tests, which would prevent them
+  # from being run concurrently. We're adding a suffix here to tell PR Checks and UI Tests apart and allow for running the two
+  # side by side in the code freeze workflow.
+  group: ${{ github.workflow }}-${{ github.ref }}-pr-checks
   cancel-in-progress: true
 
 jobs:

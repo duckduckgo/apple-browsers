@@ -22,28 +22,20 @@ import Foundation
 import History
 
 final class MockHistoryStore: HistoryStoring {
-    func cleanOld(until date: Date) -> Future<BrowsingHistory, any Error> {
-        Future { promise in
-            promise(.success([]))
-        }
+    func cleanOld(until date: Date) async throws -> BrowsingHistory {
+        []
     }
 
-    func save(entry: HistoryEntry) -> Future<[(id: Visit.ID, date: Date)], any Error> {
-        Future { promise in
-            promise(.success([]))
-        }
+    func save(entry: HistoryEntry) async throws -> [(id: Visit.ID, date: Date)] {
+        []
     }
 
-    func removeEntries(_ entries: [HistoryEntry]) -> Future<Void, any Error> {
-        Future { promise in
-            promise(.success(()))
-        }
+    func removeEntries(_ entries: some Sequence<HistoryEntry>) async throws {
+        // No-op for mock
     }
 
-    func removeVisits(_ visits: [Visit]) -> Future<Void, any Error> {
-        Future { promise in
-            promise(.success(()))
-        }
+    func removeVisits(_ visits: some Sequence<Visit>) async throws {
+        // No-op for mock
     }
 }
 #endif

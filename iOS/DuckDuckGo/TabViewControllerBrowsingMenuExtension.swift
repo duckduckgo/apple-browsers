@@ -328,16 +328,7 @@ extension TabViewController {
                                            with bookmarksInterface: MenuBookmarksInteracting) {
         Pixel.fire(pixel: .browsingMenuAddToBookmarks)
         DailyPixel.fire(pixel: .addBookmarkDaily)
-        bookmarksInterface.createBookmark(title: link.title ?? "", url: link.url)
-        favicons.loadFavicon(forDomain: link.url.host, intoCache: .fireproof, fromCache: .tabs)
-        syncService.scheduler.notifyDataChanged()
-
-        ActionMessageView.present(message: UserText.webSaveBookmarkDone,
-                                  actionTitle: UserText.actionGenericEdit,
-                                  presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom),
-                                  onAction: {
-            self.performEditBookmarkAction(for: link)
-        })
+        saveAsBookmark(favorite: false, viewModel: bookmarksInterface)
     }
 
     private func performEditBookmarkAction(for link: Link) {

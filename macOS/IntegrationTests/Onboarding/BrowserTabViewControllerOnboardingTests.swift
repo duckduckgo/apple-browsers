@@ -19,14 +19,25 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FeatureFlags
 import History
 import HistoryView
 import Onboarding
 import PrivacyDashboard
+import SharedTestUtilities
 import struct SwiftUI.AnyView
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
+
+class MockDefaultBrowserProvider: DefaultBrowserProvider {
+    var bundleIdentifier: String = "test"
+    var defaultBrowserURL: URL?
+    var isDefault: Bool = false
+
+    func presentDefaultBrowserPrompt() throws {}
+    func openSystemPreferences() {}
+}
 
 @available(macOS 12.0, *)
 final class BrowserTabViewControllerOnboardingTests: XCTestCase {
@@ -47,7 +58,10 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         autoreleasepool {
             let tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
             featureFlagger = MockFeatureFlagger()
-            featureFlagger.enabledFeatureFlags = [.contextualOnboarding, .newTabPagePerTab]
+            featureFlagger.featuresStub = [
+                FeatureFlag.contextualOnboarding.rawValue: true,
+                FeatureFlag.newTabPagePerTab.rawValue: true
+            ]
             pixelReporter = CapturingOnboardingPixelReporter()
             dialogProvider = MockDialogsProvider()
             factory = CapturingDialogFactory(expectation: expectation)
@@ -60,7 +74,14 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
             tab = Tab(content: .url(URL.duckDuckGo, credential: nil, source: .appOpenUrl), webViewConfiguration: schemeHandler.webViewConfiguration())
             let tabViewModel = TabViewModel(tab: tab)
-            viewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, onboardingPixelReporter: pixelReporter, onboardingDialogTypeProvider: dialogProvider, onboardingDialogFactory: factory, featureFlagger: featureFlagger)
+            viewController = BrowserTabViewController(
+                tabCollectionViewModel: tabCollectionViewModel,
+                onboardingPixelReporter: pixelReporter,
+                onboardingDialogTypeProvider: dialogProvider,
+                onboardingDialogFactory: factory,
+                featureFlagger: featureFlagger,
+                defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider())
+            )
             viewController.tabViewModel = tabViewModel
             _=viewController.view
             window = MockWindow()
@@ -90,7 +111,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     func testWhenNavigationCompletedAndFeatureIsOffThenTurnOffFeature() throws {
-        featureFlagger.enabledFeatureFlags = [.newTabPagePerTab]
+        featureFlagger.featuresStub = [FeatureFlag.newTabPagePerTab.rawValue: true]
         let expectation = self.expectation(description: "Wait for turnOffFeatureCalled to be called")
         dialogProvider.turnOffFeatureCalledExpectation = expectation
 

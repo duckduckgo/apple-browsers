@@ -54,7 +54,7 @@ protocol MaliciousSiteProtectionNavigationHandling: SpecialErrorPageThreatProvid
     ///   asynchronous operation for detecting malicious sites. If the task cannot be found,
     ///   the function returns `nil`.
     @MainActor
-    func getMaliciousSiteDectionTask(for navigationResponse: WKNavigationResponse, webView: WKWebView) -> Task<MaliciousSiteProtectionNavigationResult, Never>?
+    func getMaliciousSiteDetectionTask(for navigationResponse: WKNavigationResponse, webView: WKWebView) -> Task<MaliciousSiteProtectionNavigationResult, Never>?
 }
 
 final class MaliciousSiteProtectionNavigationHandler {
@@ -95,7 +95,7 @@ extension MaliciousSiteProtectionNavigationHandler: MaliciousSiteProtectionNavig
         }
 
         // Purge Detection tasks when a new main frame navigation happens
-        purgeMaliciousDectionTasksIfNeeded(navigationAction: navigationAction, url: url)
+        purgeMaliciousDetectionTasksIfNeeded(navigationAction: navigationAction, url: url)
         // Save last main frame navigation
         lastMainFrameNavigationURL = url
 
@@ -127,7 +127,7 @@ extension MaliciousSiteProtectionNavigationHandler: MaliciousSiteProtectionNavig
     }
 
     @MainActor
-    func getMaliciousSiteDectionTask(for navigationResponse: WKNavigationResponse, webView: WKWebView) -> Task<MaliciousSiteProtectionNavigationResult, Never>? {
+    func getMaliciousSiteDetectionTask(for navigationResponse: WKNavigationResponse, webView: WKWebView) -> Task<MaliciousSiteProtectionNavigationResult, Never>? {
 
         guard let url = navigationResponse.response.url else {
             assertionFailure("Could not find Malicious Site Detection Task for URL")
@@ -178,7 +178,7 @@ private extension MaliciousSiteProtectionNavigationHandler {
     }
 
     @MainActor
-    func purgeMaliciousDectionTasksIfNeeded(navigationAction: WKNavigationAction, url: URL) {
+    func purgeMaliciousDetectionTasksIfNeeded(navigationAction: WKNavigationAction, url: URL) {
         // Purge task storage if new main frame navigation to avoid creating tasks that won't be consumed and will continue to be stored causing unnecessary memory usage.
         // The following navigations don't trigger `decidePolicyForNavigationResponse`:
         // - same-document navigations (with #hash suffix)

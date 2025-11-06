@@ -16,11 +16,13 @@
 //  limitations under the License.
 //
 
-import Testing
 import Common
-import PixelKit
 import FeatureFlags
+import Foundation
 import PersistenceTestingUtils
+import PixelKit
+import Testing
+
 @testable import DuckDuckGo_Privacy_Browser
 
 @Suite("CPM - Daily Stats")

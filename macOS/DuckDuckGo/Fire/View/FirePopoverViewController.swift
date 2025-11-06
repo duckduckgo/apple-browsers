@@ -216,7 +216,7 @@ final class FirePopoverViewController: NSViewController {
             assertionFailure("No TabCollectionViewModel or MainWindowController")
             return
         }
-        windowController.window?.performClose(self)
+        windowController.window?.close()
     }
 
     private func adjustViewForBurnerWindow() {

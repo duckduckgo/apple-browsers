@@ -142,24 +142,22 @@ struct BrokerProfileOptOutSubJob {
                                                     brokerId: identifiers.brokerId,
                                                     profileQueryId: identifiers.profileQueryId,
                                                     extractedProfileId: identifiers.extractedProfileId)
-        let recordFoundDateProvider = {
-            RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
-                                            repository: repository,
-                                            brokerId: identifiers.brokerId,
-                                            profileQueryId: identifiers.profileQueryId,
-                                            extractedProfileId: identifiers.extractedProfileId)
-        }
+        let recordFoundDate = RecordFoundDateResolver.resolve(repository: repository,
+                                                              brokerId: identifiers.brokerId,
+                                                              profileQueryId: identifiers.profileQueryId,
+                                                              extractedProfileId: identifiers.extractedProfileId)
 
         OptOutSubmissionWideEventRecorder.startIfPossible(wideEvent: wideEvent,
                                                           identifier: wideEventId,
                                                           dataBrokerURL: brokerProfileQueryData.dataBroker.url,
                                                           dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-                                                          recordFoundDateProvider: recordFoundDateProvider)
+                                                          recordFoundDate: recordFoundDate)
+
         OptOutConfirmationWideEventRecorder.startIfPossible(wideEvent: wideEvent,
                                                             identifier: wideEventId,
                                                             dataBrokerURL: brokerProfileQueryData.dataBroker.url,
                                                             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-                                                            recordFoundDateProvider: recordFoundDateProvider)
+                                                            recordFoundDate: recordFoundDate)
     }
 
     internal func validateOptOutPreconditions(for extractedProfile: ExtractedProfile,
@@ -336,13 +334,10 @@ struct BrokerProfileOptOutSubJob {
                                                   brokerId: Int64,
                                                   profileQueryId: Int64,
                                                   extractedProfileId: Int64) {
-        let recordFoundDateProvider = {
-            RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
-                                            repository: database,
-                                            brokerId: brokerId,
-                                            profileQueryId: profileQueryId,
-                                            extractedProfileId: extractedProfileId)
-        }
+        let recordFoundDate = RecordFoundDateResolver.resolve(repository: database,
+                                                              brokerId: brokerId,
+                                                              profileQueryId: profileQueryId,
+                                                              extractedProfileId: extractedProfileId)
         let wideEventId = OptOutWideEventIdentifier(profileIdentifier: profileIdentifier,
                                                     brokerId: brokerId,
                                                     profileQueryId: profileQueryId,
@@ -352,7 +347,7 @@ struct BrokerProfileOptOutSubJob {
             identifier: wideEventId,
             dataBrokerURL: brokerProfileQueryData.dataBroker.url,
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-            recordFoundDateProvider: recordFoundDateProvider
+            recordFoundDate: recordFoundDate
         )?.markCompleted(at: Date())
     }
 

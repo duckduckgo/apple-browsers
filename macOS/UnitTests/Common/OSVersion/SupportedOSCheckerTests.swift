@@ -33,7 +33,7 @@ final class SupportedOSCheckerTests: XCTestCase {
 
     func testWhenCurrentVersionIsHigherThanMinSupportedThenNoWarning() {
         // Given
-        let mockFeatureFlagger = FeatureFlaggerMock()
+        let mockFeatureFlagger = MockFeatureFlagger()
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.venturaVersion,
@@ -49,7 +49,7 @@ final class SupportedOSCheckerTests: XCTestCase {
 
     func testWhenCurrentVersionIsLowerThanMinSupportedThenShowsUnsupportedWarning() {
         // Given
-        let mockFeatureFlagger = FeatureFlaggerMock()
+        let mockFeatureFlagger = MockFeatureFlagger()
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.catalinaVersion,
@@ -69,7 +69,7 @@ final class SupportedOSCheckerTests: XCTestCase {
 
     func testWhenCurrentVersionIsEqualToMinSupportedThenNoWarning() {
         // Given
-        let mockFeatureFlagger = FeatureFlaggerMock()
+        let mockFeatureFlagger = MockFeatureFlagger()
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.bigSurVersion,
@@ -87,7 +87,7 @@ final class SupportedOSCheckerTests: XCTestCase {
 
     func testWhenNoUpcomingVersionThenNoWarning() {
         // Given
-        let mockFeatureFlagger = FeatureFlaggerMock()
+        let mockFeatureFlagger = MockFeatureFlagger()
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.bigSurVersion,
@@ -103,7 +103,7 @@ final class SupportedOSCheckerTests: XCTestCase {
 
     func testWhenCurrentVersionIsLowerThanUpcomingVersionThenShowsWarning() {
         // Given
-        let mockFeatureFlagger = FeatureFlaggerMock()
+        let mockFeatureFlagger = MockFeatureFlagger()
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.bigSurVersion,
@@ -123,7 +123,7 @@ final class SupportedOSCheckerTests: XCTestCase {
 
     func testWhenCurrentVersionIsHigherThanUpcomingVersionThenNoWarning() {
         // Given
-        let mockFeatureFlagger = FeatureFlaggerMock()
+        let mockFeatureFlagger = MockFeatureFlagger()
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.venturaVersion,
@@ -139,7 +139,7 @@ final class SupportedOSCheckerTests: XCTestCase {
 
     func testWhenCurrentVersionEqualsUpcomingVersionThenNoWarning() {
         // Given
-        let mockFeatureFlagger = FeatureFlaggerMock()
+        let mockFeatureFlagger = MockFeatureFlagger()
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
             currentOSVersionOverride: Self.montereyVersion,
@@ -157,7 +157,7 @@ final class SupportedOSCheckerTests: XCTestCase {
 
     func testWhenForceUnsupportedMessageFeatureFlagIsOnThenShowsUnsupportedWarning() {
         // Given
-        let mockFeatureFlagger = FeatureFlaggerMock()
+        let mockFeatureFlagger = MockFeatureFlagger()
         mockFeatureFlagger.enabledFeatureFlags = [.osSupportForceUnsupportedMessage]
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
@@ -178,7 +178,7 @@ final class SupportedOSCheckerTests: XCTestCase {
 
     func testWhenForceWillSoonDropSupportMessageFeatureFlagIsOnThenShowsUpcomingWarning() {
         // Given
-        let mockFeatureFlagger = FeatureFlaggerMock()
+        let mockFeatureFlagger = MockFeatureFlagger()
         mockFeatureFlagger.enabledFeatureFlags = [.osSupportForceWillSoonDropSupportMessage]
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,
@@ -199,7 +199,7 @@ final class SupportedOSCheckerTests: XCTestCase {
 
     func testWhenWillSoonDropBigSurSupportFeatureFlagIsOnThenShowsUpcomingWarning() {
         // Given
-        let mockFeatureFlagger = FeatureFlaggerMock()
+        let mockFeatureFlagger = MockFeatureFlagger()
         mockFeatureFlagger.enabledFeatureFlags = [.willSoonDropBigSurSupport]
         let checker = SupportedOSChecker(
             featureFlagger: mockFeatureFlagger,

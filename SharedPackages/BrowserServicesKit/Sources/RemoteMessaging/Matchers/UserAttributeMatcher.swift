@@ -57,6 +57,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
                 isSubscriptionActive: Bool,
                 isSubscriptionExpiring: Bool,
                 isSubscriptionExpired: Bool,
+                subscriptionFreeTrialActive: Bool,
                 isDuckPlayerOnboarded: Bool,
                 isDuckPlayerEnabled: Bool,
                 dismissedMessageIds: [String],
@@ -86,6 +87,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
             isSubscriptionActive: isSubscriptionActive,
             isSubscriptionExpiring: isSubscriptionExpiring,
             isSubscriptionExpired: isSubscriptionExpired,
+            subscriptionFreeTrialActive: subscriptionFreeTrialActive,
             isDuckPlayerOnboarded: isDuckPlayerOnboarded,
             isDuckPlayerEnabled: isDuckPlayerEnabled,
             dismissedMessageIds: dismissedMessageIds,
@@ -133,6 +135,7 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
                 isSubscriptionActive: Bool,
                 isSubscriptionExpiring: Bool,
                 isSubscriptionExpired: Bool,
+                subscriptionFreeTrialActive: Bool,
                 dismissedMessageIds: [String],
                 shownMessageIds: [String],
                 pinnedTabsCount: Int,
@@ -165,6 +168,7 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
             isSubscriptionActive: isSubscriptionActive,
             isSubscriptionExpiring: isSubscriptionExpiring,
             isSubscriptionExpired: isSubscriptionExpired,
+            subscriptionFreeTrialActive: subscriptionFreeTrialActive,
             isDuckPlayerOnboarded: isDuckPlayerOnboarded,
             isDuckPlayerEnabled: isDuckPlayerEnabled,
             dismissedMessageIds: dismissedMessageIds,
@@ -219,6 +223,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
     private let isSubscriptionActive: Bool
     private let isSubscriptionExpiring: Bool
     private let isSubscriptionExpired: Bool
+    private let subscriptionFreeTrialActive: Bool
     private let isDuckPlayerOnboarded: Bool
     private let isDuckPlayerEnabled: Bool
     private let dismissedMessageIds: [String]
@@ -241,6 +246,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
                 isSubscriptionActive: Bool,
                 isSubscriptionExpiring: Bool,
                 isSubscriptionExpired: Bool,
+                subscriptionFreeTrialActive: Bool,
                 isDuckPlayerOnboarded: Bool,
                 isDuckPlayerEnabled: Bool,
                 dismissedMessageIds: [String],
@@ -263,6 +269,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
         self.isSubscriptionActive = isSubscriptionActive
         self.isSubscriptionExpiring = isSubscriptionExpiring
         self.isSubscriptionExpired = isSubscriptionExpired
+        self.subscriptionFreeTrialActive = subscriptionFreeTrialActive
         self.isDuckPlayerOnboarded = isDuckPlayerOnboarded
         self.isDuckPlayerEnabled = isDuckPlayerEnabled
         self.dismissedMessageIds = dismissedMessageIds
@@ -312,6 +319,8 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
             }
 
             return .fail
+        case let matchingAttribute as SubscriptionFreeTrialActiveMatchingAttribute:
+            return matchingAttribute.evaluate(for: subscriptionFreeTrialActive)
         case let matchingAttribute as DuckPlayerOnboardedMatchingAttribute:
             return matchingAttribute.evaluate(for: isDuckPlayerOnboarded)
         case let matchingAttribute as DuckPlayerEnabledMatchingAttribute:

@@ -1669,6 +1669,9 @@ body:not([data-platform-name]) .Button_button:active {
 [data-entry-point=omnibar]:has([role=listbox]) .SearchForm_closeButton {
   visibility: visible;
 }
+[data-platform=windows] .SearchForm_input {
+  line-height: normal;
+}
 
 /* pages/new-tab/app/omnibar/components/SuggestionsList.module.css */
 .SuggestionsList_list {
@@ -2822,11 +2825,9 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
 }
 @keyframes CustomizerDrawerInner_fade-in {
   0% {
-    opacity: 0;
     visibility: hidden;
   }
   100% {
-    opacity: 1;
     visibility: visible;
   }
 }

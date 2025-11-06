@@ -22,8 +22,10 @@ import History
 import HistoryView
 import PersistenceTestingUtils
 import TrackerRadarKit
+import SharedTestUtilities
 import WebKit
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ContentBlockingUpdatingTests: XCTestCase {
@@ -84,6 +86,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        historyCoordinator: CapturingHistoryDataSource(),
                                        fireproofDomains: MockFireproofDomains(domains: []),
                                        fireCoordinator: fireCoordinator,
+                                       autoconsentManagement: AutoconsentManagement(),
                                        contentScopePreferences: ContentScopePreferences())
         /// Set it to any value to trigger `didSet` that unblocks updates stream
         updating.userScriptDependenciesProvider = nil

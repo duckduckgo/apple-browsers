@@ -70,6 +70,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let tabCollectionViewModel: TabCollectionViewModel
     private let bookmarkManager: BookmarkManager
     private let historyCoordinator: HistoryGroupingDataSource
+    private let recentlyClosedCoordinator: RecentlyClosedCoordinating
     private let emailManager: EmailManager
     private let fireproofDomains: FireproofDomains
     private let passwordManagerCoordinator: PasswordManagerCoordinating
@@ -111,6 +112,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     init(tabCollectionViewModel: TabCollectionViewModel,
          bookmarkManager: BookmarkManager,
          historyCoordinator: HistoryGroupingDataSource,
+         recentlyClosedCoordinator: RecentlyClosedCoordinating,
          emailManager: EmailManager = EmailManager(),
          fireproofDomains: FireproofDomains,
          passwordManagerCoordinator: PasswordManagerCoordinator,
@@ -124,7 +126,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          freemiumDBPPresenter: FreemiumDBPPresenter = DefaultFreemiumDBPPresenter(),
          appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
          dockCustomizer: DockCustomization? = nil,
-         defaultBrowserPreferences: DefaultBrowserPreferences = .shared,
+         defaultBrowserPreferences: DefaultBrowserPreferences,
          notificationCenter: NotificationCenter = .default,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
@@ -139,6 +141,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.historyCoordinator = historyCoordinator
+        self.recentlyClosedCoordinator = recentlyClosedCoordinator
         self.emailManager = emailManager
         self.fireproofDomains = fireproofDomains
         self.passwordManagerCoordinator = passwordManagerCoordinator
@@ -581,7 +584,14 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         if featureFlagger.isFeatureOn(.historyView) {
             addItem(withTitle: UserText.mainMenuHistory, action: nil, keyEquivalent: "")
                 .withImage(moreOptionsMenuIconsProvider.historyIcon)
-                .withSubmenu(HistoryMenu(location: .moreOptionsMenu, historyGroupingDataSource: historyCoordinator, featureFlagger: featureFlagger))
+                .withSubmenu(
+                    HistoryMenu(
+                        location: .moreOptionsMenu,
+                        historyGroupingDataSource: historyCoordinator,
+                        recentlyClosedCoordinator: recentlyClosedCoordinator,
+                        featureFlagger: featureFlagger
+                    )
+                )
         }
 
         let loginsSubMenu = LoginsSubMenu(targetting: self,
@@ -897,12 +907,7 @@ final class FeedbackSubMenu: NSMenu {
                                  featureFlagger: FeatureFlagger,
                                  moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         removeAllItems()
-
-        if featureFlagger.isFeatureOn(.newFeedbackForm) {
-            newFlow(moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
-        } else {
-            legacyFlow(moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
-        }
+        feedbackFlow(moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
 
         if authenticationStateProvider.isUserAuthenticated {
             addItem(.separator())
@@ -921,7 +926,7 @@ final class FeedbackSubMenu: NSMenu {
         }
     }
 
-    private func newFlow(moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
+    private func feedbackFlow(moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         let reportBrokenSiteItem = NSMenuItem(title: UserText.reportBrokenSite,
                                               action: #selector(AppDelegate.openReportBrokenSite(_:)),
                                               keyEquivalent: "")
@@ -941,21 +946,6 @@ final class FeedbackSubMenu: NSMenu {
                                                 keyEquivalent: "")
             .withImage(DesignSystemImages.Glyphs.Size16.windowNew)
         addItem(requestANewFeatureItem)
-    }
-
-    private func legacyFlow(moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
-        let browserFeedbackItem = NSMenuItem(title: UserText.browserFeedback,
-                                             action: #selector(sendFeedback(_:)),
-                                             keyEquivalent: "")
-            .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.browserFeedbackIcon)
-        addItem(browserFeedbackItem)
-
-        let reportBrokenSiteItem = NSMenuItem(title: UserText.reportBrokenSite,
-                                              action: #selector(AppDelegate.openReportBrokenSite(_:)),
-                                              keyEquivalent: "")
-            .withImage(moreOptionsMenuIconsProvider.reportBrokenSiteIcon)
-        addItem(reportBrokenSiteItem)
     }
 
     @MainActor

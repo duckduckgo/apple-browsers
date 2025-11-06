@@ -54,7 +54,7 @@ struct DataImportView: ModalView {
     @State private var progress: ProgressState?
 
 #if DEBUG || REVIEW
-    @State private var debugViewDisabled: Bool = false
+    @State private var debugViewDisabled: Bool = true
 #endif
 
     private var shouldShowDebugView: Bool {
@@ -75,17 +75,46 @@ struct DataImportView: ModalView {
 
     var body: some View {
         VStack(alignment: alignment, spacing: 0) {
-            viewHeader()
-                .padding(.top, 30)
-                .padding(.leading, 20)
-                .padding(.trailing, 20)
-                .padding(.bottom, 0)
+            switch model.screen {
+            case .profileAndDataTypesPicker:
+                ImportSourcePickerView(
+                    availableSources: model.availableImportSources,
+                    selectedSource: model.importSource,
+                    selectedImportTypes: Array(model.selectedDataTypes),
+                    shouldShowSyncFeature: syncFeatureVisibility.shouldShowSyncFeature,
+                    onSourceSelected: { source in
+                        model.update(with: source)
+                    },
+                    onTypeSelected: { type, isSelected in
+                        model.setDataType(type, selected: isSelected)
+                    },
+                    onSyncSelected: {
+                        guard case .show(let syncLauncher) = syncFeatureVisibility else {
+                            return
+                        }
+                        syncLauncher.startDeviceSyncFlow(source: .dataImportStart) {
+                            importFlowLauncher.relaunchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded)
+                        }
+                        dismiss.callAsFunction()
+                    }
+                )
+            case .fileImport(let dataType, let summaryTypes):
+                FileImportScreenView(model: $model, kind: .individual(dataType: dataType), summaryTypes: summaryTypes, dismiss: dismiss.callAsFunction)
+            case .archiveImport:
+                FileImportScreenView(model: $model, kind: .archive, summaryTypes: [], dismiss: dismiss.callAsFunction)
+            default:
+                viewHeader()
+                    .padding(.top, 30)
+                    .padding(.leading, 20)
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 0)
 
-            viewBody()
-                .padding(.leading, 20)
-                .padding(.trailing, 20)
-                .padding(.bottom, 26)
-                .padding(.top, 0)
+                viewBody()
+                    .padding(.leading, 20)
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 26)
+                    .padding(.top, 0)
+            }
 
             // if import in progress…
             if let importProgress = model.importProgress {
@@ -291,7 +320,7 @@ struct DataImportView: ModalView {
         .padding(.bottom, 20)
         VStack(alignment: .leading) {
             // manual file import instructions for CSV/HTML
-            NewFileImportView(source: model.importSource, allowedFileTypes: Array(fileTypes), isButtonDisabled: model.isSelectFileButtonDisabled) {
+            NewFileImportView(source: model.importSource, allowedFileTypes: Array(fileTypes), isButtonDisabled: model.isSelectFileButtonDisabled, kind: .archive) {
                 model.selectFile()
             } onFileDrop: { url in
                 model.initiateImport(fileURL: url)

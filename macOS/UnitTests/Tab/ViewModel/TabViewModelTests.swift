@@ -23,6 +23,7 @@ import FeatureFlags
 import MaliciousSiteProtection
 import Navigation
 import PersistenceTestingUtils
+import SharedTestUtilities
 import Subscription
 import WebKit
 import XCTest

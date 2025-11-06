@@ -17,7 +17,7 @@
     "note" : "Placeholder text when there's no results to show"
   },
   "no_results_title" : {
-    "title" : "Brak wyników dla {term}",
+    "title" : "Brak wyników dla „{term}”",
     "note" : "The placeholder {term} will be dynamically replaced with the search term entered by the user. For example, if the user searches for 'cats', the title will become 'No results found for cats'."
   },
   "no_results_text" : {
@@ -115,5 +115,9 @@
   "range_older" : {
     "title" : "Starsze",
     "note" : "Label on a button that shows older history entries."
+  },
+  "range_sites" : {
+    "title" : "Witryny",
+    "note" : "Label on a button that shows which sites have been visited"
   }
 }

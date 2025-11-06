@@ -66,7 +66,6 @@ final class ToolbarHandler: ToolbarStateHandling {
     lazy var fireBarButtonItem = {
        let buttonItem = createBarButtonItem(title: UserText.actionForgetAll, image: DesignSystemImages.Glyphs.Size24.fireSolid)
         buttonItem.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
-
         return buttonItem
     }()
 

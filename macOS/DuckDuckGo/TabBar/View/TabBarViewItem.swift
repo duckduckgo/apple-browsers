@@ -312,9 +312,9 @@ final class TabBarItemCellView: NSView {
             faviconView.setAccessibilityIdentifier("TabBarViewItem.favicon")
         } else {
             faviconImageView.setAccessibilityIdentifier("TabBarViewItem.favicon")
+            faviconPlaceholderView.setAccessibilityIdentifier("TabBarViewItem.faviconPlaceholder")
         }
 
-        faviconPlaceholderView.setAccessibilityIdentifier("TabBarViewItem.faviconPlaceholder")
         titleTextField.setAccessibilityIdentifier("TabBarViewItem.title")
 
         closeButton.toolTip = UserText.closeTab
@@ -340,9 +340,9 @@ final class TabBarItemCellView: NSView {
             addSubview(faviconView)
         } else {
             addSubview(faviconImageView)
+            addSubview(faviconPlaceholderView)
         }
 
-        addSubview(faviconPlaceholderView)
         addSubview(crashIndicatorButton)
         addSubview(audioButton)
         addSubview(titleTextField)
@@ -1094,7 +1094,6 @@ final class TabBarViewItem: NSCollectionViewItem {
         /// When `faviconView` we'll never display `faviconPlaceholderView`
         if cell.displaysTabsProgressIndicator {
             cell.faviconView.image = favicon
-            cell.faviconPlaceholderView.isHidden = true
             return
         }
 

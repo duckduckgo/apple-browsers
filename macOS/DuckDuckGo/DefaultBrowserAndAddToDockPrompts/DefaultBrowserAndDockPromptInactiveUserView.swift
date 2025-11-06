@@ -49,16 +49,21 @@ struct DefaultBrowserAndDockPromptInactiveUserView: View {
 
     var body: some View {
         HStack(spacing: .zero) {
-            VStack(alignment: .center) {
-                Text(viewModel.message)
-                    .font(.title.weight(.bold))
-                    .multilineTextAlignment(.center)
-                    .padding(.top, Metrics.padding)
-                    .padding(.horizontal, Metrics.Message.horizontalPadding)
-                Spacer()
+            ZStack {
+                GradientBackgroundView()
+
+                VStack(alignment: .center) {
+                    Text(viewModel.message)
+                        .font(.title.weight(.bold))
+                        .multilineTextAlignment(.center)
+                        .padding(.top, Metrics.padding)
+                        .padding(.horizontal, Metrics.Message.horizontalPadding)
+                    Spacer()
+                    Image(.daxSearch)
+                }
+                .padding([.top, .horizontal], Metrics.padding)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(Metrics.padding)
 
             VStack(spacing: Metrics.Chart.verticalSpacing) {
                 Spacer()
@@ -73,7 +78,7 @@ struct DefaultBrowserAndDockPromptInactiveUserView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(Metrics.padding)
-            .background(Color(.white))
+            .background(Color(designSystemColor: .surfaceCanvas))
         }
             .frame(width: 868, height: 508)
     }
@@ -87,13 +92,30 @@ private enum Metrics {
     }
 
     enum Chart {
-        static let verticalSpacing: CGFloat = 44
+        static let verticalSpacing: CGFloat = 50
         static let fontSize: CGFloat = 13
         static let fontWeight: Font.Weight = .medium
     }
 }
 
-#Preview("Set As Default") {
+struct GradientBackgroundView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        GeometryReader { proxy in
+            Image(.gradientBackground)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
+                .background(
+                    OnboardingGradient()
+                        .ignoresSafeArea()
+                )
+        }
+    }
+}
+
+#Preview("Set As Default (Light)") {
     let setAsDefault = DefaultBrowserAndDockPromptInactiveUserViewModel(
         message: UserText.setAsDefaultInactiveUserPromptMessage,
         primaryButtonLabel: UserText.setAsDefaultInactiveUserPrimaryAction,
@@ -101,6 +123,18 @@ private enum Metrics {
         primaryButtonAction: {},
         dismissButtonAction: {})
     return DefaultBrowserAndDockPromptInactiveUserView(viewModel: setAsDefault)
+        .preferredColorScheme(.light)
+}
+
+#Preview("Set As Default (Dark)") {
+    let setAsDefault = DefaultBrowserAndDockPromptInactiveUserViewModel(
+        message: UserText.setAsDefaultInactiveUserPromptMessage,
+        primaryButtonLabel: UserText.setAsDefaultInactiveUserPrimaryAction,
+        dismissButtonLabel: UserText.setAsDefaultAndAddToDockInactiveUserDismissAction,
+        primaryButtonAction: {},
+        dismissButtonAction: {})
+    return DefaultBrowserAndDockPromptInactiveUserView(viewModel: setAsDefault)
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Add To Dock") {

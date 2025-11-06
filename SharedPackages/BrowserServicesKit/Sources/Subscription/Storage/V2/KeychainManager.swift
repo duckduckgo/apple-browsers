@@ -85,7 +85,7 @@ public final class KeychainManager: KeychainManaging {
 
     private enum Constants {
         static let accessQueueLabel = "keychain.subscription.access"
-        static let keychainAccessibilityLevel = kSecAttrAccessibleAlways // kSecAttrAccessibleAfterFirstUnlock replacement, as temporary mitigation to Auth V2 keychain issues
+        static let keychainAccessibilityLevel = kSecAttrAccessibleAfterFirstUnlock
     }
 
     // MARK: - Properties
@@ -277,42 +277,35 @@ public final class KeychainManager: KeychainManaging {
     /// 
     /// This enables automatic retry of operations that were queued when the keychain was unavailable.
     private func setupKeychainAvailabilityNotifications() {
+        Logger.keychainManager.log("Set up keychain availability and recovery notifications")
         #if canImport(UIKit)
+
         // On iOS, listen for app becoming active and protected data becoming available
-        NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
-            .receive(on: accessQueue)
-            .sink { [weak self] _ in
-                self?.processWritingBacklog()
-            }
-            .store(in: &cancellables)
-
-        NotificationCenter.default.publisher(for: UIApplication.protectedDataDidBecomeAvailableNotification)
-            .receive(on: accessQueue)
-            .sink { [weak self] _ in
-                self?.processWritingBacklog()
-            }
-            .store(in: &cancellables)
-
-        Logger.keychainManager.log("Set up iOS keychain availability notifications")
+        Publishers.MergeMany(
+            NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification),
+            NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification),
+            NotificationCenter.default.publisher(for: UIApplication.protectedDataDidBecomeAvailableNotification)
+        )
+        .receive(on: accessQueue)
+        .sink { [weak self] _ in
+            self?.processWritingBacklog()
+        }
+        .store(in: &cancellables)
 
         #elseif canImport(AppKit)
+
         // On macOS, listen for app becoming active and workspace session becoming active
-        NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
-            .receive(on: accessQueue)
-            .sink { [weak self] _ in
-                self?.processWritingBacklog()
-            }
-            .store(in: &cancellables)
-
-        NotificationCenter.default.publisher(for: NSWorkspace.sessionDidBecomeActiveNotification)
-            .receive(on: accessQueue)
-            .sink { [weak self] _ in
-                self?.processWritingBacklog()
-            }
-            .store(in: &cancellables)
-
-        Logger.keychainManager.log("Set up macOS keychain availability notifications")
-
+        Publishers.MergeMany(
+            NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification),
+            NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification),
+            NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification),
+            NotificationCenter.default.publisher(for: NSWorkspace.sessionDidBecomeActiveNotification)
+        )
+        .receive(on: accessQueue)
+        .sink { [weak self] _ in
+            self?.processWritingBacklog()
+        }
+        .store(in: &cancellables)
         #else
         Logger.keychainManager.log("Keychain notifications not supported on this platform")
         #endif

@@ -120,64 +120,15 @@ struct SettingsAppearanceView: View {
         }
     }
 
-    func buttonIconProvider(_ button: MobileCustomization.Button) -> Image? {
-        if button == .none {
-            return Image(uiImage: DesignSystemImages.Glyphs.Size16.eyeClosed)
-        }
-        guard let icon = button.smallIcon else { return nil }
-        return Image(uiImage: icon)
-    }
-
-    func descriptionForOption(_ button: MobileCustomization.Button) -> String {
-        switch button {
-        case .share:
-            UserText.actionShare
-        case .addEditBookmark:
-            UserText.keyCommandAddBookmark
-        case .addEditFavorite:
-            UserText.keyCommandAddFavorite
-        case .zoom:
-            UserText.textZoomMenuItem
-        case .none:
-            "Hide This Button"
-        case .home:
-            "Home"
-        case .newTab:
-            UserText.keyCommandNewTab
-        case .bookmarks:
-            UserText.actionOpenBookmarks
-        case .fire:
-            viewModel.isAIChatEnabled ? UserText.settingsAutoClearTabsAndDataWithAIChat :  UserText.settingsAutoClearTabsAndData
-        case .vpn:
-            UserText.actionVPN
-        case .passwords:
-            UserText.actionOpenPasswords
-        case .voiceSearch:
-            "Voice Search"
-        case .downloads:
-            UserText.downloadsScreenTitle
-        }
-    }
-
     @ViewBuilder
     func addressBarButtonSetting() -> some View {
 
-        let options = MobileCustomization.addressBarButtons.sorted(by: descriptionComparison)
+        let destination = AddressBarCustomizationPickerView(isAIChatEnabled: viewModel.isAIChatEnabled, selectedAddressBarButton: viewModel.selectedAddressBarButton)
+            .applySettingsListModifiers(title: "",
+                                        displayMode: .inline,
+                                        viewModel: viewModel)
 
-        NavigationLink(destination: PickerWithHeaderView(
-            title: "Address Bar Button",
-            headerImage: Image(.customAddressBarButtonPreview),
-            options: options,
-            defaultOption: MobileCustomization.addressBarDefault,
-            selectedOption: viewModel.selectedAddressBarButton,
-            descriptionForOption: descriptionForOption,
-            iconProvider: buttonIconProvider)
-
-            .applySettingsListModifiers(title: UserText.settingsAppearanceSection,
-                                                 displayMode: .inline,
-                                                 viewModel: viewModel)
-
-                       , isActive: $showAddressBarSettings) {
+        NavigationLink(destination: destination, isActive: $showAddressBarSettings) {
 
             if let image = viewModel.selectedAddressBarButton.wrappedValue.smallIcon {
                 SettingsCellView(label: "Address Bar", accessory: .image(Image(uiImage: image)))
@@ -194,22 +145,12 @@ struct SettingsAppearanceView: View {
 
     @ViewBuilder
     func toolbarButtonSetting() -> some View {
+        let destination = ToolbarCustomizationPickerView(isAIChatEnabled: viewModel.isAIChatEnabled, selectedToolbarButton: viewModel.selectedToolbarButton)
+            .applySettingsListModifiers(title: "",
+                                        displayMode: .inline,
+                                        viewModel: viewModel)
 
-        let options = MobileCustomization.toolbarButtons.sorted(by: descriptionComparison)
-        NavigationLink(destination: PickerWithHeaderView(
-            title: "Toolbar Button",
-            headerImage: Image(.customToolbarButtonPreview),
-            options: options,
-            defaultOption: MobileCustomization.toolbarDefault,
-            selectedOption: viewModel.selectedToolbarButton,
-            descriptionForOption: descriptionForOption,
-            iconProvider: buttonIconProvider)
-
-            .applySettingsListModifiers(title: UserText.settingsAppearanceSection,
-                                                 displayMode: .inline,
-                                                 viewModel: viewModel)
-
-                       , isActive: $showToolbarSettings) {
+        NavigationLink(destination: destination , isActive: $showToolbarSettings) {
 
             if let image = viewModel.selectedToolbarButton.wrappedValue.smallIcon {
                 SettingsCellView(label: "Toolbar", accessory: .image(Image(uiImage: image)))
@@ -259,74 +200,6 @@ struct SettingsAppearanceView: View {
         }
     }
 
-    func descriptionComparison(lhs: MobileCustomization.Button, rhs: MobileCustomization.Button) -> Bool {
-        if lhs == .none { return false } // Always put none at the end
-        return descriptionForOption(lhs).localizedCaseInsensitiveCompare(descriptionForOption(rhs)) == .orderedAscending
-    }
-
 }
 
-private struct PickerWithHeaderView<T: Hashable>: View {
 
-    let title: String
-    let headerImage: Image
-    let options: [T]
-    let defaultOption: T
-    @Binding var selectedOption: T
-    let descriptionForOption: (T) -> String
-    let iconProvider: ((T) -> Image?)?
-
-    init(title: String,
-         headerImage: Image,
-         options: [T],
-         defaultOption: T,
-         selectedOption: Binding<T>,
-         descriptionForOption: @escaping (T) -> String,
-         iconProvider: ((T) -> Image?)?) {
-        self.title = title
-        self.headerImage = headerImage
-        self.options = options
-        self.defaultOption = defaultOption
-        self._selectedOption = selectedOption
-        self.iconProvider = iconProvider
-        self.descriptionForOption = descriptionForOption
-    }
-
-    var body: some View {
-        List(selection: Binding<T?>(get: {
-            nil
-        }, set: {
-            selectedOption = $0 ?? options[0]
-        })) {
-            Section {
-                HStack {
-                    Spacer()
-                    headerImage
-                    Spacer()
-                }
-                .listRowBackground(Color(designSystemColor: .surface))
-
-                ForEach(options, id: \.self) { option in
-                    HStack {
-                        iconProvider?(option)
-
-                        Text(verbatim: descriptionForOption(option))
-                            .lineLimit(2)
-                            .layoutPriority(1)
-
-                        if selectedOption == option {
-                            Spacer()
-                            Image(uiImage: DesignSystemImages.Glyphs.Size24.checkSmall)
-                                .foregroundStyle(Color(designSystemColor: .accent))
-                        } else {
-                            Spacer(minLength: 24)
-                        }
-                    }
-                    .listRowBackground(Color(designSystemColor: .surface))
-                }
-                .navigationTitle(Text(title))
-            }
-        }
-    }
-
-}

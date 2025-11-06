@@ -50,14 +50,13 @@ struct SettingsAppearanceView: View {
         //  otherwise this immediately gets popped.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
             switch deepLinkTarget {
-                case .customizeToolbarButton:
-                    showToolbarSettings = true
-                case .customizeAddressBarButton:
-                    showAddressBarSettings = true
-                default: break
+            case .customizeToolbarButton:
+                showToolbarSettings = true
+            case .customizeAddressBarButton:
+                showAddressBarSettings = true
+            default: break
             }
         }
-        
     }
 
     var body: some View {
@@ -201,5 +200,3 @@ struct SettingsAppearanceView: View {
     }
 
 }
-
-

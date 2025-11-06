@@ -121,6 +121,7 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
 
     private func verifyTokenNotFoundExpectation() {
         if tokenExpected {
+            Logger.subscriptionKeychain.fault("Expected token not found")
             errorEventsHandler(AccountKeychainAccessType.getAuthToken, AccountKeychainAccessError.expectedTokenNotFound)
         }
     }

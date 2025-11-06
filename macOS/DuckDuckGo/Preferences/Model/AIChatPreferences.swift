@@ -113,6 +113,10 @@ final class AIChatPreferences: ObservableObject {
         aiChatMenuConfiguration.shouldShowSettingsImprovements
     }
 
+    var shouldShowHideAIGeneratedImagesSection: Bool {
+        featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
+    }
+
     // Properties for managing the current state of AI Chat preference options
 
     @Published var isAIFeaturesEnabled: Bool {

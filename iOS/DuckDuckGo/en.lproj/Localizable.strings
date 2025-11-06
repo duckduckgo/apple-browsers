@@ -2290,9 +2290,6 @@ https://duckduckgo.com/mac";
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Choose Your Browser";
 
-/* Message to highlight browser capability of private searches */
-"onboarding.browsers.features.privateSearch.title" = "Search privately by default";
-
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo also has an %1$@, available with a %2$@ and %3$@.";
 
@@ -2334,18 +2331,6 @@ https://duckduckgo.com/mac";
 
 /* The title of the onboarding dialog popup to select the preferred App icon. */
 "onboarding.highlights.appIconSelection.title" = "Which color looks best on me?";
-
-/* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Block cookie pop-ups";
-
-/* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Block targeted ads";
-
-/* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Delete browsing data with one button";
-
-/* Message to highlight browser capability of blocking 3rd-party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Block 3rd-party trackers";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Protections activated!";
@@ -2712,6 +2697,12 @@ Take back control of your personal information with the browser designed for dat
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Settings";
+
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Hide AI-Generated Images";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filters out AI-Generated images from image search results";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Always On";

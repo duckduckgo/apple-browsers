@@ -45,6 +45,7 @@ final class Application: NSApplication {
             featureFlagger: delegate.featureFlagger,
             bookmarkManager: delegate.bookmarkManager,
             historyCoordinator: delegate.historyCoordinator,
+            recentlyClosedCoordinator: delegate.recentlyClosedCoordinator,
             faviconManager: delegate.faviconManager,
             defaultBrowserPreferences: delegate.defaultBrowserPreferences,
             aiChatMenuConfig: delegate.aiChatMenuConfiguration,

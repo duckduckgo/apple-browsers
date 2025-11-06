@@ -36,6 +36,12 @@ final class NavigationBarPopoversTests: XCTestCase {
             bookmarkDragDropManager: .init(bookmarkManager: bookmarkManager),
             contentBlocking: ContentBlockingMock(),
             fireproofDomains: MockFireproofDomains(domains: []),
+            downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
+            downloadListCoordinator: DownloadListCoordinator(
+                store: DownloadListStoreMock(),
+                downloadManager: FileDownloadManagerMock(),
+                windowControllersManager: WindowControllersManagerMock()
+            ),
             permissionManager: PermissionManagerMock(),
             networkProtectionPopoverManager: NetPPopoverManagerMock(),
             autofillPopoverPresenter: autofillPopoverPresenter,

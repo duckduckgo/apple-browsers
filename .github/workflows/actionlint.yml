@@ -2,11 +2,20 @@ name: Shared - Actionlint
 
 on:
   pull_request:
+    # opened, synchronize, reopened are the default triggering events for a pull request
+    # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
+    types: [opened, synchronize, reopened, ready_for_review]
     paths: '.github/**'
 
 jobs:
+  should-run-checks:
+    name: Determine if checks should run
+    uses: ./.github/workflows/should_run_pr_checks.yml
+
   actionlint:
     name: Actionlint
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
     runs-on: ubuntu-latest
 
     steps:

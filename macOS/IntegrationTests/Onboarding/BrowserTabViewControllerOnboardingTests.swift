@@ -39,6 +39,37 @@ class MockDefaultBrowserProvider: DefaultBrowserProvider {
     func openSystemPreferences() {}
 }
 
+class MockDownloadsPreferencesPersistor: DownloadsPreferencesPersistor {
+
+    var selectedDownloadLocation: String?
+    var alwaysRequestDownloadLocation: Bool
+    var defaultDownloadLocation: URL?
+    var lastUsedCustomDownloadLocation: String?
+    var shouldOpenPopupOnCompletion: Bool
+
+    var _isDownloadLocationValid: (URL) -> Bool
+
+    func isDownloadLocationValid(_ location: URL) -> Bool {
+        _isDownloadLocationValid(location)
+    }
+
+    init(
+        selectedDownloadLocation: String? = nil,
+        alwaysRequestDownloadLocation: Bool = false,
+        shouldOpenPopupOnCompletion: Bool = true,
+        defaultDownloadLocation: URL? = FileManager.default.temporaryDirectory,
+        lastUsedCustomDownloadLocation: String? = nil,
+        isDownloadLocationValid: @escaping (URL) -> Bool = { _ in true }
+    ) {
+        self.selectedDownloadLocation = selectedDownloadLocation
+        self.alwaysRequestDownloadLocation = alwaysRequestDownloadLocation
+        self.shouldOpenPopupOnCompletion = shouldOpenPopupOnCompletion
+        self.defaultDownloadLocation = defaultDownloadLocation
+        self.lastUsedCustomDownloadLocation = lastUsedCustomDownloadLocation
+        self._isDownloadLocationValid = isDownloadLocationValid
+    }
+}
+
 @available(macOS 12.0, *)
 final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
@@ -80,7 +111,8 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                 onboardingDialogTypeProvider: dialogProvider,
                 onboardingDialogFactory: factory,
                 featureFlagger: featureFlagger,
-                defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider())
+                defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
+                downloadsPreferences: DownloadsPreferences(persistor: MockDownloadsPreferencesPersistor())
             )
             viewController.tabViewModel = tabViewModel
             _=viewController.view

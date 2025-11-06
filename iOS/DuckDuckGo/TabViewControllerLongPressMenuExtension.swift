@@ -107,6 +107,7 @@ extension TabViewController {
             bookmarksDatabase: bookmarksDatabase,
             historyManager: historyManager,
             syncService: syncService,
+            contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             duckPlayer: duckPlayer,
             subscriptionDataReporter: subscriptionDataReporter,
             contextualOnboardingPresenter: contextualOnboardingPresenter,

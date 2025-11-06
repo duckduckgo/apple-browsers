@@ -56,6 +56,7 @@ protocol NewWindowPolicyDecisionMaker {
         var cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter?
         let duckPlayer: DuckPlayer
         var downloadManager: FileDownloadManagerProtocol
+        var downloadsPreferences: DownloadsPreferences
         var certificateTrustEvaluator: CertificateTrustEvaluating
         var tunnelController: NetworkProtectionIPCTunnelController?
         var maliciousSiteDetector: MaliciousSiteDetecting
@@ -114,7 +115,8 @@ protocol NewWindowPolicyDecisionMaker {
                      workspace: Workspace = NSWorkspace.shared,
                      privacyFeatures: AnyPrivacyFeatures? = nil,
                      duckPlayer: DuckPlayer? = nil,
-                     downloadManager: FileDownloadManagerProtocol = FileDownloadManager.shared,
+                     downloadManager: FileDownloadManagerProtocol? = nil,
+                     downloadsPreferences: DownloadsPreferences? = nil,
                      permissionManager: PermissionManagerProtocol? = nil,
                      geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
                      cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter? = ContentBlockingAssetsCompilationTimeReporter.shared,
@@ -173,7 +175,8 @@ protocol NewWindowPolicyDecisionMaker {
                   workspace: workspace,
                   privacyFeatures: privacyFeatures,
                   duckPlayer: duckPlayer,
-                  downloadManager: downloadManager,
+                  downloadManager: downloadManager ?? NSApp.delegateTyped.downloadManager,
+                  downloadsPreferences: downloadsPreferences ?? NSApp.delegateTyped.downloadsPreferences,
                   permissionManager: permissionManager ?? NSApp.delegateTyped.permissionManager,
                   geolocationService: geolocationService,
                   extensionsBuilder: extensionsBuilder,
@@ -221,6 +224,7 @@ protocol NewWindowPolicyDecisionMaker {
          privacyFeatures: AnyPrivacyFeatures,
          duckPlayer: DuckPlayer,
          downloadManager: FileDownloadManagerProtocol,
+         downloadsPreferences: DownloadsPreferences,
          permissionManager: PermissionManagerProtocol,
          geolocationService: GeolocationServiceProtocol,
          extensionsBuilder: TabExtensionsBuilderProtocol,
@@ -330,6 +334,7 @@ protocol NewWindowPolicyDecisionMaker {
                                                        cbaTimeReporter: cbaTimeReporter,
                                                        duckPlayer: duckPlayer,
                                                        downloadManager: downloadManager,
+                                                       downloadsPreferences: downloadsPreferences,
                                                        certificateTrustEvaluator: certificateTrustEvaluator,
                                                        tunnelController: tunnelController,
                                                        maliciousSiteDetector: maliciousSiteDetector,

@@ -41,6 +41,7 @@ class AutofillDebugViewController: UITableViewController {
         case viewAllCredentials = 211
         case resetAutofillImportPromos = 212
         case resetAutofillExtensionPromos = 213
+        case resetDaysSinceInstalledTo7 = 214
     }
 
     let defaults = AppUserDefaults()
@@ -130,6 +131,8 @@ class AutofillDebugViewController: UITableViewController {
                 ActionMessageView.present(message: "Email Protection InContext Sign Up reset")
             } else if cell.tag == Row.resetDaysSinceInstalledTo0.rawValue {
                 StatisticsUserDefaults().installDate = Date()
+            } else if cell.tag == Row.resetDaysSinceInstalledTo7.rawValue {
+                StatisticsUserDefaults().installDate = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
             } else if cell.tag == Row.resetAutofillBrokenReports.rawValue {
                 let reporter = BrokenSiteReporter(pixelHandler: { _ in }, keyValueStoring: UserDefaults.standard, storageConfiguration: .autofillConfig)
                 let expiryDate = Calendar.current.date(byAdding: .day, value: 60, to: Date())!

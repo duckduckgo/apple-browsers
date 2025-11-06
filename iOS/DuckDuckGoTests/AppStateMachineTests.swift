@@ -112,6 +112,10 @@ final class MockForeground: ForegroundHandling {
         MockBackground()
     }
 
+    func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling {
+        MockConnected(actionToHandle: actionToHandle, window: window)
+    }
+
 }
 
 @MainActor
@@ -129,6 +133,10 @@ final class MockBackground: BackgroundHandling {
 
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
         MockForeground(actionToHandle: actionToHandle)
+    }
+
+    func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling {
+        MockConnected(actionToHandle: actionToHandle, window: window)
     }
 
 }

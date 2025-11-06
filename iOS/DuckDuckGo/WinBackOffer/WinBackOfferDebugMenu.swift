@@ -102,6 +102,20 @@ final class WinBackOfferDebugViewModel: ObservableObject {
         updateState()
     }
 
+    /// Mark the offer as redeemed without altering churn date.
+    func markOfferRedeemed() {
+        winbackOfferStore.setHasRedeemedOffer(true)
+        winbackOfferStore.storeOfferPresentationDate(nil)
+        winbackOfferStore.didDismissUrgencyMessage = false
+        updateState()
+    }
+
+    /// Clear the redeemed state for the offer.
+    func clearOfferRedemption() {
+        winbackOfferStore.setHasRedeemedOffer(false)
+        updateState()
+    }
+
     /// Jump to the first day of the Win-back offer (3 days after churn).
     func jumpToFirstDay() {
         if let existingChurnDate = winbackOfferStore.getChurnDate(),
@@ -246,6 +260,18 @@ struct WinBackOfferDebugView: View {
                     viewModel.resetWinBackOffer()
                 }) {
                     Text(verbatim: "Reset Win-back Offer")
+                }
+
+                Button(action: {
+                    viewModel.markOfferRedeemed()
+                }) {
+                    Text(verbatim: "Mark Offer Redeemed")
+                }
+
+                Button(action: {
+                    viewModel.clearOfferRedemption()
+                }) {
+                    Text(verbatim: "Clear Offer Redeemed")
                 }
             }
 

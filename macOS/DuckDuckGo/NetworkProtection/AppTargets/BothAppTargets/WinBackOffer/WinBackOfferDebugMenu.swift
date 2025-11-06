@@ -65,6 +65,8 @@ final class WinBackOfferDebugMenu: NSMenuItem {
 
         menu.addItem(NSMenuItem(title: "Override Today's Date", action: #selector(overrideTodaysDate), target: self))
         menu.addItem(NSMenuItem(title: "Reset Win-back Offer", action: #selector(resetWinBackOffer), target: self))
+        menu.addItem(NSMenuItem(title: "Mark Offer Redeemed", action: #selector(markOfferRedeemed), target: self))
+        menu.addItem(NSMenuItem(title: "Clear Offer Redeemed", action: #selector(clearOfferRedemption), target: self))
         menu.addItem(.separator())
 
         menu.addItem(simulatedTodayDateMenuItem)
@@ -145,6 +147,20 @@ final class WinBackOfferDebugMenu: NSMenuItem {
         winbackOfferStore.setHasRedeemedOffer(false)
         winbackOfferStore.storeOfferPresentationDate(nil)
         winbackOfferStore.didDismissUrgencyMessage = false
+        updateMenuItemsState()
+    }
+
+    @objc
+    func markOfferRedeemed() {
+        winbackOfferStore.setHasRedeemedOffer(true)
+        winbackOfferStore.storeOfferPresentationDate(nil)
+        winbackOfferStore.didDismissUrgencyMessage = false
+        updateMenuItemsState()
+    }
+
+    @objc
+    func clearOfferRedemption() {
+        winbackOfferStore.setHasRedeemedOffer(false)
         updateMenuItemsState()
     }
 

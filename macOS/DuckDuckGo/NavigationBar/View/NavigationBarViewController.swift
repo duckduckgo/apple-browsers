@@ -204,7 +204,7 @@ final class NavigationBarViewController: NSViewController {
     // MARK: View Lifecycle
 
     static func create(tabCollectionViewModel: TabCollectionViewModel,
-                       downloadListCoordinator: DownloadListCoordinator = .shared,
+                       downloadListCoordinator: DownloadListCoordinator,
                        bookmarkManager: BookmarkManager,
                        bookmarkDragDropManager: BookmarkDragDropManager,
                        historyCoordinator: HistoryCoordinator,
@@ -294,6 +294,7 @@ final class NavigationBarViewController: NSViewController {
             contentBlocking: contentBlocking,
             fireproofDomains: fireproofDomains,
             downloadsPreferences: downloadsPreferences,
+            downloadListCoordinator: downloadListCoordinator,
             permissionManager: permissionManager,
             networkProtectionPopoverManager: networkProtectionPopoverManager,
             autofillPopoverPresenter: autofillPopoverPresenter,

@@ -81,6 +81,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     private let contentBlocking: ContentBlockingProtocol
     private let fireproofDomains: FireproofDomains
     private let downloadsPreferences: DownloadsPreferences
+    private let downloadListCoordinator: DownloadListCoordinator
     private let permissionManager: PermissionManagerProtocol
     private let networkProtectionPopoverManager: NetPPopoverManager
     private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
@@ -94,6 +95,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         contentBlocking: ContentBlockingProtocol,
         fireproofDomains: FireproofDomains,
         downloadsPreferences: DownloadsPreferences,
+        downloadListCoordinator: DownloadListCoordinator,
         permissionManager: PermissionManagerProtocol,
         networkProtectionPopoverManager: NetPPopoverManager,
         autofillPopoverPresenter: AutofillPopoverPresenter,
@@ -105,6 +107,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         self.contentBlocking = contentBlocking
         self.fireproofDomains = fireproofDomains
         self.downloadsPreferences = downloadsPreferences
+        self.downloadListCoordinator = downloadListCoordinator
         self.permissionManager = permissionManager
         self.networkProtectionPopoverManager = networkProtectionPopoverManager
         self.autofillPopoverPresenter = autofillPopoverPresenter
@@ -221,7 +224,11 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         guard closeTransientPopovers(),
               button.window != nil else { return }
 
-        let popover = DownloadsPopover(fireWindowSession: FireWindowSessionRef(window: button.window), downloadsPreferences: downloadsPreferences)
+        let popover = DownloadsPopover(
+            fireWindowSession: FireWindowSessionRef(window: button.window),
+            downloadsPreferences: downloadsPreferences,
+            downloadListCoordinator: downloadListCoordinator
+        )
         popover.delegate = popoverDelegate
         popover.viewController.delegate = downloadsDelegate
         downloadsPopover = popover

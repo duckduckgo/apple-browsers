@@ -110,6 +110,7 @@ final class MainViewController: NSViewController {
          defaultBrowserPreferences: DefaultBrowserPreferences = NSApp.delegateTyped.defaultBrowserPreferences,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptService.presenter,
          downloadManager: FileDownloadManagerProtocol = NSApp.delegateTyped.downloadManager,
+         downloadListCoordinator: DownloadListCoordinator = NSApp.delegateTyped.downloadListCoordinator,
          downloadsPreferences: DownloadsPreferences = NSApp.delegateTyped.downloadsPreferences,
          themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
@@ -213,6 +214,7 @@ final class MainViewController: NSViewController {
         )
 
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
+                                                                         downloadListCoordinator: downloadListCoordinator,
                                                                          bookmarkManager: bookmarkManager,
                                                                          bookmarkDragDropManager: bookmarkDragDropManager,
                                                                          historyCoordinator: historyCoordinator,

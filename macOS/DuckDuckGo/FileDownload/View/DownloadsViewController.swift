@@ -611,7 +611,8 @@ struct DownloadsErrorBannerView: View {
         fireWindowSession: nil,
         coordinator: DownloadListCoordinator(
             store: store,
-            downloadManager: FileDownloadManager(preferences: downloadsPreferences)
+            downloadManager: FileDownloadManager(preferences: downloadsPreferences),
+            windowControllersManager: WindowControllersManagerMock()
         )
     )
     return DownloadsViewController(viewModel: viewModel, preferences: downloadsPreferences)

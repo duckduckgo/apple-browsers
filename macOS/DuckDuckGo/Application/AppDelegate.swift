@@ -141,6 +141,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let permissionManager: PermissionManager
     let recentlyClosedCoordinator: RecentlyClosedCoordinating
     let downloadManager: FileDownloadManagerProtocol
+    let downloadListCoordinator: DownloadListCoordinator
 
     let autoconsentManagement = AutoconsentManagement()
 
@@ -883,6 +884,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         recentlyClosedCoordinator = RecentlyClosedCoordinator(windowControllersManager: windowControllersManager, pinnedTabsManagerProvider: pinnedTabsManagerProvider)
         downloadsPreferences = DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor())
         downloadManager = FileDownloadManager(preferences: downloadsPreferences)
+#if DEBUG
+        if AppVersion.runType.requiresEnvironment {
+            downloadListCoordinator = DownloadListCoordinator(
+                store: DownloadListStore(database: database.db),
+                downloadManager: downloadManager,
+                windowControllersManager: windowControllersManager
+            )
+        } else {
+            downloadListCoordinator = DownloadListCoordinator(
+                store: DownloadListStore(database: nil),
+                downloadManager: downloadManager,
+                windowControllersManager: windowControllersManager
+            )
+        }
+#else
+        downloadListCoordinator = DownloadListCoordinator(
+            store: DownloadListStore(database: database.db),
+            downloadManager: downloadManager,
+            windowControllersManager: windowControllersManager
+        )
+#endif
 
         super.init()
 
@@ -960,7 +982,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         LottieConfiguration.shared.renderingEngine = .mainThread
 
         configurationManager.start()
-        _ = DownloadListCoordinator.shared
 
         let isFirstLaunch = LocalStatisticsStore().atb == nil
 
@@ -1182,7 +1203,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
             downloadManager.cancelAll(waitUntilDone: true)
-            DownloadListCoordinator.shared.sync()
+            downloadListCoordinator.sync()
         }
 
         // Cancel any active update tracking flow

@@ -461,7 +461,7 @@
 "autofill.extension.activation.done.button.title" = "Done";
 
 /* Title shown when the autofill extension activation succeeds */
-"autofill.extension.activation.title" = "Autofill Passwords activated!";
+"autofill.extension.activation.title" = "Autofill passwords activated!";
 
 /* Footer text describing what enabling the autofill extension does */
 "autofill.extension.footer" = "Use passwords you saved in DuckDuckGo across all apps on your device.";
@@ -476,7 +476,7 @@
 "autofill.extension.promo.button.title" = "Turn On Autofill in Other Apps";
 
 /* Title for the Autofill extension promotion banner shown in the Passwords screen */
-"autofill.extension.promo.title" = "Quickly log in to your apps without typing passwords";
+"autofill.extension.promo.title" = "Quickly sign in to your apps without typing passwords";
 
 /* Title for screen showing autofill extension settings */
 "autofill.extension.screen.title" = "Autofill Passwords in Other Apps";

@@ -172,9 +172,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211394727337421?focus=true
     case newDeviceSyncPrompt
-    
-    /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211245201777978?focus=true
-    case serpSettingsFollowUpQuestions
 
     /// https://app.asana.com/1/137249556945/task/1211354430557015?focus=true
     case subscriptionRestoreWidePixelMeasurement
@@ -211,6 +208,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709099?focus=true
     case onboardingSearchExperience
+
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211708648644692
+    case storeSerpSettings
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -284,7 +284,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
              .newDeviceSyncPrompt,
-             .serpSettingsFollowUpQuestions,
              .subscriptionRestoreWidePixelMeasurement,
              .embeddedSERPSettings,
              .authV2WideEventEnabled,
@@ -296,7 +295,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .forgetAllInSettings,
              .onboardingSearchExperience,
              .duckAiDataClearing,
-             .fullDuckAIMode:
+             .fullDuckAIMode,
+             .storeSerpSettings:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -484,8 +484,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
         case .newDeviceSyncPrompt:
             return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
-        case .serpSettingsFollowUpQuestions:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.serpSettingsFollowUpQuestions))
         case .subscriptionRestoreWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         case .embeddedSERPSettings:
@@ -510,6 +508,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
         case .onboardingSearchExperience:
             return .internalOnly()
+        case .storeSerpSettings:
+            return .remoteReleasable(.feature(.storeSerpSettings))
         }
     }
 }

@@ -30,6 +30,7 @@ import PreferencesUI_macOS
 final class PreferencesSidebarModelTests: XCTestCase {
 
     private var testNotificationCenter: NotificationCenter!
+    private var mockDefaultBrowserPreferences: DefaultBrowserPreferences!
     private var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
     private var pixelFiringMock: PixelKitMock!
     private var mockFeatureFlagger: MockFeatureFlagger!
@@ -43,6 +44,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         testNotificationCenter = NotificationCenter()
+        mockDefaultBrowserPreferences = DefaultBrowserPreferences(defaultBrowserProvider: DefaultBrowserProviderMock())
         mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
         mockAIChatPreferences = MockAIChatPreferences()
         mockWinBackOfferVisibilityManager = MockWinBackOfferVisibilityManager()
@@ -72,6 +74,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
     override func tearDownWithError() throws {
         testNotificationCenter = nil
+        mockDefaultBrowserPreferences = nil
         mockSubscriptionManager = nil
         pixelFiringMock = nil
         mockFeatureFlagger = nil
@@ -94,6 +97,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             isUsingAuthV2: true,
             pixelFiring: pixelFiringMock,
+            defaultBrowserPreferences: mockDefaultBrowserPreferences,
             aiFeaturesStatusProvider: mockAIChatPreferences,
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
@@ -110,6 +114,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             isUsingAuthV2: true,
             pixelFiring: pixelFiringMock,
+            defaultBrowserPreferences: mockDefaultBrowserPreferences,
             aiFeaturesStatusProvider: mockAIChatPreferences,
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
@@ -138,6 +143,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             isUsingAuthV2: isUsingAuthV2,
             pixelFiring: pixelFiringMock,
+            defaultBrowserPreferences: mockDefaultBrowserPreferences,
             aiFeaturesStatusProvider: mockAIChatPreferences,
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )

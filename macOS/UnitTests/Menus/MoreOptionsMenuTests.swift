@@ -16,16 +16,17 @@
 //  limitations under the License.
 //
 
-import Combine
-import VPN
-import NetworkProtectionUI
-import XCTest
-import Subscription
-import SubscriptionTestingUtilities
 import BrowserServicesKit
+import Combine
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
+import NetworkProtectionUI
 import Persistence
+import SharedTestUtilities
+import Subscription
+import SubscriptionTestingUtilities
+import VPN
+import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -118,6 +119,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         moreOptionsMenu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
                                           bookmarkManager: MockBookmarkManager(),
                                           historyCoordinator: HistoryCoordinatingMock(),
+                                          recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
                                           fireproofDomains: fireproofDomains,
                                           passwordManagerCoordinator: passwordManagerCoordinator,
                                           vpnFeatureGatekeeper: networkProtectionVisibilityMock,

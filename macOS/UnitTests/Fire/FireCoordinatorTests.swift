@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import Testing
-@testable import DuckDuckGo_Privacy_Browser
-import PixelKitTestingUtilities
+import AppKit
 import Common
+import PixelKitTestingUtilities
+import Testing
+
+@testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
 struct FireCoordinatorTests {

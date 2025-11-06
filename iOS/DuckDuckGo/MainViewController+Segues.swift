@@ -323,7 +323,8 @@ extension MainViewController {
                                                             dbpIOSPublicInterface: dbpIOSPublicInterface)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
-        let serpSettings = SERPSettings(aiChatSettings: aiChatSettings)
+        let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
+                                                        featureFlagger: featureFlagger)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
                                                   isAuthV2Enabled: isAuthV2Enabled,
@@ -338,7 +339,7 @@ extension MainViewController {
                                                   subscriptionDataReporter: subscriptionDataReporter,
                                                   textZoomCoordinator: textZoomCoordinator,
                                                   aiChatSettings: aiChatSettings,
-                                                  serpSettings: serpSettings,
+                                                  serpSettings: serpSettingsProvider,
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
                                                   themeManager: themeManager,
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),

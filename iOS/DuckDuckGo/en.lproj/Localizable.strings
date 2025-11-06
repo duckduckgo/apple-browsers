@@ -3754,18 +3754,6 @@ Take back control of your personal information with the browser designed for dat
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "A message from %@:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "See Offer";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Not Now";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "Last day to save 25%!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "SAVE 25%";
 

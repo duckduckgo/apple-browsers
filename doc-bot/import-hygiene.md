@@ -24,14 +24,7 @@ Prevent accidental or unrequested import churn that causes build/lint issues and
 
 3. Scope SwiftUI to previews:
    - Only import `SwiftUI` inside `#if DEBUG` blocks for `#Preview` declarations
-   - Example:
-     ```swift
-     #if DEBUG
-     import SwiftUI
-     @available(macOS 14.0, *)
-     #Preview { MyViewController() }
-     #endif
-     ```
+   - **Example:** See [swiftui-preview-import.swift](import-hygiene/swiftui-preview-import.swift)
 
 4. Keep Shared Modules stable:
    - Do not remove `import Common` or other project modules unless a dedicated cleanup task
@@ -49,30 +42,11 @@ Prevent accidental or unrequested import churn that causes build/lint issues and
 
 ## Examples
 
-- CORRECT (AppKit-only controller):
-  ```swift
-  import AppKit
-  import Common
-  final class MyViewController: NSViewController { /* ... */ }
-  ```
+- **CORRECT (AppKit-only controller):** See [appkit-only-controller.swift](import-hygiene/appkit-only-controller.swift)
 
-- CORRECT (preview-only SwiftUI):
-  ```swift
-  import AppKit
-  import Common
-  #if DEBUG
-  import SwiftUI
-  @available(macOS 14.0, *)
-  #Preview { MyViewController() }
-  #endif
-  ```
+- **CORRECT (preview-only SwiftUI):** See [preview-only-swiftui.swift](import-hygiene/preview-only-swiftui.swift)
 
-- AVOID:
-  ```swift
-  import AppKit
-  import SwiftUI  // Not needed in production path
-  import Common
-  ```
+- **AVOID:** See [import-to-avoid.swift](import-hygiene/import-to-avoid.swift)
 
 ## Enforcement Guidance
 - During PR review, reject changes that add/remove imports without a clear necessity

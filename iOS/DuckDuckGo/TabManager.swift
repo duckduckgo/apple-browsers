@@ -27,6 +27,7 @@ import History
 import Subscription
 import os.log
 import AIChat
+import Combine
 
 class TabManager {
 
@@ -38,6 +39,7 @@ class TabManager {
     private let bookmarksDatabase: CoreDataDatabase
     private let historyManager: HistoryManaging
     private let syncService: DDGSyncing
+    private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private var previewsSource: TabPreviewsSource
     private let interactionStateSource: TabInteractionStateSource?
     private var duckPlayer: DuckPlayerControlling
@@ -71,6 +73,7 @@ class TabManager {
          bookmarksDatabase: CoreDataDatabase,
          historyManager: HistoryManaging,
          syncService: DDGSyncing,
+         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          duckPlayer: DuckPlayer = DuckPlayer(),
          subscriptionDataReporter: SubscriptionDataReporting,
          contextualOnboardingPresenter: ContextualOnboardingPresenting,
@@ -96,6 +99,7 @@ class TabManager {
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
         self.syncService = syncService
+        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.duckPlayer = duckPlayer
         self.subscriptionDataReporter = subscriptionDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
@@ -139,6 +143,7 @@ class TabManager {
                                                               bookmarksDatabase: bookmarksDatabase,
                                                               historyManager: historyManager,
                                                               syncService: syncService,
+                                                              contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
                                                               duckPlayer: duckPlayer,
                                                               subscriptionDataReporter: subscriptionDataReporter,
                                                               contextualOnboardingPresenter: contextualOnboardingPresenter,
@@ -234,6 +239,7 @@ class TabManager {
                                                               bookmarksDatabase: bookmarksDatabase,
                                                               historyManager: historyManager,
                                                               syncService: syncService,
+                                                              contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
                                                               duckPlayer: duckPlayer,
                                                               subscriptionDataReporter: subscriptionDataReporter,
                                                               contextualOnboardingPresenter: contextualOnboardingPresenter,

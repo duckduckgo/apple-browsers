@@ -2359,9 +2359,6 @@
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Vyber si prohlížeč";
 
-/* Message to highlight browser capability of private searches */
-"onboarding.browsers.features.privateSearch.title" = "Soukromé vyhledávání ve výchozím nastavení";
-
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo má také %1$@, které je dostupné s %2$@ a %3$@.";
 
@@ -2403,18 +2400,6 @@
 
 /* The title of the onboarding dialog popup to select the preferred App icon. */
 "onboarding.highlights.appIconSelection.title" = "Která barva mi sluší nejvíc?";
-
-/* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Blokování vyskakovacích oken ohledně cookies";
-
-/* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokování cílených reklam";
-
-/* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Vymaž údaje o prohlížení jedním tlačítkem";
-
-/* Message to highlight browser capability of blocking 3rd-party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokuj trackery třetích stran";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Ochrana je aktivní!";

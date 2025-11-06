@@ -2359,9 +2359,6 @@
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Böngésző kiválasztása";
 
-/* Message to highlight browser capability of private searches */
-"onboarding.browsers.features.privateSearch.title" = "Privát keresés alapértelmezés szerint";
-
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "A DuckDuckGo kínálatában %1$@ is szerepel, amelyhez %2$@ és %3$@ tartozik.";
 
@@ -2403,18 +2400,6 @@
 
 /* The title of the onboarding dialog popup to select the preferred App icon. */
 "onboarding.highlights.appIconSelection.title" = "Melyik szín áll nekem a legjobban?";
-
-/* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Felugró sütiablakok blokkolása";
-
-/* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Célzott hirdetések blokkolása";
-
-/* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Böngészési adatok törlése gombnyomásra";
-
-/* Message to highlight browser capability of blocking 3rd-party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Harmadik féltől származó nyomkövetők blokkolása";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Védelem aktiválva!";

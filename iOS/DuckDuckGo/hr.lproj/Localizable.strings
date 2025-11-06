@@ -2359,9 +2359,6 @@
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Odaberi preglednik";
 
-/* Message to highlight browser capability of private searches */
-"onboarding.browsers.features.privateSearch.title" = "Pretražuj privatno po zadanim postavkama";
-
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo također ima %1$@, dostupan s %2$@ i %3$@.";
 
@@ -2403,18 +2400,6 @@
 
 /* The title of the onboarding dialog popup to select the preferred App icon. */
 "onboarding.highlights.appIconSelection.title" = "Koja boja izgleda najbolje na meni?";
-
-/* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Blokiraj skočne prozore kolačića";
-
-/* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokiraj ciljane oglase";
-
-/* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Izbriši podatke o pregledavanju jednim gumbom";
-
-/* Message to highlight browser capability of blocking 3rd-party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokiraj alate za praćenje trećih strana";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Zaštite aktivirane!";
@@ -2814,6 +2799,12 @@
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Pretraži postavke Assista";
+
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Sakrij slike generirane umjetnom inteligencijom";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrira slike generirane umjetnom inteligencijom iz rezultata pretraživanja slika";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Uvijek uključeno";

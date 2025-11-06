@@ -55,6 +55,7 @@ final class MainViewController: NSViewController {
     let bookmarkManager: BookmarkManager
     let historyCoordinator: HistoryCoordinator
     let fireproofDomains: FireproofDomains
+    let downloadManager: FileDownloadManagerProtocol
     let isBurner: Bool
 
     private var addressBarBookmarkIconVisibilityCancellable: AnyCancellable?
@@ -108,6 +109,9 @@ final class MainViewController: NSViewController {
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          defaultBrowserPreferences: DefaultBrowserPreferences = NSApp.delegateTyped.defaultBrowserPreferences,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptService.presenter,
+         downloadManager: FileDownloadManagerProtocol = NSApp.delegateTyped.downloadManager,
+         downloadListCoordinator: DownloadListCoordinator = NSApp.delegateTyped.downloadListCoordinator,
+         downloadsPreferences: DownloadsPreferences = NSApp.delegateTyped.downloadsPreferences,
          themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
          pixelFiring: PixelFiring? = PixelKit.shared,
@@ -125,6 +129,7 @@ final class MainViewController: NSViewController {
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger
         self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
+        self.downloadManager = downloadManager
         self.themeManager = themeManager
         self.fireCoordinator = fireCoordinator
         self.winBackOfferPromptPresenting = winBackOfferPromptPresenting
@@ -182,7 +187,8 @@ final class MainViewController: NSViewController {
         browserTabViewController = BrowserTabViewController(
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
-            defaultBrowserPreferences: defaultBrowserPreferences
+            defaultBrowserPreferences: defaultBrowserPreferences,
+            downloadsPreferences: downloadsPreferences
         )
         aiChatSidebarPresenter = AIChatSidebarPresenter(
             sidebarHost: browserTabViewController,
@@ -208,6 +214,7 @@ final class MainViewController: NSViewController {
         )
 
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
+                                                                         downloadListCoordinator: downloadListCoordinator,
                                                                          bookmarkManager: bookmarkManager,
                                                                          bookmarkDragDropManager: bookmarkDragDropManager,
                                                                          historyCoordinator: historyCoordinator,
@@ -223,7 +230,8 @@ final class MainViewController: NSViewController {
                                                                          aiChatSidebarPresenter: aiChatSidebarPresenter,
                                                                          vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
                                                                          sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
-                                                                         defaultBrowserPreferences: defaultBrowserPreferences)
+                                                                         defaultBrowserPreferences: defaultBrowserPreferences,
+                                                                         downloadsPreferences: downloadsPreferences)
 
         findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)

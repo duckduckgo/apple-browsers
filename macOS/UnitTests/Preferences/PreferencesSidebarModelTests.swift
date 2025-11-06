@@ -98,6 +98,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             isUsingAuthV2: true,
             pixelFiring: pixelFiringMock,
             defaultBrowserPreferences: mockDefaultBrowserPreferences,
+            downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
             aiFeaturesStatusProvider: mockAIChatPreferences,
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
@@ -115,6 +116,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             isUsingAuthV2: true,
             pixelFiring: pixelFiringMock,
             defaultBrowserPreferences: mockDefaultBrowserPreferences,
+            downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
             aiFeaturesStatusProvider: mockAIChatPreferences,
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
@@ -144,6 +146,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             isUsingAuthV2: isUsingAuthV2,
             pixelFiring: pixelFiringMock,
             defaultBrowserPreferences: mockDefaultBrowserPreferences,
+            downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
             aiFeaturesStatusProvider: mockAIChatPreferences,
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )

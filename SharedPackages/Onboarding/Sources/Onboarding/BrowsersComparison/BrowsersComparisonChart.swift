@@ -1,6 +1,5 @@
 //
 //  BrowsersComparisonChart.swift
-//  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -23,23 +22,29 @@ import SwiftUI
 
 extension BrowsersComparisonChart {
 
-    struct Configuration {
-        var fontSize: CGFloat = 15.0
-        var allowContentToScrollUnderHeader: Bool = false
+    public struct Configuration {
+        var fontSize: CGFloat
+        var allowContentToScrollUnderHeader: Bool
+
+        public init(fontSize: CGFloat = 15.0,
+                    allowContentToScrollUnderHeader: Bool = false) {
+            self.fontSize = fontSize
+            self.allowContentToScrollUnderHeader = allowContentToScrollUnderHeader
+        }
     }
 
 }
 
-struct BrowsersComparisonChart: View {
+public struct BrowsersComparisonChart: View {
     private let privacyFeatures: [BrowsersComparisonModel.PrivacyFeature]
     private let configuration: Configuration
 
-    init(privacyFeatures: [BrowsersComparisonModel.PrivacyFeature], configuration: Configuration = Configuration()) {
+    public init(privacyFeatures: [BrowsersComparisonModel.PrivacyFeature], configuration: Configuration = Configuration()) {
         self.privacyFeatures = privacyFeatures
         self.configuration = configuration
     }
 
-    var body: some View {
+    public var body: some View {
         VStack(spacing: Metrics.stackSpacing) {
             Header(browsers: BrowsersComparisonModel.Browser.allCases)
                 .frame(height: Metrics.headerHeight)
@@ -141,7 +146,7 @@ extension BrowsersComparisonChart.Row {
         var body: some View {
             ForEach(Array(browsersSupport.enumerated()), id: \.offset) { index, browserSupport in
                 Image(browserSupport.availability.image)
-                    .frame(width: Metrics.imageContainerSize.width)
+                    .frame(width: BrowsersComparisonChart.Metrics.imageContainerSize.width)
 
                 if index < browsersSupport.count - 1 {
                     Divider()
@@ -154,14 +159,16 @@ extension BrowsersComparisonChart.Row {
 
 // MARK: - Metrics
 
-private enum Metrics {
-    static let stackSpacing: CGFloat = 0.0
-    static let headerHeight: CGFloat = 60
-    static let headerImageContainerSize = CGSize(width: 40, height: 80)
-    static let imageContainerSize = CGSize(width: 40.0, height: 50.0)
-    static let font = Font.system(size: 15.0)
-    static let scrollableVStackSpacing: CGFloat = 0
-    static let scrollableBottomDividerPadding: CGFloat = 4
+extension BrowsersComparisonChart {
+    private enum Metrics {
+        static let stackSpacing: CGFloat = 0.0
+        static let headerHeight: CGFloat = 60
+        static let headerImageContainerSize = CGSize(width: 40, height: 80)
+        static let imageContainerSize = CGSize(width: 40.0, height: 50.0)
+        static let font = Font.system(size: 15.0)
+        static let scrollableVStackSpacing: CGFloat = 0
+        static let scrollableBottomDividerPadding: CGFloat = 4
+    }
 }
 
 #Preview {

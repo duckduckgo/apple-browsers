@@ -2359,9 +2359,6 @@
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Tarayıcınızı Seçin";
 
-/* Message to highlight browser capability of private searches */
-"onboarding.browsers.features.privateSearch.title" = "Varsayılan olarak gizli arama yapın";
-
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo ayrıca %2$@ ve %3$@ ile kullanılabilen bir %1$@ özelliğine de sahiptir.";
 
@@ -2403,18 +2400,6 @@
 
 /* The title of the onboarding dialog popup to select the preferred App icon. */
 "onboarding.highlights.appIconSelection.title" = "Bana hangi renk daha çok yakışıyor?";
-
-/* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Çerez açılır pencerelerini engelle";
-
-/* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Hedefli reklamları engelleyin";
-
-/* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Tarama verilerini tek bir düğmeyle silin";
-
-/* Message to highlight browser capability of blocking 3rd-party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Üçüncü taraf izleyicileri engelleyin";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Korumalar etkinleştirildi!";
@@ -2814,6 +2799,12 @@
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Ayarları";
+
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Yapay zeka tarafından oluşturulan görselleri gizle";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Görsel arama sonuçlarından yapay zeka tarafından oluşturulan görselleri filtreler";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Her Zaman Açık";

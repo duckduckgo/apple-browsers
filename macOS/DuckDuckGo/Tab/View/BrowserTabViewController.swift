@@ -88,6 +88,7 @@ final class BrowserTabViewController: NSViewController {
     private let windowControllersManager: WindowControllersManagerProtocol
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let defaultBrowserPreferences: DefaultBrowserPreferences
+    private let downloadsPreferences: DownloadsPreferences
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
@@ -137,6 +138,7 @@ final class BrowserTabViewController: NSViewController {
          activeRemoteMessageModel: ActiveRemoteMessageModel = NSApp.delegateTyped.activeRemoteMessageModel,
          privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
          defaultBrowserPreferences: DefaultBrowserPreferences,
+         downloadsPreferences: DownloadsPreferences,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          tld: TLD = NSApp.delegateTyped.tld
@@ -153,6 +155,7 @@ final class BrowserTabViewController: NSViewController {
         self.activeRemoteMessageModel = activeRemoteMessageModel
         self.privacyConfigurationManager = privacyConfigurationManager
         self.defaultBrowserPreferences = defaultBrowserPreferences
+        self.downloadsPreferences = downloadsPreferences
         self.subscriptionManager = subscriptionManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
 
@@ -1168,6 +1171,7 @@ final class BrowserTabViewController: NSViewController {
                 privacyConfigurationManager: privacyConfigurationManager,
                 featureFlagger: featureFlagger,
                 defaultBrowserPreferences: defaultBrowserPreferences,
+                downloadsPreferences: downloadsPreferences,
                 subscriptionManager: subscriptionManager,
                 winBackOfferVisibilityManager: winBackOfferVisibilityManager
             )
@@ -1450,8 +1454,7 @@ extension BrowserTabViewController: TabDelegate {
         dispatchPrecondition(condition: .onQueue(.main))
         guard let window = view.window else { return nil }
 
-        let preferences = DownloadsPreferences.shared
-        let directoryURL = preferences.lastUsedCustomDownloadLocation ?? preferences.effectiveDownloadLocation
+        let directoryURL = downloadsPreferences.lastUsedCustomDownloadLocation ?? downloadsPreferences.effectiveDownloadLocation
         let savePanel = NSSavePanel.savePanelWithFileTypeChooser(fileTypes: request.parameters.fileTypes,
                                                                  suggestedFilename: request.parameters.suggestedFilename,
                                                                  directoryURL: directoryURL)
@@ -1712,7 +1715,8 @@ extension BrowserTabViewController {
 #Preview {
     BrowserTabViewController(
         tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [.init(content: .url(.duckDuckGo, source: .ui))])),
-        defaultBrowserPreferences: DefaultBrowserPreferences()
+        defaultBrowserPreferences: DefaultBrowserPreferences(),
+        downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor())
     )
 }
 

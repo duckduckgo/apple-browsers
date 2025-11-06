@@ -108,7 +108,7 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
     }
 }
 
-@available(iOS 17.0, *)
+@available(iOS 18.0, *)
 @MainActor
 private final class MockAutofillExtensionSettingsHelper: AutofillExtensionSettingsHelping {
 

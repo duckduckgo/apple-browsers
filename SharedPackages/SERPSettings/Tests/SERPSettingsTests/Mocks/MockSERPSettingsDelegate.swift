@@ -21,11 +21,11 @@ import Foundation
 
 final class MockSERPSettingsDelegate: SERPSettingsUserScriptDelegate {
 
-    var closeTabAndOpenPrivacySettingsCallCount = 0
+    var closeTabCallCount = 0
     var openAIFeaturesSettingsCallCount = 0
 
-    func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
-        closeTabAndOpenPrivacySettingsCallCount += 1
+    func serpSettingsUserScriptDidRequestToCloseTab(_ userScript: SERPSettings.SERPSettingsUserScript) {
+        closeTabCallCount += 1
     }
 
     func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
@@ -33,7 +33,7 @@ final class MockSERPSettingsDelegate: SERPSettingsUserScriptDelegate {
     }
 
     func reset() {
-        closeTabAndOpenPrivacySettingsCallCount = 0
+        closeTabCallCount = 0
         openAIFeaturesSettingsCallCount = 0
     }
 }

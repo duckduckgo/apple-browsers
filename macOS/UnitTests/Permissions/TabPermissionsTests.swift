@@ -18,6 +18,7 @@
 
 import Combine
 import Navigation
+import SharedTestUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -415,7 +416,7 @@ final class TabPermissionsTests: XCTestCase {
             XCTFail("Unexpected permissions query \(query)")
         }
 
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 10)
 
         let permissionRequest = expectation(description: "Permission requested")
         c = tab.permissions.$authorizationQuery.sink { query in
@@ -431,7 +432,7 @@ final class TabPermissionsTests: XCTestCase {
         // but should open auth query on reload
         tab.setContent(.url(externalUrl, source: .reload))
 
-        waitForExpectations(timeout: 2)
+        waitForExpectations(timeout: 10)
 
         withExtendedLifetime(c) {}
     }

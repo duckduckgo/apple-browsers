@@ -125,14 +125,6 @@ struct SettingsAIFeaturesView: View {
                         SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
                                          accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
                     }
-                    
-                    if viewModel.shouldShowSERPSettingsFollowUpQuestions {
-                        Section(header: Text(UserText.aiChatSettingsAllowFollowUpQuestionsSectionTitle),
-                                footer: Text(UserText.aiChatSettingsAllowFollowUpQuestionsDescription)) {
-                            SettingsCellView(label: UserText.aiChatSettingsAllowFollowUpQuestionsToggle,
-                                             accessory: .toggle(isOn: viewModel.serpSettingsFollowUpQuestionsBinding))
-                        }
-                    }
                 }
             }
 

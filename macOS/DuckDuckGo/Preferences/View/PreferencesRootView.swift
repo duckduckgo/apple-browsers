@@ -108,7 +108,7 @@ enum Preferences {
             VStack(alignment: .leading) {
                 switch model.selectedPane {
                 case .defaultBrowser:
-                    DefaultBrowserView(defaultBrowserModel: DefaultBrowserPreferences.shared,
+                    DefaultBrowserView(defaultBrowserModel: model.defaultBrowserPreferences,
                                        dockCustomizer: DockCustomizer(),
                                        protectionStatus: model.protectionStatus(for: .defaultBrowser))
                 case .privateSearch:
@@ -378,7 +378,7 @@ enum Preferences {
             VStack(alignment: .leading) {
                 switch model.selectedPane {
                 case .defaultBrowser:
-                    DefaultBrowserView(defaultBrowserModel: DefaultBrowserPreferences.shared,
+                    DefaultBrowserView(defaultBrowserModel: model.defaultBrowserPreferences,
                                        dockCustomizer: DockCustomizer(),
                                        protectionStatus: model.protectionStatus(for: .defaultBrowser))
                 case .privateSearch:

@@ -273,6 +273,7 @@ class SuggestionTrayViewController: UIViewController {
         let dependencies = newTabPageDependencies
         let controller = NewTabPageViewController(
             isFocussedState: true,
+            dismissKeyboardOnScroll: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
             tab: Tab(),
             interactionModel: dependencies.favoritesModel,
             homePageMessagesConfiguration: dependencies.homePageMessagesConfiguration,

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AppKitExtensions
 import Common
 import Foundation
 

@@ -34,7 +34,9 @@ class BrowserChromeButton: UIButton {
         }
     }
 
-    private weak var border: UIView?
+    // For debugging in memory graph.
+    class BrowserChromeButtonBorder: UIView { }
+    private weak var border: BrowserChromeButtonBorder?
 
     init(_ type: ButtonType = .primary) {
         self.type = type
@@ -51,15 +53,15 @@ class BrowserChromeButton: UIButton {
     }
 
     func addBorder(borderFrame: CGRect = CGRect(x: 0, y: 0, width: 80, height: 40)) {
-        border?.removeFromSuperview()
-        let view = UIView(frame: borderFrame)
+        guard border == nil else { return }
+        let view = BrowserChromeButtonBorder(frame: borderFrame)
         view.center = self.center
         view.layer.borderWidth = 1.5
         view.layer.cornerRadius = 14
         view.backgroundColor = .clear
         border = view
         addSubview(view)
-        applyConfiguration()
+        applyConfiguration(animated: false)
         setNeedsDisplay()
     }
 
@@ -88,9 +90,15 @@ class BrowserChromeButton: UIButton {
     }
 
     func removeBorder() {
-        border?.removeFromSuperview()
-        applyConfiguration()
+        guard let border else { return }
+        border.removeFromSuperview()
+        applyConfiguration(animated: false)
         setNeedsDisplay()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        border?.center = center
     }
 
     func setImage(_ image: UIImage?) {
@@ -108,7 +116,7 @@ class BrowserChromeButton: UIButton {
         }
     }
 
-    func applyConfiguration() {
+    func applyConfiguration(animated: Bool = true) {
         let image = configuration?.image
         let defaultConfiguration = defaultConfiguration()
 
@@ -122,20 +130,24 @@ class BrowserChromeButton: UIButton {
             type.foregroundColor(for: self?.state ?? .normal)
         }
 
-        configurationUpdateHandler = { button in
+        configurationUpdateHandler = { [weak self] button in
             var newConfiguration = button.configuration ?? defaultConfiguration
 
             newConfiguration.baseForegroundColor = type.foregroundColor(for: button.state)
 
-            if button.state == .highlighted && self.border != nil {
+            if button.state == .highlighted && self?.border != nil {
                 newConfiguration.baseBackgroundColor = .clear
             } else {
                 newConfiguration.baseBackgroundColor = type.backgroundColor(for: button.state)
             }
 
-            UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
+            if animated {
+                UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
+                    button.configuration = newConfiguration
+                }.startAnimation()
+            } else {
                 button.configuration = newConfiguration
-            }.startAnimation()
+            }
         }
     }
 

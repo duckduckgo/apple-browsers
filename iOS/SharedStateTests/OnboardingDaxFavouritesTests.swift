@@ -31,6 +31,7 @@ import Common
 @testable import DuckDuckGo
 @testable import PersistenceTestingUtils
 import SystemSettingsPiPTutorialTestSupport
+import Combine
 
 // swiftlint:disable force_try
 
@@ -96,6 +97,7 @@ import SystemSettingsPiPTutorialTestSupport
                                     bookmarksDatabase: db,
                                     historyManager: historyManager,
                                     syncService: syncService,
+                                    contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
                                     subscriptionDataReporter: subscriptionDataReporter,
                                     contextualOnboardingPresenter: contextualOnboardingPresenter,
                                     contextualOnboardingLogic: contextualOnboardingLogicMock,
@@ -120,6 +122,7 @@ import SystemSettingsPiPTutorialTestSupport
             homePageConfiguration: homePageConfiguration,
             syncService: syncService,
             syncDataProviders: dataProviders,
+            contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
             appSettings: AppSettingsMock(),
             previewsSource: MockTabPreviewsSource(),
             tabManager: tabManager,

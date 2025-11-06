@@ -133,14 +133,16 @@ final class TabBarItemCellView: NSView {
     var themeUpdateCancellable: AnyCancellable?
 
     fileprivate let displaysTabsProgressIndicator: Bool = NSApp.delegateTyped.featureFlagger.isFeatureOn(.tabProgressIndicator)
-
     fileprivate lazy var faviconView = TabFaviconView()
+
+    /// Will be removed in favor of `faviconView`
     fileprivate lazy var faviconImageView = {
         let faviconImageView = NSImageView()
         faviconImageView.imageScaling = .scaleProportionallyDown
         return faviconImageView
     }()
 
+    /// Will be removed in favor of `faviconView`
     fileprivate let faviconPlaceholderView = LetterView()
 
     fileprivate let crashIndicatorButton = {

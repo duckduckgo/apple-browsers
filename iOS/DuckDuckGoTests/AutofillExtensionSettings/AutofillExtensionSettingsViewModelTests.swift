@@ -45,6 +45,7 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
         let store = MockASCredentialIdentityStore()
         store.isEnabled = false
         let settingsHelper = MockAutofillExtensionSettingsHelper(requestResult: true)
+        settingsHelper.onRequest = { store.isEnabled = true }
 
         let viewModel = AutofillExtensionSettingsViewModel(credentialStore: store,
                                                            settingsHelper: settingsHelper)
@@ -52,7 +53,6 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
         await viewModel.updateExtensionStatus()
         XCTAssertFalse(viewModel.isExtensionEnabled)
 
-        store.isEnabled = true
         await viewModel.enableExtension()
 
         XCTAssertEqual(settingsHelper.requestCallCount, 1)
@@ -116,6 +116,7 @@ private final class MockAutofillExtensionSettingsHelper: AutofillExtensionSettin
     var requestCallCount = 0
     var openCallCount = 0
     var openError: Error?
+    var onRequest: (() -> Void)?
 
     init(requestResult: Bool = false) {
         self.requestResult = requestResult
@@ -123,6 +124,7 @@ private final class MockAutofillExtensionSettingsHelper: AutofillExtensionSettin
 
     func requestToTurnOnCredentialProviderExtension() async -> Bool {
         requestCallCount += 1
+        onRequest?()
         return requestResult
     }
 

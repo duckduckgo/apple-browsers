@@ -37,12 +37,14 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
 
     private let errorEventsHandler: (AccountKeychainAccessType, AccountKeychainAccessError) -> Void
     private let keychainManager: any KeychainManaging
-    private let userDefaults: UserDefaults = .standard
+    private let userDefaults: UserDefaults
 
     public init(keychainManager: any KeychainManaging,
-                errorEventsHandler: @escaping (AccountKeychainAccessType, AccountKeychainAccessError) -> Void) {
+                errorEventsHandler: @escaping (AccountKeychainAccessType, AccountKeychainAccessError) -> Void,
+                userDefaults: UserDefaults = .standard) {
         self.errorEventsHandler = errorEventsHandler
         self.keychainManager = keychainManager
+        self.userDefaults = userDefaults
     }
 
     /*
@@ -92,11 +94,12 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
 
     public func saveTokenContainer(_ tokenContainer: TokenContainer?) throws {
         Logger.subscriptionKeychain.log("Saving TokenContainer")
+        tokenExpected = tokenContainer != nil
+
         do {
             guard let tokenContainer else {
                 Logger.subscriptionKeychain.log("Remove TokenContainer")
                 try keychainManager.deleteItem(forKey: SubscriptionKeychainField.tokenContainer.keyValue)
-                tokenExpected = false
                 return
             }
 
@@ -105,7 +108,6 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
             }
 
             try keychainManager.store(data: data, forKey: SubscriptionKeychainField.tokenContainer.keyValue)
-            tokenExpected = true
         } catch {
             Logger.subscriptionKeychain.error("Failed to set TokenContainer: \(error, privacy: .public)")
             if let error = error as? AccountKeychainAccessError {
@@ -114,7 +116,6 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
                 assertionFailure("Unexpected error: \(error)")
                 Logger.subscriptionKeychain.error("Unexpected error: \(error, privacy: .public)")
             }
-            tokenExpected = false
             throw error
         }
     }
@@ -126,12 +127,9 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
         }
     }
 
+    private let tokenExpectedKey = SubscriptionKeychainField.tokenContainer.keyValue+".expected"
     private var tokenExpected: Bool {
-        get {
-            userDefaults.bool(forKey: SubscriptionKeychainField.tokenContainer.keyValue)
-        }
-        set {
-            userDefaults.set(newValue, forKey: SubscriptionKeychainField.tokenContainer.keyValue)
-        }
+        get { userDefaults.bool(forKey: tokenExpectedKey) }
+        set { userDefaults.set(newValue, forKey: tokenExpectedKey) }
     }
 }

@@ -32,11 +32,11 @@ extension BrowsersComparisonChart {
                     fontWeight: Font.Weight = .regular,
                     allowContentToScrollUnderHeader: Bool = false,
                     showFeatureIcons: Bool = false,
-                    showBottomDivider: Bool = true) {
+                    showBottomDivider: Bool? = nil) {
             self.font = Font.system(size: fontSize, weight: fontWeight)
             self.allowContentToScrollUnderHeader = allowContentToScrollUnderHeader
             self.showFeatureIcons = showFeatureIcons
-            self.showBottomDivider = showBottomDivider
+            self.showBottomDivider = showBottomDivider ?? !allowContentToScrollUnderHeader
         }
     }
 

@@ -174,6 +174,11 @@ struct SubscriptionStatusMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
+struct SubscriptionFreeTrialActiveMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
 struct InteractedWithMessageMatchingAttribute: SingleValueMatching {
     var value: [String]? = []
     var fallback: Bool?

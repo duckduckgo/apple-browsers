@@ -87,6 +87,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         var isSubscriptionActive: Bool = false
         var isSubscriptionExpiring: Bool = false
         var isSubscriptionExpired: Bool = false
+        var subscriptionFreeTrialActive: Bool = false
 
         var isDuckPlayerOnboarded: Bool {
             duckPlayerStorage.userInteractedWithDuckPlayer
@@ -106,6 +107,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
             subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
             subscriptionPurchasePlatform = subscription.platform.rawValue
+            subscriptionFreeTrialActive = subscription.hasActiveTrialOffer
 
             switch subscription.status {
             case .autoRenewable, .gracePeriod:
@@ -156,6 +158,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isSubscriptionActive: isSubscriptionActive,
                                                        isSubscriptionExpiring: isSubscriptionExpiring,
                                                        isSubscriptionExpired: isSubscriptionExpired,
+                                                       subscriptionFreeTrialActive: subscriptionFreeTrialActive,
                                                        isDuckPlayerOnboarded: isDuckPlayerOnboarded,
                                                        isDuckPlayerEnabled: isDuckPlayerEnabled,
                                                        dismissedMessageIds: dismissedMessageIds,

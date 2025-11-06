@@ -20,9 +20,10 @@ import Bookmarks
 import Combine
 import Foundation
 import os.log
+import SharedTestUtilities
 import Utilities
-
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class LocalBookmarkManagerTests: XCTestCase {

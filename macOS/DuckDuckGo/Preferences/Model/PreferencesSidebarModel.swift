@@ -59,6 +59,7 @@ final class PreferencesSidebarModel: ObservableObject {
     let vpnTunnelIPCClient: VPNControllerXPCClient
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     let settingsIconProvider: SettingsIconsProviding
+    let defaultBrowserPreferences: DefaultBrowserPreferences
     let isUsingAuthV2: Bool
 
     @Published private(set) var currentSubscriptionState: PreferencesSidebarSubscriptionState = .init()
@@ -101,6 +102,7 @@ final class PreferencesSidebarModel: ObservableObject {
         settingsIconProvider: SettingsIconsProviding = NSApp.delegateTyped.themeManager.theme.iconsProvider.settingsIconProvider,
         isUsingAuthV2: Bool,
         pixelFiring: PixelFiring?,
+        defaultBrowserPreferences: DefaultBrowserPreferences,
         aiFeaturesStatusProvider: AIFeaturesStatusProviding,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
@@ -113,6 +115,7 @@ final class PreferencesSidebarModel: ObservableObject {
         self.isUsingAuthV2 = isUsingAuthV2
         self.pixelFiring = pixelFiring
         self.featureFlagger = featureFlagger
+        self.defaultBrowserPreferences = defaultBrowserPreferences
         self.aiFeaturesStatusProvider = aiFeaturesStatusProvider
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
 
@@ -143,6 +146,7 @@ final class PreferencesSidebarModel: ObservableObject {
         includeAIChat: Bool,
         userDefaults: UserDefaults = .netP,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        defaultBrowserPreferences: DefaultBrowserPreferences,
         aiFeaturesStatusProvider: AIFeaturesStatusProviding,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
@@ -163,6 +167,7 @@ final class PreferencesSidebarModel: ObservableObject {
                   featureFlagger: featureFlagger,
                   isUsingAuthV2: subscriptionManager is DefaultSubscriptionManagerV2,
                   pixelFiring: PixelKit.shared,
+                  defaultBrowserPreferences: defaultBrowserPreferences,
                   aiFeaturesStatusProvider: aiFeaturesStatusProvider,
                   winBackOfferVisibilityManager: winBackOfferVisibilityManager
         )
@@ -243,7 +248,7 @@ final class PreferencesSidebarModel: ObservableObject {
     func protectionStatus(for pane: PreferencePaneIdentifier) -> PrivacyProtectionStatus? {
         switch pane {
         case .defaultBrowser:
-            return PrivacyProtectionStatus(statusPublisher: DefaultBrowserPreferences.shared.$isDefault) { isDefault in
+            return PrivacyProtectionStatus(statusPublisher: defaultBrowserPreferences.$isDefault) { isDefault in
                 isDefault ? .on : .off
             }
         case .privateSearch:

@@ -724,6 +724,20 @@ body {
 [data-theme=dark] .Sidebar_item:focus-visible {
   background: var(--color-white-at-6);
 }
+.Sidebar_item.Sidebar_item_sites {
+  margin-top: 16px;
+}
+.Sidebar_item.Sidebar_item_sites::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 16px;
+  right: 16px;
+  border-top: 1px solid var(--color-black-at-6);
+}
+[data-theme=dark] .Sidebar_item.Sidebar_item_sites::before {
+  border-top: 1px solid var(--color-white-at-6);
+}
 .Sidebar_item:hover .Sidebar_delete[aria-disabled=true] {
   opacity: 0.3;
   cursor: default;

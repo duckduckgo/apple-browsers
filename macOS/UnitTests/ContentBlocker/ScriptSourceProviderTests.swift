@@ -21,7 +21,9 @@ import Common
 import History
 import HistoryView
 import PersistenceTestingUtils
+import SharedTestUtilities
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ScriptSourceProviderTests: XCTestCase {

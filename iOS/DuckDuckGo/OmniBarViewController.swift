@@ -490,6 +490,8 @@ class OmniBarViewController: UIViewController, OmniBar {
             return
         }
 
+        barView.isCustomizableButtonHidden = state.currentAddressBarButton == .none
+        
         let largeIcon = dependencies.mobileCustomization.largeIconForButton(state.currentAddressBarButton)
         barView.customizableButton.setImage(largeIcon, for: .normal)
     }

@@ -44,6 +44,7 @@ private enum AttributesKey: String, CaseIterable {
     case pproDaysUntilExpiryOrRenewal
     case pproPurchasePlatform
     case pproSubscriptionStatus
+    case subscriptionFreeTrialActive
     case interactedWithMessage
     case interactedWithDeprecatedMacRemoteMessage
     case installedMacAppStore
@@ -83,6 +84,7 @@ private enum AttributesKey: String, CaseIterable {
         case .pproDaysUntilExpiryOrRenewal: return SubscriptionDaysUntilExpiryMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .pproPurchasePlatform: return SubscriptionPurchasePlatformMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .pproSubscriptionStatus: return SubscriptionStatusMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .subscriptionFreeTrialActive: return SubscriptionFreeTrialActiveMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .interactedWithMessage: return InteractedWithMessageMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .interactedWithDeprecatedMacRemoteMessage: return InteractedWithDeprecatedMacRemoteMessageMatchingAttribute(
             jsonMatchingAttribute: jsonMatchingAttribute

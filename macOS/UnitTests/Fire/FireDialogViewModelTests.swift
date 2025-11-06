@@ -19,10 +19,13 @@
 import Common
 import History
 import HistoryView
+import SharedTestUtilities
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
+@available(macOS 12.0, *)
 final class FireDialogViewModelTests: XCTestCase {
 
     private var historyCoordinator: HistoryCoordinatingMock!
@@ -34,13 +37,13 @@ final class FireDialogViewModelTests: XCTestCase {
     private var fireCoordinator: FireCoordinator!
     private var windowControllersManager: WindowControllersManagerMock!
     private var aiChatHistoryCleaner: MockAIChatHistoryCleaner!
+    private var schemeHandler: TestSchemeHandler!
 
     private var fireDialogViewResponse: FireDialogView.Response!
 
     @MainActor
     override func setUp() {
-        super.setUp()
-
+        schemeHandler = TestSchemeHandler()
         fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD())
         historyCoordinator = HistoryCoordinatingMock()
         windowControllersManager = WindowControllersManagerMock()
@@ -84,6 +87,7 @@ final class FireDialogViewModelTests: XCTestCase {
     }
 
     override func tearDown() {
+        schemeHandler = nil
         fire = nil
         fireViewModel = nil
         windowControllersManager = nil
@@ -96,13 +100,13 @@ final class FireDialogViewModelTests: XCTestCase {
         aiChatHistoryCleaner = nil
     }
 
-    @MainActor func testOnBurn_OnboardingContextualDialogsManagerFireButtonUsedCalled() async throws {
+    @MainActor func testOnBurn_OnboardingContextualDialogsManagerFireButtonUsedCalled() {
         // Scenario: Pressing Fire triggers onboarding context hook.
         // Action: Call burn() on the view model.
         // Expectation: Only fireButtonUsed is recorded; no other onboarding actions occur.
 
         // Add a tab so there's something to burn
-        let tab = Tab(content: .url(.duckDuckGo, source: .link))
+        let tab = makeTab(url: .duckDuckGo)
         tabCollectionVM.append(tab: tab)
 
         let vm = makeViewModel(with: tabCollectionVM)
@@ -129,9 +133,14 @@ final class FireDialogViewModelTests: XCTestCase {
         fireDialogViewResponse = .burn(options: result)
 
         let window = MockWindow()
-        _=await fireCoordinator.presentFireDialog(mode: .fireButton, in: window)
+        let presentExpectation = XCTestExpectation(description: "presentFireDialog completed")
+        Task {
+            _ = await fireCoordinator.presentFireDialog(mode: .fireButton, in: window)
+            presentExpectation.fulfill()
+        }
 
         // Then
+        wait(for: [presentExpectation], timeout: 2.0)
         XCTAssertNil(onboardingContextualDialogsManager.updatedForTab)
         XCTAssertFalse(onboardingContextualDialogsManager.gotItPressedCalled)
         XCTAssertTrue(onboardingContextualDialogsManager.fireButtonUsedCalled)
@@ -140,10 +149,10 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 1, "Window should be kept open")
         XCTAssertEqual(tabCollectionVM.tabs.count, 1, "Should have 1 new tab after burning")
 
-        await fulfillment(of: [openNewWindowExp], timeout: 0.5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
     }
 
-    @MainActor func testOnBurn_WhenAppIsNotActive_DoesNotOpenNewWindow() async throws {
+    @MainActor func testOnBurn_WhenAppIsNotActive_DoesNotOpenNewWindow() {
         // Scenario: App is not active (e.g., in background)
         // Action: Burn with all options enabled (which would normally close windows)
         // Expectation: openNewWindow should NOT be called when app is inactive
@@ -199,20 +208,26 @@ final class FireDialogViewModelTests: XCTestCase {
         })
 
         let window = MockWindow()
-        _ = await inactiveFireCoordinator.presentFireDialog(mode: .fireButton, in: window)
+        let presentExpectation = XCTestExpectation(description: "presentFireDialog completed")
+        Task {
+            _ = await inactiveFireCoordinator.presentFireDialog(mode: .fireButton, in: window)
+            presentExpectation.fulfill()
+        }
+
+        wait(for: [presentExpectation], timeout: 2.0)
 
         // Validate openNewWindow was NOT called
-        await fulfillment(of: [openNewWindowExp], timeout: 0.5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
     }
 
-    @MainActor func testBurn_WithIncludeHistoryFalse_DoesNotCallBurnHistory() async throws {
+    @MainActor func testBurn_WithIncludeHistoryFalse_DoesNotCallBurnHistory() {
         // Scenario: User disables history clearing, tabs close enabled.
         // Action: Burn with includeHistory=false, includeTabsAndWindows=true.
         // Expectation: No history API is invoked; tabs are closed; window stays open with new tab.
 
         // Add tabs to burn
-        let tab1 = Tab(content: .url(.duckDuckGo, source: .link))
-        let tab2 = Tab(content: .url(URL(string: "https://example.com")!, source: .link))
+        let tab1 = makeTab(url: .duckDuckGo)
+        let tab2 = makeTab(url: URL(string: "https://example.com")!)
         tabCollectionVM.append(tab: tab1)
         tabCollectionVM.append(tab: tab2)
 
@@ -254,11 +269,15 @@ final class FireDialogViewModelTests: XCTestCase {
                                        includeTabsAndWindows: viewModel.includeTabsAndWindows,
                                        includeCookiesAndSiteData: viewModel.includeCookiesAndSiteData,
                                        includeChatHistory: viewModel.includeChatHistory)
-        let task = handle(viewModel, result2)
 
-        try await withTimeout(3) {
+        let handleExpectation = XCTestExpectation(description: "handleDialogResult completed")
+        Task {
+            let task = handle(viewModel, result2)
             await task.value
+            handleExpectation.fulfill()
         }
+
+        wait(for: [handleExpectation], timeout: 3.0)
         withExtendedLifetime(tabCollectionVM) {}
 
         XCTAssertFalse(historyCoordinator.burnAllCalled)
@@ -269,15 +288,15 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 1, "Window should be kept open")
         XCTAssertEqual(tabCollectionVM.tabs.count, 1, "Should have 1 new tab after burning")
 
-        await fulfillment(of: [openNewWindowExp], timeout: 0.5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
     }
 
-    @MainActor func testClearingOption_UpdatesSelectableAndFireproofed() async throws {
+    @MainActor func testClearingOption_UpdatesSelectableAndFireproofed() {
         // Scenario: Changing scope updates sections.
         // Action: Set clearingOption to .currentWindow.
         // Expectation: Selectable first, fireproofed second; no crashes during refresh.
         // simulate local history domains
-        let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
+        let exampleTab = makeTab(url: .duckDuckGo)
         tabCollectionVM.append(tab: exampleTab)
         tabCollectionVM.select(at: .unpinned(1))
 
@@ -315,7 +334,7 @@ final class FireDialogViewModelTests: XCTestCase {
         // Action: Burn with includeHistory=true and includeTabsAndWindows=true.
         // Expectation: burnVisits is called; current tab is closed; window stays open with new tab.
         // Ensure selected tab exists
-        let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
+        let exampleTab = makeTab(url: .duckDuckGo)
         tabCollectionVM.append(tab: exampleTab)
         tabCollectionVM.select(at: .unpinned(1))
 
@@ -373,9 +392,9 @@ final class FireDialogViewModelTests: XCTestCase {
         // Action: Burn with includeHistory=true and includeTabsAndWindows=true.
         // Expectation: burnVisits is called; all tabs in window are removed; new tab is inserted; window stays open.
         // Add multiple tabs to populate local history structure
-        let exampleTab1 = Tab(content: .url(.duckDuckGo, source: .link))
+        let exampleTab1 = makeTab(url: .duckDuckGo)
         tabCollectionVM.append(tab: exampleTab1)
-        let exampleTab2 = Tab(content: .url(URL(string: "https://example.com")!, source: .link))
+        let exampleTab2 = makeTab(url: URL(string: "https://example.com")!)
         tabCollectionVM.append(tab: exampleTab2)
         tabCollectionVM.select(at: .unpinned(1))
 
@@ -437,7 +456,7 @@ final class FireDialogViewModelTests: XCTestCase {
         // Expectation: burnVisits still occurs; no tab/window closure required.
 
         // Ensure selected tab exists
-        let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
+        let exampleTab = makeTab(url: .duckDuckGo)
         tabCollectionVM.append(tab: exampleTab)
         tabCollectionVM.select(at: .unpinned(1))
         let fire = Fire(historyCoordinating: historyCoordinator,
@@ -587,8 +606,8 @@ final class FireDialogViewModelTests: XCTestCase {
         // Expectation: burnAll is called; window stays open with new tab inserted.
 
         // Add tabs to burn
-        let tab1 = Tab(content: .url(.duckDuckGo, source: .link))
-        let tab2 = Tab(content: .url(URL(string: "https://example.com")!, source: .link))
+        let tab1 = makeTab(url: .duckDuckGo)
+        let tab2 = makeTab(url: URL(string: "https://example.com")!)
         tabCollectionVM.append(tab: tab1)
         tabCollectionVM.append(tab: tab2)
 
@@ -644,7 +663,7 @@ final class FireDialogViewModelTests: XCTestCase {
         // Scenario: Current Tab, cookies/site data excluded, tab close enabled.
         // Action: Burn with includeCookiesAndSiteData=false, includeTabsAndWindows=true.
         // Expectation: burnVisits is called; tab is closed; window stays open with new tab.
-        let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
+        let exampleTab = makeTab(url: .duckDuckGo)
         tabCollectionVM.append(tab: exampleTab)
         tabCollectionVM.select(at: .unpinned(1))
         let fire = Fire(historyCoordinating: historyCoordinator,
@@ -700,8 +719,8 @@ final class FireDialogViewModelTests: XCTestCase {
         // Scenario: Current Window, cookies/site data excluded, tabs close enabled.
         // Action: Burn with includeCookiesAndSiteData=false, includeTabsAndWindows=true.
         // Expectation: burnVisits is called; all window tabs are closed; window stays open with new tab.
-        let exampleTab1 = Tab(content: .url(.duckDuckGo, source: .link))
-        let exampleTab2 = Tab(content: .url(URL(string: "https://example.com")!, source: .link))
+        let exampleTab1 = makeTab(url: .duckDuckGo)
+        let exampleTab2 = makeTab(url: URL(string: "https://example.com")!)
         tabCollectionVM.append(tab: exampleTab1)
         tabCollectionVM.append(tab: exampleTab2)
         tabCollectionVM.select(at: .unpinned(1))
@@ -761,8 +780,8 @@ final class FireDialogViewModelTests: XCTestCase {
         // Expectation: burnAll is called; window stays open with new tab inserted.
 
         // Add tabs to burn
-        let tab1 = Tab(content: .url(.duckDuckGo, source: .link))
-        let tab2 = Tab(content: .url(URL(string: "https://example.com")!, source: .link))
+        let tab1 = makeTab(url: .duckDuckGo)
+        let tab2 = makeTab(url: URL(string: "https://example.com")!)
         tabCollectionVM.append(tab: tab1)
         tabCollectionVM.append(tab: tab2)
 
@@ -816,11 +835,11 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertEqual(tabCollectionVM.tabs.count, 1, "Should have 1 new tab after burning all")
     }
 
-    @MainActor func testBurn_CurrentTab_WithIncludeHistoryFalse_DoesNotBurnHistory() async throws {
+    @MainActor func testBurn_CurrentTab_WithIncludeHistoryFalse_DoesNotBurnHistory() {
         // Scenario: Current Tab but history disabled, tabs close enabled.
         // Action: Burn with includeHistory=false, includeTabsAndWindows=true.
         // Expectation: No history clearing occurs; tab is closed; window stays open with new tab.
-        let exampleTab = Tab(content: .url(.duckDuckGo, source: .link))
+        let exampleTab = makeTab(url: .duckDuckGo)
         tabCollectionVM.append(tab: exampleTab)
         tabCollectionVM.select(at: .unpinned(1))
 
@@ -857,11 +876,15 @@ final class FireDialogViewModelTests: XCTestCase {
                                       includeTabsAndWindows: vm.includeTabsAndWindows,
                                       includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
                                       includeChatHistory: vm.includeChatHistory)
-        let task = handle(vm, result)
 
-        try await withTimeout(3) {
+        let handleExpectation = XCTestExpectation(description: "handleDialogResult completed")
+        Task {
+            let task = handle(vm, result)
             await task.value
+            handleExpectation.fulfill()
         }
+
+        wait(for: [handleExpectation], timeout: 3.0)
         withExtendedLifetime(tabCollectionVM) {}
 
         XCTAssertFalse(historyCoordinator.burnAllCalled)
@@ -872,15 +895,15 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 1, "Window should be kept open")
         XCTAssertEqual(tabCollectionVM.tabs.count, 1, "Should have 1 new tab after burning")
 
-        await fulfillment(of: [openNewWindowExp], timeout: 0.5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
     }
 
-    @MainActor func testBurn_CurrentWindow_WithIncludeHistoryFalse_DoesNotBurnHistory() async throws {
+    @MainActor func testBurn_CurrentWindow_WithIncludeHistoryFalse_DoesNotBurnHistory() {
         // Scenario: Current Window but history disabled, tabs close enabled.
         // Action: Burn with includeHistory=false, includeTabsAndWindows=true.
         // Expectation: No history clearing occurs; all window tabs are closed; window stays open with new tab.
-        let exampleTab1 = Tab(content: .url(.duckDuckGo, source: .link))
-        let exampleTab2 = Tab(content: .url(URL(string: "https://example.com")!, source: .link))
+        let exampleTab1 = makeTab(url: .duckDuckGo)
+        let exampleTab2 = makeTab(url: URL(string: "https://example.com")!)
         tabCollectionVM.append(tab: exampleTab1)
         tabCollectionVM.append(tab: exampleTab2)
         tabCollectionVM.select(at: .unpinned(1))
@@ -918,10 +941,15 @@ final class FireDialogViewModelTests: XCTestCase {
                                        includeTabsAndWindows: vm.includeTabsAndWindows,
                                        includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
                                        includeChatHistory: vm.includeChatHistory)
-        let task = handle(vm, resultB)
-        try await withTimeout(3) {
+
+        let handleExpectation = XCTestExpectation(description: "handleDialogResult completed")
+        Task {
+            let task = handle(vm, resultB)
             await task.value
+            handleExpectation.fulfill()
         }
+
+        wait(for: [handleExpectation], timeout: 3.0)
         withExtendedLifetime(tabCollectionVM) {}
 
         XCTAssertFalse(historyCoordinator.burnAllCalled)
@@ -932,7 +960,7 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertEqual(windowControllersManager.mainWindowControllers.count, 1, "Window should be kept open")
         XCTAssertEqual(tabCollectionVM.tabs.count, 1, "Should have 1 new tab after burning")
 
-        await fulfillment(of: [openNewWindowExp], timeout: 0.5)
+        wait(for: [openNewWindowExp], timeout: 0.5)
     }
 
     @MainActor func testUpdateItems_InitialAndOnChange_UpdatesHistoryVisitsAndSelection() {
@@ -1125,7 +1153,7 @@ final class FireDialogViewModelTests: XCTestCase {
                        "Fireproofed list should contain all fireproofed domains from window tabs")
     }
 
-    @MainActor func testAllData_WithScopeCookieDomains_UsesProvidedDomains() {
+    @MainActor func testAllData_WithScopeCookieDomains_UsesProvidedDomains() { // <-- this
         // Scenario: AllData mode with explicit scopeCookieDomains provided
         // Expectation: Uses provided domains, not tab domains
 
@@ -1368,87 +1396,6 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.historyVisits.count, 2,
                        "AllData scopeVisits should not change when only selection changes")
         XCTAssertEqual(viewModel.historyItemsCountForCurrentScope, 2)
-    }
-
-    // MARK: - Helper Methods
-
-    @MainActor
-    private func makeViewModel(with tabCollectionViewModel: TabCollectionViewModel,
-                               clearingOption: FireDialogViewModel.ClearingOption? = nil,
-                               scopeCookieDomains: Set<String>? = nil) -> FireDialogViewModel {
-
-        return FireDialogViewModel(
-            fireViewModel: fireViewModel,
-            tabCollectionViewModel: tabCollectionViewModel,
-            historyCoordinating: fire.historyCoordinating,
-            aiChatHistoryCleaner: aiChatHistoryCleaner,
-            fireproofDomains: fireproofDomains,
-            faviconManagement: fire.faviconManagement,
-            clearingOption: clearingOption,
-            scopeCookieDomains: scopeCookieDomains,
-            tld: TLD()
-        )
-    }
-
-    @MainActor
-    private func registerMainWindow(with tabCollectionViewModel: TabCollectionViewModel) {
-        let mainViewController = MainViewController(
-            tabCollectionViewModel: tabCollectionViewModel,
-            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
-            aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()),
-            fireCoordinator: fireCoordinator
-        )
-        let window = MockWindow(isVisible: false)
-        let mainWindowController = MainWindowController(
-            window: window,
-            mainViewController: mainViewController,
-            fireViewModel: fireViewModel,
-            themeManager: MockThemeManager()
-        )
-        windowControllersManager.mainWindowControllers = [mainWindowController]
-    }
-
-    @MainActor
-    private func handle(_ vm: FireDialogViewModel,
-                        _ result: FireDialogResult,
-                        onboarding: ContextualOnboardingStateUpdater? = nil) -> Task<Void, Never> {
-        let isAllHistorySelected: Bool
-        if vm.scopeCookieDomains != nil  {
-            isAllHistorySelected = false
-        } else {
-            // no specific domains passed initially
-            isAllHistorySelected = result.selectedCookieDomains == nil || result.selectedCookieDomains?.count == vm.selectable.count
-        }
-
-        return Task {
-            await fireCoordinator.handleDialogResult(result, tabCollectionViewModel: vm.tabCollectionViewModel, isAllHistorySelected: isAllHistorySelected)
-        }
-    }
-
-    private func makeFireproofDomains(_ domains: [String]) {
-        domains.forEach { fireproofDomains.add(domain: $0) }
-    }
-
-    private func makeHistoryEntry(url: String) -> HistoryEntry {
-        HistoryEntry(identifier: UUID(),
-                     url: URL(string: url)!,
-                     failedToLoad: false,
-                     numberOfTotalVisits: 1,
-                     lastVisit: Date(),
-                     visits: [],
-                     numberOfTrackersBlocked: 0,
-                     blockedTrackingEntities: [],
-                     trackersFound: false)
-    }
-
-    @MainActor
-    private func makeTab(url: URL, historyMock: HistoryTabExtensionMock) -> Tab {
-        let extensionBuilder = TestTabExtensionsBuilder(load: [HistoryTabExtensionMock.self]) { builder in { _, _ in
-            builder.override {
-                historyMock
-            }
-        }}
-        return Tab(content: .url(url, source: .link), extensionsBuilder: extensionBuilder)
     }
 
     // MARK: - Clearing Chat History
@@ -1982,6 +1929,94 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.includeCookiesAndSiteData, "Default includeCookiesAndSiteData should be true")
         XCTAssertFalse(viewModel.includeChatHistorySetting, "Default includeChatHistorySetting should be false")
     }
+
+    // MARK: - Helper Methods
+
+    @MainActor
+    private func makeViewModel(with tabCollectionViewModel: TabCollectionViewModel,
+                               clearingOption: FireDialogViewModel.ClearingOption? = nil,
+                               scopeCookieDomains: Set<String>? = nil) -> FireDialogViewModel {
+
+        return FireDialogViewModel(
+            fireViewModel: fireViewModel,
+            tabCollectionViewModel: tabCollectionViewModel,
+            historyCoordinating: fire.historyCoordinating,
+            aiChatHistoryCleaner: aiChatHistoryCleaner,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: fire.faviconManagement,
+            clearingOption: clearingOption,
+            scopeCookieDomains: scopeCookieDomains,
+            tld: TLD()
+        )
+    }
+
+    @MainActor
+    private func registerMainWindow(with tabCollectionViewModel: TabCollectionViewModel) {
+        let mainViewController = MainViewController(
+            tabCollectionViewModel: tabCollectionViewModel,
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+            aiChatSidebarProvider: AIChatSidebarProvider(featureFlagger: MockFeatureFlagger()),
+            fireCoordinator: fireCoordinator
+        )
+        let window = MockWindow(isVisible: false)
+        let mainWindowController = MainWindowController(
+            window: window,
+            mainViewController: mainViewController,
+            fireViewModel: fireViewModel,
+            themeManager: MockThemeManager()
+        )
+        windowControllersManager.mainWindowControllers = [mainWindowController]
+    }
+
+    @MainActor
+    private func handle(_ vm: FireDialogViewModel,
+                        _ result: FireDialogResult,
+                        onboarding: ContextualOnboardingStateUpdater? = nil) -> Task<Void, Never> {
+        let isAllHistorySelected: Bool
+        if vm.scopeCookieDomains != nil  {
+            isAllHistorySelected = false
+        } else {
+            // no specific domains passed initially
+            isAllHistorySelected = result.selectedCookieDomains == nil || result.selectedCookieDomains?.count == vm.selectable.count
+        }
+
+        return Task {
+            await fireCoordinator.handleDialogResult(result, tabCollectionViewModel: vm.tabCollectionViewModel, isAllHistorySelected: isAllHistorySelected)
+        }
+    }
+
+    private func makeFireproofDomains(_ domains: [String]) {
+        domains.forEach { fireproofDomains.add(domain: $0) }
+    }
+
+    private func makeHistoryEntry(url: String) -> HistoryEntry {
+        HistoryEntry(identifier: UUID(),
+                     url: URL(string: url)!,
+                     failedToLoad: false,
+                     numberOfTotalVisits: 1,
+                     lastVisit: Date(),
+                     visits: [],
+                     numberOfTrackersBlocked: 0,
+                     blockedTrackingEntities: [],
+                     trackersFound: false)
+    }
+
+    @MainActor
+    private func makeTab(url: URL, historyMock: HistoryTabExtensionMock? = nil) -> Tab {
+        let mock = historyMock ?? {
+            let mock = HistoryTabExtensionMock()
+            let entry = makeHistoryEntry(url: url.absoluteString)
+            mock.localHistory = [Visit(date: Date(), identifier: entry.url, historyEntry: entry)]
+            return mock
+        }()
+        let extensionBuilder = TestTabExtensionsBuilder(load: [HistoryTabExtensionMock.self]) { builder in { _, _ in
+            builder.override {
+                mock
+            }
+        }}
+        return Tab(content: .url(url, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration(), extensionsBuilder: extensionBuilder)
+    }
+
 }
 
 class MockFireDialogViewSettings: FireDialogViewSettings {
@@ -2027,6 +2062,17 @@ class CapturingContextualOnboardingStateUpdater: ContextualOnboardingStateUpdate
 
 }
 
+final class WebCacheManagerMock: WebCacheManager {
+
+    init() {
+        super.init(fireproofDomains: MockFireproofDomains(domains: []))
+    }
+
+    var clearCalled = false
+    override func clear(baseDomains: Set<String>? = nil) async {
+        clearCalled = true
+    }
+}
 private final class TestPresenter: FireDialogViewPresenting {
     private let handler: (NSWindow?, (() -> Void)?) -> Void
     init(handler: @escaping (NSWindow?, (() -> Void)?) -> Void) { self.handler = handler }

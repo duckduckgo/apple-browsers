@@ -31,8 +31,7 @@ final class MockSERPSettingsProvider: SERPSettingsProviding {
     var mockIsAIChatEnabled: Bool = false
 
     // Required protocol properties
-    var keyValueStore: ThrowingKeyValueStoring
-    var settingsQueue: DispatchQueue = DispatchQueue(label: "test.queue")
+    var keyValueStore: ThrowingKeyValueStoring?
     var eventMapper: EventMapping<SERPSettingsError>?
     var wasStoreSettingsCalled: Bool = false
 
@@ -67,17 +66,15 @@ final class MockSERPSettingsProvider: SERPSettingsProviding {
     func storeSERPSettings(settings: [String: Any]) {
         wasStoreSettingsCalled = true
 
-        settingsQueue.sync {
+        do {
+            let data = try JSONSerialization.data(withJSONObject: settings, options: [])
             do {
-                let data = try JSONSerialization.data(withJSONObject: settings, options: [])
-                do {
-                    try keyValueStore.set(data, forKey: SERPSettingsConstants.serpSettingsStorage)
-                } catch {
-                    eventMapper?.fire(.keyValueStoreWriteError, error: error)
-                }
+                try keyValueStore?.set(data, forKey: SERPSettingsConstants.serpSettingsStorage)
             } catch {
-                eventMapper?.fire(.serializationFailed, error: error)
+                eventMapper?.fire(.keyValueStoreWriteError, error: error)
             }
+        } catch {
+            eventMapper?.fire(.serializationFailed, error: error)
         }
     }
 

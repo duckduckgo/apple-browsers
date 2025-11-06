@@ -24,7 +24,8 @@ import SetDefaultBrowserCore
 
 @MainActor
 public protocol DefaultBrowserPromptPresenting: AnyObject {
-    func tryPresentDefaultModalPrompt(from viewController: UIViewController)
+    /// Returns a view controller if the prompt is eligible to show to the user. Nil, otherwise.
+    func makePresentDefaultModalPrompt() -> UIViewController?
 }
 
 @MainActor
@@ -37,16 +38,16 @@ final class DefaultBrowserModalPresenter: NSObject, DefaultBrowserPromptPresenti
         self.uiProvider = uiProvider
     }
 
-    public func tryPresentDefaultModalPrompt(from viewController: UIViewController) {
+    func makePresentDefaultModalPrompt() -> UIViewController? {
         Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Attempting To Present Default Browser Prompt.")
 
-        guard let prompt = coordinator.getPrompt() else { return }
+        guard let prompt = coordinator.getPrompt() else { return nil }
 
         switch prompt {
         case .activeUserModal:
-            presentDefaultDefaultBrowserPromptForActiveUser(from: viewController)
+            return makeDefaultDefaultBrowserPromptForActiveUser()
         case .inactiveUserModal:
-            presentDefaultBrowserPromptForInactiveUser(from: viewController)
+            return makeDefaultBrowserPromptForInactiveUser()
         }
     }
 
@@ -56,49 +57,53 @@ final class DefaultBrowserModalPresenter: NSObject, DefaultBrowserPromptPresenti
 
 private extension DefaultBrowserModalPresenter {
 
-    func presentDefaultDefaultBrowserPromptForActiveUser(from viewController: UIViewController) {
+    func makeDefaultDefaultBrowserPromptForActiveUser() -> UIViewController {
+        let hostingController = UIHostingController(rootView: AnyView(EmptyView()))
+
         let rootView = DefaultBrowserPromptActiveUserView(
-            closeAction: { [weak viewController, weak coordinator] in
+            closeAction: { [weak hostingController, weak coordinator] in
                 coordinator?.dismissAction(forPrompt: .activeUserModal, shouldDismissPromptPermanently: false)
-                viewController?.dismiss(animated: true)
-            }, setAsDefaultAction: { [weak viewController, weak coordinator] in
+                hostingController?.dismiss(animated: true)
+            }, setAsDefaultAction: { [weak hostingController, weak coordinator] in
                 coordinator?.setDefaultBrowserAction(forPrompt: .activeUserModal)
-                viewController?.dismiss(animated: true)
-            }, doNotAskAgainAction: { [weak viewController, weak coordinator] in
+                hostingController?.dismiss(animated: true)
+            }, doNotAskAgainAction: { [weak hostingController, weak coordinator] in
                 coordinator?.dismissAction(forPrompt: .activeUserModal, shouldDismissPromptPermanently: true)
-                viewController?.dismiss(animated: true)
+                hostingController?.dismiss(animated: true)
             }
         )
-        let hostingController = UIHostingController(rootView: rootView)
+
+        hostingController.rootView = AnyView(rootView)
         hostingController.modalPresentationStyle = .pageSheet
         hostingController.modalTransitionStyle = .coverVertical
-        configurePresentationStyle(hostingController: hostingController, presentingController: viewController)
-        viewController.present(hostingController, animated: true)
+        configurePresentationStyle(hostingController: hostingController)
+
+        return hostingController
     }
 
-    func presentDefaultBrowserPromptForInactiveUser(from viewController: UIViewController) {
-        // Present the full screen from the root controller or from the presented screen if any. (E.g. settings)
-        let presentingViewController = viewController.presentedViewController ?? viewController
+    func makeDefaultBrowserPromptForInactiveUser() -> UIViewController {
+        let hostingController = PortraitHostingController(rootView: AnyView(EmptyView()))
 
         let rootView = DefaultBrowserPromptInactiveUserView(
             background: AnyView(uiProvider.makeBackground()),
             browserComparisonChart: AnyView(uiProvider.makeBrowserComparisonChart()),
-            closeAction: { [weak presentingViewController, weak coordinator] in
+            closeAction: { [weak hostingController, weak coordinator] in
                 coordinator?.dismissAction(forPrompt: .inactiveUserModal, shouldDismissPromptPermanently: false)
-                presentingViewController?.dismiss(animated: true)
+                hostingController?.dismiss(animated: true)
             },
-            setAsDefaultAction: { [weak presentingViewController, weak coordinator] in
+            setAsDefaultAction: { [weak hostingController, weak coordinator] in
                 coordinator?.setDefaultBrowserAction(forPrompt: .inactiveUserModal)
-                presentingViewController?.dismiss(animated: false)
+                hostingController?.dismiss(animated: false)
             }
         )
-        let hostingController = PortraitHostingController(rootView: rootView)
+
+        hostingController.rootView = AnyView(rootView)
         hostingController.modalPresentationStyle = .overFullScreen
 
-        presentingViewController.present(hostingController, animated: true)
+        return hostingController
     }
 
-    func configurePresentationStyle(hostingController: UIHostingController<DefaultBrowserPromptActiveUserView>, presentingController: UIViewController) {
+    func configurePresentationStyle(hostingController: UIHostingController<AnyView>) {
         guard let presentationController = hostingController.sheetPresentationController else { return }
 
         if #available(iOS 16.0, *) {

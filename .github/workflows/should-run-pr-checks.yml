@@ -5,6 +5,7 @@ name: Should Run PR Checks
 #
 # Logic:
 # - Always runs for non-PR events (push, schedule, workflow_call)
+# - Always runs when a PR is unmarked as draft (ready_for_review action)
 # - Always runs for PRs that are not in draft state
 # - Runs for draft PRs only if they have the specified "run checks" label
 #
@@ -41,6 +42,9 @@ jobs:
           if [[ "${{ github.event_name }}" != "pull_request" ]]; then
             echo "should_run=true" >> $GITHUB_OUTPUT
             echo "Non-PR event, running checks"
+          elif [[ "${{ github.event.action }}" == "ready_for_review" ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "PR was unmarked as draft, running checks"
           elif [[ "${{ github.event.pull_request.draft }}" != "true" ]]; then
             echo "should_run=true" >> $GITHUB_OUTPUT
             echo "PR is ready for review, running checks"

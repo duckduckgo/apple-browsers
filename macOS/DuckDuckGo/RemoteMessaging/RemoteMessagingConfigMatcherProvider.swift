@@ -226,16 +226,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 }
 
 extension DuckDuckGoSubscription: @retroactive SubscriptionSurveyDataProviding {
-
     public var subscriptionStatus: String? {
-        switch status {
-        case .autoRenewable: return "auto_renewable"
-        case .notAutoRenewable: return "not_auto_renewable"
-        case .gracePeriod: return "grace_period"
-        case .inactive: return "inactive"
-        case .expired: return "expired"
-        case .unknown: return "unknown"
-        }
+        return status.remoteMessagingFrameworkValue
     }
 
     public var subscriptionPlatform: String? {
@@ -243,11 +235,7 @@ extension DuckDuckGoSubscription: @retroactive SubscriptionSurveyDataProviding {
     }
 
     public var subscriptionBilling: String? {
-        switch billingPeriod {
-        case .monthly: return "monthly"
-        case .yearly: return "yearly"
-        case .unknown: return "unknown"
-        }
+        return billingPeriod.remoteMessagingFrameworkValue
     }
 
     public var subscriptionStartDate: Date? {

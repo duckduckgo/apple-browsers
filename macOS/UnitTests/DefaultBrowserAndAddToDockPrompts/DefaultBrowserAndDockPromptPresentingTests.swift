@@ -19,6 +19,7 @@
 import XCTest
 import Combine
 @testable import DuckDuckGo_Privacy_Browser
+import SharedTestUtilities
 
 final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
     private var coordinatorMock: MockDefaultBrowserAndDockPromptCoordinator!
@@ -49,6 +50,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         // GIVEN
         var popoverAnchorProviderCalled = false
         var bannerViewHandlerCalled = false
+        var inactiveUserModalWindowProviderCalled = false
         coordinatorMock.getPromptTypeResult = nil
 
         // WHEN
@@ -59,12 +61,17 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
             },
             bannerViewHandler: { _ in
                 bannerViewHandlerCalled = true
+            },
+            inactiveUserModalWindowProvider: {
+                inactiveUserModalWindowProviderCalled = true
+                return nil
             }
         )
 
         // THEN
         XCTAssertFalse(popoverAnchorProviderCalled)
         XCTAssertFalse(bannerViewHandlerCalled)
+        XCTAssertFalse(inactiveUserModalWindowProviderCalled)
     }
 
     func testTryToShowPromptShowsBannerWhenPromptTypeIsBanner() {
@@ -78,7 +85,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         }
 
         // WHEN
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler)
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler, inactiveUserModalWindowProvider: { nil })
 
         // THEN
         XCTAssertTrue(bannerShown)
@@ -95,10 +102,27 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         }
 
         // WHEN
-        sut.tryToShowPrompt(popoverAnchorProvider: popoverAnchorProvider, bannerViewHandler: { _ in })
+        sut.tryToShowPrompt(popoverAnchorProvider: popoverAnchorProvider, bannerViewHandler: { _ in }, inactiveUserModalWindowProvider: { nil })
 
         // THEN
         XCTAssertTrue(popoverShown)
+    }
+
+    func testTryToShowPromptShowsInactiveUserModalWhenPromptTypeIsInactive() {
+        // GIVEN
+        var inactiveUserModalShown = false
+        coordinatorMock.getPromptTypeResult = .inactive
+
+        let inactiveUserModalWindowProvider: () -> NSWindow? = {
+            inactiveUserModalShown = true
+            return MockWindow()
+        }
+
+        // WHEN
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in }, inactiveUserModalWindowProvider: inactiveUserModalWindowProvider)
+
+        // THEN
+        XCTAssertTrue(inactiveUserModalShown)
     }
 
     func testTryToShowPromptKeepsTrackOfPromptShownWhenPopoverIsReturned() {
@@ -107,7 +131,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         XCTAssertNil(sut.currentShownPrompt)
 
         // WHEN
-        sut.tryToShowPrompt(popoverAnchorProvider: { NSView() }, bannerViewHandler: { _ in })
+        sut.tryToShowPrompt(popoverAnchorProvider: { NSView() }, bannerViewHandler: { _ in }, inactiveUserModalWindowProvider: { nil })
 
         // THEN
         XCTAssertEqual(sut.currentShownPrompt, .active(.popover))
@@ -120,7 +144,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         XCTAssertNil(sut.currentShownPrompt)
 
         // WHEN
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in })
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in }, inactiveUserModalWindowProvider: { nil })
 
         // THEN
         XCTAssertEqual(sut.currentShownPrompt, .active(.banner))
@@ -133,7 +157,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         XCTAssertNil(sut.currentShownPrompt)
 
         // WHEN
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in })
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in }, inactiveUserModalWindowProvider: { MockWindow() })
 
         // THEN
         XCTAssertEqual(sut.currentShownPrompt, .inactive)
@@ -149,7 +173,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         XCTAssertFalse(statusUpdateNotifierMock.didCallStartNotifyingStatus)
 
         // WHEN
-        sut.tryToShowPrompt(popoverAnchorProvider: popoverAnchorProvider, bannerViewHandler: { _ in })
+        sut.tryToShowPrompt(popoverAnchorProvider: popoverAnchorProvider, bannerViewHandler: { _ in }, inactiveUserModalWindowProvider: { nil })
 
         // THEN
         XCTAssertTrue(statusUpdateNotifierMock.didCallStartNotifyingStatus)
@@ -162,7 +186,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         XCTAssertFalse(statusUpdateNotifierMock.didCallStartNotifyingStatus)
 
         // WHEN
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in })
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in }, inactiveUserModalWindowProvider: { nil })
 
         // THEN
         XCTAssertTrue(statusUpdateNotifierMock.didCallStartNotifyingStatus)
@@ -175,7 +199,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         XCTAssertFalse(statusUpdateNotifierMock.didCallStartNotifyingStatus)
 
         // WHEN
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in })
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in }, inactiveUserModalWindowProvider: { MockWindow() })
 
         // THEN
         XCTAssertTrue(statusUpdateNotifierMock.didCallStartNotifyingStatus)
@@ -191,7 +215,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         }
 
         // WHEN
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler)
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler, inactiveUserModalWindowProvider: { nil })
 
         // THEN
         XCTAssertTrue(coordinatorMock.wasPromptConfirmationCalled)
@@ -204,7 +228,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         // GIVEN
         coordinatorMock.getPromptTypeResult = .active(.banner)
         coordinatorMock.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in })
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in }, inactiveUserModalWindowProvider: { nil })
         statusUpdateNotifierMock.sendValue(.init(isDefaultBrowser: false, isAddedToDock: false))
         XCTAssertTrue(statusUpdateNotifierMock.didCallStartNotifyingStatus)
         XCTAssertFalse(statusUpdateNotifierMock.didCallStopNotifyingStatus)
@@ -222,7 +246,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         // GIVEN
         coordinatorMock.getPromptTypeResult = .active(.banner)
         coordinatorMock.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in })
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in }, inactiveUserModalWindowProvider: { nil })
         statusUpdateNotifierMock.sendValue(.init(isDefaultBrowser: false, isAddedToDock: false))
 
         var didReceiveBannerDismissed = false
@@ -245,7 +269,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         // GIVEN
         coordinatorMock.getPromptTypeResult = .active(.banner)
         coordinatorMock.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in })
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in }, inactiveUserModalWindowProvider: { nil })
         statusUpdateNotifierMock.sendValue(.init(isDefaultBrowser: false, isAddedToDock: false))
         XCTAssertNil(coordinatorMock.capturedDismissAction)
 
@@ -266,7 +290,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         let bannerViewHandler: (BannerMessageViewController) -> Void = { banner in
             bannerVC = banner
         }
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler)
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler, inactiveUserModalWindowProvider: { nil })
         XCTAssertTrue(statusUpdateNotifierMock.didCallStartNotifyingStatus)
         XCTAssertFalse(statusUpdateNotifierMock.didCallStopNotifyingStatus)
         XCTAssertEqual(sut.currentShownPrompt, .active(.banner))
@@ -287,7 +311,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         let bannerViewHandler: (BannerMessageViewController) -> Void = { banner in
             bannerVC = banner
         }
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler)
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler, inactiveUserModalWindowProvider: { nil })
         XCTAssertTrue(statusUpdateNotifierMock.didCallStartNotifyingStatus)
         XCTAssertFalse(statusUpdateNotifierMock.didCallStopNotifyingStatus)
         XCTAssertEqual(sut.currentShownPrompt, .active(.banner))
@@ -308,7 +332,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         let bannerViewHandler: (BannerMessageViewController) -> Void = { banner in
             bannerVC = banner
         }
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler)
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler, inactiveUserModalWindowProvider: { nil })
         XCTAssertFalse(coordinatorMock.wasDismissPromptCalled)
         XCTAssertNil(coordinatorMock.capturedDismissAction)
 
@@ -328,7 +352,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         let bannerViewHandler: (BannerMessageViewController) -> Void = { banner in
             bannerVC = banner
         }
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler)
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler, inactiveUserModalWindowProvider: { nil })
         XCTAssertTrue(statusUpdateNotifierMock.didCallStartNotifyingStatus)
         XCTAssertFalse(statusUpdateNotifierMock.didCallStopNotifyingStatus)
         XCTAssertEqual(sut.currentShownPrompt, .active(.banner))
@@ -349,7 +373,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         let bannerViewHandler: (BannerMessageViewController) -> Void = { banner in
             bannerVC = banner
         }
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler)
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler, inactiveUserModalWindowProvider: { nil })
         XCTAssertFalse(coordinatorMock.wasDismissPromptCalled)
         XCTAssertNil(coordinatorMock.capturedDismissAction)
 
@@ -377,7 +401,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         }
 
         // WHEN
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler)
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler, inactiveUserModalWindowProvider: { nil })
 
         // THEN
         XCTAssertTrue(didReceiveBannerDismissed)
@@ -391,7 +415,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         let bannerViewHandler: (BannerMessageViewController) -> Void = { banner in
             bannerVC = banner
         }
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler)
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler, inactiveUserModalWindowProvider: { nil })
         var didReceiveBannerDismissed = false
         sut.bannerDismissedPublisher.sink { _ in
             didReceiveBannerDismissed = true
@@ -421,7 +445,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         }
 
         // WHEN
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler)
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler, inactiveUserModalWindowProvider: { nil })
 
         // THEN
         XCTAssertTrue(didReceiveBannerDismissed)

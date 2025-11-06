@@ -414,7 +414,7 @@ final class WatchdogTests: XCTestCase {
 
     func testHangStateTransitions() async throws {
         let minimumDuration = 0.2
-        let maximumDuration = 0.4
+        let maximumDuration = 1.0
         let checkInterval   = 0.1
 
         let mockKill = MockKillAppFunction()

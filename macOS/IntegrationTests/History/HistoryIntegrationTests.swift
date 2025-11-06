@@ -20,6 +20,7 @@ import Combine
 import Common
 import History
 import Navigation
+import SharedTestUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser

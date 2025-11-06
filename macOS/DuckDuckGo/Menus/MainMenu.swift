@@ -143,7 +143,7 @@ final class MainMenu: NSMenu {
          historyCoordinator: HistoryCoordinating & HistoryGroupingDataSource,
          faviconManager: FaviconManagement,
          dockCustomizer: DockCustomization = DockCustomizer(),
-         defaultBrowserPreferences: DefaultBrowserPreferences = .shared,
+         defaultBrowserPreferences: DefaultBrowserPreferences,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
          internalUserDecider: InternalUserDecider,
          appearancePreferences: AppearancePreferences,

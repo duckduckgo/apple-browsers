@@ -105,6 +105,7 @@ final class MainViewController: NSViewController {
          aiChatTabOpener: AIChatTabOpening = NSApp.delegateTyped.aiChatTabOpener,
          brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         defaultBrowserPreferences: DefaultBrowserPreferences = NSApp.delegateTyped.defaultBrowserPreferences,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptService.presenter,
          themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
@@ -177,7 +178,11 @@ final class MainViewController: NSViewController {
             )
         }()
 
-        browserTabViewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
+        browserTabViewController = BrowserTabViewController(
+            tabCollectionViewModel: tabCollectionViewModel,
+            bookmarkManager: bookmarkManager,
+            defaultBrowserPreferences: defaultBrowserPreferences
+        )
         aiChatSidebarPresenter = AIChatSidebarPresenter(
             sidebarHost: browserTabViewController,
             sidebarProvider: aiChatSidebarProvider,
@@ -215,7 +220,8 @@ final class MainViewController: NSViewController {
                                                                          aiChatMenuConfig: aiChatMenuConfig,
                                                                          aiChatSidebarPresenter: aiChatSidebarPresenter,
                                                                          vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
-                                                                         sessionRestorePromptCoordinator: sessionRestorePromptCoordinator)
+                                                                         sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
+                                                                         defaultBrowserPreferences: defaultBrowserPreferences)
 
         findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
@@ -481,24 +487,28 @@ final class MainViewController: NSViewController {
     private func subscribeToTitleChange(of selectedTabViewModel: TabViewModel?) {
         guard let selectedTabViewModel else { return }
 
-        // Only subscribe once the view is added to the window.
-        let windowPublisher = view.publisher(for: \.window).filter({ $0 != nil }).prefix(1).asVoid()
-
-        windowPublisher
-            .combineLatest(selectedTabViewModel.$title) { $1 }
-            .map {
-                $0.truncated(length: MainMenu.Constants.maxTitleLength)
+        let updateWindowTitle = { [weak self] (title: String) in
+            guard let self, let window = self.view.window else { return }
+            guard !isBurner else {
+                // Fire Window: don‘t display active Tab title as the Window title
+                window.title = UserText.burnerWindowHeader
+                return
             }
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] title in
-                guard let self else { return }
-                guard !isBurner else {
-                    // Fire Window: don‘t display active Tab title as the Window title
-                    view.window?.title = UserText.burnerWindowHeader
-                    return
-                }
+            let truncatedTitle = title.truncated(length: MainMenu.Constants.maxTitleLength)
 
-                view.window?.title = title
+            window.title = truncatedTitle
+        }
+
+        // Update once the view is added to a window.
+        view.observe(\.window) { [weak selectedTabViewModel] view, _ in
+            guard view.window != nil else { return }
+            updateWindowTitle(selectedTabViewModel?.title ?? "")
+        }.store(in: &tabViewModelCancellables)
+
+        selectedTabViewModel.$title
+            .receive(on: DispatchQueue.main)
+            .sink { title in
+                updateWindowTitle(title)
             }
             .store(in: &tabViewModelCancellables)
     }

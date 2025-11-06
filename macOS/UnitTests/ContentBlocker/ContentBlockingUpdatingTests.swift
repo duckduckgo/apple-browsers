@@ -22,8 +22,10 @@ import History
 import HistoryView
 import PersistenceTestingUtils
 import TrackerRadarKit
+import SharedTestUtilities
 import WebKit
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ContentBlockingUpdatingTests: XCTestCase {

@@ -1666,11 +1666,6 @@ public struct UserText {
     static let winBackCampaignModalCTA = NSLocalizedString("win-back.campaign.modal.cta", value: "See Offer", comment: "CTA of the modal dialog promoting the win-back campaign")
     static let winBackCampaignModalDismiss = NSLocalizedString("win-back.campaign.modal.dismiss", value: "Not Now", comment: "Dismiss of the modal dialog promoting the win-back campaign")
 
-    static let winBackCampaignLastDayMessageTitle = NSLocalizedString("win-back.campaign.last-day.message.title", value: "Last day to save 25%!", comment: "Title of message displayed on the last day of the win-back campaign")
-    static let winBackCampaignLastDayMessageText = NSLocalizedString("win-back.campaign.last-day.message.text", value: "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%.", comment: "Message of the message displayed on the last day of the win-back campaign")
-    static let winBackCampaignLastDayMessageCTA = NSLocalizedString("win-back.campaign.last-day.message.cta", value: "See Offer", comment: "CTA of the message displayed on the last day of the win-back campaign")
-    static let winBackCampaignLastDayMessageDismiss = NSLocalizedString("win-back.campaign.last-day.message.dismiss", value: "Not Now", comment: "Dismiss of the message displayed on the last day of the win-back campaign")
-
     static let winBackCampaignMenuBadgeText = NSLocalizedString("win-back.campaign.menu.badge.text", value: "SAVE 25%", comment: "Text for the badge displayed on the Subscription menu item during the win-back campaign")
 
     static let winBackCampaignSubscriptionSettingsMenuLoggedOutSubtitle = NSLocalizedString("win-back.campaign.subscription.settings.menu.logged-out.subtitle", value: "Limited time offer!", comment: "Subtitle of the Subscription settings menu item during the win-back campaign")

@@ -29,6 +29,7 @@ public protocol WinbackOfferStoring {
     var didDismissUrgencyMessage: Bool { get set }
     func storeOfferPresentationDate(_ date: Date?)
     func getOfferPresentationDate() -> Date?
+    func clearChurnDate()
 }
 extension WinbackOfferStore {
     enum Key: String {
@@ -111,6 +112,10 @@ public struct WinbackOfferStore: WinbackOfferStoring {
             return false
         }
         return didRedeem
+    }
+
+    public func clearChurnDate() {
+        try? deleteData(forKey: .churnDate)
     }
 
     public var didDismissUrgencyMessage: Bool {

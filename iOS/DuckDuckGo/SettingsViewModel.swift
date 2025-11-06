@@ -1095,6 +1095,8 @@ extension SettingsViewModel {
         case aiChat
         case privateSearch
         case subscriptionSettings
+        case customizeToolbarButton
+        case customizeAddressBarButton
         // Add other cases as needed
 
         var id: String {
@@ -1108,6 +1110,8 @@ extension SettingsViewModel {
             case .aiChat: return "aiChat"
             case .privateSearch: return "privateSearch"
             case .subscriptionSettings: return "subscriptionSettings"
+            case .customizeToolbarButton: return "customizeToolbarButton"
+            case .customizeAddressBarButton: return "customizeAddressButton"
             // Ensure all cases are covered
             }
         }
@@ -1116,7 +1120,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings:
+            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .customizeToolbarButton, .customizeAddressBarButton:
                 return .navigationLink
             }
         }

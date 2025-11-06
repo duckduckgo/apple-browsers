@@ -3923,7 +3923,7 @@ extension MainViewController {
         if state.isEnabled {
             omniBar.barView.customizableButton.menu = UIMenu(children: [
                 UIAction(title: "Customize", image: DesignSystemImages.Glyphs.Size16.options) { [weak self] _ in
-                    // TODO self?.segueToCustomizeAddressBarSettings()
+                    self?.segueToCustomizeAddressBarSettings()
                 }
             ])
         } else {
@@ -3997,10 +3997,6 @@ extension MainViewController {
         } else {
             browserChrome.menu = nil
         }
-    }
-
-    private func segueToCustomizeToolbarSettings() {
-        
     }
 
     private func handleCustomizableAddressBarButtonPressed() {

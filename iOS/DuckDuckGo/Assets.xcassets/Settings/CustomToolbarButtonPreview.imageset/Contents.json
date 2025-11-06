@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "AB-Light.pdf",
+      "filename" : "toolbar-with-pictogram-light.svg",
       "idiom" : "universal"
     },
     {
@@ -11,7 +11,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "AB-Dark.pdf",
+      "filename" : "toolbar-with-pictogram-dark.svg",
       "idiom" : "universal"
     }
   ],

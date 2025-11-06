@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "TB-Light.pdf",
+      "filename" : "addressbar-with-pictogram-light.svg",
       "idiom" : "universal"
     },
     {
@@ -11,7 +11,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "TB-Dark.pdf",
+      "filename" : "addressbar-with-pictogram-dark.svg",
       "idiom" : "universal"
     }
   ],

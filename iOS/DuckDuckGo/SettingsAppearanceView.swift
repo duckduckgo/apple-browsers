@@ -26,6 +26,9 @@ struct SettingsAppearanceView: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
 
+    @State var showAddressBarSettings = false
+    @State var showToolbarSettings = false
+
     /// Once the feature is rolled out move this to view model
     var showReloadButton: Binding<Bool> {
         Binding<Bool>(
@@ -36,6 +39,18 @@ struct SettingsAppearanceView: View {
                 viewModel.refreshButtonPositionBinding.wrappedValue = $0 ? .addressBar : .menu
             }
         )
+    }
+
+    func navigateToSubPageIfNeeded() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        switch viewModel.deepLinkTarget {
+            case .customizeToolbarButton:
+                showToolbarSettings = true
+            case .customizeAddressBarButton:
+                showAddressBarSettings = true
+            default: break
+            }
+        }
     }
 
     var body: some View {
@@ -59,6 +74,9 @@ struct SettingsAppearanceView: View {
 
             if viewModel.state.mobileCustomization.isEnabled {
                 customizableSettings()
+                    .onFirstAppear {
+                        navigateToSubPageIfNeeded()
+                    }
             } else {
                 legacySettings()
             }
@@ -96,6 +114,9 @@ struct SettingsAppearanceView: View {
     }
 
     func buttonIconProvider(_ button: MobileCustomization.Button) -> Image? {
+        if button == .none {
+            return Image(uiImage: DesignSystemImages.Glyphs.Size16.eyeClosed)
+        }
         guard let icon = button.smallIcon else { return nil }
         return Image(uiImage: icon)
     }
@@ -111,7 +132,7 @@ struct SettingsAppearanceView: View {
         case .zoom:
             "Zoom"
         case .none:
-            "None"
+            "Hide This Button"
         case .home:
             "Home"
         case .newTab:
@@ -143,12 +164,14 @@ struct SettingsAppearanceView: View {
             defaultOption: MobileCustomization.addressBarDefault,
             selectedOption: viewModel.selectedAddressBarButton,
             descriptionForOption: descriptionForOption,
-            iconProvider: buttonIconProvider)) {
+            iconProvider: buttonIconProvider), isActive: $showAddressBarSettings) {
 
             if let image = viewModel.selectedAddressBarButton.wrappedValue.smallIcon {
                 SettingsCellView(label: "Address Bar", accessory: .image(Image(uiImage: image)))
-            } else {
+            } else if viewModel.selectedAddressBarButton.wrappedValue == .none {
                 SettingsCellView(label: "Address Bar", accessory: .rightDetail("None"))
+            } else {
+                FailedAssertionView("Unexpected state")
             }
 
         }
@@ -167,7 +190,7 @@ struct SettingsAppearanceView: View {
             defaultOption: MobileCustomization.toolbarDefault,
             selectedOption: viewModel.selectedToolbarButton,
             descriptionForOption: descriptionForOption,
-            iconProvider: buttonIconProvider)) {
+            iconProvider: buttonIconProvider), isActive: $showToolbarSettings) {
 
             if let image = viewModel.selectedToolbarButton.wrappedValue.smallIcon {
                 SettingsCellView(label: "Toolbar", accessory: .image(Image(uiImage: image)))
@@ -269,7 +292,7 @@ private struct PickerWithHeaderView<T: Hashable>: View {
                         iconProvider?(option)
 
                         Text(verbatim: descriptionForOption(option))
-                            .lineLimit(1)
+                            .lineLimit(2)
                             .layoutPriority(1)
 
                         if selectedOption == option {
@@ -288,4 +311,3 @@ private struct PickerWithHeaderView<T: Hashable>: View {
     }
 
 }
-

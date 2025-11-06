@@ -43,7 +43,8 @@ struct DefaultBrowserAndDockPromptInactiveUserView: View {
     private let privacyFeatures = BrowsersComparisonModel.privacyFeatures
     private let configuration = BrowsersComparisonChart.Configuration(fontSize: Metrics.Chart.fontSize,
                                                                       fontWeight: Metrics.Chart.fontWeight,
-                                                                      showFeatureIcons: true)
+                                                                      showFeatureIcons: true,
+                                                                      showBottomDivider: false)
 
     let viewModel: DefaultBrowserAndDockPromptInactiveUserViewModel
 

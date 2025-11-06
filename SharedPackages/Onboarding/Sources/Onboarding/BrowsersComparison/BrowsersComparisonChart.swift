@@ -26,14 +26,17 @@ extension BrowsersComparisonChart {
         var font: Font
         var allowContentToScrollUnderHeader: Bool
         var showFeatureIcons: Bool
+        var showBottomDivider: Bool
 
         public init(fontSize: CGFloat = 15.0,
                     fontWeight: Font.Weight = .regular,
                     allowContentToScrollUnderHeader: Bool = false,
-                    showFeatureIcons: Bool = false) {
+                    showFeatureIcons: Bool = false,
+                    showBottomDivider: Bool = true) {
             self.font = Font.system(size: fontSize, weight: fontWeight)
             self.allowContentToScrollUnderHeader = allowContentToScrollUnderHeader
             self.showFeatureIcons = showFeatureIcons
+            self.showBottomDivider = showBottomDivider
         }
     }
 
@@ -60,7 +63,7 @@ public struct BrowsersComparisonChart: View {
     @ViewBuilder
     private var content: some View {
         let content = ForEach(Array(privacyFeatures.enumerated()), id: \.element.type) { index, feature in
-            let shouldDisplayDivider = index < privacyFeatures.count - 1 || !configuration.allowContentToScrollUnderHeader
+            let shouldDisplayDivider = index < privacyFeatures.count - 1 || configuration.showBottomDivider
             Row(configuration: configuration, feature: feature, shouldDisplayDivider: shouldDisplayDivider)
         }
 

@@ -501,7 +501,7 @@ final class TabBarItemCellView: NSView {
         let faviconFrame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
         if displaysTabsProgressIndicator {
             faviconView.frame = faviconFrame
-        } else if faviconView.isShown {
+        } else if faviconImageView.isShown {
             faviconImageView.frame = faviconFrame
         } else if faviconPlaceholderView.isShown {
             faviconPlaceholderView.frame = faviconFrame
@@ -993,12 +993,12 @@ final class TabBarViewItem: NSCollectionViewItem {
 
         if cell.displaysTabsProgressIndicator && isPinned {
             cell.closeButton.isShown = false
-            cell.faviconView.isShown = cell.faviconView.displaysImage
+            cell.faviconView.isShown = true
             cell.titleTextField.isShown = false
         } else if cell.displaysTabsProgressIndicator {
             let showCloseButton = (isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected
             cell.closeButton.isShown = showCloseButton
-            cell.faviconView.isShown = (cell.faviconView.displaysImage) && (widthStage != .withoutTitle || !showCloseButton)
+            cell.faviconView.isShown = (widthStage != .withoutTitle || !showCloseButton)
             cell.titleTextField.isShown = !widthStage.isTitleHidden || (cell.faviconView.displaysImage == false && !showCloseButton)
 
         // # TODO: Start - Drop the following when `tabProgressIndicator` rolls out

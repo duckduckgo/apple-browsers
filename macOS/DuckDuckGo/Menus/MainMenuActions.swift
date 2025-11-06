@@ -257,7 +257,7 @@ extension AppDelegate {
     @MainActor
     @objc func setAsDefault(_ sender: Any?) {
         PixelKit.fire(GeneralPixel.defaultRequestedFromMainMenu)
-        DefaultBrowserPreferences.shared.becomeDefault()
+        defaultBrowserPreferences.becomeDefault()
     }
 
     @MainActor

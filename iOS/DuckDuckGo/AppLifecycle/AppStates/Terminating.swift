@@ -196,6 +196,8 @@ struct Terminating: TerminatingHandling {
         let rootViewController = UIViewController()
         rootViewController.view.backgroundColor = .white
         window.rootViewController = rootViewController
+        window.makeKeyAndVisible()
+
         rootViewController.present(alertController, animated: true, completion: nil)
     }
 

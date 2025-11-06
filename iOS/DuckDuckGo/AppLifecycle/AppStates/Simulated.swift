@@ -49,6 +49,7 @@ struct Simulated {
     }
 
     func configure(_ window: UIWindow) {
+        window.makeKeyAndVisible()
         window.rootViewController = rootViewController
     }
 

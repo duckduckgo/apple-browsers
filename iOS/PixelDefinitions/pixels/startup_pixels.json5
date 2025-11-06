@@ -143,7 +143,7 @@
             "appVersion",
             {
                 "key": "osVersion",
-                "description": "iOS version to track which OS versions experience scene reconnection",
+                "description": "iOS version to know which OS versions experience scene reconnection",
                 "type": "string"
             }
         ],

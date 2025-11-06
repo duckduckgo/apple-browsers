@@ -3999,6 +3999,7 @@ extension MainViewController {
                 }
             ])
         } else {
+            browserChrome.removeBorder()
             browserChrome.menu = nil
         }
     }

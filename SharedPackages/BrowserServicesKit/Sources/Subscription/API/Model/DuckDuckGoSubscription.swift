@@ -40,7 +40,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         public init(from decoder: Decoder) throws {
             self = try Self(rawValue: decoder.singleValueContainer().decode(RawValue.self)) ?? .unknown
         }
-        
+
         public var remoteMessagingFrameworkValue: String {
             switch self {
             case .monthly: return "monthly"

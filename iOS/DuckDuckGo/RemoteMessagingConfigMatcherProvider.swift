@@ -122,12 +122,12 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(statisticsStore: statisticsStore,
                                                                         vpnActivationDateStore: DefaultVPNActivationDateStore(),
-                                                                        subscription: subscription,
+                                                                        subscriptionDataProvider: subscription,
                                                                         autofillUsageStore: autofillUsageStore)
         } else {
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(statisticsStore: statisticsStore,
                                                                         vpnActivationDateStore: DefaultVPNActivationDateStore(),
-                                                                        subscription: nil,
+                                                                        subscriptionDataProvider: nil,
                                                                         autofillUsageStore: autofillUsageStore)
         }
 
@@ -170,5 +170,39 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds
         )
+    }
+}
+
+extension DuckDuckGoSubscription: @retroactive SubscriptionSurveyDataProviding {
+
+    public var subscriptionStatus: String? {
+        switch status {
+        case .autoRenewable: return "auto_renewable"
+        case .notAutoRenewable: return "not_auto_renewable"
+        case .gracePeriod: return "grace_period"
+        case .inactive: return "inactive"
+        case .expired: return "expired"
+        case .unknown: return "unknown"
+        }
+    }
+
+    public var subscriptionPlatform: String? {
+        return platform.rawValue
+    }
+
+    public var subscriptionBilling: String? {
+        switch billingPeriod {
+        case .monthly: return "monthly"
+        case .yearly: return "yearly"
+        case .unknown: return "unknown"
+        }
+    }
+
+    public var subscriptionStartDate: Date? {
+        return startedAt
+    }
+
+    public var subscriptionExpiryDate: Date? {
+        return expiresOrRenewsAt
     }
 }

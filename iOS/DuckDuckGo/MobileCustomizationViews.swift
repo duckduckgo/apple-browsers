@@ -72,7 +72,11 @@ struct AddressBarCustomizationPickerView: View, MobileCustomizationView {
 
     var body: some View {
         let options = MobileCustomization.addressBarButtons.sorted(by: { lhs, rhs in
-            if lhs == .none { return false } // Always put none at the end
+            // Always put none at the end
+            if lhs == .none { return false }
+            if rhs == .none { return true }
+
+            // Sort the rest by their localised display name
             return descriptionForOption(lhs, isAIChatEnabled: isAIChatEnabled).localizedCaseInsensitiveCompare(descriptionForOption(rhs, isAIChatEnabled: isAIChatEnabled)) == .orderedAscending
         })
 

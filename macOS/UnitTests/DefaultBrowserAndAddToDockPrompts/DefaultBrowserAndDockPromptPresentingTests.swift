@@ -31,7 +31,8 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
 
         coordinatorMock = MockDefaultBrowserAndDockPromptCoordinator()
         statusUpdateNotifierMock = MockDefaultBrowserAndDockPromptStatusUpdateNotifier()
-        sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinatorMock, statusUpdateNotifier: statusUpdateNotifierMock)
+        let uiProviderMock = MockDefaultBrowserAndDockPromptUIProvider()
+        sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinatorMock, statusUpdateNotifier: statusUpdateNotifierMock, uiProvider: uiProviderMock)
         cancellables = []
     }
 

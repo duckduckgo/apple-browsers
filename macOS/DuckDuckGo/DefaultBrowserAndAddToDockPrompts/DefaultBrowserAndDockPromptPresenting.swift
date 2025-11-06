@@ -59,6 +59,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
     private let coordinator: DefaultBrowserAndDockPrompt
     private let statusUpdateNotifier: DefaultBrowserAndDockPromptStatusNotifying
     private let bannerDismissedSubject = PassthroughSubject<Void, Never>()
+    private let uiProvider: DefaultBrowserAndDockPromptUIProviding
 
     private var popover: NSPopover?
     private var statusUpdateCancellable: Cancellable?
@@ -66,10 +67,12 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
 
     init(
         coordinator: DefaultBrowserAndDockPrompt,
-        statusUpdateNotifier: DefaultBrowserAndDockPromptStatusNotifying
+        statusUpdateNotifier: DefaultBrowserAndDockPromptStatusNotifying,
+        uiProvider: DefaultBrowserAndDockPromptUIProviding
     ) {
         self.coordinator = coordinator
         self.statusUpdateNotifier = statusUpdateNotifier
+        self.uiProvider = uiProvider
     }
 
     var bannerDismissedPublisher: AnyPublisher<Void, Never> {

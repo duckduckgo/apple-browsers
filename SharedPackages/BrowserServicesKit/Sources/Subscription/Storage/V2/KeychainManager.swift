@@ -315,9 +315,7 @@ public final class KeychainManager: KeychainManaging {
     }
 
     /// Processes all items in the writing backlog by attempting to store them in the keychain.
-    /// 
-    /// This method is called when keychain availability notifications are received.
-    /// It provides detailed logging of success and failure counts.
+    /// This method is called when keychain availability notifications or, as best effort, when app foreground and background notifications are received.
     private func processWritingBacklog() {
         guard !writingBacklog.isEmpty else { return }
 

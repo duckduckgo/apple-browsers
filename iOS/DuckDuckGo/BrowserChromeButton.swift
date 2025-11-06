@@ -53,7 +53,7 @@ class BrowserChromeButton: UIButton {
     }
 
     func addBorder(borderFrame: CGRect = CGRect(x: 0, y: 0, width: 80, height: 40)) {
-        border?.removeFromSuperview()
+        guard border == nil else { return }
         let view = BrowserChromeButtonBorder(frame: borderFrame)
         view.center = self.center
         view.layer.borderWidth = 1.5
@@ -90,7 +90,8 @@ class BrowserChromeButton: UIButton {
     }
 
     func removeBorder() {
-        border?.removeFromSuperview()
+        guard let border else { return }
+        border.removeFromSuperview()
         applyConfiguration()
         setNeedsDisplay()
     }

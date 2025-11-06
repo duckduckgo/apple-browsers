@@ -29,6 +29,8 @@ struct SettingsAppearanceView: View {
     @State var showAddressBarSettings = false
     @State var showToolbarSettings = false
 
+    @State var deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection?
+
     /// Once the feature is rolled out move this to view model
     var showReloadButton: Binding<Bool> {
         Binding<Bool>(
@@ -42,15 +44,20 @@ struct SettingsAppearanceView: View {
     }
 
     func navigateToSubPageIfNeeded() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-        switch viewModel.deepLinkTarget {
-            case .customizeToolbarButton:
-                showToolbarSettings = true
-            case .customizeAddressBarButton:
-                showAddressBarSettings = true
-            default: break
+        deepLinkTarget = viewModel.deepLinkTarget
+
+        // This just needs to be longer than the deep link logic in the View Model which uses a timer 🙄
+        //  otherwise this immediately gets popped.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
+            switch deepLinkTarget {
+                case .customizeToolbarButton:
+                    showToolbarSettings = true
+                case .customizeAddressBarButton:
+                    showAddressBarSettings = true
+                default: break
             }
         }
+        
     }
 
     var body: some View {
@@ -164,7 +171,13 @@ struct SettingsAppearanceView: View {
             defaultOption: MobileCustomization.addressBarDefault,
             selectedOption: viewModel.selectedAddressBarButton,
             descriptionForOption: descriptionForOption,
-            iconProvider: buttonIconProvider), isActive: $showAddressBarSettings) {
+            iconProvider: buttonIconProvider)
+
+            .applySettingsListModifiers(title: UserText.settingsAppearanceSection,
+                                                 displayMode: .inline,
+                                                 viewModel: viewModel)
+
+                       , isActive: $showAddressBarSettings) {
 
             if let image = viewModel.selectedAddressBarButton.wrappedValue.smallIcon {
                 SettingsCellView(label: "Address Bar", accessory: .image(Image(uiImage: image)))
@@ -190,7 +203,13 @@ struct SettingsAppearanceView: View {
             defaultOption: MobileCustomization.toolbarDefault,
             selectedOption: viewModel.selectedToolbarButton,
             descriptionForOption: descriptionForOption,
-            iconProvider: buttonIconProvider), isActive: $showToolbarSettings) {
+            iconProvider: buttonIconProvider)
+
+            .applySettingsListModifiers(title: UserText.settingsAppearanceSection,
+                                                 displayMode: .inline,
+                                                 viewModel: viewModel)
+
+                       , isActive: $showToolbarSettings) {
 
             if let image = viewModel.selectedToolbarButton.wrappedValue.smallIcon {
                 SettingsCellView(label: "Toolbar", accessory: .image(Image(uiImage: image)))

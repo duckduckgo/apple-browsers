@@ -1125,9 +1125,11 @@ extension SettingsViewModel {
     func triggerDeepLinkNavigation(to target: SettingsDeepLinkSection?) {
         guard let target else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            print("*** setting deeplink target")
             self.deepLinkTarget = target
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                print("*** unsetting deeplink target")
                 self.deepLinkTarget = nil
             }
         }

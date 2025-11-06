@@ -93,7 +93,8 @@
             {
                 "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.description",
                 "type": "string",
-                "description": "Human-readable error description for VPN connection step failures"
+                "description": "Human-readable error description for VPN connection step failures",
+                "examples": ["simulateControllerFailureError", "loadFromPreferencesFailed"]
             },
             // Per-step underlying error domains
             {
@@ -117,7 +118,7 @@
                 "key": "context.name",
                 "type": "string",
                 "description": "Context name for the flow",
-                "enum": ["funnel_appsettings_ios", "funnel_systemsettings_multiple", "funnel_others_multiple"]
+                "enum": ["funnel_appsettings_ios", "funnel_systemsettings_ios", "funnel_others_ios"]
             }
         ]
     }

@@ -25,8 +25,8 @@ enum NetworkProtectionFunnelOrigin: String {
     case appSettings = "funnel_appsettings_ios"
     
     /// User entered the funnel via the System Settings screen
-    case systemSettings = "funnel_systemsettings_multiple"
+    case systemSettings = "funnel_systemsettings_ios"
     
     /// User entered the funnel via other entries
-    case others = "funnel_others_multiple"
+    case others = "funnel_others_ios"
 }

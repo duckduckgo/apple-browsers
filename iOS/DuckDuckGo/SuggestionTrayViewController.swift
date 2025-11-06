@@ -272,6 +272,7 @@ class SuggestionTrayViewController: UIViewController {
     private func installNewTabPage(animated: Bool, onInstall: @escaping () -> Void = {}) {
         let dependencies = newTabPageDependencies
         let controller = NewTabPageViewController(
+            dismissKeyboardOnScroll: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
             tab: Tab(),
             interactionModel: dependencies.favoritesModel,
             homePageMessagesConfiguration: dependencies.homePageMessagesConfiguration,

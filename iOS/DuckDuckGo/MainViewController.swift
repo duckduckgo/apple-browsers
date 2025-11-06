@@ -1089,7 +1089,8 @@ class MainViewController: UIViewController {
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: daxDialogsManager, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
 
-        let controller = NewTabPageViewController(tab: tabModel,
+        let controller = NewTabPageViewController(dismissKeyboardOnScroll: true,
+                                                  tab: tabModel,
                                                   interactionModel: favoritesViewModel,
                                                   homePageMessagesConfiguration: homePageConfiguration,
                                                   subscriptionDataReporting: subscriptionDataReporter,

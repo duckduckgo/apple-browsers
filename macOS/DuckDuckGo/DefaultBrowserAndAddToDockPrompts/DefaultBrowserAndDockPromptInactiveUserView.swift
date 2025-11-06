@@ -51,7 +51,7 @@ struct DefaultBrowserAndDockPromptInactiveUserView: View {
     var body: some View {
         HStack(spacing: .zero) {
             ZStack {
-                GradientBackgroundView()
+                Image(.gradientBackground)
 
                 VStack(alignment: .center) {
                     Text(viewModel.message)
@@ -96,23 +96,6 @@ private enum Metrics {
         static let verticalSpacing: CGFloat = 50
         static let fontSize: CGFloat = 13
         static let fontWeight: Font.Weight = .medium
-    }
-}
-
-struct GradientBackgroundView: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        GeometryReader { proxy in
-            Image(.gradientBackground)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
-                .background(
-                    OnboardingGradient()
-                        .ignoresSafeArea()
-                )
-        }
     }
 }
 

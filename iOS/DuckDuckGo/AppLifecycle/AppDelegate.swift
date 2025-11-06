@@ -28,7 +28,6 @@ import Core
 // │ 🚨 TO DISABLE SCENES IN EMERGENCY:                                                  │
 // │ 1. Change `#if true` to `#if false` below to exclude these methods from compilation │
 // │ 2. Info.plist → Remove UIApplicationSceneManifest key                               │
-// │ 3. Clean Build (Cmd+Shift+K) and Rebuild (Cmd+B)                                    │
 // └─────────────────────────────────────────────────────────────────────────────────────┘
 
 @UIApplicationMain class AppDelegate: UIResponder, UIApplicationDelegate {

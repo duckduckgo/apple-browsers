@@ -1000,8 +1000,6 @@ final class TabBarViewItem: NSCollectionViewItem {
             cell.closeButton.isShown = showCloseButton
             cell.faviconView.isShown = (widthStage != .withoutTitle || !showCloseButton)
             cell.titleTextField.isShown = !widthStage.isTitleHidden || (cell.faviconView.displaysImage == false && !showCloseButton)
-
-        // # TODO: Start - Drop the following when `tabProgressIndicator` rolls out
         } else if isPinned {
             cell.closeButton.isShown = false
             cell.faviconImageView.isShown = cell.faviconImageView.image != nil
@@ -1014,7 +1012,6 @@ final class TabBarViewItem: NSCollectionViewItem {
             cell.faviconPlaceholderView.isShown = false
             cell.titleTextField.isShown = !widthStage.isTitleHidden || (cell.faviconImageView.image == nil && !showCloseButton)
         }
-        // # TODO: END - Drop the following when `tabProgressIndicator` rolls out
 
         updateSeparatorView()
 

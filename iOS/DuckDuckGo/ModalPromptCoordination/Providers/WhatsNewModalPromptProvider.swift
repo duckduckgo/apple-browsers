@@ -27,17 +27,25 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
     private let remoteMessageStore: RemoteMessagingStoring
     private let remoteMessageActionHandler: RemoteMessagingActionHandling
     private let isIPad: Bool
+    private let pixelReporter: RemoteMessagingPixelReporting
+    private let displayModelMapper: WhatsNewDisplayModelMapping
+
     private weak var navigationController: UINavigationController?
-    private var currentMessageId: String?
+
+    private var remoteMessage: RemoteMessageModel?
 
     init(
         remoteMessageStore: RemoteMessagingStoring,
         remoteMessageActionHandler: RemoteMessagingActionHandling,
-        isIPad: Bool
+        isIPad: Bool,
+        pixelReporter: RemoteMessagingPixelReporting,
+        displayModelMapper: WhatsNewDisplayModelMapping = WhatsNewDisplayModelMapper()
     ) {
         self.remoteMessageStore = remoteMessageStore
         self.remoteMessageActionHandler = remoteMessageActionHandler
         self.isIPad = isIPad
+        self.pixelReporter = pixelReporter
+        self.displayModelMapper = displayModelMapper
     }
 
     // MARK: - ModalPromptProvider
@@ -55,7 +63,7 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
         self.navigationController = viewController
 
         // Store the message ID to mark it as shown later
-        self.currentMessageId = message.id
+        self.remoteMessage = message
 
         Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Providing modal for message: \(message.id, privacy: .public)")
 
@@ -80,6 +88,9 @@ extension WhatsNewCoordinator: RemoteMessagingPresenter {
     @MainActor
     func presentActivitySheet(value: String, title: String?) async {
         let activityController = UIActivityViewController(activityItems: [TitleValueShareItem(value: value, title: title).item], applicationActivities: nil)
+        activityController.completionWithItemsHandler = { [weak self] _, result, _, _ in
+            self?.measureSheetShown(result: result)
+        }
         navigationController?.present(activityController, animated: true)
     }
 
@@ -108,12 +119,20 @@ private extension WhatsNewCoordinator {
     func makeViewController(message: RemoteMessageModel) -> WhatsNewViewController? {
 
         func makeDisplayModel(for message: RemoteMessageModel) -> RemoteMessagingUI.CardsListDisplayModel? {
-            WhatsNewDisplayModelMapper.makeDisplayModel(
+            displayModelMapper.makeDisplayModel(
                 from: message,
-                onItemAction: { [weak self] action in
+                onMessageAppear: { [weak self] in
+                    self?.measureMessageShown()
+                },
+                onItemAppear: { [weak self] cardId in
+                    self?.measureCardShown(cardId: cardId)
+                },
+                onItemAction: { [weak self] action, cardId in
+                    self?.measureCardTapped(cardId: cardId)
                     await self?.handleAction(action)
                 },
                 onPrimaryAction: { [weak self] action in
+                    self?.measurePrimaryActionTapped()
                     await self?.handleAction(action)
                 },
                 onDismiss: { [weak self] in
@@ -137,7 +156,7 @@ private extension WhatsNewCoordinator {
     }
 
     func markMessageAsShown() async {
-        guard let messageId = currentMessageId else {
+        guard let messageId = remoteMessage?.id else {
             Logger.modalPrompt.error("[Modal Prompt Coordination] - What's New - Cannot mark message as shown - no current message ID")
             return
         }
@@ -152,6 +171,7 @@ private extension WhatsNewCoordinator {
     func dismiss(source: DismissSource) {
         Logger.modalPrompt.info("[Modal Prompt Coordination] - What's New - Dismissed From source: \(source.debugDescription, privacy: .public)")
         navigationController?.dismiss(animated: true)
+        measureMessageDismissed(source: source)
     }
 }
 
@@ -165,9 +185,76 @@ extension WhatsNewCoordinator {
     
 }
 
+// MARK: - Pixels
+
 private extension WhatsNewCoordinator {
 
-    enum DismissSource: CustomDebugStringConvertible {
+    func measureMessageShown() {
+        guard let remoteMessage else {
+            assertionFailure("What's New - Cannot measure message as shown - no current message")
+            return
+        }
+
+        let hasAlreadySeenMessage = remoteMessageStore.hasShownRemoteMessage(withID: remoteMessage.id)
+        pixelReporter.measureRemoteMessageAppeared(remoteMessage, hasAlreadySeenMessage: hasAlreadySeenMessage)
+    }
+
+    func measureMessageDismissed(source: DismissSource) {
+        guard let message = remoteMessage else {
+            assertionFailure("What's New - Cannot measure message dismissed - no current message")
+            return
+        }
+
+        switch source {
+        case .closeButton:
+            pixelReporter.measureRemoteMessageDismissed(message, dismissType: .closeButton)
+        case .pullDown:
+            pixelReporter.measureRemoteMessageDismissed(message, dismissType: .pullDown)
+        case .mainAction:
+            pixelReporter.measureRemoteMessageDismissed(message, dismissType: .primaryAction)
+        }
+    }
+
+    func measurePrimaryActionTapped() {
+        guard let remoteMessage else {
+            assertionFailure("What's New - Cannot measure primary action tapped - no current message")
+            return
+        }
+        
+        pixelReporter.measureRemoteMessagePrimaryActionClicked(remoteMessage)
+    }
+
+    func measureCardShown(cardId: String) {
+        guard let remoteMessage else {
+            assertionFailure("What's New - Cannot measure card shown - no current message")
+            return
+        }
+
+        pixelReporter.measureRemoteMessageCardShown(remoteMessage, cardId: cardId)
+    }
+
+    func measureCardTapped(cardId: String) {
+        guard let remoteMessage else {
+            assertionFailure("What's New - Cannot measure card tapped - no current message")
+            return
+        }
+
+        pixelReporter.measureRemoteMessageCardClicked(remoteMessage, cardId: cardId)
+    }
+
+    func measureSheetShown(result: Bool) {
+        guard let remoteMessage else {
+            assertionFailure("What's New - Cannot measure sheet shown - no current message")
+            return
+        }
+        pixelReporter.measureRemoteMessageSheetShown(remoteMessage, sheetResult: result)
+    }
+
+}
+
+private extension WhatsNewCoordinator {
+
+    enum DismissSource: String, CustomDebugStringConvertible {
         case closeButton
         case mainAction
         case pullDown

@@ -36,6 +36,7 @@ extension RemoteMessagingUI {
             let title: String
             let description: String
             let disclosureIcon: Image?
+            let onAppear: (() -> Void)?
             let onTapAction: (() -> Void)?
         }
 
@@ -69,9 +70,7 @@ extension RemoteMessagingUI {
             }
             .padding(.horizontal, Metrics.CardsList.contentHorizontalPadding)
             .background(Color(singleUseColor: .whatsNewBackground))
-            .onFirstAppear {
-                displayModel.onAppear?()
-            }
+            .onAppear(perform: displayModel.onAppear)
         }
     }
 
@@ -121,6 +120,9 @@ extension RemoteMessagingUI {
             }
             .onTapGesture {
                 displayModel.onTapAction?()
+            }
+            .onFirstAppear {
+                displayModel.onAppear?()
             }
         }
     }
@@ -344,6 +346,7 @@ struct CardsList_Previews: PreviewProvider {
             title: "Hide AI Images in Search",
             description: "Easily hide AI images in your search results with the \"AI images\" search filter.",
             disclosureIcon: chevron,
+            onAppear: nil,
             onTapAction: nil
         ),
         .init(
@@ -351,6 +354,7 @@ struct CardsList_Previews: PreviewProvider {
             title: "Enhanced Scam Blocker",
             description: "Browse confidently with protection against even more sneaky online threats.",
             disclosureIcon: chevron,
+            onAppear: nil,
             onTapAction: nil
         ),
         .init(
@@ -358,6 +362,7 @@ struct CardsList_Previews: PreviewProvider {
             title: "Import From Safari",
             description: "Add your saved bookmarks and passwords in seconds!",
             disclosureIcon: chevron,
+            onAppear: nil,
             onTapAction: nil
         )
     ]

@@ -210,6 +210,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         let content = DefaultBrowserAndDockPromptContent.inactive(type)
         let viewModel = DefaultBrowserAndDockPromptInactiveUserViewModel(
             message: content.message,
+            image: content.icon,
             primaryButtonLabel: content.primaryButtonTitle,
             dismissButtonLabel: content.secondaryButtonTitle,
             primaryButtonAction: { [weak self] in

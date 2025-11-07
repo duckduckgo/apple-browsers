@@ -4068,6 +4068,7 @@ extension MainViewController {
                 }
             ])
         } else {
+            browserChrome.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
             browserChrome.removeBorder()
             browserChrome.menu = nil
         }

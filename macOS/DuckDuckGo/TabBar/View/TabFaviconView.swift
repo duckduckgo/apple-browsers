@@ -1,3 +1,4 @@
+
 //
 //  TabFaviconView.swift
 //
@@ -43,6 +44,8 @@ final class TabFaviconView: NSView {
         }
     }
 
+    private let spinnerView = SpinnerView()
+
     override init(frame: NSRect) {
         super.init(frame: frame)
         setupSubviews()
@@ -55,10 +58,28 @@ final class TabFaviconView: NSView {
     }
 }
 
+extension TabFaviconView {
+
+    func displaySpinnerIfNeeded(url: URL?, isLoading: Bool, error: Error?) {
+        let policy = DefaultLoadingIndicatorPolicy()
+        guard policy.shouldShowLoadingIndicator(url: url, isLoading: isLoading, error: error) else {
+            /// Temporary: Will be addressed in a follow-up
+            imageView.animator().alphaValue = 1
+            spinnerView.stopAnimating()
+            return
+        }
+
+        /// Temporary!! Will be addressed in a follow-up
+        imageView.animator().alphaValue = 0
+        spinnerView.startAnimating()
+    }
+}
+
 private extension TabFaviconView {
 
     func setupSubviews() {
         addSubview(imageView)
+        addSubview(spinnerView)
     }
 
     func setupImageView() {
@@ -73,9 +94,18 @@ private extension TabFaviconView {
             imageView.widthAnchor.constraint(equalToConstant: TabFaviconMetrics.defaultImageSize.width),
             imageView.heightAnchor.constraint(equalToConstant: TabFaviconMetrics.defaultImageSize.height)
         ])
+
+        spinnerView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            spinnerView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            spinnerView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            spinnerView.widthAnchor.constraint(equalTo: imageView.widthAnchor, constant: TabFaviconMetrics.defaultSpinnerPadding * 2),
+            spinnerView.heightAnchor.constraint(equalTo: imageView.heightAnchor, constant: TabFaviconMetrics.defaultSpinnerPadding * 2)
+        ])
     }
 }
 
 private enum TabFaviconMetrics {
     static let defaultImageSize = NSSize(width: 16, height: 16)
+    static let defaultSpinnerPadding = CGFloat(2)
 }

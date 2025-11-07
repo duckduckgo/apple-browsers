@@ -32,6 +32,7 @@ protocol TabBarViewModel {
     var isPinned: Bool { get }
     var title: String { get }
     var titlePublisher: Published<String>.Publisher { get }
+    var url: URL? { get }
     var faviconPublisher: Published<NSImage?>.Publisher { get }
     var tabContentPublisher: AnyPublisher<Tab.TabContent, Never> { get }
     var usedPermissionsPublisher: Published<Permissions>.Publisher { get }
@@ -39,14 +40,16 @@ protocol TabBarViewModel {
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { get }
     var canKillWebContentProcess: Bool { get }
     var crashIndicatorModel: TabCrashIndicatorModel { get }
-
+    var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> { get }
 }
+
 extension TabViewModel: TabBarViewModel {
     var isPinned: Bool {
         tab.isPinned
     }
 
     var titlePublisher: Published<String>.Publisher { $title }
+    var url: URL? { tab.content.urlForWebView }
     var faviconPublisher: Published<NSImage?>.Publisher { $favicon }
     var tabContentPublisher: AnyPublisher<Tab.TabContent, Never> { tab.$content.eraseToAnyPublisher() }
     var usedPermissionsPublisher: Published<Permissions>.Publisher { $usedPermissions }
@@ -54,6 +57,12 @@ extension TabViewModel: TabBarViewModel {
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { tab.audioStatePublisher }
     var canKillWebContentProcess: Bool { tab.canKillWebContentProcess }
     var crashIndicatorModel: TabCrashIndicatorModel { tab.crashIndicatorModel }
+    var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> {
+        tab.$isLoading
+            .eraseToAnyPublisher()
+            .combineLatest(tab.$error)
+            .eraseToAnyPublisher()
+    }
 }
 
 protocol TabBarViewItemDelegate: AnyObject {
@@ -934,6 +943,19 @@ final class TabBarViewItem: NSCollectionViewItem {
                 delegate?.tabBarViewItemDidUpdateCrashInfoPopoverVisibility(self, sender: cell.crashIndicatorButton, shouldShow: isShowingPopover)
             }
             .store(in: &cancellables)
+
+        if cell.displaysTabsProgressIndicator {
+            tabViewModel.isLoadingPublisher
+                .debounce(for: 0.1, scheduler: RunLoop.main)
+                .sink { [weak self] isLoading, error in
+                    guard let self else {
+                        return
+                    }
+
+                    self.cell.faviconView.displaySpinnerIfNeeded(url: self.tabViewModel?.url, isLoading: isLoading, error: error)
+                }
+                .store(in: &cancellables)
+        }
     }
 
     func clear() {
@@ -1493,6 +1515,7 @@ extension TabBarViewItem {
     final class PreviewViewController: NSViewController, NSCollectionViewDataSource, NSCollectionViewDelegate, NSCollectionViewDelegateFlowLayout, TabBarViewItemDelegate {
 
         final class TabBarViewModelMock: TabBarViewModel {
+            var url: URL?
             var width: CGFloat
             var isSelected: Bool
             @Published var title: String = ""
@@ -1510,15 +1533,28 @@ extension TabBarViewItem {
             }
             let crashIndicatorModel: TabCrashIndicatorModel = TabCrashIndicatorModel()
             var canKillWebContentProcess: Bool = false
-            init(width: CGFloat, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, isPinned: Bool = false, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false) {
+
+            @Published var isLoading: Bool
+            @Published var error: WKError?
+            var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> {
+                $isLoading
+                    .eraseToAnyPublisher()
+                    .combineLatest($error)
+                    .eraseToAnyPublisher()
+            }
+
+            init(width: CGFloat, title: String = "Test Title", url: URL? = nil, favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, isPinned: Bool = false, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, isLoading: Bool = false, error: WKError? = nil) {
                 self.width = width
                 self.title = title
+                self.url = url
                 self.favicon = favicon
                 self.tabContent = tabContent
                 self.isPinned = isPinned
                 self.usedPermissions = usedPermissions
                 self.audioState = audioState ?? .unmuted(isPlayingAudio: false)
                 self.isSelected = selected
+                self.isLoading = isLoading
+                self.error = error
             }
         }
 

@@ -60,6 +60,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
     let configFetcher: RemoteMessagingConfigFetching
     let configMatcherProvider: RemoteMessagingConfigMatcherProviding
     let remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding
+    let remoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding
     private(set) var store: RemoteMessagingStoring?
 
     convenience init(
@@ -72,6 +73,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         internalUserDecider: InternalUserDecider,
         configurationStore: ConfigurationStoring,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
+        remoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding,
         remoteMessagingStoreProvider: RemoteMessagingStoreProviding = DefaultRemoteMessagingStoreProvider(),
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         featureFlagger: FeatureFlagger,
@@ -94,7 +96,8 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             configMatcherProvider: provider,
             configurationStore: configurationStore,
             configurationURLProvider: configurationURLProvider,
-            remoteMessagingAvailabilityProvider: remoteMessagingAvailabilityProvider
+            remoteMessagingAvailabilityProvider: remoteMessagingAvailabilityProvider,
+            remoteMessagingSurfacesProvider: remoteMessagingSurfacesProvider
         )
     }
 
@@ -104,6 +107,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         configurationStore: ConfigurationStoring,
         configurationURLProvider: ConfigurationURLProviding,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
+        remoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding,
         remoteMessagingStoreProvider: RemoteMessagingStoreProviding = DefaultRemoteMessagingStoreProvider()
     ) {
         let configFetcher = RemoteMessagingConfigFetcher(
@@ -121,6 +125,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             configFetcher: configFetcher,
             configMatcherProvider: configMatcherProvider,
             remoteMessagingAvailabilityProvider: remoteMessagingAvailabilityProvider,
+            remoteMessagingSurfacesProvider: remoteMessagingSurfacesProvider,
             remoteMessagingStoreProvider: remoteMessagingStoreProvider
         )
     }
@@ -133,12 +138,14 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         configFetcher: RemoteMessagingConfigFetching,
         configMatcherProvider: RemoteMessagingConfigMatcherProviding,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
+        remoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding,
         remoteMessagingStoreProvider: RemoteMessagingStoreProviding = DefaultRemoteMessagingStoreProvider()
     ) {
         self.remoteMessagingDatabase = remoteMessagingDatabase
         self.configFetcher = configFetcher
         self.configMatcherProvider = configMatcherProvider
         self.remoteMessagingAvailabilityProvider = remoteMessagingAvailabilityProvider
+        self.remoteMessagingSurfacesProvider = remoteMessagingSurfacesProvider
         self.remoteMessagingStoreProvider = remoteMessagingStoreProvider
 
         subscribeToFeatureFlagChanges()

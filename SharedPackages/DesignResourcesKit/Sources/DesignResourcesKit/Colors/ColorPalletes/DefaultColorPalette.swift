@@ -238,6 +238,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: surface.lightColor, darkColor: background.darkColor)
         case .inputContentSeparator:
             return DynamicColor(lightColor: shadowTertiary.lightColor, darkColor: highlightDecoration.darkColor)
+        case .whatsNewBackground:
+            return DynamicColor(lightColor: .white, darkColor: background.darkColor)
         }
     }
 }

@@ -1,7 +1,8 @@
 //
-//  MockRemoteMessagingAvailabilityProvider.swift
+//  MockMessageNavigator.swift
+//  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,18 +17,16 @@
 //  limitations under the License.
 //
 
-import Combine
+import Foundation
 import RemoteMessaging
+@testable import DuckDuckGo
 
-public class MockRemoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding {
+final class MockMessageNavigator: MessageNavigator {
+    private(set) var didCallNavigateToNavigationTarget = false
+    private(set) var capturedNavigationTarget: NavigationTarget?
 
-    public init(isRemoteMessagingAvailable: Bool = true) {
-        self.isRemoteMessagingAvailable = isRemoteMessagingAvailable
+    func navigateTo(_ target: NavigationTarget, presentationStyle: DuckDuckGo.PresentationContext.Style) {
+        didCallNavigateToNavigationTarget = true
+        capturedNavigationTarget = target
     }
-
-    public var isRemoteMessagingAvailablePublisher: AnyPublisher<Bool, Never> {
-        $isRemoteMessagingAvailable.dropFirst().eraseToAnyPublisher()
-    }
-
-    @Published public var isRemoteMessagingAvailable: Bool
 }

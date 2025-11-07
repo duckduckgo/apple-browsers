@@ -180,6 +180,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSidebarProvider: AIChatSidebarProviding
+    let aiChatPreferences: AIChatPreferences
 
     let privacyStats: PrivacyStatsCollecting
     let activeRemoteMessageModel: ActiveRemoteMessageModel
@@ -678,6 +679,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
         cookiePopupProtectionPreferences = CookiePopupProtectionPreferences(persistor: CookiePopupProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
+        aiChatPreferences = AIChatPreferences(
+            storage: DefaultAIChatPreferencesStorage(),
+            aiChatMenuConfiguration: aiChatMenuConfiguration,
+            windowControllersManager: windowControllersManager,
+            featureFlagger: featureFlagger
+        )
 
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(
             tabShower: windowControllersManager,

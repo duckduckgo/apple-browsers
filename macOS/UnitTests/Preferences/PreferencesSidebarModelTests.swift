@@ -37,7 +37,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
     private var mockPrivacyConfigurationManager: MockPrivacyConfigurationManager!
     private var mockSyncService: MockDDGSyncing!
     private var mockVPNGatekeeper: DefaultVPNFeatureGatekeeper!
-    private var mockAIChatPreferences: MockAIChatPreferences!
+    private var mockAIChatPreferences: AIChatPreferences!
     private var mockWinBackOfferVisibilityManager: MockWinBackOfferVisibilityManager!
     var cancellables = Set<AnyCancellable>()
 
@@ -46,7 +46,12 @@ final class PreferencesSidebarModelTests: XCTestCase {
         testNotificationCenter = NotificationCenter()
         mockDefaultBrowserPreferences = DefaultBrowserPreferences(defaultBrowserProvider: DefaultBrowserProviderMock())
         mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
-        mockAIChatPreferences = MockAIChatPreferences()
+        mockAIChatPreferences = AIChatPreferences(
+            storage: MockAIChatPreferencesStorage(),
+            aiChatMenuConfiguration: MockAIChatConfig(),
+            windowControllersManager: WindowControllersManagerMock(),
+            featureFlagger: MockFeatureFlagger()
+        )
         mockWinBackOfferVisibilityManager = MockWinBackOfferVisibilityManager()
         let startedAt = Date().startOfDay
         let expiresAt = Date().startOfDay.daysAgo(-10)
@@ -104,7 +109,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
             webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
-            aiFeaturesStatusProvider: mockAIChatPreferences,
+            aiChatPreferences: mockAIChatPreferences,
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
     }
@@ -127,7 +132,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
             webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
-            aiFeaturesStatusProvider: mockAIChatPreferences,
+            aiChatPreferences: mockAIChatPreferences,
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
     }
@@ -163,7 +168,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
             webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
-            aiFeaturesStatusProvider: mockAIChatPreferences,
+            aiChatPreferences: mockAIChatPreferences,
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
     }
@@ -703,20 +708,5 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertTrue(model.isSidebarItemEnabled(for: .paidAIChat))
         let protectionStatus = model.protectionStatus(for: .paidAIChat)
         XCTAssertEqual(protectionStatus?.status, .off)
-    }
-
-}
-
-// MARK: - MockAIChatPreferences
-
-public class MockAIChatPreferences: AIFeaturesStatusProviding {
-    @Published public var isAIFeaturesEnabled: Bool = false
-
-    public var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> {
-        $isAIFeaturesEnabled.eraseToAnyPublisher()
-    }
-
-    public func simulateAIFeaturesChange(enabled: Bool) {
-        isAIFeaturesEnabled = enabled
     }
 }

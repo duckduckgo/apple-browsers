@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import Cocoa
 import Combine
@@ -93,6 +94,7 @@ final class BrowserTabViewController: NSViewController {
     private let tabsPreferences: TabsPreferences
     private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
+    private let aiChatPreferences: AIChatPreferences
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
@@ -147,6 +149,7 @@ final class BrowserTabViewController: NSViewController {
          tabsPreferences: TabsPreferences,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
+         aiChatPreferences: AIChatPreferences,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          tld: TLD = NSApp.delegateTyped.tld
@@ -168,6 +171,7 @@ final class BrowserTabViewController: NSViewController {
         self.tabsPreferences = tabsPreferences
         self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
+        self.aiChatPreferences = aiChatPreferences
         self.subscriptionManager = subscriptionManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
 
@@ -1189,6 +1193,7 @@ final class BrowserTabViewController: NSViewController {
                 tabsPreferences: tabsPreferences,
                 webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+                aiChatPreferences: aiChatPreferences,
                 subscriptionManager: subscriptionManager,
                 winBackOfferVisibilityManager: winBackOfferVisibilityManager
             )
@@ -1734,11 +1739,12 @@ extension BrowserTabViewController {
     BrowserTabViewController(
         tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [.init(content: .url(.duckDuckGo, source: .ui))])),
         defaultBrowserPreferences: DefaultBrowserPreferences(),
-        downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor()),
-        searchPreferences: SearchPreferences(persistor: SearchPreferencesUserDefaultsPersistor(), windowControllersManager: Application.appDelegate.windowControllersManager),
-        tabsPreferences: TabsPreferences(persistor: TabsPreferencesUserDefaultsPersistor(), windowControllersManager: Application.appDelegate.windowControllersManager),
-        webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: Application.appDelegate.windowControllersManager),
-        cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: CookiePopupProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: Application.appDelegate.windowControllersManager)
+        downloadsPreferences: Application.appDelegate.downloadsPreferences,
+        searchPreferences: Application.appDelegate.searchPreferences,
+        tabsPreferences: Application.appDelegate.tabsPreferences,
+        webTrackingProtectionPreferences: Application.appDelegate.webTrackingProtectionPreferences,
+        cookiePopupProtectionPreferences: Application.appDelegate.cookiePopupProtectionPreferences,
+        aiChatPreferences: Application.appDelegate.aiChatPreferences
     )
 }
 

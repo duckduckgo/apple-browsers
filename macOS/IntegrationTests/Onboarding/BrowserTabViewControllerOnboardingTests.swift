@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import Combine
 import Common
@@ -78,6 +79,51 @@ class MockCookiePopupProtectionPreferencesPersistor: CookiePopupProtectionPrefer
     var autoconsentEnabled: Bool = false
 }
 
+class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
+    var isAIFeaturesEnabled: Bool = true
+    var didDisplayAIChatAddressBarOnboarding: Bool = true
+    var showShortcutOnNewTabPage: Bool = true
+    var showShortcutInApplicationMenu: Bool = true
+    var showShortcutInAddressBar: Bool = true
+    var showShortcutInAddressBarWhenTyping: Bool = true
+    var openAIChatInSidebar: Bool = true
+    var shouldAutomaticallySendPageContext: Bool = true
+
+    let isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let showShortcutOnNewTabPagePublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let showShortcutInAddressBarPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let showShortcutInAddressBarWhenTypingPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let shouldAutomaticallySendPageContextPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+
+    func reset() {
+        isAIFeaturesEnabled = true
+        showShortcutOnNewTabPage = true
+        showShortcutInApplicationMenu = true
+        showShortcutInAddressBar = true
+        showShortcutInAddressBarWhenTyping = true
+        didDisplayAIChatAddressBarOnboarding = true
+        openAIChatInSidebar = true
+        shouldAutomaticallySendPageContext = true
+    }
+}
+
+final class MockAIChatConfig: AIChatMenuVisibilityConfigurable {
+    var shouldDisplayNewTabPageShortcut = false
+    var shouldDisplayApplicationMenuShortcut = false
+    var shouldDisplayAddressBarShortcut = false
+    var shouldDisplayAnyAIChatFeature = false
+    var shouldOpenAIChatInSidebar = false
+    var shouldDisplaySummarizationMenuItem = false
+    var shouldDisplayTranslationMenuItem = false
+    var shouldAutomaticallySendPageContext = false
+    var shouldDisplayAddressBarShortcutWhenTyping: Bool = false
+    var shouldShowSettingsImprovements: Bool = false
+    var shouldAutomaticallySendPageContextTelemetryValue: Bool?
+    let valuesChangedPublisher = PassthroughSubject<Void, Never>()
+}
+
 @available(macOS 12.0, *)
 final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
@@ -125,7 +171,13 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                 searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: windowControllersManager),
                 tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
                 webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
-                cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager)
+                cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                aiChatPreferences: AIChatPreferences(
+                    storage: MockAIChatPreferencesStorage(),
+                    aiChatMenuConfiguration: MockAIChatConfig(),
+                    windowControllersManager: windowControllersManager,
+                    featureFlagger: MockFeatureFlagger()
+                )
             )
             viewController.tabViewModel = tabViewModel
             _=viewController.view

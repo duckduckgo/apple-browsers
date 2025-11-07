@@ -55,7 +55,12 @@ final class RootViewV2Tests: XCTestCase {
             tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
             webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
-            aiFeaturesStatusProvider: MockAIChatPreferences(),
+            aiChatPreferences: AIChatPreferences(
+                storage: MockAIChatPreferencesStorage(),
+                aiChatMenuConfiguration: MockAIChatConfig(),
+                windowControllersManager: WindowControllersManagerMock(),
+                featureFlagger: MockFeatureFlagger()
+            ),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
         subscriptionManager = SubscriptionManagerMockV2()

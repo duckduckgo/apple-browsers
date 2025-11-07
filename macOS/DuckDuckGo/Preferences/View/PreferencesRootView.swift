@@ -135,7 +135,7 @@ enum Preferences {
                     SyncView()
                 case .appearance:
                     AppearanceView(model: NSApp.delegateTyped.appearancePreferences,
-                                   aiChatModel: AIChatPreferences.shared,
+                                   aiChatModel: model.aiChatPreferences,
                                    themeManager: themeManager,
                                    isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
                 case .dataClearing:
@@ -165,7 +165,7 @@ enum Preferences {
                 case .about:
                     AboutView(model: AboutPreferences.shared)
                 case .aiChat:
-                    AIChatView(model: AIChatPreferences.shared)
+                    AIChatView(model: model.aiChatPreferences)
                 }
             }
             .frame(maxWidth: Const.paneContentWidth, maxHeight: .infinity, alignment: .topLeading)
@@ -406,7 +406,7 @@ enum Preferences {
                     SyncView()
                 case .appearance:
                     AppearanceView(model: NSApp.delegateTyped.appearancePreferences,
-                                   aiChatModel: AIChatPreferences.shared,
+                                   aiChatModel: model.aiChatPreferences,
                                    themeManager: themeManager,
                                    isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
                 case .dataClearing:
@@ -435,7 +435,7 @@ enum Preferences {
                 case .about:
                     AboutView(model: AboutPreferences.shared)
                 case .aiChat:
-                    AIChatView(model: AIChatPreferences.shared)
+                    AIChatView(model: model.aiChatPreferences)
                 }
             }
             .frame(maxWidth: Const.paneContentWidth, maxHeight: .infinity, alignment: .topLeading)

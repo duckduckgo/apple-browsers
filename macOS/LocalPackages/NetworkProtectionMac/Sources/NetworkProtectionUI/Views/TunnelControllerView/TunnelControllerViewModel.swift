@@ -244,7 +244,7 @@ public final class TunnelControllerViewModel: ObservableObject {
     }
 
     @MainActor
-    private func updateRefreshTimer(oldStatus: ConnectionStatus) {
+    private func updateRefreshTimer() {
         switch connectionStatus {
         case .connected:
             startTimer()
@@ -321,7 +321,7 @@ public final class TunnelControllerViewModel: ObservableObject {
     private var connectionStatus: VPN.ConnectionStatus {
         didSet {
             previousConnectionStatus = oldValue
-            updateRefreshTimer(oldStatus: oldValue)
+            updateRefreshTimer()
             refreshTimeLapsed()
         }
     }
@@ -514,7 +514,7 @@ public final class TunnelControllerViewModel: ObservableObject {
             if shouldFlipToggle {
                 isToggleDisabled = true
                 toggleTransition = .switchingOn(locallyInitiated: true)
-                updateRefreshTimer(oldStatus: connectionStatus)
+                updateRefreshTimer()
             }
             defer { toggleTransition = .idle }
 
@@ -529,7 +529,7 @@ public final class TunnelControllerViewModel: ObservableObject {
 
         vpnControlTask = Task { @MainActor in
             toggleTransition = .switchingOff(locallyInitiated: true)
-            updateRefreshTimer(oldStatus: connectionStatus)
+            updateRefreshTimer()
             defer { toggleTransition = .idle }
 
             await tunnelController.stop()

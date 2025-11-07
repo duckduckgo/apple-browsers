@@ -205,6 +205,9 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1211652685709096?focus=true
     case fullDuckAIMode
+    
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211388368219934?focus=true
+    case vpnConnectionWidePixelMeasurement
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211708648644692
     case storeSerpSettings
@@ -236,6 +239,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .syncCreditCards,
              .unifiedURLPredictor,
              .forgetAllInSettings,
+             .vpnConnectionWidePixelMeasurement,
              .showHideAIGeneratedImagesSection:
             true
         default:
@@ -299,6 +303,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .forgetAllInSettings,
              .duckAiDataClearing,
              .fullDuckAIMode,
+             .vpnConnectionWidePixelMeasurement,
              .storeSerpSettings,
              .showHideAIGeneratedImagesSection,
              .standaloneMigration:
@@ -511,6 +516,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.duckAiDataClearing))
         case .fullDuckAIMode:
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
+        case .vpnConnectionWidePixelMeasurement:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
         case .storeSerpSettings:
             return .remoteReleasable(.feature(.storeSerpSettings))
         case .showHideAIGeneratedImagesSection:

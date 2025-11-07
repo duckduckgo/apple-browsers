@@ -95,6 +95,7 @@ public enum WideEventParameter {
 
         public static let errorDomain = "feature.data.error.domain"
         public static let errorCode = "feature.data.error.code"
+        public static let errorDescription = "feature.data.error.description"
         public static let underlyingErrorDomain = "feature.data.error.underlying_domain"
         public static let underlyingErrorCode = "feature.data.error.underlying_code"
     }

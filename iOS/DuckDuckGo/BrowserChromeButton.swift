@@ -53,6 +53,7 @@ class BrowserChromeButton: UIButton {
     }
 
     func addBorder(borderFrame: CGRect = CGRect(x: 0, y: 0, width: 80, height: 40)) {
+        automaticallyUpdatesConfiguration = false
         guard border == nil else { return }
         let view = BrowserChromeButtonBorder(frame: borderFrame)
         view.center = self.center
@@ -90,6 +91,7 @@ class BrowserChromeButton: UIButton {
     }
 
     func removeBorder() {
+        automaticallyUpdatesConfiguration = true
         guard let border else { return }
         border.removeFromSuperview()
         applyConfiguration(animated: false)
@@ -127,20 +129,13 @@ class BrowserChromeButton: UIButton {
         configuration?.image = image
         configuration?.automaticallyUpdateForSelection = false
         configuration?.imageColorTransformer = .init { [weak self] _ in
-            type.foregroundColor(for: self?.state ?? .normal)
+                type.foregroundColor(for: self?.state ?? .normal)
         }
 
-        configurationUpdateHandler = { [weak self] button in
+        configurationUpdateHandler = { button in
             var newConfiguration = button.configuration ?? defaultConfiguration
-
             newConfiguration.baseForegroundColor = type.foregroundColor(for: button.state)
-
-            if button.state == .highlighted && self?.border != nil {
-                newConfiguration.baseBackgroundColor = .clear
-            } else {
-                newConfiguration.baseBackgroundColor = type.backgroundColor(for: button.state)
-            }
-
+            newConfiguration.baseBackgroundColor = type.backgroundColor(for: button.state)
             if animated {
                 UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
                     button.configuration = newConfiguration

@@ -19,5 +19,107 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211597559231997
+    "m_ios_wide_vpn_connection": {
+        "description": "Wide pixel sent at the end of a vpn connection flow",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "widePixelAppName",
+            "widePixelAppVersion",
+            "widePixelInternalUser",
+            "widePixelPlatform",
+            "widePixelType",
+            "widePixelFormFactor",
+            "widePixelSampleRate",
+            "widePixelFeatureStatus",
+            "widePixelErrorDomain",
+            "widePixelErrorCode",
+            "widePixelErrorDescription",
+            "widePixelUnderlyingErrorDomain",
+            "widePixelUnderlyingErrorCode",
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["vpn-connection"]
+            },
+            {
+                "key": "feature.status_reason",
+                "type": "string",
+                "description": "Reason string for the current status",
+                "enum": ["partial_data", "timeout"]
+            },
+            {
+                "key": "feature.data.ext.extension_type",
+                "type": "string",
+                "description": "VPN extension type used",
+                "enum": ["app", "system"]
+            },
+            {
+                "key": "feature.data.ext.startup_method",
+                "type": "string",
+                "description": "How the VPN setup or connection was initiated",
+                "enum": ["automatic_on_demand", "manual_by_main_app", "manual_by_the_system"]
+            },
+            // Overall latency
+            {
+                "key": "feature.data.ext.latency_ms",
+                "type": "integer",
+                "description": "Overall VPN connection latency (in ms)"
+            },
+            // Per-step latencies
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_latency_ms",
+                "type": "integer",
+                "description": "Latency for VPN connection steps (in ms)"
+            },
+            // Per-step error domains
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.domain",
+                "type": "string",
+                "description": "Error domain for VPN connection step failures"
+            },
+            // Per-step error codes
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.code",
+                "type": "string",
+                "description": "Error code for VPN connection step failures",
+                "pattern": "^-?\\d+$"
+            },
+            // Per-step error descriptions
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.description",
+                "type": "string",
+                "description": "Human-readable error description for VPN connection step failures",
+                "examples": ["simulateControllerFailureError", "loadFromPreferencesFailed"]
+            },
+            // Per-step underlying error domains
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.underlying_domain[0-9]*",
+                "type": "string",
+                "description": "Underlying error domain for VPN connection step failures"
+            },
+            // Per-step underlying error codes
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.underlying_code[0-9]*",
+                "type": "string",
+                "description": "Underlying error code for VPN connection step failures",
+                "pattern": "^-?\\d+$"
+            },
+            {
+                "key": "app.native_apps_experiments",
+                "type": "string",
+                "description": "Enrolled Native Apps experiments (comma-separated)"
+            },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Context name for the flow",
+                "enum": ["funnel_appsettings_ios", "funnel_systemsettings_ios", "funnel_others_ios"]
+            }
+        ]
     }
 }

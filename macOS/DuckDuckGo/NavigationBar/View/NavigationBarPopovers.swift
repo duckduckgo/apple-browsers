@@ -82,6 +82,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     private let fireproofDomains: FireproofDomains
     private let downloadsPreferences: DownloadsPreferences
     private let downloadListCoordinator: DownloadListCoordinator
+    private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private let permissionManager: PermissionManagerProtocol
     private let networkProtectionPopoverManager: NetPPopoverManager
     private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
@@ -96,6 +97,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         fireproofDomains: FireproofDomains,
         downloadsPreferences: DownloadsPreferences,
         downloadListCoordinator: DownloadListCoordinator,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         permissionManager: PermissionManagerProtocol,
         networkProtectionPopoverManager: NetPPopoverManager,
         autofillPopoverPresenter: AutofillPopoverPresenter,
@@ -108,6 +110,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         self.fireproofDomains = fireproofDomains
         self.downloadsPreferences = downloadsPreferences
         self.downloadListCoordinator = downloadListCoordinator
+        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.permissionManager = permissionManager
         self.networkProtectionPopoverManager = networkProtectionPopoverManager
         self.autofillPopoverPresenter = autofillPopoverPresenter
@@ -396,7 +399,12 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     func openPrivacyDashboard(for tabViewModel: TabViewModel, from button: MouseOverButton, entryPoint: PrivacyDashboardEntryPoint) {
         guard closeTransientPopovers() else { return }
 
-        let popover = PrivacyDashboardPopover(entryPoint: entryPoint, contentBlocking: contentBlocking, permissionManager: permissionManager)
+        let popover = PrivacyDashboardPopover(
+            entryPoint: entryPoint,
+            contentBlocking: contentBlocking,
+            permissionManager: permissionManager,
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences
+        )
         popover.delegate = self
         self.privacyDashboardPopover = popover
         self.subscribePrivacyDashboardPendingUpdates(for: popover)

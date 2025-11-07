@@ -2698,6 +2698,12 @@ Take back control of your personal information with the browser designed for dat
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Settings";
 
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Hide AI-Generated Images";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filters out AI-Generated images from image search results";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Always On";
 
@@ -3767,7 +3773,10 @@ Take back control of your personal information with the browser designed for dat
 "win-back.campaign.subscription.settings.menu.title" = "Resubscribe and Save 25%";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Resubscribe and Save 25%";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Resubscribe";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Stay protected with our VPN, private AI, and more.\nLimited time offer.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Looking for the Mac version?";

@@ -91,9 +91,9 @@ class RemoteMessagingStoreTests: XCTestCase {
         let config = store.fetchRemoteMessagingConfig()
         XCTAssertNotNil(config)
         XCTAssertEqual(config?.version, processorResult.version)
-        guard let remoteMessage = store.fetchScheduledRemoteMessage() else {
+        guard let remoteMessage = store.fetchScheduledRemoteMessage(surfaces: .allCases) else {
             XCTFail("No remote message found")
-            return RemoteMessageModel(id: "", content: nil, matchingRules: [], exclusionRules: [], isMetricsEnabled: true)
+            return RemoteMessageModel(id: "", surfaces: .newTabPage, content: nil, matchingRules: [], exclusionRules: [], isMetricsEnabled: true)
         }
 
         XCTAssertNotNil(remoteMessage)
@@ -258,30 +258,30 @@ class RemoteMessagingStoreTests: XCTestCase {
 
     func testWhenFeatureFlagIsDisabledThenScheduledRemoteMessagesAreDeleted() async throws {
         _ = try await saveProcessedResultFetchRemoteMessage()
-        XCTAssertNotNil(store.fetchScheduledRemoteMessage())
+        XCTAssertNotNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
 
         let expectation = XCTNSNotificationExpectation(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange,
                                                        object: nil, notificationCenter: notificationCenter)
 
         try await setFeatureFlagEnabled(false)
-        XCTAssertNil(store.fetchScheduledRemoteMessage())
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
 
         await fulfillment(of: [expectation], timeout: 1)
 
         // Re-enabling remote messaging doesn't trigger a refetch on a Store level so no new scheduled messages should appear
         try await setFeatureFlagEnabled(true)
-        XCTAssertNil(store.fetchScheduledRemoteMessage())
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
     }
 
     func testWhenFeatureFlagIsDisabledAndThereWereNoMessagesThenNotificationIsNotSent() async throws {
-        XCTAssertNil(store.fetchScheduledRemoteMessage())
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
 
         let expectation = XCTNSNotificationExpectation(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange,
                                                        object: nil, notificationCenter: notificationCenter)
         expectation.isInverted = true
 
         try await setFeatureFlagEnabled(false)
-        XCTAssertNil(store.fetchScheduledRemoteMessage())
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
 
         await fulfillment(of: [expectation], timeout: 1)
     }
@@ -290,7 +290,7 @@ class RemoteMessagingStoreTests: XCTestCase {
         _ = try await saveProcessedResultFetchRemoteMessage()
 
         // Dismiss all available messages
-        while let remoteMessage = store.fetchScheduledRemoteMessage() {
+        while let remoteMessage = store.fetchScheduledRemoteMessage(surfaces: .allCases) {
             await store.dismissRemoteMessage(withID: remoteMessage.id)
         }
 
@@ -299,7 +299,7 @@ class RemoteMessagingStoreTests: XCTestCase {
         expectation.isInverted = true
 
         try await setFeatureFlagEnabled(false)
-        XCTAssertNil(store.fetchScheduledRemoteMessage())
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
 
         await fulfillment(of: [expectation], timeout: 1)
     }
@@ -321,7 +321,7 @@ class RemoteMessagingStoreTests: XCTestCase {
         _ = try await saveProcessedResultFetchRemoteMessage()
         try await setFeatureFlagEnabled(false)
 
-        XCTAssertNil(store.fetchScheduledRemoteMessage())
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
     }
 
     func testWhenFeatureFlagIsDisabledThenFetchRemoteMessagingConfigReturnsNil() async throws {
@@ -357,7 +357,196 @@ class RemoteMessagingStoreTests: XCTestCase {
         XCTAssertEqual(store.fetchDismissedRemoteMessageIDs(), [])
     }
 
-    // MARK: -
+    // MARK: - Surface
+
+    func testWhenFetchScheduledRemoteMessageAndScheduledMessageSurfaceDoesNotMatchThenReturnNil() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .newTabPage, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: [.modal, .dedicatedTab])
+
+        // THEN
+        XCTAssertNil(result)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndSurfaceIsNewTabAndScheduledMessageSurfaceMatchesThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .newTabPage, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .newTabPage)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndSurfaceIsModalAndScheduledMessageSurfaceMatchesThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .modal, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .modal)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndSurfaceIsDedicatedTabAndScheduledMessageSurfaceMatchesThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .dedicatedTab, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .dedicatedTab)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndSurfaceIsAllCasesAndScheduledMessageSurfaceIsNewTabThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .newTabPage, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndSurfaceIsAllCasesAndScheduledMessageSurfaceIsModalThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .modal, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndSurfaceIsAllCasesAndScheduledMessageSurfaceIsDedicatedTabThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .dedicatedTab, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndSurfaceMatchesOneOfTheOptionsThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: [.newTabPage, .modal], content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .newTabPage)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndMesssageDoesNotHaveAnySurfaceAndSurfaceIsNewTabThenDefaultToNewTabPageSurface() async throws {
+        // GIVEN
+        let context = store.context
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "1"
+            message.status = NSNumber(value: 0) // Scheduled
+            message.shown = false
+            message.message = """
+              {"isMetricsEnabled":false,"content":{"small":{"titleText":"","descriptionText":""}},"id":"1","exclusionRules":[],"matchingRules":[]}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .newTabPage)
+
+        // THEN
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.surfaces, .newTabPage)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndMesssageDoesNotHaveAnySurfaceAndSurfaceHasNewTabThenDefaultToNewTabPageSurface() async throws {
+        // GIVEN
+        let context = store.context
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "1"
+            message.status = NSNumber(value: 0) // Scheduled
+            message.shown = false
+            message.message = """
+              {"isMetricsEnabled":false,"content":{"small":{"titleText":"","descriptionText":""}},"id":"1","exclusionRules":[],"matchingRules":[]}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: [.newTabPage, .modal])
+
+        // THEN
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.surfaces, .newTabPage)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndMesssageDoesNotHaveAnySurfaceAndSurfaceHasNotNewTabThenDoNotReturnMessage() async throws {
+        // GIVEN
+        let context = store.context
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "1"
+            message.status = NSNumber(value: 0) // Scheduled
+            message.shown = false
+            message.message = """
+              {"isMetricsEnabled":false,"content":{"small":{"titleText":"","descriptionText":""}},"id":"1","exclusionRules":[],"matchingRules":[]}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .modal)
+
+        // THEN
+        XCTAssertNil(result)
+    }
+
+}
+
+// MARK: - Helpers
+
+private extension RemoteMessagingStoreTests {
 
     func setFeatureFlagEnabled(_ isRemoteMessagingAvailable: Bool) async throws {
         availabilityProvider.isRemoteMessagingAvailable = isRemoteMessagingAvailable
@@ -431,7 +620,7 @@ class RemoteMessagingStoreTests: XCTestCase {
                                                                   invalidate: false,
                                                                   evaluationTimestamp: Date())
 
-        if let processorResult = processor.process(jsonRemoteMessagingConfig: jsonRemoteMessagingConfig, currentConfig: config) {
+        if let processorResult = processor.process(jsonRemoteMessagingConfig: jsonRemoteMessagingConfig, currentConfig: config, supportedSurfacesForMessage: { _ in .newTabPage }) {
             return processorResult
         } else {
             XCTFail("Processor result message is nil")
@@ -454,6 +643,7 @@ class RemoteMessagingStoreTests: XCTestCase {
         }
         """
     }
+
 }
 
 private final class MockRemoteMessagingSurveyActionMapper: RemoteMessagingSurveyActionMapping {

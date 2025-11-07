@@ -2800,6 +2800,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Otsingu Assist seaded";
 
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Peida tehisintellekti loodud pildid";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtreerib tehisintellekti loodud pildid pildiotsingu tulemustest välja";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alati sisse lülitatud";
 

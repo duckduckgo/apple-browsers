@@ -70,6 +70,10 @@ class MockDownloadsPreferencesPersistor: DownloadsPreferencesPersistor {
     }
 }
 
+class MockWebTrackingProtectionPreferencesPersistor: WebTrackingProtectionPreferencesPersistor {
+    var gpcEnabled: Bool = false
+}
+
 @available(macOS 12.0, *)
 final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
@@ -105,6 +109,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
             tab = Tab(content: .url(URL.duckDuckGo, credential: nil, source: .appOpenUrl), webViewConfiguration: schemeHandler.webViewConfiguration())
             let tabViewModel = TabViewModel(tab: tab)
+            let windowControllersManager = WindowControllersManagerMock()
             viewController = BrowserTabViewController(
                 tabCollectionViewModel: tabCollectionViewModel,
                 onboardingPixelReporter: pixelReporter,
@@ -112,7 +117,10 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                 onboardingDialogFactory: factory,
                 featureFlagger: featureFlagger,
                 defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
-                downloadsPreferences: DownloadsPreferences(persistor: MockDownloadsPreferencesPersistor())
+                downloadsPreferences: DownloadsPreferences(persistor: MockDownloadsPreferencesPersistor()),
+                searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager)
             )
             viewController.tabViewModel = tabViewModel
             _=viewController.view

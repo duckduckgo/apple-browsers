@@ -110,6 +110,10 @@ final class AIChatUserScript: NSObject, Subfeature {
             rules.append(.exact(hostname: ddgDomain))
         }
 
+        if let duckAiDomain = URL.duckAi.host {
+            rules.append(.exact(hostname: duckAiDomain))
+        }
+
         if let debugHostname = debugSettings.messagePolicyHostname {
             rules.append(.exact(hostname: debugHostname))
         }
@@ -149,6 +153,14 @@ final class AIChatUserScript: NSObject, Subfeature {
             return { [weak self] params, message in
                 await self?.handler.openKeyboard(params: params, message: message, webView: self?.webView)
             }
+        case .storeMigrationData:
+            return handler.storeMigrationData
+        case .getMigrationDataByIndex:
+            return handler.getMigrationDataByIndex
+        case .getMigrationInfo:
+            return handler.getMigrationInfo
+        case .clearMigrationData:
+            return handler.clearMigrationData
         default:
             return nil
         }

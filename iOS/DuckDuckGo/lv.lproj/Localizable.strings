@@ -2800,6 +2800,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Meklēšanas Assist iestatījumi";
 
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Paslēpt mākslīgā intelekta ģenerētus attēlus";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrē mākslīgā intelekta ģenerētus attēlus no attēlu meklēšanas rezultātiem";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vienmēr ieslēgts";
 

@@ -2800,6 +2800,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Pretraži postavke Assista";
 
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Sakrij slike generirane umjetnom inteligencijom";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrira slike generirane umjetnom inteligencijom iz rezultata pretraživanja slika";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Uvijek uključeno";
 

@@ -712,7 +712,9 @@ extension Pixel {
         case remoteMessagePrimaryActionClicked
         case remoteMessageSecondaryActionClicked
         case remoteMessageSheet
-        
+        case remoteMessageCardShown
+        case remoteMessageCardClicked
+
         // MARK: debug pixels
         case dbCrashDetected(appIdentifier: String?)
         case dbCrashDetectedDaily(appIdentifier: String?)
@@ -2060,6 +2062,8 @@ extension Pixel.Event {
         case .remoteMessagePrimaryActionClicked: return "m_remote_message_primary_action_clicked"
         case .remoteMessageSecondaryActionClicked: return "m_remote_message_secondary_action_clicked"
         case .remoteMessageSheet: return "m_remote_message_sheet"
+        case .remoteMessageCardShown: return "m_remote_message_card_shown"
+        case .remoteMessageCardClicked: return "m_remote_message_card_clicked"
 
             // MARK: debug pixels
 

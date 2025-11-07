@@ -1670,7 +1670,8 @@ public struct UserText {
 
     static let winBackCampaignSubscriptionSettingsMenuLoggedOutSubtitle = NSLocalizedString("win-back.campaign.subscription.settings.menu.logged-out.subtitle", value: "Limited time offer!", comment: "Subtitle of the Subscription settings menu item during the win-back campaign")
 
-    static let winBackCampaignSubscriptionSettingsPageResubscribeCTA = NSLocalizedString("win-back.campaign.subscription.settings.page.resubscribe.cta", value: "Resubscribe and Save 25%", comment: "CTA of the message displayed for logged in users to resubscribe during the win-back campaign")
+    static let winBackCampaignSubscriptionSettingsPageResubscribeCTA = NSLocalizedString("win-back.campaign.subscription.settings.page.resubscribe.cta", value: "Resubscribe", comment: "CTA of the message displayed for logged in users to resubscribe during the win-back campaign")
+    static let winBackCampaignSubscriptionSettingsPageResubscribeSubtitle = NSLocalizedString("win-back.campaign.subscription.settings.page.resubscribe.subtitle", value: "Stay protected with our VPN, private AI, and more.\nLimited time offer.", comment: "Subtitle for resubscribe CTA for users eligible for the win-back offer.")
 
     static let winBackCampaignSubscriptionSettingsMenuTitle = NSLocalizedString("win-back.campaign.subscription.settings.menu.title", value: "Resubscribe and Save 25%", comment: "Title of the Subscription settings menu item during the win-back campaign")
     static let winBackCampaignSubscriptionSettingsMenuSubtitle = NSLocalizedString("win-back.campaign.subscription.settings.menu.subtitle", value: "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%.\nLimited time offer.", comment: "Subtitle of the Subscription settings menu item during the win-back campaign")
@@ -1781,6 +1782,10 @@ public struct UserText {
     public static let settingsAiFeaturesSearchAssist = NSLocalizedString("settings.aifeatures.assist", value: "Search Assist Settings", comment: "Title of search assist settings link")
 
     public static let settingsAiFeaturesSearchAssistSubtitle = NSLocalizedString("settings.features.assist.subtitle", value: "Choose how often you want AI-assisted answers to appear in your searches", comment: "A description of what the AI Chat toggle does")
+
+    public static let settingsAiFeaturesHideAIGeneratedImages = NSLocalizedString("settings.aifeatures.hide.ai.generated.images", value: "Hide AI-Generated Images", comment: "Title of hide AI-generated images settings link")
+
+    public static let settingsAiFeaturesHideAIGeneratedImagesSubtitle = NSLocalizedString("settings.aifeatures.hide.ai.generated.images.subtitle", value: "Filters out AI-Generated images from image search results", comment: "Description of what the hide AI-generated images feature does")
 
     public static let settingsAiChatShortcuts = NSLocalizedString("settings.aichat.shortcuts", value: "Duck.ai Shortcuts", comment: "Settings screen text for showing AI Chat in various places in the app")
 
@@ -1997,6 +2002,8 @@ public struct UserText {
     public static let dataImportSummarySyncPasswords = NSLocalizedString("data.import.summary.button.title.sync.passwords", value: "Passwords", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
     public static let dataImportSummarySyncBookmarks = NSLocalizedString("data.import.summary.button.title.sync.bookmarks", value: "Bookmarks", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
     public static let dataImportSummarySyncData = NSLocalizedString("data.import.summary.button.title.sync.data", value: "Data", comment: "Parameter for data.import.summary.button.title.sync")
+    public static let dataImportSummaryVisitSyncSettings = NotLocalizedString("data.import.summary.message.sync.settings", value: "Visit Settings to securely sync bookmarks and passwords between your devices.", comment: "Message informing the user to visit settings to sync bookmarks and passwords. Used from What's New and for en_US locale only.")
+
     public enum SubscriptionPromotionOnboarding {
         public enum Promo {
             static let title = NSLocalizedString("onboarding.privacypro.promo.title", value: "Oh, before I forget...", comment: "The title of the onboarding dialog that promotes Privacy Pro")

@@ -49,32 +49,8 @@ final class WinBackOfferDebugViewModel: ObservableObject {
     func simulateChurn() {
         let effectiveDate = debugStore.simulatedTodayDate
         winbackOfferStore.storeChurnDate(effectiveDate)
-        winbackOfferStore.setHasRedeemedOffer(false)
         winbackOfferStore.storeOfferPresentationDate(nil)
         winbackOfferStore.didDismissUrgencyMessage = false
-        updateState()
-    }
-
-    /// Simulate the end of the cooldown period after a redeemed offer.
-    func simulateCooldownExpiry() {
-        let cooldown = TimeInterval.days(270)
-        let availabilityOffset = TimeInterval.days(3)
-        let totalOffset = cooldown + availabilityOffset
-
-        if let existingChurnDate = winbackOfferStore.getChurnDate(),
-           winbackOfferStore.hasRedeemedOffer() {
-            let targetDate = existingChurnDate.addingTimeInterval(totalOffset)
-            debugStore.simulatedTodayDate = targetDate
-        } else {
-            let now = Date()
-            let churnDate = now.addingTimeInterval(-totalOffset)
-            winbackOfferStore.storeChurnDate(churnDate)
-            winbackOfferStore.setHasRedeemedOffer(true)
-            winbackOfferStore.storeOfferPresentationDate(nil)
-            winbackOfferStore.didDismissUrgencyMessage = false
-            debugStore.simulatedTodayDate = now
-        }
-
         updateState()
     }
 
@@ -84,6 +60,14 @@ final class WinBackOfferDebugViewModel: ObservableObject {
         simulatedToday = debugStore.simulatedTodayDate
         winbackOfferStore.clearChurnDate()
         winbackOfferStore.setHasRedeemedOffer(false)
+        winbackOfferStore.storeOfferPresentationDate(nil)
+        winbackOfferStore.didDismissUrgencyMessage = false
+        updateState()
+    }
+
+    /// Mark the offer as redeemed without altering churn date.
+    func markOfferRedeemed() {
+        winbackOfferStore.setHasRedeemedOffer(true)
         winbackOfferStore.storeOfferPresentationDate(nil)
         winbackOfferStore.didDismissUrgencyMessage = false
         updateState()
@@ -136,6 +120,25 @@ final class WinBackOfferDebugViewModel: ObservableObject {
         updateState()
     }
 
+    /// Complete the cooldown period and advance to the first day of the new offer window.
+    func completeCooldown() {
+        let cooldownDuration = TimeInterval.seconds(10)
+        let availabilityOffset = TimeInterval.days(3)
+
+        let cooldownExpiryDate = debugStore.simulatedTodayDate.addingTimeInterval(cooldownDuration)
+        let firstDay = cooldownExpiryDate.addingTimeInterval(availabilityOffset)
+
+        winbackOfferStore.storeChurnDate(cooldownExpiryDate)
+        winbackOfferStore.setHasRedeemedOffer(false)
+        winbackOfferStore.storeOfferPresentationDate(nil)
+        winbackOfferStore.didDismissUrgencyMessage = false
+
+        debugStore.simulatedTodayDate = firstDay
+        simulatedToday = firstDay
+
+        updateState()
+    }
+
     /// Override today's date by storing the given date in the debug store.
     func overrideTodaysDate(_ date: Date) {
         debugStore.simulatedTodayDate = date
@@ -163,7 +166,7 @@ final class WinBackOfferDebugViewModel: ObservableObject {
         if let presentationDate = winbackOfferStore.getOfferPresentationDate() {
             offerStartDate = presentationDate
             offerEndDate = presentationDate.addingTimeInterval(.days(5)) // 5 days availability after launch prompt is shown
-            urgencyMessageDate = offerEndDate?.addingTimeInterval(.days(-1)) // Last day
+            urgencyMessageDate = offerEndDate?.addingTimeInterval(.days(-2)) // Urgency messaging begins 2 days before offer end
             launchPromptPresentationDate = presentationDate
         } else {
             offerStartDate = nil
@@ -225,6 +228,12 @@ struct WinBackOfferDebugView: View {
                 }) {
                     Text(verbatim: "Reset Win-back Offer")
                 }
+
+                Button(action: {
+                    viewModel.markOfferRedeemed()
+                }) {
+                    Text(verbatim: "Mark Offer Redeemed")
+                }
             }
 
             Section(header: Text(verbatim: "Quick Test Scenarios")) {
@@ -241,9 +250,9 @@ struct WinBackOfferDebugView: View {
                 }
 
                 Button(action: {
-                    viewModel.simulateCooldownExpiry()
+                    viewModel.completeCooldown()
                 }) {
-                    Text(verbatim: "Jump to Cooldown Expiry")
+                    Text(verbatim: "Complete Cooldown")
                 }
             }
 
@@ -254,7 +263,7 @@ struct WinBackOfferDebugView: View {
                     LabeledRow(label: "Churn Date", value: Self.dateFormatter.string(from: churnDate))
 
                     if let eligibilityDate = viewModel.eligibilityDate {
-                        LabeledRow(label: "Eligible Since", value: Self.dateFormatter.string(from: eligibilityDate))
+                        LabeledRow(label: "Offer starts on", value: Self.dateFormatter.string(from: eligibilityDate))
                     }
 
                     if let presentationDate = viewModel.launchPromptPresentationDate {
@@ -272,7 +281,7 @@ struct WinBackOfferDebugView: View {
                     }
 
                     if let urgencyMessageDate = viewModel.urgencyMessageDate {
-                        LabeledRow(label: "Urgency Message", value: Self.dateFormatter.string(from: urgencyMessageDate))
+                        LabeledRow(label: "Urgency message starts", value: Self.dateFormatter.string(from: urgencyMessageDate))
                     }
 
                     LabeledRow(label: "Redeemed", value: viewModel.hasRedeemed ? "Yes" : "No")

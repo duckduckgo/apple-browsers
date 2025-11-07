@@ -2800,6 +2800,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "„Assist“ paieškos nustatymai";
 
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Paslėpti DI sugeneruotus vaizdus";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtruoja DI sugeneruotus vaizdus iš vaizdų paieškos rezultatų";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Visada įjungta";
 

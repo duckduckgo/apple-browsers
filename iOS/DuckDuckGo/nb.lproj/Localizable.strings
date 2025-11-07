@@ -2800,6 +2800,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Innstillinger for Search Assist";
 
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Skjul AI-genererte bilder";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrerer AI-genererte bilder fra bildesøkeresultater";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alltid på";
 

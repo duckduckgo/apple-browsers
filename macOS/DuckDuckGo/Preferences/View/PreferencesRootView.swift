@@ -112,21 +112,22 @@ enum Preferences {
                                        dockCustomizer: DockCustomizer(),
                                        protectionStatus: model.protectionStatus(for: .defaultBrowser))
                 case .privateSearch:
-                    PrivateSearchView(model: SearchPreferences.shared)
+                    PrivateSearchView(model: model.searchPreferences)
                 case .webTrackingProtection:
-                    WebTrackingProtectionView(model: WebTrackingProtectionPreferences.shared)
+                    WebTrackingProtectionView(model: model.webTrackingProtectionPreferences)
                 case .threatProtection:
                     ThreatProtectionView(model: MaliciousSiteProtectionPreferences.shared)
                 case .cookiePopupProtection:
                     CookiePopupProtectionView(model: CookiePopupProtectionPreferences.shared)
                 case .emailProtection:
                     EmailProtectionView(emailManager: EmailManager(),
-                                        protectionStatus: model.protectionStatus(for: .emailProtection))
+                                        protectionStatus: model.protectionStatus(for: .emailProtection),
+                                        windowControllersManager: model.searchPreferences.windowControllersManager)
                 case .general:
                     GeneralView(startupModel: NSApp.delegateTyped.startupPreferences,
                                 downloadsModel: model.downloadsPreferences,
-                                searchModel: SearchPreferences.shared,
-                                tabsModel: TabsPreferences.shared,
+                                searchModel: model.searchPreferences,
+                                tabsModel: model.tabsPreferences,
                                 dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
                                 dockCustomizer: DockCustomizer())
@@ -382,21 +383,22 @@ enum Preferences {
                                        dockCustomizer: DockCustomizer(),
                                        protectionStatus: model.protectionStatus(for: .defaultBrowser))
                 case .privateSearch:
-                    PrivateSearchView(model: SearchPreferences.shared)
+                    PrivateSearchView(model: model.searchPreferences)
                 case .webTrackingProtection:
-                    WebTrackingProtectionView(model: WebTrackingProtectionPreferences.shared)
+                    WebTrackingProtectionView(model: model.webTrackingProtectionPreferences)
                 case .threatProtection:
                     ThreatProtectionView(model: MaliciousSiteProtectionPreferences.shared)
                 case .cookiePopupProtection:
                     CookiePopupProtectionView(model: CookiePopupProtectionPreferences.shared)
                 case .emailProtection:
                     EmailProtectionView(emailManager: EmailManager(),
-                                        protectionStatus: model.protectionStatus(for: .emailProtection))
+                                        protectionStatus: model.protectionStatus(for: .emailProtection),
+                                        windowControllersManager: model.searchPreferences.windowControllersManager)
                 case .general:
                     GeneralView(startupModel: NSApp.delegateTyped.startupPreferences,
                                 downloadsModel: model.downloadsPreferences,
-                                searchModel: SearchPreferences.shared,
-                                tabsModel: TabsPreferences.shared,
+                                searchModel: model.searchPreferences,
+                                tabsModel: model.tabsPreferences,
                                 dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
                                 dockCustomizer: DockCustomizer())

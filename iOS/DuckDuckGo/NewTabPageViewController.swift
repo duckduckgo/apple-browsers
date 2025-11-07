@@ -41,8 +41,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     private var hostingController: UIHostingController<AnyView>?
 
-    private let messageNavigationDelegate: MessageNavigationDelegate
-
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
 
@@ -57,7 +55,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
          newTabDialogFactory: any NewTabDaxDialogProvider,
          daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating,
          faviconLoader: FavoritesFaviconLoading,
-         messageNavigationDelegate: MessageNavigationDelegate,
+         remoteMessagingActionHandler: RemoteMessagingActionHandling,
          appSettings: AppSettings,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
@@ -66,7 +64,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.associatedTab = tab
         self.newTabDialogFactory = newTabDialogFactory
         self.daxDialogsManager = daxDialogsManager
-        self.messageNavigationDelegate = messageNavigationDelegate
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
         self.internalUserCommands = internalUserCommands
@@ -77,7 +74,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                             faviconLoader: faviconLoader)
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 subscriptionDataReporter: subscriptionDataReporting,
-                                                navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate))
+                                                messageActionHandler: remoteMessagingActionHandler)
 
         super.init(rootView: NewTabPageView(narrowLayoutInLandscape: narrowLayoutInLandscape,
                                             dismissKeyboardOnScroll: dismissKeyboardOnScroll,

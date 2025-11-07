@@ -91,24 +91,9 @@ struct Launching: LaunchingHandling {
 
         let daxDialogs = configuration.onboardingConfiguration.daxDialogs
 
-        // Service to handle Win-back offer
-#if DEBUG || ALPHA
-        let winBackOfferDebugStore = WinBackOfferDebugStore(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
-        let dateProvider: () -> Date = { winBackOfferDebugStore.simulatedTodayDate }
-#else
-        let dateProvider: () -> Date = Date.init
-#endif
-        
-        let winBackOfferVisibilityManager = WinBackOfferVisibilityManager(
-            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-            winbackOfferStore: WinbackOfferStore(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore),
-            winbackOfferFeatureFlagProvider: WinBackOfferFeatureFlagger(featureFlagger: featureFlagger),
-            dateProvider: dateProvider
-        )
-        let winBackOfferService = WinBackOfferService(
-            visibilityManager: winBackOfferVisibilityManager,
-            isOnboardingCompletedProvider: { !daxDialogs.isEnabled }
-        )
+        let winBackOfferService = WinBackOfferFactory.makeService(keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
+                                                                  featureFlagger: featureFlagger,
+                                                                  daxDialogs: daxDialogs)
 
         let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                                             database: configuration.persistentStoresConfiguration.database,

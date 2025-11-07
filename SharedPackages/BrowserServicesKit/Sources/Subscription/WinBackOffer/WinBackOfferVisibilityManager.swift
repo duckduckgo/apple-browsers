@@ -49,8 +49,6 @@ public protocol WinBackOfferVisibilityManaging {
 
 extension WinBackOfferVisibilityManager {
     enum Constants {
-        // After redeeming the offer and churning again, the offer will be available again after 270 days
-        static let cooldownPeriod = 270 * TimeInterval.day
         // Offer will be available 3 days after the last churn date
         static let daysBeforeOfferAvailability = 3 * TimeInterval.day
         // Offer will be available for 5 days
@@ -64,6 +62,7 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private var winbackOfferStore: any WinbackOfferStoring
     private var winbackOfferFeatureFlagProvider: any WinBackOfferFeatureFlagProvider
     private let calendar: Calendar
+    private let cooldownPeriod: TimeInterval
     private let dateProvider: () -> Date
 
     private var hasActiveSubscription: Bool = false
@@ -73,11 +72,13 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
                 winbackOfferStore: any WinbackOfferStoring,
                 winbackOfferFeatureFlagProvider: any WinBackOfferFeatureFlagProvider,
                 calendar: Calendar = Calendar.current,
+                cooldownPeriod: TimeInterval = 270 * TimeInterval.day,
                 dateProvider: @escaping () -> Date = Date.init) {
         self.subscriptionManager = subscriptionManager
         self.winbackOfferStore = winbackOfferStore
         self.winbackOfferFeatureFlagProvider = winbackOfferFeatureFlagProvider
         self.calendar = calendar
+        self.cooldownPeriod = cooldownPeriod
         self.dateProvider = dateProvider
 
         observeSubscriptionDidChange()
@@ -224,7 +225,7 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
         }
 
         let timeSinceLastChurn = now.timeIntervalSince(lastStoredChurnDate)
-        let cooldownHasPassed = timeSinceLastChurn > Constants.cooldownPeriod
+        let cooldownHasPassed = timeSinceLastChurn > cooldownPeriod
 
         if cooldownHasPassed {
             // Cooldown period has passed, mark churn.

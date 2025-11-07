@@ -82,7 +82,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
 
         windowControllersManager = WindowControllersManagerMock()
 
-        tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor())
+        tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock())
 
         featureFlagger = MockFeatureFlagger()
 

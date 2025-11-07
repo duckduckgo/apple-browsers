@@ -30,7 +30,9 @@ enum GeneralPixel: PixelKitEvent {
     case crashReportCRCIDMissing
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
     case launch
-    case dailyActiveUser(isDefault: Bool, isAddedToDock: Bool?)
+    case dailyActiveUser
+    case dailyDefaultBrowser(isDefault: Bool)
+    case dailyAddedToDock(isAddedToDock: Bool)
     case dailyFireWindowConfigurationStartupFireWindowEnabled(startupFireWindow: Bool)
     case dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled(openFireWindowByDefault: Bool)
     case dailyFireWindowConfigurationFireAnimationEnabled(fireAnimationEnabled: Bool)
@@ -580,6 +582,12 @@ enum GeneralPixel: PixelKitEvent {
         case .dailyActiveUser:
             return  "m_mac_daily_active_user"
 
+        case .dailyDefaultBrowser(isDefault: let isDefault):
+            return  "m_mac_\(isDefault ? "default" : "non-default")-browser"
+
+        case .dailyAddedToDock(isAddedToDock: let isAddedToDock):
+            return  "m_mac_\(isAddedToDock ? "added" : "not-added")-to-dock"
+          
         case .dailyFireWindowConfigurationStartupFireWindowEnabled(startupFireWindow: let startupFireWindow):
             return "m_mac_fire_window_configuration_startup_fire_window_is_\(startupFireWindow ? "enabled" : "disabled")"
 
@@ -1306,6 +1314,13 @@ enum GeneralPixel: PixelKitEvent {
             }
 
             return params
+
+        case .dailyFireWindowConfiguration(let startupFireWindow, let openFireWindowByDefault, let fireAnimationEnabled):
+            return [
+                "startup_fire_window": startupFireWindow ? "true" : "false",
+                "open_fire_window_by_default": openFireWindowByDefault ? "true" : "false",
+                "fire_animation_enabled": fireAnimationEnabled ? "true" : "false"
+            ]
 
         case .navigation(let kind):
             return ["kind": kind.description]

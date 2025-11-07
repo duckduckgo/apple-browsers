@@ -43,6 +43,7 @@ protocol ScriptSourceProviding {
     var historyViewActionsManager: HistoryViewActionsManager? { get }
     var windowControllersManager: WindowControllersManagerProtocol { get }
     var currentCohorts: [ContentScopeExperimentData]? { get }
+    var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
 
 }
@@ -53,7 +54,7 @@ protocol ScriptSourceProviding {
     ScriptSourceProvider(
         configStorage: Application.appDelegate.configurationStore,
         privacyConfigurationManager: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
-        webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared,
+        webTrackingProtectionPreferences: Application.appDelegate.webTrackingProtectionPreferences,
         contentBlockingManager: Application.appDelegate.privacyFeatures.contentBlocking.contentBlockingManager,
         trackerDataManager: Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager,
         experimentManager: Application.appDelegate.contentScopeExperimentsManager,
@@ -88,7 +89,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let privacyConfigurationManager: PrivacyConfigurationManaging
     let contentBlockingManager: ContentBlockerRulesManagerProtocol
     let trackerDataManager: TrackerDataManager
-    let webTrakcingProtectionPreferences: WebTrackingProtectionPreferences
+    let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     let tld: TLD
     let experimentManager: ContentScopeExperimentsManaging
     let bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
@@ -119,7 +120,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
 
         self.configStorage = configStorage
         self.privacyConfigurationManager = privacyConfigurationManager
-        self.webTrakcingProtectionPreferences = webTrackingProtectionPreferences
+        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.contentBlockingManager = contentBlockingManager
         self.trackerDataManager = trackerDataManager
         self.experimentManager = experimentManager
@@ -156,7 +157,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         let privacyConfig = self.privacyConfigurationManager.privacyConfig
         do {
             return try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
-                                                             properties: ContentScopeProperties(gpcEnabled: webTrakcingProtectionPreferences.isGPCEnabled,
+                                                             properties: ContentScopeProperties(gpcEnabled: webTrackingProtectionPreferences.isGPCEnabled,
                                                                                                 sessionKey: self.sessionKey ?? "",
                                                                                                 messageSecret: self.messageSecret ?? "",
                                                                                                 featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig)),

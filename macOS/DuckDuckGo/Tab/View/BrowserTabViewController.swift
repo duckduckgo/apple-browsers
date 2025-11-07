@@ -89,6 +89,9 @@ final class BrowserTabViewController: NSViewController {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let downloadsPreferences: DownloadsPreferences
+    private let searchPreferences: SearchPreferences
+    private let tabsPreferences: TabsPreferences
+    private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
@@ -139,6 +142,9 @@ final class BrowserTabViewController: NSViewController {
          privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
          defaultBrowserPreferences: DefaultBrowserPreferences,
          downloadsPreferences: DownloadsPreferences,
+         searchPreferences: SearchPreferences,
+         tabsPreferences: TabsPreferences,
+         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          tld: TLD = NSApp.delegateTyped.tld
@@ -156,6 +162,9 @@ final class BrowserTabViewController: NSViewController {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.downloadsPreferences = downloadsPreferences
+        self.searchPreferences = searchPreferences
+        self.tabsPreferences = tabsPreferences
+        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.subscriptionManager = subscriptionManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
 
@@ -1150,6 +1159,7 @@ final class BrowserTabViewController: NSViewController {
                 dataBrokerProtectionManager: DataBrokerProtectionManager.shared,
                 vpnBypassService: VPNBypassService(),
                 privacyConfigurationManager: privacyConfigurationManager,
+                webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 freemiumDBPFeature: freemiumDBPFeature
             )
             self.dataBrokerProtectionHomeViewController = dataBrokerProtectionHomeViewController
@@ -1172,6 +1182,9 @@ final class BrowserTabViewController: NSViewController {
                 featureFlagger: featureFlagger,
                 defaultBrowserPreferences: defaultBrowserPreferences,
                 downloadsPreferences: downloadsPreferences,
+                searchPreferences: searchPreferences,
+                tabsPreferences: tabsPreferences,
+                webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 subscriptionManager: subscriptionManager,
                 winBackOfferVisibilityManager: winBackOfferVisibilityManager
             )
@@ -1199,6 +1212,7 @@ final class BrowserTabViewController: NSViewController {
             let overlayPopover = ContentOverlayPopover(
                 currentTabView: self.view,
                 privacyConfigurationManager: privacyConfigurationManager,
+                webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 featureFlagger: featureFlagger,
                 tld: tld
             )
@@ -1716,7 +1730,10 @@ extension BrowserTabViewController {
     BrowserTabViewController(
         tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [.init(content: .url(.duckDuckGo, source: .ui))])),
         defaultBrowserPreferences: DefaultBrowserPreferences(),
-        downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor())
+        downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor()),
+        searchPreferences: SearchPreferences(persistor: SearchPreferencesUserDefaultsPersistor(), windowControllersManager: Application.appDelegate.windowControllersManager),
+        tabsPreferences: TabsPreferences(persistor: TabsPreferencesUserDefaultsPersistor(), windowControllersManager: Application.appDelegate.windowControllersManager),
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: Application.appDelegate.windowControllersManager)
     )
 }
 

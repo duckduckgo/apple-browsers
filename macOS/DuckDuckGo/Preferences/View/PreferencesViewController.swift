@@ -49,6 +49,9 @@ final class PreferencesViewController: NSViewController {
         featureFlagger: FeatureFlagger,
         defaultBrowserPreferences: DefaultBrowserPreferences,
         downloadsPreferences: DownloadsPreferences,
+        searchPreferences: SearchPreferences,
+        tabsPreferences: TabsPreferences,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
@@ -65,6 +68,9 @@ final class PreferencesViewController: NSViewController {
                                         subscriptionManager: subscriptionManager,
                                         defaultBrowserPreferences: defaultBrowserPreferences,
                                         downloadsPreferences: downloadsPreferences,
+                                        searchPreferences: searchPreferences,
+                                        tabsPreferences: tabsPreferences,
+                                        webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                                         aiFeaturesStatusProvider: AIChatPreferences.shared,
                                         winBackOfferVisibilityManager: winBackOfferVisibilityManager)
         super.init(nibName: nil, bundle: nil)

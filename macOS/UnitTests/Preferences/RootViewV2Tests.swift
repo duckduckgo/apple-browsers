@@ -39,6 +39,8 @@ final class RootViewV2Tests: XCTestCase {
         let vpnGatekeeper = MockVPNFeatureGatekeeper(canStartVPN: false, isInstalled: false, isVPNVisible: false, onboardStatusPublisher: Just(.completed).eraseToAnyPublisher())
         mockWinBackOfferVisibilityManager = MockWinBackOfferVisibilityManager()
 
+        let windowControllersManager = WindowControllersManagerMock()
+
         sidebarModel = PreferencesSidebarModel(
             privacyConfigurationManager: MockPrivacyConfigurationManaging(),
             featureFlagger: MockFeatureFlagger(),
@@ -49,6 +51,9 @@ final class RootViewV2Tests: XCTestCase {
             subscriptionManager: SubscriptionAuthV1toV2BridgeMock(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
+            searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             aiFeaturesStatusProvider: MockAIChatPreferences(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )

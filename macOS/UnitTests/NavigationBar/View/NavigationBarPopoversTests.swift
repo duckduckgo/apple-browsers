@@ -31,6 +31,7 @@ final class NavigationBarPopoversTests: XCTestCase {
     override func setUpWithError() throws {
         autofillPopoverPresenter = MockAutofillPopoverPresenter()
         let bookmarkManager = MockBookmarkManager()
+        let windowControllersManager = WindowControllersManagerMock()
         sut = NavigationBarPopovers(
             bookmarkManager: bookmarkManager,
             bookmarkDragDropManager: .init(bookmarkManager: bookmarkManager),
@@ -40,8 +41,9 @@ final class NavigationBarPopoversTests: XCTestCase {
             downloadListCoordinator: DownloadListCoordinator(
                 store: DownloadListStoreMock(),
                 downloadManager: FileDownloadManagerMock(),
-                windowControllersManager: WindowControllersManagerMock()
+                windowControllersManager: windowControllersManager,
             ),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             permissionManager: PermissionManagerMock(),
             networkProtectionPopoverManager: NetPPopoverManagerMock(),
             autofillPopoverPresenter: autofillPopoverPresenter,

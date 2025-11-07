@@ -276,7 +276,8 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         featureFlagger: featureFlagger,
         settings: tunnelSettings,
         defaults: userDefaults,
-        wideEvent: wideEvent, accessTokenStorage: accessTokenStorage,
+        wideEvent: wideEvent,
+        accessTokenStorage: accessTokenStorage,
         subscriptionManagerV2: subscriptionManagerV2,
         vpnAppState: vpnAppState)
 

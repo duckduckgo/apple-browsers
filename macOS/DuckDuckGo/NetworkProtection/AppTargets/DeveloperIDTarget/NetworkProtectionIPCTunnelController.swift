@@ -308,7 +308,7 @@ private extension NetworkProtectionIPCTunnelController {
         data.overallDuration?.complete()
         data.errorData = .init(error: error, description: description)
         wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
-        cleanupConnectionWideEvent()
+        self.connectionWideEventData = nil
     }
     
     func discardAndPassonConnectionWideEvent() {
@@ -317,13 +317,6 @@ private extension NetworkProtectionIPCTunnelController {
         vpnConnectionWideEventOverallStartTime = data.overallDuration?.start
         vpnConnectionWideEventBrowserStartError = data.browserStartError
         wideEvent.discardFlow(data)
-        cleanupConnectionWideEvent()
-    }
-    
-    func cleanupConnectionWideEvent() {
         self.connectionWideEventData = nil
-        vpnConnectionWideEventBrowserStartTime = nil
-        vpnConnectionWideEventBrowserStartError = nil
-        vpnConnectionWideEventOverallStartTime = nil
     }
 }

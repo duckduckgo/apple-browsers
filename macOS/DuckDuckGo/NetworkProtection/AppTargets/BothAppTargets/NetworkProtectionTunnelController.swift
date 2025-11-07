@@ -977,7 +977,6 @@ private extension NetworkProtectionTunnelController {
     func prefillBrowserStartDataIfAvailable() {
         guard let data = self.connectionWideEventData else { return }
         if let vpnConnectionWideEventBrowserStartTime {
-            let browserStartEndTime = Date()
             data.browserStartDuration = WideEvent.MeasuredInterval(start: vpnConnectionWideEventBrowserStartTime)
             data.browserStartDuration?.complete()
             data.contextData = WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)

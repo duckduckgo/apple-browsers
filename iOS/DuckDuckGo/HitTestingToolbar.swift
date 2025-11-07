@@ -26,8 +26,15 @@ class HitTestingToolbar: UIToolbar {
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
 
         let item = items?.first(where: {
+            // Only interested in buttons with custom views
             guard let customView = $0.customView else { return false }
+
             let location = convert(point, to: customView)
+
+            // If the button detects the hit, just stop
+            guard customView.hitTest(location, with: event) == nil else { return true }
+
+            // Then check the extended frame of the button just to be sure
             let extra = max(0, Self.hitWidth - customView.frame.width)
             return location.x >= -extra && location.x <= Self.hitWidth
                 && location.y > 0 && location.y <= customView.frame.height

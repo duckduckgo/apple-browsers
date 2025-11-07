@@ -27,10 +27,10 @@ import LetsMove
 @MainActor
 final class VPNURLEventHandler {
 
-    private let windowControllerManager: WindowControllersManager
+    private let windowControllersManager: WindowControllersManager
 
-    init(windowControllerManager: WindowControllersManager? = nil) {
-        self.windowControllerManager = windowControllerManager ?? Application.appDelegate.windowControllersManager
+    init(windowControllersManager: WindowControllersManager? = nil) {
+        self.windowControllersManager = windowControllersManager ?? Application.appDelegate.windowControllersManager
     }
 
     /// Handles VPN event URLs
@@ -38,9 +38,9 @@ final class VPNURLEventHandler {
     func handle(_ url: URL) async {
         switch url {
         case VPNAppLaunchCommand.manageExcludedApps.launchURL:
-            windowControllerManager.showVPNAppExclusions()
+            windowControllersManager.showVPNAppExclusions()
         case VPNAppLaunchCommand.manageExcludedDomains.launchURL:
-            windowControllerManager.showVPNDomainExclusions()
+            windowControllersManager.showVPNDomainExclusions()
         case VPNAppLaunchCommand.showStatus.launchURL:
             await showStatus()
         case VPNAppLaunchCommand.showSettings.launchURL:
@@ -63,45 +63,45 @@ final class VPNURLEventHandler {
     }
 
     func reloadTab(showingDomain domain: String) {
-        windowControllerManager.selectedTab?.reload()
+        windowControllersManager.selectedTab?.reload()
     }
 
     func showStatus() async {
-        await windowControllerManager.showNetworkProtectionStatus()
+        await windowControllersManager.showNetworkProtectionStatus()
     }
 
     func showPreferences() {
-        windowControllerManager.showPreferencesTab(withSelectedPane: .vpn)
+        windowControllersManager.showPreferencesTab(withSelectedPane: .vpn)
     }
 
     func showShareFeedback() {
-        windowControllerManager.showShareFeedbackModal(source: .vpn)
+        windowControllersManager.showShareFeedbackModal(source: .vpn)
     }
 
     func showMainWindow() {
-        windowControllerManager.showMainWindow()
+        windowControllersManager.showMainWindow()
     }
 
     func showLocations() {
-        windowControllerManager.showPreferencesTab(withSelectedPane: .vpn)
-        windowControllerManager.showLocationPickerSheet()
+        windowControllersManager.showPreferencesTab(withSelectedPane: .vpn)
+        windowControllersManager.showLocationPickerSheet()
     }
 
     func showSubscription() {
         let url = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .purchase)
-        windowControllerManager.showTab(with: .subscription(url))
+        windowControllersManager.showTab(with: .subscription(url))
 
         PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression)
     }
 
     func showVPNAppExclusions() {
-        windowControllerManager.showPreferencesTab(withSelectedPane: .vpn)
-        windowControllerManager.showVPNAppExclusions()
+        windowControllersManager.showPreferencesTab(withSelectedPane: .vpn)
+        windowControllersManager.showVPNAppExclusions()
     }
 
     func showVPNDomainExclusions() {
-        windowControllerManager.showPreferencesTab(withSelectedPane: .vpn)
-        windowControllerManager.showVPNDomainExclusions()
+        windowControllersManager.showPreferencesTab(withSelectedPane: .vpn)
+        windowControllersManager.showVPNDomainExclusions()
     }
 
 #if !APPSTORE && !DEBUG

@@ -23,7 +23,7 @@ import Foundation
 
 final class FavoritesPreviewModel: FavoritesViewModel {
     init(favorites: [Favorite] = randomFavorites) {
-        super.init(favoriteDataSource: FavoritesPreviewDataSource(favorites: favorites), faviconLoader: EmptyFaviconLoading())
+        super.init(isFocussedState: false, favoriteDataSource: FavoritesPreviewDataSource(favorites: favorites), faviconLoader: EmptyFaviconLoading())
     }
 
     static var randomFavorites: [Favorite] {

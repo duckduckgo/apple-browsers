@@ -78,6 +78,7 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsURLChatIDRestoration: Bool
     public let supportsFullChatRestoration: Bool
     public let supportsPageContext: Bool
+    public let supportsStandaloneMigration: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -85,6 +86,7 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsClosingAIChat: true,
                                         supportsOpeningSettings: true,
                                         supportsNativePrompt: false,
+                                        supportsStandaloneMigration: false,
                                         supportsNativeChatInput: false,
                                         supportsURLChatIDRestoration: false,
                                         supportsFullChatRestoration: false,
@@ -96,6 +98,7 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsClosingAIChat: true,
                                         supportsOpeningSettings: true,
                                         supportsNativePrompt: true,
+                                        supportsStandaloneMigration: false,
                                         supportsNativeChatInput: false,
                                         supportsURLChatIDRestoration: false,
                                         supportsFullChatRestoration: false,
@@ -107,6 +110,7 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsClosingAIChat: Bool,
                 supportsOpeningSettings: Bool,
                 supportsNativePrompt: Bool,
+                supportsStandaloneMigration: Bool,
                 supportsNativeChatInput: Bool,
                 supportsURLChatIDRestoration: Bool,
                 supportsFullChatRestoration: Bool,
@@ -120,6 +124,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsURLChatIDRestoration = supportsURLChatIDRestoration
         self.supportsFullChatRestoration = supportsFullChatRestoration
         self.supportsPageContext = supportsPageContext
+        self.supportsStandaloneMigration = supportsStandaloneMigration
     }
 }
 

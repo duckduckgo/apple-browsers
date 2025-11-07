@@ -71,6 +71,7 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
     var isAutoClearAIChatHistoryEnabled: Bool {
         didSet {
             persistor.autoClearAIChatHistoryEnabled = isAutoClearAIChatHistoryEnabled
+            pixelFiring?.fire(AIChatPixel.aiChatAutoClearHistorySettingToggled(enabled: isAutoClearAIChatHistoryEnabled), frequency: .dailyAndCount)
         }
     }
 
@@ -87,7 +88,7 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     @MainActor
-    func presentManageFireproofSitesDialog() {
+    func presentManageFireproofSitesDialog() async {
         let fireproofDomainsWindowController = FireproofDomainsViewController.create(fireproofDomains: fireproofDomains, faviconManager: faviconManager).wrappedInWindowController()
 
         guard let fireproofDomainsWindow = fireproofDomainsWindowController.window,
@@ -98,7 +99,13 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
         }
 
         // display on top of currently presented sheet
-        sequence(first: window, next: \.sheets.last).reversed().first?.beginSheet(fireproofDomainsWindow)
+        await sequence(first: window, next: \.sheets.last).reversed().first?.beginSheet(fireproofDomainsWindow)
+    }
+
+    func presentManageFireproofSitesDialog() {
+        Task { @MainActor in
+            await presentManageFireproofSitesDialog()
+        }
     }
 
     init(

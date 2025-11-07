@@ -36,10 +36,12 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
 
     private let isWidgetInstalled: Bool
     private let isSyncEnabled: Bool
+    private let shouldShowWinBackOfferUrgencyMessage: Bool
 
     private let commonUserAttributeMatcher: CommonUserAttributeMatcher
 
     public init(statisticsStore: StatisticsStore,
+                featureDiscovery: FeatureDiscovery,
                 variantManager: VariantManager,
                 emailManager: EmailManager = EmailManager(),
                 bookmarksCount: Int,
@@ -55,18 +57,22 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
                 isSubscriptionActive: Bool,
                 isSubscriptionExpiring: Bool,
                 isSubscriptionExpired: Bool,
+                subscriptionFreeTrialActive: Bool,
                 isDuckPlayerOnboarded: Bool,
                 isDuckPlayerEnabled: Bool,
                 dismissedMessageIds: [String],
                 shownMessageIds: [String],
                 enabledFeatureFlags: [String],
-                isSyncEnabled: Bool
+                isSyncEnabled: Bool,
+                shouldShowWinBackOfferUrgencyMessage: Bool
     ) {
         self.isWidgetInstalled = isWidgetInstalled
         self.isSyncEnabled = isSyncEnabled
+        self.shouldShowWinBackOfferUrgencyMessage = shouldShowWinBackOfferUrgencyMessage
 
         commonUserAttributeMatcher = .init(
             statisticsStore: statisticsStore,
+            featureDiscovery: featureDiscovery,
             variantManager: variantManager,
             emailManager: emailManager,
             bookmarksCount: bookmarksCount,
@@ -81,6 +87,7 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
             isSubscriptionActive: isSubscriptionActive,
             isSubscriptionExpiring: isSubscriptionExpiring,
             isSubscriptionExpired: isSubscriptionExpired,
+            subscriptionFreeTrialActive: subscriptionFreeTrialActive,
             isDuckPlayerOnboarded: isDuckPlayerOnboarded,
             isDuckPlayerEnabled: isDuckPlayerEnabled,
             dismissedMessageIds: dismissedMessageIds,
@@ -95,6 +102,8 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
             return matchingAttribute.evaluate(for: isWidgetInstalled)
         case let matchingAttribute as SyncEnabledMatchingAttribute:
             return matchingAttribute.evaluate(for: isSyncEnabled)
+        case let matchingAttribute as WinBackOfferUrgencyMatchingAttribute:
+            return matchingAttribute.evaluate(for: shouldShowWinBackOfferUrgencyMessage)
         default:
             return commonUserAttributeMatcher.evaluate(matchingAttribute: matchingAttribute)
         }
@@ -111,6 +120,7 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
     private let commonUserAttributeMatcher: CommonUserAttributeMatcher
 
     public init(statisticsStore: StatisticsStore,
+                featureDiscovery: FeatureDiscovery,
                 variantManager: VariantManager,
                 emailManager: EmailManager = EmailManager(),
                 bookmarksCount: Int,
@@ -125,6 +135,7 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
                 isSubscriptionActive: Bool,
                 isSubscriptionExpiring: Bool,
                 isSubscriptionExpired: Bool,
+                subscriptionFreeTrialActive: Bool,
                 dismissedMessageIds: [String],
                 shownMessageIds: [String],
                 pinnedTabsCount: Int,
@@ -142,6 +153,7 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
 
         commonUserAttributeMatcher = .init(
             statisticsStore: statisticsStore,
+            featureDiscovery: featureDiscovery,
             variantManager: variantManager,
             emailManager: emailManager,
             bookmarksCount: bookmarksCount,
@@ -156,6 +168,7 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
             isSubscriptionActive: isSubscriptionActive,
             isSubscriptionExpiring: isSubscriptionExpiring,
             isSubscriptionExpired: isSubscriptionExpired,
+            subscriptionFreeTrialActive: subscriptionFreeTrialActive,
             isDuckPlayerOnboarded: isDuckPlayerOnboarded,
             isDuckPlayerEnabled: isDuckPlayerEnabled,
             dismissedMessageIds: dismissedMessageIds,
@@ -195,6 +208,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
     }
 
     private let statisticsStore: StatisticsStore
+    private let featureDiscovery: FeatureDiscovery
     private let variantManager: VariantManager
     private let emailManager: EmailManager
     private let appTheme: String
@@ -209,6 +223,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
     private let isSubscriptionActive: Bool
     private let isSubscriptionExpiring: Bool
     private let isSubscriptionExpired: Bool
+    private let subscriptionFreeTrialActive: Bool
     private let isDuckPlayerOnboarded: Bool
     private let isDuckPlayerEnabled: Bool
     private let dismissedMessageIds: [String]
@@ -216,6 +231,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
     private let enabledFeatureFlags: [String]
 
     public init(statisticsStore: StatisticsStore,
+                featureDiscovery: FeatureDiscovery,
                 variantManager: VariantManager,
                 emailManager: EmailManager = EmailManager(),
                 bookmarksCount: Int,
@@ -230,6 +246,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
                 isSubscriptionActive: Bool,
                 isSubscriptionExpiring: Bool,
                 isSubscriptionExpired: Bool,
+                subscriptionFreeTrialActive: Bool,
                 isDuckPlayerOnboarded: Bool,
                 isDuckPlayerEnabled: Bool,
                 dismissedMessageIds: [String],
@@ -237,6 +254,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
                 enabledFeatureFlags: [String]
     ) {
         self.statisticsStore = statisticsStore
+        self.featureDiscovery = featureDiscovery
         self.variantManager = variantManager
         self.emailManager = emailManager
         self.appTheme = appTheme
@@ -251,6 +269,7 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
         self.isSubscriptionActive = isSubscriptionActive
         self.isSubscriptionExpiring = isSubscriptionExpiring
         self.isSubscriptionExpired = isSubscriptionExpired
+        self.subscriptionFreeTrialActive = subscriptionFreeTrialActive
         self.isDuckPlayerOnboarded = isDuckPlayerOnboarded
         self.isDuckPlayerEnabled = isDuckPlayerEnabled
         self.dismissedMessageIds = dismissedMessageIds
@@ -300,6 +319,8 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
             }
 
             return .fail
+        case let matchingAttribute as SubscriptionFreeTrialActiveMatchingAttribute:
+            return matchingAttribute.evaluate(for: subscriptionFreeTrialActive)
         case let matchingAttribute as DuckPlayerOnboardedMatchingAttribute:
             return matchingAttribute.evaluate(for: isDuckPlayerOnboarded)
         case let matchingAttribute as DuckPlayerEnabledMatchingAttribute:
@@ -322,6 +343,12 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
             }
         case let matchingAttribute as AllFeatureFlagsEnabledMatchingAttribute:
             return matchingAttribute.evaluate(for: enabledFeatureFlags)
+        case let matchingAttribute as DaysSinceDuckAIUsedMatchingAttribute:
+            if let daysSinceDuckAiEnabled = featureDiscovery.daysSinceLastUsed(.aiChat) {
+                return matchingAttribute.evaluate(for: daysSinceDuckAiEnabled)
+            } else {
+                return .fail
+            }
         default:
             assertionFailure("Could not find matching attribute")
             return nil

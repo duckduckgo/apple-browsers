@@ -33,6 +33,7 @@ struct SettingsRootView: View {
     @State private var shouldDisplayDeepLinkPush: Bool = false
     @State var deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection?
     @State var isShowingSubscribeFlow = false
+    @State private var currentRedirectURLComponents: URLComponents?
 
     private var settingSubscriptionRedirectURLComponents: URLComponents? {
         SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.appSettings.rawValue)
@@ -61,7 +62,7 @@ struct SettingsRootView: View {
             }
         }
 
-        NavigationLink(destination: navigationDestinationView(for: .subscriptionFlow(redirectURLComponents: settingSubscriptionRedirectURLComponents)),
+        NavigationLink(destination: navigationDestinationView(for: .subscriptionFlow(redirectURLComponents: currentRedirectURLComponents)),
                        isActive: $isShowingSubscribeFlow) { EmptyView() }
 
         List {
@@ -138,6 +139,9 @@ struct SettingsRootView: View {
             }
         }
         .onReceive(subscriptionNavigationCoordinator.$shouldPushSubscriptionWebView) { shouldPush in
+            currentRedirectURLComponents = subscriptionNavigationCoordinator.redirectURLComponents ?? settingSubscriptionRedirectURLComponents
+            // Clear params for next navigation
+            subscriptionNavigationCoordinator.redirectURLComponents = nil
             isShowingSubscribeFlow = shouldPush
         }
     }
@@ -222,6 +226,7 @@ struct SettingsRootView: View {
         case .dbp:
             if viewModel.isPIREnabled, let vcProvider = viewModel.dataBrokerProtectionViewControllerProvider {
                 DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
+                    .edgesIgnoringSafeArea(.bottom)
             } else {
                 SubscriptionPIRMoveToDesktopView()
             }
@@ -240,6 +245,8 @@ struct SettingsRootView: View {
             SettingsAIFeaturesView().environmentObject(viewModel)
         case .privateSearch:
             PrivateSearchView().environmentObject(viewModel)
+        case .customizeAddressBarButton, .customizeToolbarButton:
+            SettingsAppearanceView().environmentObject(viewModel)
         case .subscriptionSettings:
             if let configuration = subscriptionSettingsConfiguration() {
                 SubscriptionSettingsViewV2(configuration: configuration, settingsViewModel: viewModel)

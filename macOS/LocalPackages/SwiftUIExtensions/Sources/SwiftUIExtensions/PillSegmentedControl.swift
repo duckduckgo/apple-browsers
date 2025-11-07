@@ -263,6 +263,7 @@ public struct PillSegmentedControl: View {
                 .stroke(containerBorder, lineWidth: 1)
                 .padding(1)
         }
+        .accessibilityElement(children: .contain)
     }
 }
 
@@ -361,6 +362,10 @@ private struct PillSegmentItemView: View {
             let y = 1 - yNorm
             pointerUnitPoint = UnitPoint(x: x, y: y)
         })
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(segment.title)
+        .accessibilityValue(isSelected ? "selected" : "")
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
 

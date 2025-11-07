@@ -18,7 +18,46 @@
 
 import XCTest
 
+extension XCUIElementSnapshot {
+    var accessibilityElement: AXElement? {
+        guard let accessibilityElement = (self as! NSObject).value(forKey: "accessibilityElement") as? NSObject else {
+            Logger.log("Could not get accessibilityElement of \(self)")
+            return nil
+        }
+        return unsafeBitCast(accessibilityElement, to: AXElement.self)
+    }
+}
 extension XCUIElement {
+
+    @nonobjc var application: XCUIApplication {
+        return self.value(forKey: "application") as! XCUIApplication
+    }
+
+    var url: String? {
+        do {
+            guard let values = try self.queryAXAttributes([kAXURLAttribute]) else { return nil }
+            return values[kAXURLAttribute] as? String
+        } catch {
+            Logger.log("\(self): queryAXAttributes error: \(error)")
+            return nil
+        }
+    }
+
+    func queryAXAttributes(_ attributes: [String]) throws -> [String: Any]? {
+        let snapshot = try self.snapshot()
+        guard let accessibilityElement = snapshot.accessibilityElement,
+              var result = try self.application.automationSession?.attributes(for: accessibilityElement, attributes: attributes) as? [String: Any] else {
+            return nil
+        }
+        let prefix = "Unsafe value, description '"
+        for (key, value) in result {
+            if let value = value as? String, value.hasPrefix(prefix), value.hasSuffix("'") {
+                result[key] = String(value.dropFirst(prefix.count).dropLast(1))
+            }
+        }
+        return result
+    }
+
     // https://stackoverflow.com/a/63089781/119717
     // Licensed under https://creativecommons.org/licenses/by-sa/4.0/
     // Credit: Adil Hussain
@@ -127,24 +166,34 @@ extension XCUIElement {
 
     /// Toggles a checkbox or switch element to the desired boolean value if needed.
     /// Supports value types: String ("1"/"on"), NSNumber (non-zero), or falls back to single click.
-    func toggleCheckboxIfNeeded(to enabled: Bool, ensureHittable: (XCUIElement) -> Void) {
+    func toggleCheckboxIfNeeded(to enabled: Bool, validate: Bool = false, ensureHittable: (XCUIElement) -> Void) {
         if !exists {
             ensureHittable(self)
         }
         XCTAssertTrue(self.exists, "Control should exist before toggling")
-        if let valueString = self.value as? String {
-            let isOn = valueString == "1" || valueString.lowercased() == "on"
-            if isOn == enabled { return }
-        } else if let valueNumber = self.value as? NSNumber {
-            let isOn = valueNumber.intValue != 0
-            if isOn == enabled { return }
-        } else {
-            XCTFail("\(self.value ??? "<nil>") (\(self.value.map { type(of: $0) } ??? "")) is not a String or NSNumber")
-        }
+        Logger.log("Checkbox value is \(self.value.map { type(of: $0) } ??? ""): `\(self.value ??? "<nil>")`: isOn: \(isOn): \(isOn == enabled ? "skip" : "switching to \(enabled)")")
+        if isOn == enabled { return }
+
         if !isHittable {
             ensureHittable(self)
         }
         self.click()
+        if validate {
+            XCTAssertEqual(isOn, enabled, "value of \(self) does not match expected after toggling")
+        }
+    }
+
+    var isOn: Bool {
+        let isOn: Bool
+        if let valueString = self.value as? String {
+            isOn = valueString == "1" || valueString.lowercased() == "on"
+        } else if let valueNumber = self.value as? NSNumber {
+            isOn = valueNumber.intValue != 0
+        } else {
+            XCTFail("\(self.value ??? "<nil>") (\(self.value.map { type(of: $0) } ??? "")) is not a String or NSNumber")
+            return false
+        }
+        return isOn
     }
 
     public var tabs: XCUIElementQuery {

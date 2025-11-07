@@ -166,6 +166,10 @@ class SwitchBarTextEntryView: UIView {
             self?.handler.clearText()
             self?.handler.clearButtonTapped()
         }
+
+        buttonsView.onVoiceTapped = { [weak self] in
+            self?.handler.microphoneButtonTapped()
+        }
     }
 
     private func updateButtonsPadding() {
@@ -227,14 +231,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateButtonState() {
-        let hasText = !textView.text.isEmpty
-        let newButtonState: SwitchBarButtonState
-
-        if hasText {
-            newButtonState = .clearOnly
-        } else {
-            newButtonState = .noButtons
-        }
+        let newButtonState = handler.buttonState
 
         if newButtonState != currentButtonState {
             currentButtonState = newButtonState
@@ -251,7 +248,7 @@ class SwitchBarTextEntryView: UIView {
         let buttonsIntersectionWidth = textView.frame.intersection(buttonsView.frame).width
 
         // Use default inset or the amount of how buttons interset with the view + required spacing
-        let rightInset = currentButtonState.showsClearButton ? buttonsIntersectionWidth : Constants.textHorizontalInset
+        let rightInset = currentButtonState.showsAnyButton ? buttonsIntersectionWidth : Constants.textHorizontalInset
 
         textView.textContainerInset = UIEdgeInsets(
             top: Constants.textTopInset,
@@ -383,9 +380,16 @@ class SwitchBarTextEntryView: UIView {
                 if self.textView.text != text {
                     self.textView.text = text
                     self.updatePlaceholderVisibility()
-                    self.updateButtonState()
                     self.updateTextViewHeight()
                 }
+            }
+            .store(in: &cancellables)
+
+        handler.currentButtonStatePublisher
+            .receive(on: DispatchQueue.main)
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.updateButtonState()
             }
             .store(in: &cancellables)
     }

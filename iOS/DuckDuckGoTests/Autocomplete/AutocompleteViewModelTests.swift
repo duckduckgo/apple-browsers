@@ -222,7 +222,7 @@ private final class MockAutocompleteViewModelDelegate: NSObject, AutocompleteVie
     var shownCount: Int = 0
     var deleted: Suggestion?
 
-    func onSuggestionSelected(_ suggestion: Suggestion) {
+    func onSuggestionSelected(_ suggestion: Suggestion, ddgSuggestionIndex: Int?) {
         selected.append(suggestion)
     }
 

@@ -83,14 +83,16 @@ enum HistoryViewPixel: PixelKitEvent {
     enum FilterKind: String {
         case range, searchTerm = "search-term", domain
 
-        init(_ queryKind: DataModel.HistoryQueryKind) {
+        init?(_ queryKind: DataModel.HistoryQueryKind) {
             switch queryKind {
-            case .rangeFilter:
+            case .rangeFilter, .dateFilter:
                 self = .range
             case .domainFilter:
                 self = .domain
             case .searchTerm:
                 self = .searchTerm
+            case .visits:
+                return nil
             }
         }
     }
@@ -100,14 +102,16 @@ enum HistoryViewPixel: PixelKitEvent {
 
         init(_ queryKind: DataModel.HistoryQueryKind) {
             switch queryKind {
-            case .rangeFilter(.all):
+            case .rangeFilter(.all), .rangeFilter(.allSites):
                 self = .all
-            case .rangeFilter:
+            case .rangeFilter, .dateFilter:
                 self = .range
             case .domainFilter:
                 self = .domain
             case .searchTerm:
                 self = .searchTerm
+            case .visits:
+                self = .multiSelect
             }
         }
     }

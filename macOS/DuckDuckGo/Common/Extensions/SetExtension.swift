@@ -19,16 +19,22 @@
 import Foundation
 import Common
 
-extension Set where Element == String {
+extension Collection where Element == String {
 
     func convertedToETLDPlus1(tld: TLD) -> Set<String> {
-        var transformedSet = Set<String>()
-        for domain in self {
-            if let eTLDPlus1Domain = tld.eTLDplus1(domain) {
-                transformedSet.insert(eTLDPlus1Domain)
-            }
+        let result = self.reduce(into: Set<String>()) { result, domain in
+            let eTLDPlus1Domain = tld.eTLDplus1(domain) ?? domain // support domains like "localhost" or "invalid.loc"
+            result.insert(eTLDPlus1Domain)
         }
-        return transformedSet
+        return result
+    }
+
+}
+
+extension Collection where Element == URL {
+
+    func convertedToETLDPlus1(tld: TLD) -> Set<String> {
+        self.lazy.compactMap(\.host).convertedToETLDPlus1(tld: tld)
     }
 
 }

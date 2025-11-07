@@ -60,6 +60,12 @@ enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEvent, Hashable {
     ///     - type: A hardcoded string with the following possible values (“set-as-default”, “add-to-dock”, “set-as-default-and-add-to-dock") representing the type of prompt.
     case bannerNeverAskAgainButtonClicked(type: DefaultBrowserAndDockPromptType)
 
+    /// Pixels for inactive user SAD/ATD prompt.
+    /// See definitions in `default-browser-and-dock-prompt-inactive-user.json5`
+    case inactiveUserModalImpression(type: DefaultBrowserAndDockPromptType)
+    case inactiveUserModalConfirmButtonClicked(type: DefaultBrowserAndDockPromptType)
+    case inactiveUserModalDismissed(type: DefaultBrowserAndDockPromptType)
+
     var name: String {
         switch self {
         case .popoverImpression:
@@ -76,16 +82,26 @@ enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEvent, Hashable {
             "m_mac_set-as-default-add-to-dock_banner-cancel-action"
         case .bannerNeverAskAgainButtonClicked:
             "m_mac_set-as-default-add-to-dock_banner-never-ask-again-action"
+        case .inactiveUserModalImpression:
+            "m_mac_set-as-default-add-to-dock_inactive-user_modal-shown"
+        case .inactiveUserModalConfirmButtonClicked:
+            "m_mac_set-as-default-add-to-dock_inactive-user_modal-confirm-action"
+        case .inactiveUserModalDismissed:
+            "m_mac_set-as-default-add-to-dock_inactive-user_modal-cancel-action"
         }
     }
 
     var parameters: [String: String]? {
         switch self {
-        case let .popoverImpression(type):
-            [ParameterKey.contentType: type.promptTypeDescription]
-        case let.popoverConfirmButtonClicked(type):
-            [ParameterKey.contentType: type.promptTypeDescription]
-        case let .popoverCloseButtonClicked(type):
+        case
+            let .popoverImpression(type),
+            let .popoverConfirmButtonClicked(type),
+            let .popoverCloseButtonClicked(type),
+            let .bannerCloseButtonClicked(type),
+            let .bannerNeverAskAgainButtonClicked(type),
+            let .inactiveUserModalImpression(type),
+            let .inactiveUserModalConfirmButtonClicked(type),
+            let .inactiveUserModalDismissed(type):
             [ParameterKey.contentType: type.promptTypeDescription]
         case
             let .bannerImpression(type, numberOfBannersShown),
@@ -94,10 +110,6 @@ enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEvent, Hashable {
                 ParameterKey.contentType: type.promptTypeDescription,
                 ParameterKey.numberOfBannersShown: String(numberOfBannersShown)
             ]
-        case let .bannerCloseButtonClicked(type):
-            [ParameterKey.contentType: type.promptTypeDescription]
-        case let .bannerNeverAskAgainButtonClicked(type):
-            [ParameterKey.contentType: type.promptTypeDescription]
         }
     }
 }
@@ -126,6 +138,13 @@ enum DefaultBrowserAndDockPromptDebugPixelEvent: PixelKitEvent {
     /// Trigger Event: The permanently dismissed flag fails to retrieve.
     case failedToRetrieveBannerPermanentlyDismissedValue
 
+    /// Debug pixel events for inactive user SAD/ATD prompt.
+    /// See definitions in `default-browser-and-dock-prompt-inactive-user.json5`
+    case failedToSaveInactiveUserModalShown
+    case failedToRetrieveInactiveUserModalShown
+    case failedToSaveCurrentActivity
+    case failedToRetrieveCurrentActivity
+
     var name: String {
         switch self {
         /// Event Trigger: Failed to write the popover seen date value in the KeyValue store.
@@ -152,6 +171,14 @@ enum DefaultBrowserAndDockPromptDebugPixelEvent: PixelKitEvent {
         /// Event Trigger: Failed to retrieve the permanently dismissed flag value in the KeyValue store.
         case .failedToRetrieveBannerPermanentlyDismissedValue:
             "m_mac_debug_set-as-default-add-to-dock_failed-to-retrieve-banner-permanently-dismissed-value"
+        case .failedToSaveInactiveUserModalShown:
+            "m_mac_debug_set-as-default-add-to-dock_inactive-user_failed-to-save-modal-shown"
+        case .failedToRetrieveInactiveUserModalShown:
+            "m_mac_debug_set-as-default-add-to-dock_inactive-user_failed-to-retrieve-modal-shown"
+        case .failedToSaveCurrentActivity:
+            "m_mac_debug_set-as-default-add-to-dock_inactive-user_failed-to-save-current-activity"
+        case .failedToRetrieveCurrentActivity:
+            "m_mac_debug_set-as-default-add-to-dock_inactive-user_failed-to-retrieve-current-activity"
         }
     }
 

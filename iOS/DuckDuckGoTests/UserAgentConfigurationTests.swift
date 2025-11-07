@@ -32,7 +32,7 @@ final class UserAgentConfigurationTests {
 
     @Test
     func testFirstLaunchExtractsAndSetsAndCachesDefaultUserAgent() async {
-        let osProvider = MockOSVersionProvider(osVersion: "18.0.1")
+        let osProvider = MockOSVersionProvider(osVersionMajorMinorPatch: "18.0.1")
 
         let config = UserAgentConfiguration(
             userAgentManager: uaManager,
@@ -57,7 +57,7 @@ final class UserAgentConfigurationTests {
 
     @Test
     func testCachedLaunchWithSameOSSetsUserAgentAndNoLaunchTaskIsScheduled() async {
-        let osProvider = MockOSVersionProvider(osVersion: "18.0.1")
+        let osProvider = MockOSVersionProvider(osVersionMajorMinorPatch: "18.0.1")
         let ua = CachedUserAgent(userAgent: "cached-UA", osVersion: "18.0.1")
         let encoded = try? PropertyListEncoder().encode(ua)
         store.store["default_user_agent"] = encoded
@@ -82,7 +82,7 @@ final class UserAgentConfigurationTests {
 
     @Test
     func testCachedLaunchWithDifferentOSSetsUserAgentAndSchedulesUserAgentUpdateTask() async {
-        let osProvider = MockOSVersionProvider(osVersion: "18.0.2")
+        let osProvider = MockOSVersionProvider(osVersionMajorMinorPatch: "18.0.2")
         let ua = CachedUserAgent(userAgent: "cached-UA", osVersion: "18.0.1")
         let encoded = try? PropertyListEncoder().encode(ua)
         store.store["default_user_agent"] = encoded
@@ -136,7 +136,7 @@ final class UserAgentConfigurationTests {
 
     struct MockOSVersionProvider: OSVersionProviding {
 
-        var osVersion: String
+        var osVersionMajorMinorPatch: String
 
     }
 

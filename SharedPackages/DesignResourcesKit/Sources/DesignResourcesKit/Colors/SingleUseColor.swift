@@ -27,4 +27,6 @@ public enum SingleUseColor {
     /// Color used for separator line between text input and content
     case inputContentSeparator
 
+    /// Color used for what's New background
+    case whatsNewBackground
 }

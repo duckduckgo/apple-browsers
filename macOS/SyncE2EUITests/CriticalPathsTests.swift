@@ -396,9 +396,9 @@ final class CriticalPathsTests: XCTestCase {
         app.buttons["NavigationBarViewController.optionsButton"].click()
         app.menuItems["MoreOptionsMenu.autofill"].click()
         let elementsQuery = currentWindow.popovers.scrollViews.otherElements
-        elementsQuery.buttons["Da, Dax Login, daxthetest"].click()
-        elementsQuery.buttons["Gi, Github, githubusername"].click()
-        elementsQuery.buttons["My, mywebsite.com, mywebsite"].click()
-        elementsQuery.buttons["St, StackOverflow, stacker"].click()
+        elementsQuery.buttons["Dax Login, daxthetest"].click()
+        elementsQuery.buttons["Github, githubusername"].click()
+        elementsQuery.buttons["mywebsite.com, mywebsite"].click()
+        elementsQuery.buttons["StackOverflow, stacker"].click()
     }
 }

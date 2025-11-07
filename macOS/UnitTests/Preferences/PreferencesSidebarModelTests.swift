@@ -30,6 +30,7 @@ import PreferencesUI_macOS
 final class PreferencesSidebarModelTests: XCTestCase {
 
     private var testNotificationCenter: NotificationCenter!
+    private var mockDefaultBrowserPreferences: DefaultBrowserPreferences!
     private var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
     private var pixelFiringMock: PixelKitMock!
     private var mockFeatureFlagger: MockFeatureFlagger!
@@ -37,15 +38,16 @@ final class PreferencesSidebarModelTests: XCTestCase {
     private var mockSyncService: MockDDGSyncing!
     private var mockVPNGatekeeper: DefaultVPNFeatureGatekeeper!
     private var mockAIChatPreferences: MockAIChatPreferences!
-
+    private var mockWinBackOfferVisibilityManager: MockWinBackOfferVisibilityManager!
     var cancellables = Set<AnyCancellable>()
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         testNotificationCenter = NotificationCenter()
+        mockDefaultBrowserPreferences = DefaultBrowserPreferences(defaultBrowserProvider: DefaultBrowserProviderMock())
         mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
         mockAIChatPreferences = MockAIChatPreferences()
-
+        mockWinBackOfferVisibilityManager = MockWinBackOfferVisibilityManager()
         let startedAt = Date().startOfDay
         let expiresAt = Date().startOfDay.daysAgo(-10)
         let subscription = DuckDuckGoSubscription(
@@ -72,6 +74,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
     override func tearDownWithError() throws {
         testNotificationCenter = nil
+        mockDefaultBrowserPreferences = nil
         mockSubscriptionManager = nil
         pixelFiringMock = nil
         mockFeatureFlagger = nil
@@ -79,6 +82,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
         mockSyncService = nil
         mockVPNGatekeeper = nil
         mockAIChatPreferences = nil
+        mockWinBackOfferVisibilityManager = nil
         cancellables.removeAll()
         try super.tearDownWithError()
     }
@@ -93,7 +97,10 @@ final class PreferencesSidebarModelTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             isUsingAuthV2: true,
             pixelFiring: pixelFiringMock,
-            aiFeaturesStatusProvider: mockAIChatPreferences
+            defaultBrowserPreferences: mockDefaultBrowserPreferences,
+            downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
+            aiFeaturesStatusProvider: mockAIChatPreferences,
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
     }
 
@@ -108,7 +115,10 @@ final class PreferencesSidebarModelTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             isUsingAuthV2: true,
             pixelFiring: pixelFiringMock,
-            aiFeaturesStatusProvider: mockAIChatPreferences
+            defaultBrowserPreferences: mockDefaultBrowserPreferences,
+            downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
+            aiFeaturesStatusProvider: mockAIChatPreferences,
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
     }
 
@@ -135,7 +145,10 @@ final class PreferencesSidebarModelTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             isUsingAuthV2: isUsingAuthV2,
             pixelFiring: pixelFiringMock,
-            aiFeaturesStatusProvider: mockAIChatPreferences
+            defaultBrowserPreferences: mockDefaultBrowserPreferences,
+            downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
+            aiFeaturesStatusProvider: mockAIChatPreferences,
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
     }
 
@@ -445,6 +458,30 @@ final class PreferencesSidebarModelTests: XCTestCase {
         pixelFiringMock.verifyExpectations()
     }
 
+    func testWhenSelectedPaneIsUpdatedToSubscriptionDuringTheWinBackOfferThenWinBackOfferPixelIsSent() throws {
+        // Given
+        mockWinBackOfferVisibilityManager.isOfferAvailable = true
+        let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .subscription])]
+        let model = PreferencesSidebarModel(loadSections: sections)
+
+        // When
+        model.selectPane(.subscription)
+        model.selectPane(.appearance)
+        model.selectPane(.subscription)
+        model.selectPane(.appearance)
+
+        // Then
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: SettingsPixel.settingsPaneOpened(.appearance), frequency: .daily),
+            .init(pixel: SubscriptionPixel.subscriptionWinBackOfferSettingsPageShown, frequency: .standard),
+            .init(pixel: SettingsPixel.settingsPaneOpened(.appearance), frequency: .daily),
+            .init(pixel: SubscriptionPixel.subscriptionWinBackOfferSettingsPageShown, frequency: .standard),
+            .init(pixel: SettingsPixel.settingsPaneOpened(.appearance), frequency: .daily)
+        ]
+
+        pixelFiringMock.verifyExpectations()
+    }
+
     // MARK: - isPaneNew tests
 
     func testIsPaneNewReturnsTrueForPaidAIChat() throws {
@@ -464,6 +501,37 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertFalse(model.isPaneNew(pane: .vpn))
         XCTAssertFalse(model.isPaneNew(pane: .personalInformationRemoval))
         XCTAssertFalse(model.isPaneNew(pane: .identityTheftRestoration))
+    }
+
+    // MARK: - shouldShowWinBackCampaignBadge tests
+
+    func testDoesPaneShowWinBackCampaignBadge() throws {
+        // Given
+        mockWinBackOfferVisibilityManager.isOfferAvailable = true
+
+        // When
+        let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .subscription])]
+        let model = PreferencesSidebarModel(loadSections: sections)
+
+        // Then
+        XCTAssertTrue(model.shouldShowWinBackCampaignBadge(pane: .subscription))
+    }
+
+    func testDoesPaneNotShowWinBackCampaignBadgeForOtherPanes() throws {
+        // Given
+        mockWinBackOfferVisibilityManager.isOfferAvailable = false
+
+        // When
+        let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .autofill, .general, .vpn])]
+        let model = PreferencesSidebarModel(loadSections: sections)
+
+        // Then
+        XCTAssertFalse(model.shouldShowWinBackCampaignBadge(pane: .appearance))
+        XCTAssertFalse(model.shouldShowWinBackCampaignBadge(pane: .autofill))
+        XCTAssertFalse(model.shouldShowWinBackCampaignBadge(pane: .general))
+        XCTAssertFalse(model.shouldShowWinBackCampaignBadge(pane: .vpn))
+        XCTAssertFalse(model.shouldShowWinBackCampaignBadge(pane: .personalInformationRemoval))
+        XCTAssertFalse(model.shouldShowWinBackCampaignBadge(pane: .identityTheftRestoration))
     }
 
     // MARK: - PaidAIChat Status Tests

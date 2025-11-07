@@ -63,7 +63,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   featureFlagger: DBPFeatureFlagging,
                                   pixelKit: PixelKit,
                                   wideEvent: WideEventManaging,
-                                  subscriptionManager: DataBrokerProtectionSubscriptionManager,
+                                  subscriptionManager: DataBrokerProtectionSubscriptionManaging,
                                   quickLinkOpenURLHandler: @escaping (URL) -> Void,
                                   feedbackViewCreator: @escaping () -> (any View)) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
@@ -166,7 +166,8 @@ public class DataBrokerProtectionIOSManagerProvider {
             feedbackViewCreator: feedbackViewCreator,
             featureFlagger: featureFlagger,
             settings: dbpSettings,
-            subscriptionManager: subscriptionManager
+            subscriptionManager: subscriptionManager,
+            wideEvent: wideEvent
         )
     }
 }

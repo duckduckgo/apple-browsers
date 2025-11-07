@@ -103,6 +103,8 @@ public struct UserDefaultsWrapper<T> {
         case autofillSurveysCompleted = "com.duckduckgo.app.autofill.SurveysCompleted"
         case autofillExtensionEnabled = "com.duckduckgo.app.autofill.ExtensionEnabled"
 
+        case contentScopeDebugStateEnabled = "com.duckduckgo.ios.debug.contentScopeDebugStateEnabled"
+
         case syncPromoBookmarksDismissed = "com.duckduckgo.app.sync.PromoBookmarksDismissed"
         case syncPromoPasswordsDismissed = "com.duckduckgo.app.sync.PromoPasswordsDismissed"
 
@@ -184,6 +186,9 @@ public struct UserDefaultsWrapper<T> {
         case duckPlayerControlsVisible = "com.duckduckgo.ios.duckPlayerControlsVisible"
         case duckPlayerNativeUIWasUsed = "com.duckduckgo.ios.duckPlayerNativeUIWasUsed"
         case duckPlayerNativeUISettingsMapped = "com.duckduckgo.ios.duckPlayerNativeUISettingsMapped"
+
+        // AI Chat
+        case autoClearAIChatHistory = "com.duckduckgo.ios.autoClearAIChatHistory"
 
         // Debug keys
         case debugOnboardingHighlightsEnabledKey = "com.duckduckgo.ios.debug.onboardingHighlightsEnabled"

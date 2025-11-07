@@ -18,11 +18,57 @@
 
 import BrowserServicesKit
 import Combine
+import Common
+import FeatureFlags
+import History
+import HistoryView
 import Onboarding
 import PrivacyDashboard
+import SharedTestUtilities
 import struct SwiftUI.AnyView
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
+
+class MockDefaultBrowserProvider: DefaultBrowserProvider {
+    var bundleIdentifier: String = "test"
+    var defaultBrowserURL: URL?
+    var isDefault: Bool = false
+
+    func presentDefaultBrowserPrompt() throws {}
+    func openSystemPreferences() {}
+}
+
+class MockDownloadsPreferencesPersistor: DownloadsPreferencesPersistor {
+
+    var selectedDownloadLocation: String?
+    var alwaysRequestDownloadLocation: Bool
+    var defaultDownloadLocation: URL?
+    var lastUsedCustomDownloadLocation: String?
+    var shouldOpenPopupOnCompletion: Bool
+
+    var _isDownloadLocationValid: (URL) -> Bool
+
+    func isDownloadLocationValid(_ location: URL) -> Bool {
+        _isDownloadLocationValid(location)
+    }
+
+    init(
+        selectedDownloadLocation: String? = nil,
+        alwaysRequestDownloadLocation: Bool = false,
+        shouldOpenPopupOnCompletion: Bool = true,
+        defaultDownloadLocation: URL? = FileManager.default.temporaryDirectory,
+        lastUsedCustomDownloadLocation: String? = nil,
+        isDownloadLocationValid: @escaping (URL) -> Bool = { _ in true }
+    ) {
+        self.selectedDownloadLocation = selectedDownloadLocation
+        self.alwaysRequestDownloadLocation = alwaysRequestDownloadLocation
+        self.shouldOpenPopupOnCompletion = shouldOpenPopupOnCompletion
+        self.defaultDownloadLocation = defaultDownloadLocation
+        self.lastUsedCustomDownloadLocation = lastUsedCustomDownloadLocation
+        self._isDownloadLocationValid = isDownloadLocationValid
+    }
+}
 
 @available(macOS 12.0, *)
 final class BrowserTabViewControllerOnboardingTests: XCTestCase {
@@ -43,7 +89,10 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         autoreleasepool {
             let tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
             featureFlagger = MockFeatureFlagger()
-            featureFlagger.enabledFeatureFlags = [.contextualOnboarding, .newTabPagePerTab]
+            featureFlagger.featuresStub = [
+                FeatureFlag.contextualOnboarding.rawValue: true,
+                FeatureFlag.newTabPagePerTab.rawValue: true
+            ]
             pixelReporter = CapturingOnboardingPixelReporter()
             dialogProvider = MockDialogsProvider()
             factory = CapturingDialogFactory(expectation: expectation)
@@ -56,7 +105,15 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
             tab = Tab(content: .url(URL.duckDuckGo, credential: nil, source: .appOpenUrl), webViewConfiguration: schemeHandler.webViewConfiguration())
             let tabViewModel = TabViewModel(tab: tab)
-            viewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, onboardingPixelReporter: pixelReporter, onboardingDialogTypeProvider: dialogProvider, onboardingDialogFactory: factory, featureFlagger: featureFlagger)
+            viewController = BrowserTabViewController(
+                tabCollectionViewModel: tabCollectionViewModel,
+                onboardingPixelReporter: pixelReporter,
+                onboardingDialogTypeProvider: dialogProvider,
+                onboardingDialogFactory: factory,
+                featureFlagger: featureFlagger,
+                defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
+                downloadsPreferences: DownloadsPreferences(persistor: MockDownloadsPreferencesPersistor())
+            )
             viewController.tabViewModel = tabViewModel
             _=viewController.view
             window = MockWindow()
@@ -86,7 +143,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     func testWhenNavigationCompletedAndFeatureIsOffThenTurnOffFeature() throws {
-        featureFlagger.enabledFeatureFlags = [.newTabPagePerTab]
+        featureFlagger.featuresStub = [FeatureFlag.newTabPagePerTab.rawValue: true]
         let expectation = self.expectation(description: "Wait for turnOffFeatureCalled to be called")
         dialogProvider.turnOffFeatureCalledExpectation = expectation
 
@@ -340,7 +397,17 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         tab.navigateFromOnboarding(to: url)
         wait(for: [expectation], timeout: 3.0)
 
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
+        let windowControllersManager = WindowControllersManagerMock()
+        let fireCoordinator = FireCoordinator(tld: TLD(),
+                                              featureFlagger: Application.appDelegate.featureFlagger,
+                                              historyCoordinating: HistoryCoordinatingMock(),
+                                              visualizeFireAnimationDecider: nil,
+                                              onboardingContextualDialogsManager: nil,
+                                              fireproofDomains: MockFireproofDomains(),
+                                              faviconManagement: FaviconManagerMock(),
+                                              windowControllersManager: windowControllersManager,
+                                              pixelFiring: nil,
+                                              historyProvider: MockHistoryViewDataProvider())
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
@@ -355,7 +422,10 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
             themeManager: MockThemeManager()
         )
         mainWindowController.window = window
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
+        windowControllersManager.mainWindowControllers = [mainWindowController]
+        defer {
+            windowControllersManager.mainWindowControllers = []
+        }
 
         // WHEN
         window.isVisible = true

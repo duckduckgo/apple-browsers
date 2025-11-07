@@ -20,7 +20,7 @@ import Foundation
 import Common
 
 /// Manages the visibility of the win-back offer.
-protocol WinBackOfferVisibilityManaging {
+public protocol WinBackOfferVisibilityManaging {
     /// Whether the urgency message should be shown.
     /// 
     /// The urgency message is shown on the last day of the offer.
@@ -33,6 +33,10 @@ protocol WinBackOfferVisibilityManaging {
     /// 
     /// Availability depends on feature flag, subscription status, and churn date.
     var isOfferAvailable: Bool { get }
+    /// Whether the urgency message has been dismissed.
+    /// 
+    /// Use this to update the storage when the urgency message is dismissed.
+    var didDismissUrgencyMessage: Bool { get set }
     /// Mark the launch message as presented.
     /// 
     /// Use this to update the storage when the launch message is presented.
@@ -55,18 +59,26 @@ extension WinBackOfferVisibilityManager {
 }
 
 /// Default implementation of the WinBackOfferVisibilityManaging protocol.
-final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging {
+public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging {
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private var winbackOfferStore: any WinbackOfferStoring
     private var winbackOfferFeatureFlagProvider: any WinBackOfferFeatureFlagProvider
+    private let calendar: Calendar
+    private let dateProvider: () -> Date
 
     private var hasActiveSubscription: Bool = false
     private var observer: NSObjectProtocol?
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, winbackOfferStore: any WinbackOfferStoring, winbackOfferFeatureFlagProvider: any WinBackOfferFeatureFlagProvider) {
+    public init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+                winbackOfferStore: any WinbackOfferStoring,
+                winbackOfferFeatureFlagProvider: any WinBackOfferFeatureFlagProvider,
+                calendar: Calendar = Calendar.current,
+                dateProvider: @escaping () -> Date = Date.init) {
         self.subscriptionManager = subscriptionManager
         self.winbackOfferStore = winbackOfferStore
         self.winbackOfferFeatureFlagProvider = winbackOfferFeatureFlagProvider
+        self.calendar = calendar
+        self.dateProvider = dateProvider
 
         observeSubscriptionDidChange()
         checkCachedSubscription()
@@ -78,46 +90,74 @@ final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging {
         }
     }
 
-    var shouldShowUrgencyMessage: Bool {
-        guard let lastChurnDate = winbackOfferStore.getChurnDate(), isOfferAvailable else {
-            // Offer no longer valid
+    public var shouldShowUrgencyMessage: Bool {
+        // Only show if offer was already presented AND it's the last day
+        guard let presentationDate = winbackOfferStore.getOfferPresentationDate(),
+              isOfferAvailable,
+              !didDismissUrgencyMessage else {
             return false
         }
 
-        let offerStartDate = offerStartDate(churnDate: lastChurnDate)
-        // Last day of the offer
-        return isLastDayOfOffer(startDate: offerStartDate)
+        let now = dateProvider()
+        let offerEndDate = presentationDate.addingTimeInterval(Constants.offerAvailabilityPeriod)
+        let startOfUrgencyMessaging = calendar.startOfDay(for: offerEndDate.addingTimeInterval(.days(-2)))
+        // Show urgency message 2 days before the offer end
+        return now >= startOfUrgencyMessaging
     }
 
-    var shouldShowLaunchMessage: Bool {
-        isOfferAvailable && !winbackOfferStore.firstDayModalShown
-    }
-
-    var isOfferAvailable: Bool {
+    public var shouldShowLaunchMessage: Bool {
         guard isFeatureEnabled,
+              winbackOfferStore.getOfferPresentationDate() == nil,
               !hasActiveSubscription,
-              let lastChurnDate = winbackOfferStore.getChurnDate() else {
+              let churnDate = winbackOfferStore.getChurnDate(),
+              !winbackOfferStore.hasRedeemedOffer() else {
             return false
         }
 
-        // Offer availability window check
-        let offerStartDate = offerStartDate(churnDate: lastChurnDate)
-        guard offerStartDate.isInThePast(), Date().timeIntervalSince(offerStartDate) <= Constants.offerAvailabilityPeriod else {
+        let eligibilityDate = churnDate.addingTimeInterval(Constants.daysBeforeOfferAvailability)
+        return dateProvider() >= eligibilityDate
+    }
+
+    public var isOfferAvailable: Bool {
+        guard isFeatureEnabled, !hasActiveSubscription else {
             return false
         }
 
-        return !winbackOfferStore.hasRedeemedOffer()
+        // Check if already redeemed
+        guard !winbackOfferStore.hasRedeemedOffer() else {
+            return false
+        }
+
+        guard let presentationDate = winbackOfferStore.getOfferPresentationDate() else {
+            return false
+
+        }
+
+        // Offer window is active, check if within 5-day window
+        let now = dateProvider()
+        return now.timeIntervalSince(presentationDate) <= Constants.offerAvailabilityPeriod
+    }
+
+    public var didDismissUrgencyMessage: Bool {
+        get { winbackOfferStore.didDismissUrgencyMessage }
+        set { winbackOfferStore.didDismissUrgencyMessage = newValue }
     }
 
     private var isFeatureEnabled: Bool {
         winbackOfferFeatureFlagProvider.isWinBackOfferFeatureEnabled
     }
 
-    func setLaunchMessagePresented(_ newValue: Bool) {
-        winbackOfferStore.firstDayModalShown = newValue
+    public func setLaunchMessagePresented(_ newValue: Bool) {
+        if newValue && winbackOfferStore.getOfferPresentationDate() == nil {
+            // Record presentation timestamp
+            winbackOfferStore.storeOfferPresentationDate(dateProvider())
+        } else if !newValue {
+            // Clear presentation
+            winbackOfferStore.storeOfferPresentationDate(nil)
+        }
     }
 
-    func setOfferRedeemed(_ newValue: Bool) {
+    public func setOfferRedeemed(_ newValue: Bool) {
         winbackOfferStore.setHasRedeemedOffer(newValue)
     }
 
@@ -126,7 +166,8 @@ final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging {
     }
 
     private func isLastDayOfOffer(startDate: Date) -> Bool {
-        return Date().timeIntervalSince(startDate) >= Constants.offerAvailabilityPeriod - 1 * TimeInterval.day
+        let now = dateProvider()
+        return now.timeIntervalSince(startDate) >= Constants.offerAvailabilityPeriod - 1 * TimeInterval.day
     }
 
     private func checkCachedSubscription() {
@@ -148,7 +189,22 @@ final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging {
         observer = NotificationCenter.default.addObserver(forName: .subscriptionDidChange, object: nil, queue: .main) { [weak self] notification in
             guard let self, let newSubscription = notification.userInfo?[UserDefaultsCacheKey.subscription] as? DuckDuckGoSubscription else { return }
 
-            hasActiveSubscription = newSubscription.status.isActive
+            let wasActive = hasActiveSubscription
+            let isNowActive = newSubscription.status.isActive
+
+            switch (wasActive, isNowActive) {
+            case (false, true) where isOfferAvailable:
+                // User subscribed during the win-back offer
+                completeOfferRedemption()
+            case (false, true):
+                // User subscribed regardless of the win-back offer
+                winbackOfferStore.storeOfferPresentationDate(nil)
+                winbackOfferStore.didDismissUrgencyMessage = false
+            default:
+                break
+            }
+
+            hasActiveSubscription = isNowActive
 
             storeChurnDateIfNeeded(newStatus: newSubscription.status)
         }
@@ -159,26 +215,40 @@ final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging {
             return
         }
 
+        let now = dateProvider()
+
         guard let lastStoredChurnDate = winbackOfferStore.getChurnDate() else {
             // No stored churn date, mark churn.
-            resetOffer()
+            resetOffer(using: now)
             return
         }
 
-        // User churned in the past, and now they churned again.
-        guard Date().timeIntervalSince(lastStoredChurnDate) > Constants.cooldownPeriod else {
-            // Still within the cooldown period, no-op.
+        let timeSinceLastChurn = now.timeIntervalSince(lastStoredChurnDate)
+        let cooldownHasPassed = timeSinceLastChurn > Constants.cooldownPeriod
+
+        if cooldownHasPassed {
+            // Cooldown period has passed, mark churn.
+            resetOffer(using: now)
             return
         }
 
-        // Cooldown period has passed, mark churn.
-        resetOffer()
+        // Mark new churn date if previous offer was redeemed.
+        if winbackOfferStore.hasRedeemedOffer() {
+            winbackOfferStore.storeChurnDate(now)
+        }
     }
 
-    private func resetOffer() {
-        winbackOfferStore.storeChurnDate(Date())
+    private func completeOfferRedemption() {
+        setOfferRedeemed(true)
+        winbackOfferStore.storeOfferPresentationDate(nil)
+        didDismissUrgencyMessage = false
+    }
+
+    private func resetOffer(using churnDate: Date) {
+        winbackOfferStore.storeChurnDate(churnDate)
         winbackOfferStore.setHasRedeemedOffer(false)
-        winbackOfferStore.firstDayModalShown = false
+        winbackOfferStore.storeOfferPresentationDate(nil)
+        didDismissUrgencyMessage = false
     }
 }
 

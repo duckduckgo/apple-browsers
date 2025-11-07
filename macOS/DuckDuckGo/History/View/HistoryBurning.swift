@@ -18,14 +18,15 @@
 
 import History
 
-protocol HistoryBurning: AnyObject {
-    func burn(_ visits: [Visit], animated: Bool) async
+protocol HistoryBurning {
+    func burn(_ visits: [Visit], and burnChats: Bool, animated: Bool) async
     func burnAll() async
+    func burnChats() async
 }
 
-final class FireHistoryBurner: HistoryBurning {
+struct FireHistoryBurner: HistoryBurning {
     let fireproofDomains: DomainFireproofStatusProviding
-    let fire: () async -> Fire
+    let fire: () async -> FireProtocol
 
     /**
      * The arguments here are async closures because FireHistoryBurner is initialized
@@ -33,20 +34,26 @@ final class FireHistoryBurner: HistoryBurning {
      */
     init(
         fireproofDomains: DomainFireproofStatusProviding,
-        fire: @escaping () async -> Fire
+        fire: @escaping () async -> FireProtocol
     ) {
         self.fireproofDomains = fireproofDomains
         self.fire = fire
     }
 
-    func burn(_ visits: [Visit], animated: Bool) async {
+    func burn(_ visits: [Visit], and burnChats: Bool, animated: Bool) async {
         guard !visits.isEmpty else {
             return
         }
 
         await withCheckedContinuation { continuation in
             Task { @MainActor in
-                await fire().burnVisits(visits, except: fireproofDomains, isToday: animated, urlToOpenIfWindowsAreClosed: .history) {
+                await fire().burnVisits(visits,
+                                        except: fireproofDomains,
+                                        isToday: animated,
+                                        closeWindows: false,
+                                        clearSiteData: true,
+                                        clearChatHistory: burnChats,
+                                        urlToOpenIfWindowsAreClosed: .history) {
                     continuation.resume()
                 }
             }
@@ -54,12 +61,10 @@ final class FireHistoryBurner: HistoryBurning {
     }
 
     func burnAll() async {
-        await withCheckedContinuation { continuation in
-            Task { @MainActor in
-                await fire().burnAll(opening: .history) {
-                    continuation.resume()
-                }
-            }
-        }
+        await fire().burnAll(opening: .history)
+    }
+
+    func burnChats() async {
+        await fire().burnChatHistory()
     }
 }

@@ -123,7 +123,7 @@ struct DataImportSummaryView: View {
     }
 }
 
-func bookmarksSuccessSummary(_ summary: DataImport.DataTypeSummary) -> some View {
+private func bookmarksSuccessSummary(_ summary: DataImport.DataTypeSummary) -> some View {
     VStack {
         importSummaryRow(image: .success,
                          text: "Bookmarks:",

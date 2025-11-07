@@ -29,8 +29,8 @@ public protocol HistoryManaging {
     
     var historyCoordinator: HistoryCoordinating { get }
     var isEnabledByUser: Bool { get }
-    func removeAllHistory() async
-    func deleteHistoryForURL(_ url: URL) async
+    @MainActor func removeAllHistory() async
+    @MainActor func deleteHistoryForURL(_ url: URL) async
 
 }
 
@@ -65,6 +65,7 @@ public class HistoryManager: HistoryManaging {
         self.isRecentlyVisitedSitesEnabledByUser = isRecentlyVisitedSitesEnabledByUser
     }
 
+    @MainActor
     public func removeAllHistory() async {
         await withCheckedContinuation { continuation in
             dbCoordinator.burnAll {
@@ -73,9 +74,10 @@ public class HistoryManager: HistoryManaging {
         }
     }
 
+    @MainActor
     public func deleteHistoryForURL(_ url: URL) async {
-        guard let domain = url.host,
-            let baseDomain = tld.eTLDplus1(domain) else { return }
+        guard let domain = url.host else { return }
+        let baseDomain = tld.eTLDplus1(domain) ?? domain
 
         await withCheckedContinuation { continuation in
             historyCoordinator.burnDomains([baseDomain], tld: tld) { _ in
@@ -127,20 +129,28 @@ class NullHistoryCoordinator: HistoryCoordinating {
         return nil
     }
 
-    func burnAll(completion: @escaping () -> Void) {
-        completion()
+    func burnAll(completion: @escaping @MainActor () -> Void) {
+        DispatchQueue.main.asyncOrNow {
+            completion()
+        }
     }
 
-    func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping (Set<URL>) -> Void) {
-        completion([])
+    func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Set<URL>) -> Void) {
+        DispatchQueue.main.asyncOrNow {
+            completion([])
+        }
     }
 
-    func burnVisits(_ visits: [History.Visit], completion: @escaping () -> Void) {
-        completion()
+    func burnVisits(_ visits: [History.Visit], completion: @escaping @MainActor () -> Void) {
+        DispatchQueue.main.asyncOrNow {
+            completion()
+        }
     }
 
-    func removeUrlEntry(_ url: URL, completion: (((any Error)?) -> Void)?) {
-        completion?(nil)
+    func removeUrlEntry(_ url: URL, completion: (@MainActor ((any Error)?) -> Void)?) {
+        DispatchQueue.main.asyncOrNow {
+            completion?(nil)
+        }
     }
 
 }
@@ -237,9 +247,11 @@ extension HistoryManager {
                                             isAutocompleteEnabledByUser: isAutocompleteEnabledByUser(),
                                             isRecentlyVisitedSitesEnabledByUser: isRecentlyVisitedSitesEnabledByUser())
 
-        dbCoordinator.loadHistory(onCleanFinished: {
-            // Do future migrations after clean has finished.  See macOS for an example.
-        })
+        MainActor.assumeMainThread {
+            dbCoordinator.loadHistory(onCleanFinished: {
+                // Do future migrations after clean has finished.  See macOS for an example.
+            })
+        }
 
         return .success(historyManager)
     }

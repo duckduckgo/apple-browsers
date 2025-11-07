@@ -35,7 +35,6 @@ public enum OmniBarIcon {
             return DesignSystemImages.Glyphs.Size24.globe
         }
     }
-
 }
 
 final class DefaultOmniBarView: UIView, OmniBarView {
@@ -53,25 +52,14 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var settingsButton: UIButton! { settingsButtonView }
     var cancelButton: UIButton! { searchAreaView.cancelButton }
     var bookmarksButton: UIButton! { bookmarksButtonView }
-    var accessoryButton: UIButton! { searchAreaView.accessoryButton }
+    var aiChatButton: UIButton! { searchAreaView.aiChatButton }
     var menuButton: UIButton! { menuButtonView }
     var refreshButton: UIButton! { searchAreaView.reloadButton }
-    var shareButton: UIButton! { searchAreaView.shareButton }
+    var customizableButton: UIButton! { searchAreaView.customizableButton }
     var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }
     var searchContainer: UIView! { searchAreaContainerView }
     let expectedHeight: CGFloat = DefaultOmniBarView.expectedHeight
     static let expectedHeight: CGFloat = Metrics.height
-
-    var accessoryType: OmniBarAccessoryType = .chat {
-        didSet {
-            switch accessoryType {
-            case .chat:
-                searchAreaView.accessoryButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat, for: .normal)
-                searchAreaView.accessoryButton.accessibilityLabel = UserText.duckAiFeatureName
-            }
-            updateAccessoryAccessibility()
-        }
-    }
 
     private var readableSearchAreaWidthConstraint: NSLayoutConstraint?
     private var largeSizeSpacingConstraint: NSLayoutConstraint?
@@ -128,9 +116,9 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         set { searchAreaView.reloadButton.isHidden = newValue }
     }
 
-    var isShareButtonHidden: Bool {
-        get { searchAreaView.shareButton.isHidden }
-        set { searchAreaView.shareButton.isHidden = newValue }
+    var isCustomizableButtonHidden: Bool {
+        get { searchAreaView.customizableButton.isHidden }
+        set { searchAreaView.customizableButton.isHidden = newValue }
     }
 
     var isVoiceSearchButtonHidden: Bool {
@@ -147,9 +135,9 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         set { searchAreaView.cancelButton.isHidden = newValue }
     }
 
-    var isAccessoryButtonHidden: Bool {
-        get { searchAreaView.accessoryButton.isHidden }
-        set { searchAreaView.accessoryButton.isHidden = newValue }
+    var isAIChatButtonHidden: Bool {
+        get { searchAreaView.aiChatButton.isHidden }
+        set { searchAreaView.aiChatButton.isHidden = newValue }
     }
 
     var isSearchLoupeHidden: Bool {
@@ -160,6 +148,17 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var isDismissButtonHidden: Bool {
         get { searchAreaView.dismissButtonView.isHidden }
         set { searchAreaView.dismissButtonView.isHidden = newValue }
+    }
+
+    /// Controls whether the AI Chat mode UI is hidden (false = AI Chat mode, true = regular mode)
+    var isFullAIChatHidden: Bool = true {
+        didSet {
+            if isFullAIChatHidden {
+                hideAIChatOmnibar()
+            } else {
+                showAIChatOmnibar()
+            }
+        }
     }
 
     var isUsingCompactLayout: Bool = false {
@@ -202,12 +201,21 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     var onSettingsButtonPressed: (() -> Void)?
     var onCancelPressed: (() -> Void)?
     var onRefreshPressed: (() -> Void)?
-    var onSharePressed: (() -> Void)?
+    var onCustomizableButtonPressed: (() -> Void)?
     var onBackPressed: (() -> Void)?
     var onForwardPressed: (() -> Void)?
     var onBookmarksPressed: (() -> Void)?
-    var onAccessoryPressed: (() -> Void)?
+    var onAIChatPressed: (() -> Void)?
     var onDismissPressed: (() -> Void)?
+    
+    /// Callback fired when the AI Chat left button is tapped
+    var onAIChatLeftButtonPressed: (() -> Void)?
+
+    /// Callback fired when the AI Chat right button is tapped
+    var onAIChatRightButtonPressed: (() -> Void)?
+
+    /// Callback fired when the omnibar branding area is tapped while in AI Chat mode
+    var onAIChatBrandingPressed: (() -> Void)?
 
     // MARK: - Properties
 
@@ -232,7 +240,12 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     let forwardButtonView = BrowserChromeButton()
     let backButtonView = BrowserChromeButton()
 
-    var menuButtonContent: MenuButton = MenuButton()
+    private let aiChatLeftButton = BrowserChromeButton()
+    private let aiChatRightButton = BrowserChromeButton()
+    private var aiChatBrandingView: AIChatFullModeOmniBrandingView?
+
+    private var aiChatLeadingSpacingConstraint: NSLayoutConstraint?
+    private var aiChatTrailingSpacingConstraint: NSLayoutConstraint?
 
     var searchContainerWidth: CGFloat { searchAreaView.frame.width }
 
@@ -300,8 +313,26 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         trailingButtonsContainer.addArrangedSubview(menuButtonView)
         trailingButtonsContainer.addArrangedSubview(settingsButtonView)
 
+        addSubview(aiChatLeftButton)
+        addSubview(aiChatRightButton)
+
         addSubview(activeOutlineView)
         addLayoutGuide(fieldContainerLayoutGuide)
+        
+        addAIChatFullModeBrandingView()
+    }
+    
+    private func addAIChatFullModeBrandingView() {
+        let brandingView = AIChatFullModeOmniBrandingView()
+        brandingView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(brandingView)
+
+        aiChatBrandingView = brandingView
+
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(aiChatBrandingViewTapped))
+        brandingView.addGestureRecognizer(tapGesture)
+
+        brandingView.isHidden = true
     }
 
     private func setUpConstraints() {
@@ -367,6 +398,34 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         DefaultOmniBarView.activateItemSizeConstraints(for: bookmarksButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: menuButtonView)
         DefaultOmniBarView.activateItemSizeConstraints(for: settingsButtonView)
+
+        // AI Chat Full Mode
+        aiChatLeftButton.translatesAutoresizingMaskIntoConstraints = false
+        aiChatRightButton.translatesAutoresizingMaskIntoConstraints = false
+
+        let aiChatButtonConstraints = [
+            aiChatLeftButton.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding),
+            aiChatLeftButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            aiChatRightButton.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding),
+            aiChatRightButton.centerYAnchor.constraint(equalTo: centerYAnchor)
+        ]
+        NSLayoutConstraint.activate(aiChatButtonConstraints)
+        
+        DefaultOmniBarView.activateItemSizeConstraints(for: aiChatLeftButton)
+        DefaultOmniBarView.activateItemSizeConstraints(for: aiChatRightButton)
+
+        aiChatLeadingSpacingConstraint = searchAreaContainerView.leadingAnchor.constraint(equalTo: aiChatLeftButton.trailingAnchor, constant: Metrics.expandedSizeSpacing)
+        aiChatTrailingSpacingConstraint = searchAreaContainerView.trailingAnchor.constraint(equalTo: aiChatRightButton.leadingAnchor, constant: -Metrics.expandedSizeSpacing)
+
+        if let brandingView = aiChatBrandingView {
+            NSLayoutConstraint.activate([
+                brandingView.centerXAnchor.constraint(equalTo: centerXAnchor),
+                brandingView.centerYAnchor.constraint(equalTo: centerYAnchor),
+                brandingView.leadingAnchor.constraint(greaterThanOrEqualTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding),
+                brandingView.trailingAnchor.constraint(lessThanOrEqualTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding)
+            ])
+        }
     }
 
     private func setUpProperties() {
@@ -427,6 +486,14 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         
         refreshButton.setImage(DesignSystemImages.Glyphs.Size24.reloadSmall, for: .normal)
 
+        aiChatLeftButton.setImage(DesignSystemImages.Glyphs.Size24.aiChatBack, for: .normal)
+        aiChatLeftButton.isHidden = true
+        DefaultOmniBarView.setUpCommonProperties(for: aiChatLeftButton)
+
+        aiChatRightButton.setImage(DesignSystemImages.Glyphs.Size24.aiChatAdd, for: .normal)
+        aiChatRightButton.isHidden = true
+        DefaultOmniBarView.setUpCommonProperties(for: aiChatRightButton)
+
         progressView?.hide()
 
         updateShadows()
@@ -437,9 +504,9 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         searchAreaView.voiceSearchButton.addTarget(self, action: #selector(voiceSearchButtonTap), for: .touchUpInside)
         searchAreaView.reloadButton.addTarget(self, action: #selector(reloadButtonTap), for: .touchUpInside)
         searchAreaView.clearButton.addTarget(self, action: #selector(clearButtonTap), for: .touchUpInside)
-        searchAreaView.shareButton.addTarget(self, action: #selector(shareButtonTap), for: .touchUpInside)
+        searchAreaView.customizableButton.addTarget(self, action: #selector(customizableButtonTap), for: .touchUpInside)
         searchAreaView.cancelButton.addTarget(self, action: #selector(cancelButtonTap), for: .touchUpInside)
-        searchAreaView.accessoryButton.addTarget(self, action: #selector(accessoryButtonTap), for: .touchUpInside)
+        searchAreaView.aiChatButton.addTarget(self, action: #selector(aiChatButtonTap), for: .touchUpInside)
 
         forwardButtonView.addTarget(self, action: #selector(forwardButtonTap), for: .touchUpInside)
         backButtonView.addTarget(self, action: #selector(backButtonTap), for: .touchUpInside)
@@ -453,6 +520,9 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         searchAreaView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(searchAreaPressed)))
 
         menuButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(menuButtonLongPress)))
+
+        aiChatLeftButton.addTarget(self, action: #selector(aiChatLeftButtonTap), for: .touchUpInside)
+        aiChatRightButton.addTarget(self, action: #selector(aiChatRightButtonTap), for: .touchUpInside)
     }
 
     private func updateShadows() {
@@ -485,9 +555,9 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         settingsButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Settings"
         settingsButtonView.accessibilityTraits = .button
 
-        accessoryButton.accessibilityLabel = "AI Chat"
-        accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AI Chat"
-        accessoryButton.accessibilityTraits = .button
+        aiChatButton.accessibilityLabel = UserText.duckAiFeatureName
+        aiChatButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
+        aiChatButton.accessibilityTraits = .button
 
         // This is for compatibility purposes with old OmniBar
         searchAreaView.textField.accessibilityIdentifier = "searchEntry"
@@ -515,15 +585,6 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         searchAreaView.dismissButtonView.accessibilityLabel = "Cancel"
         searchAreaView.dismissButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Dismiss"
         searchAreaView.dismissButtonView.accessibilityTraits = .button
-    }
-
-    private func updateAccessoryAccessibility() {
-        switch accessoryType {
-        case .chat:
-            accessoryButton.accessibilityLabel = UserText.duckAiFeatureName
-            accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
-        }
-        accessoryButton.accessibilityTraits = .button
     }
 
     private func setUpInitialState() {
@@ -603,20 +664,32 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         onClearButtonPressed?()
     }
 
-    @objc private func shareButtonTap() {
-        onSharePressed?()
+    @objc private func customizableButtonTap() {
+        onCustomizableButtonPressed?()
     }
 
     @objc private func cancelButtonTap() {
         onAbortButtonPressed?()
     }
 
-    @objc private func accessoryButtonTap() {
-        onAccessoryPressed?()
+    @objc private func aiChatButtonTap() {
+        onAIChatPressed?()
     }
 
     @objc private func searchAreaPressed() {
         onTrackersViewPressed?()
+    }
+
+    @objc private func aiChatLeftButtonTap() {
+        onAIChatLeftButtonPressed?()
+    }
+
+    @objc private func aiChatRightButtonTap() {
+        onAIChatRightButtonPressed?()
+    }
+
+    @objc private func aiChatBrandingViewTapped() {
+        onAIChatBrandingPressed?()
     }
 
     private struct Metrics {
@@ -686,6 +759,38 @@ extension DefaultOmniBarView {
     func revealButtons() {
         privacyInfoContainer.alpha = 1
         searchAreaView.revealButtons()
+    }
+
+    /// Configures the omnibar UI for AI Chat mode. Shows AI Chat buttons, hides search elements.
+    private func showAIChatOmnibar() {
+        aiChatBrandingView?.isHidden = false
+        searchAreaView.textField.isHidden = true
+
+        aiChatLeadingSpacingConstraint?.isActive = true
+        aiChatTrailingSpacingConstraint?.isActive = true
+        aiChatLeftButton.isHidden = false
+        aiChatRightButton.isHidden = false
+        aiChatLeftButton.alpha = 1.0
+        aiChatRightButton.alpha = 1.0
+
+        layoutIfNeeded()
+    }
+
+    /// Restores the omnibar UI to regular browse mode. Hides AI Chat buttons, shows search elements.
+    private func hideAIChatOmnibar() {
+        aiChatBrandingView?.isHidden = true
+        searchAreaView.textField.isHidden = false
+        aiChatLeadingSpacingConstraint?.isActive = false
+        aiChatTrailingSpacingConstraint?.isActive = false
+        aiChatLeftButton.isHidden = true
+        aiChatRightButton.isHidden = true
+        aiChatLeftButton.alpha = 0.0
+        aiChatRightButton.alpha = 0.0
+
+        searchAreaView.textField.alpha = 1.0
+        searchAreaView.revealButtons()
+
+        layoutIfNeeded()
     }
 
     // Used to mask shadows going outside of bounds to prevent them covering other content

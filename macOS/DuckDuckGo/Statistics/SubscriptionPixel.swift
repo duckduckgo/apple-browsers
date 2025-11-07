@@ -90,6 +90,22 @@ enum SubscriptionPixel: PixelKitEvent {
     case subscriptionToolbarButtonPopoverShown
     case subscriptionToolbarButtonPopoverDismissButtonClicked
     case subscriptionToolbarButtonPopoverProceedButtonClicked
+    // Win-back Offer
+    case subscriptionWinBackOfferLaunchPromptShown
+    case subscriptionWinBackOfferLaunchPromptCTAClicked
+    case subscriptionWinBackOfferLaunchPromptDismissed
+
+    case subscriptionWinBackOfferMainMenuShown
+    case subscriptionWinBackOfferMainMenuClicked
+
+    case subscriptionWinBackOfferSettingsSidebarBadgeShown
+
+    case subscriptionWinBackOfferSettingsPageShown
+    case subscriptionWinBackOfferSettingsPageCTAClicked
+
+    case subscriptionWinBackOfferNewTabPageShown
+    case subscriptionWinBackOfferNewTabPageCTAClicked
+    case subscriptionWinBackOfferNewTabPageDismissed
 
     var name: String {
         switch self {
@@ -153,6 +169,24 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionToolbarButtonPopoverShown: return "m_mac_privacy-pro_toolbar_button_popover_shown"
         case .subscriptionToolbarButtonPopoverDismissButtonClicked: return "m_mac_privacy-pro_toolbar_button_popover_dismiss_button_clicked"
         case .subscriptionToolbarButtonPopoverProceedButtonClicked: return "m_mac_privacy-pro_toolbar_button_popover_proceed_button_clicked"
+            // Win-back Offer
+        case .subscriptionWinBackOfferLaunchPromptShown: return "m_mac_\(appDistribution)_privacy-pro_winback_launch_prompt_shown"
+        case .subscriptionWinBackOfferLaunchPromptCTAClicked: return "m_mac_\(appDistribution)_privacy-pro_winback_launch_prompt_cta_clicked"
+        case .subscriptionWinBackOfferLaunchPromptDismissed: return "m_mac_\(appDistribution)_privacy-pro_winback_launch_prompt_dismissed"
+
+        case .subscriptionWinBackOfferMainMenuShown: return "m_mac_\(appDistribution)_privacy-pro_winback_main_menu_badge_shown"
+        case .subscriptionWinBackOfferMainMenuClicked: return "m_mac_\(appDistribution)_privacy-pro_winback_main_menu_clicked"
+
+        case .subscriptionWinBackOfferSettingsSidebarBadgeShown: return "m_mac_\(appDistribution)_privacy-pro_winback_settings_sidebar_badge_shown"
+
+        case .subscriptionWinBackOfferSettingsPageShown: return "m_mac_\(appDistribution)_privacy-pro_winback_settings_page_shown"
+        case .subscriptionWinBackOfferSettingsPageCTAClicked: return "m_mac_\(appDistribution)_privacy-pro_winback_settings_page_cta_clicked"
+
+        case .subscriptionWinBackOfferNewTabPageShown: return "m_mac_\(appDistribution)_privacy-pro_winback_new_tab_page_shown"
+
+        case .subscriptionWinBackOfferNewTabPageCTAClicked: return "m_mac_\(appDistribution)_privacy-pro_winback_new_tab_page_cta_clicked"
+
+        case .subscriptionWinBackOfferNewTabPageDismissed: return "m_mac_\(appDistribution)_privacy-pro_winback_new_tab_page_dismissed"
         }
     }
 

@@ -23,4 +23,5 @@ final class SubscriptionNavigationCoordinator: ObservableObject {
     @Published var shouldPopToSubscriptionSettings: Bool = false
     @Published var shouldPopToAppSettings: Bool = false
     @Published var shouldPushSubscriptionWebView: Bool = false
+    @Published var redirectURLComponents: URLComponents?
 }

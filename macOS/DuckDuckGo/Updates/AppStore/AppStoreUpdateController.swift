@@ -120,7 +120,7 @@ final class AppStoreUpdateController: NSObject, UpdateController {
             // New flow - check cloud for updates
             Task { @UpdateCheckActor in
                 // User-initiated checks skip rate limiting but still log the attempt
-                guard await updateCheckState.canStartNewCheck(updater: updaterChecker, minimumInterval: 0) else {
+                guard await updateCheckState.canStartNewCheck(updater: updaterChecker, latestUpdate: latestUpdate, minimumInterval: 0) else {
                     Logger.updates.debug("User-initiated App Store update check skipped - updater not available")
                     return
                 }
@@ -145,7 +145,7 @@ final class AppStoreUpdateController: NSObject, UpdateController {
     private func performUpdateCheck(dismissRateLimiting: Bool = false) async {
         // Check if we can start a new check (rate limiting for automatic checks)
         if !dismissRateLimiting {
-            guard await updateCheckState.canStartNewCheck(updater: updaterChecker) else {
+            guard await updateCheckState.canStartNewCheck(updater: updaterChecker, latestUpdate: latestUpdate) else {
                 Logger.updates.debug("App Store update check skipped - rate limited")
                 return
             }
@@ -208,6 +208,10 @@ final class AppStoreUpdateController: NSObject, UpdateController {
 
     @objc func openUpdatesPage() {
         appStoreOpener.openAppStore()
+    }
+
+    func handleAppTermination() {
+        // Intentional no-op
     }
 
     // MARK: - Private Methods

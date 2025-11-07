@@ -32,8 +32,15 @@ import VPN
 import AIChat
 import DataBrokerProtection_iOS
 import SystemSettingsPiPTutorial
+import SERPSettings
 
 final class SettingsViewModel: ObservableObject {
+
+    /// There's an improved picker cell being rolled out with the feature flag below.
+    /// Once it has passed a ship review we'll move to the improved one.
+    var useImprovedPicker: Bool {
+        featureFlagger.isFeatureOn(.mobileCustomization)
+    }
 
     // Dependencies
     private(set) lazy var appSettings = AppDependencyProvider.shared.appSettings
@@ -59,6 +66,8 @@ final class SettingsViewModel: ObservableObject {
     private let urlOpener: URLOpener
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
+    weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
+    let mobileCustomization: MobileCustomization
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -77,6 +86,9 @@ final class SettingsViewModel: ObservableObject {
     // Used to cache the lasts subscription state for up to a week
     private let subscriptionStateCache = UserDefaultsCache<SettingsState.Subscription>(key: UserDefaultsCacheKey.subscriptionState,
                                                                          settings: UserDefaultsCacheSettings(defaultExpirationInterval: .days(7)))
+    // Win-back offer
+    let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+    
     // Properties
     private lazy var isPad = UIDevice.current.userInterfaceIdiom == .pad
     private var cancellables = Set<AnyCancellable>()
@@ -116,6 +128,10 @@ final class SettingsViewModel: ObservableObject {
     // This affects UI: shows Done button and hides Search Assist link
     var openedFromSERPSettingsButton: Bool = false
 
+    var isForgetAllInSettingsEnabled: Bool {
+        featureFlagger.isFeatureOn(.forgetAllInSettings)
+    }
+
     // Indicates if the Paid AI Chat feature flag is enabled for the current user/session.
     var isPaidAIChatEnabled: Bool {
         featureFlagger.isFeatureOn(.paidAIChat)
@@ -134,25 +150,17 @@ final class SettingsViewModel: ObservableObject {
     var isUpdatedAIFeaturesSettingsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
     }
-    
-    var isRefreshButtonPositionEnabled: Bool {
-        featureFlagger.isFeatureOn(.refreshButtonPosition)
-    }
-    
-    var firstSectionTitle: String {
-        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) ? UserText.aiChatSettingsBrowserShortcutsSectionTitle : ""
-    }
-    
-    var secondSectionTitle: String {
-        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) ? UserText.aiChatSettingsAllowFollowUpQuestionsSectionTitle : ""
-    }
-    
-    var shouldShowSERPSettingsFollowUpQuestions: Bool {
-        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) && serpSettings.didMigrate
-    }
 
     var embedSERPSettings: Bool {
         featureFlagger.isFeatureOn(.embeddedSERPSettings)
+    }
+
+    var isDuckAiDataClearingEnabled: Bool {
+        featureFlagger.isFeatureOn(.duckAiDataClearing)
+    }
+
+    var shouldShowHideAIGeneratedImagesSection: Bool {
+        featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
     }
 
     var shouldShowNoMicrophonePermissionAlert: Bool = false
@@ -173,6 +181,32 @@ final class SettingsViewModel: ObservableObject {
     @Published private(set) var deepLinkTarget: SettingsDeepLinkSection?
 
     // MARK: Bindings
+
+    var selectedToolbarButton: Binding<MobileCustomization.Button> {
+        Binding<MobileCustomization.Button>(
+            get: {
+                self.state.mobileCustomization.currentToolbarButton
+            },
+            set: {
+                guard $0 != self.state.mobileCustomization.currentToolbarButton else { return }
+                self.state.mobileCustomization.currentToolbarButton = $0
+                self.mobileCustomization.persist(self.state.mobileCustomization)
+            }
+        )
+    }
+
+    var selectedAddressBarButton: Binding<MobileCustomization.Button> {
+        Binding<MobileCustomization.Button>(
+            get: {
+                self.state.mobileCustomization.currentAddressBarButton
+            },
+            set: {
+                guard $0 != self.state.mobileCustomization.currentAddressBarButton else { return }
+                self.state.mobileCustomization.currentAddressBarButton = $0
+                self.mobileCustomization.persist(self.state.mobileCustomization)
+            }
+        )
+    }
 
     var themeStyleBinding: Binding<ThemeStyle> {
         Binding<ThemeStyle>(
@@ -516,6 +550,22 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var autoClearAIChatHistoryBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                if self.featureFlagger.isFeatureOn(.duckAiDataClearing) {
+                    return self.state.autoClearAIChatHistory
+                } else {
+                    return false
+                }
+            },
+            set: {
+                self.appSettings.autoClearAIChatHistory = $0
+                self.state.autoClearAIChatHistory = $0
+            }
+        )
+    }
+
     var cookiePopUpProtectionStatus: StatusIndicator {
         return appSettings.autoconsentEnabled ? .on : .off
     }
@@ -570,7 +620,9 @@ final class SettingsViewModel: ObservableObject {
          keyValueStore: ThrowingKeyValueStoring,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
-         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
+         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
+         mobileCustomization: MobileCustomization
     ) {
 
         self.state = SettingsState.defaults
@@ -600,6 +652,8 @@ final class SettingsViewModel: ObservableObject {
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
+        self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+        self.mobileCustomization = mobileCustomization
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -631,9 +685,11 @@ extension SettingsViewModel {
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
+            mobileCustomization: mobileCustomization.state,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
+            autoClearAIChatHistory: appSettings.autoClearAIChatHistory,
             applicationLock: privacyStore.authenticationEnabled,
             autocomplete: appSettings.autocomplete,
             recentlyVisitedSites: appSettings.recentlyVisitedSites,
@@ -1032,6 +1088,8 @@ extension SettingsViewModel {
         case aiChat
         case privateSearch
         case subscriptionSettings
+        case customizeToolbarButton
+        case customizeAddressBarButton
         // Add other cases as needed
 
         var id: String {
@@ -1045,6 +1103,8 @@ extension SettingsViewModel {
             case .aiChat: return "aiChat"
             case .privateSearch: return "privateSearch"
             case .subscriptionSettings: return "subscriptionSettings"
+            case .customizeToolbarButton: return "customizeToolbarButton"
+            case .customizeAddressBarButton: return "customizeAddressButton"
             // Ensure all cases are covered
             }
         }
@@ -1053,7 +1113,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings:
+            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .customizeToolbarButton, .customizeAddressBarButton:
                 return .navigationLink
             }
         }
@@ -1110,6 +1170,7 @@ extension SettingsViewModel {
             updatedSubscription.isActiveTrialOffer = false
 
             updatedSubscription.isEligibleForTrialOffer = await isUserEligibleForTrialOffer()
+            updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
 
             state.subscription = updatedSubscription
             // Sync cache
@@ -1123,6 +1184,7 @@ extension SettingsViewModel {
             updatedSubscription.hasSubscription = true
             updatedSubscription.hasActiveSubscription = subscription.isActive
             updatedSubscription.isActiveTrialOffer = subscription.hasActiveTrialOffer
+            updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
 
             // Check entitlements and update state
             var currentEntitlements: [Entitlement.ProductName] = []
@@ -1147,10 +1209,12 @@ extension SettingsViewModel {
             updatedSubscription.entitlements = []
             updatedSubscription.platform = .unknown
             updatedSubscription.isActiveTrialOffer = false
+            updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
 
             DailyPixel.fireDailyAndCount(pixel: .settingsSubscriptionAccountWithNoSubscriptionFound)
         } catch {
             Logger.subscription.error("Failed to fetch Subscription: \(error, privacy: .public)")
+            updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
         }
 
         // Apply all updates at once
@@ -1194,6 +1258,10 @@ extension SettingsViewModel {
                 }
             }
         }
+    }
+
+    func forgetAll() {
+        autoClearActionDelegate?.performDataClearing()
     }
 
     func restoreAccountPurchase() async {
@@ -1372,16 +1440,6 @@ extension SettingsViewModel {
             get: { self.aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled },
             set: { newValue in
                 self.aiChatSettings.enableAIChatTabSwitcherUserSettings(enable: newValue)
-            }
-        )
-    }
-    
-    var serpSettingsFollowUpQuestionsBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: {
-                self.serpSettings.isAllowFollowUpQuestionsEnabled ?? true },
-            set: { newValue in
-                self.serpSettings.enableAllowFollowUpQuestions(enable: newValue)
             }
         )
     }

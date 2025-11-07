@@ -962,8 +962,8 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var profile: DataBrokerProtectionProfile?
     public var attemptInformation: AttemptInformation?
     public var attemptCount: Int64 = 0
-    public private(set) var scanEvents = [HistoryEvent]()
-    public private(set) var optOutEvents = [HistoryEvent]()
+    public var scanEvents = [HistoryEvent]()
+    public var optOutEvents = [HistoryEvent]()
     public var optOutToReturn: OptOutJobData?
 
     public var brokerToReturn: DataBroker?
@@ -980,6 +980,10 @@ public final class MockDatabase: DataBrokerProtectionRepository {
 
     public var saveResult: Result<Void, Error> = .success(())
     public var addHistoryEventError: Error?
+    public var updateLastRunDateError: Error?
+    public var updatePreferredRunDateError: Error?
+    public var updateSubmittedSuccessfullyDateError: Error?
+    public var brokerProfileQueryDataError: Error?
 
     public lazy var callsList: [Bool] = [
         wasSaveProfileCalled,
@@ -1035,8 +1039,12 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasSaveOptOutOperationCalled = true
     }
 
-    public func brokerProfileQueryData(for brokerId: Int64, and profileQueryId: Int64) -> BrokerProfileQueryData? {
+    public func brokerProfileQueryData(for brokerId: Int64, and profileQueryId: Int64) throws -> BrokerProfileQueryData? {
         wasBrokerProfileQueryDataCalled = true
+
+        if let brokerProfileQueryDataError {
+            throw brokerProfileQueryDataError
+        }
 
         if !brokerProfileQueryDataToReturn.isEmpty {
             return brokerProfileQueryDataToReturn.first
@@ -1109,15 +1117,21 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         incrementAttemptCountCallCount += 1
     }
 
-    public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) {
+    public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws {
         lastPreferredRunDateOnScan = date
         lastProfileQueryIdOnScanUpdatePreferredRunDate = profileQueryId
         wasUpdatedPreferredRunDateForScanCalled = true
+        if let updatePreferredRunDateError {
+            throw updatePreferredRunDateError
+        }
     }
 
-    public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) {
+    public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
         lastPreferredRunDateOnOptOut = date
         wasUpdatedPreferredRunDateForOptOutCalled = true
+        if let updatePreferredRunDateError {
+            throw updatePreferredRunDateError
+        }
     }
 
     public func updateAttemptCount(_ count: Int64, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
@@ -1134,6 +1148,9 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public func updateSubmittedSuccessfullyDate(_ date: Date?, forBrokerId brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
         submittedSuccessfullyDate = date
         wasUpdateSubmittedSuccessfullyDateForOptOutCalled = true
+        if let updateSubmittedSuccessfullyDateError {
+            throw updateSubmittedSuccessfullyDateError
+        }
     }
 
     public func updateSevenDaysConfirmationPixelFired(_ pixelFired: Bool, forBrokerId brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
@@ -1152,15 +1169,21 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasUpdateFortyTwoDaysConfirmationPixelFired = true
     }
 
-    public func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) {
+    public func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws {
         wasUpdateLastRunDateForScanCalled = true
+        if let updateLastRunDateError {
+            throw updateLastRunDateError
+        }
     }
 
-    public func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) {
+    public func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
         wasUpdateLastRunDateForOptOutCalled = true
+        if let updateLastRunDateError {
+            throw updateLastRunDateError
+        }
     }
 
-    public func updateRemovedDate(_ date: Date?, on extractedProfileId: Int64) {
+    public func updateRemovedDate(_ date: Date?, on extractedProfileId: Int64) throws {
         extractedProfileRemovedDate = date
         wasUpdateRemoveDateCalled = true
     }
@@ -1180,7 +1203,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    public func fetchLastEvent(brokerId: Int64, profileQueryId: Int64) -> HistoryEvent? {
+    public func fetchLastEvent(brokerId: Int64, profileQueryId: Int64) throws -> HistoryEvent? {
         wasFetchLastHistoryEventCalled = true
         if let event = brokerProfileQueryDataToReturn.first?.events.last {
             return event
@@ -1200,7 +1223,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         optOutToReturn
     }
 
-    public func hasMatches() -> Bool {
+    public func hasMatches() throws -> Bool {
         false
     }
 
@@ -1208,7 +1231,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
 
     }
 
-    public func fetchExtractedProfiles(for brokerId: Int64) -> [ExtractedProfile] {
+    public func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile] {
         return extractedProfilesFromBroker
     }
 
@@ -1216,14 +1239,14 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         [attemptInformation].compactMap { $0 }
     }
 
-    public func fetchAttemptInformation(for extractedProfileId: Int64) -> AttemptInformation? {
+    public func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation? {
         return attemptInformation
     }
 
-    public func addAttempt(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) {
+    public func addAttempt(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws {
     }
 
-    public func fetchChildBrokers(for parentBroker: String) -> [DataBroker] {
+    public func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker] {
         lastParentBrokerWhereChildSitesWhereFetched = parentBroker
         return childBrokers
     }
@@ -1352,11 +1375,13 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
     public var fireOptOutConditionNotFoundCalled = false
     public var fireScanStartedCalled = false
     public var fireScanSuccessCalled = false
-    public var fireScanFailedCalled = false
+    public var fireScanNoResultsCalled = false
     public var fireScanErrorCalled = false
     public var setStageCalled = false
     public var setEmailPatternCalled = false
-    public var setLastActionIdCalled = false
+    public var setLastActionCalled = false
+    public var lastActionID: String?
+    public var lastActionType: String?
     public var resetTriesCalled = false
     public var incrementTriesCalled = false
 
@@ -1436,8 +1461,8 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
         fireScanSuccessCalled = true
     }
 
-    public func fireScanFailed() {
-        fireScanFailedCalled = true
+    public func fireScanNoResults() {
+        fireScanNoResultsCalled = true
     }
 
     public func fireScanError(error: any Error) {
@@ -1453,8 +1478,10 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
         setEmailPatternCalled = true
     }
 
-    public func setLastActionId(_ actionID: String) {
-        setLastActionIdCalled = true
+    public func setLastAction(_ action: Action) {
+        setLastActionCalled = true
+        lastActionID = action.id
+        lastActionType = action.actionType.rawValue
     }
 
     public func resetTries() {
@@ -1487,11 +1514,13 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
         fireOptOutConditionNotFoundCalled = false
         fireScanStartedCalled = false
         fireScanSuccessCalled = false
-        fireScanFailedCalled = false
+        fireScanNoResultsCalled = false
         fireScanErrorCalled = false
         setStageCalled = false
         setEmailPatternCalled = false
-        setLastActionIdCalled = false
+        setLastActionCalled = false
+        lastActionID = nil
+        lastActionType = nil
         resetTriesCalled = false
         incrementTriesCalled = false
     }
@@ -2858,28 +2887,6 @@ public final class MockWebViewHandler: NSObject, WebViewHandler {
     }
 
     public func setCookies(_ cookies: [HTTPCookie]) async {
-    }
-}
-
-public final class SubmissionRecorderMock: OptOutSubmissionWideEventRecording {
-    private(set) var recordedStages: [(stage: Stage, duration: Double?, tries: Int, actionID: String?)] = []
-    private(set) var submissionEndMarked = false
-    private(set) var completionStatus: WideEventStatus?
-
-    public func recordStage(_ stage: Stage, duration: Double?, tries: Int, actionID: String?) {
-        recordedStages.append((stage, duration, tries, actionID))
-    }
-
-    public func markSubmissionCompleted(at date: Date, tries: Int, actionID: String?) {
-        submissionEndMarked = true
-    }
-
-    public func complete(status: WideEventStatus, with error: Error?) {
-        completionStatus = status
-    }
-
-    public func cancel(with error: Error?) {
-        completionStatus = .cancelled
     }
 }
 

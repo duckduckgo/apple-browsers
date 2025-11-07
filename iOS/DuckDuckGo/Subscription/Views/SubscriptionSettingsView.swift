@@ -40,6 +40,7 @@ struct SubscriptionSettingsView: View {
     @StateObject var settingsViewModel: SettingsViewModel
     @EnvironmentObject var subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
     var viewPlans: (() -> Void)?
+    var takeWinBackOffer: (() -> Void)?
     @State var isShowingStripeView = false
     @State var isShowingGoogleView = false
     @State var isShowingInternalSubscriptionNotice = false
@@ -147,10 +148,15 @@ struct SubscriptionSettingsView: View {
             switch configuration {
             case .subscribed, .expired, .trial:
                 let active = viewModel.state.subscriptionInfo?.isActive ?? false
+                let isEligibleForWinBackCampaign = settingsViewModel.state.subscription.isEligibleForTrialOffer
                 SettingsCustomCell(content: {
                     if !viewModel.state.isLoadingSubscriptionInfo {
                         if active {
                             Text(UserText.subscriptionChangePlan)
+                                .daxBodyRegular()
+                                .foregroundColor(Color.init(designSystemColor: .accent))
+                        } else if isEligibleForWinBackCampaign {
+                            Text(UserText.winBackCampaignSubscriptionSettingsPageResubscribeCTA)
                                 .daxBodyRegular()
                                 .foregroundColor(Color.init(designSystemColor: .accent))
                         } else {
@@ -168,6 +174,8 @@ struct SubscriptionSettingsView: View {
                             if active {
                                 viewModel.manageSubscription()
                                 Pixel.fire(pixel: .ddgSubscriptionManagementPlanBilling, debounce: 1)
+                            } else if isEligibleForWinBackCampaign {
+                                takeWinBackOffer?()
                             } else {
                                 viewPlans?()
                             }
@@ -312,7 +320,6 @@ struct SubscriptionSettingsView: View {
         }.hidden()
 
         NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-                                                                                                    apiService: DefaultAPIService(),
                                                                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(),
                                                                                                     dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                                                                     isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
@@ -453,6 +460,7 @@ struct SubscriptionSettingsViewV2: View {
     @StateObject var settingsViewModel: SettingsViewModel
     @EnvironmentObject var subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
     var viewPlans: (() -> Void)?
+    var takeWinBackOffer: (() -> Void)?
 
     @State var isShowingStripeView = false
     @State var isShowingGoogleView = false
@@ -537,10 +545,15 @@ struct SubscriptionSettingsViewV2: View {
             switch configuration {
             case .subscribed, .expired, .trial:
                 let active = viewModel.state.subscriptionInfo?.isActive ?? false
+                let isEligibleForWinBackCampaign = settingsViewModel.state.subscription.isEligibleForTrialOffer
                 SettingsCustomCell(content: {
                     if !viewModel.state.isLoadingSubscriptionInfo {
                         if active {
                             Text(UserText.subscriptionChangePlan)
+                                .daxBodyRegular()
+                                .foregroundColor(Color.init(designSystemColor: .accent))
+                        } else if isEligibleForWinBackCampaign {
+                            Text(UserText.winBackCampaignSubscriptionSettingsPageResubscribeCTA)
                                 .daxBodyRegular()
                                 .foregroundColor(Color.init(designSystemColor: .accent))
                         } else {
@@ -558,6 +571,8 @@ struct SubscriptionSettingsViewV2: View {
                             if active {
                                 viewModel.manageSubscription()
                                 Pixel.fire(pixel: .ddgSubscriptionManagementPlanBilling, debounce: 1)
+                            } else if isEligibleForWinBackCampaign {
+                                takeWinBackOffer?()
                             } else {
                                 viewPlans?()
                             }
@@ -760,7 +775,6 @@ struct SubscriptionSettingsViewV2: View {
         }.hidden()
         
         NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-                                                                                                    apiService: DefaultAPIService(),
                                                                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(), dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                                                                     isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
                                                                                                     source: .ppro)),

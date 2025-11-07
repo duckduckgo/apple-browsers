@@ -27,6 +27,7 @@ struct TestRemoteMessagingProcessor: RemoteMessagingProcessing {
     var configFetcher: RemoteMessagingConfigFetching
     var configMatcherProvider: RemoteMessagingConfigMatcherProviding
     var remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding
+    var remoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding
     var remoteMessagingConfigProcessor: RemoteMessagingConfigProcessing
 
     init(
@@ -34,12 +35,14 @@ struct TestRemoteMessagingProcessor: RemoteMessagingProcessing {
         configFetcher: RemoteMessagingConfigFetching,
         configMatcherProvider: RemoteMessagingConfigMatcherProviding,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
+        remoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding,
         remoteMessagingConfigProcessor: RemoteMessagingConfigProcessing
     ) {
         self.endpoint = endpoint
         self.configFetcher = configFetcher
         self.configMatcherProvider = configMatcherProvider
         self.remoteMessagingAvailabilityProvider = remoteMessagingAvailabilityProvider
+        self.remoteMessagingSurfacesProvider = remoteMessagingSurfacesProvider
         self.remoteMessagingConfigProcessor = remoteMessagingConfigProcessor
     }
 
@@ -54,6 +57,7 @@ class RemoteMessagingProcessingTests: XCTestCase {
     var configFetcher: MockRemoteMessagingConfigFetcher!
     var configProcessor: MockRemoteMessagingConfigProcessor!
     var store: MockRemoteMessagingStore!
+    var surfaceProvider: MockRemoteMessageSurfacesProvider!
 
     var processor: TestRemoteMessagingProcessor!
 
@@ -61,11 +65,13 @@ class RemoteMessagingProcessingTests: XCTestCase {
         let emailManagerStorage = MockEmailManagerStorage()
 
         availabilityProvider = MockRemoteMessagingAvailabilityProvider()
+        surfaceProvider = MockRemoteMessageSurfacesProvider()
 
         let matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     emailManager: EmailManager(storage: emailManagerStorage),
                     bookmarksCount: 10,
@@ -81,12 +87,14 @@ class RemoteMessagingProcessingTests: XCTestCase {
                     isSubscriptionActive: false,
                     isSubscriptionExpiring: false,
                     isSubscriptionExpired: false,
+                    subscriptionFreeTrialActive: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
-                    isSyncEnabled: false
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -102,6 +110,7 @@ class RemoteMessagingProcessingTests: XCTestCase {
             configFetcher: configFetcher,
             configMatcherProvider: MockRemoteMessagingConfigMatcherProvider { _ in matcher },
             remoteMessagingAvailabilityProvider: availabilityProvider,
+            remoteMessagingSurfacesProvider: surfaceProvider,
             remoteMessagingConfigProcessor: configProcessor
         )
     }
@@ -118,7 +127,7 @@ class RemoteMessagingProcessingTests: XCTestCase {
     }
 
     func testWhenConfigProcessorReturnsNilThenResultIsNotSaved() async throws {
-        configProcessor.processConfig = { _, _ in nil }
+        configProcessor.processConfig = { _, _, _ in nil }
 
         do {
             try await processor.fetchAndProcess(using: store)
@@ -129,7 +138,7 @@ class RemoteMessagingProcessingTests: XCTestCase {
     }
 
     func testWhenConfigProcessorReturnsMessageThenResultIsSaved() async throws {
-        configProcessor.processConfig = { _, _ in .init(version: 0, message: nil) }
+        configProcessor.processConfig = { _, _, _ in .init(version: 0, message: nil) }
 
         do {
             try await processor.fetchAndProcess(using: store)

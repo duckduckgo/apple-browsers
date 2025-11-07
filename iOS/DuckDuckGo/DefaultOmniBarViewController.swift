@@ -118,7 +118,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         omniBarView.isUsingCompactLayout = !state.hasLargeWidth
 
         // Should show separator only when there is another button next to accessory button
-        let isShowingSeparator = state.showAccessoryButton && (state.showClear || state.showVoiceSearch || state.showRefresh || state.showAbort || state.showShare)
+        let isShowingSeparator = state.showAIChatButton && (state.showClear || state.showVoiceSearch || state.showRefresh || state.showAbort || state.showCustomizableButton)
         omniBarView.isShowingSeparator = isShowingSeparator
 
         updateShadowAppearanceByApplyingLayerMask()
@@ -216,14 +216,14 @@ final class DefaultOmniBarViewController: OmniBarViewController {
                                                 storage: UserDefaults.standard, aiChatSettings: aiChatSettings,
                                                 sessionStateMetrics: sessionStateMetrics)
 
-        guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty else {
+        guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty, omniBarView.isFullAIChatHidden else {
             return switchBarHandler
         }
 
         /// Determine whether the current text in the omnibar is a search query or a URL.
         /// - If the text is a URL, retrieve the full URL from the delegate and update the text with the full URL for display.
         /// - If the text is a search query, simply update the text with the query itself.
-        if URL(trimmedAddressBarString: currentText) != nil,
+        if URL(trimmedAddressBarString: currentText, useUnifiedLogic: isUsingUnifiedPredictor) != nil,
            let url = omniDelegate?.didRequestCurrentURL() {
             let urlText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: true)
             switchBarHandler.updateCurrentText(urlText.string)
@@ -236,7 +236,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     private func shouldAutoSelectTextForUrl(_ textField: UITextField) -> Bool {
         guard let textFieldText = textField.text else { return false }
-        return URL(trimmedAddressBarString: textFieldText.trimmingWhitespace()) != nil
+        return URL(trimmedAddressBarString: textFieldText.trimmingWhitespace(), useUnifiedLogic: isUsingUnifiedPredictor) != nil
     }
 }
 

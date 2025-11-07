@@ -51,10 +51,14 @@ actor UpdateCheckState {
     ///     Defaults to `UpdateCheckState.defaultMinimumCheckInterval`.
     /// - Returns: `true` if the updater allows checks and enough time has passed since the last check, `false` otherwise.
     ///
-    func canStartNewCheck(updater: UpdaterAvailabilityChecking?, minimumInterval: TimeInterval = UpdateCheckState.defaultMinimumCheckInterval) -> Bool {
+    func canStartNewCheck(updater: UpdaterAvailabilityChecking?, latestUpdate: Update?, minimumInterval: TimeInterval = UpdateCheckState.defaultMinimumCheckInterval) -> Bool {
         // Check if updater allows checking for updates
         if let updater = updater, !updater.canCheckForUpdates {
             return false
+        }
+
+        guard latestUpdate != nil else {
+            return true
         }
 
         // Check if last check was less than the specified interval ago
@@ -70,7 +74,7 @@ actor UpdateCheckState {
     ///
     /// Used for rate limiting to ensure update checks don't happen too frequently.
     ///
-    internal func recordCheckTime() {
+    func recordCheckTime() {
         lastUpdateCheckTime = Date()
     }
 }

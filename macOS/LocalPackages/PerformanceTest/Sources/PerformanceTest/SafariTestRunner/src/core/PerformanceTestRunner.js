@@ -135,21 +135,65 @@ class PerformanceTestRunner {
     }
 
     /**
+     * Check if data is consistent using IQR/median threshold
+     * @private
+     */
+    _isDataConsistent(values) {
+        if (values.length < 4) return false;
+
+        const sorted = [...values].sort((a, b) => a - b);
+        const count = sorted.length;
+
+        // Calculate median
+        const mid = Math.floor(count / 2);
+        const median = count % 2 === 0
+            ? (sorted[mid - 1] + sorted[mid]) / 2
+            : sorted[mid];
+
+        if (median <= 0) return false;
+
+        // Calculate IQR (Q3 - Q1) using linear interpolation (matches Swift implementation)
+        const q1Index = (count - 1) * 0.25;
+        const q1LowerIndex = Math.floor(q1Index);
+        const q1UpperIndex = Math.ceil(q1Index);
+        const q1 = q1LowerIndex === q1UpperIndex
+            ? sorted[q1LowerIndex]
+            : sorted[q1LowerIndex] + (q1Index - q1LowerIndex) * (sorted[q1UpperIndex] - sorted[q1LowerIndex]);
+
+        const q3Index = (count - 1) * 0.75;
+        const q3LowerIndex = Math.floor(q3Index);
+        const q3UpperIndex = Math.ceil(q3Index);
+        const q3 = q3LowerIndex === q3UpperIndex
+            ? sorted[q3LowerIndex]
+            : sorted[q3LowerIndex] + (q3Index - q3LowerIndex) * (sorted[q3UpperIndex] - sorted[q3LowerIndex]);
+
+        const iqr = q3 - q1;
+        const coefficientOfVariation = (iqr / median) * 100;
+
+        // Calculate P95/P50 ratio for additional reliability check
+        const p50Index = Math.floor((count - 1) * 0.50);
+        const p95Index = Math.floor((count - 1) * 0.95);
+        const p50 = sorted[p50Index];
+        const p95 = sorted[p95Index];
+        const ratio = p50 > 0 ? p95 / p50 : 999;
+
+        // Only stop early if we achieve "Good" or better consistency
+        // Good: coeffVariation < 20% AND ratio < 2.0x
+        // Excellent: coeffVariation < 10% AND ratio < 1.5x
+        return coefficientOfVariation < 20.0 && ratio < 2.0;
+    }
+
+    /**
      * Run test iterations with session restarts for clean cache
+     * Adaptive iterations: starts with minimum, continues until consistent or hits maximum
      * @private
      */
     async _runIterations() {
-        const { iterations, url } = this.config;
-
-        // Note: With session restarts, warm-up benefits are limited to:
-        // - OS-level DNS caching
-        // - Network route optimization
-        // - Ensuring test setup works
-        // Browser-level warm-up is lost when we restart for each iteration
+        const { iterations: minIterations, maxIterations, url } = this.config;
 
         // Run warm-up iteration (not counted in results)
         this.logger.info('Running warm-up iteration (validates test setup)');
-        const warmupResult = await this.services.testExecutor.execute(url, false); // Keep session for warm-up
+        const warmupResult = await this.services.testExecutor.execute(url, false);
 
         if (warmupResult.success) {
             this.logger.info(`  ✓ Warm-up completed successfully (${warmupResult.duration}ms)`);
@@ -162,28 +206,92 @@ class PerformanceTestRunner {
             await this.services.webDriver.sleep(this.config.retryDelay);
         }
 
-        // Run actual test iterations
-        // Each iteration restarts WebDriver to match Swift's complete cache clearing
-        for (let i = 1; i <= iterations && !this.isShuttingDown; i++) {
-            this.logger.info(`Running iteration ${i} of ${iterations}`);
+        // Run actual test iterations with adaptive logic
+        let currentIteration = 0;
+        while (currentIteration < maxIterations && !this.isShuttingDown) {
+            currentIteration++;
+            this.logger.info(`==> Starting iteration ${currentIteration} (min: ${minIterations}, max: ${maxIterations})`);
 
-            // First iteration after warm-up still needs restart for clean cache
-            const needsRestart = true; // Always restart for consistent clean cache
+            try {
+                const needsRestart = true;
+                const result = await this.services.testExecutor.execute(url, needsRestart);
+                this.services.resultsManager.addIterationResult(result, currentIteration);
+            } catch (error) {
+                this.logger.error(`Iteration ${currentIteration} failed with exception: ${error.message}`, error);
+                // Add failed result and continue to next iteration
+                this.services.resultsManager.addIterationResult({
+                    success: false,
+                    url: url,
+                    timestamp: new Date().toISOString(),
+                    error: error.message,
+                    metrics: null
+                }, currentIteration);
+            }
 
-            const result = await this.services.testExecutor.execute(url, needsRestart);
-            this.services.resultsManager.addIterationResult(result, i);
+            // Did we reach minimum iteration number?
+            if (currentIteration >= minIterations) {
+                try {
+                    // Get successful samples
+                    const loadCompleteTimes = this.services.resultsManager.results.iterations
+                        .filter(iter => iter.success && iter.metrics)
+                        .map(iter => iter.metrics.loadComplete || 0)
+                        .filter(val => val > 0);
 
-            if (result.success) {
-                this.logger.info(`  ✓ Completed successfully (${result.duration}ms)`);
-            } else {
-                this.logger.error(`  ✗ Failed: ${result.error}`);
+                    // Calculate consistency metrics for display
+                    if (loadCompleteTimes.length >= 4) {
+                        const sorted = [...loadCompleteTimes].sort((a, b) => a - b);
+                        const count = sorted.length;
+                        const median = count % 2 === 0 ? (sorted[count/2 - 1] + sorted[count/2]) / 2 : sorted[count/2];
+                        const q1Index = (count - 1) * 0.25;
+                        const q3Index = (count - 1) * 0.75;
+                        const q1 = sorted[Math.floor(q1Index)];
+                        const q3 = sorted[Math.floor(q3Index)];
+                        const iqr = q3 - q1;
+                        const coeffVar = median > 0 ? (iqr / median * 100) : 999;
+                        const p50Index = Math.floor((count - 1) * 0.50);
+                        const p95Index = Math.floor((count - 1) * 0.95);
+                        const p50 = sorted[p50Index];
+                        const p95 = sorted[p95Index];
+                        const ratio = p50 > 0 ? p95 / p50 : 999;
+
+                        this.logger.info(`Consistency metrics: CoeffVar=${coeffVar.toFixed(1)}%, Ratio=${ratio.toFixed(2)}x (target: <20% AND <2.0x)`);
+                        this.logger.info(`  Median=${median.toFixed(0)}ms, IQR=${iqr.toFixed(0)}ms, P50=${p50.toFixed(0)}ms, P95=${p95.toFixed(0)}ms`);
+
+                        const isConsistent = this._isDataConsistent(loadCompleteTimes);
+                        this.logger.info(`  Consistency check result: ${isConsistent} (needs BOTH coeffVar<20% AND ratio<2.0x)`);
+
+                        // Did we reach desired consistency?
+                        if (isConsistent) {
+                            // Yes - STOP
+                            this.logger.info(`✓ Achieved 'Good' consistency after ${currentIteration} iterations. Stopping.`);
+                            break;
+                        }
+                        // Otherwise test one more time (continue loop)
+                        this.logger.info(`Consistency not yet achieved. Testing iteration ${currentIteration + 1}...`);
+                    } else {
+                        this.logger.info(`Only ${loadCompleteTimes.length} samples - need 4+ for consistency check. Continuing...`);
+                    }
+                } catch (error) {
+                    this.logger.error(`Consistency check failed: ${error.message}`, error);
+                    // Continue testing anyway - better to get more data than stop early
+                    this.logger.info(`Continuing to iteration ${currentIteration + 1} despite consistency check error...`);
+                }
             }
 
             // Delay between iterations (except last one)
-            if (i < iterations && !this.isShuttingDown) {
-                await this.services.webDriver.sleep(this.config.retryDelay);
+            if (currentIteration < maxIterations && !this.isShuttingDown) {
+                try {
+                    await this.services.webDriver.sleep(this.config.retryDelay);
+                } catch (error) {
+                    this.logger.warn(`Sleep between iterations failed: ${error.message}`);
+                    // Continue anyway - the next iteration will reinitialize the driver
+                }
             }
         }
+
+        this.logger.info(`==> Loop completed. Final iteration count: ${currentIteration}`);
+        this.logger.info(`  Shutdown requested: ${this.isShuttingDown}`);
+        this.logger.info(`  Reached max iterations: ${currentIteration >= maxIterations}`);
     }
 
     /**

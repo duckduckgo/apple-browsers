@@ -414,7 +414,7 @@ final class TabBarItemCellView: NSView {
         var minX: CGFloat = 12
 
         if displaysTabsProgressIndicator && faviconView.isShown {
-            faviconView.frame = NSRect(x: minX, y: bounds.midY - 8, width: 16, height: 16)
+            faviconView.frame = NSRect(x: minX, y: bounds.midY - 10, width: 20, height: 20)
             minX = faviconView.frame.maxX + 4
         } else if !displaysTabsProgressIndicator && faviconImageView.isShown {
             faviconImageView.frame = NSRect(x: minX, y: bounds.midY - 8, width: 16, height: 16)
@@ -470,7 +470,7 @@ final class TabBarItemCellView: NSView {
 
         if displaysTabsProgressIndicator && faviconView.isShown {
             assert(closeButton.isHidden)
-            faviconView.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
+            faviconView.frame = NSRect(x: x.rounded(), y: bounds.midY - 10, width: 20, height: 20)
             x = faviconView.frame.maxX + spacing
         } else if !displaysTabsProgressIndicator && faviconImageView.isShown {
             assert(closeButton.isHidden)

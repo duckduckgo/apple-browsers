@@ -33,6 +33,7 @@ public final class ContentOverlayPopover: NSObject {
     public init(
         currentTabView: NSView,
         privacyConfigurationManager: PrivacyConfigurationManaging,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         featureFlagger: FeatureFlagger,
         tld: TLD
     ) {
@@ -41,6 +42,7 @@ public final class ContentOverlayPopover: NSObject {
             ContentOverlayViewController(
                 coder: coder,
                 privacyConfigurationManager: privacyConfigurationManager,
+                webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 featureFlagger: featureFlagger,
                 tld: tld
             )

@@ -21,13 +21,14 @@ import XCTest
 
 final class TabsPreferencesTests: XCTestCase {
 
+    @MainActor
     func testWhenInitializedThenItLoadsPersistedValues() {
         let mockPersistor = MockTabsPreferencesPersistor()
         mockPersistor.preferNewTabsToWindows = true
         mockPersistor.switchToNewTabWhenOpened = true
         mockPersistor.sharedPinnedTabs = true
         mockPersistor.newTabPosition = .nextToCurrent
-        let tabsPreferences = TabsPreferences(persistor: mockPersistor)
+        let tabsPreferences = TabsPreferences(persistor: mockPersistor, windowControllersManager: WindowControllersManagerMock())
 
         XCTAssertTrue(tabsPreferences.preferNewTabsToWindows)
         XCTAssertTrue(tabsPreferences.switchToNewTabWhenOpened)
@@ -35,9 +36,10 @@ final class TabsPreferencesTests: XCTestCase {
         XCTAssertEqual(tabsPreferences.newTabPosition, .nextToCurrent)
     }
 
+    @MainActor
     func testWhenPreferencesUpdatedThenPersistorUpdates() {
         let mockPersistor = MockTabsPreferencesPersistor()
-        let tabsPreferences = TabsPreferences(persistor: mockPersistor)
+        let tabsPreferences = TabsPreferences(persistor: mockPersistor, windowControllersManager: WindowControllersManagerMock())
         tabsPreferences.preferNewTabsToWindows = true
         tabsPreferences.switchToNewTabWhenOpened = true
         tabsPreferences.pinnedTabsMode = .shared

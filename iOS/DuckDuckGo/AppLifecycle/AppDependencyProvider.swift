@@ -298,7 +298,9 @@ final class AppDependencyProvider: DependencyProvider {
         networkProtectionTunnelController = NetworkProtectionTunnelController(tokenHandler: tokenHandler,
                                                                               featureFlagger: featureFlagger,
                                                                               persistentPixel: persistentPixel,
-                                                                              settings: vpnSettings)
+                                                                              settings: vpnSettings,
+                                                                              wideEvent: wideEvent
+        )
     }
 
 }

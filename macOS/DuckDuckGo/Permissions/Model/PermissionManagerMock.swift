@@ -38,7 +38,7 @@ final class PermissionManagerMock: PermissionManagerProtocol {
         }
     }
 
-    func hasPermissionPersisted(forDomain domain: String, permissionType: DuckDuckGo_Privacy_Browser.PermissionType) -> Bool {
+    func hasPermissionPersisted(forDomain domain: String, permissionType: PermissionType) -> Bool {
         savedPermissions[domain.droppingWwwPrefix()]?[permissionType] != nil
     }
 

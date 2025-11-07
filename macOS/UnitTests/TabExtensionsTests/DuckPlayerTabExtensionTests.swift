@@ -98,6 +98,7 @@ final class DuckPlayerTabExtensionTests: XCTestCase {
             scriptsPublisher: scriptsPublisher.eraseToAnyPublisher(),
             webViewPublisher: webViewPublisher.eraseToAnyPublisher(),
             preferences: preferences,
+            tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
             onboardingDecider: onboardingDecider
         )
 

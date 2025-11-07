@@ -69,7 +69,6 @@ struct Connected: ConnectedHandling {
                                               autoClearService: autoClearService)
 
         configure(window, with: mainCoordinator)
-        logAppLaunchTime()
     }
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
@@ -125,12 +124,6 @@ struct Connected: ConnectedHandling {
         window.rootViewController = mainCoordinator.controller
         window.makeKeyAndVisible()
         mainCoordinator.start()
-    }
-
-    private func logAppLaunchTime() {
-        let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
-        Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
-                   withAdditionalParameters: [PixelParameters.time: String(launchTime)])
     }
 
 }

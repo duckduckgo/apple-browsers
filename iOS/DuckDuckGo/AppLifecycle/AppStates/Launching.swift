@@ -229,11 +229,18 @@ struct Launching: LaunchingHandling {
             launchTaskManager: launchTaskManager
         )
 
+        logAppLaunchTime()
         // Keep this init method minimal and think twice before adding anything here.
         // - Use AppConfiguration for one-time setup.
         // - Use a service for functionality that persists throughout the app's lifecycle.
         // More details: https://app.asana.com/0/1202500774821704/1209445353536498/f
         // For a broader overview: https://app.asana.com/0/1202500774821704/1209445353536490/f
+    }
+
+    private func logAppLaunchTime() {
+        let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
+        Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
+                   withAdditionalParameters: [PixelParameters.time: String(launchTime)])
     }
 
     // MARK: -

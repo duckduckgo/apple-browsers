@@ -20,9 +20,16 @@ import Foundation
 import BrowserServicesKit
 
 public enum FeatureFlag: String, CaseIterable {
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473003324
     case debugMenu
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715760000
     case sslCertificatesBypass
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715841970
     case maliciousSiteProtection
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473245911
     case scamSiteProtection
 
     /// Add experimental atb parameter to SERP queries for internal users to display Privacy Reminder
@@ -51,6 +58,7 @@ public enum FeatureFlag: String, CaseIterable {
     case historyView
 
     /// Subfeature: display the Sites section inside History View
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866716610324
     case historyViewSitesSection
 
     /// Enable WebKit page load timing performance reporting
@@ -65,10 +73,13 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715515023
     case autofillPartialFormSaves
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866714296474
     case autocompleteTabs
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474376005
     case webExtensions
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616130440
     case syncSeamlessAccountSwitching
 
@@ -79,11 +90,15 @@ public enum FeatureFlag: String, CaseIterable {
     case privacyProAuthV2
 
     // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866472271359
     case failsafeExampleCrossPlatformFeature
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717037699
     case failsafeExamplePlatformSpecificSubfeature
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717504694
     case visualUpdates
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616568109
     case visualUpdatesInternalOnly
 
@@ -172,9 +187,11 @@ public enum FeatureFlag: String, CaseIterable {
     case vpnToolbarUpsell
 
     /// Loading New Tab Page in regular browsing webview
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719013868
     case newTabPagePerTab
 
     /// Managing state of New Tab Page using tab IDs in frontend
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719908836
     case newTabPageTabIDs
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866618846917
@@ -233,7 +250,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715393773
     case fireDialogIndividualSitesLink
 
-    ///  https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477844148
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477844148
     case syncCreditCards
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620280912

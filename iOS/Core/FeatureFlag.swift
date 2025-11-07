@@ -21,45 +21,103 @@ import Foundation
 import BrowserServicesKit
 
 public enum FeatureFlag: String {
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866466606715
     case debugMenu
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866605041091
     case sync
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866709124077
     case autofillCredentialInjecting
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866466776981
     case autofillCredentialsSaving
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866465652865
     case autofillInlineIconCredentials
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866709604162
     case autofillAccessCredentialManagement
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866608422170
     case autofillPasswordGeneration
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866465600921
     case autofillOnByDefault
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866709799446
     case autofillFailureReporting
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866466892257
     case autofillOnForExistingUsers
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464342535
     case autofillUnknownUsernameCategorization
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866467356751
     case autofillPartialFormSaves
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866603305287
     case autofillCreditCards
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866609047656
     case autofillCreditCardsOnByDefault
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710362491
     case autocompleteAttributeSupport
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866467693551
     case inputFocusApi
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866467140007
     case incontextSignup
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710317371
     case autoconsentOnByDefault
 
     // Duckplayer 'Web based' UI
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866609457246
     case duckPlayer
 
     // Open Duckplayer in a new tab for 'Web based' UI
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710727484
     case duckPlayerOpenInNewTab
 
     // Duckplayer 'Native' UI
     // https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710146121
     case duckPlayerNativeUI
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710942922
     case sslCertificatesBypass
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468307995
     case syncPromotionBookmarks
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468401462
     case syncPromotionPasswords
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468468677
     case onboardingHighlights
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468574274
     case onboardingAddToDock
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711364768
     case autofillSurveys
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468784743
     case autocompleteTabs
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711501880
     case textZoom
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711151217
     case adAttributionReporting
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866610480266
     case dbpRemoteBrokerDelivery
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710074694
     case dbpEmailConfirmationDecoupling
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
@@ -91,7 +149,10 @@ public enum FeatureFlag: String {
     case setAsDefaultBrowserPiPVideoTutorial
 
     // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611361238
     case failsafeExampleCrossPlatformFeature
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611466455
     case failsafeExamplePlatformSpecificSubfeature
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470028133
@@ -135,6 +196,8 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866607644644
     case canPromoteImportPasswordsInPasswordManagement
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611615737
     case canPromoteImportPasswordsInBrowser
     
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866463389460

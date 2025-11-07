@@ -49,39 +49,76 @@ struct DefaultBrowserAndDockPromptInactiveUserView: View {
 
     var body: some View {
         HStack(spacing: .zero) {
-            ZStack {
-                Image(.gradientBackground)
+            PromptMessageAndImage(message: viewModel.message, image: viewModel.image)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                VStack(alignment: .center) {
-                    Text(viewModel.message)
-                        .font(.title.weight(.bold))
-                        .multilineTextAlignment(.center)
-                        .padding(.top, Metrics.padding)
-                        .padding(.horizontal, Metrics.Message.horizontalPadding)
-                    Spacer()
-                    Image(nsImage: viewModel.image)
-                }
-                .padding([.top, .horizontal], Metrics.padding)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            VStack(spacing: Metrics.Chart.verticalSpacing) {
-                Spacer()
-
-                browsersComparisonChart
-
-                HStack {
-                    OnboardingSecondaryCTAButton(title: viewModel.dismissButtonLabel, action: viewModel.dismissButtonAction)
-                    OnboardingPrimaryCTAButton(title: viewModel.primaryButtonLabel, action: viewModel.primaryButtonAction)
-                        .layoutPriority(1) // Resist compression to avoid multiline label if possible
-                }
-                .frame(maxWidth: .infinity, alignment: .trailing)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(Metrics.padding)
-            .background(Color(designSystemColor: .surfaceCanvas))
+            PromptChartAndButtons(browsersComparisonChart: browsersComparisonChart,
+                                  primaryButtonLabel: viewModel.primaryButtonLabel,
+                                  dismissButtonLabel: viewModel.dismissButtonLabel,
+                                  primaryButtonAction: viewModel.primaryButtonAction,
+                                  dismissButtonAction: viewModel.dismissButtonAction)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(width: Metrics.width, height: Metrics.height)
+    }
+}
+
+private struct PromptMessageAndImage: View {
+    let message: String
+    let image: NSImage
+
+    var body: some View {
+        ZStack {
+            Image(.gradientBackground)
+
+            VStack(alignment: .center) {
+                promptMessage
+                Spacer()
+                Image(nsImage: image)
+            }
+            .padding([.top, .horizontal], Metrics.padding)
+        }
+    }
+
+    var promptMessage: some View {
+        Text(message)
+            .font(.title.weight(.bold))
+            .multilineTextAlignment(.center)
+            .padding(.top, Metrics.padding)
+            .padding(.horizontal, PromptLeftViewMetrics.horizontalPadding)
+    }
+
+    enum PromptLeftViewMetrics {
+        static let horizontalPadding: CGFloat = 30
+    }
+}
+
+private struct PromptChartAndButtons: View {
+    let browsersComparisonChart: AnyView
+    let primaryButtonLabel: String
+    let dismissButtonLabel: String
+    let primaryButtonAction: () -> Void
+    let dismissButtonAction: () -> Void
+
+    var body: some View {
+        VStack(spacing: PromptRightViewMetrics.verticalSpacing) {
+            Spacer()
+
+            browsersComparisonChart
+
+            HStack {
+                OnboardingSecondaryCTAButton(title: dismissButtonLabel, action: dismissButtonAction)
+                OnboardingPrimaryCTAButton(title: primaryButtonLabel, action: primaryButtonAction)
+                    .layoutPriority(1) // Resist compression to avoid multiline label if possible
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+        .padding(Metrics.padding)
+        .background(Color(designSystemColor: .surfaceCanvas))
+    }
+
+    enum PromptRightViewMetrics {
+        static let verticalSpacing: CGFloat = 50
     }
 }
 
@@ -89,14 +126,6 @@ private enum Metrics {
     static let padding: CGFloat = 24
     static let width: CGFloat = 868
     static let height: CGFloat = 508
-
-    enum Message {
-        static let horizontalPadding: CGFloat = 30
-    }
-
-    enum Chart {
-        static let verticalSpacing: CGFloat = 50
-    }
 }
 
 #Preview("Set As Default (Light)") {

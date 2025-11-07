@@ -333,7 +333,7 @@ final class AddressBarTextField: NSTextField {
             PixelKit.fire(NavigationEngagementPixel.navigateToURL(source: .suggestion))
         case .none:
             // Fire engagement pixel for direct URL entry (not search phrases)
-            if URL.makeURL(from: stringValueWithoutSuffix, enableMetrics: false) != nil {
+            if URL.makeURL(from: stringValueWithoutSuffix) != nil {
                 PixelKit.fire(NavigationEngagementPixel.navigateToURL(source: .addressBar))
             }
         default:

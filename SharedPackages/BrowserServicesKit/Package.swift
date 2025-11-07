@@ -78,7 +78,6 @@ let package = Package(
             name: "BrowserServicesKit",
             dependencies: [
                 .product(name: "Autofill", package: "duckduckgo-autofill"),
-                "Bookmarks",
                 "ContentScopeScripts",
                 "Persistence",
                 "TrackerRadarKit",

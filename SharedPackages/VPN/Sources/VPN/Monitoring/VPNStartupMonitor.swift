@@ -20,9 +20,9 @@ import Foundation
 import NetworkExtension
 
 /// Monitors VPN startup to detect successful connection or failure
-final class VPNStartupMonitor {
+public final class VPNStartupMonitor {
 
-    enum StartupError: Error, CustomNSError {
+    public enum StartupError: Error, CustomNSError {
         case startTunnelDisconnectedSilently
         case startTunnelTimedOut
 
@@ -43,22 +43,25 @@ final class VPNStartupMonitor {
             }
         }
 
-        var errorCode: Int {
+        public var errorCode: Int {
             switch self {
             case .startTunnelDisconnectedSilently: return 1
             case .startTunnelTimedOut: return 2
             }
         }
 
-        var errorUserInfo: [String: Any] {
+        public var errorUserInfo: [String: Any] {
             return [:]
         }
     }
 
     private let notificationCenter: NotificationCenter
+    private let statusProvider: (NEVPNConnection) -> NEVPNStatus
 
-    init(notificationCenter: NotificationCenter = .default) {
+    public init(notificationCenter: NotificationCenter = .default,
+                statusProvider: @escaping (NEVPNConnection) -> NEVPNStatus = { $0.status }) {
         self.notificationCenter = notificationCenter
+        self.statusProvider = statusProvider
     }
 
     /// Waits for VPN startup to complete successfully or fail
@@ -66,7 +69,7 @@ final class VPNStartupMonitor {
     ///   - tunnelManager: The tunnel manager to monitor
     ///   - timeout: Maximum time to wait (default 10 seconds)
     @available(macOS 12, *)
-    func waitForStartSuccess(
+    public func waitForStartSuccess(
         _ tunnelManager: NETunnelProviderManager,
         timeout: TimeInterval = 10
     ) async throws {
@@ -79,7 +82,7 @@ final class VPNStartupMonitor {
                 try Task.checkCancellation()
 
                 // Check status after subscribing to catch fast connections
-                if targetConnection.status == .connected {
+                if self.statusProvider(targetConnection) == .connected {
                     return
                 }
 
@@ -91,7 +94,7 @@ final class VPNStartupMonitor {
                         continue
                     }
 
-                    switch connection.status {
+                    switch self.statusProvider(connection) {
                     case .connected:
                         return
                     case .disconnecting, .disconnected:

@@ -93,8 +93,13 @@ enum AutoconsentPixel: PixelKitEvent {
             })
         case let .popupManagedCount(params):
             params
-        case let .usageStats(stats):
-            stats
+        case let .usageStats(stats): {
+            var params = stats
+            // Added as a requirement from the privacy triage
+            // see: https://app.asana.com/1/137249556945/project/1209220182846570/task/1211062294407696?focus=true
+            params["petal"] = "true"
+            return params
+        }()
         default: [:]
         }
     }

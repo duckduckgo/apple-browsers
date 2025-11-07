@@ -4061,7 +4061,6 @@ extension MainViewController {
 
         if !isNewTabPageVisible && state.isEnabled {
             browserChrome.setImage(state.currentToolbarButton.largeIcon)
-            browserChrome.addBorder()
             browserChrome.menu = UIMenu(children: [
                 UIAction(title: "Customize", image: DesignSystemImages.Glyphs.Size16.options) { [weak self] _ in
                     self?.segueToCustomizeToolbarSettings()
@@ -4069,7 +4068,6 @@ extension MainViewController {
             ])
         } else {
             browserChrome.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
-            browserChrome.removeBorder()
             browserChrome.menu = nil
         }
     }

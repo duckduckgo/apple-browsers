@@ -56,6 +56,7 @@ final class SpinnerView: NSView {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupLayer()
+        setupInitialState()
     }
 
     override func layout() {
@@ -97,6 +98,10 @@ private extension SpinnerView {
     func setupLayer() {
         wantsLayer = true
         layer?.addSublayer(gradientLayer)
+    }
+
+    func setupInitialState() {
+        gradientLayer.isHidden = hidesWhenStopped
     }
 
     func refreshGradientBounds() {

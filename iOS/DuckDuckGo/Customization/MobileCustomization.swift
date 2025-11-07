@@ -42,38 +42,7 @@ class MobileCustomization {
 
     }
 
-    enum Button: String, CustomStringConvertible {
-
-        var description: String {
-            switch self {
-            case .share:
-                "Share"
-            case .addEditBookmark:
-                "Add Bookmark"
-            case .addEditFavorite:
-                "Add Favorite"
-            case .zoom:
-                "Zoom"
-            case .none:
-                "None"
-            case .home:
-                "Home"
-            case .newTab:
-                "New Tab"
-            case .bookmarks:
-                "Bookmarks"
-            case .fire:
-                "Clear Tabs and Data"
-            case .vpn:
-                "VPN"
-            case .passwords:
-                "Passwords"
-            case .voiceSearch:
-                "Voice Search"
-            case .downloads:
-                "Downloads"
-            }
-        }
+    enum Button: String, Hashable {
 
         var altLargeIcon: UIImage? {
             switch self {
@@ -168,22 +137,18 @@ class MobileCustomization {
     static let addressBarDefault: Button = .share
     static let toolbarDefault: Button = .fire
 
-    static let addressBarButtons: [Button?] = {
-        let sortedButtons: [Button] = [
+    static let addressBarButtons: [Button] = [
+            .share,
             .addEditBookmark,
             .addEditFavorite,
             .fire,
             .vpn,
             .zoom,
-        ].sorted(by: descriptionComparison)
+            .none
+        ]
 
-        return [.share] // default
-            + sortedButtons
-            + [nil, Button.none] // none is at the end after the divider
-    } ()
-
-    static let toolbarButtons: [Button] = {
-        let sortedButtons: [Button] = [
+    static let toolbarButtons: [Button] = [
+            .fire,
             .bookmarks,
             .home,
             .newTab,
@@ -191,12 +156,7 @@ class MobileCustomization {
             .share,
             .vpn,
             .downloads,
-        ].sorted(by: descriptionComparison)
-
-        return [.fire] // default
-            + sortedButtons
-
-    }()
+        ]
 
     var state: State {
         State(isEnabled: isEnabled,
@@ -218,10 +178,6 @@ class MobileCustomization {
     private let postChangeNotification: (State) -> Void
 
     public weak var delegate: Delegate?
-
-    static func descriptionComparison(lhs: CustomStringConvertible, rhs: CustomStringConvertible) -> Bool {
-        lhs.description.localizedCaseInsensitiveCompare(rhs.description) == .orderedAscending
-    }
 
     enum StorageKeys: String {
 

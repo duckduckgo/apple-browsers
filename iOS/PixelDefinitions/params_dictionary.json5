@@ -110,6 +110,12 @@
         "description": "Error code for the failure, when applicable",
         "pattern": "^-?\\d+$"
     },
+    "widePixelErrorDescription": {
+        "key": "feature.data.error.description",
+        "type": "string",
+        "description": "Error description for the failure, when applicable",
+        "examples": ["saveToPreferencesFailed", "startVPNFailed"]
+    },
     "widePixelUnderlyingErrorDomain": {
         "keyPattern": "feature\\.data\\.error\\.underlying_domain[0-9]*",
         "type": "string",

@@ -105,6 +105,7 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
                                                                                   primaryActionText: "Tell Us What You Think",
                                                                                   primaryAction: .survey(value: "www.survey.com"))
         return RemoteMessageModel(id: TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId,
+                                  surfaces: .newTabPage, // TabBar Surface not handled yet in macOS
                                   content: tabBarRemoteMessageContent,
                                   matchingRules: [Int](),
                                   exclusionRules: [Int](),
@@ -118,6 +119,7 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
                                                                                   primaryActionText: "Tell Us What You Think",
                                                                                   primaryAction: .appStore)
         return RemoteMessageModel(id: TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId,
+                                  surfaces: .newTabPage, // TabBar Surface not handled yet in macOS
                                   content: tabBarRemoteMessageContent,
                                   matchingRules: [Int](),
                                   exclusionRules: [Int](),
@@ -131,6 +133,7 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
                                                                                   primaryActionText: "Primary!",
                                                                                   primaryAction: .survey(value: "www.survey.com"))
         return RemoteMessageModel(id: "other_id",
+                                  surfaces: .newTabPage, // TabBar Surface not handled yet in macOS
                                   content: tabBarRemoteMessageContent,
                                   matchingRules: [Int](),
                                   exclusionRules: [Int](),

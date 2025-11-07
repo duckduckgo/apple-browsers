@@ -254,17 +254,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Win-back Campaign
     lazy var winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = {
-        #if DEBUG || REVIEW
+        let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+#if DEBUG || REVIEW
         let winBackOfferDebugStore = WinBackOfferDebugStore(keyValueStore: keyValueStore)
         let dateProvider: () -> Date = { winBackOfferDebugStore.simulatedTodayDate }
-        #else
-        let dateProvider: () -> Date = Date.init
-        #endif
-
-        return WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
-                                            winbackOfferStore: winbackOfferStore,
-                                            winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider,
-                                            dateProvider: dateProvider)
+        winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
+                                                                      winbackOfferStore: winbackOfferStore,
+                                                                      winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider,
+                                                                      cooldownPeriod: TimeInterval.seconds(10),
+                                                                      dateProvider: dateProvider)
+#else
+        winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
+                                                                      winbackOfferStore: winbackOfferStore,
+                                                                      winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider)
+#endif
+        return winBackOfferVisibilityManager
     }()
 
     lazy var winbackOfferStore: WinbackOfferStoring = {

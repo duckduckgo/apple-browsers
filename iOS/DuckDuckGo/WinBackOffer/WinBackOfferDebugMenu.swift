@@ -36,7 +36,6 @@ final class WinBackOfferDebugViewModel: ObservableObject {
     @Published var urgencyMessageDate: Date?
     @Published var hasRedeemed: Bool = false
     @Published var launchPromptPresentationDate: Date?
-    @Published var nextEligibleDate: Date?
 
     init(keyValueStore: ThrowingKeyValueStoring) {
         let store = WinbackOfferStore(keyValueStore: keyValueStore)
@@ -63,29 +62,6 @@ final class WinBackOfferDebugViewModel: ObservableObject {
 
         if !winbackOfferStore.hasRedeemedOffer() {
             winbackOfferStore.setHasRedeemedOffer(true)
-        }
-
-        updateState()
-    }
-
-    /// Simulate the end of the cooldown period after a redeemed offer.
-    func simulateCooldownExpiry() {
-        let cooldown = TimeInterval.days(270)
-        let availabilityOffset = TimeInterval.days(3)
-        let totalOffset = cooldown + availabilityOffset
-
-        if let existingChurnDate = winbackOfferStore.getChurnDate(),
-           winbackOfferStore.hasRedeemedOffer() {
-            let targetDate = existingChurnDate.addingTimeInterval(totalOffset)
-            debugStore.simulatedTodayDate = targetDate
-        } else {
-            let now = Date()
-            let churnDate = now.addingTimeInterval(-totalOffset)
-            winbackOfferStore.storeChurnDate(churnDate)
-            winbackOfferStore.setHasRedeemedOffer(true)
-            winbackOfferStore.storeOfferPresentationDate(nil)
-            winbackOfferStore.didDismissUrgencyMessage = false
-            debugStore.simulatedTodayDate = now
         }
 
         updateState()
@@ -181,7 +157,6 @@ final class WinBackOfferDebugViewModel: ObservableObject {
             urgencyMessageDate = nil
             hasRedeemed = false
             launchPromptPresentationDate = nil
-            nextEligibleDate = nil
             return
         }
 
@@ -201,14 +176,6 @@ final class WinBackOfferDebugViewModel: ObservableObject {
         }
 
         hasRedeemed = winbackOfferStore.hasRedeemedOffer()
-
-        if hasRedeemed {
-            let cooldown = TimeInterval.days(270)
-            let availabilityOffset = TimeInterval.days(3)
-            nextEligibleDate = storedChurnDate.addingTimeInterval(cooldown + availabilityOffset)
-        } else {
-            nextEligibleDate = nil
-        }
     }
 }
 
@@ -289,12 +256,6 @@ struct WinBackOfferDebugView: View {
                 }
 
                 Button(action: {
-                    viewModel.simulateCooldownExpiry()
-                }) {
-                    Text(verbatim: "Jump to Cooldown Expiry")
-                }
-
-                Button(action: {
                     viewModel.simulateChurnAfterRedemption()
                 }) {
                     Text(verbatim: "Simulate Churn After Redemption")
@@ -330,10 +291,6 @@ struct WinBackOfferDebugView: View {
                     }
 
                     LabeledRow(label: "Redeemed", value: viewModel.hasRedeemed ? "Yes" : "No")
-
-                    if viewModel.hasRedeemed, let nextEligibleDate = viewModel.nextEligibleDate {
-                        LabeledRow(label: "Next eligible on", value: Self.dateFormatter.string(from: nextEligibleDate))
-                    }
                 } else {
                     Text(verbatim: "No churn simulated")
                         .foregroundColor(.secondary)

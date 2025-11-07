@@ -77,6 +77,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             await self?.isConfigurationInstalled(extensionBundleID: extensionBundleID) ?? true
         })
     }()
+
+    private lazy var startupMonitor = VPNStartupMonitor()
+
     private let networkExtensionController: NetworkExtensionController
 
     // MARK: - Notification Center
@@ -688,7 +691,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             try tunnelManager.connection.startVPNTunnel(options: options)
 
             if #available(macOS 12, *) {
-                try await waitForStartSuccess(tunnelManager)
+                try await startupMonitor.waitForStartSuccess(tunnelManager)
+                try await self.enableOnDemand(tunnelManager: tunnelManager)
             }
         } catch {
             Logger.networkProtection.fault("🔴 Failed to start VPN tunnel: \(error, privacy: .public)")
@@ -741,89 +745,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
         return options
     }
-
-    enum StartMonitoringError: Error, CustomNSError {
-        case startTunnelDisconnectedSilently
-        case startTunnelTimedOut
-
-        var errorDescription: String? {
-            switch self {
-            case .startTunnelDisconnectedSilently:
-#if DEBUG
-                return "[DEBUG] The connection attempt failed silently, please try again"
-#else
-                return "An unexpected error occurred, please try again"
-#endif
-            case .startTunnelTimedOut:
-#if DEBUG
-                return "[DEBUG] The connection attempt timed out, please try again"
-#else
-                return "An unexpected error occurred, please try again"
-#endif
-            }
-        }
-
-        var errorCode: Int {
-            switch self {
-            case .startTunnelDisconnectedSilently: return 1
-            case .startTunnelTimedOut: return 2
-            }
-        }
-
-        var errorUserInfo: [String: Any] {
-            return [:]
-        }
-    }
-
-    @available(macOS 12, *)
-    func waitForStartSuccess(_ tunnelManager: NETunnelProviderManager, timeout: TimeInterval = 10) async throws {
-        let notificationCenter = NotificationCenter.default
-        let statusChange = NSNotification.Name.NEVPNStatusDidChange
-
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            let targetConnection = tunnelManager.connection
-
-            group.addTask {
-                try Task.checkCancellation()
-
-                // Check status after subscribing to catch fast connections
-                if targetConnection.status == .connected {
-                    try await self.enableOnDemand(tunnelManager: tunnelManager)
-                    return
-                }
-
-                for await notification in notificationCenter.notifications(named: statusChange) {
-                    try Task.checkCancellation()
-
-                    guard let connection = notification.object as? NEVPNConnection,
-                          connection === targetConnection else {
-                        continue
-                    }
-
-                    switch connection.status {
-                    case .connected:
-                        try await self.enableOnDemand(tunnelManager: tunnelManager)
-                        return
-                    case .disconnecting, .disconnected:
-                        // We check the disconnecting status because "disconnected" is a valid initial status
-                        // and results in false negatives.
-                        throw StartMonitoringError.startTunnelDisconnectedSilently
-                    default:
-                        continue
-                    }
-                }
-            }
-
-            group.addTask {
-                try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
-                throw StartMonitoringError.startTunnelTimedOut
-            }
-
-            try await group.next()
-            group.cancelAll()
-        }
-    }
-
     /// Stops the VPN connection
     ///
     @MainActor

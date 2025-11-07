@@ -77,7 +77,7 @@ public class VPNEnabledObserverThroughSession: VPNEnabledObserver {
 
     // MARK: - VPN-Enabled Status Calculations
 
-    private static func isVPNEnabled(status: NEVPNStatus, isOnDemandEnabled: Bool) -> Bool {
+    internal static func isVPNEnabled(status: NEVPNStatus, isOnDemandEnabled: Bool) -> Bool {
         // If the VPN has not been configured it's certainly not on, and won't have on-demand
         // enabled.  We need to capture this here though because `isOnDemandEnabled` keeps
         // returning true the last known value when the VPN configuration has been deleted.

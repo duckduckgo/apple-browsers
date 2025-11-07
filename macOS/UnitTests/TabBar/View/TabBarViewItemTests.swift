@@ -391,7 +391,7 @@ private class TabBarViewModelMock: TabBarViewModel {
             .eraseToAnyPublisher()
     }
 
-    init(width: CGFloat = 0, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, pinned: Bool = false) {
+    init(width: CGFloat = 0, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, pinned: Bool = false, loading: Bool = false, error: WKError? = nil) {
         self.width = width
         self.title = title
         self.favicon = favicon
@@ -400,5 +400,7 @@ private class TabBarViewModelMock: TabBarViewModel {
         self.audioState = audioState ?? .unmuted(isPlayingAudio: false)
         self.isSelected = selected
         self.isPinned = pinned
+        self.isLoading = loading
+        self.error = error
     }
 }

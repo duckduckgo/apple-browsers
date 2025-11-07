@@ -23,7 +23,7 @@ import RemoteMessaging
 import AIChat
 import OSLog
 import WebKit
-
+import Common
 // MARK: - Response Types
 
 /// Response structure for openKeyboard request

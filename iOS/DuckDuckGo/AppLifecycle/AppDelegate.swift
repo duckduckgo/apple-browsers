@@ -21,10 +21,6 @@ import UIKit
 import Core
 
 // ┌─────────────────────────────────────────────────────────────────────────────────────┐
-// │ SCENE SUPPORT CONFIGURATION                                                         │
-// │                                                                                     │
-// │ Currently: ENABLED (SUPPORTS_SCENES is defined in Build Settings)                   │
-// │                                                                                     │
 // │ 🚨 TO DISABLE SCENES IN EMERGENCY:                                                  │
 // │ 1. Change `#if true` to `#if false` below to exclude these methods from compilation │
 // │ 2. Info.plist → Remove UIApplicationSceneManifest key                               │

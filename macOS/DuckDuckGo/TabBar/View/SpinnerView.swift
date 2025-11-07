@@ -51,6 +51,7 @@ final class SpinnerView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         setupLayer()
+        setupInitialState()
     }
 
     required init?(coder: NSCoder) {

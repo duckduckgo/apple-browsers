@@ -587,7 +587,7 @@ enum GeneralPixel: PixelKitEvent {
 
         case .dailyAddedToDock(isAddedToDock: let isAddedToDock):
             return  "m_mac_\(isAddedToDock ? "added" : "not-added")-to-dock"
-          
+
         case .dailyFireWindowConfigurationStartupFireWindowEnabled(startupFireWindow: let startupFireWindow):
             return "m_mac_fire_window_configuration_startup_fire_window_is_\(startupFireWindow ? "enabled" : "disabled")"
 

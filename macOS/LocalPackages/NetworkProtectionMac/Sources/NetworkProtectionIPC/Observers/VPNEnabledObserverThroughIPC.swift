@@ -34,6 +34,7 @@ public final class VPNEnabledObserverThroughIPC: VPNEnabledObserver {
 
     // MARK: - Publishing Updates
 
+    @MainActor
     func publish(_ isVPNEnabled: Bool) {
         subject.send(isVPNEnabled)
     }

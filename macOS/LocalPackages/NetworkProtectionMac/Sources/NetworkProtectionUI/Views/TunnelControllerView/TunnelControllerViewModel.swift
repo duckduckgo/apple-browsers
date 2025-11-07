@@ -347,6 +347,7 @@ public final class TunnelControllerViewModel: ObservableObject {
     /// The description for the current connection status.
     /// When the status is `connected` this description will also show the time lapsed since connection.
     ///
+    @MainActor
     @Published var timeLapsed: String
 
     @MainActor

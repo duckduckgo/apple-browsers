@@ -166,8 +166,10 @@ private final class TunnelControllerXPCClientDelegate: XPCClientInterfaceObjC {
     }
 
     func statusChanged(status: ConnectionStatus) {
-        connectionStatusObserver.publish(status)
-        clientDelegate?.statusChanged(status)
+        Task { @MainActor in
+            connectionStatusObserver.publish(status)
+            clientDelegate?.statusChanged(status)
+        }
     }
 
     func dataVolumeUpdated(payload: Data) {
@@ -201,8 +203,10 @@ private final class TunnelControllerXPCClientDelegate: XPCClientInterfaceObjC {
     }
 
     func vpnEnabledChanged(enabled: Bool) {
-        vpnEnabledObserver.publish(enabled)
-        clientDelegate?.vpnEnableChanged(enabled)
+        Task { @MainActor in
+            vpnEnabledObserver.publish(enabled)
+            clientDelegate?.vpnEnableChanged(enabled)
+        }
     }
 }
 

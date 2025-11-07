@@ -93,17 +93,28 @@ public class VPNEnabledObserverThroughSession: VPNEnabledObserver {
 
     // MARK: - Observing VPN status and configuration
 
-    private func startObservingChanges() {
-        let statusPublisher = notificationCenter.publisher(for: .NEVPNStatusDidChange)
+    private func fetchCurrentState() async -> (status: NEVPNStatus, isOnDemandEnabled: Bool) {
+        guard let session = await tunnelSessionProvider.activeSession() else {
+            return (.disconnected, false)
+        }
+        return (session.status, session.manager.isOnDemandEnabled)
+    }
+
+    private func createStatusPublisher(initialStatus: NEVPNStatus) -> AnyPublisher<NEVPNStatus, Never> {
+        notificationCenter.publisher(for: .NEVPNStatusDidChange)
             .compactMap { notification -> NEVPNConnection? in
                 notification.object as? NEVPNConnection
             }
             .map { connection -> NEVPNStatus in
                 connection.status
             }
+            .prepend(initialStatus)
             .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
 
-        let configPublisher = notificationCenter.publisher(for: .NEVPNConfigurationChange)
+    private func createConfigPublisher(initialValue: Bool) -> AnyPublisher<Bool, Never> {
+        notificationCenter.publisher(for: .NEVPNConfigurationChange)
             .compactMap { notification in
                 notification.object as? NEVPNManager
             }
@@ -120,32 +131,52 @@ public class VPNEnabledObserverThroughSession: VPNEnabledObserver {
                 guard let tunnelProviderProtocol = (manager.protocolConfiguration as? NETunnelProviderProtocol) else {
                     return false
                 }
-
                 return tunnelProviderProtocol.providerBundleIdentifier == activeExtensionBundleID
             }
             .map { manager, _ in
                 manager.isOnDemandEnabled
             }
+            .prepend(initialValue)
             .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
 
-        Publishers.CombineLatest(statusPublisher, configPublisher)
-            .map { (status, isOnDemandEnabled) -> Bool in
-                Self.isVPNEnabled(status: status, isOnDemandEnabled: isOnDemandEnabled)
-            }
-            .sink { [subject] isVPNEnabled in
-                subject.send(isVPNEnabled)
-            }
-            .store(in: &cancellables)
-
+    private func subscribeToRefreshNotifications() {
         notificationCenter.publisher(for: .VPNSnoozeRefreshed)
             .sink { [weak self] notification in
                 self?.handleRefreshNotification(notification)
-        }.store(in: &cancellables)
+            }.store(in: &cancellables)
 
         platformNotificationCenter.publisher(for: platformDidWakeNotification)
             .sink { [weak self] notification in
                 self?.handleRefreshNotification(notification)
-        }.store(in: &cancellables)
+            }.store(in: &cancellables)
+    }
+
+    private func startObservingChanges() {
+        Task { [weak self] in
+            guard let self else { return }
+
+            // Fetch current state
+            let currentState = await self.fetchCurrentState()
+
+            // Create publishers with current values prepended
+            let statusPublisher = self.createStatusPublisher(initialStatus: currentState.status)
+            let configPublisher = self.createConfigPublisher(initialValue: currentState.isOnDemandEnabled)
+
+            // Combine and subscribe
+            Publishers.CombineLatest(statusPublisher, configPublisher)
+                .map { (status, isOnDemandEnabled) -> Bool in
+                    Self.isVPNEnabled(status: status, isOnDemandEnabled: isOnDemandEnabled)
+                }
+                .sink { [subject = self.subject] isVPNEnabled in
+                    subject.send(isVPNEnabled)
+                }
+                .store(in: &self.cancellables)
+
+            // Subscribe to refresh notifications
+            self.subscribeToRefreshNotifications()
+        }
     }
 
     // MARK: - Handling Notifications

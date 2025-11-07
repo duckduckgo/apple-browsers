@@ -1305,23 +1305,6 @@ enum GeneralPixel: PixelKitEvent {
         case .loginItemUpdateError(let loginItemBundleID, let action, let buildType, let osVersion):
             return ["loginItemBundleID": loginItemBundleID, "action": action, "buildType": buildType, "macosVersion": osVersion]
 
-        case .dailyActiveUser(let isDefault, let isAddedToDock):
-            var params = [String: String]()
-            params["default_browser"] = isDefault ? "1" : "0"
-
-            if let isAddedToDock = isAddedToDock {
-                params["dock"] = isAddedToDock ? "1" : "0"
-            }
-
-            return params
-
-        case .dailyFireWindowConfiguration(let startupFireWindow, let openFireWindowByDefault, let fireAnimationEnabled):
-            return [
-                "startup_fire_window": startupFireWindow ? "true" : "false",
-                "open_fire_window_by_default": openFireWindowByDefault ? "true" : "false",
-                "fire_animation_enabled": fireAnimationEnabled ? "true" : "false"
-            ]
-
         case .navigation(let kind):
             return ["kind": kind.description]
 

@@ -116,6 +116,8 @@ public struct PixelParameters {
     // Remote messaging
     public static let message = "message"
     public static let sheetResult = "success"
+    public static let card = "card"
+    public static let dismissType = "dismiss_type"
 
     // Network Protection
     public static let keychainFieldName = "fieldName"

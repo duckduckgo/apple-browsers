@@ -142,13 +142,13 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         XCTAssertEqual(segueToAIChatSettingsCallCount, 0)
         XCTAssertEqual(segueToFeedbackCallCount, 0)
 
-        DefaultMessageNavigator(delegate: self).navigateTo(.settings)
+        DefaultMessageNavigator(delegate: self).navigateTo(.settings, presentationStyle: .dismissModalsAndPresentFromRoot)
         XCTAssertEqual(segueToSettingsCallCount, 1)
 
-        DefaultMessageNavigator(delegate: self).navigateTo(.duckAISettings)
+        DefaultMessageNavigator(delegate: self).navigateTo(.duckAISettings, presentationStyle: .dismissModalsAndPresentFromRoot)
         XCTAssertEqual(segueToAIChatSettingsCallCount, 1)
         
-        DefaultMessageNavigator(delegate: self).navigateTo(.feedback)
+        DefaultMessageNavigator(delegate: self).navigateTo(.feedback, presentationStyle: .dismissModalsAndPresentFromRoot)
         XCTAssertEqual(segueToFeedbackCallCount, 1)
 
     }
@@ -270,28 +270,35 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     }
 
     private func createSUT() -> NewTabPageMessagesModel {
-        NewTabPageMessagesModel(homePageMessagesConfiguration: messagesConfiguration,
+        let remoteMessageActionHandler = RemoteMessagingActionHandler(lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher())
+        remoteMessageActionHandler.messageNavigator = DefaultMessageNavigator(delegate: self)
+
+        return NewTabPageMessagesModel(homePageMessagesConfiguration: messagesConfiguration,
                                 notificationCenter: notificationCenter,
                                 pixelFiring: PixelFiringMock.self,
-                                navigator: DefaultMessageNavigator(delegate: self))
+                                messageActionHandler: remoteMessageActionHandler)
     }
 }
 
 extension NewTabPageMessagesModelTests: MessageNavigationDelegate {
-    func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, completion: (() -> Void)?) {
+    func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, presentationStyle: PresentationContext.Style) {
         segueToAIChatSettingsCallCount += 1
     }
     
-    func segueToSettings() {
+    func segueToSettings(presentationStyle: PresentationContext.Style) {
         segueToSettingsCallCount += 1
     }
 
-    func segueToFeedback() {
+    func segueToFeedback(presentationStyle: PresentationContext.Style) {
         segueToFeedbackCallCount += 1
     }
 
-    func segueToSettingsSync(with source: String?, pairingInfo: PairingInfo?) {
+    func segueToSettingsSync(with source: String?, pairingInfo: PairingInfo?, presentationStyle: PresentationContext.Style) {
         segueToSyncSettingsCallCount += 1
+    }
+
+    func segueToImportPasswords(presentationStyle: DuckDuckGo.PresentationContext.Style) {
+        assertionFailure("Not implemented yet")
     }
 
 }
@@ -301,6 +308,7 @@ private extension HomeMessage {
         HomeMessage.remoteMessage(
             remoteMessage: .init(
                 id: "foo",
+                surfaces: .newTabPage,
                 content: type,
                 matchingRules: [],
                 exclusionRules: [],

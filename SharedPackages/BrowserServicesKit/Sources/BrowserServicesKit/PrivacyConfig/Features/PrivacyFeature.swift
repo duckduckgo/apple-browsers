@@ -278,6 +278,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Signals that the iOS app should display duck.ai chats in "full mode" i.e in a tab, not a sheet
     case fullDuckAIMode
+
+    /// Enables native-side support for standalone migration flows in AI Chat
+    case standaloneMigration
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -370,6 +373,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case supportsAlternateStripePaymentFlow
     case subscriptionPurchaseWidePixelMeasurement
     case subscriptionRestoreWidePixelMeasurement
+    case vpnConnectionWidePixelMeasurement
     case authV2WideEventEnabled
     case winBackOffer
     case vpnMenuItem

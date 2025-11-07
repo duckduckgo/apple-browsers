@@ -179,7 +179,7 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            navigator: DefaultMessageNavigator(delegate: nil)
+            messageActionHandler: RemoteMessagingActionHandler()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -194,6 +194,7 @@ private struct Metrics {
                     HomeMessage.remoteMessage(
                         remoteMessage: RemoteMessageModel(
                             id: "0",
+                            surfaces: .newTabPage,
                             content: .small(titleText: "Title", descriptionText: "Description"),
                             matchingRules: [],
                             exclusionRules: [],
@@ -202,7 +203,7 @@ private struct Metrics {
                     )
                 ]
             ),
-            navigator: DefaultMessageNavigator(delegate: nil)
+            messageActionHandler: RemoteMessagingActionHandler()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -215,7 +216,7 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            navigator: DefaultMessageNavigator(delegate: nil)
+            messageActionHandler: RemoteMessagingActionHandler()
         ),
         favoritesViewModel: FavoritesPreviewModel(favorites: [])
     )
@@ -228,7 +229,7 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            navigator: DefaultMessageNavigator(delegate: nil)
+            messageActionHandler: RemoteMessagingActionHandler()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )

@@ -551,8 +551,6 @@ enum GeneralPixel: PixelKitEvent {
      */
     case userScriptLoadJSFailed(jsFile: String, error: Error)
 
-    case unifiedURLPredictionMismatch(prediction: String, input: String)
-
     var name: String {
         switch self {
         case .crash(let appIdentifier):
@@ -1283,9 +1281,6 @@ enum GeneralPixel: PixelKitEvent {
 
             // UserScript
         case .userScriptLoadJSFailed: return "m_mac_debug_user_script_load_js_failed"
-
-        case .unifiedURLPredictionMismatch:
-            return "unified_url_prediction_mismatch"
         }
     }
 
@@ -1463,9 +1458,6 @@ enum GeneralPixel: PixelKitEvent {
             var params = error.pixelParameters
             params[PixelKit.Parameters.jsFile] = jsFile
             return params
-
-        case .unifiedURLPredictionMismatch(let prediction, let input):
-            return ["prediction": prediction, "input": input]
 
         default: return nil
         }

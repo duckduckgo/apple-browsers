@@ -31,6 +31,7 @@ import SubscriptionTestingUtilities
 import Common
 @testable import DuckDuckGo
 @testable import PersistenceTestingUtils
+import RemoteMessagingTestsUtils
 import SystemSettingsPiPTutorialTestSupport
 import AIChat
 
@@ -72,20 +73,7 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
             featureFlagger: MockFeatureFlagger()
         )
 
-        let remoteMessagingClient = RemoteMessagingClient(
-            bookmarksDatabase: db,
-            appSettings: AppSettingsMock(),
-            internalUserDecider: MockInternalUserDecider(),
-            configurationStore: MockConfigurationStoring(),
-            database: db,
-            errorEvents: nil,
-            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProviding(),
-            duckPlayerStorage: MockDuckPlayerStorage(),
-            configurationURLProvider: MockCustomURLProvider(),
-            syncService: MockDDGSyncing(),
-            winBackOfferService: .mocked
-        )
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
         let tabsModel = TabsModel(desktop: true)
         let tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: true)
         let contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
@@ -161,7 +149,8 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
             daxDialogsManager: DummyDaxDialogsManager(),
             dbpIOSPublicInterface: nil,
             launchSourceManager: LaunchSourceManager(),
-            winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager()
+            winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
+            remoteMessagingActionHandler: MockRemoteMessagingActionHandler()
         )
         
         let window = UIWindow(frame: UIScreen.main.bounds)

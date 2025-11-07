@@ -23,11 +23,12 @@ import RemoteMessagingTestsUtils
 class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
     func testWhenValidJsonParsedThenMessagesMappedIntoRemoteConfig() throws {
-        let config = try decodeAndMapJson(fileName: "remote-messaging-config.json")
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config.json", bundle: .module)
         XCTAssertEqual(config.messages.count, 8)
 
         XCTAssertEqual(config.messages[0], RemoteMessageModel(
                 id: "8274589c-8aeb-4322-a737-3852911569e3",
+                surfaces: .newTabPage,
                 content: .bigSingleAction(titleText: "title", descriptionText: "description", placeholder: .announce,
                                           primaryActionText: "Ok", primaryAction: .url(value: "https://duckduckgo.com")),
                 matchingRules: [],
@@ -37,6 +38,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[1], RemoteMessageModel(
                 id: "8274589c-8aeb-4322-a737-3852911569e3",
+                surfaces: .newTabPage,
                 content: .bigSingleAction(titleText: "Kedvenc hozzáadása", descriptionText: "Kedvenc eltávolítása", placeholder: .ddgAnnounce,
                                           primaryActionText: "Ok", primaryAction: .url(value: "https://duckduckgo.com")),
                 matchingRules: [],
@@ -46,6 +48,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[2], RemoteMessageModel(
                 id: "26780792-49fe-4e25-ae27-aa6a2e6f013b",
+                surfaces: .newTabPage,
                 content: .small(titleText: "Here goes a title", descriptionText: "description"),
                 matchingRules: [5, 6],
                 exclusionRules: [7, 8, 9],
@@ -54,6 +57,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[3], RemoteMessageModel(
                 id: "c3549d64-b388-41d8-9649-33e6e2674e8e",
+                surfaces: .newTabPage,
                 content: .medium(titleText: "Here goes a title", descriptionText: "description", placeholder: .criticalUpdate),
                 matchingRules: [],
                 exclusionRules: [],
@@ -62,6 +66,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[4], RemoteMessageModel(
                 id: "c2d0a1f1-6157-434f-8145-38416037d339",
+                surfaces: .newTabPage,
                 content: .bigTwoAction(titleText: "Here goes a title", descriptionText: "description", placeholder: .appUpdate,
                                        primaryActionText: "Ok", primaryAction: .appStore,
                                        secondaryActionText: "Cancel", secondaryAction: .dismiss),
@@ -72,6 +77,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[5], RemoteMessageModel(
             id: "96EEA91B-030D-41E5-95A7-F11C1952A5FF",
+            surfaces: .newTabPage,
             content: .bigTwoAction(titleText: "Here goes a title", descriptionText: "description", placeholder: .newForMacAndWindows,
                                    primaryActionText: "Ok", primaryAction: .share(value: "https://duckduckgo.com/app",
                                                                                   title: "Share Title"),
@@ -83,6 +89,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[6], RemoteMessageModel(
             id: "6E58D3DA-AB9D-47A4-87B7-B8AF830BFB5E",
+            surfaces: .newTabPage,
             content: .promoSingleAction(titleText: "Promo Title", descriptionText: "Promo Description", placeholder: .newForMacAndWindows,
                                         actionText: "Promo Action", action: .dismiss),
             matchingRules: [],
@@ -92,6 +99,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[7], RemoteMessageModel(
             id: "8E909844-C809-4543-AAFE-2C75DC285B3B",
+            surfaces: .newTabPage,
             content: .promoSingleAction(
                 titleText: "Survey Title",
                 descriptionText: "Survey Description",
@@ -107,7 +115,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
     }
 
     func testWhenValidJsonParsedThenRulesMappedIntoRemoteConfig() throws {
-        let config = try decodeAndMapJson(fileName: "remote-messaging-config.json")
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config.json", bundle: .module)
         XCTAssertTrue(config.rules.count == 7)
 
         let rule5 = config.rules.filter { $0.id == 5 }.first
@@ -213,13 +221,13 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
     }
 
     func testWhenJsonMessagesHaveUnknownTypesThenMessagesNotMappedIntoConfig() throws {
-        let config = try decodeAndMapJson(fileName: "remote-messaging-config-unsupported-items.json")
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-unsupported-items.json", bundle: .module)
         let countValidContent = config.messages.filter { $0.content != nil }.count
         XCTAssertEqual(countValidContent, 1)
     }
 
     func testWhenJsonMessagesHaveUnknownTypesThenRulesMappedIntoConfig() throws {
-        let config = try decodeAndMapJson(fileName: "remote-messaging-config-unsupported-items.json")
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-unsupported-items.json", bundle: .module)
         XCTAssertTrue(config.rules.count == 2)
 
         let rule6 = config.rules.filter { $0.id == 6 }.first
@@ -242,7 +250,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
         let remoteMessagingConfig = try JSONDecoder().decode(RemoteMessageResponse.JsonRemoteMessagingConfig.self, from: validJson)
         let surveyMapper = MockRemoteMessageSurveyActionMapper()
         XCTAssertNotNil(remoteMessagingConfig)
-        let config = JsonToRemoteConfigModelMapper.mapJson(remoteMessagingConfig: remoteMessagingConfig, surveyActionMapper: surveyMapper)
+        let config = JsonToRemoteConfigModelMapper.mapJson(remoteMessagingConfig: remoteMessagingConfig, surveyActionMapper: surveyMapper, supportedSurfacesForMessage: { _ in .newTabPage })
         XCTAssertTrue(config.rules.count == 2)
 
         let rule6 = config.rules.filter { $0.id == 6 }.first
@@ -253,11 +261,12 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
     }
 
     func testThatMetricsAreEnabledWhenStatedInJSONOrMissing() throws {
-        let config = try decodeAndMapJson(fileName: "remote-messaging-config-metrics.json")
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-metrics.json", bundle: .module)
         XCTAssertEqual(config.messages.count, 4)
 
         XCTAssertEqual(config.messages[0], RemoteMessageModel(
                 id: "1",
+                surfaces: .newTabPage,
                 content: .small(titleText: "title", descriptionText: "description"),
                 matchingRules: [],
                 exclusionRules: [],
@@ -266,6 +275,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[1], RemoteMessageModel(
                 id: "2",
+                surfaces: .newTabPage,
                 content: .small(titleText: "title", descriptionText: "description"),
                 matchingRules: [],
                 exclusionRules: [],
@@ -274,6 +284,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[2], RemoteMessageModel(
                 id: "3",
+                surfaces: .newTabPage,
                 content: .small(titleText: "title", descriptionText: "description"),
                 matchingRules: [],
                 exclusionRules: [],
@@ -282,6 +293,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[3], RemoteMessageModel(
                 id: "4",
+                surfaces: .newTabPage,
                 content: .small(titleText: "title", descriptionText: "description"),
                 matchingRules: [],
                 exclusionRules: [],
@@ -289,15 +301,4 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
         )
     }
 
-    func decodeAndMapJson(fileName: String) throws -> RemoteConfigModel {
-        let resourceURL = Bundle.module.resourceURL!.appendingPathComponent(fileName, conformingTo: .json)
-        let validJson = try Data(contentsOf: resourceURL)
-        let remoteMessagingConfig = try JSONDecoder().decode(RemoteMessageResponse.JsonRemoteMessagingConfig.self, from: validJson)
-        let surveyMapper = MockRemoteMessageSurveyActionMapper()
-        XCTAssertNotNil(remoteMessagingConfig)
-
-        let config = JsonToRemoteConfigModelMapper.mapJson(remoteMessagingConfig: remoteMessagingConfig, surveyActionMapper: surveyMapper)
-        XCTAssertNotNil(config)
-        return config
-    }
 }

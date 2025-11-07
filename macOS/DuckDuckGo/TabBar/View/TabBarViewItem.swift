@@ -505,9 +505,10 @@ final class TabBarItemCellView: NSView {
         assert(permissionButton.isHidden)
         assert(titleTextField.isHidden)
 
-        let elementWidth: CGFloat = 16
+        let elementWidth: CGFloat = displaysTabsProgressIndicator ? 20 : 16
         let x = (bounds.width - elementWidth) / 2
-        let faviconFrame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
+        let faviconFrame = NSRect(x: x.rounded(), y: bounds.midY - elementWidth * 0.5, width: elementWidth, height: elementWidth)
+
         if displaysTabsProgressIndicator {
             faviconView.frame = faviconFrame
         } else if faviconImageView.isShown {

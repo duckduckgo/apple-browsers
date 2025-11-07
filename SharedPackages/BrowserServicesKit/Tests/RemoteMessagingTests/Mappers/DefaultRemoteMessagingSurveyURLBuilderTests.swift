@@ -191,7 +191,7 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
 
 }
 
-private class MockVPNActivationDateStore: VPNActivationDateProviding {
+private final class MockVPNActivationDateStore: VPNActivationDateProviding {
 
     var _daysSinceActivation: Int
     var _daysSinceLastActive: Int
@@ -211,9 +211,7 @@ private class MockVPNActivationDateStore: VPNActivationDateProviding {
 
 }
 
-// MARK: - Test-only Protocol Conformance
-
-final class MockDuckDuckGoSubscription: SubscriptionSurveyDataProviding {
+private final class MockDuckDuckGoSubscription: SubscriptionSurveyDataProviding {
 
     var status: String?
     var platform: String?

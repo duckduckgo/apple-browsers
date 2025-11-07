@@ -627,26 +627,18 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             return platform == .appStore && subscriptionManager.canPurchase == false
         }
 
+        // Check if user is eligible for Win-back Offer
+        if winBackOfferVisibilityManager.isOfferAvailable {
+            addItem(makeWinBackOfferMenuItem())
+            return
+        }
+
         if !subscriptionManager.isUserAuthenticated {
 
             var subscriptionItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
                 .withImage(moreOptionsMenuIconsProvider.subscriptionIcon)
 
-            // Check if user is eligible for Win-back Offer
-            if winBackOfferVisibilityManager.isOfferAvailable {
-                // Fire pixel for tracking Main Menu badge impression
-                PixelKit.fire(SubscriptionPixel.subscriptionWinBackOfferMainMenuShown)
-
-                subscriptionItem = NSMenuItem.createMenuItemWithBadge(
-                    title: UserText.subscriptionOptionsMenuItem,
-                    badgeText: UserText.winBackCampaignMenuBadgeText,
-                    action: #selector(openWinBackOfferPurchasePage(_:)),
-                    target: self,
-                    image: moreOptionsMenuIconsProvider.subscriptionIcon,
-                    menu: self
-                )
-            // Check if user is eligible for Free Trial and hasn't exceeded view limit
-            } else if featureFlagger.isFeatureOn(.privacyProFreeTrial) &&
+            if featureFlagger.isFeatureOn(.privacyProFreeTrial) &&
                subscriptionManager.isUserEligibleForFreeTrial() &&
                !freeTrialBadgePersistor.hasReachedViewLimit {
                 subscriptionItem = NSMenuItem.createMenuItemWithBadge(
@@ -681,6 +673,19 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                          })
             addItem(subscriptionItem)
         }
+    }
+
+    private func makeWinBackOfferMenuItem() -> NSMenuItem {
+        PixelKit.fire(SubscriptionPixel.subscriptionWinBackOfferMainMenuShown)
+
+        return NSMenuItem.createMenuItemWithBadge(
+            title: UserText.subscriptionOptionsMenuItem,
+            badgeText: UserText.winBackCampaignMenuBadgeText,
+            action: #selector(openWinBackOfferPurchasePage(_:)),
+            target: self,
+            image: moreOptionsMenuIconsProvider.subscriptionIcon,
+            menu: self
+        )
     }
 
     @MainActor

@@ -46,10 +46,9 @@ extension FileDownloadManagerProtocol {
 
 final class FileDownloadManager: FileDownloadManagerProtocol {
 
-    static let shared = FileDownloadManager()
     private let preferences: DownloadsPreferences
 
-    init(preferences: DownloadsPreferences = .shared) {
+    init(preferences: DownloadsPreferences) {
         self.preferences = preferences
     }
 

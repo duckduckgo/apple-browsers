@@ -107,7 +107,7 @@ class SuggestionTrayViewController: UIViewController {
         let newTabDialogFactory: NewTabDaxDialogFactory
         let newTabDaxDialogManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating
         let faviconLoader: FavoritesFaviconLoading
-        let messageNavigationDelegate: MessageNavigationDelegate
+        let remoteMessagingActionHandler: RemoteMessagingActionHandling
         let appSettings: AppSettings
         let internalUserCommands: URLBasedDebugCommands
     }
@@ -273,6 +273,7 @@ class SuggestionTrayViewController: UIViewController {
         let dependencies = newTabPageDependencies
         let controller = NewTabPageViewController(
             isFocussedState: true,
+            dismissKeyboardOnScroll: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
             tab: Tab(),
             interactionModel: dependencies.favoritesModel,
             homePageMessagesConfiguration: dependencies.homePageMessagesConfiguration,
@@ -280,7 +281,7 @@ class SuggestionTrayViewController: UIViewController {
             newTabDialogFactory: dependencies.newTabDialogFactory,
             daxDialogsManager: dependencies.newTabDaxDialogManager,
             faviconLoader: dependencies.faviconLoader,
-            messageNavigationDelegate: dependencies.messageNavigationDelegate,
+            remoteMessagingActionHandler: dependencies.remoteMessagingActionHandler,
             appSettings: dependencies.appSettings,
             internalUserCommands: dependencies.internalUserCommands
         )

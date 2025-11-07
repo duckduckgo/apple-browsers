@@ -45,6 +45,10 @@ struct ExperimentalAIChatManager {
         }
     }
 
+    var isStandaloneMigrationSupported: Bool {
+        featureFlagger.isFeatureOn(.standaloneMigration)
+    }
+
     mutating func toggleExperimentalTheming() {
         isExperimentalAIChatSettingsEnabled.toggle()
     }

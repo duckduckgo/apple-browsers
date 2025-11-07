@@ -1,0 +1,61 @@
+name: Should Run PR Checks
+
+# Reusable workflow that determines whether CI checks should run based on PR draft status and labels
+# This workflow can be called by other workflows using workflow_call trigger
+#
+# Logic:
+# - Always runs for non-PR events (push, schedule, workflow_call)
+# - Always runs when a PR is unmarked as draft (ready_for_review action)
+# - Always runs for PRs that are not in draft state
+# - Runs for draft PRs only if they have the specified "run checks" label
+#
+# Usage:
+#   jobs:
+#     should-run-checks:
+#       uses: ./.github/workflows/should_run_pr_checks.yml
+#     other-job:
+#       needs: [should-run-checks]
+#       if: needs.should-run-checks.outputs.should_run == 'true'
+
+on:
+  workflow_call:
+    inputs:
+      run_checks_label:
+        description: 'Label name that allows running checks on draft PRs'
+        required: false
+        type: string
+        default: 'Run PR Checks'
+    outputs:
+      should_run:
+        description: 'Whether CI checks should run (true/false)'
+        value: ${{ jobs.check.outputs.should_run }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Evaluate run conditions
+        id: check
+        run: |
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "Non-PR event, running checks"
+          elif [[ "${{ github.event.action }}" == "ready_for_review" ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "PR was unmarked as draft, running checks"
+          elif [[ "${{ github.event.pull_request.draft }}" != "true" ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "PR is ready for review, running checks"
+          else
+            # Check for run checks label
+            labels='${{ toJson(github.event.pull_request.labels) }}'
+            if echo "$labels" | jq -e --arg label "${{ inputs.run_checks_label }}" '.[] | select(.name == $label)' > /dev/null 2>&1; then
+              echo "should_run=true" >> $GITHUB_OUTPUT
+              echo "Draft PR has '${{ inputs.run_checks_label }}' label, running checks"
+            else
+              echo "should_run=false" >> $GITHUB_OUTPUT
+              echo "Draft PR without '${{ inputs.run_checks_label }}' label, skipping checks"
+            fi
+          fi

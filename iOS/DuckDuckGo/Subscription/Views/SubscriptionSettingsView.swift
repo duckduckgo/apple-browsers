@@ -23,6 +23,7 @@ import DesignResourcesKit
 import Core
 import Networking
 import VPN
+import UIComponents
 
 enum SubscriptionSettingsViewConfiguration {
     case subscribed
@@ -148,7 +149,7 @@ struct SubscriptionSettingsView: View {
             switch configuration {
             case .subscribed, .expired, .trial:
                 let active = viewModel.state.subscriptionInfo?.isActive ?? false
-                let isEligibleForWinBackCampaign = settingsViewModel.state.subscription.isEligibleForTrialOffer
+                let isEligibleForWinBackCampaign = settingsViewModel.state.subscription.isWinBackEligible
                 SettingsCustomCell(content: {
                     if !viewModel.state.isLoadingSubscriptionInfo {
                         if active {
@@ -156,9 +157,7 @@ struct SubscriptionSettingsView: View {
                                 .daxBodyRegular()
                                 .foregroundColor(Color.init(designSystemColor: .accent))
                         } else if isEligibleForWinBackCampaign {
-                            Text(UserText.winBackCampaignSubscriptionSettingsPageResubscribeCTA)
-                                .daxBodyRegular()
-                                .foregroundColor(Color.init(designSystemColor: .accent))
+                            resubscribeWithWinBackOfferView
                         } else {
                             Text(UserText.subscriptionRestoreNotFoundPlans)
                                 .daxBodyRegular()
@@ -545,7 +544,7 @@ struct SubscriptionSettingsViewV2: View {
             switch configuration {
             case .subscribed, .expired, .trial:
                 let active = viewModel.state.subscriptionInfo?.isActive ?? false
-                let isEligibleForWinBackCampaign = settingsViewModel.state.subscription.isEligibleForTrialOffer
+                let isEligibleForWinBackCampaign = settingsViewModel.state.subscription.isWinBackEligible
                 SettingsCustomCell(content: {
                     if !viewModel.state.isLoadingSubscriptionInfo {
                         if active {
@@ -553,9 +552,7 @@ struct SubscriptionSettingsViewV2: View {
                                 .daxBodyRegular()
                                 .foregroundColor(Color.init(designSystemColor: .accent))
                         } else if isEligibleForWinBackCampaign {
-                            Text(UserText.winBackCampaignSubscriptionSettingsPageResubscribeCTA)
-                                .daxBodyRegular()
-                                .foregroundColor(Color.init(designSystemColor: .accent))
+                            resubscribeWithWinBackOfferView
                         } else {
                             Text(UserText.subscriptionRestoreNotFoundPlans)
                                 .daxBodyRegular()
@@ -903,5 +900,20 @@ struct SubscriptionSettingsViewV2: View {
         if let stripeViewModel = viewModel.state.stripeViewModel {
             SubscriptionExternalLinkView(viewModel: stripeViewModel)
         }
+    }
+}
+
+@ViewBuilder
+private var resubscribeWithWinBackOfferView: some View {
+    VStack(alignment: .leading) {
+        HStack {
+            Text(UserText.winBackCampaignSubscriptionSettingsPageResubscribeCTA)
+                .daxBodyRegular()
+                .foregroundColor(Color.init(designSystemColor: .accent))
+            BadgeView(text: UserText.winBackCampaignMenuBadgeText)
+        }
+        Text(UserText.winBackCampaignSubscriptionSettingsPageResubscribeSubtitle)
+            .daxFootnoteRegular()
+            .foregroundColor(Color(designSystemColor: .textSecondary))
     }
 }

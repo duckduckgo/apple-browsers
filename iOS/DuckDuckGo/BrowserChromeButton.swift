@@ -34,7 +34,9 @@ class BrowserChromeButton: UIButton {
         }
     }
 
-    private var border: UIView?
+    // For debugging in memory graph.
+    class BrowserChromeButtonBorder: UIView { }
+    private weak var border: BrowserChromeButtonBorder?
 
     init(_ type: ButtonType = .primary) {
         self.type = type
@@ -50,21 +52,55 @@ class BrowserChromeButton: UIButton {
         applyConfiguration()
     }
 
-    func addBorder() {
-        border?.removeFromSuperview()
-        let view = UIView(frame: CGRect(x: 0, y: 0, width: 80, height: 40))
+    func addBorder(borderFrame: CGRect = CGRect(x: 0, y: 0, width: 80, height: 40)) {
+        automaticallyUpdatesConfiguration = false
+        guard border == nil else { return }
+        let view = BrowserChromeButtonBorder(frame: borderFrame)
         view.center = self.center
         view.layer.borderWidth = 1.5
         view.layer.cornerRadius = 14
         view.backgroundColor = .clear
         border = view
         addSubview(view)
+        applyConfiguration(animated: false)
         setNeedsDisplay()
     }
 
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        if let border {
+            let converted = convert(point, to: border)
+            return border.hitTest(converted, with: event) ?? super.hitTest(point, with: event)
+        }
+
+        return super.hitTest(point, with: event)
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        border?.backgroundColor = type.backgroundColor(for: .highlighted)
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesEnded(touches, with: event)
+        border?.backgroundColor = nil
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesCancelled(touches, with: event)
+        border?.backgroundColor = nil
+    }
+
     func removeBorder() {
-        border?.removeFromSuperview()
+        automaticallyUpdatesConfiguration = true
+        guard let border else { return }
+        border.removeFromSuperview()
+        applyConfiguration(animated: false)
         setNeedsDisplay()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        border?.center = center
     }
 
     func setImage(_ image: UIImage?) {
@@ -82,7 +118,7 @@ class BrowserChromeButton: UIButton {
         }
     }
 
-    func applyConfiguration() {
+    func applyConfiguration(animated: Bool = true) {
         let image = configuration?.image
         let defaultConfiguration = defaultConfiguration()
 
@@ -93,18 +129,20 @@ class BrowserChromeButton: UIButton {
         configuration?.image = image
         configuration?.automaticallyUpdateForSelection = false
         configuration?.imageColorTransformer = .init { [weak self] _ in
-            type.foregroundColor(for: self?.state ?? .normal)
+                type.foregroundColor(for: self?.state ?? .normal)
         }
 
         configurationUpdateHandler = { button in
             var newConfiguration = button.configuration ?? defaultConfiguration
-
             newConfiguration.baseForegroundColor = type.foregroundColor(for: button.state)
             newConfiguration.baseBackgroundColor = type.backgroundColor(for: button.state)
-
-            UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
+            if animated {
+                UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
+                    button.configuration = newConfiguration
+                }.startAnimation()
+            } else {
                 button.configuration = newConfiguration
-            }.startAnimation()
+            }
         }
     }
 

@@ -198,6 +198,7 @@ public struct UserDefaultsWrapper<T> {
         case networkProtectionOnboardingStatusRawValue = "networkProtectionOnboardingStatusRawValue"
         case vpnConnectionWideEventBrowserStartTime = "vpnConnectionWideEventBrowserStartTime"
         case vpnConnectionWideEventBrowserStartError = "vpnConnectionWideEventBrowserStartError"
+        case vpnConnectionWideEventOverallStartTime = "vpnConnectionWideEventOverallStartTime"
 
         // Updates
         case automaticUpdates = "updates.automatic"

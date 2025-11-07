@@ -42,10 +42,11 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     // MARK: - Configuration
 
-    private let featureFlagger: FeatureFlagger
     let settings: VPNSettings
     let vpnAppState: VPNAppState
     let defaults: UserDefaults
+    private let featureFlagger: FeatureFlagger
+    private let wideEvent: WideEventManaging
 
     // MARK: - Combine Cancellables
 
@@ -112,10 +113,20 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     private(set) var onboardingStatusRawValue: OnboardingStatus.RawValue
     
     @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartTime, defaultValue: nil, defaults: .netP)
-    private var vpnConnectionWideEventBrowserStartTime: TimeInterval?
+    private var vpnConnectionWideEventBrowserStartTime: Date?
     
     @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartError, defaultValue: nil, defaults: .netP)
-    private var vpnConnectionWideEventBrowserStartError: Error?
+    private var vpnConnectionWideEventBrowserStartError: WideEventErrorData?
+    
+    @UserDefaultsWrapper(key: .vpnConnectionWideEventOverallStartTime, defaultValue: nil, defaults: .netP)
+    private var vpnConnectionWideEventOverallStartTime: Date?
+    
+    // MARK: - Wide Event
+    
+    private var isConnectionWideEventMeasurementEnabled: Bool {
+        featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
+    }
+    private var connectionWideEventData: VPNConnectionWideEventData?
 
     // MARK: - Tunnel Manager
 
@@ -169,6 +180,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
          featureFlagger: FeatureFlagger,
          settings: VPNSettings,
          defaults: UserDefaults,
+         wideEvent: WideEventManaging,
          notificationCenter: NotificationCenter = .default,
          accessTokenStorage: SubscriptionTokenKeychainStorage,
          subscriptionManagerV2: any SubscriptionManagerV2,
@@ -180,6 +192,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         self.notificationCenter = notificationCenter
         self.settings = settings
         self.defaults = defaults
+        self.wideEvent = wideEvent
         self.accessTokenStorage = accessTokenStorage
         self.subscriptionManagerV2 = subscriptionManagerV2
         self.vpnAppState = vpnAppState
@@ -572,6 +585,25 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 return [NSUnderlyingErrorKey: error]
             }
         }
+        
+        public var caseDescription: String {
+            switch self {
+            case .cancelled:
+                return "cancelled"
+            case .noAuthToken:
+                return "noAuthToken"
+            case .connectionStatusInvalid:
+                return "connectionStatusInvalid"
+            case .connectionAlreadyStarted:
+                return "connectionAlreadyStarted"
+            case .simulateControllerFailureError:
+                return "simulateControllerFailureError"
+            case .startTunnelFailure:
+                return "startTunnelFailure"
+            case .failedToFetchAuthToken:
+                return "failedToFetchAuthToken"
+            }
+        }
     }
 
     /// Starts the VPN connection
@@ -580,6 +612,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     ///
     func start() async {
         Logger.networkProtection.log("🚀 Start VPN")
+        setupAndStartConnectionWideEvent()
         VPNOperationErrorRecorder().beginRecordingControllerStart()
         PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionControllerStartAttempt,
                       frequency: .legacyDailyAndCount)
@@ -596,6 +629,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             //
             PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionControllerStartSuccess, frequency: .legacyDailyAndCount)
             Logger.networkProtection.log("Controller start tunnel success")
+            completeAndCleanupConnectionWideEvent()
         } catch {
             Logger.networkProtection.error("Controller start tunnel failure: \(error, privacy: .public)")
 
@@ -616,11 +650,16 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             if controllerErrorStore.lastErrorMessage == nil {
                 controllerErrorStore.lastErrorMessage = error.localizedDescription
             }
+            
+            // Top level catch-all
+            completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
         }
     }
 
     private func start(isFirstAttempt: Bool) async throws {
+        self.connectionWideEventData?.controllerStartDuration = WideEvent.MeasuredInterval.startingNow()
         if await extensionResolver.isUsingSystemExtension {
+            self.connectionWideEventData?.extensionType = .system
             try await activateSystemExtension { [weak self] in
                 // If we're waiting for user approval we wanna make sure the
                 // onboarding step is set correctly.  This can be useful to
@@ -641,6 +680,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 onboardingStatusRawValue = OnboardingStatus.isOnboarding(step: .userNeedsToAllowVPNConfiguration).rawValue
                 return
             }
+        } else {
+            self.connectionWideEventData?.extensionType = .app
         }
 
         let tunnelManager: NETunnelProviderManager
@@ -650,10 +691,11 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         } catch {
             if case NEVPNError.configurationReadWriteFailed = error {
                 onboardingStatusRawValue = OnboardingStatus.isOnboarding(step: .userNeedsToAllowVPNConfiguration).rawValue
-
+                completeAtStepWithFailure(.controllerStart, with: error, description: StartError.cancelled.caseDescription)
                 throw StartError.cancelled
             }
 
+            completeAtStepWithFailure(.controllerStart, with: error, description: error.contextualizedDescription())
             throw error
         }
         onboardingStatusRawValue = OnboardingStatus.completed.rawValue
@@ -664,14 +706,18 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             // manager and try again
 
             guard isFirstAttempt else {
+                completeAtStepWithFailure(.controllerStart, with: StartError.connectionStatusInvalid, description: StartError.connectionStatusInvalid.caseDescription)
                 throw StartError.connectionStatusInvalid
             }
 
             await clearInternalManager()
+            resetControllerStartWideEventMeasurement()
             try await start(isFirstAttempt: false)
         case .connected:
+            completeAtStepWithFailure(.controllerStart, with: StartError.connectionAlreadyStarted, description: StartError.connectionAlreadyStarted.caseDescription)
             throw StartError.connectionAlreadyStarted
         default:
+            self.connectionWideEventData?.controllerStartDuration?.complete()
             try await start(tunnelManager)
         }
     }
@@ -683,16 +729,20 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         options[NetworkProtectionOptionKey.isAuthV2Enabled] = NSNumber(value: vpnAppState.isAuthV2Enabled)
         if !vpnAppState.isAuthV2Enabled {
             Logger.networkProtection.log("Using Auth V1")
+            self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
             let authToken = try fetchAuthToken()
             options[NetworkProtectionOptionKey.authToken] = authToken
+            self.connectionWideEventData?.oauthDuration?.complete()
         } else {
             Logger.networkProtection.log("Using Auth V2")
+            self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
             let tokenContainer = try await fetchTokenContainer()
             options[NetworkProtectionOptionKey.tokenContainer] = tokenContainer.data
 
             // It’s important to force refresh the token here to immediately branch the token used by the main app from the one sent to the system extension.
             // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
             try await subscriptionManagerV2.getTokenContainer(policy: .localForceRefresh)
+            self.connectionWideEventData?.oauthDuration?.complete()
         }
 
         // Encode entire VPN settings as one unit
@@ -718,9 +768,12 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
         do {
             Logger.networkProtection.log("🚀 Starting NetworkProtectionTunnelController, options: \(options, privacy: .public)")
+            self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
             try tunnelManager.connection.startVPNTunnel(options: options)
+            self.connectionWideEventData?.tunnelStartDuration?.complete()
         } catch {
             Logger.networkProtection.fault("🔴 Failed to start VPN tunnel: \(error, privacy: .public)")
+            completeAtStepWithFailure(.tunnelStart, with: error, description: StartError.startTunnelFailure(error).caseDescription)
             throw StartError.startTunnelFailure(error)
         }
 
@@ -904,5 +957,73 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     private static func adaptAccessTokenForVPN(_ token: String) -> String {
         "ddg:\(token)"
+    }
+}
+
+// MARK: Wide Event
+
+private extension NetworkProtectionTunnelController {
+    func setupAndStartConnectionWideEvent() {
+        guard isConnectionWideEventMeasurementEnabled else { return }
+        let data = VPNConnectionWideEventData(
+            startupMethod: .manualByMainApp,
+            contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.agent.rawValue)
+        )
+        self.connectionWideEventData = data
+        prefillBrowserStartDataIfAvailable()
+        wideEvent.startFlow(data)
+    }
+    
+    func prefillBrowserStartDataIfAvailable() {
+        guard let data = self.connectionWideEventData else { return }
+        if let vpnConnectionWideEventBrowserStartTime {
+            let browserStartEndTime = Date()
+            data.browserStartDuration = WideEvent.MeasuredInterval(start: vpnConnectionWideEventBrowserStartTime)
+            data.browserStartDuration?.complete()
+            data.contextData = WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
+        }
+        if let vpnConnectionWideEventOverallStartTime {
+            data.overallDuration = WideEvent.MeasuredInterval(start: vpnConnectionWideEventOverallStartTime)
+        }
+        if let vpnConnectionWideEventBrowserStartError {
+            data.browserStartError = vpnConnectionWideEventBrowserStartError
+        }
+        vpnConnectionWideEventBrowserStartTime = nil
+        vpnConnectionWideEventOverallStartTime = nil
+        vpnConnectionWideEventBrowserStartError = nil
+    }
+    
+    func resetControllerStartWideEventMeasurement() {
+        self.connectionWideEventData?.controllerStartDuration = nil
+    }
+    
+    func completeAtStepWithFailure(
+        _ step: VPNConnectionWideEventData.Step,
+        with error: Error,
+        description: String? = nil
+    ) {
+        self.connectionWideEventData?[keyPath: step.errorPath] = .init(error: error, description: description)
+        self.connectionWideEventData?[keyPath: step.durationPath]?.complete()
+        completeAndCleanupConnectionWideEvent(with: error, description: description)
+    }
+
+    func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil) {
+        guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
+        data.overallDuration?.complete()
+        if let error {
+            data.errorData = .init(error: error, description: description)
+            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+        } else {
+            wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
+        }
+        self.connectionWideEventData = nil
+    }
+}
+
+// MARK: - Error Description Helper
+
+private extension Error {
+    func contextualizedDescription() -> String? {
+        return (self as? NetworkProtectionTunnelController.StartError)?.caseDescription
     }
 }

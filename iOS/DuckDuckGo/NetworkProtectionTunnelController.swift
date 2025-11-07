@@ -520,8 +520,8 @@ private extension NetworkProtectionTunnelController {
     func setupAndStartConnectionWideEvent() {
         guard isConnectionWideEventMeasurementEnabled else { return }
         let data = VPNConnectionWideEventData(
-            extensionType: .app,
             startupMethod: .manualByMainApp,
+            extensionType: .app,
             contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
         )
         self.connectionWideEventData = data

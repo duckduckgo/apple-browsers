@@ -23,6 +23,7 @@ import NetworkProtectionIPC
 import PixelKit
 import UDSHelper
 import os.log
+import BrowserServicesKit
 
 /// VPN tunnel controller through IPC.
 ///
@@ -51,6 +52,17 @@ final class NetworkProtectionIPCTunnelController {
                 return [NSUnderlyingErrorKey: error as NSError]
             }
         }
+        
+        var caseDescription: String {
+            switch self {
+            case .notAuthorizedToEnableLoginItem:
+                return "notAuthorizedToEnableLoginItem"
+            case .enableLoginItemError:
+                return "enableLoginItemError"
+            case .ipcControlError:
+                return "ipcControlError"
+            }
+        }
     }
 
     private let featureGatekeeper: VPNFeatureGatekeeper
@@ -59,13 +71,26 @@ final class NetworkProtectionIPCTunnelController {
     private let pixelKit: PixelFiring?
     private let errorRecorder: VPNOperationErrorRecorder
     private let knownFailureStore: NetworkProtectionKnownFailureStore
+    private let wideEvent: WideEventManaging
+    private let featureFlagger: FeatureFlagger
     
     // MARK: - User Defaults
+    
     @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartTime, defaultValue: nil, defaults: .netP)
-    private var vpnConnectionWideEventBrowserStartTime: TimeInterval?
+    private var vpnConnectionWideEventBrowserStartTime: Date?
     
     @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartError, defaultValue: nil, defaults: .netP)
-    private var vpnConnectionWideEventBrowserStartError: Error?
+    private var vpnConnectionWideEventBrowserStartError: WideEventErrorData?
+    
+    @UserDefaultsWrapper(key: .vpnConnectionWideEventOverallStartTime, defaultValue: nil, defaults: .netP)
+    private var vpnConnectionWideEventOverallStartTime: Date?
+    
+    // MARK: - Wide Event
+    
+    private var isConnectionWideEventMeasurementEnabled: Bool {
+        featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
+    }
+    private var connectionWideEventData: VPNConnectionWideEventData?
 
     init(featureGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
          loginItemsManager: LoginItemsManaging = LoginItemsManager(),
@@ -73,7 +98,9 @@ final class NetworkProtectionIPCTunnelController {
          fileManager: FileManager = .default,
          pixelKit: PixelFiring? = PixelKit.shared,
          errorRecorder: VPNOperationErrorRecorder = VPNOperationErrorRecorder(),
-         knownFailureStore: NetworkProtectionKnownFailureStore = NetworkProtectionKnownFailureStore()) {
+         knownFailureStore: NetworkProtectionKnownFailureStore = NetworkProtectionKnownFailureStore(),
+         wideEvent: WideEventManaging = Application.appDelegate.wideEvent,
+         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
 
         self.featureGatekeeper = featureGatekeeper
         self.loginItemsManager = loginItemsManager
@@ -81,6 +108,8 @@ final class NetworkProtectionIPCTunnelController {
         self.pixelKit = pixelKit
         self.errorRecorder = errorRecorder
         self.knownFailureStore = knownFailureStore
+        self.wideEvent = wideEvent
+        self.featureFlagger = featureFlagger
     }
 
     // MARK: - Login Items Manager
@@ -98,6 +127,7 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
     func start() async {
         errorRecorder.beginRecordingIPCStart()
         pixelKit?.fire(StartAttempt.begin)
+        setupAndStartConnectionWideEvent()
 
         func handleFailure(_ error: Error) {
             knownFailureStore.lastKnownFailure = KnownFailure(error)
@@ -107,14 +137,19 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
         }
 
         do {
+            self.connectionWideEventData?.browserStartDuration = WideEvent.MeasuredInterval.startingNow()
             guard try await featureGatekeeper.canStartVPN() else {
-                throw RequestError.notAuthorizedToEnableLoginItem
+                let noAuthError = RequestError.notAuthorizedToEnableLoginItem
+                completeAndCleanupConnectionWideEvent(with: noAuthError, description: noAuthError.caseDescription)
+                throw noAuthError
             }
 
             do {
                 try await enableLoginItems()
             } catch {
-                throw RequestError.enableLoginItemError(error)
+                let enableLoginError = RequestError.enableLoginItemError(error)
+                completeAndCleanupConnectionWideEvent(with: enableLoginError, description: enableLoginError.caseDescription)
+                throw enableLoginError
             }
 
             knownFailureStore.reset()
@@ -123,12 +158,15 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
                 if let error {
                     let error = RequestError.ipcControlError(error)
                     handleFailure(error)
+                    self.connectionWideEventData?.browserStartError = WideEventErrorData(error: error, description: error.caseDescription)
                 } else {
                     pixelKit?.fire(StartAttempt.success, frequency: .legacyDailyAndCount)
                 }
+                self.discardAndPassonConnectionWideEvent()
             }
         } catch {
             handleFailure(error)
+            completeAndCleanupConnectionWideEvent(with: error)
         }
     }
 
@@ -246,5 +284,46 @@ extension NetworkProtectionIPCTunnelController {
             return nil
         }
 
+    }
+}
+
+// MARK: - Wide Event
+
+private extension NetworkProtectionIPCTunnelController {
+    
+    func setupAndStartConnectionWideEvent() {
+        guard isConnectionWideEventMeasurementEnabled else { return }
+        let data = VPNConnectionWideEventData(
+            startupMethod: .manualByMainApp,
+            contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
+        )
+        self.connectionWideEventData = data
+        wideEvent.startFlow(data)
+        self.connectionWideEventData?.overallDuration = WideEvent.MeasuredInterval.startingNow()
+    }
+    
+    func completeAndCleanupConnectionWideEvent(with error: Error, description: String? = nil) {
+        guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
+        data.browserStartDuration?.complete()
+        data.overallDuration?.complete()
+        data.errorData = .init(error: error, description: description)
+        wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+        cleanupConnectionWideEvent()
+    }
+    
+    func discardAndPassonConnectionWideEvent() {
+        guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
+        vpnConnectionWideEventBrowserStartTime = data.browserStartDuration?.start
+        vpnConnectionWideEventOverallStartTime = data.overallDuration?.start
+        vpnConnectionWideEventBrowserStartError = data.browserStartError
+        wideEvent.discardFlow(data)
+        cleanupConnectionWideEvent()
+    }
+    
+    func cleanupConnectionWideEvent() {
+        self.connectionWideEventData = nil
+        vpnConnectionWideEventBrowserStartTime = nil
+        vpnConnectionWideEventBrowserStartError = nil
+        vpnConnectionWideEventOverallStartTime = nil
     }
 }

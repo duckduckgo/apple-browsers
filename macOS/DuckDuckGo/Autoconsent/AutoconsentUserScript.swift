@@ -47,7 +47,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     private var selfTestFrameInfo: WKFrameInfo?
 
     private var topUrl: URL?
-    private let preferences = CookiePopupProtectionPreferences.shared
+    private let preferences: CookiePopupProtectionPreferences
     private let management: AutoconsentManagement
 
     public var messageNames: [String] { MessageName.allCases.map(\.rawValue) }
@@ -58,7 +58,8 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
 
     init(config: PrivacyConfiguration,
          statsManager: AutoconsentDailyStatsManaging,
-         management: AutoconsentManagement
+         management: AutoconsentManagement,
+         preferences: CookiePopupProtectionPreferences
     ) {
         Logger.autoconsent.debug("Initialising autoconsent userscript")
         do {
@@ -72,6 +73,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
         self.config = config
         self.statsManager = statsManager
         self.management = management
+        self.preferences = preferences
     }
 
     func userContentController(_ userContentController: WKUserContentController,

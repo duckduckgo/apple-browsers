@@ -64,6 +64,7 @@ final class PreferencesSidebarModel: ObservableObject {
     let searchPreferences: SearchPreferences
     let tabsPreferences: TabsPreferences
     let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+    let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let isUsingAuthV2: Bool
 
     @Published private(set) var currentSubscriptionState: PreferencesSidebarSubscriptionState = .init()
@@ -111,6 +112,7 @@ final class PreferencesSidebarModel: ObservableObject {
         searchPreferences: SearchPreferences,
         tabsPreferences: TabsPreferences,
         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+        cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
         aiFeaturesStatusProvider: AIFeaturesStatusProviding,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
@@ -128,6 +130,7 @@ final class PreferencesSidebarModel: ObservableObject {
         self.searchPreferences = searchPreferences
         self.tabsPreferences = tabsPreferences
         self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
+        self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
         self.aiFeaturesStatusProvider = aiFeaturesStatusProvider
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
 
@@ -163,6 +166,7 @@ final class PreferencesSidebarModel: ObservableObject {
         searchPreferences: SearchPreferences,
         tabsPreferences: TabsPreferences,
         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+        cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
         aiFeaturesStatusProvider: AIFeaturesStatusProviding,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
@@ -188,6 +192,7 @@ final class PreferencesSidebarModel: ObservableObject {
                   searchPreferences: searchPreferences,
                   tabsPreferences: tabsPreferences,
                   webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                  cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
                   aiFeaturesStatusProvider: aiFeaturesStatusProvider,
                   winBackOfferVisibilityManager: winBackOfferVisibilityManager
         )
@@ -278,7 +283,7 @@ final class PreferencesSidebarModel: ObservableObject {
         case .threatProtection:
             return PrivacyProtectionStatus(statusIndicator: .on)
         case .cookiePopupProtection:
-            return  PrivacyProtectionStatus(statusPublisher: CookiePopupProtectionPreferences.shared.$isAutoconsentEnabled) { isAutoconsentEnabled in
+            return  PrivacyProtectionStatus(statusPublisher: cookiePopupProtectionPreferences.$isAutoconsentEnabled) { isAutoconsentEnabled in
                 isAutoconsentEnabled ? .on : .off
             }
         case .emailProtection:

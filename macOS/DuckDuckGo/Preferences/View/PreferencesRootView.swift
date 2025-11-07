@@ -118,7 +118,7 @@ enum Preferences {
                 case .threatProtection:
                     ThreatProtectionView(model: MaliciousSiteProtectionPreferences.shared)
                 case .cookiePopupProtection:
-                    CookiePopupProtectionView(model: CookiePopupProtectionPreferences.shared)
+                    CookiePopupProtectionView(model: model.cookiePopupProtectionPreferences)
                 case .emailProtection:
                     EmailProtectionView(emailManager: EmailManager(),
                                         protectionStatus: model.protectionStatus(for: .emailProtection),
@@ -389,7 +389,7 @@ enum Preferences {
                 case .threatProtection:
                     ThreatProtectionView(model: MaliciousSiteProtectionPreferences.shared)
                 case .cookiePopupProtection:
-                    CookiePopupProtectionView(model: CookiePopupProtectionPreferences.shared)
+                    CookiePopupProtectionView(model: model.cookiePopupProtectionPreferences)
                 case .emailProtection:
                     EmailProtectionView(emailManager: EmailManager(),
                                         protectionStatus: model.protectionStatus(for: .emailProtection),

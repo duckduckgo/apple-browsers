@@ -92,6 +92,7 @@ final class BrowserTabViewController: NSViewController {
     private let searchPreferences: SearchPreferences
     private let tabsPreferences: TabsPreferences
     private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+    private let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
@@ -145,6 +146,7 @@ final class BrowserTabViewController: NSViewController {
          searchPreferences: SearchPreferences,
          tabsPreferences: TabsPreferences,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          tld: TLD = NSApp.delegateTyped.tld
@@ -165,6 +167,7 @@ final class BrowserTabViewController: NSViewController {
         self.searchPreferences = searchPreferences
         self.tabsPreferences = tabsPreferences
         self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
+        self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
         self.subscriptionManager = subscriptionManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
 
@@ -1185,6 +1188,7 @@ final class BrowserTabViewController: NSViewController {
                 searchPreferences: searchPreferences,
                 tabsPreferences: tabsPreferences,
                 webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
                 subscriptionManager: subscriptionManager,
                 winBackOfferVisibilityManager: winBackOfferVisibilityManager
             )
@@ -1733,7 +1737,8 @@ extension BrowserTabViewController {
         downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor()),
         searchPreferences: SearchPreferences(persistor: SearchPreferencesUserDefaultsPersistor(), windowControllersManager: Application.appDelegate.windowControllersManager),
         tabsPreferences: TabsPreferences(persistor: TabsPreferencesUserDefaultsPersistor(), windowControllersManager: Application.appDelegate.windowControllersManager),
-        webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: Application.appDelegate.windowControllersManager)
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: Application.appDelegate.windowControllersManager),
+        cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: CookiePopupProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: Application.appDelegate.windowControllersManager)
     )
 }
 

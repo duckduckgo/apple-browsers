@@ -74,6 +74,10 @@ class MockWebTrackingProtectionPreferencesPersistor: WebTrackingProtectionPrefer
     var gpcEnabled: Bool = false
 }
 
+class MockCookiePopupProtectionPreferencesPersistor: CookiePopupProtectionPreferencesPersistor {
+    var autoconsentEnabled: Bool = false
+}
+
 @available(macOS 12.0, *)
 final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
@@ -120,7 +124,8 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                 downloadsPreferences: DownloadsPreferences(persistor: MockDownloadsPreferencesPersistor()),
                 searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: windowControllersManager),
                 tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
-                webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager)
+                webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager)
             )
             viewController.tabViewModel = tabViewModel
             _=viewController.view

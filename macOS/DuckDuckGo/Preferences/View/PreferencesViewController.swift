@@ -52,6 +52,7 @@ final class PreferencesViewController: NSViewController {
         searchPreferences: SearchPreferences,
         tabsPreferences: TabsPreferences,
         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+        cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
@@ -71,6 +72,7 @@ final class PreferencesViewController: NSViewController {
                                         searchPreferences: searchPreferences,
                                         tabsPreferences: tabsPreferences,
                                         webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                        cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
                                         aiFeaturesStatusProvider: AIChatPreferences.shared,
                                         winBackOfferVisibilityManager: winBackOfferVisibilityManager)
         super.init(nibName: nil, bundle: nil)

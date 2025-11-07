@@ -116,6 +116,7 @@ final class MainViewController: NSViewController {
          downloadsPreferences: DownloadsPreferences = NSApp.delegateTyped.downloadsPreferences,
          tabsPreferences: TabsPreferences = NSApp.delegateTyped.tabsPreferences,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences = NSApp.delegateTyped.webTrackingProtectionPreferences,
+         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences = NSApp.delegateTyped.cookiePopupProtectionPreferences,
          themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
          pixelFiring: PixelFiring? = PixelKit.shared,
@@ -196,7 +197,8 @@ final class MainViewController: NSViewController {
             downloadsPreferences: downloadsPreferences,
             searchPreferences: searchPreferences,
             tabsPreferences: tabsPreferences,
-            webTrackingProtectionPreferences: webTrackingProtectionPreferences
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences
         )
         aiChatSidebarPresenter = AIChatSidebarPresenter(
             sidebarHost: browserTabViewController,

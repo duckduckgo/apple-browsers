@@ -155,7 +155,7 @@ final class MockOmniBarDelegate: OmniBarDelegate {
         return .dismissed
     }
 
-    func onClearPressed() {
+    func onClearTextPressed() {
     }
 
     func onEnterPressed() {

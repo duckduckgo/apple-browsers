@@ -211,6 +211,12 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211708648644692
     case storeSerpSettings
+
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211579914062173?focus=true
+    case showHideAIGeneratedImagesSection
+
+    /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
+    case standaloneMigration
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -233,7 +239,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .syncCreditCards,
              .unifiedURLPredictor,
              .forgetAllInSettings,
-             .vpnConnectionWidePixelMeasurement:
+             .vpnConnectionWidePixelMeasurement,
+             .showHideAIGeneratedImagesSection:
             true
         default:
             false
@@ -297,7 +304,9 @@ extension FeatureFlag: FeatureFlagDescribing {
              .duckAiDataClearing,
              .fullDuckAIMode,
              .vpnConnectionWidePixelMeasurement,
-             .storeSerpSettings:
+             .storeSerpSettings,
+             .showHideAIGeneratedImagesSection,
+             .standaloneMigration:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -511,6 +520,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
         case .storeSerpSettings:
             return .remoteReleasable(.feature(.storeSerpSettings))
+        case .showHideAIGeneratedImagesSection:
+            return .remoteReleasable(.feature(.showHideAIGeneratedImagesSection))
+        case .standaloneMigration:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
         }
     }
 }

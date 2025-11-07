@@ -124,7 +124,7 @@ enum Preferences {
                                         protectionStatus: model.protectionStatus(for: .emailProtection))
                 case .general:
                     GeneralView(startupModel: NSApp.delegateTyped.startupPreferences,
-                                downloadsModel: DownloadsPreferences.shared,
+                                downloadsModel: model.downloadsPreferences,
                                 searchModel: SearchPreferences.shared,
                                 tabsModel: TabsPreferences.shared,
                                 dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
@@ -394,7 +394,7 @@ enum Preferences {
                                         protectionStatus: model.protectionStatus(for: .emailProtection))
                 case .general:
                     GeneralView(startupModel: NSApp.delegateTyped.startupPreferences,
-                                downloadsModel: DownloadsPreferences.shared,
+                                downloadsModel: model.downloadsPreferences,
                                 searchModel: SearchPreferences.shared,
                                 tabsModel: TabsPreferences.shared,
                                 dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,

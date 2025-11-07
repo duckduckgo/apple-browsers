@@ -1,6 +1,5 @@
 //
 //  BrowserComparisonModelTests.swift
-//  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -18,7 +17,7 @@
 //
 
 import XCTest
-@testable import DuckDuckGo
+@testable import Onboarding
 
 final class BrowserComparisonModelTests: XCTestCase {
 
@@ -27,7 +26,7 @@ final class BrowserComparisonModelTests: XCTestCase {
         let result = try XCTUnwrap(BrowsersComparisonModel.privacyFeatures.first(where: { $0.type == .privateSearch })?.type.title)
 
         // THEN
-        XCTAssertEqual(result, UserText.Onboarding.BrowsersComparison.Features.privateSearch)
+        XCTAssertEqual(result, UserText.BrowsersComparison.Features.privateSearch)
 
     }
 
@@ -36,7 +35,7 @@ final class BrowserComparisonModelTests: XCTestCase {
         let result = try XCTUnwrap(BrowsersComparisonModel.privacyFeatures.first(where: { $0.type == .blockThirdPartyTrackers })?.type.title)
 
         // THEN
-        XCTAssertEqual(result, UserText.Onboarding.BrowsersComparison.Features.trackerBlockers)
+        XCTAssertEqual(result, UserText.BrowsersComparison.Features.trackerBlockers)
     }
 
     func testBrowserComparisonFeatureBlockCookiePopupsIsCorrect() throws {
@@ -44,7 +43,7 @@ final class BrowserComparisonModelTests: XCTestCase {
         let result = try XCTUnwrap(BrowsersComparisonModel.privacyFeatures.first(where: { $0.type == .blockCookiePopups })?.type.title)
 
         // THEN
-        XCTAssertEqual(result, UserText.Onboarding.BrowsersComparison.Features.cookiePopups)
+        XCTAssertEqual(result, UserText.BrowsersComparison.Features.cookiePopups)
     }
 
     func testBrowserComparisonFeatureBlockCreepyAdsIsCorrect() throws {
@@ -52,7 +51,7 @@ final class BrowserComparisonModelTests: XCTestCase {
         let result = try XCTUnwrap(BrowsersComparisonModel.privacyFeatures.first(where: { $0.type == .blockCreepyAds })?.type.title)
 
         // THEN
-        XCTAssertEqual(result, UserText.Onboarding.BrowsersComparison.Features.creepyAds)
+        XCTAssertEqual(result, UserText.BrowsersComparison.Features.creepyAds)
     }
 
     func testWhenIsNotHighlightsThenBrowserComparisonFeatureEraseBrowsingDataIsCorrect() throws {
@@ -60,7 +59,7 @@ final class BrowserComparisonModelTests: XCTestCase {
         let result = try XCTUnwrap(BrowsersComparisonModel.privacyFeatures.first(where: { $0.type == .eraseBrowsingData })?.type.title)
 
         // THEN
-        XCTAssertEqual(result, UserText.Onboarding.BrowsersComparison.Features.eraseBrowsingData)
+        XCTAssertEqual(result, UserText.BrowsersComparison.Features.eraseBrowsingData)
     }
 
 }

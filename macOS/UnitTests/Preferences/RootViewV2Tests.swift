@@ -48,6 +48,7 @@ final class RootViewV2Tests: XCTestCase {
             includeAIChat: true,
             subscriptionManager: SubscriptionAuthV1toV2BridgeMock(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
+            downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
             aiFeaturesStatusProvider: MockAIChatPreferences(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )

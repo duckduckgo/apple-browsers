@@ -159,6 +159,10 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.duckAiDataClearing)
     }
 
+    var shouldShowHideAIGeneratedImagesSection: Bool {
+        featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
+    }
+
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false
 

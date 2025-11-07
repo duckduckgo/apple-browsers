@@ -57,6 +57,7 @@ final class MainCoordinator {
     private let launchSourceManager: LaunchSourceManaging
 
     init(syncService: SyncService,
+         contentBlockingService: ContentBlockingService,
          bookmarksDatabase: CoreDataDatabase,
          remoteMessagingService: RemoteMessagingService,
          daxDialogs: DaxDialogs,
@@ -84,7 +85,7 @@ final class MainCoordinator {
         self.featureFlagger = featureFlagger
         self.modalPromptCoordinationService = modalPromptCoordinationService
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
-                                                          remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
+                                                          remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
         let previewsSource = DefaultTabPreviewsSource()
@@ -106,6 +107,7 @@ final class MainCoordinator {
                                 bookmarksDatabase: bookmarksDatabase,
                                 historyManager: historyManager,
                                 syncService: syncService.sync,
+                                contentBlockingAssetsPublisher: contentBlockingService.updating.userContentBlockingAssets,
                                 subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                 contextualOnboardingPresenter: contextualOnboardingPresenter,
                                 contextualOnboardingLogic: daxDialogs,
@@ -128,6 +130,7 @@ final class MainCoordinator {
                                         homePageConfiguration: homePageConfiguration,
                                         syncService: syncService.sync,
                                         syncDataProviders: syncService.syncDataProviders,
+                                        contentBlockingAssetsPublisher: contentBlockingService.updating.userContentBlockingAssets,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         previewsSource: previewsSource,
                                         tabManager: tabManager,
@@ -152,7 +155,8 @@ final class MainCoordinator {
                                         daxDialogsManager: daxDialogsManager,
                                         dbpIOSPublicInterface: dbpIOSPublicInterface,
                                         launchSourceManager: launchSourceManager,
-                                        winBackOfferVisibilityManager: winBackOfferService.visibilityManager)
+                                        winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
+                                        remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler)
     }
 
     func start() {

@@ -57,17 +57,23 @@ final class WinBackOfferDebugMenu: NSMenuItem {
         let menu = NSMenu(title: "")
 
         menu.addItem(NSMenuItem(title: "Simulate Churn", action: #selector(simulateChurn), target: self))
-        menu.addItem(NSMenuItem(title: "Simulate Churn After Redemption", action: #selector(simulateChurnAfterRedemption), target: self))
         menu.addItem(.separator())
-
         menu.addItem(NSMenuItem(title: "Override Today's Date", action: #selector(overrideTodaysDate), target: self))
         menu.addItem(NSMenuItem(title: "Reset Win-back Offer", action: #selector(resetWinBackOffer), target: self))
         menu.addItem(.separator())
-        
-        menu.addItem(NSMenuItem(title: "Mark Offer Redeemed", action: #selector(markOfferRedeemed), target: self))
-        menu.addItem(NSMenuItem(title: "Clear Offer Redeemed", action: #selector(clearOfferRedemption), target: self))
+        let markRedeemedItem = NSMenuItem(
+            title: "Mark Offer Redeemed",
+            action: #selector(markOfferRedeemed),
+            target: self
+        )
+        menu.addItem(markRedeemedItem)
+        let completeCooldownItem = NSMenuItem(
+            title: "Complete Cooldown",
+            action: #selector(completeCooldown),
+            target: self
+        )
+        menu.addItem(completeCooldownItem)
         menu.addItem(.separator())
-
         menu.addItem(simulatedTodayDateMenuItem)
         menu.addItem(churnDateMenuItem)
         menu.addItem(eligibilityDateMenuItem)
@@ -87,21 +93,8 @@ final class WinBackOfferDebugMenu: NSMenuItem {
     func simulateChurn() {
         let effectiveDate = debugStore.simulatedTodayDate
         winbackOfferStore.storeChurnDate(effectiveDate)
-        winbackOfferStore.setHasRedeemedOffer(false)
         winbackOfferStore.storeOfferPresentationDate(nil)
         winbackOfferStore.didDismissUrgencyMessage = false
-        updateMenuItemsState()
-    }
-
-    @objc
-    func simulateChurnAfterRedemption() {
-        let effectiveDate = debugStore.simulatedTodayDate
-        winbackOfferStore.storeChurnDate(effectiveDate)
-
-        if !winbackOfferStore.hasRedeemedOffer() {
-            winbackOfferStore.setHasRedeemedOffer(true)
-        }
-
         updateMenuItemsState()
     }
 
@@ -133,8 +126,19 @@ final class WinBackOfferDebugMenu: NSMenuItem {
     }
 
     @objc
-    func clearOfferRedemption() {
+    func completeCooldown() {
+        let cooldownDuration = TimeInterval.seconds(10)
+        let availabilityOffset = TimeInterval.days(3)
+
+        let cooldownExpiryDate = debugStore.simulatedTodayDate.addingTimeInterval(cooldownDuration)
+        let firstDay = cooldownExpiryDate.addingTimeInterval(availabilityOffset)
+
+        winbackOfferStore.storeChurnDate(cooldownExpiryDate)
         winbackOfferStore.setHasRedeemedOffer(false)
+        winbackOfferStore.storeOfferPresentationDate(nil)
+        winbackOfferStore.didDismissUrgencyMessage = false
+
+        debugStore.simulatedTodayDate = firstDay
         updateMenuItemsState()
     }
 

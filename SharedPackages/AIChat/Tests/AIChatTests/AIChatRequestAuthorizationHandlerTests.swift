@@ -69,6 +69,19 @@ final class AIChatRequestAuthorizationHandlerTests: XCTestCase {
         XCTAssertTrue(result, "Expected to allow request for DuckAI bang")
     }
 
+    // MARK: - Allow-listed hosts
+    @MainActor
+    func testShouldAllowRequestWithDuckAIHost() {
+        let url = URL(string: "https://duck.ai/chat")!
+        let request = URLRequest(url: url)
+        let targetFrame = MockWKFrameInfo(isMainFrame: true)
+        navigationAction = MockWKNavigationAction(request: request, targetFrame: targetFrame)
+
+        let result = handler.shouldAllowRequestWithNavigationAction(navigationAction)
+
+        XCTAssertTrue(result, "Expected to allow request for duck.ai host in main frame")
+    }
+
     // MARK: - Main Frame
     @MainActor
     func testShouldAllowRequestWithNonMainFrame() {

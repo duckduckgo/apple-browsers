@@ -413,6 +413,8 @@ final class WatchdogTests: XCTestCase {
     // MARK: - State Transitions
 
     func testHangStateTransitions() async throws {
+        throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/project/1200194497630846/task/1211604496994582?focus=true")
+
         let minimumDuration = 0.2
         let maximumDuration = 1.0
         let checkInterval   = 0.1

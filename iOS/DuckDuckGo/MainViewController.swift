@@ -115,6 +115,9 @@ class MainViewController: UIViewController {
     let syncService: DDGSyncing
     let syncDataProviders: SyncDataProviders
     let syncPausedStateManager: any SyncPausedStateManaging
+
+    let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
+
     private let tutorialSettings: TutorialSettings
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     let contextualOnboardingPixelReporter: OnboardingPixelReporting
@@ -213,7 +216,8 @@ class MainViewController: UIViewController {
     }()
 
     private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
-        let manager = AIChatViewControllerManager(experimentalAIChatManager: .init(featureFlagger: featureFlagger),
+        let manager = AIChatViewControllerManager(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
+                                                  experimentalAIChatManager: .init(featureFlagger: featureFlagger),
                                                   featureFlagger: featureFlagger,
                                                   featureDiscovery: featureDiscovery,
                                                   aiChatSettings: aiChatSettings)
@@ -251,6 +255,7 @@ class MainViewController: UIViewController {
         homePageConfiguration: HomePageConfiguration,
         syncService: DDGSyncing,
         syncDataProviders: SyncDataProviders,
+        contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
         appSettings: AppSettings,
         previewsSource: TabPreviewsSource,
         tabManager: TabManager,
@@ -289,6 +294,7 @@ class MainViewController: UIViewController {
         self.homePageConfiguration = homePageConfiguration
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
+        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.favoritesViewModel = FavoritesListViewModel(bookmarksDatabase: bookmarksDatabase, favoritesDisplayMode: appSettings.favoritesDisplayMode)
         self.bookmarksCachingSearch = BookmarksCachingSearch(bookmarksStore: CoreDataBookmarksSearchStore(bookmarksStore: bookmarksDatabase))
         self.appSettings = appSettings
@@ -1098,6 +1104,7 @@ class MainViewController: UIViewController {
         let narrowLayoutInLandscape = aiChatSettings.isAIChatSearchInputUserSettingsEnabled
 
         let controller = NewTabPageViewController(isFocussedState: false,
+                                                  dismissKeyboardOnScroll: true,
                                                   tab: tabModel,
                                                   interactionModel: favoritesViewModel,
                                                   homePageMessagesConfiguration: homePageConfiguration,
@@ -2637,7 +2644,9 @@ extension MainViewController: OmniBarDelegate {
             menuEntries = tab.buildShortcutsMenu()
             headerEntries = []
         } else {
-            menuEntries = tab.buildBrowsingMenu(with: menuBookmarksViewModel)
+            menuEntries = tab.buildBrowsingMenu(with: menuBookmarksViewModel,
+                                                mobileCustomization: mobileCustomization,
+                                                clearTabsAndData: onFirePressed)
             headerEntries = tab.buildBrowsingMenuHeaderContent()
         }
 
@@ -2743,7 +2752,7 @@ extension MainViewController: OmniBarDelegate {
         stopLoading()
     }
 
-    func onClearPressed() {
+    func onClearTextPressed() {
         fireControllerAwarePixel(ntp: .addressBarClearPressedOnNTP,
                                  serp: .addressBarClearPressedOnSERP,
                                  website: .addressBarClearPressedOnWebsite)
@@ -3948,9 +3957,6 @@ extension MainViewController {
         case .bookmarks:
             self.segueToBookmarks()
 
-        case .duckAi:
-            self.openAIChat()
-
         case .passwords:
             self.launchAutofillLogins(with: currentTab?.url, currentTabUid: currentTab?.tabModel.uid, source: .customizedToolbarButton, selectedAccount: nil)
 
@@ -3975,12 +3981,12 @@ extension MainViewController {
             return
         }
 
-        browserChrome.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
-        browserChrome.removeBorder()
-
         if !isNewTabPageVisible && state.isEnabled {
             browserChrome.setImage(state.currentToolbarButton.largeIcon)
             browserChrome.addBorder()
+        } else {
+            browserChrome.removeBorder()
+            browserChrome.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
         }
     }
 

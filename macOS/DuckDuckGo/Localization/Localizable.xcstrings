@@ -23329,6 +23329,126 @@
         }
       }
     },
+    "duckai.hide-ai-generated-images-settings" : {
+      "comment" : "The section name in preferences for Hide AI-Generated Images Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KI-generierte Bilder ausblenden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide AI-Generated Images"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar imágenes generadas por IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer les images générées par l'IA"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nascondi immagini generate dall'intelligenza artificiale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verberg door AI gegenereerde afbeeldingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ukryj obrazy wygenerowane przez sztuczną inteligencję"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar imagens geradas por IA"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрыть изображения, созданные ИИ"
+          }
+        }
+      }
+    },
+    "duckai.hide-ai-generated-images-settings.description" : {
+      "comment" : "Description of the section in Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtert KI-generierte Bilder aus den Bildsuchergebnissen heraus"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Filter out AI-generated images from image search results"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtra las imágenes generadas por IA de los resultados de búsqueda de imágenes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtre les images générées par l'IA dans les résultats de recherche d'images"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtra le immagini generate dall'intelligenza artificiale dai risultati di ricerca di immagini"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtert door AI gegenereerde afbeeldingen uit de zoekresultaten van afbeeldingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtruje obrazy wygenerowane przez sztuczną inteligencję z wyników wyszukiwania obrazów"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtra as imagens geradas por IA dos resultados de pesquisa de imagens"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фильтрует изображения, созданные ИИ, из результатов поиска изображений"
+          }
+        }
+      }
+    },
     "duckai.menu.new" : {
       "comment" : "Menu item to launch AI Chat",
       "extractionState" : "extracted_with_value",
@@ -23689,6 +23809,66 @@
         }
       }
     },
+    "duckai.search-ai-features-settings.link" : {
+      "comment" : "Button to open the Search AI Features Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Such-KI-Funktionen öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Search AI Features"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir funciones de IA de búsqueda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir les fonctionnalités d'IA de recherche"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri le funzionalità di ricerca IA"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open AI-zoekfuncties"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz funkcje wyszukiwania AI"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir funcionalidades de IA de pesquisa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть функции поиска с ИИ"
+          }
+        }
+      }
+    },
     "duckai.search-assist-settings" : {
       "comment" : "The section name in preferences for Search Assist Settings",
       "extractionState" : "extracted_with_value",
@@ -23865,6 +24045,186 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть настройки Search Assist"
+          }
+        }
+      }
+    },
+    "duckai.hide-ai-generated-images-settings" : {
+      "comment" : "The section name in preferences for Hide AI-Generated Images Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KI-generierte Bilder ausblenden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide AI-Generated Images"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar imágenes generadas por IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer les images générées par l'IA"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nascondi immagini generate dall'intelligenza artificiale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verberg door AI gegenereerde afbeeldingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ukryj obrazy wygenerowane przez sztuczną inteligencję"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar imagens geradas por IA"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрыть изображения, созданные ИИ"
+          }
+        }
+      }
+    },
+    "duckai.hide-ai-generated-images-settings.description" : {
+      "comment" : "Description of the section in Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtert KI-generierte Bilder aus den Bildsuchergebnissen heraus"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Filter out AI-generated images from image search results"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtra las imágenes generadas por IA de los resultados de búsqueda de imágenes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtre les images générées par l'IA dans les résultats de recherche d'images"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtra le immagini generate dall'intelligenza artificiale dai risultati di ricerca di immagini"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtert door AI gegenereerde afbeeldingen uit de zoekresultaten van afbeeldingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtruje obrazy wygenerowane przez sztuczną inteligencję z wyników wyszukiwania obrazów"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtra as imagens geradas por IA dos resultados de pesquisa de imagens"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фильтрует изображения, созданные ИИ, из результатов поиска изображений"
+          }
+        }
+      }
+    },
+    "duckai.search-ai-features-settings.link" : {
+      "comment" : "Button to open the Search AI Features Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Such-KI-Funktionen öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Search AI Features"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir funciones de IA de búsqueda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir les fonctionnalités d'IA de recherche"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri le funzionalità di ricerca IA"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open AI-zoekfuncties"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz funkcje wyszukiwania AI"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir funcionalidades de IA de pesquisa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть функции поиска с ИИ"
           }
         }
       }

@@ -55,6 +55,7 @@ final class MainViewController: NSViewController {
     let bookmarkManager: BookmarkManager
     let historyCoordinator: HistoryCoordinator
     let fireproofDomains: FireproofDomains
+    let downloadManager: FileDownloadManagerProtocol
     let isBurner: Bool
 
     private var addressBarBookmarkIconVisibilityCancellable: AnyCancellable?
@@ -94,6 +95,7 @@ final class MainViewController: NSViewController {
          bookmarkManager: BookmarkManager = NSApp.delegateTyped.bookmarkManager,
          bookmarkDragDropManager: BookmarkDragDropManager = NSApp.delegateTyped.bookmarkDragDropManager,
          historyCoordinator: HistoryCoordinator = NSApp.delegateTyped.historyCoordinator,
+         recentlyClosedCoordinator: RecentlyClosedCoordinating = NSApp.delegateTyped.recentlyClosedCoordinator,
          contentBlocking: ContentBlockingProtocol = NSApp.delegateTyped.privacyFeatures.contentBlocking,
          fireproofDomains: FireproofDomains = NSApp.delegateTyped.fireproofDomains,
          windowControllersManager: WindowControllersManager = NSApp.delegateTyped.windowControllersManager,
@@ -107,6 +109,9 @@ final class MainViewController: NSViewController {
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          defaultBrowserPreferences: DefaultBrowserPreferences = NSApp.delegateTyped.defaultBrowserPreferences,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptService.presenter,
+         downloadManager: FileDownloadManagerProtocol = NSApp.delegateTyped.downloadManager,
+         downloadListCoordinator: DownloadListCoordinator = NSApp.delegateTyped.downloadListCoordinator,
+         downloadsPreferences: DownloadsPreferences = NSApp.delegateTyped.downloadsPreferences,
          themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
          pixelFiring: PixelFiring? = PixelKit.shared,
@@ -124,6 +129,7 @@ final class MainViewController: NSViewController {
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger
         self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
+        self.downloadManager = downloadManager
         self.themeManager = themeManager
         self.fireCoordinator = fireCoordinator
         self.winBackOfferPromptPresenting = winBackOfferPromptPresenting
@@ -181,7 +187,8 @@ final class MainViewController: NSViewController {
         browserTabViewController = BrowserTabViewController(
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
-            defaultBrowserPreferences: defaultBrowserPreferences
+            defaultBrowserPreferences: defaultBrowserPreferences,
+            downloadsPreferences: downloadsPreferences
         )
         aiChatSidebarPresenter = AIChatSidebarPresenter(
             sidebarHost: browserTabViewController,
@@ -207,9 +214,11 @@ final class MainViewController: NSViewController {
         )
 
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
+                                                                         downloadListCoordinator: downloadListCoordinator,
                                                                          bookmarkManager: bookmarkManager,
                                                                          bookmarkDragDropManager: bookmarkDragDropManager,
                                                                          historyCoordinator: historyCoordinator,
+                                                                         recentlyClosedCoordinator: recentlyClosedCoordinator,
                                                                          contentBlocking: contentBlocking,
                                                                          fireproofDomains: fireproofDomains,
                                                                          permissionManager: permissionManager,
@@ -221,7 +230,8 @@ final class MainViewController: NSViewController {
                                                                          aiChatSidebarPresenter: aiChatSidebarPresenter,
                                                                          vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
                                                                          sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
-                                                                         defaultBrowserPreferences: defaultBrowserPreferences)
+                                                                         defaultBrowserPreferences: defaultBrowserPreferences,
+                                                                         downloadsPreferences: downloadsPreferences)
 
         findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)

@@ -87,6 +87,7 @@ public enum PrivacyFeature: String {
     case dataImport
     case duckAiDataClearing
     case storeSerpSettings
+    case showHideAIGeneratedImagesSection
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -277,6 +278,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Signals that the iOS app should display duck.ai chats in "full mode" i.e in a tab, not a sheet
     case fullDuckAIMode
+
+    /// Enables native-side support for standalone migration flows in AI Chat
+    case standaloneMigration
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

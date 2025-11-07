@@ -1,6 +1,5 @@
 //
 //  BrowsersComparisonModel.swift
-//  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -19,9 +18,9 @@
 
 import Foundation
 
-struct BrowsersComparisonModel {
+public struct BrowsersComparisonModel {
 
-    static let privacyFeatures: [PrivacyFeature] = {
+    public static let privacyFeatures: [PrivacyFeature] = {
         PrivacyFeature.FeatureType.allCases.map { featureType in
             PrivacyFeature(type: featureType, browsersSupport: browsersSupport(for: featureType))
         }
@@ -96,7 +95,7 @@ extension BrowsersComparisonModel {
 
 extension BrowsersComparisonModel {
 
-    struct PrivacyFeature {
+    public struct PrivacyFeature {
         let type: FeatureType
         let browsersSupport: [BrowserSupport]
     }
@@ -120,15 +119,15 @@ extension BrowsersComparisonModel.PrivacyFeature {
         var title: String {
             switch self {
             case .privateSearch:
-                UserText.Onboarding.BrowsersComparison.Features.privateSearch
+                UserText.BrowsersComparison.Features.privateSearch
             case .blockThirdPartyTrackers:
-                UserText.Onboarding.BrowsersComparison.Features.trackerBlockers
+                UserText.BrowsersComparison.Features.trackerBlockers
             case .blockCookiePopups:
-                UserText.Onboarding.BrowsersComparison.Features.cookiePopups
+                UserText.BrowsersComparison.Features.cookiePopups
             case .blockCreepyAds:
-                UserText.Onboarding.BrowsersComparison.Features.creepyAds
+                UserText.BrowsersComparison.Features.creepyAds
             case .eraseBrowsingData:
-                UserText.Onboarding.BrowsersComparison.Features.eraseBrowsingData
+                UserText.BrowsersComparison.Features.eraseBrowsingData
             }
         }
     }

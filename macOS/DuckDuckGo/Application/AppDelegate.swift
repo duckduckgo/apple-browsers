@@ -94,7 +94,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let faviconManager: FaviconManager
     let pinnedTabsManager = PinnedTabsManager()
-    let pinnedTabsManagerProvider: PinnedTabsManagerProviding!
+    let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider
@@ -125,6 +125,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let dataClearingPreferences: DataClearingPreferences
     let startupPreferences: StartupPreferences
     let defaultBrowserPreferences: DefaultBrowserPreferences
+    let downloadsPreferences: DownloadsPreferences
 
     let database: Database!
     let bookmarkDatabase: BookmarkDatabase
@@ -138,6 +139,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
     let fireCoordinator: FireCoordinator
     let permissionManager: PermissionManager
+    let recentlyClosedCoordinator: RecentlyClosedCoordinating
+    let downloadManager: FileDownloadManagerProtocol
+    let downloadListCoordinator: DownloadListCoordinator
 
     let autoconsentManagement = AutoconsentManagement()
 
@@ -516,7 +520,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         bookmarkDragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
-        pinnedTabsManagerProvider = PinnedTabsManagerProvider()
+        pinnedTabsManagerProvider = PinnedTabsManagerProvider(sharedPinedTabsManager: pinnedTabsManager)
 
 #if DEBUG || REVIEW
         let defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
@@ -659,6 +663,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagger: featureFlagger
         )
         self.windowControllersManager = windowControllersManager
+        pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
 
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(
             tabShower: windowControllersManager,
@@ -876,6 +881,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 #endif
 
+        recentlyClosedCoordinator = RecentlyClosedCoordinator(windowControllersManager: windowControllersManager, pinnedTabsManagerProvider: pinnedTabsManagerProvider)
+        downloadsPreferences = DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor())
+        downloadManager = FileDownloadManager(preferences: downloadsPreferences)
+#if DEBUG
+        if AppVersion.runType.requiresEnvironment {
+            downloadListCoordinator = DownloadListCoordinator(
+                store: DownloadListStore(database: database.db),
+                downloadManager: downloadManager,
+                windowControllersManager: windowControllersManager
+            )
+        } else {
+            downloadListCoordinator = DownloadListCoordinator(
+                store: DownloadListStore(database: nil),
+                downloadManager: downloadManager,
+                windowControllersManager: windowControllersManager
+            )
+        }
+#else
+        downloadListCoordinator = DownloadListCoordinator(
+            store: DownloadListStore(database: database.db),
+            downloadManager: downloadManager,
+            windowControllersManager: windowControllersManager
+        )
+#endif
+
         super.init()
 
         appContentBlocking?.userContentUpdating.userScriptDependenciesProvider = self
@@ -952,8 +982,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         LottieConfiguration.shared.renderingEngine = .mainThread
 
         configurationManager.start()
-        _ = DownloadListCoordinator.shared
-        _ = RecentlyClosedCoordinator.shared
 
         let isFirstLaunch = LocalStatisticsStore().atb == nil
 
@@ -1159,11 +1187,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        if !FileDownloadManager.shared.downloads.isEmpty {
+        if !downloadManager.downloads.isEmpty {
             // if there‘re downloads without location chosen yet (save dialog should display) - ignore them
-            let activeDownloads = Set(FileDownloadManager.shared.downloads.filter { $0.state.isDownloading })
+            let activeDownloads = Set(downloadManager.downloads.filter { $0.state.isDownloading })
             if !activeDownloads.isEmpty {
-                let alert = NSAlert.activeDownloadsTerminationAlert(for: FileDownloadManager.shared.downloads)
+                let alert = NSAlert.activeDownloadsTerminationAlert(for: downloadManager.downloads)
                 let downloadsFinishedCancellable = FileDownloadManager.observeDownloadsFinished(activeDownloads) {
                     // close alert and burn the window when all downloads finished
                     NSApp.stopModal(withCode: .OK)
@@ -1174,8 +1202,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     return .terminateCancel
                 }
             }
-            FileDownloadManager.shared.cancelAll(waitUntilDone: true)
-            DownloadListCoordinator.shared.sync()
+            downloadManager.cancelAll(waitUntilDone: true)
+            downloadListCoordinator.sync()
         }
 
         // Cancel any active update tracking flow

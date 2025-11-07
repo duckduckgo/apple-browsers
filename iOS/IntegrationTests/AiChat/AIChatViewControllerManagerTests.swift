@@ -33,6 +33,7 @@ struct AIChatViewControllerManagerTests {
     private func createManager() -> AIChatViewControllerManager {
         let manager = AIChatViewControllerManager(
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
             downloadsDirectoryHandler: MockDownloadsDirectoryHandler(),
             userAgentManager: MockUserAgentManager(privacyConfig: MockPrivacyConfiguration()),
             experimentalAIChatManager: ExperimentalAIChatManager(),

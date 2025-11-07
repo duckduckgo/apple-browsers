@@ -66,8 +66,6 @@ struct DownloadsPreferencesUserDefaultsPersistor: DownloadsPreferencesPersistor 
 
 final class DownloadsPreferences: ObservableObject {
 
-    static let shared = DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor())
-
     private func validatedDownloadLocation(_ selectedLocation: URL?) -> URL? {
         if let selectedLocation, Self.isDownloadLocationValid(selectedLocation) {
             return selectedLocation
@@ -168,7 +166,7 @@ final class DownloadsPreferences: ObservableObject {
     }
 
     func presentDownloadDirectoryPanel() {
-        let panel = NSOpenPanel.downloadDirectoryPanel()
+        let panel = NSOpenPanel.downloadDirectoryPanel(downloadsPreferences: self)
         let result = panel.runModal()
 
         if result == .OK, let selectedURL = panel.url {

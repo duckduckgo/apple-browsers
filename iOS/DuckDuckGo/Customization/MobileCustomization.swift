@@ -62,8 +62,6 @@ class MobileCustomization {
                 "New Tab"
             case .bookmarks:
                 "Bookmarks"
-            case .duckAi:
-                "Duck.ai"
             case .fire:
                 "Clear Tabs and Data"
             case .vpn:
@@ -103,8 +101,6 @@ class MobileCustomization {
                 DesignSystemImages.Glyphs.Size24.add
             case .bookmarks:
                 DesignSystemImages.Glyphs.Size24.bookmarks
-            case .duckAi:
-                DesignSystemImages.Glyphs.Size24.aiChat
             case .fire:
                 DesignSystemImages.Glyphs.Size24.fireSolid
             case .vpn:
@@ -136,8 +132,6 @@ class MobileCustomization {
                 DesignSystemImages.Glyphs.Size16.add
             case .bookmarks:
                 DesignSystemImages.Glyphs.Size16.bookmarks
-            case .duckAi:
-                DesignSystemImages.Glyphs.Size16.aiChat
             case .fire:
                 DesignSystemImages.Glyphs.Size16.fireSolid
             case .vpn:
@@ -163,7 +157,6 @@ class MobileCustomization {
         case home
         case newTab
         case bookmarks
-        case duckAi
         case downloads
 
         // Shared
@@ -192,7 +185,6 @@ class MobileCustomization {
     static let toolbarButtons: [Button] = {
         let sortedButtons: [Button] = [
             .bookmarks,
-            .duckAi,
             .home,
             .newTab,
             .passwords,
@@ -207,9 +199,17 @@ class MobileCustomization {
     }()
 
     var state: State {
-        State(isEnabled: featureFlagger.isFeatureOn(.mobileCustomization) && !isPad,
-              currentToolbarButton: current(forKey: .toolbarButton, Self.toolbarDefault),
-              currentAddressBarButton: current(forKey: .addressBarButton, Self.addressBarDefault))
+        State(isEnabled: isEnabled,
+              currentToolbarButton: current(forKey: .toolbarButton, containedIn: Self.toolbarButtons, Self.toolbarDefault),
+              currentAddressBarButton: current(forKey: .addressBarButton, containedIn: Self.addressBarButtons.compactMap { $0 }, Self.addressBarDefault))
+    }
+
+    var hasFireButton: Bool {
+        return state.currentToolbarButton == .fire || state.currentAddressBarButton == .fire
+    }
+
+    var isEnabled: Bool {
+        featureFlagger.isFeatureOn(.mobileCustomization) && !isPad
     }
 
     private let featureFlagger: FeatureFlagger
@@ -243,12 +243,15 @@ class MobileCustomization {
         self.postChangeNotification = postChangeNotification
     }
 
-    private func current(forKey key: StorageKeys, _ defaultButton: Button) -> Button {
-        if let value = try? keyValueStore.object(forKey: key.rawValue) as? String {
-            Button(rawValue: value) ?? defaultButton
-        } else {
-            defaultButton
-        }
+    /// Get the current button for the given storage key.  If the button isn't in the alloweed list then the default is returned.  This prevents migration problems if the options change.
+    private func current(forKey key: StorageKeys, containedIn allowed: [Button], _ defaultButton: Button) -> Button {
+        guard let value = try? keyValueStore.object(forKey: key.rawValue) as? String,
+              let button = Button(rawValue: value),
+              allowed.contains(button) else {
+                  return defaultButton
+              }
+
+        return button
     }
 
     func persist(_ state: State) {

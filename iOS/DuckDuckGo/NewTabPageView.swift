@@ -30,8 +30,10 @@ struct NewTabPageView: View {
     @ObservedObject private var favoritesViewModel: FavoritesViewModel
 
     let narrowLayoutInLandscape: Bool
+    let dismissKeyboardOnScroll: Bool
 
     init(narrowLayoutInLandscape: Bool = false,
+         dismissKeyboardOnScroll: Bool = true,
          viewModel: NewTabPageViewModel,
          messagesModel: NewTabPageMessagesModel,
          favoritesViewModel: FavoritesViewModel) {
@@ -39,6 +41,7 @@ struct NewTabPageView: View {
         self.messagesModel = messagesModel
         self.favoritesViewModel = favoritesViewModel
         self.narrowLayoutInLandscape = narrowLayoutInLandscape
+        self.dismissKeyboardOnScroll = dismissKeyboardOnScroll
 
         self.messagesModel.load()
     }
@@ -92,10 +95,14 @@ private extension NewTabPageView {
                 .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
                 .background(Color(designSystemColor: .background))
             }
-            .withScrollKeyboardDismiss()
+            .if(dismissKeyboardOnScroll, transform: {
+                $0.withScrollKeyboardDismiss()
+            })
         }
-        // Prevent recreating geomery reader when keyboard is shown/hidden.
-        .ignoresSafeArea(.keyboard)
+        .if(dismissKeyboardOnScroll, transform: {
+            // Prevent recreating geometry reader when keyboard is shown/hidden.
+            $0.ignoresSafeArea(.keyboard)
+        })
     }
 
     @ViewBuilder

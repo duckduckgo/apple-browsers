@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
+import Bookmarks
 import BrowserServicesKit
+import Foundation
 
 enum BookmarkImportSource: Equatable {
     case duckduckgoWebKit

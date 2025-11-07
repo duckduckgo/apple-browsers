@@ -24,6 +24,7 @@ import SubscriptionTestingUtilities
 import BrowserServicesKit
 import PersistenceTestingUtils
 import BrowserServicesKitTestsUtils
+import Combine
 
 // swiftlint:disable force_try
 
@@ -90,6 +91,7 @@ final class TabManagerTests: XCTestCase {
                           bookmarksDatabase: MockBookmarksDatabase.make(prepareFolderStructure: false),
                           historyManager: MockHistoryManager(),
                           syncService: MockDDGSyncing(),
+                          contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
                           subscriptionDataReporter: MockSubscriptionDataReporter(),
                           contextualOnboardingPresenter: ContextualOnboardingPresenterMock(),
                           contextualOnboardingLogic: ContextualOnboardingLogicMock(),

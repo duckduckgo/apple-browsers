@@ -23,11 +23,13 @@ import History
 import MaliciousSiteProtection
 import OHHTTPStubs
 import OHHTTPStubsSwift
+import os.log
 import PrivacyDashboard
+import SharedTestUtilities
 import SpecialErrorPages
 import Suggestions
 import XCTest
-import os.log
+
 @testable import DuckDuckGo_Privacy_Browser
 
 @available(macOS 12.0, *)

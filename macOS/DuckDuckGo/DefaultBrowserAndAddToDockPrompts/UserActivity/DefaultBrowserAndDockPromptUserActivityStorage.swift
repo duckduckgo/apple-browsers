@@ -18,6 +18,7 @@
 
 import Foundation
 import Persistence
+import class Common.EventMapping
 
 protocol DefaultBrowserAndDockPromptUserActivityStorage: AnyObject {
     /// Persists the provided user activity data to storage.
@@ -52,11 +53,14 @@ final class DefaultBrowserAndDockPromptUserActivityStore: DefaultBrowserAndDockP
     }()
 
     private let keyValueFilesStore: ThrowingKeyValueStoring
+    private let eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent>
 
     init(
-        keyValueFilesStore: ThrowingKeyValueStoring
+        keyValueFilesStore: ThrowingKeyValueStoring,
+        eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> = DefaultBrowserAndDockPromptDebugEventMapper.eventHandler
     ) {
         self.keyValueFilesStore = keyValueFilesStore
+        self.eventMapper = eventMapper
     }
 
     func save(_ activity: DefaultBrowserAndDockPromptUserActivity) {
@@ -64,8 +68,7 @@ final class DefaultBrowserAndDockPromptUserActivityStore: DefaultBrowserAndDockP
             let encodedActivity = try Self.encoder.encode(activity)
             try keyValueFilesStore.set(encodedActivity, forKey: StorageKey.userActivity)
         } catch {
-            // https://app.asana.com/1/137249556945/task/1210864108653442
-            // Fire a debug pixel when fails to save user activity
+            eventMapper.fire(.storage(.failedToSaveValue(.currentActivity(error))))
         }
     }
 
@@ -74,8 +77,7 @@ final class DefaultBrowserAndDockPromptUserActivityStore: DefaultBrowserAndDockP
             guard let data = try keyValueFilesStore.object(forKey: StorageKey.userActivity) as? Data else { return .empty }
             return try Self.decoder.decode(DefaultBrowserAndDockPromptUserActivity.self, from: data)
         } catch {
-            // https://app.asana.com/1/137249556945/task/1210864108653442
-            // Fire a debug pixel when fails to retrieve user activity
+            eventMapper.fire(.storage(.failedToRetrieveValue(.currentActivity(error))))
             return DefaultBrowserAndDockPromptUserActivity.empty
         }
     }

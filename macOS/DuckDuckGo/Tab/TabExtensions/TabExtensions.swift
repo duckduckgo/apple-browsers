@@ -71,6 +71,7 @@ protocol TabExtensionDependencies {
     var workspace: Workspace { get }
     var historyCoordinating: HistoryCoordinating { get }
     var downloadManager: FileDownloadManagerProtocol { get }
+    var downloadsPreferences: DownloadsPreferences { get }
     var cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter? { get }
     var duckPlayer: DuckPlayer { get }
     var certificateTrustEvaluator: CertificateTrustEvaluating { get }
@@ -193,8 +194,8 @@ extension TabExtensionsBuilder {
             FindInPageTabExtension()
         }
         add {
-            DownloadsTabExtension(downloadManager:
-                                    dependencies.downloadManager,
+            DownloadsTabExtension(downloadManager: dependencies.downloadManager,
+                                  downloadsPreferences: dependencies.downloadsPreferences,
                                   isBurner: args.isTabBurner)
         }
         add {

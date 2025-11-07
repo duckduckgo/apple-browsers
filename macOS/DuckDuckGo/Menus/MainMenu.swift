@@ -141,9 +141,10 @@ final class MainMenu: NSMenu {
     init(featureFlagger: FeatureFlagger,
          bookmarkManager: BookmarkManager,
          historyCoordinator: HistoryCoordinating & HistoryGroupingDataSource,
+         recentlyClosedCoordinator: RecentlyClosedCoordinating,
          faviconManager: FaviconManagement,
          dockCustomizer: DockCustomization = DockCustomizer(),
-         defaultBrowserPreferences: DefaultBrowserPreferences = .shared,
+         defaultBrowserPreferences: DefaultBrowserPreferences,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
          internalUserDecider: InternalUserDecider,
          appearancePreferences: AppearancePreferences,
@@ -161,7 +162,7 @@ final class MainMenu: NSMenu {
         self.dockCustomizer = dockCustomizer
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.aiChatMenuConfig = aiChatMenuConfig
-        self.historyMenu = HistoryMenu(historyGroupingDataSource: historyCoordinator, featureFlagger: featureFlagger)
+        self.historyMenu = HistoryMenu(historyGroupingDataSource: historyCoordinator, recentlyClosedCoordinator: recentlyClosedCoordinator, featureFlagger: featureFlagger)
         self.configurationURLProvider = configurationURLProvider
         self.contentScopePreferences = contentScopePreferences
         super.init(title: UserText.duckDuckGo)

@@ -180,6 +180,10 @@ final class MainWindowController: NSWindowController {
     }
 
     private func setupToolbar() {
+#if DEBUG
+        // animation retains the toolbar in tests
+        if [.unitTests, .integrationTests].contains(AppVersion.runType) { return }
+#endif
         // Empty toolbar ensures that window buttons are centered vertically
         window?.toolbar = NSToolbar()
         window?.toolbar?.showsBaselineSeparator = true
@@ -498,7 +502,7 @@ extension MainWindowController: NSWindowDelegate {
         }
         // only check if it‘s the last Fire Window from the Burner Session
         guard fireWindowSession.windows == [window] else { return false }
-        let fireWindowDownloads = Set(FileDownloadManager.shared.downloads.filter { $0.fireWindowSession == fireWindowSessionRef && $0.state.isDownloading })
+        let fireWindowDownloads = Set(mainViewController.downloadManager.downloads.filter { $0.fireWindowSession == fireWindowSessionRef && $0.state.isDownloading })
         guard !fireWindowDownloads.isEmpty else { return false }
 
         let alert = NSAlert.activeDownloadsFireWindowClosingAlert(for: fireWindowDownloads)

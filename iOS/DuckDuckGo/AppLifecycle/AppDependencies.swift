@@ -31,6 +31,7 @@ struct AppServices {
 
     let screenshotService: ScreenshotService
     let authenticationService: AuthenticationService
+    let contentBlockingService: ContentBlockingService
     let syncService: SyncService
     let vpnService: VPNService
     let dbpService: DBPService

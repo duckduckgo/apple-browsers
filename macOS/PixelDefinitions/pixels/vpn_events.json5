@@ -89,9 +89,10 @@
             },
             // Per-step error descriptions
             {
-                "keyPattern": "feature\\.data\\.ext\\.(browser_start|controller_start|oauth|tunnel_start)_error\\.description",
+                "keyPattern": "feature\\.data\\.ext\\.(controller_start|oauth|tunnel_start)_error\\.description",
                 "type": "string",
-                "description": "Human-readable error description for VPN connection step failures"
+                "description": "Human-readable error description for VPN connection step failures",
+                "examples": ["simulateControllerFailureError", "loadFromPreferencesFailed"]
             },
             // Per-step underlying error domains
             {
@@ -115,7 +116,7 @@
                 "key": "context.name",
                 "type": "string",
                 "description": "Context name for the flow",
-                "enum": ["funnel_appsettings_macos", "funnel_networkprotection_macos", "funnel_systemsettings_multiple", "funnel_others_multiple"]
+                "enum": ["funnel_appsettings_macos", "funnel_networkprotection_macos", "funnel_systemsettings_macos", "funnel_others_macos"]
             }
         ]
     }

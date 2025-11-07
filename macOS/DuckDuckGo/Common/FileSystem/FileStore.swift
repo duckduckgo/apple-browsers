@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
 import CryptoKit
+import Foundation
 import PixelKit
+import Utilities
 
 protocol FileStore {
     func persist(_ data: Data, url: URL) -> Bool

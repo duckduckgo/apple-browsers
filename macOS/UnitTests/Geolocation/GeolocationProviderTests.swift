@@ -20,6 +20,7 @@ import Combine
 import CoreLocation
 import Foundation
 import OSLog
+import SharedTestUtilities
 import WebKit
 import XCTest
 

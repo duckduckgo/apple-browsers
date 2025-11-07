@@ -17,9 +17,9 @@
 //
 
 import AppKit
-import Foundation
 import AppKitExtensions
 import Common
+import Foundation
 
 extension UserDefaults {
     /// The app group's shared UserDefaults

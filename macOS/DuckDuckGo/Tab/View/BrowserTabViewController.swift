@@ -87,6 +87,11 @@ final class BrowserTabViewController: NSViewController {
     private let featureFlagger: FeatureFlagger
     private let windowControllersManager: WindowControllersManagerProtocol
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let defaultBrowserPreferences: DefaultBrowserPreferences
+    private let downloadsPreferences: DownloadsPreferences
+    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+
     private let tld: TLD
 
     private var tabViewModelCancellables = Set<AnyCancellable>()
@@ -132,6 +137,10 @@ final class BrowserTabViewController: NSViewController {
          newTabPageActionsManager: @autoclosure @escaping @MainActor () -> NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
          activeRemoteMessageModel: ActiveRemoteMessageModel = NSApp.delegateTyped.activeRemoteMessageModel,
          privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
+         defaultBrowserPreferences: DefaultBrowserPreferences,
+         downloadsPreferences: DownloadsPreferences,
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge = NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
+         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          tld: TLD = NSApp.delegateTyped.tld
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -145,6 +154,11 @@ final class BrowserTabViewController: NSViewController {
         self.newTabPageActionsManager = newTabPageActionsManager
         self.activeRemoteMessageModel = activeRemoteMessageModel
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.defaultBrowserPreferences = defaultBrowserPreferences
+        self.downloadsPreferences = downloadsPreferences
+        self.subscriptionManager = subscriptionManager
+        self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+
         self.tld = tld
         containerStackView = NSStackView()
 
@@ -1155,7 +1169,11 @@ final class BrowserTabViewController: NSViewController {
                 syncService: syncService,
                 tabCollectionViewModel: tabCollectionViewModel,
                 privacyConfigurationManager: privacyConfigurationManager,
-                featureFlagger: featureFlagger
+                featureFlagger: featureFlagger,
+                defaultBrowserPreferences: defaultBrowserPreferences,
+                downloadsPreferences: downloadsPreferences,
+                subscriptionManager: subscriptionManager,
+                winBackOfferVisibilityManager: winBackOfferVisibilityManager
             )
             preferencesViewController.delegate = self
             self.preferencesViewController = preferencesViewController
@@ -1436,8 +1454,7 @@ extension BrowserTabViewController: TabDelegate {
         dispatchPrecondition(condition: .onQueue(.main))
         guard let window = view.window else { return nil }
 
-        let preferences = DownloadsPreferences.shared
-        let directoryURL = preferences.lastUsedCustomDownloadLocation ?? preferences.effectiveDownloadLocation
+        let directoryURL = downloadsPreferences.lastUsedCustomDownloadLocation ?? downloadsPreferences.effectiveDownloadLocation
         let savePanel = NSSavePanel.savePanelWithFileTypeChooser(fileTypes: request.parameters.fileTypes,
                                                                  suggestedFilename: request.parameters.suggestedFilename,
                                                                  directoryURL: directoryURL)
@@ -1696,7 +1713,11 @@ extension BrowserTabViewController {
 
 @available(macOS 14.0, *)
 #Preview {
-    BrowserTabViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [.init(content: .url(.duckDuckGo, source: .ui))])))
+    BrowserTabViewController(
+        tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [.init(content: .url(.duckDuckGo, source: .ui))])),
+        defaultBrowserPreferences: DefaultBrowserPreferences(),
+        downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor())
+    )
 }
 
 private extension NSViewController {

@@ -46,9 +46,11 @@ final class PreferencesViewController: NSViewController {
         tabCollectionViewModel: TabCollectionViewModel,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         aiChatRemoteSettings: AIChatRemoteSettingsProvider = AIChatRemoteSettings(),
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge = Application.appDelegate.subscriptionAuthV1toV2Bridge,
-        winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = Application.appDelegate.winBackOfferVisibilityManager,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger,
+        defaultBrowserPreferences: DefaultBrowserPreferences,
+        downloadsPreferences: DownloadsPreferences,
+        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -61,6 +63,8 @@ final class PreferencesViewController: NSViewController {
                                         includeDuckPlayer: duckPlayer.shouldDisplayPreferencesSideBar,
                                         includeAIChat: aiChatRemoteSettings.isAIChatEnabled,
                                         subscriptionManager: subscriptionManager,
+                                        defaultBrowserPreferences: defaultBrowserPreferences,
+                                        downloadsPreferences: downloadsPreferences,
                                         aiFeaturesStatusProvider: AIChatPreferences.shared,
                                         winBackOfferVisibilityManager: winBackOfferVisibilityManager)
         super.init(nibName: nil, bundle: nil)

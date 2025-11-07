@@ -203,9 +203,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1211260578559159?focus=true
     case unifiedURLPredictor
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211396583578252?focus=true
-    case unifiedURLPredictorMetrics
-
     /// https://app.asana.com/1/137249556945/task/1211354430557015?focus=true
     case subscriptionRestoreWidePixelMeasurement
 
@@ -234,7 +231,7 @@ public enum FeatureFlag: String, CaseIterable {
     case cpmCountPixel
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211708648644692?focus=true
-    case serpSettings
+    case storeSerpSettings
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
@@ -253,6 +250,12 @@ public enum FeatureFlag: String, CaseIterable {
     
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211388368219934?focus=true
     case vpnConnectionWidePixelMeasurement
+
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211579914062173?focus=true
+    case showHideAIGeneratedImagesSection
+
+    /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
+    case standaloneMigration
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -278,7 +281,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .fireDialogIndividualSitesLink,
                 .blurryAddressBarTahoeFix,
                 .pinnedTabsViewRewrite,
-                .vpnConnectionWidePixelMeasurement:
+                .vpnConnectionWidePixelMeasurement,
+                .showHideAIGeneratedImagesSection:
             true
         default:
             false
@@ -353,7 +357,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .themes,
                 .appStoreUpdateFlow,
                 .unifiedURLPredictor,
-                .unifiedURLPredictorMetrics,
                 .authV2WideEventEnabled,
                 .webKitPerformanceReporting,
                 .fireDialog,
@@ -362,12 +365,14 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncIdentities,
                 .aiChatDataClearing,
                 .dataImportNewSafariFilePicker,
-                .serpSettings,
+                .storeSerpSettings,
                 .blurryAddressBarTahoeFix,
                 .dataImportNewExperience,
                 .pinnedTabsViewRewrite,
                 .tabProgressIndicator,
-                .vpnConnectionWidePixelMeasurement:
+                .vpnConnectionWidePixelMeasurement,
+                .showHideAIGeneratedImagesSection,
+                .standaloneMigration:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -526,8 +531,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
-        case .unifiedURLPredictorMetrics:
-            return .disabled
         case .authV2WideEventEnabled:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
         case .webKitPerformanceReporting:
@@ -542,8 +545,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.duckAiDataClearing))
         case .cpmCountPixel:
             return .internalOnly()
-        case .serpSettings:
-            return .disabled
+        case .storeSerpSettings:
+            return .remoteReleasable(.feature(.storeSerpSettings))
         case .blurryAddressBarTahoeFix:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .dataImportNewExperience:
@@ -555,8 +558,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabProgressIndicator:
             return .disabled
         case .vpnConnectionWidePixelMeasurement:
-            // TODO(htang)
-            return .disabled
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
+        case .showHideAIGeneratedImagesSection:
+            return .remoteReleasable(.feature(.showHideAIGeneratedImagesSection))
+        case .standaloneMigration:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
         }
     }
 }

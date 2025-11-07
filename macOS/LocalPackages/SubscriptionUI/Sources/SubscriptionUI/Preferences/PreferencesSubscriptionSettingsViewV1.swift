@@ -108,7 +108,7 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
                 TextMenuItemCaption(model.subscriptionDetails ?? UserText.preferencesSubscriptionInactiveHeader(isPaidAIChatEnabled: false))
             }
             HStack {
-                Button(UserText.viewPlansExpiredButtonTitle) { model.purchaseAction() }
+                Button(model.expiredSubscriptionPurchaseButtonTitle) { model.purchaseAction() }
                     .buttonStyle(DefaultActionButtonStyle(enabled: true))
                 Button(UserText.removeFromThisDeviceButton, action: {
                     showingRemoveConfirmationDialog.toggle()

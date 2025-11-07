@@ -23,7 +23,7 @@ enum UserAgent {
 
     static func duckDuckGoUserAgent(appVersion: String = AppVersion.shared.versionNumber,
                                     appID: String = AppVersion.shared.identifier,
-                                    systemVersion: String = ProcessInfo.processInfo.operatingSystemVersionString) -> String {
+                                    systemVersion: String = AppVersion.shared.osVersionMajorMinor) -> String {
         return "ddg_mac/\(appVersion) (\(appID); macOS \(systemVersion))"
     }
 

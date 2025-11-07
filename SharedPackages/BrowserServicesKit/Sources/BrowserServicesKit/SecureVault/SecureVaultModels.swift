@@ -200,7 +200,11 @@ public struct SecureVaultModels {
         public var expirationYear: Int?
 
         public var cardNumber: String {
-            return String(data: cardNumberData, encoding: .utf8)!
+            guard let cardNumber = String(data: cardNumberData, encoding: .utf8) else {
+                assertionFailure("cardNumberData could not be decoded as UTF-8 - data may still be encrypted")
+                return ""
+            }
+            return cardNumber
         }
 
         public var displayName: String {

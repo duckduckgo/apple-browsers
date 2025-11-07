@@ -137,7 +137,7 @@ final class SuggestionJsonScenarioTests: XCTestCase {
         let sortedDataSource = SortingDataSourceWrapper(wrapping: dataSource)
 
         // Create a suggestion loader
-        let suggestionLoader = SuggestionLoader(urlFactory: { _ in return nil }, isUrlIgnored: testScenario.input.isURLIgnored)
+        let suggestionLoader = SuggestionLoader(shouldLoadSuggestionsForUserInput: { _ in return true }, isUrlIgnored: testScenario.input.isURLIgnored)
         var actualResults: SuggestionResult?
         var loadingError: Error?
 
@@ -354,24 +354,26 @@ extension SuggestionJsonScenarioTests {
             didSet {
                 // Convert test entries to History.HistoryEntry when assigned
                 if let entries = testHistoryEntries {
-                    history = entries.map { testEntry in
-                        // Initialize HistoryEntry with all required parameters based on how it's done in HistoryStoreTests
-                        return History.HistoryEntry(
-                            identifier: testEntry.identifier,
-                            url: testEntry.url,
-                            title: testEntry.title,
-                            failedToLoad: testEntry.failedToLoad,
-                            numberOfTotalVisits: testEntry.numberOfVisits,
-                            lastVisit: testEntry.lastVisit,
-                            visits: Set<History.Visit>(),
-                            numberOfTrackersBlocked: 0,
-                            blockedTrackingEntities: Set<String>(),
-                            trackersFound: false
-                        )
+                    MainActor.assumeMainThread {
+                        history = entries.map { testEntry in
+                            // Initialize HistoryEntry with all required parameters based on how it's done in HistoryStoreTests
+                            return History.HistoryEntry(
+                                identifier: testEntry.identifier,
+                                url: testEntry.url,
+                                title: testEntry.title,
+                                failedToLoad: testEntry.failedToLoad,
+                                numberOfTotalVisits: testEntry.numberOfVisits,
+                                lastVisit: testEntry.lastVisit,
+                                visits: Set<History.Visit>(),
+                                numberOfTrackersBlocked: 0,
+                                blockedTrackingEntities: Set<String>(),
+                                trackersFound: false
+                            )
+                        }
+                        
+                        // Update history dictionary
+                        historyDictionary = Dictionary(uniqueKeysWithValues: (history ?? []).map { ($0.url, $0) })
                     }
-                    
-                    // Update history dictionary
-                    historyDictionary = Dictionary(uniqueKeysWithValues: (history ?? []).map { ($0.url, $0) })
                 }
             }
         }
@@ -415,20 +417,28 @@ extension SuggestionJsonScenarioTests {
             return nil
         }
         
-        func burnAll(completion: @escaping () -> Void) {
-            completion()
+        func burnAll(completion: @escaping @MainActor () -> Void) {
+            MainActor.assumeMainThread {
+                completion()
+            }
         }
         
-        func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping (Set<URL>) -> Void) {
-            completion([])
+        func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Set<URL>) -> Void) {
+            MainActor.assumeMainThread {
+                completion([])
+            }
         }
         
-        func burnVisits(_ visits: [History.Visit], completion: @escaping () -> Void) {
-            completion()
+        func burnVisits(_ visits: [History.Visit], completion: @escaping @MainActor () -> Void) {
+            MainActor.assumeMainThread {
+                completion()
+            }
         }
         
-        func removeUrlEntry(_ url: URL, completion: (((any Error)?) -> Void)?) {
-            completion?(nil)
+        func removeUrlEntry(_ url: URL, completion: (@MainActor ((any Error)?) -> Void)?) {
+            MainActor.assumeMainThread {
+                completion?(nil)
+            }
         }
     }
     

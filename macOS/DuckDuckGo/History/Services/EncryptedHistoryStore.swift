@@ -31,47 +31,36 @@ final class EncryptedHistoryStore: HistoryStoring {
     }
 
     enum HistoryStoreError: Error {
-        case storeDeallocated
         case savingFailed
     }
 
     let context: NSManagedObjectContext
 
-    func removeEntries(_ entries: [HistoryEntry]) -> Future<Void, Error> {
-        return Future { [weak self] promise in
-            self?.context.perform {
-                guard let self = self else {
-                    promise(.failure(HistoryStoreError.storeDeallocated))
-                    return
-                }
-
+    func removeEntries(_ entries: some Sequence<HistoryEntry>) async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            context.perform {
                 let identifiers = entries.map { $0.identifier }
                 switch self.remove(identifiers, context: self.context) {
                 case .failure(let error):
                     self.context.reset()
-                    promise(.failure(error))
+                    continuation.resume(throwing: error)
                 case .success:
-                    promise(.success(()))
+                    continuation.resume(returning: ())
                 }
             }
-        }
+        } as Void
     }
 
-    func cleanOld(until date: Date) -> Future<BrowsingHistory, Error> {
-        return Future { [weak self] promise in
-            self?.context.perform {
-                guard let self = self else {
-                    promise(.failure(HistoryStoreError.storeDeallocated))
-                    return
-                }
-
+    func cleanOld(until date: Date) async throws -> BrowsingHistory {
+        try await withCheckedThrowingContinuation { continuation in
+            context.perform {
                 switch self.clean(self.context, until: date) {
                 case .failure(let error):
                     self.context.reset()
-                    promise(.failure(error))
+                    continuation.resume(throwing: error)
                 case .success:
                     let reloadResult = self.reload(self.context)
-                    promise(reloadResult)
+                    continuation.resume(with: reloadResult)
                 }
             }
         }
@@ -201,14 +190,9 @@ final class EncryptedHistoryStore: HistoryStoring {
         return .success(())
     }
 
-    func save(entry: HistoryEntry) -> Future<[(id: Visit.ID, date: Date)], Error> {
-        return Future { [weak self] promise in
-            self?.context.perform { [weak self] in
-
-                guard let self = self else {
-                    promise(.failure(HistoryStoreError.storeDeallocated))
-                    return
-                }
+    func save(entry: HistoryEntry) async throws -> [(id: Visit.ID, date: Date)] {
+        try await withCheckedThrowingContinuation { continuation in
+            context.perform {
 
                 // Check for existence
                 let fetchRequest = HistoryEntryManagedObject.fetchRequest() as NSFetchRequest<HistoryEntryManagedObject>
@@ -221,7 +205,7 @@ final class EncryptedHistoryStore: HistoryStoring {
                 } catch {
                     PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailed, error: error))
                     PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailedDaily, error: error), frequency: .legacyDailyNoSuffix)
-                    promise(.failure(error))
+                    continuation.resume(throwing: error)
                     return
                 }
 
@@ -236,7 +220,7 @@ final class EncryptedHistoryStore: HistoryStoring {
                     // Add new
                     let insertedObject = NSEntityDescription.insertNewObject(forEntityName: HistoryEntryManagedObject.className(), into: self.context)
                     guard let historyEntryMO = insertedObject as? HistoryEntryManagedObject else {
-                        promise(.failure(HistoryStoreError.savingFailed))
+                        continuation.resume(throwing: HistoryStoreError.savingFailed)
                         return
                     }
                     historyEntryMO.update(with: entry, afterInsertion: true)
@@ -250,16 +234,17 @@ final class EncryptedHistoryStore: HistoryStoring {
                 case .failure(let error):
                     PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailed, error: error))
                     PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailedDaily, error: error), frequency: .legacyDailyNoSuffix)
-                    context.reset()
-                    promise(.failure(error))
+                    self.context.reset()
+                    continuation.resume(throwing: error)
                 case .success(let visitMOs):
                     do {
                         try self.context.save()
+                        Logger.history.debug("HistoryStore: saved entry \(entry.url.absoluteString)")
                     } catch {
                         PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailed, error: error))
                         PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailedDaily, error: error), frequency: .legacyDailyNoSuffix)
-                        context.reset()
-                        promise(.failure(HistoryStoreError.savingFailed))
+                        self.context.reset()
+                        continuation.resume(throwing: HistoryStoreError.savingFailed)
                         return
                     }
 
@@ -270,7 +255,7 @@ final class EncryptedHistoryStore: HistoryStoring {
                             return nil
                         }
                     }
-                    promise(.success(result))
+                    continuation.resume(returning: result)
                 }
             }
         }
@@ -315,28 +300,23 @@ final class EncryptedHistoryStore: HistoryStoring {
         return .success(visitMO)
     }
 
-    func removeVisits(_ visits: [Visit]) -> Future<Void, Error> {
-        return Future { [weak self] promise in
-            self?.context.perform {
-                guard let self = self else {
-                    promise(.failure(HistoryStoreError.storeDeallocated))
-                    return
-                }
-
+    func removeVisits(_ visits: some Sequence<Visit>) async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            context.perform {
                 switch self.remove(visits, context: self.context) {
                 case .failure(let error):
                     self.context.reset()
-                    promise(.failure(error))
+                    continuation.resume(throwing: error)
                 case .success:
-                    promise(.success(()))
+                    continuation.resume(returning: ())
                 }
             }
-        }
+        } as Void
     }
 
-    private func remove(_ visits: [Visit], context: NSManagedObjectContext) -> Result<Void, Error> {
+    private func remove(_ visits: some Sequence<Visit>, context: NSManagedObjectContext) -> Result<Void, Error> {
         // To avoid long predicate, execute multiple times
-        let chunkedVisits = visits.chunked(into: 100)
+        let chunkedVisits = visits.chunkedSequence(into: 100)
 
         for visits in chunkedVisits {
             let deleteRequest = NSFetchRequest<VisitManagedObject>(entityName: VisitManagedObject.className())

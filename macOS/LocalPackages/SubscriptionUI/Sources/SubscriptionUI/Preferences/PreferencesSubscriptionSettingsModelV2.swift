@@ -40,13 +40,21 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
         return !rebrandingMessageDismissed
     }
 
+    var expiredSubscriptionPurchaseButtonTitle: String {
+        if winBackOfferVisibilityManager.isOfferAvailable {
+            return UserText.winBackCampaignLoggedInPreferencesCTA
+        } else {
+            return UserText.viewPlansExpiredButtonTitle
+        }
+    }
+
     private var subscriptionPlatform: DuckDuckGoSubscription.Platform?
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
     private let subscriptionManager: SubscriptionManagerV2
     private let keyValueStore: ThrowingKeyValueStoring
     private let rebrandingDismissedKey = "hasDismissedSubscriptionRebrandingMessage"
-
+    private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
 
@@ -64,18 +72,20 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
              didClickManageEmail,
              didOpenSubscriptionSettings,
              didClickChangePlanOrBilling,
-             didClickRemoveSubscription
+             didClickRemoveSubscription,
+             openWinBackOfferLandingPage
     }
 
     public init(userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
                 subscriptionManager: SubscriptionManagerV2,
                 subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>,
-                keyValueStore: ThrowingKeyValueStoring) {
+                keyValueStore: ThrowingKeyValueStoring,
+                winBackOfferVisibilityManager: WinBackOfferVisibilityManaging) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
         self.keyValueStore = keyValueStore
         self.rebrandingMessageDismissed = (try? keyValueStore.object(forKey: rebrandingDismissedKey) as? Bool) ?? false
-
+        self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         Task {
             await self.updateSubscription(cachePolicy: .cacheFirst)
         }
@@ -139,7 +149,11 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
 
     @MainActor
     func purchaseAction() {
-        userEventHandler(.openURL(.purchase))
+        if winBackOfferVisibilityManager.isOfferAvailable {
+            userEventHandler(.openWinBackOfferLandingPage)
+        } else {
+            userEventHandler(.openURL(.purchase))
+        }
     }
 
     enum ChangePlanOrBillingAction {

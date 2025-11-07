@@ -77,6 +77,64 @@ struct SettingsSubscriptionView: View {
             return AppDependencyProvider.shared.subscriptionManagerV2!.storePurchaseManager().currentStorefrontRegion
         }
     }
+    
+    private var winBackURLComponents: URLComponents? {
+        SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(
+            origin: SubscriptionFunnelOrigin.winBackSettings.rawValue,
+            featurePage: SubscriptionURL.FeaturePage.winback
+        )
+    }
+    
+    @ViewBuilder
+    private var resubscribeWithWinbackOfferView: some View {
+        Group {
+            let titleText: String = UserText.winBackCampaignSubscriptionSettingsMenuTitle
+            let subtitleText = UserText.winBackCampaignSubscriptionSettingsMenuSubtitle
+
+            SettingsCellView(label: titleText,
+                             subtitle: subtitleText,
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.subscription))
+            .disabled(true)
+
+            // See Offer
+            SettingsCustomCell(content: {
+                Text(UserText.winBackCampaignSubscriptionSettingsMenuCTA)
+                    .daxBodyRegular()
+                    .foregroundColor(Color.init(designSystemColor: .accent))
+                    .padding(.leading, 32.0)
+            }, action: {
+                Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedOutOfferCTAClicked)
+                subscriptionNavigationCoordinator.redirectURLComponents = winBackURLComponents
+                subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
+            }, isButton: true, shouldShowWinBackOffer: true)
+
+            // Restore subscription
+            if !settingsViewModel.isAuthV2Enabled {
+                let restoreView = subscriptionRestoreView
+                    .navigationViewStyle(.stack)
+                    .onFirstAppear {
+                        Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
+                    }
+                NavigationLink(destination: restoreView,
+                               isActive: $isShowingRestoreFlow) {
+                    SettingsCellView(label: UserText.settingsPProIHaveASubscription).padding(.leading, 32.0)
+                }
+            } else {
+                let restoreView = subscriptionRestoreViewV2
+                    .navigationViewStyle(.stack)
+                    .onFirstAppear {
+                        Pixel.fire(pixel: .subscriptionRestorePurchaseClick)
+                    }
+                NavigationLink(destination: restoreView,
+                               isActive: $isShowingRestoreFlow) {
+                    SettingsCellView(label: UserText.settingsPProIHaveASubscription).padding(.leading, 32.0)
+                }
+            }
+        }
+        .onFirstAppear {
+            Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedOutOfferShown)
+        }
+    }
 
     @ViewBuilder
     private var purchaseSubscriptionView: some View {
@@ -213,6 +271,57 @@ struct SettingsSubscriptionView: View {
     }
 
     @ViewBuilder
+    private var subscribeWithWinBackOfferView: some View {
+        Group {
+        disabledFeaturesView
+
+        // Subscribe with Win-back offer
+        if !settingsViewModel.isAuthV2Enabled {
+            let settingsView = SubscriptionSettingsView(configuration: SubscriptionSettingsViewConfiguration.expired,
+                                                        settingsViewModel: settingsViewModel,
+                                                        takeWinBackOffer: {
+                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsCTAClicked)
+                subscriptionNavigationCoordinator.redirectURLComponents = winBackURLComponents
+                subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
+            }).onFirstAppear {
+                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsShown)
+            }
+                .environmentObject(subscriptionNavigationCoordinator)
+            NavigationLink(destination: settingsView) {
+                SettingsCellView(
+                    label: UserText.settingsPProManageSubscription,
+                    subtitle: UserText.winBackCampaignSubscriptionSettingsMenuLoggedOutSubtitle,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription),
+                    shouldShowWinBackOffer: true
+                )
+            }
+        } else {
+            let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.expired,
+                                                          settingsViewModel: settingsViewModel,
+                                                          takeWinBackOffer: {
+                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsCTAClicked)
+                subscriptionNavigationCoordinator.redirectURLComponents = winBackURLComponents
+                subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
+            }).onFirstAppear {
+                Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsShown)
+            }
+                .environmentObject(subscriptionNavigationCoordinator)
+            NavigationLink(destination: settingsView) {
+                SettingsCellView(
+                    label: UserText.settingsPProManageSubscription,
+                    subtitle: UserText.winBackCampaignSubscriptionSettingsMenuLoggedOutSubtitle,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.subscription),
+                    shouldShowWinBackOffer: true
+                )
+            }
+        }
+        }
+        .onFirstAppear {
+            Pixel.fire(pixel: .subscriptionWinBackOfferSettingsLoggedInOfferShown)
+        }
+    }
+
+    @ViewBuilder
     private var missingSubscriptionOrEntitlementsView: some View {
         disabledFeaturesView
 
@@ -275,7 +384,8 @@ struct SettingsSubscriptionView: View {
 
             let destination: LazyView<AnyView> = {
                 if settingsViewModel.isPIREnabled, let vcProvider = settingsViewModel.dataBrokerProtectionViewControllerProvider {
-                    return LazyView(AnyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)))
+                    return LazyView(AnyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
+                        .edgesIgnoringSafeArea(.bottom)))
                 } else {
                     statusIndicator = .on
                     return LazyView(AnyView(SubscriptionPIRMoveToDesktopView()))
@@ -348,6 +458,7 @@ struct SettingsSubscriptionView: View {
                 let hasSubscription = settingsViewModel.state.subscription.hasSubscription
                 let hasActiveSubscription = settingsViewModel.state.subscription.hasActiveSubscription
                 let hasAnyEntitlements = !settingsViewModel.state.subscription.entitlements.isEmpty
+                let isWinBackEligible = settingsViewModel.state.subscription.isWinBackEligible
 
                 let footerLink = Link(UserText.settingsPProSectionFooter,
                                       destination: ViewConstants.privacyPolicyURL)
@@ -359,6 +470,10 @@ struct SettingsSubscriptionView: View {
 
                     switch (isSignedIn, hasSubscription, hasActiveSubscription, hasAnyEntitlements) {
 
+                    // Signed out, Eligible for Win-back offer
+                    case (false, _, _, _) where isWinBackEligible:
+                        resubscribeWithWinbackOfferView
+                        
                     // Signed out
                     case (false, _, _, _):
                         purchaseSubscriptionView
@@ -367,6 +482,10 @@ struct SettingsSubscriptionView: View {
                     case (true, false, _, _):
                         missingSubscriptionOrEntitlementsView
 
+                    // Subscription Expired, Eligible for Win-back offer
+                    case (true, true, false, _) where isWinBackEligible:
+                        subscribeWithWinBackOfferView
+                        
                     // Signed In, Subscription Present & Not Active
                     case (true, true, false, _):
                         subscriptionExpiredView

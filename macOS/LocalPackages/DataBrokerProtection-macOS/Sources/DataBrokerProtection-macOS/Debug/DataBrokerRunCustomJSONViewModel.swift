@@ -83,7 +83,7 @@ struct AlertUI {
     }
 
     static func from(error: DataBrokerProtectionError) -> AlertUI {
-        AlertUI(title: error.title, description: error.description)
+        AlertUI(title: error.title, description: error.localizedDescription)
     }
 }
 
@@ -317,7 +317,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             if dbpError.is404 {
                 return createRowFor(matched: false, result: result, error: "404 - No results")
             } else {
-                return createRowFor(matched: false, result: result, error: "\(dbpError.title)-\(dbpError.description)")
+                return createRowFor(matched: false, result: result, error: "\(dbpError.title)-\(dbpError.localizedDescription)")
             }
         } else {
             return createRowFor(matched: false, result: result, error: error.localizedDescription)
@@ -646,7 +646,7 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     func fireScanSuccess(matchesFound: Int) {
     }
 
-    func fireScanFailed() {
+    func fireScanNoResults() {
     }
 
     func fireScanError(error: Error) {
@@ -655,7 +655,7 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     func setStage(_ stage: Stage) {
     }
 
-    func setLastActionId(_ actionID: String) {
+    func setLastAction(_ action: Action) {
     }
 
     func fireOptOutConditionFound() {

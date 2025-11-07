@@ -71,12 +71,13 @@ protocol TabExtensionDependencies {
     var workspace: Workspace { get }
     var historyCoordinating: HistoryCoordinating { get }
     var downloadManager: FileDownloadManagerProtocol { get }
+    var downloadsPreferences: DownloadsPreferences { get }
     var cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter? { get }
     var duckPlayer: DuckPlayer { get }
     var certificateTrustEvaluator: CertificateTrustEvaluating { get }
     var tunnelController: NetworkProtectionIPCTunnelController? { get }
     var maliciousSiteDetector: MaliciousSiteDetecting { get }
-    var faviconManagement: FaviconManagement? { get }
+    var faviconManagement: FaviconManagement { get }
     var featureFlagger: FeatureFlagger { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
     var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable { get }
@@ -193,8 +194,8 @@ extension TabExtensionsBuilder {
             FindInPageTabExtension()
         }
         add {
-            DownloadsTabExtension(downloadManager:
-                                    dependencies.downloadManager,
+            DownloadsTabExtension(downloadManager: dependencies.downloadManager,
+                                  downloadsPreferences: dependencies.downloadsPreferences,
                                   isBurner: args.isTabBurner)
         }
         add {
@@ -255,7 +256,8 @@ extension TabExtensionsBuilder {
                                     featureFlagger: dependencies.featureFlagger,
                                     aiChatSidebarProvider: dependencies.aiChatSidebarProvider,
                                     aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration,
-                                    isLoadedInSidebar: args.isTabLoadedInSidebar)
+                                    isLoadedInSidebar: args.isTabLoadedInSidebar,
+                                    faviconManagement: dependencies.faviconManagement)
         }
 
         add {

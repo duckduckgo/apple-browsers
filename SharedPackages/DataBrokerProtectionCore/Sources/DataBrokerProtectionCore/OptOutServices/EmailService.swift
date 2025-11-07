@@ -204,3 +204,36 @@ internal struct EmailResponse: Codable {
     let status: Status
     let link: String?
 }
+
+extension EmailError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .cantGenerateURL:
+            return "Unable to generate URL"
+        case .cantFindEmail:
+            return "Unable to find email"
+        case .invalidEmailLink:
+            return "Invalid email confirmation link"
+        case .linkExtractionTimedOut:
+            return "Email link extraction timed out"
+        case .cantDecodeEmailLink:
+            return "Unable to decode email link"
+        case .unknownStatusReceived:
+            return "Unknown email status received"
+        case .cancelled:
+            return "Email operation cancelled"
+        case .httpError(let statusCode):
+            return "Email HTTP error \(statusCode)"
+        case .unknownHTTPError:
+            return "Unknown email HTTP error"
+        case .extractionError:
+            return "Email extraction error"
+        case .requestError:
+            return "Email request error"
+        case .serverError:
+            return "Email server error"
+        case .retriesExceeded:
+            return "Email retries exceeded"
+        }
+    }
+}

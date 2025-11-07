@@ -31,6 +31,7 @@ class RemoteMessagingConfigProcessorTests: XCTestCase {
             appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
             userAttributeMatcher: MobileUserAttributeMatcher(
                 statisticsStore: MockStatisticsStore(),
+                featureDiscovery: MockFeatureDiscovery(),
                 variantManager: MockVariantManager(),
                 bookmarksCount: 0,
                 favoritesCount: 0,
@@ -45,12 +46,14 @@ class RemoteMessagingConfigProcessorTests: XCTestCase {
                 isSubscriptionActive: false,
                 isSubscriptionExpiring: false,
                 isSubscriptionExpired: false,
+                subscriptionFreeTrialActive: false,
                 isDuckPlayerOnboarded: false,
                 isDuckPlayerEnabled: false,
                 dismissedMessageIds: [],
                 shownMessageIds: [],
                 enabledFeatureFlags: [],
-                isSyncEnabled: false
+                isSyncEnabled: false,
+                shouldShowWinBackOfferUrgencyMessage: false
             ),
             percentileStore: MockRemoteMessagePercentileStore(),
             surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -62,7 +65,7 @@ class RemoteMessagingConfigProcessorTests: XCTestCase {
                                                                   invalidate: false,
                                                                   evaluationTimestamp: Date())
 
-        let processorResult = processor.process(jsonRemoteMessagingConfig: jsonRemoteMessagingConfig, currentConfig: config)
+        let processorResult = processor.process(jsonRemoteMessagingConfig: jsonRemoteMessagingConfig, currentConfig: config, supportedSurfacesForMessage: { _ in .newTabPage })
         XCTAssertNotNil(processorResult)
         XCTAssertEqual(processorResult?.version, jsonRemoteMessagingConfig.version)
         XCTAssertNotNil(processorResult?.message)
@@ -76,6 +79,7 @@ class RemoteMessagingConfigProcessorTests: XCTestCase {
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
@@ -90,12 +94,14 @@ class RemoteMessagingConfigProcessorTests: XCTestCase {
                     isSubscriptionActive: false,
                     isSubscriptionExpiring: false,
                     isSubscriptionExpired: false,
+                    subscriptionFreeTrialActive: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
-                    isSyncEnabled: false
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -106,7 +112,7 @@ class RemoteMessagingConfigProcessorTests: XCTestCase {
                                                                   invalidate: false,
                                                                   evaluationTimestamp: Date())
 
-        let result = processor.process(jsonRemoteMessagingConfig: jsonRemoteMessagingConfig, currentConfig: config)
+        let result = processor.process(jsonRemoteMessagingConfig: jsonRemoteMessagingConfig, currentConfig: config, supportedSurfacesForMessage: { _ in .newTabPage })
         XCTAssertNil(result)
     }
 

@@ -16,9 +16,14 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+import BrowserServicesKit
 import Combine
 import Common
 import Foundation
+import History
+import HistoryView
+import SharedTestUtilities
 import UniformTypeIdentifiers
 import XCTest
 
@@ -84,9 +89,13 @@ final class DownloadListCoordinatorTests: XCTestCase {
     }
 
     func setUpCoordinator() {
-        coordinator = DownloadListCoordinator(store: store, downloadManager: downloadManager, clearItemsOlderThan: Date.daysAgo(2)) {
-            return self.webView
-        }
+        coordinator = DownloadListCoordinator(
+            store: store,
+            downloadManager: downloadManager,
+            windowControllersManager: Application.appDelegate.windowControllersManager,
+            clearItemsOlderThan: Date.daysAgo(2)) {
+                return self.webView
+            }
     }
 
     @MainActor
@@ -107,7 +116,16 @@ final class DownloadListCoordinatorTests: XCTestCase {
 
         var fireWindowSession: FireWindowSessionRef?
         if isBurner {
-            let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld, featureFlagger: Application.appDelegate.featureFlagger)
+            let fireCoordinator = FireCoordinator(tld: TLD(),
+                                                  featureFlagger: Application.appDelegate.featureFlagger,
+                                                  historyCoordinating: HistoryCoordinatingMock(),
+                                                  visualizeFireAnimationDecider: nil,
+                                                  onboardingContextualDialogsManager: nil,
+                                                  fireproofDomains: MockFireproofDomains(),
+                                                  faviconManagement: FaviconManagerMock(),
+                                                  windowControllersManager: WindowControllersManagerMock(),
+                                                  pixelFiring: nil,
+                                                  historyProvider: MockHistoryViewDataProvider())
             let mainViewController = MainViewController(
                 tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: []), burnerMode: .init(isBurner: true)),
                 autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),

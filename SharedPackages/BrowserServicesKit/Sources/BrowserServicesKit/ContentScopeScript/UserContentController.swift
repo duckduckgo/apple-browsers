@@ -144,7 +144,7 @@ final public class UserContentController: WKUserContentController {
 #if DEBUG
         // make sure delegate for UserScripts is set shortly after init
         DispatchQueue.main.async { [weak self] in
-            assert(self == nil || self?.delegate != nil, "UserContentController delegate not set")
+            assert(self == nil || self?.delegate != nil || [.unitTests, .integrationTests].contains(AppVersion.runType), "UserContentController delegate not set")
         }
 #endif
     }

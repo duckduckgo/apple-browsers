@@ -37,12 +37,6 @@ final class Application: NSApplication {
         // See SecurityScopedFileURLController.swift
         NSURL.swizzleStartStopAccessingSecurityScopedResourceOnce()
 
-#if DEBUG
-        if [.unitTests, .integrationTests].contains(AppVersion.runType) {
-            (NSClassFromString("TestRunHelper") as? NSObject.Type)!.perform(NSSelectorFromString("sharedInstance"))
-        }
-#endif
-
         let delegate = AppDelegate()
         self.delegate = delegate
         Application.appDelegate = delegate
@@ -51,13 +45,16 @@ final class Application: NSApplication {
             featureFlagger: delegate.featureFlagger,
             bookmarkManager: delegate.bookmarkManager,
             historyCoordinator: delegate.historyCoordinator,
+            recentlyClosedCoordinator: delegate.recentlyClosedCoordinator,
             faviconManager: delegate.faviconManager,
+            defaultBrowserPreferences: delegate.defaultBrowserPreferences,
             aiChatMenuConfig: delegate.aiChatMenuConfiguration,
             internalUserDecider: delegate.internalUserDecider,
             appearancePreferences: delegate.appearancePreferences,
             privacyConfigurationManager: delegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
             isFireWindowDefault: delegate.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
-            configurationURLProvider: delegate.configurationURLProvider
+            configurationURLProvider: delegate.configurationURLProvider,
+            contentScopePreferences: delegate.contentScopePreferences
         )
         self.mainMenu = mainMenu
 

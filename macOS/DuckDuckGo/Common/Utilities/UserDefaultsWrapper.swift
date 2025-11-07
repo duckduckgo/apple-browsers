@@ -17,9 +17,9 @@
 //
 
 import AppKit
-import Foundation
 import AppKitExtensions
 import Common
+import Foundation
 
 extension UserDefaults {
     /// The app group's shared UserDefaults
@@ -57,6 +57,7 @@ public struct UserDefaultsWrapper<T> {
 
         case loginDetectionEnabled = "fireproofing.login-detection-enabled"
         case autoClearEnabled = "preferences.auto-clear-enabled"
+        case autoClearAIChatHistoryEnabled = "preferences.auto-clear-ai-chat-history-enabled"
         case warnBeforeClearingEnabled = "preferences.warn-before-clearing-enabled"
         case fireAnimationEnabled = "preferences.fire-animation-enabled"
         case gpcEnabled = "preferences.gpc-enabled"
@@ -78,6 +79,7 @@ public struct UserDefaultsWrapper<T> {
         case askToSavePaymentMethods = "preferences.ask-to-save.payment-methods"
         case autolockLocksFormFilling = "preferences.lock-autofill-form-fill"
         case autofillDebugScriptEnabled = "preferences.enable-autofill-debug-script"
+        case contentScopeDebugStateEnabled = "preferences.enable-content-scope-debug-state"
 
         case saveAsPreferredFileType = "saveAs.selected.filetype"
 
@@ -95,6 +97,7 @@ public struct UserDefaultsWrapper<T> {
         case themeAppearance = "com.duckduckgo.macos.currentThemeNameKey"
         case themeName = "preferences.appearance.theme-name"
         case showFullURL = "preferences.appearance.show-full-url"
+        case syncAppIconWithTheme = "preferences.appearance.sync-app-icon-with-theme"
         case showAutocompleteSuggestions = "preferences.appearance.show-autocomplete-suggestions"
         case preferNewTabsToWindows = "preferences.tabs.prefer-new-tabs-to-windows"
         case switchToNewTabWhenOpened = "preferences.tabs.switch-to-new-tab-when-opened"
@@ -199,6 +202,7 @@ public struct UserDefaultsWrapper<T> {
         case pendingUpdateShown = "pending.update.shown"
         case pendingUpdateSince = "pending.update.since"
         case updateValidityStartDate = "update.validity.start.date"
+        case lastSuccessfulUpdateDate = "updates.last.successful.date"
 
         // Experiments
         case pixelExperimentInstalled = "pixel.experiment.installed"
@@ -210,6 +214,12 @@ public struct UserDefaultsWrapper<T> {
         // Updates
         case previousAppVersion = "previous.app.version"
         case previousBuild = "previous.build"
+        case pendingUpdateSourceVersion = "pending.update.source.version"
+        case pendingUpdateSourceBuild = "pending.update.source.build"
+        case pendingUpdateExpectedVersion = "pending.update.expected.version"
+        case pendingUpdateExpectedBuild = "pending.update.expected.build"
+        case pendingUpdateInitiationType = "pending.update.initiation.type"
+        case pendingUpdateConfiguration = "pending.update.configuration"
 
         // Sync
 
@@ -259,6 +269,9 @@ public struct UserDefaultsWrapper<T> {
 
         // SAD/ATT Debug
         case debugSetDefaultAndAddToDockPromptCurrentDateKey = "com.duckduckgo.ios.debug.setDefaultAndAddToDockPromptCurrentDate"
+
+        // Win-back Offer Debug
+        case debugWinBackOfferSimulatedTodayDate = "com.duckduckgo.debug.winBackOfferSimulatedTodayDate"
     }
 
     enum RemovedKeys: String, CaseIterable {

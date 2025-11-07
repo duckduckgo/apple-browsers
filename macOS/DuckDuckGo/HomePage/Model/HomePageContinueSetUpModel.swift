@@ -439,15 +439,3 @@ extension HomePage.Models {
         }
     }
 }
-
-// MARK: - Remote Messaging
-
-extension AppVersion {
-    public var majorAndMinorOSVersion: String {
-        let components = osVersion.split(separator: ".")
-        guard components.count >= 2 else {
-            return majorVersionNumber
-        }
-        return "\(components[0]).\(components[1])"
-    }
-}

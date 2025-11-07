@@ -39,6 +39,8 @@ final class FireproofDomainsViewController: NSViewController {
 
     // MARK: - UI
     private let buttonsStackView = NSStackView()
+    private lazy var addDomainButton = NSButton(title: UserText.fireproofAddButton, target: self, action: #selector(addDomain(_:)))
+    private lazy var addCurrentDomainButton = NSButton(title: UserText.fireproofAddCurrentButton, target: self, action: #selector(addCurrentDomain(_:)))
     private lazy var removeDomainButton = NSButton(title: UserText.remove, target: self, action: #selector(removeSelectedDomain(_:)))
     private lazy var removeAllDomainsButton = NSButton(title: UserText.fireproofRemoveAllButton, target: self, action: #selector(removeAllDomains(_:)))
     private lazy var doneButton = NSButton(title: UserText.done, target: self, action: #selector(doneButtonClicked(_:)))
@@ -116,10 +118,14 @@ final class FireproofDomainsViewController: NSViewController {
         tableView.dataSource = self
 
         // Buttons
+        addDomainButton.setAccessibilityIdentifier("FireproofDomainsViewController.addButton")
+        addCurrentDomainButton.setAccessibilityIdentifier("FireproofDomainsViewController.addCurrentButton")
         removeDomainButton.setAccessibilityIdentifier("FireproofDomainsViewController.removeButton")
         removeAllDomainsButton.setAccessibilityIdentifier("FireproofDomainsViewController.removeAllButton")
         doneButton.setAccessibilityIdentifier("FireproofDomainsViewController.doneButton")
 
+        configureToolbarButton(addDomainButton)
+        configureToolbarButton(addCurrentDomainButton)
         configureToolbarButton(removeDomainButton)
         configureToolbarButton(removeAllDomainsButton)
         configureToolbarButton(doneButton)
@@ -127,6 +133,8 @@ final class FireproofDomainsViewController: NSViewController {
         buttonsStackView.orientation = .horizontal
         buttonsStackView.spacing = 12
         buttonsStackView.translatesAutoresizingMaskIntoConstraints = false
+        buttonsStackView.addArrangedSubview(addDomainButton)
+        buttonsStackView.addArrangedSubview(addCurrentDomainButton)
         buttonsStackView.addArrangedSubview(removeDomainButton)
         buttonsStackView.addArrangedSubview(removeAllDomainsButton)
         view.addSubview(buttonsStackView)
@@ -206,6 +214,7 @@ final class FireproofDomainsViewController: NSViewController {
         let hasAnyDomains = !allFireproofDomains.isEmpty
         removeAllDomainsButton.isEnabled = hasAnyDomains
         searchBar.isEnabled = hasAnyDomains
+        updateAddCurrentButtonState()
     }
 
     private func updateFilteredFireproofDomains() {
@@ -223,6 +232,70 @@ final class FireproofDomainsViewController: NSViewController {
         dismiss()
     }
 
+    @objc private func addDomain(_ sender: NSButton) {
+        guard let window = view.window else {
+            assertionFailure("Expected to have a valid window to present from")
+            return
+        }
+        let (alert, textField) = NSAlert.fireproofAddDomainPrompt()
+        guard let firstButton = alert.buttons.first else {
+            assertionFailure("Expected to have a 'Add' button in the alert")
+            return
+        }
+
+        // Pre-fill with current tab domain if available
+        if let mainWindowController = Application.appDelegate.windowControllersManager.mainWindowController(for: view.window),
+           let url = mainWindowController.mainViewController.tabCollectionViewModel.selectedTab?.url,
+           url.navigationalScheme?.isHypertextScheme ?? false,
+           let host = url.host {
+            textField.stringValue = host
+        }
+        // Live validation: enable Add only when input resolves to a hypertext URL host (canFireproof)
+        let changeObserver = NotificationCenter.default.addObserver(forName: NSControl.textDidChangeNotification, object: textField, queue: .main) { [weak self] _ in
+            guard let self else { return }
+            firstButton.isEnabled = self.isInputFireproofable(textField.stringValue)
+        }
+        // Initial state based on the (possibly prefilled) text
+        firstButton.isEnabled = isInputFireproofable(textField.stringValue)
+
+        alert.beginSheetModal(for: window) { [weak self] response in
+            NotificationCenter.default.removeObserver(changeObserver)
+            guard let self,
+                  response == .alertFirstButtonReturn,
+                  self.isInputFireproofable(textField.stringValue),
+                  let host = self.fireproofDomains.normalizedHost(fromUserInput: textField.stringValue) else { return }
+            self.addDomainSilently(host)
+        }
+    }
+
+    private func isInputFireproofable(_ input: String) -> Bool {
+        guard let host = fireproofDomains.normalizedHost(fromUserInput: input) else { return false }
+        // Apply same rule as toolbar/menu enablement: only hypertext schemes and not DDG domain
+        let candidate = URL(string: URL.NavigationalScheme.https.separated() + host)
+        return (candidate?.canFireproof ?? false) && !fireproofDomains.isFireproof(fireproofDomain: host)
+    }
+
+    @objc private func addCurrentDomain(_ sender: NSButton) {
+        guard let mainWindowController = Application.appDelegate.windowControllersManager.mainWindowController(for: view.window),
+              let url = mainWindowController.mainViewController.tabCollectionViewModel.selectedTab?.url,
+              url.canFireproof,
+              let host = url.host else {
+            assertionFailure("Expected to have a valid main window, a tab with a valid, fireproofable URL, and a valid host")
+            return
+        }
+
+        let before = Set(allFireproofDomains)
+        fireproofDomains.add(domain: host)
+        reloadData()
+        let after = Set(allFireproofDomains)
+        if let actuallyAdded = after.subtracting(before).first {
+            undoManager?.registerUndo(withTarget: self) { vc in
+                vc.removeDomainSilently(actuallyAdded, setActionName: false)
+            }
+            if undoManager?.isUndoing == false { undoManager?.setActionName(UserText.fireproofAddCurrentButton) }
+        }
+    }
+
     @objc private func removeSelectedDomain(_ sender: NSButton) {
         deleteSelectedItems()
     }
@@ -232,10 +305,9 @@ final class FireproofDomainsViewController: NSViewController {
 
         undoManager?.beginUndoGrouping()
         undoManager?.registerUndo(withTarget: self) { vc in
-            domainsBeforeClear.forEach { vc.fireproofDomains.add(domain: $0) }
-            vc.reloadData()
+            domainsBeforeClear.forEach { vc.addDomainSilently($0, setActionName: false) }
         }
-        undoManager?.setActionName(UserText.fireproofRemoveAllButton)
+        if undoManager?.isUndoing == false { undoManager?.setActionName(UserText.fireproofRemoveAllButton) }
         undoManager?.endUndoGrouping()
 
         fireproofDomains.clearAll()
@@ -260,11 +332,10 @@ final class FireproofDomainsViewController: NSViewController {
         undoManager?.beginUndoGrouping()
         for domain in domains {
             undoManager?.registerUndo(withTarget: self) { vc in
-                vc.fireproofDomains.add(domain: domain)
-                vc.reloadData()
+                vc.addDomainSilently(domain, setActionName: false)
             }
         }
-        undoManager?.setActionName(UserText.remove)
+        if undoManager?.isUndoing == false { undoManager?.setActionName(UserText.remove) }
         undoManager?.endUndoGrouping()
 
         domains.forEach { fireproofDomains.remove(domain: $0) }
@@ -282,6 +353,18 @@ final class FireproofDomainsViewController: NSViewController {
         return true
     }
 
+    private func updateAddCurrentButtonState() {
+        guard let sourceWindow = view.window else { return }
+
+        let mainWindowController = Application.appDelegate.windowControllersManager.mainWindowController(for: sourceWindow)
+        let url = mainWindowController?.mainViewController.tabCollectionViewModel.selectedTab?.url
+        if let url, url.canFireproof, let host = url.host, let tldDomain = NSApp.delegateTyped.tld.eTLDplus1(host) {
+            addCurrentDomainButton.isEnabled = !fireproofDomains.isFireproof(fireproofDomain: tldDomain)
+        } else {
+            addCurrentDomainButton.isEnabled = false
+        }
+    }
+
     override func keyDown(with event: NSEvent) {
         switch Int(event.keyCode) {
         case kVK_Delete, kVK_ForwardDelete:
@@ -296,6 +379,30 @@ final class FireproofDomainsViewController: NSViewController {
     override func cancelOperation(_ sender: Any?) {
         dismiss()
     }
+
+    // MARK: - Undo/Redo helpers
+    private func addDomainSilently(_ domain: String, setActionName: Bool = true) {
+        fireproofDomains.add(domain: domain)
+        reloadData()
+        undoManager?.registerUndo(withTarget: self) { vc in
+            vc.removeDomainSilently(domain, setActionName: setActionName)
+        }
+        if setActionName, undoManager?.isUndoing == false {
+            undoManager?.setActionName(UserText.fireproofAddButton)
+        }
+    }
+
+    private func removeDomainSilently(_ domain: String, setActionName: Bool = true) {
+        fireproofDomains.remove(domain: domain)
+        reloadData()
+        undoManager?.registerUndo(withTarget: self) { vc in
+            vc.addDomainSilently(domain, setActionName: setActionName)
+        }
+        if setActionName, undoManager?.isUndoing == false {
+            undoManager?.setActionName(UserText.remove)
+        }
+    }
+
 }
 // MARK: - NSTableViewDataSource
 extension FireproofDomainsViewController: NSTableViewDataSource, NSTableViewDelegate {
@@ -341,9 +448,13 @@ extension FireproofDomainsViewController: NSSearchFieldDelegate {
                 }
             }
             return true
-        case #selector(NSResponder.cancelOperation(_:)),
-             #selector(NSResponder.insertNewline(_:)):
-            // If search field is active, first press just deactivates it
+        case #selector(NSResponder.cancelOperation(_:)):
+            // If search field is active and non-empty, first Esc press just deactivates it, second – closes the dialog
+            guard !textView.string.isEmpty else { return false }
+            tableView.makeMeFirstResponder()
+            return true
+        case #selector(NSResponder.insertNewline(_:)):
+            // If search field is active, first Enter press just deactivates it, second - burns
             tableView.makeMeFirstResponder()
             return true
         default:

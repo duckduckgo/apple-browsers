@@ -17,10 +17,12 @@
 //
 
 import AppKit
+import AppKitExtensions
 import Combine
 import Common
 import Foundation
 import os.log
+import SharedSandboxTestUtilities
 
 @main
 struct SandboxTestTool {

@@ -39,7 +39,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         duckPlayerStorage: DuckPlayerStorage,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         themeManager: ThemeManaging = ThemeManager.shared,
-        syncService: DDGSyncing
+        syncService: DDGSyncing,
+        winBackOfferService: WinBackOfferService
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appSettings = appSettings
@@ -48,6 +49,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.featureFlagger = featureFlagger
         self.themeManager = themeManager
         self.syncService = syncService
+        self.winBackOfferService = winBackOfferService
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -57,7 +59,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let featureFlagger: FeatureFlagger
     let themeManager: ThemeManaging
     let syncService: DDGSyncing
-
+    let winBackOfferService: WinBackOfferService
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
         var bookmarksCount = 0
@@ -69,6 +71,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         }
 
         let statisticsStore = StatisticsUserDefaults()
+        let featureDiscovery = DefaultFeatureDiscovery()
         let variantManager = DefaultVariantManager()
         let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
         let isDuckDuckGoSubscriber = subscriptionManager.isUserAuthenticated
@@ -84,6 +87,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         var isSubscriptionActive: Bool = false
         var isSubscriptionExpiring: Bool = false
         var isSubscriptionExpired: Bool = false
+        var subscriptionFreeTrialActive: Bool = false
 
         var isDuckPlayerOnboarded: Bool {
             duckPlayerStorage.userInteractedWithDuckPlayer
@@ -95,12 +99,15 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             syncService.authState != .inactive
         }
 
+        let shouldShowWinBackOfferUrgencyMessage = winBackOfferService.shouldShowUrgencyMessage
+
         let surveyActionMapper: DefaultRemoteMessagingSurveyURLBuilder
 
         if let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst) {
             subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
             subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
             subscriptionPurchasePlatform = subscription.platform.rawValue
+            subscriptionFreeTrialActive = subscription.hasActiveTrialOffer
 
             switch subscription.status {
             case .autoRenewable, .gracePeriod:
@@ -136,6 +143,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                      variantManager: variantManager,
                                                      isInternalUser: internalUserDecider.isInternalUser),
             userAttributeMatcher: UserAttributeMatcher(statisticsStore: statisticsStore,
+                                                       featureDiscovery: featureDiscovery,
                                                        variantManager: variantManager,
                                                        bookmarksCount: bookmarksCount,
                                                        favoritesCount: favoritesCount,
@@ -150,12 +158,14 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isSubscriptionActive: isSubscriptionActive,
                                                        isSubscriptionExpiring: isSubscriptionExpiring,
                                                        isSubscriptionExpired: isSubscriptionExpired,
+                                                       subscriptionFreeTrialActive: subscriptionFreeTrialActive,
                                                        isDuckPlayerOnboarded: isDuckPlayerOnboarded,
                                                        isDuckPlayerEnabled: isDuckPlayerEnabled,
                                                        dismissedMessageIds: dismissedMessageIds,
                                                        shownMessageIds: shownMessageIds,
                                                        enabledFeatureFlags: enabledFeatureFlags,
-                                                       isSyncEnabled: isSyncEnabled),
+                                                       isSyncEnabled: isSyncEnabled,
+                                                       shouldShowWinBackOfferUrgencyMessage: shouldShowWinBackOfferUrgencyMessage),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds

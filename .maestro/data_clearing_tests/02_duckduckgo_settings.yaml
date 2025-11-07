@@ -22,9 +22,8 @@ tags:
 - tapOn: "Off"
 
 # Fire Button - twice, just to be sure
-- tapOn: "Close Tabs and Clear Data"
-- tapOn:
-    id: "alert.forget-data.confirm"
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 - assertVisible:
     id: "searchEntry"
 - runFlow:
@@ -32,9 +31,8 @@ tags:
         visible: "Cancel"
     commands:
         - tapOn: "Cancel"
-- tapOn: "Close Tabs and Clear Data"
-- tapOn:
-    id: "alert.forget-data.confirm"
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 
 # Validate Cookie was retained
 - tapOn: 

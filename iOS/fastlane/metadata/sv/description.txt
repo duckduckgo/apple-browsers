@@ -1,32 +1,28 @@
-På DuckDuckGo vill vi skydda dina personuppgifter från hackare, bedragare och integritetskränkande företag – och den bästa metoden är att förhindra att den samlas in överhuvudtaget. Det är därför som miljontals människor väljer DuckDuckGo framför Chrome och andra webbläsare  för att söka och surfa online. Vår inbyggda sökmotor är som Google men spårar aldrig dina sökningar. Och våra surfskydd, som spårningsblockering och blockering av cookies, hjälper till att stoppa andra företag från att samla in dina data. Vår webbläsare är dessutom gratis – vi tjänar pengar på sökannonser som respekterar din integritet, inte genom att utnyttja dina data. Ta tillbaka kontrollen över dina personuppgifter med en webbläsare som är designad för dataskydd, inte datainsamling. 
+På DuckDuckGo vill vi skydda dina personuppgifter från hackare, bedragare och integritetskränkande företag – och den bästa metoden är att förhindra att den samlas in överhuvudtaget. Det är därför som miljontals människor väljer DuckDuckGo framför Chrome och andra webbläsare för att söka och surfa online. Vår inbyggda sökmotor är som Google men spårar aldrig dina sökningar. Våra surfskydd, som spårningsblockering och blockering av cookies, hjälper till att stoppa andra företag från att samla in dina data. Och våra valbara integrerade AI-funktioner, som Search Assist och Duck.ai, är privata och använder aldrig dina data för att träna AI. Vår webbläsare är dessutom gratis – vi tjänar pengar på sökannonser som respekterar din integritet, inte genom att utnyttja dina data. Ta tillbaka kontrollen över dina personuppgifter med en webbläsare som är designad för dataskydd, inte datainsamling. 
 
-FUNKTIONER I FOKUS
-Skydda dina sökningar som standard: DuckDuckGo Search är inbyggt, så du kan enkelt söka online utan att bli spårad. 
+FUNKTIONER I FOKUS 
+Skydda dina sökningar som standard: DuckDuckGo Search är inbyggt, så du kan enkelt söka online utan att bli spårad.  
+Skydda din webbhistorik: Vår Tracker Loading Protection blockerar de flesta spårare från tredje part innan de läses in, vilket med råge överträffar vad de mest populära webbläsarna erbjuder som standard.  
+Chatta privat med AI: Med Duck.ai kan du ha privata konversationer med AI-modeller från tredje part som anonymiseras av oss och aldrig används för att träna AI.
+Skydda din e-post (valfritt): Använd Email Protection för att blockera de flesta e-postspårare och dölja din befintliga e-postadress med @duck.com-adresser.   
+Titta på YouTube-videor utan riktade annonser: Duck Player skyddar dig från riktade annonser och cookies med ett distraktionsfritt gränssnitt som använder YouTubes strängaste integritetsinställningar för inbäddad video. 
+Använd kryptering automatiskt: Skydda dina data från nätverks- och wifi-tjuvlyssnare genom att tvinga många webbplatser att använda en HTTPS-anslutning.  
+Undvik fingerprinting: Gör det svårare för företag att skapa en unik identifikator för dig genom att blockera deras försök att kombinera information om din webbläsare och din enhet.  
+Synkronisera och säkerhetskopiera (valfritt): Synkronisera krypterade bokmärken och lösenord mellan dina enheter. 
+Rensa dina flikar och surfdata på nolltid med Fire Button. 
+Ta bort popup-fönster för cookies och ställ automatiskt in dina preferenser för att minimera antalet cookies och maximera din integritet. 
+Och många fler skydd som inte finns tillgängliga i de flesta webbläsare. 
 
-Skydda din webbhistorik: Vår Tracker Loading Protection blockerar de flesta spårare från tredje part innan de läses in, vilket med råge överträffar vad de mest populära webbläsarna erbjuder som standard. 
+DuckDuckGo Abonnemang
+Abonnenter får: 
+• Vårt VPN: Skydda din uppkoppling på upp till 5 enheter. 
+• Tillgång till avancerade AI-modeller i Duck.ai: Chatta privat med AI-modeller som skapats för komplexa uppgifter.
+• Personal Information Removal: Hitta och ta bort personlig information från webbplatser som lagrar och säljer den.
+• Identity Theft Restoration: Om din identitet blir stulen hjälper vi dig att återställa den.
 
-Skydda din e-post (valfritt): Använd Email Protection för att blockera de flesta e-postspårare och dölja din befintliga e-postadress med @duck.com-adresser.  
-
-Titta på YouTube-videor utan riktade annonser: Duck Player skyddar dig från riktade annonser och cookies med ett distraktionsfritt gränssnitt som använder YouTubes strängaste integritetsinställningar för inbäddad video.
-
-Använd kryptering automatiskt: Skydda dina data från nätverks- och wifi-tjuvlyssnare genom att tvinga många webbplatser att använda en HTTPS-anslutning. 
-
-Undvik fingerprinting: Gör det svårare för företag att skapa en unik identifikator för dig genom att blockera deras försök att kombinera information om din webbläsare och din enhet. 
-
-Synkronisera och säkerhetskopiera (valfritt): Synkronisera krypterade bokmärken och lösenord mellan dina enheter.
-
-Rensa dina flikar och surfdata på nolltid med Fire Button.
-
-Ta bort popup-fönster för cookies och ställ automatiskt in dina preferenser för att minimera antalet cookies och maximera din integritet.
-
-Och många andra skydd som inte finns tillgängliga i de flesta webbläsare, inte ens i privat surfläge, som skydd mot länkspårning, Global Privacy Control (GPC) och mycket mer.
-
-Du behöver inte vänta med att ta kontroll över din personliga information! Gör som miljontals människor som använder DuckDuckGo för att varje dag skydda sina sökningar, sitt surfande och sin e-post. 
-
-Läs mer om våra kostnadsfria spårningsskydd på https://help.duckduckgo.com/privacy/web-tracking-protections
-
+Priser och villkor för DuckDuckGo-abonnemanget   
+Betalningen dras automatiskt från ditt Apple-konto tills du avbryter, vilket du kan göra i appens inställningar. Du kan ange en e-postadress för att aktivera din prenumeration på andra enheter. Vi kommer endast att använda den e-postadressen för att verifiera din prenumeration. Användarvillkor och integritetspolicy hittar du på https://duckduckgo.com/pro/privacy-terms 
+Läs mer om våra kostnadsfria spårningsskydd på https://help.duckduckgo.com/privacy/web-tracking-protections 
 Integritetspolicy: https://duckduckgo.com/privacy/ 
-
-Användarvillkor: https://duckduckgo.com/terms
-
-Anmärkning om spårningsskydd från tredje part och sökannonser: även om det finns vissa begränsningar efter klick på sökannonser kan man se annonser anonymt i sökningar med DuckDuckGo. Mer information finn här https://help.duckduckgo.com/privacy/web-tracking-protections
+Användarvillkor: https://duckduckgo.com/terms 
+Anmärkning om spårningsskydd från tredje part och sökannonser: även om det finns vissa begränsningar efter klick på sökannonser kan man se annonser anonymt i sökningar med DuckDuckGo. Mer information finns här https://help.duckduckgo.com/privacy/web-tracking-protections

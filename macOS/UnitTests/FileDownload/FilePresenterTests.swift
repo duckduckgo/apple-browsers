@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import Combine
 import Foundation
+import SharedSandboxTestUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -60,7 +62,7 @@ final class FilePresenterTests: XCTestCase {
     }
 
     override var allowedNonNilVariables: Set<String> {
-        ["fm"]
+        ["fm", "runningApp"]
     }
 
     override func tearDown() async throws {

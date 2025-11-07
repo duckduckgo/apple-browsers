@@ -78,7 +78,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public let featureFlagger: DBPFeatureFlagging
     private let actionsHandlerMode: ActionsHandlerMode
 
-    public var retriesCountOnError: Int = 3
+    public var retriesCountOnError: Int = 0
 
     public init(privacyConfig: PrivacyConfigurationManaging,
                 prefs: ContentScopeProperties,
@@ -193,7 +193,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
 
         let shouldContinue = self.shouldRunNextStep()
         if let action = actionsHandler?.nextAction(), shouldContinue {
-            stageCalculator.setLastActionId(action.id)
+            stageCalculator.setLastAction(action)
             Logger.action.debug(loggerContext(for: action), message: "Next action")
             await runNextAction(action)
         } else {

@@ -24,6 +24,13 @@ enum BookmarkMode {
     case manager
 }
 
+@objc protocol XCTRunnerAutomationSessionProtocol: AnyObject {
+    @objc(attributesForElement:attributes:error:)
+    func attributes(for element: AXElement, attributes: [String]) throws -> Any
+}
+@objc protocol AXElement: AnyObject {
+}
+
 extension XCUIApplication {
 
     private enum AccessibilityIdentifiers {
@@ -35,10 +42,17 @@ extension XCUIApplication {
         static let backButton = "NavigationBarViewController.BackButton"
         static let forwardButton = "NavigationBarViewController.ForwardButton"
         static let downloadsButton = "NavigationBarViewController.downloadsButton"
+        static let optionsButton = "NavigationBarViewController.optionsButton"
         static let bookmarksBar = "BookmarksBarViewController.bookmarksBarCollectionView"
         static let mainMenuAddBookmarkMenuItem = "MainMenu.addBookmark"
         static let mainMenuToggleBookmarksBarMenuItem = "MainMenu.toggleBookmarksBar"
         static let historyMenu = "History"
+        static let clearAllHistoryMenuItem = "HistoryMenu.clearAllHistory"
+        static let clearAllHistoryAlertClearButton = "ClearAllHistoryAndDataAlert.clearButton"
+        static let reopenLastClosedWindowMenuItem = "HistoryMenu.reopenLastClosedWindow"
+        static let recentlyVisitedMenuItemPrefix = "HistoryMenu.recentlyVisitedMenuItem"
+        static let populateFakeHistory10MenuItem = "HistoryDebugMenu.populate10"
+        static let populateFakeHistory100MenuItem = "HistoryDebugMenu.populate100"
         static let bookmarksMenu = "Bookmarks"
         static let mainMenuPinTabMenuItem = "Pin Tab"
         static let mainMenuUnpinTabMenuItem = "Unpin Tab"
@@ -63,9 +77,28 @@ extension XCUIApplication {
         static let startupWindowTypeFireWindow = "PreferencesGeneralView.stateRestorePicker.openANewWindow.fireWindow"
 
         static let openFireWindowByDefaultCheckbox = "PreferencesDataClearingView.openFireWindowByDefault"
+
+        static let fireDialogTitle = "FireDialogView.title"
+        static let fireDialogSegmentedControl = "FireDialogView.segmentedControl"
+        static let fireDialogTabsToggle = "FireDialogView.tabsToggle"
+        static let fireDialogHistoryToggle = "FireDialogView.historyToggle"
+        static let fireDialogCookiesToggle = "FireDialogView.cookiesToggle"
+        static let fireDialogCookiesInfoButton = "FireDialogView.cookiesInfoButton"
+        static let fireDialogManageFireproofButton = "FireDialogView.manageFireproofButton"
+        static let fireDialogIndividualSitesLink = "FireDialogView.individualSitesLink"
+        static let fireDialogSitesOverlayCloseButton = "FireDialogView.sitesOverlayCloseButton"
+        static let fireDialogCancelButton = "FireDialogView.cancelButton"
+        static let fireDialogBurnButton = "FireDialogView.burnButton"
+        static let fireproofDomainsAddButton = "FireproofDomainsViewController.addButton"
+        static let fireproofDomainsAddCurrentButton = "FireproofDomainsViewController.addCurrentButton"
+        static let fireproofDomainsDoneButton = "FireproofDomainsViewController.doneButton"
+        static let fireButton = "TabBarViewController.fireButton"
+        static let fakeFireButton = "FireViewController.fakeFireButton"
     }
 
-    static func setUp(environment: [String: String]? = nil, featureFlags: [String: Bool] = ["visualUpdates": true]) -> XCUIApplication {
+    static func setUp(environment: [String: String]? = nil,
+                      featureFlags: [String: Bool] = ["visualUpdates": true],
+                      arguments: [String]? = nil) -> XCUIApplication {
         let app = XCUIApplication()
         if let environment {
             app.launchEnvironment = app.launchEnvironment.merging(environment, uniquingKeysWith: { $1 })
@@ -74,6 +107,9 @@ extension XCUIApplication {
         }
         if !featureFlags.isEmpty {
             app.launchEnvironment["FEATURE_FLAGS"] = featureFlags.map { "\($0)=\($1)" }.joined(separator: " ")
+        }
+        if let arguments {
+            app.launchArguments.append(contentsOf: arguments)
         }
         app.launch()
         return app
@@ -105,8 +141,12 @@ extension XCUIApplication {
     func enforceSingleWindow() {
         let window = windows.firstMatch
         while window.exists {
-            window.click()
-            typeKey("w", modifierFlags: [.command, .option, .shift])
+            let closeButton = window.buttons["_XCUI:CloseWindow"]
+            if closeButton.isHittable {
+                closeButton.click()
+            } else {
+                typeKey("w", modifierFlags: [.command, .option, .shift])
+            }
             _=window.waitForNonExistence(timeout: UITests.Timeouts.elementExistence)
         }
         typeKey("n", modifierFlags: .command)
@@ -200,10 +240,54 @@ extension XCUIApplication {
             addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
         )
-        addressBar.typeURL(url)
+        addressBar.pasteURL(url, pressingEnter: true)
         XCTAssertTrue(
             windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."
+        )
+    }
+
+    var automationSession: XCTRunnerAutomationSessionProtocol? {
+        guard self.value(forKey: "hasAutomationSession") as? Bool == true,
+              let automationSession = self.value(forKey: "automationSession") as? NSObject else { return nil }
+        return unsafeBitCast(automationSession, to: XCTRunnerAutomationSessionProtocol.self)
+    }
+
+    func openURL(_ url: URL, waitForWebViewAccessibilityLabel expectedLabel: String? = nil) {
+        let addressBar = addressBar
+        XCTAssertTrue(
+            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The address bar text field didn't become available in a reasonable timeframe."
+        )
+        addressBar.pasteURL(url, pressingEnter: true)
+        if let expectedLabel {
+            XCTAssertTrue(
+                windows.firstMatch.webViews[expectedLabel].waitForExistence(timeout: UITests.Timeouts.navigation),
+                "Web view with label '\(expectedLabel)' didn't load in a reasonable timeframe."
+            )
+        } else {
+            XCTAssertTrue(
+                windows.firstMatch.webViews.firstMatch.waitForExistence(timeout: UITests.Timeouts.navigation),
+                "Web view didn't load in a reasonable timeframe."
+            )
+        }
+        let tab = windows.firstMatch.tabs.element(matching: \.isSelected, equalTo: true)
+        let progressIndicator = windows.firstMatch.progressIndicators["LoadingProgressIndicator"]
+
+        let naked = (url.nakedString ?? url.absoluteString).droppingWwwPrefix()
+        let scheme = url.navigationalScheme?.separated() ?? ""
+        XCTAssertTrue(
+            tab.wait(for: .keyPath(\.url, in: [
+                scheme + naked,
+                scheme + naked + "/",
+                scheme + "www." + naked,
+                scheme + "www." + naked + "/",
+            ]), timeout: UITests.Timeouts.navigation),
+            "Tab did not change URL to \(url.absoluteString) in a reasonable timeframe (current URL: \(tab.url ?? "<nil>"))."
+        )
+        XCTAssertTrue(
+            progressIndicator.wait(for: .keyPath(\.value, equalTo: 1.0), timeout: UITests.Timeouts.navigation),
+            "Progress did not reach 100% in a reasonable timeframe (current value: \(progressIndicator.value as? Double ??? "<nil>"))."
         )
     }
 
@@ -443,7 +527,7 @@ extension XCUIApplication {
     /// Sets the Tabs behavior: whether to switch to a new tab when opened (true) or keep in background (false)
     func setSwitchToNewTabWhenOpened(enabled: Bool) {
         let checkbox = preferencesWindow.checkBoxes[AccessibilityIdentifiers.switchToNewTabWhenOpenedCheckbox]
-        checkbox.toggleCheckboxIfNeeded(to: enabled, ensureHittable: self.ensureHittable)
+        checkbox.toggleCheckboxIfNeeded(to: enabled, validate: true, ensureHittable: self.ensureHittable)
     }
 
     /// Sets the "Automatically open the Downloads panel when downloads complete" preference
@@ -608,12 +692,104 @@ extension XCUIApplication {
         buttons[AccessibilityIdentifiers.downloadsButton]
     }
 
+    var optionsButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.optionsButton]
+    }
+
+    var fireDialogTitle: XCUIElement {
+        staticTexts[AccessibilityIdentifiers.fireDialogTitle]
+    }
+
+    var fireDialogSegmentedControl: XCUIElement {
+        groups[AccessibilityIdentifiers.fireDialogSegmentedControl]
+    }
+
+    var fireDialogTabsToggle: XCUIElement {
+        checkBoxes[AccessibilityIdentifiers.fireDialogTabsToggle]
+    }
+
+    var fireDialogHistoryToggle: XCUIElement {
+        checkBoxes[AccessibilityIdentifiers.fireDialogHistoryToggle]
+    }
+
+    var fireDialogCookiesToggle: XCUIElement {
+        checkBoxes[AccessibilityIdentifiers.fireDialogCookiesToggle]
+    }
+
+    var fireDialogCookiesInfoButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogCookiesInfoButton]
+    }
+
+    var fireDialogManageFireproofButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogManageFireproofButton]
+    }
+
+    var fireDialogIndividualSitesLink: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogIndividualSitesLink]
+    }
+
+    var fireDialogSitesOverlayCloseButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogSitesOverlayCloseButton]
+    }
+
+    var fireDialogCancelButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogCancelButton]
+    }
+
+    var fireDialogBurnButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogBurnButton]
+    }
+
+    var fireproofDomainsAddButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireproofDomainsAddButton]
+    }
+
+    var fireproofDomainsAddCurrentButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireproofDomainsAddCurrentButton]
+    }
+
+    var fireproofDomainsDoneButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireproofDomainsDoneButton]
+    }
+
+    var fireButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireButton].firstMatch
+    }
+
+    var fakeFireButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fakeFireButton]
+    }
+
     var helpMenu: XCUIElement {
         menuBarItems[AccessibilityIdentifiers.helpMenuItem]
     }
 
     var historyMenu: XCUIElement {
         menuBarItems[AccessibilityIdentifiers.historyMenu]
+    }
+
+    var clearAllHistoryMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.clearAllHistoryMenuItem]
+    }
+
+    var clearAllHistoryAlertClearButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.clearAllHistoryAlertClearButton]
+    }
+
+    var reopenLastClosedWindowMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.reopenLastClosedWindowMenuItem]
+    }
+
+    func recentlyVisitedMenuItem(at index: Int) -> XCUIElement {
+        menuItems["\(AccessibilityIdentifiers.recentlyVisitedMenuItemPrefix).\(index)"]
+    }
+
+    var populateFakeHistory10MenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.populateFakeHistory10MenuItem]
+    }
+
+    var populateFakeHistory100MenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.populateFakeHistory100MenuItem]
     }
 
     var releaseNotesMenu: XCUIElement {

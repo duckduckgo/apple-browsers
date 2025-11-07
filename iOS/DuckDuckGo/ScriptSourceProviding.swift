@@ -23,7 +23,7 @@ import Combine
 import BrowserServicesKit
 import enum UserScript.UserScriptError
 
-protocol ScriptSourceProviding {
+public protocol ScriptSourceProviding {
 
     var loginDetectionEnabled: Bool { get }
     var sendDoNotSell: Bool { get }
@@ -80,6 +80,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         contentScopeProperties = ContentScopeProperties(gpcEnabled: appSettings.sendDoNotSell,
                                                         sessionKey: sessionKey,
                                                         messageSecret: messageSecret,
+                                                        debug: AppUserDefaults().contentScopeDebugStateEnabled,
                                                         featureToggles: ContentScopeFeatureToggles.supportedFeaturesOniOS,
                                                         currentCohorts: currentCohorts)
         autofillSourceProvider = Self.makeAutofillSource(privacyConfigurationManager: privacyConfigurationManager,

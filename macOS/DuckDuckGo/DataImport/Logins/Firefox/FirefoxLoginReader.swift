@@ -99,8 +99,8 @@ final class FirefoxLoginReader {
         var currentOperationType: ImportError.OperationType = .couldNotFindLoginsFile
         do {
             let dataFormat = try dataFormat ?? detectLoginFormat() ?? { throw ImportError(type: .couldNotFindKeyDB, underlyingError: nil) }()
-            let keyData = try getEncryptionKey(dataFormat: dataFormat)
-            let result = try reallyReadLogins(dataFormat: dataFormat, keyData: keyData, currentOperationType: &currentOperationType)
+            let keys = try getEncryptionKeys(dataFormat: dataFormat)
+            let result = try reallyReadLogins(dataFormat: dataFormat, keys: keys, currentOperationType: &currentOperationType)
             return .success(result)
         } catch let error as ImportError {
             return .failure(error)
@@ -111,27 +111,30 @@ final class FirefoxLoginReader {
 
     func getEncryptionKey() throws -> Data {
         let dataFormat = try detectLoginFormat() ?? { throw ImportError(type: .couldNotFindKeyDB, underlyingError: nil) }()
-        return try getEncryptionKey(dataFormat: dataFormat)
+        let keys = try getEncryptionKeys(dataFormat: dataFormat)
+        return keys.primaryKey
     }
 
-    private func getEncryptionKey(dataFormat: DataFormat) throws -> Data {
+    private func getEncryptionKeys(dataFormat: DataFormat) throws -> FirefoxEncryptionKeys {
         let databaseURL = firefoxProfileURL.appendingPathComponent(dataFormat.formatFileNames.databaseName)
 
         switch dataFormat {
         case .version2:
-            return try keyReader.getEncryptionKey(key3DatabaseURL: databaseURL, primaryPassword: primaryPassword ?? "").get()
+            // Key3 database only has 3DES key
+            let key3Data = try keyReader.getEncryptionKey(key3DatabaseURL: databaseURL, primaryPassword: primaryPassword ?? "").get()
+            return FirefoxEncryptionKeys(tripleDesKey: key3Data, aesKey: nil)
         case .version3:
             return try keyReader.getEncryptionKey(key4DatabaseURL: databaseURL, primaryPassword: primaryPassword ?? "").get()
         }
     }
 
-    private func reallyReadLogins(dataFormat: DataFormat, keyData: Data, currentOperationType: inout ImportError.OperationType) throws -> [ImportedLoginCredential] {
+    private func reallyReadLogins(dataFormat: DataFormat, keys: FirefoxEncryptionKeys, currentOperationType: inout ImportError.OperationType) throws -> [ImportedLoginCredential] {
         let loginsFileURL = firefoxProfileURL.appendingPathComponent(dataFormat.formatFileNames.loginsFileName)
 
         currentOperationType = .couldNotReadLoginsFile
         let logins = try readLoginsFile(from: loginsFileURL.path)
 
-        let decryptedLogins = try decrypt(logins: logins, with: keyData, currentOperationType: &currentOperationType)
+        let decryptedLogins = try decrypt(logins: logins, with: keys, currentOperationType: &currentOperationType)
         return decryptedLogins
     }
 
@@ -172,7 +175,7 @@ final class FirefoxLoginReader {
         return EncryptedFirefoxLogins(logins: activeLogins)
     }
 
-    private func decrypt(logins: EncryptedFirefoxLogins, with key: Data, currentOperationType: inout ImportError.OperationType) throws -> [ImportedLoginCredential] {
+    private func decrypt(logins: EncryptedFirefoxLogins, with keys: FirefoxEncryptionKeys, currentOperationType: inout ImportError.OperationType) throws -> [ImportedLoginCredential] {
         var credentials = [ImportedLoginCredential]()
 
         // Filter out rows that are used by the Firefox sync service.
@@ -182,9 +185,9 @@ final class FirefoxLoginReader {
         for login in loginsToImport {
             do {
                 currentOperationType = .decryptUsername
-                let decryptedUsername = try decrypt(credential: login.encryptedUsername, key: key)
+                let decryptedUsername = try decrypt(credential: login.encryptedUsername, keys: keys)
                 currentOperationType = .decryptPassword
-                let decryptedPassword = try decrypt(credential: login.encryptedPassword, key: key)
+                let decryptedPassword = try decrypt(credential: login.encryptedPassword, keys: keys)
 
                 credentials.append(ImportedLoginCredential(url: login.hostname, username: decryptedUsername, password: decryptedPassword, notes: nil))
             } catch {
@@ -198,22 +201,45 @@ final class FirefoxLoginReader {
         return credentials
     }
 
-    private func decrypt(credential: String, key: Data) throws -> String {
+    private func decrypt(credential: String, keys: FirefoxEncryptionKeys) throws -> String {
         guard let base64Decoded = Data(base64Encoded: credential) else { throw LoginReaderFileLineError() }
 
         let asn1Decoded = try ASN1Parser.parse(data: base64Decoded)
 
+        // Extract the OID to determine which encryption scheme to use
+        let oid = ASN1Parser.extractOID(from: asn1Decoded)
+
+        // Parse the ASN.1 structure:
+        // SEQUENCE
+        //   OCTET STRING (magic identifier F8 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01)
+        //   SEQUENCE (algorithm identifier)
+        //     OBJECT IDENTIFIER (encryption algorithm OID)
+        //     OCTET STRING (initialization vector)
+        //   OCTET STRING (ciphertext)
+
         var lineError = LoginReaderFileLineError.nextLine()
         guard case let .sequence(topLevelValues) = asn1Decoded, lineError.next(),
-              case let .sequence(initializationVectorValues) = topLevelValues[1], lineError.next(),
-              case let .octetString(initializationVector) = initializationVectorValues[1], lineError.next(),
+              topLevelValues.count >= 3, lineError.next(),
+              case let .sequence(algorithmSequence) = topLevelValues[1], lineError.next(),
+              algorithmSequence.count >= 2, lineError.next(),
+              case let .octetString(initializationVector) = algorithmSequence[1], lineError.next(),
               case let .octetString(ciphertext) = topLevelValues[2] else {
             throw lineError
         }
 
-        let decryptedData = try Cryptography.decrypt3DES(data: ciphertext, key: key, iv: initializationVector)
-
-        return try String(data: decryptedData, encoding: .utf8) ?? { throw LoginReaderFileLineError() }()
+        // Determine encryption type by OID
+        if oid == ASN1Parser.OID.aes256CBC, let aesKey = keys.aesKey {
+            // Use AES-256-CBC decryption with the 32-byte key
+            let decryptedData = try Cryptography.decryptAESCBC(data: ciphertext, key: aesKey, iv: initializationVector)
+            return try String(data: decryptedData, encoding: .utf8) ?? { throw LoginReaderFileLineError() }()
+        } else if let tripleDesKey = keys.tripleDesKey {
+            // Use 3DES-CBC decryption with the 24-byte key (or fallback if no OID found)
+            let decryptedData = try Cryptography.decrypt3DES(data: ciphertext, key: tripleDesKey, iv: initializationVector)
+            return try String(data: decryptedData, encoding: .utf8) ?? { throw LoginReaderFileLineError() }()
+        } else {
+            // No suitable key found for this encryption type
+            throw LoginReaderFileLineError()
+        }
     }
 
 }

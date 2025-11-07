@@ -22,14 +22,23 @@ import PackageDescription
 
 let package = Package(
     name: "Utilities",
+    platforms: [
+        .macOS("11.4")
+    ],
     products: [
         .library(
             name: "Utilities",
             targets: ["Utilities"]),
     ],
+    dependencies: [
+        .package(path: "../../../SharedPackages/BrowserServicesKit"),
+    ],
     targets: [
         .target(
-            name: "Utilities"
+            name: "Utilities",
+            dependencies: [
+                .product(name: "Common", package: "BrowserServicesKit"),
+            ]
         )
     ]
 )

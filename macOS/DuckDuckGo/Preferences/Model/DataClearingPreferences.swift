@@ -20,6 +20,7 @@ import Foundation
 import PixelKit
 import BrowserServicesKit
 import FeatureFlags
+import AIChat
 
 final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
 
@@ -63,6 +64,17 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
         }
     }
 
+    @Published
+    private(set) var shouldShowAutoClearAIChatHistorySetting: Bool
+
+    @Published
+    var isAutoClearAIChatHistoryEnabled: Bool {
+        didSet {
+            persistor.autoClearAIChatHistoryEnabled = isAutoClearAIChatHistoryEnabled
+            pixelFiring?.fire(AIChatPixel.aiChatAutoClearHistorySettingToggled(enabled: isAutoClearAIChatHistoryEnabled), frequency: .dailyAndCount)
+        }
+    }
+
     var shouldShowDisableFireAnimationSection: Bool {
         featureFlagger.isFeatureOn(.disableFireAnimation)
     }
@@ -76,7 +88,7 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     @MainActor
-    func presentManageFireproofSitesDialog() {
+    func presentManageFireproofSitesDialog() async {
         let fireproofDomainsWindowController = FireproofDomainsViewController.create(fireproofDomains: fireproofDomains, faviconManager: faviconManager).wrappedInWindowController()
 
         guard let fireproofDomainsWindow = fireproofDomainsWindowController.window,
@@ -87,7 +99,13 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
         }
 
         // display on top of currently presented sheet
-        sequence(first: window, next: \.sheets.last).reversed().first?.beginSheet(fireproofDomainsWindow)
+        await sequence(first: window, next: \.sheets.last).reversed().first?.beginSheet(fireproofDomainsWindow)
+    }
+
+    func presentManageFireproofSitesDialog() {
+        Task { @MainActor in
+            await presentManageFireproofSitesDialog()
+        }
     }
 
     init(
@@ -96,7 +114,8 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
         faviconManager: FaviconManagement,
         windowControllersManager: WindowControllersManagerProtocol,
         featureFlagger: FeatureFlagger,
-        pixelFiring: PixelFiring? = nil
+        pixelFiring: PixelFiring? = nil,
+        aiChatHistoryCleaner: AIChatHistoryCleaning
     ) {
         self.persistor = persistor
         self.fireproofDomains = fireproofDomains
@@ -104,11 +123,17 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
         self.windowControllersManager = windowControllersManager
         self.pixelFiring = pixelFiring
         self.featureFlagger = featureFlagger
+        self.aiChatHistoryCleaner = aiChatHistoryCleaner
         isLoginDetectionEnabled = persistor.loginDetectionEnabled
         isAutoClearEnabled = persistor.autoClearEnabled
         isWarnBeforeClearingEnabled = persistor.warnBeforeClearingEnabled
         isFireAnimationEnabled = persistor.isFireAnimationEnabled
         shouldOpenFireWindowByDefault = persistor.shouldOpenFireWindowByDefault
+        isAutoClearAIChatHistoryEnabled = persistor.autoClearAIChatHistoryEnabled
+        shouldShowAutoClearAIChatHistorySetting = aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption
+
+        aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOptionPublisher
+            .assign(to: &$shouldShowAutoClearAIChatHistorySetting)
     }
 
     private var persistor: FireButtonPreferencesPersistor
@@ -117,11 +142,13 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
     private let windowControllersManager: WindowControllersManagerProtocol
     private let pixelFiring: PixelFiring?
     private let featureFlagger: FeatureFlagger
+    private let aiChatHistoryCleaner: AIChatHistoryCleaning
 }
 
 protocol FireButtonPreferencesPersistor {
     var loginDetectionEnabled: Bool { get set }
     var autoClearEnabled: Bool { get set }
+    var autoClearAIChatHistoryEnabled: Bool { get set }
     var warnBeforeClearingEnabled: Bool { get set }
     var isFireAnimationEnabled: Bool { get set }
     var shouldOpenFireWindowByDefault: Bool { get set }
@@ -143,6 +170,9 @@ struct FireButtonPreferencesUserDefaultsPersistor: FireButtonPreferencesPersisto
 
     @UserDefaultsWrapper(key: .openFireWindowByDefault, defaultValue: false)
     var shouldOpenFireWindowByDefault: Bool
+
+    @UserDefaultsWrapper(key: .autoClearAIChatHistoryEnabled, defaultValue: false)
+    var autoClearAIChatHistoryEnabled: Bool
 
 }
 

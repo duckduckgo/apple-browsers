@@ -162,6 +162,11 @@ protocol UpdateController: AnyObject {
     /// **Usage**: Called when user wants to see update details, release notes, or manually update.
     /// Provides access to detailed update information and manual update path.
     func openUpdatesPage()
+
+    /// Handles cleanup when the app is terminating.
+    ///
+    /// Called during app termination to ensure proper cleanup of update-related state.
+    func handleAppTermination()
 }
 
 extension UpdateController {

@@ -156,7 +156,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
     }
 
     private func collectDeviceInfoMetadata() -> VPNMetadata.DeviceInfo {
-        .init(osVersion: AppVersion.shared.osVersion, lowPowerModeEnabled: ProcessInfo.processInfo.isLowPowerModeEnabled)
+        .init(osVersion: AppVersion.shared.osVersionMajorMinorPatch, lowPowerModeEnabled: ProcessInfo.processInfo.isLowPowerModeEnabled)
     }
 
     func collectNetworkInformation() async -> VPNMetadata.NetworkInfo {

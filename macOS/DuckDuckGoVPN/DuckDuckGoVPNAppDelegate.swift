@@ -112,6 +112,8 @@ final class DuckDuckGoVPNApplication: NSApplication {
         pixelSource = "vpnAgentAppStore"
 #endif
 
+        let userAgent = UserAgent.duckDuckGoUserAgent()
+
         PixelKit.setUp(dryRun: dryRun,
                        appVersion: AppVersion.shared.versionNumber,
                        source: pixelSource,
@@ -119,7 +121,7 @@ final class DuckDuckGoVPNApplication: NSApplication {
                        defaults: .netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
 
             let url = URL.pixelUrl(forPixelNamed: pixelName)
-            let apiHeaders = APIRequest.Headers(additionalHeaders: headers) // workaround - Pixel class should really handle APIRequest.Headers by itself
+            let apiHeaders = APIRequest.Headers(userAgent: userAgent, additionalHeaders: headers)
             let configuration = APIRequest.Configuration(url: url, method: .get, queryParameters: parameters, headers: apiHeaders)
             let request = APIRequest(configuration: configuration)
 

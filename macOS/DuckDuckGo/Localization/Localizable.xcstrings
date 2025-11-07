@@ -664,6 +664,9 @@
         }
       }
     },
+    "Activate to select" : {
+
+    },
     "Actual Size" : {
       "comment" : "Main Menu View item",
       "localizations" : {
@@ -8101,6 +8104,66 @@
         }
       }
     },
+    "automatically.clear.chats" : {
+      "comment" : "Label after the checkbox in Settings which configures clearing Duck.ai chat history automatically after quitting the app.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Chatverlauf löschen, wenn DuckDuckGo beendet wird"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete Duck.ai chat history when DuckDuckGo quits"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar el historial de chat de Duck.ai al cerrar DuckDuckGo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer l'historique du chat Duck.ai à la fermeture de DuckDuckGo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina la cronologia chat di Duck.ai quando DuckDuckGo esce"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai chatgeschiedenis verwijderen wanneer DuckDuckGo stopt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń historię czatów Duck.ai po zamknięciu DuckDuckGo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar o histórico de conversas do Duck.ai quando sair do DuckDuckGo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалять историю чатов с Duck.ai при закрытии DuckDuckGo"
+          }
+        }
+      }
+    },
     "automatically.clear.data" : {
       "comment" : "Label after the checkbox in Settings which configures clearing data automatically after quitting the app.",
       "extractionState" : "extracted_with_value",
@@ -13641,7 +13704,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cookies und Daten von „Fireproof“-Websites werden nicht gelöscht."
+            "value" : "Cookies und Daten einer „Fireproof“-Website werden nicht gelöscht."
           }
         },
         "en" : {
@@ -19313,6 +19376,66 @@
         }
       }
     },
+    "delete.history.and.browsing.data.menu.item" : {
+      "comment" : "Menu item title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verlauf und Browser-Daten löschen …"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete History and Browsing Data…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar historial y datos de navegación…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer l'historique et les données de navigation…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina la cronologia e i dati di navigazione…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geschiedenis en browsegegevens verwijderen..."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń historię i dane przeglądania…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar histórico e dados de navegação…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить историю и данные просмотра…"
+          }
+        }
+      }
+    },
     "details" : {
       "comment" : "details button",
       "extractionState" : "extracted_with_value",
@@ -19662,58 +19785,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отключить автозаполнение в рамках защиты почты?"
-          }
-        }
-      }
-    },
-    "Display progress" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fortschritt anzeigen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar progreso"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher la progression"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Visualizza i progressi"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voortgang weergeven"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wyświetl postęp"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar progresso"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показывать степень выполнения"
           }
         }
       }
@@ -23258,6 +23329,126 @@
         }
       }
     },
+    "duckai.hide-ai-generated-images-settings" : {
+      "comment" : "The section name in preferences for Hide AI-Generated Images Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KI-generierte Bilder ausblenden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide AI-Generated Images"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar imágenes generadas por IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer les images générées par l'IA"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nascondi immagini generate dall'intelligenza artificiale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verberg door AI gegenereerde afbeeldingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ukryj obrazy wygenerowane przez sztuczną inteligencję"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar imagens geradas por IA"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрыть изображения, созданные ИИ"
+          }
+        }
+      }
+    },
+    "duckai.hide-ai-generated-images-settings.description" : {
+      "comment" : "Description of the section in Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtert KI-generierte Bilder aus den Bildsuchergebnissen heraus"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Filter out AI-generated images from image search results"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtra las imágenes generadas por IA de los resultados de búsqueda de imágenes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtre les images générées par l'IA dans les résultats de recherche d'images"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtra le immagini generate dall'intelligenza artificiale dai risultati di ricerca di immagini"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtert door AI gegenereerde afbeeldingen uit de zoekresultaten van afbeeldingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtruje obrazy wygenerowane przez sztuczną inteligencję z wyników wyszukiwania obrazów"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtra as imagens geradas por IA dos resultados de pesquisa de imagens"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фильтрует изображения, созданные ИИ, из результатов поиска изображений"
+          }
+        }
+      }
+    },
     "duckai.menu.new" : {
       "comment" : "Menu item to launch AI Chat",
       "extractionState" : "extracted_with_value",
@@ -23618,6 +23809,66 @@
         }
       }
     },
+    "duckai.search-ai-features-settings.link" : {
+      "comment" : "Button to open the Search AI Features Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Such-KI-Funktionen öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Search AI Features"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir funciones de IA de búsqueda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir les fonctionnalités d'IA de recherche"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri le funzionalità di ricerca IA"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open AI-zoekfuncties"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz funkcje wyszukiwania AI"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir funcionalidades de IA de pesquisa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть функции поиска с ИИ"
+          }
+        }
+      }
+    },
     "duckai.search-assist-settings" : {
       "comment" : "The section name in preferences for Search Assist Settings",
       "extractionState" : "extracted_with_value",
@@ -23794,6 +24045,186 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть настройки Search Assist"
+          }
+        }
+      }
+    },
+    "duckai.hide-ai-generated-images-settings" : {
+      "comment" : "The section name in preferences for Hide AI-Generated Images Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KI-generierte Bilder ausblenden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide AI-Generated Images"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar imágenes generadas por IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer les images générées par l'IA"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nascondi immagini generate dall'intelligenza artificiale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verberg door AI gegenereerde afbeeldingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ukryj obrazy wygenerowane przez sztuczną inteligencję"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar imagens geradas por IA"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрыть изображения, созданные ИИ"
+          }
+        }
+      }
+    },
+    "duckai.hide-ai-generated-images-settings.description" : {
+      "comment" : "Description of the section in Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtert KI-generierte Bilder aus den Bildsuchergebnissen heraus"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Filter out AI-generated images from image search results"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtra las imágenes generadas por IA de los resultados de búsqueda de imágenes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtre les images générées par l'IA dans les résultats de recherche d'images"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtra le immagini generate dall'intelligenza artificiale dai risultati di ricerca di immagini"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtert door AI gegenereerde afbeeldingen uit de zoekresultaten van afbeeldingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtruje obrazy wygenerowane przez sztuczną inteligencję z wyników wyszukiwania obrazów"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtra as imagens geradas por IA dos resultados de pesquisa de imagens"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фильтрует изображения, созданные ИИ, из результатов поиска изображений"
+          }
+        }
+      }
+    },
+    "duckai.search-ai-features-settings.link" : {
+      "comment" : "Button to open the Search AI Features Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Such-KI-Funktionen öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Search AI Features"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir funciones de IA de búsqueda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir les fonctionnalités d'IA de recherche"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri le funzionalità di ricerca IA"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open AI-zoekfuncties"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz funkcje wyszukiwania AI"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir funcionalidades de IA de pesquisa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть функции поиска с ИИ"
           }
         }
       }
@@ -24274,66 +24705,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показывать вариант Duck.ai в поисковом поле на странице новой вкладки"
-          }
-        }
-      }
-    },
-    "duckai.show-on-new-tab-page.toggle" : {
-      "comment" : "A checkbox to control AI Chat shortcut visibility on the New Tab Page",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Auf neuer Tab-Seite anzeigen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Show on New Tab Page"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar en nueva página de pestaña"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher sur la page du nouvel onglet"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostra nella pagina Nuova scheda"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Weergeven op de nieuwe tabbladpagina"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pokaż na stronie nowej karty"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar na página do novo separador"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показывать в новой вкладке"
           }
         }
       }
@@ -31298,6 +31669,66 @@
         }
       }
     },
+    "fire.active-tabs-and-chats-info" : {
+      "comment" : "Info in the Fire Button popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktive Tabs (%1$d) schließen und alle Browserverläufe und Cookies (Websites: %2$d) sowie Duck.ai-Chatverlauf löschen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close active tabs (%1$d) and clear all browsing history and cookies (sites: %2$d), and clear Duck.ai chat history."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cierra las pestañas activas (%1$d) y borra todo el historial de navegación y las cookies (sitios: %2$d), y borra el historial de chat de Duck.ai."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermez les onglets actifs (%1$d) et effacez tout l'historique de navigation et les cookies (sites : %2$d), et effacez l'historique du chat Duck.ai."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudi le schede attive (%1$d) e cancella tutta la cronologia di navigazione e i cookie (siti: %2$d) e cancella la cronologia chat di Duck.ai."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actieve tabbladen (%1$d) sluiten en alle browsegeschiedenis en cookies (sites: %2$d) wissen, en de chatgeschiedenis van Duck.ai wissen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij aktywne karty (%1$d) i wyczyść całą historię przeglądania, pliki cookie (witryny: %2$d), oraz historię czatów z Duck.ai."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fecha os separadores ativos (%1$d), limpa todo o histórico de navegação e cookies (sites: %2$d) e limpa o histórico de conversas do Duck.ai."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрывает активные вкладки (%1$d) и стирает всю историю посещений, куки-файлы (сайтов: %2$d) и историю чатов с Duck.ai."
+          }
+        }
+      }
+    },
     "fire.active-tabs-info" : {
       "comment" : "Info in the Fire Button popover",
       "extractionState" : "extracted_with_value",
@@ -31797,7 +32228,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Todas las ventanas se cerrarán."
+            "value" : "Se cerrarán todas las ventanas."
           }
         },
         "fr" : {
@@ -31827,13 +32258,133 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Serão fechadas todas as janelas."
+            "value" : "Todas as janelas serão fechadas."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Все окна будут закрыты."
+          }
+        }
+      }
+    },
+    "fire.dialog.chats.subtitle" : {
+      "comment" : "Subtitle shown under the Duck.ai chats row to explain that chat history will be deleted.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Chats löschen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete all chats."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar todos los chats."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimez toutes les discussions."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina tutte le chat."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle chats verwijderen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń wszystkie czaty."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina todas as conversas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все чаты будут удалены."
+          }
+        }
+      }
+    },
+    "fire.dialog.chats.title" : {
+      "comment" : "Section title. Toggle that controls whether Duck.ai chat history is deleted.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Chats"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat di Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai chats"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czaty Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чаты Duck.ai"
           }
         }
       }
@@ -32013,7 +32564,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Закрыть все вкладки и окна."
+            "value" : "Закрыть все вкладки и окна"
           }
         }
       }
@@ -32073,7 +32624,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Закрыть эту вкладку."
+            "value" : "Закрыть эту вкладку"
           }
         }
       }
@@ -32133,7 +32684,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Закрыть это окно."
+            "value" : "Закрыть это окно"
           }
         }
       }
@@ -32200,7 +32751,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar de %#@sites@. Puede que cierres sesión en tus cuentas."
+            "value" : "Eliminar de %#@sites@.Puede que cierres sesión en tus cuentas."
           },
           "substitutions" : {
             "sites" : {
@@ -32239,13 +32790,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg site"
+                      "value" : "%arg site"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg sites"
+                      "value" : "%arg sites"
                     }
                   }
                 }
@@ -32284,7 +32835,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verwijder van %#@sites@. Je kan worden uitgelogd bij accounts."
+            "value" : "Verwijderen van %#@sites@. Je kan worden uitgelogd bij accounts."
           },
           "substitutions" : {
             "sites" : {
@@ -32295,13 +32846,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg website"
+                      "value" : "%arg site"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg websites"
+                      "value" : "%arg sites"
                     }
                   }
                 }
@@ -32312,7 +32863,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usuń z %#@sites@. Może spowodować wylogowanie z kont."
+            "value" : "Usuń z %#@sites@. Może nastąpić wylogowanie z kont."
           },
           "substitutions" : {
             "sites" : {
@@ -32335,13 +32886,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg witryny"
+                      "value" : "%arg witryna"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg witryn"
+                      "value" : "%arg witryn(y)"
                     }
                   }
                 }
@@ -32380,7 +32931,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Данные будут удалены с %#@sites@. Операция может сопровождаться выходом из учетных записей."
+            "value" : "Данные будут удалены с %#@sites@.Операция может сопровождаться выходом из учетных записей."
           },
           "substitutions" : {
             "sites" : {
@@ -32391,7 +32942,7 @@
                   "few" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg сайта"
+                      "value" : "%arg сайтов"
                     }
                   },
                   "many" : {
@@ -32403,13 +32954,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg сайта"
+                      "value" : "%arg сайт"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg сайтов"
+                      "value" : "%arg сайта(-ов)"
                     }
                   }
                 }
@@ -32659,6 +33210,66 @@
         }
       }
     },
+    "fire.dialog.fire-window.close-tabs-chats" : {
+      "comment" : "Title of the dialog where the user can close browser tabs and clear data and Duck.ai chat history.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabs schließen und Daten und Chats löschen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close Tabs and Clear Data and Chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar pestañas y borrar datos y chats"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer les onglets, effacer les données et les conversations"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudi le schede, cancella i dati e le chat"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabbladen sluiten en gegevens en chats wissen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij karty oraz wyczyść dane i czaty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechar separadores e limpar dados e chats"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрытие вкладок и удаление данных и чатов"
+          }
+        }
+      }
+    },
     "fire.dialog.fire-window.description" : {
       "comment" : "Explanation of what a fire window is.",
       "extractionState" : "extracted_with_value",
@@ -32845,7 +33456,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lösche %#@items@."
+            "value" : "%#@items@ löschen."
           },
           "substitutions" : {
             "items" : {
@@ -32912,13 +33523,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elemento"
+                      "value" : "%arg artículo"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementos"
+                      "value" : "%arg artículos"
                     }
                   }
                 }
@@ -32940,13 +33551,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg élément"
+                      "value" : "%arg élément"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg éléments"
+                      "value" : "%arg éléments"
                     }
                   }
                 }
@@ -33013,7 +33624,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usuń %#@items@."
+            "value" : "Usuń 1$#@items@."
           },
           "substitutions" : {
             "items" : {
@@ -33042,7 +33653,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementów"
+                      "value" : "Liczba elementów: %arg"
                     }
                   }
                 }
@@ -33053,7 +33664,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar %#@items@."
+            "value" : "Elimina %#@items@."
           },
           "substitutions" : {
             "items" : {
@@ -33081,7 +33692,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить %#@items@."
+            "value" : "Удаление %#@items@."
           },
           "substitutions" : {
             "items" : {
@@ -33104,13 +33715,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg запись"
+                      "value" : "%arg элемент"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg записей"
+                      "value" : "Записей: %arg"
                     }
                   }
                 }
@@ -33126,7 +33737,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lösche %#@items@ aus diesem Tab."
+            "value" : "%#@items@ aus dieser Registerkarte löschen."
           },
           "substitutions" : {
             "items" : {
@@ -33193,13 +33804,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elemento"
+                      "value" : "%arg artículo"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementos"
+                      "value" : "%arg artículos"
                     }
                   }
                 }
@@ -33221,13 +33832,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg élément"
+                      "value" : "%arg élément"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg éléments"
+                      "value" : "%arg éléments"
                     }
                   }
                 }
@@ -33323,7 +33934,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementów"
+                      "value" : "Liczba elementów: %arg"
                     }
                   }
                 }
@@ -33334,7 +33945,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar %#@items@ deste separador."
+            "value" : "Elimina %#@items@ deste separador."
           },
           "substitutions" : {
             "items" : {
@@ -33362,7 +33973,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить %#@items@ с этой вкладки."
+            "value" : "Удаление %#@items@ с этой вкладки."
           },
           "substitutions" : {
             "items" : {
@@ -33385,13 +33996,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg запись"
+                      "value" : "%arg элемент"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg записей"
+                      "value" : "Записей: %arg"
                     }
                   }
                 }
@@ -33407,7 +34018,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lösche %#@items@ aus diesem Fenster."
+            "value" : "%#@items@ aus diesem Fenster löschen."
           },
           "substitutions" : {
             "items" : {
@@ -33474,13 +34085,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elemento"
+                      "value" : "%arg artículo"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementos"
+                      "value" : "%arg artículos"
                     }
                   }
                 }
@@ -33502,13 +34113,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg élément"
+                      "value" : "%arg élément"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg éléments"
+                      "value" : "%arg éléments"
                     }
                   }
                 }
@@ -33604,7 +34215,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg elementów"
+                      "value" : "%arg elem."
                     }
                   }
                 }
@@ -33615,7 +34226,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar %#@items@ desta janela."
+            "value" : "Elimina %#@items@ desta janela."
           },
           "substitutions" : {
             "items" : {
@@ -33643,7 +34254,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Удалить %#@items@ из этого окна."
+            "value" : "Удаление %#@items@ из этого окна."
           },
           "substitutions" : {
             "items" : {
@@ -33666,13 +34277,13 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg запись"
+                      "value" : "%arg элемент"
                     }
                   },
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg записей"
+                      "value" : "Записей: %arg"
                     }
                   }
                 }
@@ -33968,7 +34579,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Separador"
+            "value" : "Tab"
           }
         },
         "ru" : {
@@ -34038,13 +34649,308 @@
         }
       }
     },
+    "fire.dialog.single.title.all" : {
+      "comment" : "Title asking user to confirm deleting browsing data (all time)",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browsendaten löschen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete browsing data?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar los datos de navegación?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer les données de navigation\t?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminare i dati di navigazione?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Surfgegevens verwijderen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń dane przeglądania?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar dados de navegação?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить данные о посещении сайтов?"
+          }
+        }
+      }
+    },
+    "fire.dialog.single.title.date" : {
+      "comment" : "Title asking user to confirm deleting browsing data from a specific date label (e.g., Monday, April 1)",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browsendaten von %@ löschen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete browsing data from %@?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar los datos de navegación de %@?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer les données de navigation de %@ ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminare i dati di navigazione da %@?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browsegegevens verwijderen van %@?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usunąć dane przeglądania z: %@?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar dados de navegação de %@?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить данные о посещении сайтов: %@?"
+          }
+        }
+      }
+    },
+    "fire.dialog.single.title.site" : {
+      "comment" : "Title asking user to confirm deleting browsing data from a specific site/domain",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browserdaten von %@ löschen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete browsing data from %@?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar los datos de navegación de %@?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer les données de navigation de %@ ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminare i dati di navigazione da %@?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browsegegevens verwijderen van %@?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usunąć dane przeglądania z: %@?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar dados de navegação de %@?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить данные о посещении сайта %@?"
+          }
+        }
+      }
+    },
+    "fire.dialog.single.title.today" : {
+      "comment" : "Title asking user to confirm deleting browsing data from today",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browsendaten von heute löschen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete browsing data from today?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar los datos de navegación de hoy?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer les données de navigation d'aujourd'hui ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminare i dati di navigazione a partire da oggi?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browsegegevens van vandaag verwijderen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usunąć dzisiejsze dane przeglądania?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar dados de navegação de hoje?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить данные о посещениях за сегодня?"
+          }
+        }
+      }
+    },
+    "fire.dialog.single.title.yesterday" : {
+      "comment" : "Title asking user to confirm deleting browsing data from yesterday",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browsendaten von gestern löschen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete browsing data from yesterday?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar los datos de navegación de ayer?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer les données de navigation d’hier ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminare i dati di navigazione a partire da ieri?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browsegegevens van gisteren verwijderen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usunąć wczorajsze dane przeglądania?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar dados de navegação de ontem?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить данные о посещениях за вчерашний день?"
+          }
+        }
+      }
+    },
     "fire.dialog.sites.overlay.subtitle" : {
       "comment" : "Subtitle above the list of domains in in-dialog overlay",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Diese Websites werden gelöscht."
+            "value" : "Diese Seiten werden gelöscht."
           }
         },
         "en" : {
@@ -34056,7 +34962,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Estos sitios se eliminarán."
+            "value" : "Estos sitios serán eliminados."
           }
         },
         "fr" : {
@@ -34074,7 +34980,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deze sites worden verwijderd."
+            "value" : "Deze sites zullen worden verwijderd."
           }
         },
         "pl" : {
@@ -34092,7 +34998,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Данные сайтов будут удалены."
+            "value" : "Эти сайты будут удалены."
           }
         }
       }
@@ -34103,7 +35009,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Website-Details"
+            "value" : "Websitedetails"
           }
         },
         "en" : {
@@ -34115,43 +35021,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Detalles de los sitios"
+            "value" : "Detalles del sitio"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Détails des sites"
+            "value" : "Détails du site"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dettagli dei siti"
+            "value" : "Dettagli del sito"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sitedetails"
+            "value" : "Site details"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Szczegóły witryn"
+            "value" : "Szczegóły witryny"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Detalhes dos sites"
+            "value" : "Detalhes do site"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Сведения о сайтах"
+            "value" : "Подробнее о сайте"
           }
         }
       }
@@ -34193,7 +35099,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Huidige tabblad wordt gesloten."
+            "value" : "Huidig tabblad wordt gesloten."
           }
         },
         "pl" : {
@@ -34217,7 +35123,7 @@
       }
     },
     "fire.dialog.tab-will-reload" : {
-      "comment" : "Warning label shown in an expanded view of the fire popover",
+      "comment" : "Warning label shown when a single pinned tab will reload after burning",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -34259,7 +35165,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Przypięta karta zostanie załadowana ponownie."
+            "value" : "Przypięta karta zostanie ponownie załadowana."
           }
         },
         "pt" : {
@@ -34272,6 +35178,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Закрепленная вкладка будет перезагружена."
+          }
+        }
+      }
+    },
+    "fire.dialog.tabs-will-reload" : {
+      "comment" : "Warning label shown when multiple pinned tabs will reload after burning",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angepinnte Tabs werden neu geladen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pinned tabs will reload."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las pestañas ancladas se volverán a cargar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les onglets épinglés se rechargeront."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le schede bloccate si ricaricheranno."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vastgezette tabbladen worden opnieuw geladen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przypięte karty zostaną załadowane ponownie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os separadores afixados serão recarregados."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрепленные вкладки будут перезагружены."
           }
         }
       }
@@ -34354,7 +35320,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eliminar los datos de navegación"
+            "value" : "Elimina los datos de navegación"
           }
         },
         "fr" : {
@@ -34372,7 +35338,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browsegegevens verwijderen"
+            "value" : "Surfgegevens verwijderen"
           }
         },
         "pl" : {
@@ -34402,7 +35368,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aktuelles Fenster wird geschlossen."
+            "value" : "Das aktuelle Fenster wird geschlossen."
           }
         },
         "en" : {
@@ -34414,7 +35380,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La ventana actual se cerrará."
+            "value" : "Se cerrará la ventana actual."
           }
         },
         "fr" : {
@@ -34991,6 +35957,186 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сделать сайт %@ огнеупорным?"
+          }
+        }
+      }
+    },
+    "fireproof.domains.add" : {
+      "comment" : "Button adds a new fireproofed website",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hinzufügen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toevoegen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить"
+          }
+        }
+      }
+    },
+    "fireproof.domains.add.current" : {
+      "comment" : "Button adds the current website to the fireproofed list",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktuelle hinzufügen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add Current"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir actual"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter le site actuel"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi sito attuale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Huidige toevoegen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj bieżącą"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar atual"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить этот сайт"
+          }
+        }
+      }
+    },
+    "fireproof.domains.add.title" : {
+      "comment" : "Title for the alert to add a fireproof site",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fireproof-Seite hinzufügen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add Fireproof Site"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir sitio Fireproof"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter un site Fireproof"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi sito Fireproof"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fireproof-site toevoegen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj zabezpieczoną witrynę internetową"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar site Fireproof"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fireproof: огнеупорный сайт"
           }
         }
       }
@@ -36661,6 +37807,126 @@
         }
       }
     },
+    "history.delete.dialog.chats.checkbox.caption" : {
+      "comment" : "Caption for a checkbox to optionally delete Duck.ai chats alongside removing browser history entries",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auch Duck.ai-Chats löschen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Also delete Duck.ai chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrar también los chats de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer également les discussions Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina anche le chat di Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwijder ook Duck.ai-chats"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń także czaty Duck.ai."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar também as conversas do Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Также удалить чаты с Duck.ai"
+          }
+        }
+      }
+    },
+    "history.delete.dialog.chats.checkbox.explanation" : {
+      "comment" : "Explanation of what deleting Duck.ai chats means.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dadurch werden alle Chats im Duck.ai-Chatverlauf gelöscht."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This will delete all chats in Duck.ai chat history."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esto eliminará todos los chats del historial de chats de Duck.ai."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cela supprimera toutes les discussions de l'historique du chat Duck.ai."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo eliminerà tutte le chat nella cronologia di Duck.ai."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hiermee worden alle chats uit de chatgeschiedenis van Duck.ai verwijderd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spowoduje to usunięcie wszystkich czatów w historii czatów Duck.ai."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Isto elimina todas as conversas do histórico de conversas do Duck.ai."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "История чатов с Duck.ai будет полностью удалена."
+          }
+        }
+      }
+    },
     "history.delete.dialog.message" : {
       "comment" : "Message in a dialog asking the user to confirm deleting history. NOTE: This term is only for English. For other languages, please translate the following term: 'History items (%@) will be deleted.'",
       "extractionState" : "extracted_with_value",
@@ -36837,6 +38103,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Удалить историю?"
+          }
+        }
+      }
+    },
+    "history.delete.older.dialog.title" : {
+      "comment" : "Title of a dialog asking the user to confirm deleting older history (more than a week old)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Älteren Verlauf löschen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete older history?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar el historial más antiguo?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer l'historique plus ancien\t?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminare la cronologia precedente?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oudere geschiedenis verwijderen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usunąć starszą historię?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar histórico mais antigo?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить более старую историю?"
           }
         }
       }
@@ -37677,6 +39003,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Недавно посещенные"
+          }
+        }
+      }
+    },
+    "history.sites.label" : {
+      "comment" : "Label for the Sites section in history view showing unique domains visited",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Websites"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sites"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sitios"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sites"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sites"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Witryny"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sites"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сайты"
           }
         }
       }
@@ -39820,6 +41206,9 @@
         }
       }
     },
+    "Import from %@" : {
+
+    },
     "Import Passwords" : {
       "comment" : "Title of dialog with instruction for the user to import passwords from another browser",
       "localizations" : {
@@ -40102,6 +41491,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Закладки импортируются..."
+          }
+        }
+      }
+    },
+    "import.bookmarks.manually.title" : {
+      "comment" : "Title for the option to manually import bookmarks",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import your bookmarks manually"
           }
         }
       }
@@ -41246,6 +42647,54 @@
         }
       }
     },
+    "import.choose-source.show-more-button.title" : {
+      "comment" : "Button text for showing more import options in the data import view",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show More"
+          }
+        }
+      }
+    },
+    "import.choose-source.sync-button.action" : {
+      "comment" : "Action text for syncing data with another device from the data import view",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync"
+          }
+        }
+      }
+    },
+    "import.choose-source.sync-button.title" : {
+      "comment" : "Button text for syncing from the data import view",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Using DuckDuckGo on another device?"
+          }
+        }
+      }
+    },
+    "import.choose-source.title" : {
+      "comment" : "Title text for the import dialog, before the user selects a source",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Choose where to import from"
+          }
+        }
+      }
+    },
     "import.credit-cards" : {
       "comment" : "Title text for the Credit Card import option",
       "extractionState" : "extracted_with_value",
@@ -41486,6 +42935,18 @@
         }
       }
     },
+    "import.csv.instructions.bitwarden.new" : {
+      "comment" : "Instructions to import Passwords as CSV from Bitwarden.\n%2$s - app name (Bitwarden)\n%5$@ - download icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open and unlock **%2$s → File → Export vault**\n%3$d Select **File Format: .csv**\n%4$d Enter your Bitwarden password → Click %5$@ and save the file\n%6$d Upload the exported CSV file to DuckDuckGo"
+          }
+        }
+      }
+    },
     "import.csv.instructions.brave" : {
       "comment" : "Instructions to import Passwords as CSV from Brave browser.\n%N$d - step number\n%2$s - browser name (Brave)\n%4$@, %6$@ - hamburger menu icon\n%10$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
@@ -41542,6 +43003,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$d Откройте **%2$s**\n%3$d Нажмите значок %4$@, чтобы открыть меню приложения, а затем выберите **Менеджер паролей**\n%5$d Нажмите значок %6$@ **сверху слева** от заголовка «Менеджер паролей» и выберите **Настройки**\n%7$d Найдите опцию «Экспортировать пароли» и нажмите **Загрузить файл**\n%8$d Сохраните файл с паролями там, где вы легко его найдете (например, на рабочем столе)\n%9$d %10$@"
+          }
+        }
+      }
+    },
+    "import.csv.instructions.brave.new" : {
+      "comment" : "Instructions to import Passwords as CSV from Brave browser.\n%N$d - step number\n%2$s - browser name (Brave)\n%4$@ - hamburger menu icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open **%2$s → %3$@ → Password Manager → Settings**\n%4$d Find **Export Passwords → click Download File** and save the file\n%5$d Upload the exported CSV file to DuckDuckGo"
           }
         }
       }
@@ -41606,6 +43079,18 @@
         }
       }
     },
+    "import.csv.instructions.chrome.new.new" : {
+      "comment" : "Instructions to import Passwords as CSV from Google Chrome browser.\n%N$d - step number\n%2$s - browser name (Chrome)\n%4$@ - hamburger menu icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open **%2$s → %3$@ → Google Password Manager → Settings**\n%4$d Find **Export Passwords → click Download File** and save the file\n%5$d Upload the exported CSV file to DuckDuckGo"
+          }
+        }
+      }
+    },
     "import.csv.instructions.chromium" : {
       "comment" : "Instructions to import Passwords as CSV from Chromium-based browsers.\n%N$d - step number\n%2$s - browser name\n%4$@ - hamburger menu icon\n%8$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
@@ -41662,6 +43147,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$d Откройте **%2$s**%3$d В новой вкладке нажмите на значок %4$@, а\n затем: **Менеджер паролей → Настройки**\n%5$d Найдите опцию «Экспортировать пароли» и нажмите **Скачать файл**\n%6$d Сохраните файл с паролями там, где вы легко его найдете (например, на рабочем столе)\n%7$d %8$@"
+          }
+        }
+      }
+    },
+    "import.csv.instructions.chromium.new" : {
+      "comment" : "Instructions to import Passwords as CSV from Chromium-based browsers.\n%N$d - step number\n%2$s - browser name\n%4$@ - hamburger menu icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open **%2$s → %3$@ → Password Manager → Settings**\n%4$d Find **Export Passwords → click Download File** and save the file\n%5$d Upload the exported CSV file to DuckDuckGo"
           }
         }
       }
@@ -41726,6 +43223,18 @@
         }
       }
     },
+    "import.csv.instructions.coccoc.new" : {
+      "comment" : "Instructions to import Passwords as CSV from Cốc Cốc browser.\n%N$d - step number\n%2$s - browser name (Cốc Cốc)\n%4$@ - hamburger menu icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Type _coccoc://settings/passwords_ into the Address bar\n%2$d Click %3$@ (on the right from _Saved Passwords_) → **Export passwords** and save the file\n%4$d Upload the exported CSV file to DuckDuckGo"
+          }
+        }
+      }
+    },
     "import.csv.instructions.firefox" : {
       "comment" : "Instructions to import Passwords as CSV from Firefox.\n%N$d - step number\n%2$s - browser name (Firefox)\n%4$@, %6$@ - hamburger menu icon\n%9$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
@@ -41782,6 +43291,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$d Откройте **%2$s**\n%3$d Нажмите значок %4$@, чтобы открыть меню приложения, а затем откройте раздел **Пароли**\n%5$d Нажмите значок %6$@ и выберите опцию **Экспортировать логины…**\n%7$d Сохраните файл с паролями там, где вы легко его найдете (например, на рабочем столе)\n%8$d %9$@"
+          }
+        }
+      }
+    },
+    "import.csv.instructions.firefox.new" : {
+      "comment" : "Instructions to import Passwords as CSV from Firefox.\n%N$d - step number\n%2$s - browser name (Firefox)\n%4$@ - hamburger menu icon\n%6$@ - horizontal menu icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open **%2$s →** %3$@ **→ Passwords →** %4$@ **→ Export Logins…** and save the file\n%5$d Upload the exported CSV file to DuckDuckGo"
           }
         }
       }
@@ -41846,6 +43367,18 @@
         }
       }
     },
+    "import.csv.instructions.generic.new" : {
+      "comment" : "Instructions to import a generic CSV passwords file.\n%N$d - step number\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The CSV importer will try to match column headers to their position.\nIf there is no header, it supports two formats:\n%1$d URL, Username, Password\n%2$d Title, URL, Username, Password"
+          }
+        }
+      }
+    },
     "import.csv.instructions.lastpass" : {
       "comment" : "Instructions to import Passwords as CSV from LastPass.\n%2$s - app name (LastPass)\n%8$@ - “Select LastPass CSV File” button\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
@@ -41902,6 +43435,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$d Нажмите на значок **%2$s** в браузере и введите основной пароль\n%3$d Выберите меню **Открыть мое хранилище**\n%4$d На боковой панели выберите **Дополнительные опции → Экспортировать**\n%5$d Введите основной пароль к LastPass\n%6$d Сохраните файл в формате: **текст с разделяющими запятыми (.csv)**\n%7$d %8$@"
+          }
+        }
+      }
+    },
+    "import.csv.instructions.lastpass.new" : {
+      "comment" : "Instructions to import Passwords as CSV from LastPass.\n%2$s - app name (LastPass)\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Click the **%2$s** icon in your browser → enter your password → **Open My Vault**\n%3$d From the sidebar: **Advanced Options → Export**\n%4$d Enter your LastPass password\n%5$d Select **File Format: Comma Delimited Text (.csv)** and save the file\n%6$d Upload the exported CSV file to DuckDuckGo"
           }
         }
       }
@@ -41966,6 +43511,18 @@
         }
       }
     },
+    "import.csv.instructions.onePassword7.new" : {
+      "comment" : "Instructions to import Passwords as CSV from 1Password 7.\n%2$s - app name (1Password)\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open **%2$s** and select the vault you want to export (one vault at a time)\n%3$d Select **File → Export → All Items**\n%4$d Enter your 1Password password\n%5$d Select **File Format: iCloud Keychain (.csv)** and save the file\n%6$d Upload the exported CSV file to DuckDuckGo"
+          }
+        }
+      }
+    },
     "import.csv.instructions.onePassword8" : {
       "comment" : "Instructions to import Passwords as CSV from 1Password 8.\n%2$s - app name (1Password)\n%8$@ - “Select 1Password CSV File” button\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
@@ -42022,6 +43579,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$d Откройте и разблокируйте **%2$s**\n%3$d В панели меню откройте раздел **Файл → Экспортировать** и выберите учетную запись, которую нужно экспортировать\n%4$d Введите пароль учетной записи 1Password\n%5$d Выберите формат файла: **CSV (только для логинов и паролей)**\n%6$d Нажмите кнопку «Экспортировать данные» и сохраните файл там, где вы легко его найдете (например, на рабочем столе)\n%7$d %8$@"
+          }
+        }
+      }
+    },
+    "import.csv.instructions.onePassword8.new" : {
+      "comment" : "Instructions to import Passwords as CSV from 1Password 8.\n%2$s - app name (1Password)\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open **%2$s → File → Export** and select an account to export\n%3$d Select format **CSV Logins and Passwords only → Export** and save the file\n%4$d Upload the exported CSV file to DuckDuckGo"
           }
         }
       }
@@ -42086,6 +43655,18 @@
         }
       }
     },
+    "import.csv.instructions.opera.new" : {
+      "comment" : "Instructions to import Passwords as CSV from Opera browser.\n%N$d - step number\n%2$s - browser name (Opera)\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open **%2$s → View → Show Password Manager → Settings**\n%3$d Find **Export Passwords → Download File** and save the file\n%4$d Upload the exported CSV file to DuckDuckGo"
+          }
+        }
+      }
+    },
     "import.csv.instructions.operagx" : {
       "comment" : "Instructions to import Passwords as CSV from Opera GX browsers.\n%N$d - step number\n%2$s - browser name (Opera GX)\n%5$@ - menu button icon\n%8$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
@@ -42146,121 +43727,133 @@
         }
       }
     },
+    "import.csv.instructions.operagx.new" : {
+      "comment" : "Instructions to import Passwords as CSV from Opera GX browsers.\n%N$d - step number\n%2$s - browser name (Opera GX)\n%4$@ - menu button icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open **%2$s → View → Show Password Manager → Settings**\n%3$d Click %4$@ (on the right from _Saved Passwords_) → **Export passwords** and save the file\n%5$d Upload the exported CSV file to DuckDuckGo"
+          }
+        }
+      }
+    },
     "import.csv.instructions.safari" : {
-      "comment" : "Instructions to import Passwords as CSV from Safari.\n%N$d - step number\n%5$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Safari.\n%N$d - step number\n%5$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_\nInstructions to import Passwords as CSV from Safari.\n%N$d - step number\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Öffne **Safari**\n%2$d Wähle **Datei → Exportieren → Passwörter**\n%3$d Speichere die Datei mit den Passwörtern an einem Ort, an dem du sie finden kannst (z. B. auf dem Desktop)\n%4$d %5$@"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$d Open **Safari**\n%2$d Select **File → Export → Passwords**\n%3$d Save the passwords file someplace you can find it (e.g., Desktop)\n%4$d %5$@"
+            "value" : "%1$d Open **Safari → File → Export → Passwords** and save the file\n%2$d Upload the exported CSV file to DuckDuckGo"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Abre **Safari**\n%2$d Selecciona **Archivo → Exportar → Contraseñas**\n%3$d Guarda el archivo de contraseñas donde puedas encontrarlo posteriormente (por ejemplo, en el escritorio)\n%4$d %5$@"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Ouvrez **Safari**\n%2$d Sélectionnez **Fichier → Exporter → Mots de passe**\n%3$d Enregistrez le fichier des mots de passe à un endroit où le trouver facilement (par exemple, sur le bureau)\n%4$d %5$@"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Apri **Safari**\n%2$d Seleziona **File → Esporta → Password**\n%3$d Salva il file delle password dove puoi trovarlo (ad esempio, sul desktop)\n%4$d %5$@"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Open **Safari**\n%2$d Selecteer **Bestand → Exporteren → Wachtwoorden**\n%3$d Bewaar het bestand met de wachtwoorden op een plek waar je het kunt vinden (bijv. het bureaublad)\n%4$d %5$@"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Otwórz przeglądarkę **Safari**\n%2$d Wybierz **Plik → Eksportuj → Hasła**\n%3$d Zapisz plik haseł w łatwo dostępnym miejscu (np. na biurku)\n%4$d %5$@"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Abre o **Safari**\n%2$d Seleciona **Ficheiro → Exportar → Palavras-passe**\n%3$d Guarda o ficheiro de palavras-passe onde consigas encontrá-lo (por exemplo, no ambiente de trabalho)\n%4$d %5$@"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Откройте **Safari**\n%2$d Выберите раздел **Файл → Экспортировать → Пароли**\n%3$d Сохраните файл с паролями там, где вы легко его найдете (например, на рабочем столе)\n%4$d %5$@"
           }
         }
       }
     },
     "import.csv.instructions.safari.macos15-2" : {
-      "comment" : "Instructions to import Passwords as CSV from Safari zip file on >= macOS 15.2.\n%N$d - step number\n%5$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Safari zip file on >= macOS 15.2.\n%N$d - step number\n%5$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_\nInstructions to import Passwords as CSV from Safari zip file on >= macOS 15.2.\n%N$d - step number\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Öffne **Safari**\n%2$d Öffne das Menü **Datei → Browserdaten in Datei exportieren ...**\n%3$d Wähle **Passwörter** und speichere die Datei an einem Ort, an dem du sie wiederfindest (z. B. Desktop)\n%4$d Doppelklicke auf die .zip-Datei, um sie zu entpacken\n%5$d %6$@"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$d Open **Safari**\n%2$d Open the **File menu → Export Browsing Data to File...**\n%3$d Select **passwords** and save the file someplace you can find it (e.g., Desktop)\n%4$d Double click the .zip file to unzip it\n%5$d %6$@"
+            "value" : "%1$d Open **Safari → File → Export Browsing Data to File...**\n%2$d Select **passwords** and save the file\n%3$d Double click the .zip file to unzip it, then upload the CSV file to DuckDuckGo"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Abre **Safari**\n%2$d Abre el menú **Archivo → Exportar datos de navegación a archivo...**\n%3$d Selecciona **contraseñas** y guarda el archivo en algún lugar donde puedas encontrarlo (por ejemplo, en el escritorio)\n%4$d Haz doble clic en el archivo .zip para descomprimirlo\n%5$d %6$@"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Ouvrez **Safari**\n%2$d Ouvrez le **menu Fichier → Exporter les données de navigation vers le fichier…**\n%3$d Sélectionnez **mots de passe** et enregistrez le fichier à un endroit où le trouver facilement (par exemple, sur le bureau)\n%4$d Double-cliquez sur le fichier .zip pour le décompresser\n%5$d %6$@"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Apri **Safari**\n%2$d Apri il menu **File → Esporta i dati di navigazione in un file...**\n%3$d Seleziona **password** e salva il file in una posizione che ti consenta di trovarlo (ad esempio, sul desktop)\n%4$d Fai doppio clic sul file .zip per decomprimerlo\n%5$d %6$@"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Open **Safari**\n%2$d Open het menu **Bestand → Browsergegevens exporteren naar bestand...**\n%3$d Selecteer **wachtwoorden** en sla het bestand op een plek op waar je het kunt vinden (bijv. je bureaublad)\n%4$d Dubbelklik op het .zip-bestand om het uit te pakken\n%5$d %6$@"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Otwórz **Safari**\n%2$d Otwórz menu **Plik → Eksportuj dane przeglądania do pliku...**\n%3$d Wybierz **hasła** i zapisz plik w łatwo dostępnym miejscu (np. na biurku)\n%4$d Kliknij dwukrotnie plik .zip w celu jego rozpakowania\n%5$d %6$@"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Abre o **Safari**\n%2$d Abre o menu **Ficheiro → Exportar dados de navegação para ficheiro...**\n%3$d Seleciona **palavras-passe** e guarda o ficheiro num local onde o possas encontrar (por exemplo, no ambiente de trabalho)\n%4$d Clica duas vezes no ficheiro .zip para o descomprimir\n%5$d %6$@"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Запустите **Safari**\n%2$d Откройте меню **Файл → Экспортировать данные просмотров в файл...**\n%3$d Выберите **пароли** и сохраните файл там, где вы легко его найдете (например, на рабочем столе)\n%4$d Дважды нажмите мышью файл .zip, чтобы распаковать его\n%5$d %6$@"
           }
         }
@@ -42326,6 +43919,18 @@
         }
       }
     },
+    "import.csv.instructions.vivaldi.new" : {
+      "comment" : "Instructions to import Passwords exported as CSV from Vivaldi browser.\n%N$d - step number\n%2$s - browser name (Vivaldi)\n%4$@ - menu button icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Type _chrome://settings/passwords_ into the Address bar\n%2$d Click %3$@ (on the right from _Saved Passwords_) → **Export passwords** and save the file\n%4$d Upload the exported CSV file to DuckDuckGo"
+          }
+        }
+      }
+    },
     "import.csv.instructions.yandex" : {
       "comment" : "Instructions to import Passwords as CSV from Yandex Browser.\n%N$d - step number\n%2$s - browser name (Yandex)\n%4$@ - hamburger menu icon\n%8$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
@@ -42382,6 +43987,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$d Откройте **%2$s**\n%3$d Нажмите значок %4$@, чтобы открыть меню приложения и выберите пункт **Пароли и карты**\n%5$d Нажмите значок %6$@, а затем — опцию **Экспортировать пароли**\n%7$d Выберите вариант **В текстовый файл (небезопасно)** и нажмите **Экспортировать**\n%8$d Сохраните файл с паролями там, где вы легко его найдете (например, на рабочем столе)\n%9$d %10$@"
+          }
+        }
+      }
+    },
+    "import.csv.instructions.yandex.new" : {
+      "comment" : "Instructions to import Passwords as CSV from Yandex Browser.\n%N$d - step number\n%2$s - browser name (Yandex)\n%4$@ - hamburger menu icon\n%6$@ - vertical menu icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open **%2$s →** %3$@ **→ Passwords and cards**\n%4$d Click %5$@ **→ Export passwords → To a text file (not secure) → Export** and save the file\n%6$d Upload the exported CSV file to DuckDuckGo"
           }
         }
       }
@@ -43106,6 +44723,18 @@
         }
       }
     },
+    "import.from.file.title" : {
+      "comment" : "Title text for the file import screen, after the user selects a source",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import from %@"
+          }
+        }
+      }
+    },
     "import.html.instructions.chromium" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Chromium-based browsers.\n%N$d - step number\n%2$s - browser name\n%5$@ - hamburger menu icon\n%8$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
@@ -43162,6 +44791,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$d Откройте **%2$s**\n%3$d На панели меню выберите **Закладки → Менеджер закладок**\n%4$d Нажмите значок %5$@ и выберите опцию **Экспортировать закладки**\n%6$d Сохраните файл там, где вы легко его найдете (например, на рабочем столе)\n%7$d %8$@"
+          }
+        }
+      }
+    },
+    "import.html.instructions.chromium.new" : {
+      "comment" : "Instructions to import Bookmarks exported as HTML from Chromium-based browsers.\n%N$d - step number\n%2$s - browser name\n%4$@ - hamburger menu icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open **%2$s → Bookmarks → Bookmark Manager**\n%3$d Click %4$@ **→ Export Bookmarks** and save the file\n%5$d Upload the exported HTML file to DuckDuckGo"
           }
         }
       }
@@ -43226,6 +44867,18 @@
         }
       }
     },
+    "import.html.instructions.firefox.new" : {
+      "comment" : "Instructions to import Bookmarks exported as HTML from Firefox based browsers.\n%N$d - step number\n%2$s - browser name (Firefox)\n%4$@ - import/export icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open **%2$s → Bookmarks → Manage Bookmarks**\n%3$d Click %4$@ **→ Export bookmarks to HTML…** and save the file\n%5$d Upload the exported HTML file to DuckDuckGo"
+          }
+        }
+      }
+    },
     "import.html.instructions.generic" : {
       "comment" : "Instructions to import a generic HTML Bookmarks file.\n%N$d - step number\n%6$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
@@ -43282,6 +44935,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$d Запустите старый браузер\n%2$d Откройте **Менеджер закладок**\n%3$d Экспортируйте закладки в HTML\n%4$d Сохраните файл там, где вы легко его найдете (например, на рабочем столе)\n%5$d %6$@"
+          }
+        }
+      }
+    },
+    "import.html.instructions.generic.new" : {
+      "comment" : "Instructions to import a generic HTML Bookmarks file.\n%N$d - step number\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open your old browser → **Bookmark Manager**\n%2$d **Export bookmarks to HTML…** and save the file\n%3$d Upload the exported HTML file to DuckDuckGo"
           }
         }
       }
@@ -43346,6 +45011,18 @@
         }
       }
     },
+    "import.html.instructions.opera.new" : {
+      "comment" : "Instructions to import Bookmarks exported as HTML from Opera browser.\n%N$d - step number\n%2$s - browser name (Opera)\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open **%2$s → Bookmarks → Bookmarks → Open full Bookmarks view…**\n%3$d Click **Import/Export… → Export Bookmarks** and save the file\n%4$d Upload the exported HTML file to DuckDuckGo"
+          }
+        }
+      }
+    },
     "import.html.instructions.operagx" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Opera GX browser.\n%N$d - step number\n%2$s - browser name (Opera GX)\n%7$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
@@ -43402,6 +45079,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$d Откройте **%2$s**\n%3$d В панели меню выберите **Закладки → Закладки**\n%4$d Нажмите кнопку **Импорт/Экспорт…** слева внизу и выберите **Экспортировать закладки**\n%5$d Сохраните файл там, где вы легко его найдете (например, на рабочем столе)\n%6$d %7$@"
+          }
+        }
+      }
+    },
+    "import.html.instructions.operagx.new" : {
+      "comment" : "Instructions to import Bookmarks exported as HTML from Opera GX browser.\n%N$d - step number\n%2$s - browser name (Opera GX)\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open **%2$s → Bookmarks → Bookmarks**\n%3$d Click **Import/Export… → Export Bookmarks** and save the file\n%4$d Upload the exported HTML file to DuckDuckGo"
           }
         }
       }
@@ -43466,6 +45155,18 @@
         }
       }
     },
+    "import.html.instructions.safari.new" : {
+      "comment" : "Instructions to import Bookmarks exported as HTML from Safari.\n%N$d - step number\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open **Safari → File → Export → Bookmarks** and save the file\n%2$d Upload the exported HTML file to DuckDuckGo"
+          }
+        }
+      }
+    },
     "import.html.instructions.vivaldi" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Vivaldi browser.\n%N$d - step number\n%2$s - browser name (Vivaldi)\n%6$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
@@ -43526,6 +45227,18 @@
         }
       }
     },
+    "import.html.instructions.vivaldi.new" : {
+      "comment" : "Instructions to import Bookmarks exported as HTML from Vivaldi browser.\n%N$d - step number\n%2$s - browser name (Vivaldi)\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open **%2$s → File → Export Bookmarks…** and save the file\n%3$d Upload the exported HTML file to DuckDuckGo"
+          }
+        }
+      }
+    },
     "import.html.instructions.yandex" : {
       "comment" : "Instructions to import Bookmarks exported as HTML from Yandex Browser.\n%N$d - step number\n%2$s - browser name (Yandex)\n%5$@ - hamburger menu icon\n%8$@ - “Select Bookmarks HTML File” button\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
@@ -43582,6 +45295,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$d Откройте **%2$s**\n%3$d На панели меню выберите раздел **Избранное → Менеджер закладок**\n%4$d Нажмите на значок %5$@ и выберите опцию **Экспорт закладок в файл HTML**\n%6$d Сохраните файл там, где вы легко его найдете (например, на рабочем столе)\n%7$d %8$@"
+          }
+        }
+      }
+    },
+    "import.html.instructions.yandex.new" : {
+      "comment" : "Instructions to import Bookmarks exported as HTML from Yandex Browser.\n%N$d - step number\n%2$s - browser name (Yandex)\n%4$@ - hamburger menu icon\n**bold text**; _italic text_",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$d Open **%2$s → Favorites → Bookmark Manager**\n%3$d Click %4$@ **→ Export bookmarks to HTML file** and save the file\n%5$d Upload the exported HTML file to DuckDuckGo"
           }
         }
       }
@@ -44186,6 +45911,18 @@
         }
       }
     },
+    "import.passwords.manually.title" : {
+      "comment" : "Title for the option to manually import passwords",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import your passwords manually"
+          }
+        }
+      }
+    },
     "import.passwords.number.progress.text" : {
       "comment" : "Operation progress info message about %d number of passwords being imported",
       "extractionState" : "extracted_with_value",
@@ -44242,6 +45979,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Пароли импортируются (%d)…"
+          }
+        }
+      }
+    },
+    "import.selected-data.title" : {
+      "comment" : "Title text for the dialog to confirm which data to import (e.g passwords, bookmarks)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Selected Data"
           }
         }
       }
@@ -44482,6 +46231,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показывать ярлык для паролей"
+          }
+        }
+      }
+    },
+    "import.type-selection.title.all" : {
+      "comment" : "Title text for the button to select the type of data to import (e.g passwords, bookmarks)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Bookmarks & Passwords"
+          }
+        }
+      }
+    },
+    "import.type-selection.title.bookmarks" : {
+      "comment" : "Title text for the button to select the type of data to import when bookmarks selected",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Bookmarks"
+          }
+        }
+      }
+    },
+    "import.type-selection.title.passwords" : {
+      "comment" : "Title text for the button to select the type of data to import when passwords selected",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import Passwords"
           }
         }
       }
@@ -52634,7 +54419,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keine"
+            "value" : "gar nichts"
           }
         },
         "en" : {
@@ -52658,7 +54443,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nessuno"
+            "value" : "Niente"
           }
         },
         "nl" : {
@@ -52682,7 +54467,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Нет"
+            "value" : "Без анимации"
           }
         }
       }
@@ -62731,8 +64516,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Passwörter sind verschlüsselt. Niemand außer dir kann sie sehen, nicht einmal wir."
+            "state" : "translated",
+            "value" : "Passwörter und Kreditkarten sind verschlüsselt. Niemand außer dir kann sie sehen, nicht einmal wir."
           }
         },
         "en" : {
@@ -62743,44 +64528,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Las contraseñas están cifradas. Nadie más que tú puede verlas, ni siquiera nosotros."
+            "state" : "translated",
+            "value" : "Las contraseñas y las tarjetas de crédito están cifradas. Nadie más que tú puede verlas, ni siquiera nosotros."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Les mots de passe sont cryptés. Personne d'autre que vous ne peut les voir, pas même nous."
+            "state" : "translated",
+            "value" : "Les mots de passe et les cartes bancaires sont cryptés. Personne d'autre que vous ne peut les voir, pas même nous."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Le password sono crittografate. Nessuno tranne te può vederle, nemmeno noi."
+            "state" : "translated",
+            "value" : "Password e carte di credito sono crittografate. Nessuno tranne te può vederle, nemmeno noi."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Wachtwoorden worden versleuteld. Niemand anders kan ze zien, zelfs wij niet."
+            "state" : "translated",
+            "value" : "Wachtwoorden en creditcards worden versleuteld. Niemand anders kan ze zien, zelfs wij niet."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Hasła są szyfrowane. Nikt poza Tobą ich nie widzi, nawet my."
+            "state" : "translated",
+            "value" : "Hasła i dane kart kredytowych są szyfrowane. Nikt poza Tobą ich nie widzi, nawet my."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "As palavras-passe estão encriptadas. Ninguém além de ti pode vê-las, nem mesmo nós."
+            "state" : "translated",
+            "value" : "As palavras-passe e os cartões de crédito estão encriptados. Ninguém além de ti pode vê-las, nem mesmo nós."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Пароли подвергаются шифрованию. Никто, кроме вас, их не увидит. Даже мы."
+            "state" : "translated",
+            "value" : "Пароли и реквизиты карт подвергаются шифрованию. Никто, кроме вас, их не увидит. Даже мы."
           }
         }
       }
@@ -62791,8 +64576,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Passwörter sind verschlüsselt."
+            "state" : "translated",
+            "value" : "Passwörter und Kreditkarten sind verschlüsselt."
           }
         },
         "en" : {
@@ -62803,44 +64588,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Las contraseñas están cifradas."
+            "state" : "translated",
+            "value" : "Las contraseñas y las tarjetas de crédito están cifradas."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Les mots de passe sont cryptés."
+            "state" : "translated",
+            "value" : "Les mots de passe et les cartes bancaires sont cryptés."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Le password sono crittografate."
+            "state" : "translated",
+            "value" : "Password e carte di credito sono crittografate."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Wachtwoorden worden versleuteld."
+            "state" : "translated",
+            "value" : "Wachtwoorden en creditcards worden versleuteld."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Hasła są szyfrowane."
+            "state" : "translated",
+            "value" : "Hasła i dane kart kredytowych są szyfrowane."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "As palavras-passe estão encriptadas."
+            "state" : "translated",
+            "value" : "As palavras-passe e os cartões de crédito estão encriptados."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Пароли подвергаются шифрованию."
+            "state" : "translated",
+            "value" : "Пароли и реквизиты карт подвергаются шифрованию."
           }
         }
       }
@@ -62851,7 +64636,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Passwörter sind verschlüsselt. Niemand außer dir kann sie sehen, nicht einmal wir."
           }
         },
@@ -62863,55 +64648,55 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Las contraseñas están cifradas. Nadie más que tú puede verlas, ni siquiera nosotros."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Les mots de passe sont cryptés. Personne d'autre que vous ne peut les voir, pas même nous."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Le password sono crittografate. Nessuno tranne te può vederle, nemmeno noi."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Wachtwoorden worden versleuteld. Niemand anders kan ze zien, zelfs wij niet."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Hasła są szyfrowane. Nikt poza Tobą ich nie widzi, nawet my."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "As palavras-passe estão encriptadas. Ninguém além de ti pode vê-las, nem mesmo nós."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Пароли подвергаются шифрованию. Никто, кроме вас, их не увидит. Даже мы."
           }
         }
       }
     },
-    "pm.empty.default.description.extended.v2.autolock.off" : {
+    "pm.empty.default.passwords.description.extended.v2.autolock.off" : {
       "comment" : "Label for default empty state description when the autolock feature is off",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Passwörter sind verschlüsselt."
           }
         },
@@ -62923,43 +64708,43 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Las contraseñas están cifradas."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Les mots de passe sont cryptés."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Le password sono crittografate."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Wachtwoorden worden versleuteld."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Hasła są szyfrowane."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "As palavras-passe estão encriptadas."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Пароли подвергаются шифрованию."
           }
         }
@@ -63296,7 +65081,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sincronizza carte di credito"
+            "value" : "Sincronizza Carte di credito"
           }
         },
         "nl" : {
@@ -63320,7 +65105,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Синхронизировать платежные карты"
+            "value" : "Синхронизировать карты"
           }
         }
       }
@@ -63356,7 +65141,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sincronizza identità"
+            "value" : "Sincronizza le identità"
           }
         },
         "nl" : {
@@ -63380,7 +65165,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Синхронизировать учетные данные"
+            "value" : "Синхронизировать данные"
           }
         }
       }
@@ -63416,7 +65201,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sincronizza password"
+            "value" : "Sincronizza le password"
           }
         },
         "nl" : {
@@ -67406,7 +69191,7 @@
     },
     "ppro.feedback-form.email.label" : {
       "comment" : "Label for the email field of the PPro feedback form",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -67466,7 +69251,7 @@
     },
     "ppro.feedback-form.email.placeholder" : {
       "comment" : "Placeholder for the email field of the PPro feedback form",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -67820,6 +69605,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Спасибо!"
+          }
+        }
+      }
+    },
+    "ppro.feedback-form.support.text" : {
+      "comment" : "Support link text displayed beneath the feedback form description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Need help? [Contact support.](https://duckduckgo.com/subscription-support)"
           }
         }
       }
@@ -69324,6 +71121,66 @@
         }
       }
     },
+    "preferences.about.terms-of-service" : {
+      "comment" : "Link to Terms of Service page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nutzungsbedingungen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Terms of Service"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Condiciones del servicio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conditions d'utilisation"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Termini di servizio"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servicevoorwaarden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warunki korzystania"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Termos de Serviço"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Условия предоставления услуг"
+          }
+        }
+      }
+    },
     "preferences.about.unsupported-device-info1" : {
       "comment" : "This string represents a message informing the user that DuckDuckGo is no longer providing browser updates for their version of macOS",
       "extractionState" : "extracted_with_value",
@@ -70220,6 +72077,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Полный адрес сайта"
+          }
+        }
+      }
+    },
+    "preferences.appearance.sync-app-icon-with-theme" : {
+      "comment" : "Checkbox option to sync the app icon with the selected theme",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App-Symbol an das Design anpassen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Change app icon to match theme"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambia el icono de la aplicación para que coincida con el tema"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changer l'icône de l'application pour qu'elle corresponde au thème"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambia l'icona dell'app per abbinarla al tema"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App-pictogram aanpassen aan thema"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmień ikonę aplikacji, aby pasowała do motywu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alterar o ícone da aplicação para combinar com o tema"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменить значок приложения, чтобы он соответствовал теме"
           }
         }
       }
@@ -82422,66 +84339,6 @@
         }
       }
     },
-    "sync.promo.bookmarks.message" : {
-      "comment" : "Message for the Sync Promotion banner when user has bookmarks that can be synced",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kein Konto erforderlich. Ende-zu-Ende-Verschlüsselung bedeutet, dass niemand außer dir deine Lesezeichen sehen kann, nicht einmal wir."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "No account needed. End-to-end encryption means nobody but you can see your bookmarks, not even us."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No necesitas ninguna cuenta. El cifrado de extremo a extremo significa que nadie más que tú puede ver tus marcadores, ni siquiera nosotros."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucun compte n'est nécessaire. Le cryptage de bout en bout signifie que personne d'autre ne peut voir vos signets, pas même nous."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non è necessario un account. Con la crittografia end-to-end, nessuno, a parte te, può vedere i tuoi segnalibri, nemmeno noi."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geen account nodig. End-to-end versleuteling betekent dat niemand anders dan jij je bladwijzers kan zien, zelfs wij niet."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Konto nie jest wymagane. Kompleksowe szyfrowanie oznacza, że nikt poza Tobą nie może zobaczyć Twoich zakładek, nawet my."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não precisas de uma conta. A encriptação ponta a ponta significa que ninguém além de ti pode ver os teus favoritos, nem mesmo nós."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Учетная запись не требуется. Сквозное шифрование означает, что ваши закладки видны только вам. Даже у нас нет к ним доступа."
-          }
-        }
-      }
-    },
     "sync.promo.bookmarks.title" : {
       "comment" : "Title for the Sync Promotion banner",
       "extractionState" : "extracted_with_value",
@@ -82838,66 +84695,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Учетная запись не требуется. Защита сквозным шифрованием."
-          }
-        }
-      }
-    },
-    "sync.promo.passwords.message" : {
-      "comment" : "Message for the Sync Promotion banner when user has passwords that can be synced",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kein Konto erforderlich. Ende-zu-Ende-Verschlüsselung bedeutet, dass niemand außer dir deine Passwörter sehen kann, nicht einmal wir."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "No account needed. End-to-end encryption means nobody but you can see your passwords, not even us."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No necesitas ninguna cuenta. El cifrado de extremo a extremo significa que nadie más que tú puede ver tus contraseñas, ni siquiera nosotros."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucun compte n'est nécessaire. Le cryptage de bout en bout signifie que personne d'autre ne peut voir vos mots de passe, pas même nous."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non è necessario un account. Con la crittografia end-to-end, nessuno a parte te può vedere le tue password, nemmeno noi."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geen account nodig. Dankzij end-to-end versleuteling kan niemand behalve jij je wachtwoorden zien, zelfs wij niet."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Konto nie jest wymagane. Kompleksowe szyfrowanie oznacza, że nikt poza Tobą nie może zobaczyć Twoich haseł, nawet my."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não precisas de uma conta. A encriptação ponta a ponta significa que ninguém além de ti pode ver as tuas palavras-passe, nem mesmo nós."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Учетная запись не требуется. Сквозное шифрование означает, что ваши пароли видны только вам. Даже у нас нет к ним доступа."
           }
         }
       }
@@ -92505,6 +94302,126 @@
         }
       }
     },
+    "warn.before.quit.clearChats" : {
+      "comment" : "Label after the checkbox in Settings which configures a warning before clearing data and chats on the application termination.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warne mich, dass Tabs, Daten und Chats beim Beenden gelöscht werden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Warn me that tabs, data, and chats will be deleted when quitting"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisarme de que las pestañas, los datos y los chats se eliminarán al salir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "M'avertir que les onglets, les données et les discussions seront supprimés à la fermeture"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avvisa prima di eliminare schede, dati e chat all'uscita"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waarschuw me dat tabbladen, gegevens en chats worden verwijderd bij het afsluiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ostrzegaj, że karty, dane i czaty zostaną usunięte przy wychodzeniu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisar-me que os separadores, os dados e as conversas forem eliminados na saída"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Предупреждать о закрытии вкладок, удалении данных и чатов при выходе"
+          }
+        }
+      }
+    },
+    "warn.before.quit.clearChats.dialog.header" : {
+      "comment" : "A header of warning before clearing data and chats on the application termination.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabs, Browsendaten und Chats löschen und DuckDuckGo beenden?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Clear tabs, browsing data, and chats and quit DuckDuckGo?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Borrar pestañas, datos de navegación y chats y salir de DuckDuckGo?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Effacer les onglets, les données de navigation et les discussions, puis quitter DuckDuckGo ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancellare le schede, i dati di navigazione e le chat e uscire da DuckDuckGo?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabbladen, browsegegevens en chats wissen en DuckDuckGo afsluiten?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyczyścić karty, dane przeglądania i czaty oraz wyjść z DuckDuckGo?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limpar separadores, dados de navegação, conversas e sair do DuckDuckGo?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть вкладки, очистить данные и чаты, а затем выйти из DuckDuckGo?"
+          }
+        }
+      }
+    },
     "warn.before.quit.dialog.checkbox.message" : {
       "comment" : "A label after checkbox to configure the warning before clearing data on the application termination.",
       "extractionState" : "extracted_with_value",
@@ -93186,6 +95103,486 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Что нового"
+          }
+        }
+      }
+    },
+    "win-back.campaign.last-day.message.cta" : {
+      "comment" : "CTA of the message displayed on the last day of the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angebot ansehen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "See Offer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver oferta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir l'offre"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedi l'offerta"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bekijk de aanbieding"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobacz ofertę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver oferta"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Посмотреть"
+          }
+        }
+      }
+    },
+    "win-back.campaign.last-day.message.text" : {
+      "comment" : "Message of the message displayed on the last day of the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bleib geschützt mit unserem VPN, privater KI und mehr. Abonniere noch heute erneut und spare 25 %.\nZeitlich begrenztes Angebot."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Stay protected with our VPN, private AI, and more.\nResubscribe today and save 25%. Limited time offer."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantente protegido con nuestra VPN, IA privada y mucho más. Vuelve a suscribirte hoy y ahorra un 25 %.Oferta por tiempo limitado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protégez-vous grâce à notre VPN, à notre IA privée et plus encore. Réabonnez-vous aujourd'hui et économisez 25 %.Offre à durée limitée."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proteggiti con la nostra VPN, AI privata e altro ancora. Rinnova oggi stesso e risparmia il 25%.\nOfferta a tempo limitato."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blijf beschermd met onze VPN, private AI en meer. Meld je vandaag nog opnieuw aan en bespaar 25%.\nTijdelijke aanbieding."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zachowaj bezpieczeństwo dzięki naszej sieci VPN, prywatnej AI i innym usługom.Odnów subskrypcję już dziś i zaoszczędź 25%. Oferta ograniczona czasowo."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantém a tua proteção com a nossa VPN, IA privada e muito mais. Volta a subscrever hoje mesmo e poupa 25%.Oferta por tempo limitado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всегда под защитой: VPN, приватный ИИ и не только.Скидка 25% при возобновлении подписки. Срок действия предложения ограничен."
+          }
+        }
+      }
+    },
+    "win-back.campaign.last-day.message.title" : {
+      "comment" : "Title of message displayed on the last day of the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Letzter Tag, um 25 % zu sparen!"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Last chance to save 25%!"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "¡Último día para ahorrar un 25 %!"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dernier jour pour économiser 25 % !"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ultimo giorno per risparmiare il 25%!"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alleen vandaag nog 25% korting!"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ostatni dzień, aby zaoszczędzić 25%!"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Último dia para poupar 25%!"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Скидка 25%: последний день акции!"
+          }
+        }
+      }
+    },
+    "win-back.campaign.menu.badge.text" : {
+      "comment" : "Text for the badge displayed on the Subscription menu item during the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SPARE 25 %"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SAVE 25%"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AHORRA UN 25 %"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ÉCONOMISEZ 25 %"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RISPARMIA IL 25%"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "BESPAAR 25%"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZAOSZCZĘDŹ 25%"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "POUPA 25%"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "СКИДКА 25%"
+          }
+        }
+      }
+    },
+    "win-back.campaign.modal.cta" : {
+      "comment" : "CTA of the modal dialog promoting the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angebot ansehen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "See Offer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver oferta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir l'offre"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedi l'offerta"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bekijk de aanbieding"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobacz ofertę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver oferta"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Акция"
+          }
+        }
+      }
+    },
+    "win-back.campaign.modal.dismiss" : {
+      "comment" : "Dismiss of the modal dialog promoting the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt nicht"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not Now"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora no"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas maintenant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non adesso"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet nu"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie teraz"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora não"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не сейчас"
+          }
+        }
+      }
+    },
+    "win-back.campaign.modal.message" : {
+      "comment" : "Message of the modal dialog promoting the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bleib geschützt mit unserem VPN, privater KI und mehr. Abonniere noch heute erneut und spare 25 %.\nZeitlich begrenztes Angebot."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Stay protected with our VPN, private AI, and more.\nResubscribe today and save 25%. Limited time offer."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantente protegido con nuestra VPN, IA privada y mucho más. Vuelve a suscribirte hoy y ahorra un 25 %.Oferta por tiempo limitado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protégez-vous grâce à notre VPN, à notre IA privée et plus encore. Réabonnez-vous aujourd'hui et économisez 25 %.Offre à durée limitée."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proteggiti con la nostra VPN, AI privata e altro ancora. Rinnova oggi stesso e risparmia il 25%.\nOfferta a tempo limitato."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blijf beschermd met onze VPN, private AI en meer. Meld je vandaag nog opnieuw aan en bespaar 25%.\nTijdelijke aanbieding."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zachowaj bezpieczeństwo dzięki naszej sieci VPN, prywatnej AI i innym usługom.\nOdnów subskrypcję już dziś i zaoszczędź 25%. Oferta ograniczona czasowo."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantém a tua proteção com a nossa VPN, IA privada e muito mais. Volta a subscrever hoje mesmo e poupa 25%.Oferta por tempo limitado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы всегда под защитой: VPN, приватный ИИ и многое другое.Скидка 25% при возобновлении подписки. Срок акции ограничен."
+          }
+        }
+      }
+    },
+    "win-back.campaign.modal.title" : {
+      "comment" : "Title of the modal dialog promoting the win-back campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir wollen dich zurück!\nErhalte 25 % Rabatt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We want you back! Get 25% off."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Queremos que vuelvas!\nConsigue un 25 % de descuento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous voulons vous revoir !\nBénéficiez de 25 % de réduction."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Torna indietro!\nOttieni il 25% di sconto."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wij willen je terug!\nKrijg 25% korting."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wróć do nas! Otrzymasz 25% zniżki."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Queremos-te de volta!\nRecebe 25% de desconto."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ждем вашего возвращения. Держите скидку 25%!"
           }
         }
       }

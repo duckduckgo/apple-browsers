@@ -151,6 +151,17 @@ internal class FireproofDomains: DomainFireproofStatusProviding {
         }
     }
 
+    /// Validates and normalizes arbitrary user input (URL or host) into an eTLD+1 host.
+    /// Returns nil if the input is empty, invalid, or already fireproofed.
+    func normalizedHost(fromUserInput input: String) -> String? {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let url = URL(trimmedAddressBarString: trimmed),
+              url.navigationalScheme?.isHypertextScheme == true,
+              let eTLDPlus1Domain = tld.eTLDplus1(url.host) else { return nil }
+        return eTLDPlus1Domain
+    }
+
     func remove(domain: String, changeToETLDPlus1: Bool = true) {
         dispatchPrecondition(condition: .onQueue(.main))
 

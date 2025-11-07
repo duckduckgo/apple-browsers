@@ -14,8 +14,9 @@ const path = require('path');
 class Configuration {
     static DEFAULT_VALUES = {
         iterations: 1,
+        maxIterations: 30,
         outputFolder: null,  // null = console output only
-        timeout: 30000,
+        timeout: 120000,  // 2 minutes for very large pages (specs, documentation)
         retryDelay: 500,
         scrollDelay: 500,
         stabilityDelay: 500,
@@ -40,8 +41,9 @@ class Configuration {
     _validateAndSetOptions(options) {
 
         // Input validation
-        this.url = this._validateUrl(options.url);        
+        this.url = this._validateUrl(options.url);
         this.iterations = this._validateIterations(options.iterations);
+        this.maxIterations = this._validateIterations(options.maxIterations || Configuration.DEFAULT_VALUES.maxIterations);
         this.outputFolder = this._validateOutputFolder(options.outputFolder);
 
         // Timing Configs

@@ -29,6 +29,11 @@ protocol DataImportSummaryViewModelDelegate: AnyObject {
 
 final class DataImportSummaryViewModel: ObservableObject {
 
+    enum Footer: Equatable {
+        case syncButton(title: String)
+        case message(body: String)
+    }
+
     weak var delegate: DataImportSummaryViewModelDelegate?
 
     @Published var passwordsSummary: DataImport.DataTypeSummary?
@@ -38,11 +43,23 @@ final class DataImportSummaryViewModel: ObservableObject {
     let importScreen: DataImportViewModel.ImportScreen
     private let syncService: DDGSyncing
 
-    var syncIsActive: Bool {
+
+    var footer: Footer? {
+        if importScreen == .whatsNew {
+            return .message(body: UserText.dataImportSummaryVisitSyncSettings)
+        } else if !syncIsActive {
+            return .syncButton(title: syncButtonTitle)
+        } else {
+            return nil
+        }
+    }
+
+
+    private var syncIsActive: Bool {
         syncService.authState != .inactive
     }
 
-    var syncButtonTitle: String {
+    private var syncButtonTitle: String {
         if passwordsSummary != nil && bookmarksSummary != nil {
             return String(format: UserText.dataImportSummarySync,
                           UserText.dataImportSummarySyncData)

@@ -94,7 +94,10 @@ final class NetworkProtectionDebugLogCollector {
             throw LogCollectionError.logStoreCreationFailed
         }
 
-        guard let enumerator = try? logStore.getEntries() else {
+        let tenMinutesAgo = Date().addingTimeInterval(-TimeInterval.minutes(10))
+        let position = logStore.position(date: tenMinutesAgo)
+
+        guard let enumerator = try? logStore.getEntries(at: position) else {
             throw LogCollectionError.logEnumerationFailed
         }
 

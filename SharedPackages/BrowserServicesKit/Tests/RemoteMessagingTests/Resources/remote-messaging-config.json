@@ -260,10 +260,16 @@
         "daysSinceNetPEnabled": {
           "min": 5
         },
+        "daysSinceDuckAiUsed": {
+          "min": 3
+        },
         "pproEligible": {
           "value": true
         },
         "pproSubscriber": {
+          "value": true
+        },
+        "subscriptionFreeTrialActive": {
           "value": true
         },
         "pproPurchasePlatform": {

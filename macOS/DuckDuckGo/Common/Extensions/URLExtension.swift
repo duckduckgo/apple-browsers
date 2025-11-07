@@ -122,35 +122,12 @@ extension URL {
         return url
     }
 
-    static func makeURL(from addressBarString: String, enableMetrics: Bool = true) -> URL? {
-        let featureFlagger = Application.appDelegate.featureFlagger
-        guard featureFlagger.isFeatureOn(.unifiedURLPredictor) else {
+    static func makeURL(from addressBarString: String) -> URL? {
+        guard Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor) else {
             return makeURLUsingNativePredictionLogic(from: addressBarString)
         }
 
-        let url = makeURLUsingUnifiedPredictionLogic(from: addressBarString)
-
-        /// Return early if the metrics feature flag is disabled (only internal users can opt in to metrics collection).
-        guard enableMetrics, featureFlagger.isFeatureOn(.unifiedURLPredictorMetrics) else {
-            return url
-        }
-
-        /// Verify unified prediction logic against native one and fire a pixel when the output (wrt search/navigate/error) differs.
-        let expectedURL = makeURLUsingNativePredictionLogic(from: addressBarString)
-        switch (url?.isDuckDuckGoSearch, expectedURL?.isDuckDuckGoSearch) {
-        case (true, false):
-            PixelKit.fire(DebugEvent(GeneralPixel.unifiedURLPredictionMismatch(prediction: "search", input: addressBarString)))
-        case (false, true):
-            PixelKit.fire(DebugEvent(GeneralPixel.unifiedURLPredictionMismatch(prediction: "navigate", input: addressBarString)))
-        case (nil, nil):
-            break
-        case (nil, _):
-            PixelKit.fire(DebugEvent(GeneralPixel.unifiedURLPredictionMismatch(prediction: "error", input: addressBarString)))
-        default:
-            break
-        }
-
-        return url
+        return makeURLUsingUnifiedPredictionLogic(from: addressBarString)
     }
 
     static func makeURLUsingUnifiedPredictionLogic(from addressBarString: String) -> URL? {
@@ -217,12 +194,24 @@ extension URL {
         return settings.appendingPathComponent(pane.rawValue)
     }
 
+    static func historyPane(_ pane: HistoryPaneIdentifier) -> URL {
+        return history.appendingParameter(name: "range", value: pane.rawValue)
+    }
+
     var isSettingsURL: Bool {
         isChild(of: .settings) && (pathComponents.isEmpty || PreferencePaneIdentifier(url: self) != nil)
     }
 
     var isErrorURL: Bool {
         return navigationalScheme == .duck && host == URL.error.host
+    }
+
+    var isHistory: Bool {
+        return navigationalScheme == .duck && host == URL.history.host
+    }
+
+    var isNTP: Bool {
+        return navigationalScheme == .duck && host == URL.newtab.host
     }
 
 #endif
@@ -237,6 +226,7 @@ extension URL {
 
         static let aboutSettings = URL(string: "about:settings")!
         static let aboutPreferences = URL(string: "about:preferences")!
+        static let aboutHistory = URL(string: "about:history")!
         static let duckPreferences = URL(string: "duck://preferences")!
         static let aboutConfig = URL(string: "about:config")!
         static let duckConfig = URL(string: "duck://config")!
@@ -441,6 +431,11 @@ extension URL {
         return URL(string: duckDuckGoUrlString)!
     }
 
+    static var duckAi: URL {
+        let duckAiString = "https://duck.ai/"
+        return URL(string: duckAiString)!
+    }
+
     static var duckDuckGoAutocomplete: URL {
         duckDuckGo.appendingPathComponent("ac/")
     }
@@ -503,6 +498,10 @@ extension URL {
 
     static var privacyPolicy: URL {
         return URL(string: "https://duckduckgo.com/privacy")!
+    }
+
+    static var termsOfService: URL {
+        URL(string: "https://duckduckgo.com/terms")!
     }
 
     static var subscription: URL {
@@ -640,27 +639,6 @@ extension URL {
             return false
         }
     }
-
-#if DEBUG && APPSTORE
-    /// sandbox extension URL access should be stopped after SecurityScopedFileURLController is deallocated - this function validates it and breaks if the file is still writable
-    func ensureUrlIsNotWritable(or handler: () -> Void) {
-        let fm = FileManager.default
-        // is the URL ~/Downloads?
-        if self.resolvingSymlinksInPath() == fm.urls(for: .downloadsDirectory, in: .userDomainMask).first!.resolvingSymlinksInPath() {
-            assert(isWritableLocation())
-            return
-        }
-        // is parent directory writable (e.g. ~/Downloads)?
-        if fm.isWritableFile(atPath: self.deletingLastPathComponent().path)
-            // trashed files are still accessible for some reason even after stopping access
-            || fm.isInTrash(self)
-            // other file is being saved at the same URL
-            || NSURL.activeSecurityScopedUrlUsages.contains(where: { $0.url !== self as NSURL && $0.url == self as NSURL })
-            || !isWritableLocation() { return }
-
-        handler()
-    }
-#endif
 
     // MARK: - System Settings
 

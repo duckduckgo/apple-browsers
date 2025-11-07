@@ -487,4 +487,76 @@ final class JobQueueManagerTests: XCTestCase {
         XCTAssert(mockOperationsCreator.createdType == .optOut)
         XCTAssertEqual(mockQueue.maxConcurrentOperationCount, expectedConcurrentOperations)
     }
+
+    func testWhenActionFailedErrorPixelFired_parametersIncludeStepTypeAndParent() {
+        // Given
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+
+        mockPixelHandler.resetCapturedData()
+        let error = DataBrokerProtectionError.actionFailed(actionID: "action-id", message: "something happened")
+
+        // When
+        sut.dataBrokerOperationDidError(error,
+                                        withBrokerURL: "broker.com",
+                                        version: "1.0.0",
+                                        stepType: .optOut,
+                                        dataBrokerParent: "parent.com")
+
+        // Then
+        guard let lastEvent = mockPixelHandler.lastFiredEvent else {
+            return XCTFail("Expected pixel to be fired")
+        }
+
+        if case let .actionFailedError(_, actionId, message, dataBroker, version, stepType, parent) = lastEvent {
+            XCTAssertEqual(actionId, "action-id")
+            XCTAssertEqual(message, "something happened")
+            XCTAssertEqual(dataBroker, "broker.com")
+            XCTAssertEqual(version, "1.0.0")
+            XCTAssertEqual(stepType, .optOut)
+            XCTAssertEqual(parent, "parent.com")
+        } else {
+            XCTFail("Unexpected pixel fired: \(lastEvent)")
+        }
+
+        XCTAssertEqual(mockPixelHandler.lastFiredEvent?.parameters?["stepType"], StepType.optOut.rawValue)
+        XCTAssertEqual(mockPixelHandler.lastFiredEvent?.parameters?["parent"], "parent.com")
+    }
+
+    func testWhenActionFailedErrorHasNoParent_parametersIncludeEmptyParentAndNoStepType() {
+        // Given
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+
+        mockPixelHandler.resetCapturedData()
+        let error = DataBrokerProtectionError.actionFailed(actionID: "id", message: "msg")
+
+        // When
+        sut.dataBrokerOperationDidError(error,
+                                        withBrokerURL: "broker.com",
+                                        version: "1.0.0",
+                                        stepType: nil,
+                                        dataBrokerParent: nil)
+
+        // Then
+        guard let lastEvent = mockPixelHandler.lastFiredEvent else {
+            return XCTFail("Expected pixel to be fired")
+        }
+
+        if case let .actionFailedError(_, _, _, _, _, stepType, parent) = lastEvent {
+            XCTAssertNil(stepType)
+            XCTAssertNil(parent)
+        } else {
+            XCTFail("Unexpected pixel fired: \(lastEvent)")
+        }
+
+        XCTAssertEqual(mockPixelHandler.lastFiredEvent?.parameters?["stepType"], "unknown")
+        XCTAssertEqual(mockPixelHandler.lastFiredEvent?.parameters?["parent"], "")
+    }
 }

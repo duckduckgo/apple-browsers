@@ -30,6 +30,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
     var mockOptOutRunner: MockOptOutSubJobWebRunner!
     var mockDatabase: MockDatabase!
     var mockEventsHandler: MockOperationEventsHandler!
+    var mockPixelHandler: MockPixelHandler!
     var mockDependencies: MockBrokerProfileJobDependencies!
 
     override func setUp() {
@@ -38,14 +39,807 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         mockOptOutRunner = MockOptOutSubJobWebRunner()
         mockDatabase = MockDatabase()
         mockEventsHandler = MockOperationEventsHandler()
+        mockPixelHandler = MockPixelHandler()
 
         mockDependencies = MockBrokerProfileJobDependencies()
         mockDependencies.mockScanRunner = self.mockScanRunner
         mockDependencies.mockOptOutRunner = self.mockOptOutRunner
         mockDependencies.database = self.mockDatabase
         mockDependencies.eventsHandler = self.mockEventsHandler
+        mockDependencies.pixelHandler = self.mockPixelHandler
 
         sut = BrokerProfileScanSubJob(dependencies: mockDependencies)
+    }
+
+    private func makeFixtureIdentifiers() -> BrokerProfileScanSubJob.ScanIdentifiers {
+        .init(brokerId: 1, profileQueryId: 1)
+    }
+
+    private func makeFixtureBrokerProfileQueryData(broker: DataBroker = .mock,
+                                                   profileQuery: ProfileQuery = .mock,
+                                                   scanHistoryEvents: [HistoryEvent] = []) -> BrokerProfileQueryData {
+        BrokerProfileQueryData(
+            dataBroker: broker,
+            profileQuery: profileQuery,
+            scanJobData: .init(
+                brokerId: broker.id ?? 1,
+                profileQueryId: profileQuery.id ?? 1,
+                historyEvents: scanHistoryEvents
+            )
+        )
+    }
+
+    // MARK: - validateScanPreconditions
+
+    func testValidateScanPreconditions_whenBrokerIdMissing_throws() {
+        let broker = DataBroker(name: "broker",
+                                url: "broker.com",
+                                steps: [],
+                                version: "1",
+                                schedulingConfig: .default,
+                                optOutUrl: "",
+                                eTag: "",
+                                removedAt: nil)
+        let profile = ProfileQuery(firstName: "John", lastName: "Doe", city: "City", state: "State", birthYear: 1990)
+        let brokerData = BrokerProfileQueryData(dataBroker: broker,
+                                                profileQuery: profile,
+                                                scanJobData: .mock)
+
+        XCTAssertThrowsError(
+            try sut.validateScanPreconditions(brokerProfileQueryData: brokerData)
+        ) { error in
+            XCTAssertEqual(error as? BrokerProfileSubJobError, .idsMissingForBrokerOrProfileQuery)
+        }
+    }
+
+    func testValidateScanPreconditions_whenProfileQueryIdMissing_throws() {
+        let broker = DataBroker.mock
+        let profile = ProfileQuery(firstName: "John", lastName: "Doe", city: "City", state: "State", birthYear: 1990)
+        let brokerData = BrokerProfileQueryData(dataBroker: broker,
+                                                profileQuery: profile,
+                                                scanJobData: .mock)
+
+        XCTAssertThrowsError(try sut.validateScanPreconditions(brokerProfileQueryData: brokerData)) { error in
+            XCTAssertEqual(error as? BrokerProfileSubJobError, .idsMissingForBrokerOrProfileQuery)
+        }
+    }
+
+    func testValidateScanPreconditions_whenAllIdsPresent_returnsIdentifiers() throws {
+        let brokerData = makeFixtureBrokerProfileQueryData()
+
+        let result = try sut.validateScanPreconditions(brokerProfileQueryData: brokerData)
+
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.brokerId, 1)
+        XCTAssertEqual(result?.profileQueryId, 1)
+    }
+
+    // MARK: - reportScanCompletion
+
+    func testReportScanCompletion_updatesLastRunDate() {
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        let identifiers = makeFixtureIdentifiers()
+        let notificationCenter = NotificationCenter()
+
+        sut.reportScanCompletion(database: mockDatabase,
+                                 notificationCenter: notificationCenter,
+                                 brokerProfileQueryData: brokerData,
+                                 identifiers: identifiers)
+
+        XCTAssertTrue(mockDatabase.wasUpdateLastRunDateForScanCalled)
+    }
+
+    func testReportScanCompletion_postsFinishNotification() {
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        let identifiers = makeFixtureIdentifiers()
+        let notificationCenter = NotificationCenter()
+        var notificationReceived = false
+        var receivedObject: Any?
+
+        let observer = notificationCenter.addObserver(forName: DataBrokerProtectionNotifications.didFinishScan,
+                                                      object: nil,
+                                                      queue: nil) { notification in
+            notificationReceived = true
+            receivedObject = notification.object
+        }
+
+        defer {
+            notificationCenter.removeObserver(observer)
+        }
+
+        sut.reportScanCompletion(database: mockDatabase,
+                                 notificationCenter: notificationCenter,
+                                 brokerProfileQueryData: brokerData,
+                                 identifiers: identifiers)
+
+        XCTAssertTrue(notificationReceived, "Notification should have been posted")
+        XCTAssertEqual(receivedObject as? String, brokerData.dataBroker.name)
+    }
+
+    func testReportScanCompletion_whenDatabaseFails_doesNotThrow() {
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        let identifiers = makeFixtureIdentifiers()
+        let notificationCenter = NotificationCenter()
+        mockDatabase.updateLastRunDateError = MockDatabase.MockError.saveFailed
+
+        sut.reportScanCompletion(database: mockDatabase,
+                                 notificationCenter: notificationCenter,
+                                 brokerProfileQueryData: brokerData,
+                                 identifiers: identifiers)
+
+        XCTAssertTrue(mockDatabase.wasUpdateLastRunDateForScanCalled)
+    }
+
+    // MARK: - createScanStageContext
+
+    func testCreateScanStageContext_createsEventPixelsAndCalculator() {
+        let brokerData = makeFixtureBrokerProfileQueryData()
+
+        let context = sut.createScanStageContext(brokerProfileQueryData: brokerData,
+                                                 isManual: false,
+                                                 database: mockDatabase,
+                                                 pixelHandler: mockPixelHandler,
+                                                 parentURL: nil,
+                                                 vpnConnectionState: "connected",
+                                                 vpnBypassStatus: "enabled")
+
+        XCTAssertNotNil(context.eventPixels)
+        XCTAssertNotNil(context.stageCalculator)
+    }
+
+    func testCreateScanStageContext_whenManualScan_setsImmediateOperation() {
+        let brokerData = makeFixtureBrokerProfileQueryData()
+
+        let context = sut.createScanStageContext(brokerProfileQueryData: brokerData,
+                                                 isManual: true,
+                                                 database: mockDatabase,
+                                                 pixelHandler: mockPixelHandler,
+                                                 parentURL: nil,
+                                                 vpnConnectionState: "connected",
+                                                 vpnBypassStatus: "enabled")
+
+        let calculator = context.stageCalculator as DataBrokerProtectionStageDurationCalculator
+        XCTAssertNotNil(calculator)
+        XCTAssertTrue(calculator.isImmediateOperation)
+    }
+
+    func testCreateScanStageContext_whenNotManualScan_doesNotSetImmediateOperation() {
+        let brokerData = makeFixtureBrokerProfileQueryData()
+
+        let context = sut.createScanStageContext(brokerProfileQueryData: brokerData,
+                                                 isManual: false,
+                                                 database: mockDatabase,
+                                                 pixelHandler: mockPixelHandler,
+                                                 parentURL: nil,
+                                                 vpnConnectionState: "connected",
+                                                 vpnBypassStatus: "enabled")
+
+        let calculator = context.stageCalculator as DataBrokerProtectionStageDurationCalculator
+        XCTAssertNotNil(calculator)
+        XCTAssertFalse(calculator.isImmediateOperation)
+    }
+
+    // MARK: - markScanStarted
+
+    func testMarkScanStarted_persistsHistoryEvent() throws {
+        let identifiers = makeFixtureIdentifiers()
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
+                                                                     dataBrokerVersion: "1.0",
+                                                                     handler: mockPixelHandler,
+                                                                     parentURL: nil,
+                                                                     vpnConnectionState: "state",
+                                                                     vpnBypassStatus: "status")
+
+        try sut.markScanStarted(brokerId: identifiers.brokerId,
+                                profileQueryId: identifiers.profileQueryId,
+                                stageCalculator: calculator,
+                                database: mockDatabase)
+
+        XCTAssertTrue(mockDatabase.scanEvents.contains { $0.type == .scanStarted })
+    }
+
+    func testMarkScanStarted_whenHistoryWriteFails_rethrows() {
+        let identifiers = makeFixtureIdentifiers()
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
+                                                                     dataBrokerVersion: "1.0",
+                                                                     handler: mockPixelHandler,
+                                                                     parentURL: nil,
+                                                                     vpnConnectionState: "state",
+                                                                     vpnBypassStatus: "status")
+        mockDatabase.addHistoryEventError = MockDatabase.MockError.saveFailed
+
+        XCTAssertThrowsError(try sut.markScanStarted(brokerId: identifiers.brokerId,
+                                                     profileQueryId: identifiers.profileQueryId,
+                                                     stageCalculator: calculator,
+                                                     database: mockDatabase)) { error in
+            XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
+        }
+    }
+
+    // MARK: - makeScanRunner
+
+    func testMakeScanRunner_usesFactory() {
+        var capturedBrokerData: BrokerProfileQueryData?
+        var capturedCalculator: StageDurationCalculator?
+        var capturedShouldRun: (() -> Bool)?
+
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
+                                                                     dataBrokerVersion: "1.0",
+                                                                     handler: mockPixelHandler,
+                                                                     parentURL: nil,
+                                                                     vpnConnectionState: "state",
+                                                                     vpnBypassStatus: "status")
+
+        let runner = sut.makeScanRunner(brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
+                                        stageCalculator: calculator,
+                                        shouldRunNextStep: { true },
+                                        runnerFactory: { profile, calc, should in
+            capturedBrokerData = profile
+            capturedCalculator = calc
+            capturedShouldRun = should
+            return MockScanSubJobWebRunner()
+        })
+
+        XCTAssertNotNil(runner)
+        XCTAssertEqual(capturedBrokerData?.dataBroker.name, "Test broker")
+        XCTAssertTrue((capturedCalculator as AnyObject) === (calculator as AnyObject))
+        XCTAssertNotNil(capturedShouldRun)
+        XCTAssertTrue(capturedShouldRun?() ?? false)
+    }
+
+    // MARK: - executeScan
+
+    func testExecuteScan_invokesRunner() async throws {
+        let runner = MockScanSubJobWebRunner()
+        runner.scanResults = [.mockWithoutRemovedDate]
+
+        let profiles = try await sut.executeScan(runner: runner,
+                                                 brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
+                                                 showWebView: true,
+                                                 shouldRunNextStep: { true })
+
+        XCTAssertTrue(runner.wasScanCalled)
+        XCTAssertEqual(profiles.count, 1)
+    }
+
+    func testExecuteScan_whenRunnerThrows_rethrows() async {
+        let runner = MockScanSubJobWebRunner()
+        runner.shouldScanThrow = true
+
+        do {
+            _ = try await sut.executeScan(runner: runner,
+                                          brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
+                                          showWebView: true,
+                                          shouldRunNextStep: { true })
+            XCTFail("Expected runner scan to throw")
+        } catch {
+            XCTAssertTrue(runner.wasScanCalled)
+        }
+    }
+
+    func testExecuteScan_returnsExtractedProfiles() async throws {
+        let runner = MockScanSubJobWebRunner()
+        let expectedProfiles = [ExtractedProfile.mockWithoutRemovedDate, ExtractedProfile.mockWithoutId]
+        runner.scanResults = expectedProfiles
+
+        let profiles = try await sut.executeScan(runner: runner,
+                                                 brokerProfileQueryData: makeFixtureBrokerProfileQueryData(),
+                                                 showWebView: false,
+                                                 shouldRunNextStep: { true })
+
+        XCTAssertEqual(profiles.count, expectedProfiles.count)
+    }
+
+    // MARK: - handleScanMatches
+
+    func testHandleScanMatches_firesSuccessPixel() throws {
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        let eventPixels = DataBrokerProtectionEventPixels(database: mockDatabase,
+                                                          handler: mockPixelHandler)
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
+                                                                     dataBrokerVersion: "1.0",
+                                                                     handler: mockPixelHandler,
+                                                                     parentURL: nil,
+                                                                     vpnConnectionState: "state",
+                                                                     vpnBypassStatus: "status")
+        let matches = [ExtractedProfile.mockWithoutRemovedDate]
+        var scheduleOptOutsCalled = false
+
+        try sut.handleScanMatches(matches: matches,
+                                  brokerId: identifiers.brokerId,
+                                  profileQueryId: identifiers.profileQueryId,
+                                  brokerProfileQueryData: brokerData,
+                                  database: mockDatabase,
+                                  eventPixels: eventPixels,
+                                  stageCalculator: calculator,
+                                  scheduleOptOuts: { _, _, _, _, _, _, _ in
+            scheduleOptOutsCalled = true
+        })
+
+        XCTAssertTrue(scheduleOptOutsCalled)
+        XCTAssertTrue(mockDatabase.scanEvents.contains { $0.type == .matchesFound(count: 1) })
+    }
+
+    func testHandleScanMatches_addsMatchesFoundEvent() throws {
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        let eventPixels = DataBrokerProtectionEventPixels(database: mockDatabase,
+                                                          handler: mockPixelHandler)
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
+                                                                     dataBrokerVersion: "1.0",
+                                                                     handler: mockPixelHandler,
+                                                                     parentURL: nil,
+                                                                     vpnConnectionState: "state",
+                                                                     vpnBypassStatus: "status")
+        let matches = [ExtractedProfile.mockWithoutRemovedDate, ExtractedProfile.mockWithoutId]
+
+        try sut.handleScanMatches(matches: matches,
+                                 brokerId: identifiers.brokerId,
+                                 profileQueryId: identifiers.profileQueryId,
+                                 brokerProfileQueryData: brokerData,
+                                 database: mockDatabase,
+                                 eventPixels: eventPixels,
+                                 stageCalculator: calculator,
+                                 scheduleOptOuts: { _, _, _, _, _, _, _ in })
+
+        XCTAssertTrue(mockDatabase.scanEvents.contains { $0.type == .matchesFound(count: 2) })
+    }
+
+    func testHandleScanMatches_whenDatabaseFails_rethrows() {
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        let eventPixels = DataBrokerProtectionEventPixels(database: mockDatabase,
+                                                          handler: mockPixelHandler)
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
+                                                                     dataBrokerVersion: "1.0",
+                                                                     handler: mockPixelHandler,
+                                                                     vpnConnectionState: "state",
+                                                                     vpnBypassStatus: "status")
+        let matches = [ExtractedProfile.mockWithoutRemovedDate]
+        mockDatabase.addHistoryEventError = MockDatabase.MockError.saveFailed
+
+        XCTAssertThrowsError(try sut.handleScanMatches(matches: matches,
+                                                       brokerId: identifiers.brokerId,
+                                                       profileQueryId: identifiers.profileQueryId,
+                                                       brokerProfileQueryData: brokerData,
+                                                       database: mockDatabase,
+                                                       eventPixels: eventPixels,
+                                                       stageCalculator: calculator,
+                                                       scheduleOptOuts: { _, _, _, _, _, _, _ in })) { error in
+            XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
+        }
+    }
+
+    // MARK: - handleScanWithNoMatches
+
+    func testHandleScanWithNoMatches_callsStoreNoMatchesEvent() throws {
+        let identifiers = makeFixtureIdentifiers()
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
+                                                                     dataBrokerVersion: "1.0",
+                                                                     handler: mockPixelHandler,
+                                                                     parentURL: nil,
+                                                                     vpnConnectionState: "state",
+                                                                     vpnBypassStatus: "status")
+        var storeNoMatchesCalled = false
+
+        try sut.handleScanWithNoMatches(brokerId: identifiers.brokerId,
+                                        profileQueryId: identifiers.profileQueryId,
+                                        database: mockDatabase,
+                                        stageCalculator: calculator,
+                                        storeNoMatchesEvent: { _, _, _, _ in
+            storeNoMatchesCalled = true
+        })
+
+        XCTAssertTrue(storeNoMatchesCalled)
+    }
+
+    func testHandleScanWithNoMatches_whenStoreEventFails_rethrows() {
+        let identifiers = makeFixtureIdentifiers()
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
+                                                                     dataBrokerVersion: "1.0",
+                                                                     handler: mockPixelHandler,
+                                                                     parentURL: nil,
+                                                                     vpnConnectionState: "state",
+                                                                     vpnBypassStatus: "status")
+
+        XCTAssertThrowsError(try sut.handleScanWithNoMatches(brokerId: identifiers.brokerId,
+                                                             profileQueryId: identifiers.profileQueryId,
+                                                             database: mockDatabase,
+                                                             stageCalculator: calculator,
+                                                             storeNoMatchesEvent: { _, _, _, _ in
+            throw MockDatabase.MockError.saveFailed
+        })) { error in
+            XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
+        }
+    }
+
+    // MARK: - detectRemovedProfiles
+
+    func testDetectRemovedProfiles_whenNoProfilesRemoved_returnsEmpty() {
+        let previousProfiles = [ExtractedProfile.mockWithoutRemovedDate]
+        let currentProfiles = [ExtractedProfile.mockWithoutRemovedDate]
+
+        let removedProfiles = sut.detectRemovedProfiles(previouslyExtractedProfiles: previousProfiles,
+                                                        currentScanProfiles: currentProfiles)
+
+        XCTAssertTrue(removedProfiles.isEmpty)
+    }
+
+    func testDetectRemovedProfiles_whenProfileRemoved_returnsRemovedProfile() {
+        let profile1 = ExtractedProfile(id: 1, name: "Profile 1", profileUrl: "url1", identifier: "id1")
+        let profile2 = ExtractedProfile(id: 2, name: "Profile 2", profileUrl: "url2", identifier: "id2")
+        let previousProfiles = [profile1, profile2]
+        let currentProfiles = [profile1]
+
+        let removedProfiles = sut.detectRemovedProfiles(previouslyExtractedProfiles: previousProfiles,
+                                                        currentScanProfiles: currentProfiles)
+
+        XCTAssertEqual(removedProfiles.count, 1)
+        XCTAssertEqual(removedProfiles.first?.identifier, "id2")
+    }
+
+    func testDetectRemovedProfiles_whenAllProfilesRemoved_returnsAllProfiles() {
+        let profile1 = ExtractedProfile(id: 1, name: "Profile 1", profileUrl: "url1", identifier: "id1")
+        let profile2 = ExtractedProfile(id: 2, name: "Profile 2", profileUrl: "url2", identifier: "id2")
+        let previousProfiles = [profile1, profile2]
+        let currentProfiles: [ExtractedProfile] = []
+
+        let removedProfiles = sut.detectRemovedProfiles(previouslyExtractedProfiles: previousProfiles,
+                                                        currentScanProfiles: currentProfiles)
+
+        XCTAssertEqual(removedProfiles.count, 2)
+    }
+
+    func testDetectRemovedProfiles_whenNewProfileAdded_returnsEmpty() {
+        let profile1 = ExtractedProfile(id: 1, name: "Profile 1", profileUrl: "url1", identifier: "id1")
+        let profile2 = ExtractedProfile(id: 2, name: "Profile 2", profileUrl: "url2", identifier: "id2")
+        let previousProfiles = [profile1]
+        let currentProfiles = [profile1, profile2]
+
+        let removedProfiles = sut.detectRemovedProfiles(previouslyExtractedProfiles: previousProfiles,
+                                                        currentScanProfiles: currentProfiles)
+
+        XCTAssertTrue(removedProfiles.isEmpty)
+    }
+
+    // MARK: - handleRemovedProfiles
+
+    func testHandleRemovedProfiles_callsMarkRemovedAndNotify() throws {
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        let removedProfiles = [ExtractedProfile.mockWithoutRemovedDate]
+        var markRemovedCalled = false
+
+        try sut.handleRemovedProfiles(removedProfiles: removedProfiles,
+                                      brokerId: identifiers.brokerId,
+                                      profileQueryId: identifiers.profileQueryId,
+                                      brokerProfileQueryData: brokerData,
+                                      database: mockDatabase,
+                                      pixelHandler: mockPixelHandler,
+                                      eventsHandler: mockEventsHandler,
+                                      markRemovedAndNotify: { _, _, _, _, _, _, _ in
+            markRemovedCalled = true
+        })
+
+        XCTAssertTrue(markRemovedCalled)
+    }
+
+    func testHandleRemovedProfiles_whenMarkRemovedFails_rethrows() {
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        let removedProfiles = [ExtractedProfile.mockWithoutRemovedDate]
+
+        XCTAssertThrowsError(try sut.handleRemovedProfiles(removedProfiles: removedProfiles,
+                                                           brokerId: identifiers.brokerId,
+                                                           profileQueryId: identifiers.profileQueryId,
+                                                           brokerProfileQueryData: brokerData,
+                                                           database: mockDatabase,
+                                                           pixelHandler: mockPixelHandler,
+                                                           eventsHandler: mockEventsHandler,
+                                                           markRemovedAndNotify: { _, _, _, _, _, _, _ in
+            throw MockDatabase.MockError.saveFailed
+        })) { error in
+            XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
+        }
+    }
+
+    // MARK: - updateDatesAfterNoRemovals
+
+    func testUpdateDatesAfterNoRemovals_callsUpdateOperationDates() throws {
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        var updateOperationDatesCalled = false
+
+        try sut.updateDatesAfterNoRemovals(brokerId: identifiers.brokerId,
+                                           profileQueryId: identifiers.profileQueryId,
+                                           brokerProfileQueryData: brokerData,
+                                           database: mockDatabase,
+                                           updateOperationDates: { _, _, _, _, _, _ in
+            updateOperationDatesCalled = true
+        })
+
+        XCTAssertTrue(updateOperationDatesCalled)
+    }
+
+    func testUpdateDatesAfterNoRemovals_passesCorrectOrigin() throws {
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        var capturedOrigin: OperationPreferredDateUpdaterOrigin?
+
+        try sut.updateDatesAfterNoRemovals(brokerId: identifiers.brokerId,
+                                           profileQueryId: identifiers.profileQueryId,
+                                           brokerProfileQueryData: brokerData,
+                                           database: mockDatabase,
+                                           updateOperationDates: { origin, _, _, _, _, _ in
+            capturedOrigin = origin
+        })
+
+        XCTAssertEqual(capturedOrigin, .scan)
+    }
+
+    func testUpdateDatesAfterNoRemovals_passesNilExtractedProfileId() throws {
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        var capturedExtractedProfileId: Int64? = Int64(999) // Start with non-nil sentinel
+
+        try sut.updateDatesAfterNoRemovals(brokerId: identifiers.brokerId,
+                                           profileQueryId: identifiers.profileQueryId,
+                                           brokerProfileQueryData: brokerData,
+                                           database: mockDatabase,
+                                           updateOperationDates: { _, _, _, extractedProfileId, _, _ in
+            capturedExtractedProfileId = extractedProfileId
+        })
+
+        XCTAssertNil(capturedExtractedProfileId, "extractedProfileId should be nil")
+    }
+
+    func testUpdateDatesAfterNoRemovals_whenUpdateFails_rethrows() {
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+
+        XCTAssertThrowsError(try sut.updateDatesAfterNoRemovals(brokerId: identifiers.brokerId,
+                                                                profileQueryId: identifiers.profileQueryId,
+                                                                brokerProfileQueryData: brokerData,
+                                                                database: mockDatabase,
+                                                                updateOperationDates: { _, _, _, _, _, _ in
+            throw MockDatabase.MockError.saveFailed
+        })) { error in
+            XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
+        }
+    }
+
+    // MARK: - handleScanFailure
+
+    func testHandleScanFailure_firesErrorPixel() {
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
+                                                                     dataBrokerVersion: "1.0",
+                                                                     handler: mockPixelHandler,
+                                                                     vpnConnectionState: "state",
+                                                                     vpnBypassStatus: "status")
+        let testError = DataBrokerProtectionError.unknown("test error")
+        var handleErrorCalled = false
+
+        let returnedError = sut.handleScanFailure(error: testError,
+                                                  brokerId: identifiers.brokerId,
+                                                  profileQueryId: identifiers.profileQueryId,
+                                                  brokerProfileQueryData: brokerData,
+                                                  stageCalculator: calculator,
+                                                  database: mockDatabase,
+                                                  schedulingConfig: .default,
+                                                  scanWideEventRecorder: nil,
+                                                  handleError: { _, _, _, _, _, _, _ in
+            handleErrorCalled = true
+        })
+
+        XCTAssertTrue(handleErrorCalled)
+        XCTAssertEqual(returnedError as? DataBrokerProtectionError, testError)
+    }
+
+    func testHandleScanFailure_passesCorrectOrigin() {
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
+                                                                     dataBrokerVersion: "1.0",
+                                                                     handler: mockPixelHandler,
+                                                                     vpnConnectionState: "state",
+                                                                     vpnBypassStatus: "status")
+        let testError = DataBrokerProtectionError.unknown("test error")
+        var capturedOrigin: OperationPreferredDateUpdaterOrigin?
+
+        _ = sut.handleScanFailure(error: testError,
+                                  brokerId: identifiers.brokerId,
+                                  profileQueryId: identifiers.profileQueryId,
+                                  brokerProfileQueryData: brokerData,
+                                  stageCalculator: calculator,
+                                  database: mockDatabase,
+                                  schedulingConfig: .default,
+                                  scanWideEventRecorder: nil,
+                                  handleError: { origin, _, _, _, _, _, _ in
+            capturedOrigin = origin
+        })
+
+        XCTAssertEqual(capturedOrigin, .scan)
+    }
+
+    func testHandleScanFailure_passesNilExtractedProfileId() {
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
+                                                                     dataBrokerVersion: "1.0",
+                                                                     handler: mockPixelHandler,
+                                                                     vpnConnectionState: "state",
+                                                                     vpnBypassStatus: "status")
+        let testError = DataBrokerProtectionError.unknown("test error")
+        var capturedExtractedProfileId: Int64? = Int64(999) // Start with non-nil to prove it gets set to nil
+
+        _ = sut.handleScanFailure(error: testError,
+                                  brokerId: identifiers.brokerId,
+                                  profileQueryId: identifiers.profileQueryId,
+                                  brokerProfileQueryData: brokerData,
+                                  stageCalculator: calculator,
+                                  database: mockDatabase,
+                                  schedulingConfig: .default,
+                                  scanWideEventRecorder: nil,
+                                  handleError: { _, _, _, extractedProfileId, _, _, _ in
+            capturedExtractedProfileId = extractedProfileId
+        })
+
+        XCTAssertNil(capturedExtractedProfileId, "extractedProfileId should be nil")
+    }
+
+    func testHandleScanFailure_returnsOriginalError() {
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        let calculator = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "https://broker.com",
+                                                                     dataBrokerVersion: "1.0",
+                                                                     handler: mockPixelHandler,
+                                                                     vpnConnectionState: "state",
+                                                                     vpnBypassStatus: "status")
+        let testError = DataBrokerProtectionError.actionFailed(actionID: "test", message: "test message")
+
+        let returnedError = sut.handleScanFailure(error: testError,
+                                                  brokerId: identifiers.brokerId,
+                                                  profileQueryId: identifiers.profileQueryId,
+                                                  brokerProfileQueryData: brokerData,
+                                                  stageCalculator: calculator,
+                                                  database: mockDatabase,
+                                                  schedulingConfig: .default,
+                                                  scanWideEventRecorder: nil,
+                                                  handleError: { _, _, _, _, _, _, _ in })
+
+        if case .actionFailed(let actionID, let message) = returnedError as? DataBrokerProtectionError {
+            XCTAssertEqual(actionID, "test")
+            XCTAssertEqual(message, "test message")
+        } else {
+            XCTFail("Expected actionFailed error")
+        }
+    }
+
+    // MARK: - updateOperationDataDates error scenarios
+
+    func testUpdateOperationDataDates_whenBrokerProfileQueryDataThrows_rethrows() {
+        let identifiers = makeFixtureIdentifiers()
+        mockDatabase.brokerProfileQueryDataError = MockDatabase.MockError.saveFailed
+
+        XCTAssertThrowsError(
+            try sut.updateOperationDataDates(origin: .scan,
+                                            brokerId: identifiers.brokerId,
+                                            profileQueryId: identifiers.profileQueryId,
+                                            extractedProfileId: nil,
+                                            schedulingConfig: .default,
+                                            database: mockDatabase)
+        ) { error in
+            XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
+        }
+    }
+
+    func testUpdateOperationDataDates_whenUpdatePreferredRunDateForScanThrows_rethrows() throws {
+        let identifiers = makeFixtureIdentifiers()
+        let extractedProfileId: Int64 = 1
+
+        let historyEvent = HistoryEvent(extractedProfileId: extractedProfileId,
+                                        brokerId: identifiers.brokerId,
+                                        profileQueryId: identifiers.profileQueryId,
+                                        type: .matchesFound(count: 1))
+
+        let pastDate = Date().addingTimeInterval(-86400 * 30) // 30 days ago
+        let brokerData = BrokerProfileQueryData(dataBroker: .mock,
+                                                profileQuery: .mock,
+                                                scanJobData: .init(brokerId: identifiers.brokerId,
+                                                                   profileQueryId: identifiers.profileQueryId,
+                                                                   preferredRunDate: pastDate,
+                                                                   historyEvents: [historyEvent]))
+
+        let throwingDatabase = MockDatabase()
+        throwingDatabase.brokerProfileQueryDataToReturn = [brokerData]
+        throwingDatabase.updatePreferredRunDateError = MockDatabase.MockError.saveFailed
+
+        XCTAssertThrowsError(try sut.updateOperationDataDates(origin: .scan,
+                                                              brokerId: identifiers.brokerId,
+                                                              profileQueryId: identifiers.profileQueryId,
+                                                              extractedProfileId: extractedProfileId,
+                                                              schedulingConfig: .default,
+                                                              database: throwingDatabase)) { error in
+            XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
+        }
+    }
+
+    func testUpdateOperationDataDates_whenUpdatePreferredRunDateForOptOutThrows_rethrows() throws {
+        let identifiers = makeFixtureIdentifiers()
+        let extractedProfileId: Int64 = 1
+        let historyEvent = HistoryEvent(extractedProfileId: extractedProfileId,
+                                        brokerId: identifiers.brokerId,
+                                        profileQueryId: identifiers.profileQueryId,
+                                        type: .optOutRequested)
+
+        let optOutJobData = OptOutJobData(brokerId: identifiers.brokerId,
+                                          profileQueryId: identifiers.profileQueryId,
+                                          createdDate: Date(),
+                                          preferredRunDate: Date(),
+                                          historyEvents: [historyEvent],
+                                          attemptCount: 0,
+                                          extractedProfile: ExtractedProfile(id: extractedProfileId))
+
+        let brokerData = BrokerProfileQueryData(dataBroker: .mock,
+                                                profileQuery: .mock,
+                                                scanJobData: .init(brokerId: identifiers.brokerId,
+                                                                   profileQueryId: identifiers.profileQueryId,
+                                                                   historyEvents: [historyEvent]),
+                                                optOutJobData: [optOutJobData])
+
+        let throwingDatabase = MockDatabase()
+        throwingDatabase.brokerProfileQueryDataToReturn = [brokerData]
+        throwingDatabase.updatePreferredRunDateError = MockDatabase.MockError.saveFailed
+
+        XCTAssertThrowsError(try sut.updateOperationDataDates(origin: .scan,
+                                                              brokerId: identifiers.brokerId,
+                                                              profileQueryId: identifiers.profileQueryId,
+                                                              extractedProfileId: extractedProfileId,
+                                                              schedulingConfig: .default,
+                                                              database: throwingDatabase)) { error in
+            XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
+        }
+    }
+
+    func testUpdateOperationDataDates_whenUpdateSubmittedSuccessfullyDateThrows_rethrows() throws {
+        let identifiers = makeFixtureIdentifiers()
+        let extractedProfileId: Int64 = 1
+        let historyEvent = HistoryEvent(extractedProfileId: extractedProfileId,
+                                        brokerId: identifiers.brokerId,
+                                        profileQueryId: identifiers.profileQueryId,
+                                        type: .optOutRequested)
+
+        let optOutJobData = OptOutJobData(brokerId: identifiers.brokerId,
+                                          profileQueryId: identifiers.profileQueryId,
+                                          createdDate: Date(),
+                                          preferredRunDate: Date(),
+                                          historyEvents: [historyEvent],
+                                          attemptCount: 0,
+                                          submittedSuccessfullyDate: nil,
+                                          extractedProfile: ExtractedProfile(id: extractedProfileId))
+
+        let brokerData = BrokerProfileQueryData(dataBroker: .mock,
+                                                profileQuery: .mock,
+                                                scanJobData: .init(brokerId: identifiers.brokerId,
+                                                                   profileQueryId: identifiers.profileQueryId,
+                                                                   historyEvents: [historyEvent]),
+                                                optOutJobData: [optOutJobData])
+
+        let throwingDatabase = MockDatabase()
+        throwingDatabase.brokerProfileQueryDataToReturn = [brokerData]
+        throwingDatabase.updateSubmittedSuccessfullyDateError = MockDatabase.MockError.saveFailed
+
+        XCTAssertThrowsError(try sut.updateOperationDataDates(origin: .scan,
+                                                              brokerId: identifiers.brokerId,
+                                                              profileQueryId: identifiers.profileQueryId,
+                                                              extractedProfileId: extractedProfileId,
+                                                              schedulingConfig: .default,
+                                                              database: throwingDatabase)) { error in
+            XCTAssertEqual(error as? MockDatabase.MockError, .saveFailed)
+        }
     }
 
     // MARK: - Notification tests

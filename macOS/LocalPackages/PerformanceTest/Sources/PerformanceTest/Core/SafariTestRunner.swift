@@ -26,6 +26,7 @@ public class SafariTestRunner: SafariTestExecuting {
 
     public let url: URL
     public let iterations: Int
+    public let maxIterations: Int
 
     /// Progress callback (iteration, total, status)
     public var progressHandler: ((Int, Int, String) -> Void)?
@@ -45,6 +46,7 @@ public class SafariTestRunner: SafariTestExecuting {
     private var errorPipe: Pipe?
     private var outputTask: Task<Void, Never>?
     private var errorTask: Task<Void, Never>?
+    private var errorOutput: [String] = []
 
     // MARK: - Computed Properties
 
@@ -87,14 +89,18 @@ public class SafariTestRunner: SafariTestExecuting {
 
     // MARK: - Initialization
 
-    public init(url: URL, iterations: Int) {
+    public init(url: URL, iterations: Int, maxIterations: Int = 30) {
         self.url = url
         self.iterations = iterations
+        self.maxIterations = maxIterations
     }
 
     // MARK: - Public Methods
 
     public func runTest() async throws -> String {
+        // Clear previous error output
+        errorOutput.removeAll()
+
         // Validate inputs
         guard iterations > 0 else {
             throw RunnerError.invalidIterationCount
@@ -112,8 +118,9 @@ public class SafariTestRunner: SafariTestExecuting {
         // Check for Node.js
         let nodePath = try await findNodePath()
 
-        // Check for npm dependencies and install if needed
-        try await ensureNpmDependencies(nodePath: nodePath, scriptPath: scriptPath)
+        // Set up test runner in temp directory (allows npm install in writable location)
+        let runtimeDir = try await setupRuntimeDirectory(sourcePath: scriptPath)
+        let runtimeScript = runtimeDir.appendingPathComponent("bin/safari-performance-test")
 
         // Create output directory
         let outputDir = outputDirectory
@@ -126,7 +133,7 @@ public class SafariTestRunner: SafariTestExecuting {
         self.process = process
 
         process.executableURL = URL(fileURLWithPath: nodePath)
-        let args = buildProcessArguments(scriptPath: scriptPath, outputPath: outputDir.path)
+        let args = buildProcessArguments(scriptPath: runtimeScript.path, outputPath: outputDir.path)
         process.arguments = args
 
         // Set up pipes for output
@@ -160,7 +167,7 @@ public class SafariTestRunner: SafariTestExecuting {
         // Wait for completion or cancellation
         while process.isRunning {
             if isCancelled() {
-                logger.log("Test cancelled by user")
+                logger.log("Test cancelled")
                 process.terminate()
 
                 // Wait for process to actually exit (with timeout)
@@ -188,8 +195,14 @@ public class SafariTestRunner: SafariTestExecuting {
         // Check exit code
         let exitCode = process.terminationStatus
         if exitCode != 0 {
+            let errorDetails = errorOutput.joined(separator: "\n")
             logger.log("Safari test process failed with exit code: \(exitCode)")
-            throw RunnerError.processFailedWithExitCode(Int(exitCode))
+            if !errorDetails.isEmpty {
+                logger.log("Error output: \(errorDetails)")
+                throw RunnerError.processFailedWithError(Int(exitCode), errorDetails)
+            } else {
+                throw RunnerError.processFailedWithExitCode(Int(exitCode))
+            }
         }
 
         // Find the results JSON file
@@ -236,44 +249,43 @@ public class SafariTestRunner: SafariTestExecuting {
 
     // MARK: - Internal Methods (for testing)
 
-    internal func buildProcessArguments() -> [String] {
-        return [
-            url.absoluteString,
-            "\(iterations)"
-        ]
-    }
-
     internal func buildProcessArguments(scriptPath: String, outputPath: String) -> [String] {
         return [
             scriptPath,
             url.absoluteString,
             "\(iterations)",
+            "\(maxIterations)",
             outputPath
         ]
     }
 
     internal func parseProgressLog(_ line: String) -> (iteration: Int?, status: String) {
-        // Parse format: "[INFO] Running iteration 5 of 10"
-        if line.contains("iteration") && line.contains(" of ") {
-            let components = line.components(separatedBy: " ")
-            if let iterationIndex = components.firstIndex(of: "iteration"),
-               iterationIndex + 1 < components.count,
-               let iteration = Int(components[iterationIndex + 1]) {
-                // Clean up the status message
-                let cleanStatus = line
-                    .replacingOccurrences(of: "[INFO] ", with: "")
-                    .replacingOccurrences(of: "[DEBUG] ", with: "")
-                    .replacingOccurrences(of: "[WARN] ", with: "")
-                return (iteration, cleanStatus)
-            }
-        }
-
-        // Parse status lines like "[INFO] Clearing cache..."
+        // Clean log prefixes first
         let cleanLine = line
             .replacingOccurrences(of: "[INFO] ", with: "")
             .replacingOccurrences(of: "[DEBUG] ", with: "")
             .replacingOccurrences(of: "[WARN] ", with: "")
 
+        // Check for consistency metrics
+        if cleanLine.contains("Consistency metrics:") {
+            // Extract just the metrics part
+            if let metricsRange = cleanLine.range(of: "Consistency metrics: ") {
+                let metrics = String(cleanLine[metricsRange.upperBound...])
+                return (nil, metrics)
+            }
+        }
+
+        // Parse iteration number from lines like "==> Starting iteration 10"
+        if cleanLine.contains("iteration") {
+            let components = cleanLine.components(separatedBy: " ")
+            if let iterationIndex = components.firstIndex(of: "iteration"),
+               iterationIndex + 1 < components.count,
+               let iteration = Int(components[iterationIndex + 1]) {
+                return (iteration, "Running tests")
+            }
+        }
+
+        // Return other status lines as-is
         if !cleanLine.isEmpty {
             return (nil, cleanLine)
         }
@@ -283,66 +295,142 @@ public class SafariTestRunner: SafariTestExecuting {
 
     // MARK: - Private Methods
 
-    // Makes sure Node and NPM are installed and the dependencies are installed
-    private func ensureNpmDependencies(nodePath: String, scriptPath: String) async throws {
-        // Get the SafariTestRunner directory (parent of bin/)
-        let scriptURL = URL(fileURLWithPath: scriptPath)
-        let safariTestRunnerDir = scriptURL.deletingLastPathComponent().deletingLastPathComponent()
-        let nodeModulesPath = safariTestRunnerDir.appendingPathComponent("node_modules")
-        let packageJsonPath = safariTestRunnerDir.appendingPathComponent("package.json")
+    private func setupRuntimeDirectory(sourcePath: String) async throws -> URL {
+        let scriptURL = URL(fileURLWithPath: sourcePath)
+        let sourceDir = scriptURL.deletingLastPathComponent().deletingLastPathComponent()
 
-        // Check if package.json exists
-        guard FileManager.default.fileExists(atPath: packageJsonPath.path) else {
-            return
+        // Use a persistent temp location that survives across runs
+        let tempBase = FileManager.default.temporaryDirectory
+            .appendingPathComponent("safari-test-runner")
+        let runtimeDir = tempBase.appendingPathComponent("current")
+
+        // Check if cache exists and is up to date
+        let nodeModulesPath = runtimeDir.appendingPathComponent("node_modules")
+        let srcDir = runtimeDir.appendingPathComponent("src")
+
+        if FileManager.default.fileExists(atPath: nodeModulesPath.path),
+           FileManager.default.fileExists(atPath: srcDir.path) {
+            // Check if source files are newer than cache
+            let sourceFile = sourceDir.appendingPathComponent("src/core/PerformanceTestRunner.js")
+            let cachedFile = srcDir.appendingPathComponent("core/PerformanceTestRunner.js")
+
+            if let sourceModDate = try? FileManager.default.attributesOfItem(atPath: sourceFile.path)[.modificationDate] as? Date,
+               let cachedModDate = try? FileManager.default.attributesOfItem(atPath: cachedFile.path)[.modificationDate] as? Date,
+               sourceModDate <= cachedModDate {
+                logger.log("Using cached Safari test runner at \(runtimeDir.path)")
+                return runtimeDir
+            } else {
+                logger.log("Source files changed - rebuilding cache...")
+            }
         }
 
-        // Check if node_modules exists
-        if FileManager.default.fileExists(atPath: nodeModulesPath.path) {
-            return
+        // Clean up any old installation
+        if FileManager.default.fileExists(atPath: runtimeDir.path) {
+            try? FileManager.default.removeItem(at: runtimeDir)
         }
 
-        // Need to install dependencies
-        logger.log("Installing npm dependencies...")
-        progressHandler?(0, iterations, "Installing npm dependencies...")
+        logger.log("Setting up Safari test runner in temp directory...")
+        progressHandler?(0, iterations, "Setting up test environment...")
 
-        // Find npm (should be in same directory as node)
-        let nodeURL = URL(fileURLWithPath: nodePath)
-        let npmPath = nodeURL.deletingLastPathComponent().appendingPathComponent("npm").path
+        // Create temp directory
+        try FileManager.default.createDirectory(at: runtimeDir, withIntermediateDirectories: true)
+
+        // Copy SafariTestRunner folder to temp
+        let fileManager = FileManager.default
+        let contents = try fileManager.contentsOfDirectory(at: sourceDir, includingPropertiesForKeys: nil)
+
+        for item in contents where item.lastPathComponent != "node_modules" {
+            let destination = runtimeDir.appendingPathComponent(item.lastPathComponent)
+            try fileManager.copyItem(at: item, to: destination)
+        }
+
+        // Copy performanceMetrics.js (required by build:metrics script)
+        // In SPM bundle, it's at bundle root, not in a Resources folder
+        let bundleRoot = sourceDir.deletingLastPathComponent()
+        let metricsSource = bundleRoot.appendingPathComponent("performanceMetrics.js")
+
+        if fileManager.fileExists(atPath: metricsSource.path) {
+            // Create Resources folder in temp and copy the metrics file there
+            let resourcesDestination = tempBase.appendingPathComponent("Resources")
+            try? fileManager.createDirectory(at: resourcesDestination, withIntermediateDirectories: true)
+
+            let metricsDestination = resourcesDestination.appendingPathComponent("performanceMetrics.js")
+            try? fileManager.removeItem(at: metricsDestination) // Remove if exists
+            try fileManager.copyItem(at: metricsSource, to: metricsDestination)
+            logger.log("Copied performanceMetrics.js: \(metricsSource.path) -> \(metricsDestination.path)")
+        } else {
+            logger.log("WARNING: performanceMetrics.js not found at \(metricsSource.path)")
+        }
+
+        // Install npm dependencies
+        try await installDependencies(at: runtimeDir)
+
+        logger.log("Safari test runner ready at \(runtimeDir.path)")
+        return runtimeDir
+    }
+
+    private func installDependencies(at directory: URL) async throws {
+        logger.log("Installing npm dependencies at \(directory.path)...")
+        progressHandler?(0, iterations, "Installing dependencies...")
+
+        // Find both node and npm paths
+        let nodePath = try await findNodePath()
+        let npmPath = try await findNpmPath()
+
+        // Get the directory containing node (for PATH)
+        let nodeDir = URL(fileURLWithPath: nodePath).deletingLastPathComponent().path
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: npmPath)
-        process.arguments = ["install", "--no-audit", "--no-fund"]
-        process.currentDirectoryURL = safariTestRunnerDir
+        process.arguments = ["install", "--production", "--no-audit", "--no-fund"]
+        process.currentDirectoryURL = directory
+
+        // Set environment with proper PATH so npm can find node
+        var environment = ProcessInfo.processInfo.environment
+        if let existingPath = environment["PATH"] {
+            environment["PATH"] = "\(nodeDir):\(existingPath)"
+        } else {
+            environment["PATH"] = nodeDir
+        }
+        process.environment = environment
 
         let outputPipe = Pipe()
         let errorPipe = Pipe()
         process.standardOutput = outputPipe
         process.standardError = errorPipe
 
-        do {
-            try process.run()
+        try process.run()
+        process.waitUntilExit()
 
-            process.waitUntilExit()
+        // Capture output for debugging
+        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        let outputText = String(data: outputData, encoding: .utf8) ?? ""
 
-            let exitCode = process.terminationStatus
-            if exitCode != 0 {
-                let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-                let errorOutput = String(data: errorData, encoding: .utf8) ?? "Unknown error"
-                logger.log("npm install failed: \(errorOutput)")
-                throw RunnerError.npmInstallFailed
-            }
+        let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+        let errorText = String(data: errorData, encoding: .utf8) ?? ""
 
-            logger.log("npm dependencies installed successfully")
-        } catch {
-            logger.log("Failed to install npm dependencies: \(error.localizedDescription)")
-            throw RunnerError.npmInstallFailed
+        let exitCode = process.terminationStatus
+        if exitCode != 0 {
+            logger.log("npm install failed with exit code \(exitCode)")
+            logger.log("npm stdout: \(outputText)")
+            logger.log("npm stderr: \(errorText)")
+            throw RunnerError.dependenciesInstallFailed("Exit code: \(exitCode)\n\n\(errorText)")
         }
+
+        // Log output for successful install too
+        if !outputText.isEmpty {
+            logger.log("npm install output: \(outputText)")
+        }
+
+        logger.log("Dependencies installed successfully")
     }
 
-    private func findNodePath() async throws -> String {
+    private func findNpmPath() async throws -> String {
+        // First, try using 'which npm' to find whatever is in the user's PATH
+        // This works with all node version managers (nvm, fnm, volta, etc.)
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-        process.arguments = ["node"]
+        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        process.arguments = ["-l", "-c", "which npm"]
 
         let pipe = Pipe()
         process.standardOutput = pipe
@@ -353,8 +441,92 @@ public class SafariTestRunner: SafariTestExecuting {
         if process.terminationStatus == 0 {
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             if let path = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
-               !path.isEmpty {
+               !path.isEmpty,
+               FileManager.default.fileExists(atPath: path) {
                 return path
+            }
+        }
+
+        // Fall back to common npm installation locations
+        let commonPaths = [
+            "/usr/local/bin/npm",
+            "/opt/homebrew/bin/npm",
+            "/usr/bin/npm",
+            FileManager.default.homeDirectoryForCurrentUser.path + "/.nvm/versions/node/*/bin/npm"
+        ]
+
+        for pathPattern in commonPaths {
+            if pathPattern.contains("*") {
+                // Handle glob pattern for nvm
+                let pathComponents = pathPattern.components(separatedBy: "*")
+                if pathComponents.count == 2,
+                   let baseURL = URL(string: "file://" + pathComponents[0]),
+                   let contents = try? FileManager.default.contentsOfDirectory(at: baseURL, includingPropertiesForKeys: nil) {
+                    for dir in contents {
+                        let npmPath = dir.path + pathComponents[1]
+                        if FileManager.default.fileExists(atPath: npmPath) {
+                            return npmPath
+                        }
+                    }
+                }
+            } else if FileManager.default.fileExists(atPath: pathPattern) {
+                return pathPattern
+            }
+        }
+
+        throw RunnerError.npmNotFound
+    }
+
+    private func findNodePath() async throws -> String {
+        // First, try using 'which node' to find whatever is in the user's PATH
+        // This works with all node version managers (nvm, fnm, volta, etc.)
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        process.arguments = ["-l", "-c", "which node"]
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+
+        try process.run()
+        process.waitUntilExit()
+
+        if process.terminationStatus == 0 {
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let path = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !path.isEmpty,
+               FileManager.default.fileExists(atPath: path) {
+                return path
+            }
+        }
+
+        // Fall back to common Node.js installation locations
+        let commonPaths = [
+            "/usr/local/bin/node",
+            "/opt/homebrew/bin/node",
+            "/usr/bin/node",
+            FileManager.default.homeDirectoryForCurrentUser.path + "/.nvm/versions/node/*/bin/node"
+        ]
+
+        for pathPattern in commonPaths {
+            if pathPattern.contains("*") {
+                // Handle glob pattern for nvm
+                let pathComponents = pathPattern.components(separatedBy: "*")
+                if pathComponents.count == 2 {
+                    let baseDir = pathComponents[0]
+                    let suffix = pathComponents[1]
+
+                    if let contents = try? FileManager.default.contentsOfDirectory(atPath: baseDir) {
+                        // Sort to get the latest version
+                        for version in contents.sorted().reversed() {
+                            let nodePath = baseDir + version + suffix
+                            if FileManager.default.fileExists(atPath: nodePath) {
+                                return nodePath
+                            }
+                        }
+                    }
+                }
+            } else if FileManager.default.fileExists(atPath: pathPattern) {
+                return pathPattern
             }
         }
 
@@ -430,6 +602,9 @@ public class SafariTestRunner: SafariTestExecuting {
 
                     for line in lines.dropLast().filter({ !$0.isEmpty }) {
                         logger.log("ERROR: \(line)")
+                        self.errorOutput.append(line)
+                        // Also show in progress handler so user sees it immediately
+                        self.progressHandler?(0, self.iterations, "ERROR: \(line)")
                     }
                 }
 
@@ -456,16 +631,51 @@ public class SafariTestRunner: SafariTestExecuting {
 
     // MARK: - Error Types
 
-    public enum RunnerError: Error, Equatable, Sendable {
+    public enum RunnerError: Error, Equatable, Sendable, LocalizedError {
         case invalidIterationCount
         case invalidURL
         case scriptNotFound
         case nodeNotFound
-        case npmInstallFailed
+        case npmNotFound
+        case dependenciesInstallFailed(String)
         case processExecutionFailed(String)
         case processFailedWithExitCode(Int)
+        case processFailedWithError(Int, String)
         case cancelled
         case resultsFileNotFound
+
+        public var errorDescription: String? {
+            switch self {
+            case .invalidIterationCount:
+                return "Invalid iteration count."
+            case .invalidURL:
+                return "Invalid URL."
+            case .scriptNotFound:
+                return "Test script not found in bundle."
+            case .nodeNotFound:
+                return "Node.js not installed. Install from nodejs.org and restart the app."
+            case .npmNotFound:
+                return "npm not found. Install Node.js from nodejs.org and restart the app."
+            case .dependenciesInstallFailed(let details):
+                if details.contains("node: No such file or directory") {
+                    return "Node.js not installed. Install from nodejs.org and restart the app."
+                }
+                return "Failed to install dependencies."
+            case .processExecutionFailed:
+                return "Failed to start test process."
+            case .processFailedWithExitCode:
+                return "Test process exited with error."
+            case .processFailedWithError(_, let details):
+                if details.contains("Remote Automation") || details.contains("WebDriver") {
+                    return "Enable Remote Automation in Safari → Develop menu."
+                }
+                return "Test process error."
+            case .cancelled:
+                return "Test cancelled"
+            case .resultsFileNotFound:
+                return "Results file not found."
+            }
+        }
 
         public static func == (lhs: RunnerError, rhs: RunnerError) -> Bool {
             switch (lhs, rhs) {
@@ -473,14 +683,18 @@ public class SafariTestRunner: SafariTestExecuting {
                  (.invalidURL, .invalidURL),
                  (.scriptNotFound, .scriptNotFound),
                  (.nodeNotFound, .nodeNotFound),
-                 (.npmInstallFailed, .npmInstallFailed),
+                 (.npmNotFound, .npmNotFound),
                  (.cancelled, .cancelled),
                  (.resultsFileNotFound, .resultsFileNotFound):
                 return true
+            case (.dependenciesInstallFailed(let lhsMsg), .dependenciesInstallFailed(let rhsMsg)):
+                return lhsMsg == rhsMsg
             case (.processExecutionFailed(let lhsMsg), .processExecutionFailed(let rhsMsg)):
                 return lhsMsg == rhsMsg
             case (.processFailedWithExitCode(let lhsCode), .processFailedWithExitCode(let rhsCode)):
                 return lhsCode == rhsCode
+            case (.processFailedWithError(let lhsCode, let lhsMsg), .processFailedWithError(let rhsCode, let rhsMsg)):
+                return lhsCode == rhsCode && lhsMsg == rhsMsg
             default:
                 return false
             }

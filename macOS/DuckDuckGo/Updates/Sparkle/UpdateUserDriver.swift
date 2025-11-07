@@ -172,10 +172,21 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
         onResuming = block
     }
 
-    func cancelAndDismissCurrentUpdate() {
+    private func dismissCurrentUpdate() {
         onDismiss()
         pendingUpdateSince = .distantPast
         onResuming = nil
+    }
+
+    /// Cancels the current update and dismisses any UI.
+    ///
+    /// User dismissal (via this method) still allows the update to install on quit because
+    /// Sparkle preserves downloaded updates. Other cancellation reasons (settings changed,
+    /// build expired) discard the update entirely.
+    ///
+    /// - Parameter reason: Why the update is being cancelled
+    func cancelAndDismissCurrentUpdate() {
+        dismissCurrentUpdate()
     }
 
     func show(_ request: SPUUpdatePermissionRequest) async -> SUUpdatePermissionResponse {
@@ -307,8 +318,22 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
         }
     }
 
+    /// Called after successful update installation.
+    ///
+    /// Records the timestamp for future time-since-update tracking. This callback happens
+    /// AFTER successful installation, making it the authoritative source. Future update
+    /// flows will use this to calculate `time_since_last_update_ms`.
+    ///
+    /// - Parameters:
+    ///   - relaunched: Whether the app was relaunched
+    ///   - acknowledgement: Callback to acknowledge completion
     func showUpdateInstalledAndRelaunched(_ relaunched: Bool, acknowledgement: @escaping () -> Void) {
         updateProgress = .installing
+        // Record successful update timestamp for future time-since-update tracking.
+        // We do this here (not in WideEvent completion) because this callback happens
+        // AFTER successful installation, making it the authoritative source.
+        // Future update flows will use this to calculate time_since_last_update_ms.
+        SparkleUpdateWideEvent.lastSuccessfulUpdateDate = Date()
         acknowledgement()
     }
 

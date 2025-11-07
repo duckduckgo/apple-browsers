@@ -83,7 +83,7 @@ public final class ContentBlocking {
         var finalParameters = parameters ?? [:]
         switch event {
         case .trackerDataParseFailed:
-            domainEvent = .trackerDataParseFailed
+            domainEvent = .couldNotParseConfiguration(configuration: .trackerDataSet, target: .app)
             if let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
                 finalParameters[PixelParameterName.experimentName] = experimentName
                 finalParameters[PixelParameterName.etag] = UserDefaultsETagStorage().loadEtag(for: .trackerDataSet)
@@ -93,16 +93,13 @@ public final class ContentBlocking {
             domainEvent = .trackerDataReloadFailed
 
         case .trackerDataCouldNotBeLoaded:
-            domainEvent = .trackerDataCouldNotBeLoaded
+            domainEvent = .couldNotLoadConfiguration(configuration: .trackerDataSet, target: .app)
 
         case .privacyConfigurationReloadFailed:
             domainEvent = .privacyConfigurationReloadFailed
 
         case .privacyConfigurationParseFailed:
-            domainEvent = .privacyConfigurationParseFailed
-
-        case .privacyConfigurationCouldNotBeLoaded:
-            domainEvent = .privacyConfigurationCouldNotBeLoaded
+            domainEvent = .couldNotParseConfiguration(configuration: .privacyConfiguration, target: .app)
 
         case .contentBlockingCompilationFailed(let listName, let component):
             let defaultTDSListName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName

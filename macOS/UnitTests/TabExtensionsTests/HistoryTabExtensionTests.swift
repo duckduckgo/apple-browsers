@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Combine
 import Navigation
+import SharedTestUtilities
 import WebKit
 import XCTest
 

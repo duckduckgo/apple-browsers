@@ -51,7 +51,7 @@ runs:
           "create-task")
             ${{ github.action_path }}/report-failed-pr-checks.sh create-task \
               -t "PR Check is failing on ${{ env.GITHUB_REF_NAME }}" \
-              -d "PR Checks conducted after merging have failed. See ${{ env.WORKFLOW_URL }}. Follow the steps on https://app.asana.com/0/1202500774821704/1205317064731691 to resolve this issue."
+              -d "PR Checks conducted after merging have failed. See ${{ env.WORKFLOW_URL }}. Follow the steps on https://app.asana.com/0/1202500774821704/1205317064731691 to resolve this issue.\n\nFlaky Test Resolution\n\nFor guidance on addressing flaky tests, please refer to our [Flaky Test Resolution Guide](https://app.asana.com/1/137249556945/project/1204186595873227/task/1211692881229935). If you've successfully resolved a flaky test issue and believe it could help others, share your example in the guide!"
             ;;
           "close-task")
             ${{ github.action_path }}/report-failed-pr-checks.sh close-task \

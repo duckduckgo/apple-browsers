@@ -193,6 +193,11 @@ class SurrogatesUserScriptsTests: XCTestCase {
                                           .init(type: .script, url: nonSurrogateScriptURL)])
     }
 
+    override func tearDown() {
+        super.tearDown()
+        webView = nil
+    }
+
     private func setupWebViewForUserScripTests(trackerData: TrackerData,
                                                encodedTrackerData: String,
                                                privacyConfig: PrivacyConfiguration,
@@ -327,18 +332,19 @@ class SurrogatesUserScriptsTests: XCTestCase {
         let surrogateValidated = self.expectation(description: "Validated surrogate injection")
 
         navigationDelegateMock.onDidFinishNavigation = {
+            self.waitForJavaScriptCondition("typeof window.ctlSurrT !== 'undefined'", in: self.webView, timeout: 5) {
+                self.webView?.evaluateJavaScript("window.ctlSurrT.ping()", completionHandler: { result, err in
+                    XCTAssertNil(err)
+                    if let result = result as? String {
+                        XCTAssertEqual(result, "success")
+                        surrogateValidated.fulfill()
+                    }
 
-            self.webView?.evaluateJavaScript("window.ctlSurrT.ping()", completionHandler: { result, err in
-                XCTAssertNil(err)
-                if let result = result as? String {
-                    XCTAssertEqual(result, "success")
-                    surrogateValidated.fulfill()
-                }
-
-                XCTAssertEqual(self.userScriptDelegateMock.detectedSurrogates.count, 2)
-                XCTAssertTrue(self.userScriptDelegateMock.detectedSurrogates.contains(where: { $0.url == self.surrogateScriptURL.absoluteString }))
-                websiteLoaded.fulfill()
-            })
+                    XCTAssertEqual(self.userScriptDelegateMock.detectedSurrogates.count, 2)
+                    XCTAssertTrue(self.userScriptDelegateMock.detectedSurrogates.contains(where: { $0.url == self.surrogateScriptURL.absoluteString }))
+                    websiteLoaded.fulfill()
+                })
+            }
 
             let expectedRequests: Set<URL> = [websiteURL, self.nonTrackerURL]
             XCTAssertEqual(Set(self.schemeHandler.handledRequests), expectedRequests)
@@ -690,6 +696,29 @@ class SurrogatesUserScriptsTests: XCTestCase {
         performTestFor(privacyConfig: privacyConfig, websiteURL: websiteURL)
 
         self.wait(for: [websiteLoaded, surrogateValidated], timeout: 15)
+    }
+
+    private func waitForJavaScriptCondition(_ condition: String,
+                                            in webView: WKWebView?,
+                                            timeout: TimeInterval,
+                                            completion: @escaping () -> Void) {
+        let startTime = Date()
+
+        func checkCondition() {
+            webView?.evaluateJavaScript(condition) { result, _ in
+                if let isReady = result as? Bool, isReady {
+                    completion()
+                } else if Date().timeIntervalSince(startTime) < timeout {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        checkCondition()
+                    }
+                } else {
+                    completion()
+                }
+            }
+        }
+
+        checkCondition()
     }
 }
 

@@ -16,16 +16,17 @@
 //  limitations under the License.
 //
 
-import Combine
-import VPN
-import NetworkProtectionUI
-import XCTest
-import Subscription
-import SubscriptionTestingUtilities
 import BrowserServicesKit
+import Combine
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
+import NetworkProtectionUI
 import Persistence
+import SharedTestUtilities
+import Subscription
+import SubscriptionTestingUtilities
+import VPN
+import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -50,6 +51,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
     private var mockFeatureFlagger: MockFeatureFlagger!
+    private var mockWinBackOfferVisibilityManager: MockWinBackOfferVisibilityManager!
 
     var moreOptionsMenu: MoreOptionsMenu!
 
@@ -84,6 +86,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         mockNotificationCenter = MockNotificationCenter()
         mockPixelHandler = MockDataBrokerProtectionFreemiumPixelHandler()
         mockFreemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
+        mockWinBackOfferVisibilityManager = MockWinBackOfferVisibilityManager()
     }
 
     @MainActor
@@ -105,6 +108,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         mockPixelHandler = nil
         networkProtectionVisibilityMock = nil
         storePurchaseManager = nil
+        mockWinBackOfferVisibilityManager = nil
     }
 
     @MainActor
@@ -115,6 +119,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         moreOptionsMenu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
                                           bookmarkManager: MockBookmarkManager(),
                                           historyCoordinator: HistoryCoordinatingMock(),
+                                          recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
                                           fireproofDomains: fireproofDomains,
                                           passwordManagerCoordinator: passwordManagerCoordinator,
                                           vpnFeatureGatekeeper: networkProtectionVisibilityMock,
@@ -137,7 +142,8 @@ final class MoreOptionsMenuTests: XCTestCase {
                                           ),
                                           isFireWindowDefault: isFireWindowDefault,
                                           isUsingAuthV2: true,
-                                          freeTrialBadgePersistor: freeTrialBadgePersistor)
+                                          freeTrialBadgePersistor: freeTrialBadgePersistor,
+                                          winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager)
 
         moreOptionsMenu.actionDelegate = capturingActionDelegate
     }
@@ -336,6 +342,22 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(mockNotificationCenter.didCallPostNotification)
         XCTAssertEqual(mockNotificationCenter.lastPostedNotification, .freemiumDBPEntryPointActivated)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.overFlowResults)
+    }
+
+    @MainActor
+    func testWhenClickingWinBackOfferPurchasePageThenActionDelegateIsCalled() throws {
+        // Given
+        mockWinBackOfferVisibilityManager.isOfferAvailable = true
+        subscriptionManager.canPurchase = true
+        setupMoreOptionsMenu()
+
+        let subscriptionItemIndex = try XCTUnwrap(moreOptionsMenu.indexOfItem(with: #selector(MoreOptionsMenu.openWinBackOfferPurchasePage(_:))))
+
+        // When
+        moreOptionsMenu.performActionForItem(at: subscriptionItemIndex)
+
+        // Then
+        XCTAssertTrue(capturingActionDelegate.optionsButtonMenuRequestedWinBackOfferPurchasePageCalled)
     }
 
     // MARK: - Paid AI Chat
@@ -598,7 +620,7 @@ final class MoreOptionsMenuTests: XCTestCase {
             .newtab,
             .settings(pane: nil),
             .bookmarks,
-            .history,
+            .anyHistoryPane,
             .onboarding,
             .dataBrokerProtection
         ]
@@ -643,7 +665,7 @@ final class MoreOptionsMenuTests: XCTestCase {
             .releaseNotes,
             .webExtensionUrl(.aboutDuckDuckGo),
             .newtab,
-            .history,
+            .anyHistoryPane,
             .bookmarks,
             .settings(pane: nil)
         ]
@@ -688,7 +710,7 @@ final class MoreOptionsMenuTests: XCTestCase {
             .releaseNotes,
             .webExtensionUrl(.aboutDuckDuckGo),
             .newtab,
-            .history,
+            .anyHistoryPane,
             .bookmarks,
             .settings(pane: nil)
         ]
@@ -713,9 +735,11 @@ final class MoreOptionsMenuTests: XCTestCase {
                                   moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
                                   featureFlagger: MockFeatureFlagger())
 
-        XCTAssertTrue(sut.items.count == 2)
-        XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
-        XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
+        XCTAssertTrue(sut.items.count == 4)
+        XCTAssertEqual(sut.item(at: 0)?.title, UserText.reportBrokenSite)
+        XCTAssertEqual(sut.item(at: 1)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 2)?.title, UserText.reportBrowserProblem)
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.requestNewFeature)
     }
 
     func testCorrectItemsAreShown_whenNotInternalUserAndSubscriptionUser() {
@@ -725,11 +749,13 @@ final class MoreOptionsMenuTests: XCTestCase {
                                   moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
                                   featureFlagger: MockFeatureFlagger())
 
-        XCTAssertTrue(sut.items.count == 4)
-        XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
-        XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
-        XCTAssertEqual(sut.item(at: 2)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 3)?.title, UserText.sendSubscriptionFeedback)
+        XCTAssertTrue(sut.items.count == 6)
+        XCTAssertEqual(sut.item(at: 0)?.title, UserText.reportBrokenSite)
+        XCTAssertEqual(sut.item(at: 1)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 2)?.title, UserText.reportBrowserProblem)
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.requestNewFeature)
+        XCTAssertEqual(sut.item(at: 4)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 5)?.title, UserText.sendSubscriptionFeedback)
     }
 
     func testCorrectItemsAreShown_whenInternalUserAndNotSubscriptionUser() {
@@ -739,11 +765,13 @@ final class MoreOptionsMenuTests: XCTestCase {
                                   moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
                                   featureFlagger: MockFeatureFlagger())
 
-        XCTAssertTrue(sut.items.count == 4)
-        XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
-        XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
-        XCTAssertEqual(sut.item(at: 2)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 3)?.title, "Copy Version")
+        XCTAssertTrue(sut.items.count == 6)
+        XCTAssertEqual(sut.item(at: 0)?.title, UserText.reportBrokenSite)
+        XCTAssertEqual(sut.item(at: 1)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 2)?.title, UserText.reportBrowserProblem)
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.requestNewFeature)
+        XCTAssertEqual(sut.item(at: 4)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 5)?.title, "Copy Version")
     }
 
     func testCorrectItemsAreShown_whenInternalUserAndSubscriptionUser() {
@@ -753,18 +781,19 @@ final class MoreOptionsMenuTests: XCTestCase {
                                   moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
                                   featureFlagger: MockFeatureFlagger())
 
-        XCTAssertTrue(sut.items.count == 6)
-        XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
-        XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
-        XCTAssertEqual(sut.item(at: 2)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 3)?.title, UserText.sendSubscriptionFeedback)
+        XCTAssertTrue(sut.items.count == 8)
+        XCTAssertEqual(sut.item(at: 0)?.title, UserText.reportBrokenSite)
+        XCTAssertEqual(sut.item(at: 1)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 2)?.title, UserText.reportBrowserProblem)
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.requestNewFeature)
         XCTAssertEqual(sut.item(at: 4)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 5)?.title, "Copy Version")
+        XCTAssertEqual(sut.item(at: 5)?.title, UserText.sendSubscriptionFeedback)
+        XCTAssertEqual(sut.item(at: 6)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 7)?.title, "Copy Version")
     }
 
     func testCorrectItemsAreShown_whenNewFeedbackFeatureFlagIsOn() {
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.newFeedbackForm]
         let sut = FeedbackSubMenu(targetting: self,
                                   authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: true),
                                   internalUserDecider: MockInternalUserDecider(isInternalUser: true),
@@ -837,6 +866,46 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Then
         XCTAssertNotNil(subscriptionItem, "Subscription item should be present")
         XCTAssertNil(subscriptionItem?.view, "Free trial badge should be hidden when view limit has been reached")
+    }
+
+    // MARK: - Win-back Offer
+
+    @MainActor
+    func testSubscriptionBadge_ShowsWhenWinBackOfferIsAvailable() {
+        // Given
+        mockWinBackOfferVisibilityManager.isOfferAvailable = true
+
+        subscriptionManager.canPurchase = true
+
+        setupMoreOptionsMenu()
+
+        // When
+        let subscriptionItem = moreOptionsMenu.items.first {
+            $0.action == #selector(MoreOptionsMenu.openWinBackOfferPurchasePage(_:))
+        }
+
+        // Then
+        XCTAssertNotNil(subscriptionItem, "Subscription item should be present")
+        XCTAssertNotNil(subscriptionItem?.view, "Win-back offer badge should be shown when available")
+    }
+
+    @MainActor
+    func testSubscriptionBadge_HidesWhenWinBackOfferIsNotAvailable() {
+        // Given
+        mockWinBackOfferVisibilityManager.isOfferAvailable = false
+
+        subscriptionManager.canPurchase = true
+
+        setupMoreOptionsMenu()
+
+        // When
+        let subscriptionItem = moreOptionsMenu.items.first {
+            $0.action == #selector(MoreOptionsMenu.openSubscriptionPurchasePage(_:))
+        }
+
+        // Then
+        XCTAssertNotNil(subscriptionItem, "Subscription item should be present")
+        XCTAssertNil(subscriptionItem?.view, "Win-back offer badge should be hidden when not available")
     }
 }
 
@@ -923,7 +992,7 @@ final class MockFreemiumDBPFeature: FreemiumDBPFeature {
 final class MockFreemiumDBPPresenter: FreemiumDBPPresenter {
     var didCallShowFreemium = false
 
-    func showFreemiumDBPAndSetActivated(windowControllerManager: WindowControllersManagerProtocol? = nil) {
+    func showFreemiumDBPAndSetActivated(windowControllersManager: WindowControllersManagerProtocol? = nil) {
         didCallShowFreemium = true
     }
 }

@@ -1,4 +1,4 @@
-/*! © DuckDuckGo ContentScopeScripts protections https://github.com/duckduckgo/content-scope-scripts/ */
+/*! © DuckDuckGo ContentScopeScripts apple-isolated https://github.com/duckduckgo/content-scope-scripts/ */
 "use strict";
 (() => {
   var __create = Object.create;
@@ -1558,6 +1558,10 @@
     TypeError: () => TypeError2,
     URL: () => URL2,
     addEventListener: () => addEventListener,
+    console: () => console2,
+    consoleError: () => consoleError,
+    consoleLog: () => consoleLog,
+    consoleWarn: () => consoleWarn,
     customElementsDefine: () => customElementsDefine,
     customElementsGet: () => customElementsGet,
     dispatchEvent: () => dispatchEvent,
@@ -1598,6 +1602,10 @@
   var Map2 = globalThis.Map;
   var Error2 = globalThis.Error;
   var randomUUID = globalThis.crypto?.randomUUID?.bind(globalThis.crypto);
+  var console2 = globalThis.console;
+  var consoleLog = console2.log.bind(console2);
+  var consoleWarn = console2.warn.bind(console2);
+  var consoleError = console2.error.bind(console2);
 
   // src/utils.js
   var globalObj = typeof window === "undefined" ? globalThis : window;
@@ -2019,7 +2027,7 @@
   function isGloballyDisabled(args) {
     return args.site.allowlisted || args.site.isBroken;
   }
-  var platformSpecificFeatures = ["navigatorInterface", "duckAiListener", "windowsPermissionUsage", "messageBridge", "favicon"];
+  var platformSpecificFeatures = ["navigatorInterface", "windowsPermissionUsage", "messageBridge", "favicon"];
   function isPlatformSpecificFeature(featureName) {
     return platformSpecificFeatures.includes(featureName);
   }
@@ -2060,7 +2068,6 @@
       "messageBridge",
       "duckPlayer",
       "duckPlayerNative",
-      "duckAiListener",
       "duckAiDataClearing",
       "harmfulApis",
       "webCompat",
@@ -2075,7 +2082,7 @@
     ]
   );
   var platformSupport = {
-    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "duckAiListener", "duckAiDataClearing", "pageContext"],
+    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "duckAiDataClearing", "pageContext"],
     "apple-isolated": [
       "duckPlayer",
       "duckPlayerNative",
@@ -2111,7 +2118,6 @@
       "messageBridge",
       "webCompat",
       "pageContext",
-      "duckAiListener",
       "duckAiDataClearing"
     ],
     firefox: ["cookie", ...baseFeatures, "clickToLoad"],
@@ -4709,6 +4715,7 @@
        *   platform: import('./utils.js').Platform,
        *   desktopModeEnabled?: boolean,
        *   forcedZoomEnabled?: boolean,
+       *   isDdgWebView?: boolean,
        *   featureSettings?: Record<string, unknown>,
        *   assets?: import('./content-feature.js').AssetConfig | undefined,
        *   site: import('./content-feature.js').Site,
@@ -4795,6 +4802,7 @@
      * @property {boolean} [context.top] - true if the condition applies to the top frame
      * @property {string} [injectName] - the inject name to match against (e.g., "apple-isolated")
      * @property {boolean} [internal] - true if the condition applies to internal builds
+     * @property {boolean} [preview] - true if the condition applies to preview builds
      */
     /**
      * Takes multiple conditional blocks and returns true if any apply.
@@ -4822,7 +4830,8 @@
         minSupportedVersion: this._matchMinSupportedVersion,
         maxSupportedVersion: this._matchMaxSupportedVersion,
         injectName: this._matchInjectNameConditional,
-        internal: this._matchInternalConditional
+        internal: this._matchInternalConditional,
+        preview: this._matchPreviewConditional
       };
       for (const key in conditionBlock) {
         if (!conditionChecks[key]) {
@@ -4923,6 +4932,17 @@
       const isInternal = __privateGet(this, _args)?.platform?.internal;
       if (isInternal === void 0) return false;
       return Boolean(conditionBlock.internal) === Boolean(isInternal);
+    }
+    /**
+     * Takes a condition block and returns true if the preview state matches the condition.
+     * @param {ConditionBlock} conditionBlock
+     * @returns {boolean}
+     */
+    _matchPreviewConditional(conditionBlock) {
+      if (conditionBlock.preview === void 0) return false;
+      const isPreview = __privateGet(this, _args)?.platform?.preview;
+      if (isPreview === void 0) return false;
+      return Boolean(conditionBlock.preview) === Boolean(isPreview);
     }
     /**
      * Takes a condition block and returns true if the platform version satisfies the `minSupportedFeature`
@@ -5133,21 +5153,21 @@
             return () => {
             };
           }
-          return console.log.bind(console, prefix);
+          return consoleLog.bind(console, prefix);
         },
         get warn() {
           if (!shouldLog) {
             return () => {
             };
           }
-          return console.warn.bind(console, prefix);
+          return consoleWarn.bind(console, prefix);
         },
         get error() {
           if (!shouldLog) {
             return () => {
             };
           }
-          return console.error.bind(console, prefix);
+          return consoleError.bind(console, prefix);
         }
       };
     }
@@ -8605,7 +8625,7 @@ ul.messages {
           break;
         case "UNKNOWN":
         default:
-          console.warn("No known pageType");
+          logger.log("No known pageType");
       }
       if (this.currentPage) {
         this.currentPage.destroy();

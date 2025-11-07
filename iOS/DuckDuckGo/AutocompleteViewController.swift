@@ -59,6 +59,10 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
     private var task: URLSessionDataTask?
 
+    private var isUsingUnifiedPrediction: Bool {
+        featureFlagger.isFeatureOn(.unifiedURLPredictor)
+    }
+
     lazy var dataSource: AutocompleteSuggestionsDataSource = {
         return AutocompleteSuggestionsDataSource(
             historyManager: historyManager,
@@ -196,15 +200,25 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private func requestSuggestions(query: String) {
         model.selection = nil
 
-        loader = SuggestionLoader(urlFactory: { phrase in
-            guard let url = URL(trimmedAddressBarString: phrase),
-                  let scheme = url.scheme,
-                  scheme.description.hasPrefix("http"),
-                  url.isValid else {
-                return nil
+        loader = SuggestionLoader(shouldLoadSuggestionsForUserInput: { [weak self] phrase in
+            // We want to always load suggestions, except for when the user has typed a URL that looks "complete".
+            // We define this as a URL with a path equal to a single slash (root URL).
+            // Skip suggestions when all of the following are true:
+            // * input can be converted to a URL
+            // * input starts with http[s]
+            // * converted URL is root (no path)
+            // * the user typed the trailing "/"
+            guard let self,
+                  let url = URL(trimmedAddressBarString: phrase, useUnifiedLogic: isUsingUnifiedPrediction),
+                  url.isValid(usingUnifiedLogic: self.isUsingUnifiedPrediction)
+            else {
+                return true
             }
 
-            return url
+            if let scheme = url.scheme, scheme.description.hasPrefix("http"), url.isRoot, phrase.last == "/" {
+                return false
+            }
+            return true
         }, isUrlIgnored: { _ in false })
 
         loader?.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, error in
@@ -269,7 +283,7 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
         historyMessageManager.shownToUser()
     }
 
-    func onSuggestionSelected(_ suggestion: Suggestion) {
+    func onSuggestionSelected(_ suggestion: Suggestion, ddgSuggestionIndex: Int?) {
         switch suggestion {
         case .bookmark(_, _, let isFavorite, _):
             Pixel.fire(pixel: isFavorite ? .autocompleteClickFavorite : .autocompleteClickBookmark)
@@ -278,10 +292,12 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
             Pixel.fire(pixel: url.isDuckDuckGoSearch ? .autocompleteClickSearchHistory : .autocompleteClickSiteHistory)
 
         case .phrase:
-            Pixel.fire(pixel: .autocompleteClickPhrase)
+            let parameters = createPixelIndexParam(for: ddgSuggestionIndex)
+            Pixel.fire(pixel: .autocompleteClickPhrase, withAdditionalParameters: parameters)
 
         case .website:
-            Pixel.fire(pixel: .autocompleteClickWebsite)
+            let parameters = createPixelIndexParam(for: ddgSuggestionIndex)
+            Pixel.fire(pixel: .autocompleteClickWebsite, withAdditionalParameters: parameters)
 
         case .openTab:
             Pixel.fire(pixel: .autocompleteClickOpenTab)
@@ -321,6 +337,12 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
         default:
             assertionFailure("Only history items can be deleted")
         }
+    }
+
+    private func createPixelIndexParam(for index: Int?) -> [String: String] {
+        return index.map { i in
+            ["search_suggestion_index": String(i)]
+        } ?? [:]
     }
 }
 

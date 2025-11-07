@@ -38,24 +38,32 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
         subscriptionManager.currentEnvironment.purchasePlatform == .stripe
     }
 
+    var shouldDisplayWinBackOffer: Bool {
+        winBackOfferVisibilityManager.isOfferAvailable
+    }
+
     private let subscriptionManager: SubscriptionAuthV1toV2Bridge
     private let userEventHandler: (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void
     private let sheetActionHandler: SubscriptionAccessActionHandlers
     private let featureFlagger: FeatureFlagger
+    private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
     public enum UserEvent {
         case didClickIHaveASubscription,
-             openURL(SubscriptionURL)
+             openURL(SubscriptionURL),
+             openWinBackOfferLandingPage
     }
 
     public init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
                 featureFlagger: FeatureFlagger,
+                winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
                 userEventHandler: @escaping (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void,
                 sheetActionHandler: SubscriptionAccessActionHandlers) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
         self.sheetActionHandler = sheetActionHandler
         self.featureFlagger = featureFlagger
+        self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.subscriptionStorefrontRegion = currentStorefrontRegion()
 
         updateFreeTrialEligibility()
@@ -69,7 +77,11 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
 
     @MainActor
     func purchaseAction() {
-        userEventHandler(.openURL(.purchase))
+        if winBackOfferVisibilityManager.isOfferAvailable {
+            userEventHandler(.openWinBackOfferLandingPage)
+        } else {
+            userEventHandler(.openURL(.purchase))
+        }
     }
 
     @MainActor

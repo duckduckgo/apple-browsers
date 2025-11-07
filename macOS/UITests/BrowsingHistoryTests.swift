@@ -20,67 +20,69 @@ import XCTest
 
 class BrowsingHistoryTests: UITestCase {
 
-    private var historyMenuBarItem: XCUIElement!
-    private var clearAllHistoryMenuItem: XCUIElement!
-    private var clearAllHistoryAlertClearButton: XCUIElement!
-    private var fakeFireButton: XCUIElement!
-    private var addressBarTextField: XCUIElement!
     private let lengthForRandomPageTitle = 8
+
+    // Fire Dialog Element Accessors
+    private var fireDialog: XCUIElement { app.sheets.firstMatch }
+    private var fireDialogTitle: XCUIElement { app.fireDialogTitle }
+    private var fireDialogHistoryToggle: XCUIElement { app.fireDialogHistoryToggle }
+    private var fireDialogCookiesToggle: XCUIElement { app.fireDialogCookiesToggle }
+    private var fireDialogTabsToggle: XCUIElement { app.fireDialogTabsToggle }
+    private var fireDialogBurnButton: XCUIElement { app.fireDialogBurnButton }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
         app = XCUIApplication.setUp()
-        historyMenuBarItem = app.menuBarItems["History"]
-        clearAllHistoryMenuItem = app.menuItems["HistoryMenu.clearAllHistory"]
-        clearAllHistoryAlertClearButton = app.buttons["ClearAllHistoryAndDataAlert.clearButton"]
-        fakeFireButton = app.buttons["FireViewController.fakeFireButton"]
-        addressBarTextField = app.addressBar
         app.enforceSingleWindow()
 
+        // Clear history using Fire Dialog
         XCTAssertTrue(
-            historyMenuBarItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.historyMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "History menu bar item didn't appear in a reasonable timeframe."
         )
-        historyMenuBarItem.click()
+        app.historyMenu.click()
 
         XCTAssertTrue(
-            clearAllHistoryMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.clearAllHistoryMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Clear all history item didn't appear in a reasonable timeframe."
         )
-        clearAllHistoryMenuItem.click()
+        app.clearAllHistoryMenuItem.click()
 
+        // Fire Dialog should appear instead of old alert
         XCTAssertTrue(
-            clearAllHistoryAlertClearButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Clear all history item didn't appear in a reasonable timeframe."
+            fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Fire dialog didn't appear in a reasonable timeframe."
         )
-        clearAllHistoryAlertClearButton.click() // Manually remove the history
-        XCTAssertTrue( // Let any ongoing fire animation or data processes complete
-            fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation),
+
+        // Select "Everything" scope to clear all history
+        app.fireDialogSegmentedControl.buttons["Everything"].click()
+
+        // Ensure history toggle is enabled
+        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+        fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+        fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+
+        // Click burn button to clear history
+        fireDialogBurnButton.click()
+
+        // Wait for fire animation to complete
+        XCTAssertTrue(
+            app.fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation),
             "Fire animation didn't finish and cease existing in a reasonable timeframe."
         )
     }
 
     func test_recentlyVisited_showsLastVisitedSite() throws {
         let historyPageTitleExpectedToBeFirstInRecentlyVisited = UITests.randomPageTitle(length: lengthForRandomPageTitle)
-        let url = UITests.simpleServedPage(titled: historyPageTitleExpectedToBeFirstInRecentlyVisited)
-        let firstSiteInRecentlyVisitedSection = app.menuItems["HistoryMenu.recentlyVisitedMenuItem.0"]
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The address bar text field didn't become available in a reasonable timeframe."
-        )
+        app.openSite(pageTitle: historyPageTitleExpectedToBeFirstInRecentlyVisited)
 
-        addressBarTextField.typeURL(url)
+        let firstSiteInRecentlyVisitedSection = app.recentlyVisitedMenuItem(at: 0)
         XCTAssertTrue(
-            app.windows.webViews[historyPageTitleExpectedToBeFirstInRecentlyVisited]
-                .waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Visited site didn't load with the expected title in a reasonable timeframe."
-        )
-        XCTAssertTrue(
-            historyMenuBarItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.historyMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "History menu bar item didn't appear in a reasonable timeframe."
         )
-        historyMenuBarItem.click() // The visited sites identifiers will not be available until after the History menu has been accessed.
+        app.historyMenu.click() // The visited sites identifiers will not be available until after the History menu has been accessed.
         XCTAssertTrue(
             firstSiteInRecentlyVisitedSection.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The first site in the recently visited section didn't appear in a reasonable timeframe."
@@ -91,24 +93,15 @@ class BrowsingHistoryTests: UITestCase {
 
     func test_history_showsVisitedSiteAfterClosingAndReopeningWindow() throws {
         let historyPageTitleExpectedToBeFirstInTodayHistory = UITests.randomPageTitle(length: lengthForRandomPageTitle)
-        let url = UITests.simpleServedPage(titled: historyPageTitleExpectedToBeFirstInTodayHistory)
-        let siteInRecentlyVisitedSection = app.menuItems[historyPageTitleExpectedToBeFirstInTodayHistory]
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The address bar text field didn't become available in a reasonable timeframe."
-        )
+        app.openSite(pageTitle: historyPageTitleExpectedToBeFirstInTodayHistory)
 
-        addressBarTextField.typeURL(url)
-        XCTAssertTrue(
-            app.windows.webViews[historyPageTitleExpectedToBeFirstInTodayHistory].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Visited site didn't load with the expected title in a reasonable timeframe."
-        )
+        let siteInRecentlyVisitedSection = app.menuItems[historyPageTitleExpectedToBeFirstInTodayHistory]
         app.enforceSingleWindow()
         XCTAssertTrue(
-            historyMenuBarItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.historyMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "History menu bar item didn't appear in a reasonable timeframe."
         )
-        historyMenuBarItem.click() // The visited sites identifiers will not be available until after the History menu has been accessed.
+        app.historyMenu.click() // The visited sites identifiers will not be available until after the History menu has been accessed.
         XCTAssertTrue(
             siteInRecentlyVisitedSection.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The first site in the recently visited section didn't appear in a reasonable timeframe."
@@ -118,36 +111,23 @@ class BrowsingHistoryTests: UITestCase {
     func test_reopenLastClosedWindowMenuItem_canReopenTabsOfLastClosedWindow() throws {
         let titleOfFirstTabWhichShouldRestore = UITests.randomPageTitle(length: lengthForRandomPageTitle)
         let titleOfSecondTabWhichShouldRestore = UITests.randomPageTitle(length: lengthForRandomPageTitle)
-        let urlForFirstTab = UITests.simpleServedPage(titled: titleOfFirstTabWhichShouldRestore)
-        let urlForSecondTab = UITests.simpleServedPage(titled: titleOfSecondTabWhichShouldRestore)
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The address bar text field didn't become available in a reasonable timeframe."
-        )
-        addressBarTextField.typeURL(urlForFirstTab)
-        XCTAssertTrue(
-            app.windows.webViews[titleOfFirstTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Visited site didn't load with the expected title in a reasonable timeframe."
-        )
-        app.openNewTab()
 
-        addressBarTextField.typeURL(urlForSecondTab)
-        XCTAssertTrue(
-            app.windows.webViews[titleOfSecondTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Visited site didn't load with the expected title in a reasonable timeframe."
-        )
+        app.openSite(pageTitle: titleOfFirstTabWhichShouldRestore)
+        app.openNewTab()
+        app.openSite(pageTitle: titleOfSecondTabWhichShouldRestore)
+
         app.enforceSingleWindow()
         XCTAssertTrue(
-            historyMenuBarItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.historyMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "History menu bar item didn't appear in a reasonable timeframe."
         )
-        historyMenuBarItem.click() // The visited sites identifiers will not be available until after the History menu has been accessed.
-        let reopenLastClosedWindowMenuItem = app.menuItems["HistoryMenu.reopenLastClosedWindow"]
+        app.historyMenu.click() // The visited sites identifiers will not be available until after the History menu has been accessed.
+
         XCTAssertTrue(
-            reopenLastClosedWindowMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.reopenLastClosedWindowMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The \"Reopen Last Closed Window\" menu item didn't appear in a reasonable timeframe."
         )
-        reopenLastClosedWindowMenuItem.click()
+        app.reopenLastClosedWindowMenuItem.click()
 
         XCTAssertTrue(
             app.windows.webViews[titleOfFirstTabWhichShouldRestore].waitForExistence(timeout: UITests.Timeouts.elementExistence),

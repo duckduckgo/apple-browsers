@@ -1,4 +1,3 @@
-
 //
 //  TabFaviconView.swift
 //
@@ -18,6 +17,7 @@
 //
 
 import AppKit
+
 final class TabFaviconView: NSView {
 
     private let imageView = NSImageView()

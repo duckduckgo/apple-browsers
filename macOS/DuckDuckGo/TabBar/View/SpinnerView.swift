@@ -19,7 +19,7 @@
 import AppKit
 import DesignResourcesKit
 
-class SpinnerView: NSView {
+final class SpinnerView: NSView {
 
     private lazy var spinnerLayer: CAShapeLayer = buildSpinnerLayer()
     private lazy var gradientLayer: CAGradientLayer = {
@@ -154,7 +154,6 @@ private extension SpinnerView {
         return path
     }
 }
-
 
 private enum SpinnerConstants {
     static let animationDuration: TimeInterval = 0.5

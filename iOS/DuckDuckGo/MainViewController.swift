@@ -586,16 +586,6 @@ class MainViewController: UIViewController {
                 completion?()
             }
 
-        } else if let currentTab = self.tabManager.current(), currentTab.tabModel.isAITab {
-            currentTab.prepareAIChatPreview(completion: { image in
-                guard let image else {
-                    completion?()
-                    return
-                }
-                self.previewsSource.update(preview: image, forTab: currentTab.tabModel)
-                completion?()
-            })
-
         } else if let currentTab = self.tabManager.current(), currentTab.link != nil {
             // Web view
             currentTab.preparePreview(completion: { image in
@@ -1351,7 +1341,6 @@ class MainViewController: UIViewController {
     }
     
     private func prepareTabForRequest(request: () -> Void) {
-        currentTab?.prepareUIForWebModeIfModeIsAI()
         viewCoordinator.navigationBarContainer.alpha = 1
         allowContentUnderflow = false
 
@@ -2323,7 +2312,7 @@ class MainViewController: UIViewController {
     ///   - payload: Optional payload data for AI Chat
     ///   - tools: Optional RAG tools available in AI Chat
     private func openAIChatInTab(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
-        // Ensure we have a current tab, creating one if needed
+        
         if currentTab == nil {
             if tabManager.current(createIfNeeded: true) == nil {
                 fatalError("failed to create tab")
@@ -2331,19 +2320,6 @@ class MainViewController: UIViewController {
         }
 
         guard let currentTab = currentTab else { fatalError("no tab") }
-
-        currentTab.loadAIChat(
-            
-            query: query,
-            payload: payload,
-            autoSend: autoSend,
-            tools: tools
-        ) { [weak self] in
-            guard let self else { return }
-
-            self.themeColorManager.resetThemeColor()
-            select(tab: currentTab)
-        }
     }
 }
 

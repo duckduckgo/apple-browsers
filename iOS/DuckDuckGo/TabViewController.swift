@@ -43,7 +43,6 @@ import os.log
 import Navigation
 import Subscription
 import WKAbstractions
-import AIChat
 import SERPSettings
 
 class TabViewController: UIViewController {
@@ -65,11 +64,6 @@ class TabViewController: UIViewController {
     @IBOutlet weak var webViewContainer: UIView!
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     var daxContextualOnboardingController: UIViewController?
-    
-    // AI Chat
-    private var aiChatViewContainer: UIView?
-    private(set) var aiChatSettings: AIChatSettingsProvider
-    private var aiChatViewControllerManager: AIChatViewControllerManager?
     
     /// Stores the visual state of the web view
     /// Used by DuckPlayer to save and restore view appearance when switching between normal browsing and fullscreen (portrail/landscape) video modes.
@@ -394,8 +388,7 @@ class TabViewController: UIViewController {
                                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                                    featureDiscovery: FeatureDiscovery,
                                    keyValueStore: ThrowingKeyValueStoring,
-                                   daxDialogsManager: DaxDialogsManaging,
-                                   aiChatSettings: AIChatSettingsProvider) -> TabViewController {
+                                   daxDialogsManager: DaxDialogsManaging) -> TabViewController {
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
             TabViewController(coder: coder,
@@ -420,8 +413,7 @@ class TabViewController: UIViewController {
                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                               featureDiscovery: featureDiscovery,
                               keyValueStore: keyValueStore,
-                              daxDialogsManager: daxDialogsManager,
-                              aiChatSettings: aiChatSettings
+                              daxDialogsManager: daxDialogsManager
             )
         })
         return controller
@@ -493,8 +485,7 @@ class TabViewController: UIViewController {
                    featureDiscovery: FeatureDiscovery,
                    keyValueStore: ThrowingKeyValueStoring,
                    daxDialogsManager: DaxDialogsManaging,
-                   adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector(),
-                   aiChatSettings: AIChatSettingsProvider) {
+                   adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector()) {
 
         self.tabModel = tabModel
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -564,8 +555,6 @@ class TabViewController: UIViewController {
         initAttributionLogic()
         decorate()
         addTextZoomObserver()
-        setupAIChatViewContainer()
-        updateContainerVisibility()
 
         subscribeToEmailProtectionSignOutNotification()
         registerForDownloadsNotifications()
@@ -580,11 +569,6 @@ class TabViewController: UIViewController {
         
         // Link DuckPlayer to current Tab
         duckPlayerNavigationHandler.setHostViewController(self)
-        
-        // Restore AI Chat view controller if this tab is an AI Chat tab
-        if tabModel.isAITab {
-            loadAIChat()
-        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -1688,24 +1672,6 @@ extension TabViewController: WKNavigationDelegate {
                 if let jsAlertController = self?.jsAlertController {
                     jsAlertController.view.drawHierarchy(in: jsAlertController.view.bounds, afterScreenUpdates: false)
                 }
-            }
-
-            completion(image)
-        }
-    }
-
-    
-    /// Prepares a tab preview for ai chat tabs
-    /// 
-    /// - Parameter completion: Handles the rendered preview image
-    func prepareAIChatPreview(completion: @escaping (UIImage?) -> Void) {
-        DispatchQueue.main.async { [weak self] in
-            guard let container = self?.aiChatViewContainer,
-                  container.bounds.height > 0 && container.bounds.width > 0 else { completion(nil); return }
-
-            let renderer = UIGraphicsImageRenderer(size: container.bounds.size)
-            let image = renderer.image { _ in
-                container.drawHierarchy(in: container.bounds, afterScreenUpdates: true)
             }
 
             completion(image)
@@ -3902,80 +3868,5 @@ extension TabViewController: SERPSettingsUserScriptDelegate {
     func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
         guard let mainVC = parent as? MainViewController else { return }
         mainVC.segueToSettingsAIChat(openedFromSERPSettingsButton: true)
-    }
-}
-
-// AI Chat
-extension TabViewController {
-    
-    // MARK: Public API
-
-    /// Loads AI Chat into this tab's container.
-    ///
-    /// - Parameters:
-    ///   - query: Optional initial query to send to AI Chat
-    ///   - payload: Optional payload data for AI Chat
-    ///   - autoSend: Whether to automatically send the query
-    ///   - tools: Optional RAG tools available in AI Chat
-    ///   - completion: Optional callback when setup completes
-    func loadAIChat(query: String? = nil,
-                    payload: Any? = nil,
-                    autoSend: Bool = false,
-                    tools: [AIChatRAGTool]? = nil,
-                    completion: (() -> Void)? = nil) {
-
-        guard let container = aiChatViewContainer else { return }
-
-        tabModel.type = .aiChat
-
-        aiChatViewControllerManager?.openAIChatInContainer(
-            query,
-            payload: payload,
-            autoSend: autoSend,
-            tools: tools,
-            in: container,
-            parentViewController: self
-        ) {
-            completion?()
-        }
-
-        updateContainerVisibility()
-    }
-    
-    /// Exits AI Chat mode and switches back to web browsing.
-    func prepareUIForWebModeIfModeIsAI() {
-        guard tabModel.isAITab else { return }
-        tabModel.type = .web
-        updateContainerVisibility()
-        view.layoutIfNeeded()
-    }
-
-    // MARK: Private API
-
-    /// Creates the AI Chat container. The container is inserted as a subview below the web view container
-    private func setupAIChatViewContainer() {
-        let container = UIView()
-        container.backgroundColor = .black
-        container.isHidden = true
-        container.translatesAutoresizingMaskIntoConstraints = false
-
-        guard let parent = webViewContainer.superview else { return }
-        parent.insertSubview(container, belowSubview: webViewContainer)
-
-        NSLayoutConstraint.activate([
-            container.topAnchor.constraint(equalTo: parent.topAnchor),
-            container.leadingAnchor.constraint(equalTo: parent.leadingAnchor),
-            container.trailingAnchor.constraint(equalTo: parent.trailingAnchor),
-            container.bottomAnchor.constraint(equalTo: parent.bottomAnchor)
-        ])
-
-        self.aiChatViewContainer = container
-    }
-
-    /// Toggles visibility between web view and AI Chat container based on tab type.
-    private func updateContainerVisibility() {
-        let isAIChat = tabModel.type == .aiChat
-        webViewContainer.isHidden = isAIChat
-        aiChatViewContainer?.isHidden = !isAIChat
     }
 }

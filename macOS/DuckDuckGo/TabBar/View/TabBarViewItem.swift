@@ -948,7 +948,10 @@ final class TabBarViewItem: NSCollectionViewItem {
 
         if cell.displaysTabsProgressIndicator {
             tabViewModel.isLoadingPublisher
-                .debounce(for: 0.1, scheduler: RunLoop.main)
+                .removeDuplicates(by: { lhs, rhs in
+                    lhs.0 == rhs.0 && lhs.1 == rhs.1
+                })
+                .receive(on: DispatchQueue.main)
                 .sink { [weak self] isLoading, error in
                     guard let self else {
                         return

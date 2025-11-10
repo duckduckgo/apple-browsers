@@ -207,19 +207,27 @@ final class ModalPromptCoordinationServiceTests {
         #expect(!managerMock.didCallPresentModalPromptIfNeeded)
     }
 
-    @Test("Check Priority Order For First Item")
-    func whenFirstPriorityProviderCanPresentModalThenFirstProviderReturnsModal() throws {
+    @Test(
+        "Check Provider Priority Order",
+        arguments: [
+            ProviderPriority.winBackOffer,
+            .newAddressBarPicker,
+            .defaultBrowser,
+            .whatsNew
+        ]
+    )
+    func whenHigherPriorityProvidersReturnNilThenCorrectProviderIsUsed(priority: ProviderPriority) throws {
         // GIVEN
         let keyValueStore = try MockKeyValueFileStore()
         let privacyConfigManager = MockPrivacyConfigurationManager()
-        let newAddressBarPickerProvider = MockModalPromptProvider()
-        let defaultBrowserProvider = MockModalPromptProvider()
-        let winBackOfferProvider = MockModalPromptProvider()
+
         let providers = ModalPromptProviders(
-            newAddressBarPicker: newAddressBarPickerProvider,
-            defaultBrowser: defaultBrowserProvider,
-            winBackOffer: winBackOfferProvider
+            newAddressBarPicker: MockModalPromptProvider(shouldReturnPrompt: priority == .newAddressBarPicker),
+            defaultBrowser: MockModalPromptProvider(shouldReturnPrompt: priority == .defaultBrowser),
+            winBackOffer: MockModalPromptProvider(shouldReturnPrompt: priority == .winBackOffer),
+            whatsNew: MockModalPromptProvider(shouldReturnPrompt: priority == .whatsNew),
         )
+
         launchSourceManagerMock.source = .standard
         contextualOnboardingMock.hasSeenOnboarding = true
         presenterMock.presentedViewController = nil
@@ -235,80 +243,48 @@ final class ModalPromptCoordinationServiceTests {
         // WHEN
         sut.presentModalPromptIfNeeded(from: presenterMock)
 
-        // THEN
-        #expect(winBackOfferProvider.didCallProvideModalPrompt)
-        #expect(!newAddressBarPickerProvider.didCallProvideModalPrompt)
-        #expect(!defaultBrowserProvider.didCallProvideModalPrompt)
+        // THEN All providers up to and including the target should be checked
+        for providerPriority in ProviderPriority.allCases {
+            let provider = try #require(providers.provider(for: providerPriority) as? MockModalPromptProvider)
+            if providerPriority.rawValue <= priority.rawValue {
+                #expect(provider.didCallProvideModalPrompt, "Provider \(providerPriority) should be checked")
+            } else {
+                #expect(!provider.didCallProvideModalPrompt, "Provider \(providerPriority) should not be checked")
+            }
+        }
     }
 
-    @Test("Check Priority Order For Second Item")
-    func whenFirstPriorityProviderCannotPresentModalThenSecondProviderReturnsModal() throws {
-        // GIVEN
-        let keyValueStore = try MockKeyValueFileStore()
-        let privacyConfigManager = MockPrivacyConfigurationManager()
-        let newAddressBarPickerProvider = MockModalPromptProvider()
-        let defaultBrowserProvider = MockModalPromptProvider()
-        let winBackOfferProvider = MockModalPromptProvider(shouldReturnPrompt: false)
-        let providers = ModalPromptProviders(
-            newAddressBarPicker: newAddressBarPickerProvider,
-            defaultBrowser: defaultBrowserProvider,
-            winBackOffer: winBackOfferProvider
-        )
-        launchSourceManagerMock.source = .standard
-        contextualOnboardingMock.hasSeenOnboarding = true
-        presenterMock.presentedViewController = nil
+}
 
-        sut = ModalPromptCoordinationService(
-            launchSourceManager: launchSourceManagerMock,
-            keyValueStore: keyValueStore,
-            contextualOnboardingStatusProvider: contextualOnboardingMock,
-            privacyConfigManager: privacyConfigManager,
-            providers: providers
-        )
+extension ModalPromptProviders {
 
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-
-        // THEN
-        #expect(winBackOfferProvider.didCallProvideModalPrompt)
-        #expect(newAddressBarPickerProvider.didCallProvideModalPrompt)
-        #expect(!defaultBrowserProvider.didCallProvideModalPrompt)
+    func provider(for priority: ProviderPriority) -> ModalPromptProvider? {
+        switch priority {
+        case .winBackOffer: return winBackOffer
+        case .defaultBrowser: return defaultBrowser
+        case .newAddressBarPicker: return newAddressBarPicker
+        case .whatsNew: return whatsNew
+        }
     }
+    
+}
 
-    @Test("Check Priority Order For Third Item")
-    func whenSecondPriorityProviderCannotPresentModalThenThirdProviderReturnsModal() throws {
-        // GIVEN
-        let keyValueStore = try MockKeyValueFileStore()
-        let privacyConfigManager = MockPrivacyConfigurationManager()
-        let newAddressBarPickerProvider = MockModalPromptProvider(shouldReturnPrompt: false)
-        let defaultBrowserProvider = MockModalPromptProvider()
-        let winBackOfferProvider = MockModalPromptProvider(shouldReturnPrompt: false)
-        let providers = ModalPromptProviders(
-            newAddressBarPicker: newAddressBarPickerProvider,
-            defaultBrowser: defaultBrowserProvider,
-            winBackOffer: winBackOfferProvider
-        )
-        launchSourceManagerMock.source = .standard
-        contextualOnboardingMock.hasSeenOnboarding = true
-        presenterMock.presentedViewController = nil
+enum ProviderPriority: Int, CaseIterable, CustomStringConvertible {
+    case winBackOffer = 0
+    case newAddressBarPicker = 1
+    case defaultBrowser = 2
+    case whatsNew = 3
 
-        sut = ModalPromptCoordinationService(
-            launchSourceManager: launchSourceManagerMock,
-            keyValueStore: keyValueStore,
-            contextualOnboardingStatusProvider: contextualOnboardingMock,
-            privacyConfigManager: privacyConfigManager,
-            providers: providers
-        )
+    var index: Int { rawValue }
 
-        // WHEN
-        sut.presentModalPromptIfNeeded(from: presenterMock)
-
-        // THEN
-        #expect(winBackOfferProvider.didCallProvideModalPrompt)
-        #expect(newAddressBarPickerProvider.didCallProvideModalPrompt)
-        #expect(defaultBrowserProvider.didCallProvideModalPrompt)
+    var description: String {
+        switch self {
+        case .winBackOffer: return "WinBackOffer"
+        case .newAddressBarPicker: return "NewAddressBarPicker"
+        case .defaultBrowser: return "DefaultBrowser"
+        case .whatsNew: return "WhatsNew"
+        }
     }
-
 }
 
 private final class MockDismissingViewController: UIViewController {

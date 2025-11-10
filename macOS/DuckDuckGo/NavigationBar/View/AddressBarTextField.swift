@@ -67,8 +67,8 @@ final class AddressBarTextField: NSTextField {
 
     weak var onboardingDelegate: OnboardingAddressBarReporting?
     weak var focusDelegate: AddressBarTextFieldFocusDelegate?
-
-    private let searchPreferences: SearchPreferences = SearchPreferences.shared
+    weak var searchPreferences: SearchPreferences?
+    weak var tabsPreferences: TabsPreferences?
 
     private enum TextDidChangeEventType {
         case none
@@ -333,7 +333,7 @@ final class AddressBarTextField: NSTextField {
             PixelKit.fire(NavigationEngagementPixel.navigateToURL(source: .suggestion))
         case .none:
             // Fire engagement pixel for direct URL entry (not search phrases)
-            if URL.makeURL(from: stringValueWithoutSuffix, enableMetrics: false) != nil {
+            if URL.makeURL(from: stringValueWithoutSuffix) != nil {
                 PixelKit.fire(NavigationEngagementPixel.navigateToURL(source: .addressBar))
             }
         default:
@@ -354,7 +354,7 @@ final class AddressBarTextField: NSTextField {
             // Use LinkOpenBehavior to determine how to open the suggestion
             let behavior = LinkOpenBehavior(
                 modifierFlags: NSEvent.modifierFlags,
-                switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+                switchToNewTabWhenOpenedPreference: shouldSwitchToNewTabWhenOpened,
                 canOpenLinkInCurrentTab: true
             )
 
@@ -377,6 +377,14 @@ final class AddressBarTextField: NSTextField {
         }
 
         currentEditor()?.selectAll(self)
+    }
+
+    private var shouldSwitchToNewTabWhenOpened: Bool {
+        guard let tabsPreferences else {
+            assertionFailure("tabsPreferences must be set")
+            return false
+        }
+        return tabsPreferences.switchToNewTabWhenOpened
     }
 
     func escapeKeyDown() {
@@ -672,6 +680,10 @@ final class AddressBarTextField: NSTextField {
     }
 
     @objc func toggleAutocomplete(_ menuItem: NSMenuItem) {
+        guard let searchPreferences else {
+            assertionFailure("searchPreferences must be set")
+            return
+        }
         searchPreferences.showAutocompleteSuggestions.toggle()
 
         let shouldShowAutocomplete = searchPreferences.showAutocompleteSuggestions
@@ -1100,6 +1112,10 @@ extension AddressBarTextField: NSTextViewDelegate {
     }
 
     func textView(_ view: NSTextView, menu: NSMenu, for event: NSEvent, at charIndex: Int) -> NSMenu? {
+        guard let searchPreferences else {
+            assertionFailure("searchPreferences must be set")
+            return nil
+        }
         removeUnwantedMenuItems(from: menu)
 
         if let pasteAndGoMenuItem = NSMenuItem.makePasteAndGoMenuItem() {
@@ -1113,7 +1129,7 @@ extension AddressBarTextField: NSTextViewDelegate {
         }
 
         let additionalMenuItems: [NSMenuItem] = [
-            .toggleAutocompleteSuggestionsMenuItem,
+            .toggleAutocompleteSuggestionsMenuItem(searchPreferences),
             .toggleFullWebsiteAddressMenuItem,
             .toggleAIChatAddressMenuItem,
             .separator()
@@ -1169,13 +1185,13 @@ extension AddressBarTextField: NSTextViewDelegate {
 
 private extension NSMenuItem {
 
-    static var toggleAutocompleteSuggestionsMenuItem: NSMenuItem {
+    static func toggleAutocompleteSuggestionsMenuItem(_ searchPreferences: SearchPreferences) -> NSMenuItem {
         let menuItem = NSMenuItem(
             title: UserText.showAutocompleteSuggestions.localizedCapitalized,
             action: #selector(AddressBarTextField.toggleAutocomplete(_:)),
             keyEquivalent: ""
         )
-        menuItem.state = SearchPreferences.shared.showAutocompleteSuggestions ? .on : .off
+        menuItem.state = searchPreferences.showAutocompleteSuggestions ? .on : .off
 
         return menuItem
     }

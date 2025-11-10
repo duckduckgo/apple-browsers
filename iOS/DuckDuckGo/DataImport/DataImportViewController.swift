@@ -151,12 +151,13 @@ final class DataImportViewController: UIViewController {
                 guard let self = self else { return }
                 if self.navigationController?.children.first is DataImportViewController {
                     self.presentingViewController?.dismiss(animated: true)
+                } else if importScreen == .whatsNew {
+                    navigationController?.popViewController(animated: true)
                 } else {
                     navigationController?.popViewController(animated: false)
                     delegate?.dataImportViewControllerDidFinish(self)
                 }
             }
-
 
             self.present(summaryViewController, animated: true)
 

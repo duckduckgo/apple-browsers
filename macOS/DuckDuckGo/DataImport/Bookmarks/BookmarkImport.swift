@@ -37,3 +37,9 @@ protocol BookmarkImporter {
     func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource, markRootBookmarksAsFavoritesByDefault: Bool, maxFavoritesCount: Int?) -> BookmarksImportSummary
 
 }
+
+extension DataImport.DataTypeSummary {
+    public init(_ bookmarksImportSummary: BookmarksImportSummary) {
+        self.init(successful: bookmarksImportSummary.successful, duplicate: bookmarksImportSummary.duplicates, failed: bookmarksImportSummary.failed)
+    }
+}

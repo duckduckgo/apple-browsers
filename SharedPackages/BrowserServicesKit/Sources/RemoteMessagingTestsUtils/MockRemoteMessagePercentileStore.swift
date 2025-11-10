@@ -29,12 +29,12 @@ public class MockRemoteMessagePercentileStore: RemoteMessagingPercentileStoring 
         self.defaultPercentage = defaultPercentage
     }
 
-    public func percentile(forMessageId messageID: String) -> Float {
-        if let percentile = percentileStorage[messageID] {
+    public func percentile(forEntityId entityID: String) -> Float {
+        if let percentile = percentileStorage[entityID] {
             return percentile
         }
 
-        percentileStorage[messageID] = defaultPercentage
+        percentileStorage[entityID] = defaultPercentage
         return defaultPercentage
     }
 

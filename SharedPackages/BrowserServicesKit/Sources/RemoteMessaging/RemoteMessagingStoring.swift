@@ -26,7 +26,7 @@ public protocol RemoteMessagingStoring: RemoteMessagingStoringDebuggingSupport {
 
     func saveProcessedResult(_ processorResult: RemoteMessagingConfigProcessor.ProcessorResult) async
     func fetchRemoteMessagingConfig() -> RemoteMessagingConfig?
-    func fetchScheduledRemoteMessage() -> RemoteMessageModel?
+    func fetchScheduledRemoteMessage(surfaces: RemoteMessageSurfaceType) -> RemoteMessageModel?
     func hasShownRemoteMessage(withID id: String) -> Bool
     func fetchShownRemoteMessageIDs() -> [String]
     func dismissRemoteMessage(withID id: String) async

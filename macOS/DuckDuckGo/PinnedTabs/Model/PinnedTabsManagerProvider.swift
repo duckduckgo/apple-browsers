@@ -54,23 +54,39 @@ protocol PinnedTabsManagerProviding {
 /// Encapsulates logic to manage per-window pinned tabs or shared pinned tabs
 final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProviding {
 
-    private let tabsPreferences: TabsPreferences
+    weak var tabsPreferences: TabsPreferences? {
+        didSet {
+            guard let tabsPreferences else {
+                assertionFailure("tabsPreferences must not be nil")
+                return
+            }
+            // only subscribe once
+            guard oldValue == nil else {
+                return
+            }
+            settingChangedCancellable = tabsPreferences.$pinnedTabsMode
+                .map { _ in () }
+                .receive(on: DispatchQueue.main)
+                .dropFirst()
+                .sink { [weak self] in
+                    self?.settingChangedSubject.send()
+                }
+        }
+    }
+
     private var closedWindowPinnedTabCache: TabCollection?
     private let sharedPinnedTabsManager: PinnedTabsManager
 
     @MainActor
     weak var windowControllersManager: WindowControllersManagerProtocol?
 
-    var settingChangedPublisher: AnyPublisher<Void, Never>
+    let settingChangedPublisher: AnyPublisher<Void, Never>
+    private let settingChangedSubject = PassthroughSubject<Void, Never>()
+    private var settingChangedCancellable: AnyCancellable?
 
-    init(tabsPreferences: TabsPreferences = TabsPreferences.shared, sharedPinedTabsManager: PinnedTabsManager) {
-        self.tabsPreferences = tabsPreferences
+    init(sharedPinedTabsManager: PinnedTabsManager) {
         self.sharedPinnedTabsManager = sharedPinedTabsManager
-        self.settingChangedPublisher = tabsPreferences.$pinnedTabsMode
-            .map { _ in () }
-            .receive(on: DispatchQueue.main)
-            .dropFirst()
-            .eraseToAnyPublisher()
+        self.settingChangedPublisher = settingChangedSubject.eraseToAnyPublisher()
     }
 
     @MainActor
@@ -86,7 +102,11 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
     }
 
     var pinnedTabsMode: PinnedTabsMode {
-        tabsPreferences.pinnedTabsMode
+        guard let tabsPreferences else {
+            assertionFailure("tabsPreferences must be set")
+            return .separate
+        }
+        return tabsPreferences.pinnedTabsMode
     }
 
     @MainActor

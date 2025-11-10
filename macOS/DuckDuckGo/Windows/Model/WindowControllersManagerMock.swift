@@ -27,7 +27,7 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
     var stateChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
     var tabsChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
 
-    var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
+    var mainWindowControllers: [MainWindowController] = []
 
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding
 
@@ -80,7 +80,7 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
     var openWindowCalls: [OpenWindowCall] = []
     var onOpenNewWindow: ((OpenWindowCall) -> Void)?
     @discardableResult
-    func openNewWindow(with tabCollectionViewModel: DuckDuckGo_Privacy_Browser.TabCollectionViewModel?, burnerMode: DuckDuckGo_Privacy_Browser.BurnerMode, droppingPoint: NSPoint?, contentSize: NSSize?, showWindow: Bool, popUp: Bool, lazyLoadTabs: Bool, isMiniaturized: Bool, isMaximized: Bool, isFullscreen: Bool) -> NSWindow? {
+    func openNewWindow(with tabCollectionViewModel: TabCollectionViewModel?, burnerMode: BurnerMode, droppingPoint: NSPoint?, contentSize: NSSize?, showWindow: Bool, popUp: Bool, lazyLoadTabs: Bool, isMiniaturized: Bool, isMaximized: Bool, isFullscreen: Bool) -> NSWindow? {
         let call = OpenWindowCall(
             contents: tabCollectionViewModel?.tabs.map(\.content),
             burnerMode: burnerMode,
@@ -98,14 +98,14 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
         return nil
     }
 
-    func open(_ url: URL, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {
+    func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {
         openCalls.append(.init(url, source, window, event))
     }
-    func showTab(with content: DuckDuckGo_Privacy_Browser.Tab.TabContent) {
+    func showTab(with content: Tab.TabContent) {
         showTabCalls.append(content)
     }
 
-    func openTab(_ tab: DuckDuckGo_Privacy_Browser.Tab, afterParentTab parentTab: DuckDuckGo_Privacy_Browser.Tab, selected: Bool) {
+    func openTab(_ tab: Tab, afterParentTab parentTab: Tab, selected: Bool) {
         openTabCalls.append(OpenTabCall(tab: tab, parentTab: parentTab, selected: selected))
     }
 

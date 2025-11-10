@@ -31,6 +31,18 @@ import DataBrokerProtection_iOS
 
 extension MainViewController {
 
+    func segueToCustomizeAddressBarSettings() {
+        launchSettings {
+            $0.triggerDeepLinkNavigation(to: .customizeAddressBarButton)
+        }
+    }
+
+    func segueToCustomizeToolbarSettings() {
+        launchSettings {
+            $0.triggerDeepLinkNavigation(to: .customizeToolbarButton)
+        }
+    }
+
     func segueToDaxOnboarding() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()

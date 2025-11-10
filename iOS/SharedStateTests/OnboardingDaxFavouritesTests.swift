@@ -145,7 +145,8 @@ import SystemSettingsPiPTutorialTestSupport
             daxDialogsManager: DummyDaxDialogsManager(),
             dbpIOSPublicInterface: nil,
             launchSourceManager: LaunchSourceManager(),
-            winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager()
+            winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
+            mobileCustomization: MobileCustomization(isFeatureEnabled: false, keyValueStore: MockThrowingKeyValueStore())
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

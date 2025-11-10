@@ -9965,7 +9965,6 @@
 				B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */,
 				B53F4E912EA917AB0043B5EF /* LetterView.swift */,
 				B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */,
-				B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";

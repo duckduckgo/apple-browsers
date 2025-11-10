@@ -41,4 +41,8 @@ struct OnboardingStepsHelper {
             .appIconSelection
         ]
     }
+
+    static func expectedIPadStepsWithSearchExperience(isReturningUser: Bool) -> [OnboardingIntroStep] {
+        expectedIPadSteps(isReturningUser: isReturningUser) + [.searchExperienceSelection]
+    }
 }

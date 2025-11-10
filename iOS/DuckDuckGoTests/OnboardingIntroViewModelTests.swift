@@ -666,6 +666,80 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(didCallOnCompletingOnboardingIntro)
     }
 
+    // MARK: - iPad Search Experience Selection
+
+    func testWhenAppIconPickerContinueActionIsCalledAndIsIpadFlowWithSearchExperienceThenViewStateChangesToChooseSearchExperienceDialogAndProgressIs3Of3() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .appIconSelection)
+
+        // WHEN
+        sut.appIconPickerContinueAction()
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .chooseSearchExperienceDialog, step: .init(currentStep: 3, totalSteps: 3))))
+    }
+
+    func testWhenStateChangesToChooseSearchExperienceAndIsIpadFlowThenPixelReporterMeasureSearchExperienceSelectionImpression() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .appIconSelection)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureSearchExperienceSelectionImpression)
+
+        // WHEN
+        sut.appIconPickerContinueAction()
+
+        // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureSearchExperienceSelectionImpression)
+    }
+
+    func testWhenSelectSearchExperienceActionIsCalledAndAIChatIsEnabledAndIsIpadFlowThenPixelReporterMeasureChooseAIChat() {
+        // GIVEN
+        let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
+        mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = true
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection, onboardingSearchExperienceProvider: mockSearchExperienceProvider)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseAIChat)
+
+        // WHEN
+        sut.selectSearchExperienceAction()
+
+        // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseAIChat)
+    }
+
+    func testWhenSelectSearchExperienceActionIsCalledAndAIChatIsDisabledAndIsIpadFlowThenPixelReporterMeasureChooseSearchOnly() {
+        // GIVEN
+        let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
+        mockSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding = false
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection, onboardingSearchExperienceProvider: mockSearchExperienceProvider)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseSearchOnly)
+
+        // WHEN
+        sut.selectSearchExperienceAction()
+
+        // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseSearchOnly)
+    }
+
+    func testWhenSelectSearchExperienceActionIsCalledAndIsIpadFlowWithSearchExperienceThenOnCompletingOnboardingIntroIsCalled() {
+        // GIVEN
+        var didCallOnCompletingOnboardingIntro = false
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
+        let sut = makeSUT(currentOnboardingStep: .searchExperienceSelection)
+        sut.onCompletingOnboardingIntro = {
+            didCallOnCompletingOnboardingIntro = true
+        }
+        XCTAssertFalse(didCallOnCompletingOnboardingIntro)
+
+        // WHEN
+        sut.selectSearchExperienceAction()
+
+        // THEN
+        XCTAssertTrue(didCallOnCompletingOnboardingIntro)
+    }
+
 }
 
 extension OnboardingIntroViewModelTests {

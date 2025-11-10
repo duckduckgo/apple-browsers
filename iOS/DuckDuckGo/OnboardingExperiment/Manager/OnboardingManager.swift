@@ -59,7 +59,8 @@ final class OnboardingManager {
         .addressBarPositionSelection,
         .searchExperienceSelection
     ]
-    private let iPadFlow: [OnboardingIntroStep] = [.browserComparison, .appIconSelection]
+    private let iPadFlowWithoutSearchExperience: [OnboardingIntroStep] = [.browserComparison, .appIconSelection]
+    private let iPadFlowWithSearchExperience: [OnboardingIntroStep] = [.browserComparison, .appIconSelection, .searchExperienceSelection]
 
     var isNewUser: Bool {
 #if DEBUG || ALPHA
@@ -101,7 +102,7 @@ final class OnboardingManager {
     }
 
     private func steps(isIphone: Bool) -> [OnboardingIntroStep] {
-        isIphone ? iPhoneFlow() : iPadFlow
+        isIphone ? iPhoneFlow() : iPadFlow()
     }
 
     private func iPhoneFlow() -> [OnboardingIntroStep] {
@@ -109,6 +110,14 @@ final class OnboardingManager {
             return iPhoneFlowWithSearchExperience
         } else {
             return iPhoneFlowWithoutSearchExperience
+        }
+    }
+
+    private func iPadFlow() -> [OnboardingIntroStep] {
+        if featureFlagger.isFeatureOn(.onboardingSearchExperience) {
+            return iPadFlowWithSearchExperience
+        } else {
+            return iPadFlowWithoutSearchExperience
         }
     }
 }

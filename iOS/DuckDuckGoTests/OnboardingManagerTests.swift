@@ -60,12 +60,27 @@ struct OnboardingManagerTests {
             // THEN
             #expect(result == expectedSteps)
         }
-#warning("add tests cases here, like for iphone, if modyfing steps for ipad")
-        @Test("Check correct onboarding steps are returned for iPad")
-        func checkOnboardingSteps_iPad() {
+
+        @Test("Check correct onboarding steps are returned for iPad, when onboardingSearchExperience flag is OFF")
+        func checkOnboardingSteps_iPad_onboardingSearchExperience_off() {
             // GIVEN
             let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: variantManagerMock, isIphone: false)
             let expectedSteps = OnboardingStepsHelper.expectedIPadSteps(isReturningUser: false)
+
+            // WHEN
+            let result = sut.newUserSteps(isIphone: false)
+
+            // THEN
+            #expect(result == expectedSteps)
+        }
+
+        @Test("Check correct onboarding steps are returned for iPad, when onboardingSearchExperience flag is ON")
+        func checkOnboardingSteps_iPad_onboardingSearchExperience_on() {
+            // GIVEN
+            let featureFlagger = MockFeatureFlagger()
+            featureFlagger.enabledFeatureFlags = [.onboardingSearchExperience]
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: featureFlagger, variantManager: variantManagerMock, isIphone: false)
+            let expectedSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: false)
 
             // WHEN
             let result = sut.newUserSteps(isIphone: false)
@@ -113,12 +128,27 @@ struct OnboardingManagerTests {
             // THEN
             #expect(result == expectedSteps)
         }
-#warning("add tests cases here, like for iphone, if modyfing steps for ipad")
-        @Test("Check correct onboarding steps are returned for iPad")
-        func checkOnboardingSteps_iPad() {
+
+        @Test("Check correct onboarding steps are returned for iPad, when onboardingSearchExperience flag is OFF")
+        func checkOnboardingSteps_iPad_onboardingSearchExperience_off() {
             // GIVEN
             let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: variantManagerMock, isIphone: false)
             let expectedSteps = OnboardingStepsHelper.expectedIPadSteps(isReturningUser: true)
+
+            // WHEN
+            let result = sut.returningUserSteps(isIphone: false)
+
+            // THEN
+            #expect(result == expectedSteps)
+        }
+
+        @Test("Check correct onboarding steps are returned for iPad, when onboardingSearchExperience flag is ON")
+        func checkOnboardingSteps_iPad_onboardingSearchExperience_on() {
+            // GIVEN
+            let featureFlagger = MockFeatureFlagger()
+            featureFlagger.enabledFeatureFlags = [.onboardingSearchExperience]
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: featureFlagger, variantManager: variantManagerMock, isIphone: false)
+            let expectedSteps = OnboardingStepsHelper.expectedIPadStepsWithSearchExperience(isReturningUser: true)
 
             // WHEN
             let result = sut.returningUserSteps(isIphone: false)

@@ -32,16 +32,6 @@ final class TabFaviconView: NSView {
         imageView.image != nil
     }
 
-    var image: NSImage? {
-        get {
-            imageView.image
-        }
-        set {
-            imageView.image = newValue
-            placeholderView.isHidden = newValue != nil
-        }
-    }
-
     var imageTintColor: NSColor? {
         get {
             imageView.contentTintColor
@@ -89,16 +79,17 @@ extension TabFaviconView {
         spinnerView.stopAnimating()
     }
 
-    func displayFavicon(image: NSImage?, placeholderStyle: FaviconPlaceholderStyle) {
-        let targetURL = placeholderStyle.url
-        let targetImage = image ?? placeholderStyle.placeholderImage
+    func displayFavicon(favicon: NSImage?, placeholderStyle: FaviconPlaceholderStyle) {
+        imageView.image = favicon ?? placeholderStyle.placeholderImage
 
-        self.image = targetImage
-        self.placeholderView.isHidden = !shouldDisplayPlaceholderView(faviconImage: image, placeholderStyle: placeholderStyle)
+        placeholderView.isShown = shouldDisplayPlaceholderView(favicon: favicon, placeholderStyle: placeholderStyle)
+        placeholderView.displayURL(placeholderStyle.url)
+    }
 
-        if let targetURL {
-            placeholderView.displayURL(targetURL)
-        }
+    func reset() {
+        stopSpinner()
+        imageView.image = nil
+        placeholderView.isShown = false
     }
 }
 
@@ -200,8 +191,8 @@ private extension TabFaviconView {
         scaleDown ? CATransform3DMakeScale(FaviconAnimation.scaleDownRatio, FaviconAnimation.scaleDownRatio, 1.0) : CATransform3DIdentity
     }
 
-    func shouldDisplayPlaceholderView(faviconImage: NSImage?, placeholderStyle: FaviconPlaceholderStyle) -> Bool {
-        faviconImage == nil && placeholderStyle.url != nil
+    func shouldDisplayPlaceholderView(favicon: NSImage?, placeholderStyle: FaviconPlaceholderStyle) -> Bool {
+        favicon == nil && placeholderStyle.url != nil
     }
 }
 

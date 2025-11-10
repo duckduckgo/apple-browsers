@@ -72,7 +72,7 @@ struct Launching: LaunchingHandling {
         // 1. To begin their essential work immediately, without waiting for UI or other components
         // 2. To potentially complete their tasks before the app becomes visible to the user
         // This approach aims to optimize performance and ensure critical functionalities are ready ASAP
-        let autofillService = AutofillService()
+        let autofillService = AutofillService(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared)
         let configurationService = RemoteConfigurationService()

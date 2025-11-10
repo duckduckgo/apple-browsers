@@ -111,18 +111,18 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     @UserDefaultsWrapper(key: .networkProtectionOnboardingStatusRawValue, defaultValue: OnboardingStatus.default.rawValue, defaults: .netP)
     private(set) var onboardingStatusRawValue: OnboardingStatus.RawValue
-    
+
     @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartTime, defaultValue: nil, defaults: .netP)
     private var vpnConnectionWideEventBrowserStartTime: Date?
-    
+
     @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartError, defaultValue: nil, defaults: .netP)
     private var vpnConnectionWideEventBrowserStartError: WideEventErrorData?
-    
+
     @UserDefaultsWrapper(key: .vpnConnectionWideEventOverallStartTime, defaultValue: nil, defaults: .netP)
     private var vpnConnectionWideEventOverallStartTime: Date?
-    
+
     // MARK: - Wide Event
-    
+
     private var isConnectionWideEventMeasurementEnabled: Bool {
         featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
     }
@@ -383,7 +383,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             protocolConfiguration.serverAddress = "127.0.0.1" // Dummy address... the NetP service will take care of grabbing a real server
             protocolConfiguration.providerBundleIdentifier = extensionBundleID
             protocolConfiguration.providerConfiguration = [
-                NetworkProtectionOptionKey.defaultPixelHeaders: APIRequest.Headers().httpHeaders,
+                NetworkProtectionOptionKey.defaultPixelHeaders: APIRequest.Headers().httpHeaders
             ]
 
             // always-on
@@ -585,7 +585,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 return [NSUnderlyingErrorKey: error]
             }
         }
-        
+
         public var caseDescription: String {
             switch self {
             case .cancelled:
@@ -651,7 +651,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             if controllerErrorStore.lastErrorMessage == nil {
                 controllerErrorStore.lastErrorMessage = error.localizedDescription
             }
-            
+
             // Top level catch-all
             completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
         }
@@ -976,7 +976,7 @@ private extension NetworkProtectionTunnelController {
         prefillBrowserStartDataIfAvailable()
         wideEvent.startFlow(data)
     }
-    
+
     func prefillBrowserStartDataIfAvailable() {
         guard let data = self.connectionWideEventData else { return }
         guard vpnConnectionWideEventBrowserStartTime != nil || vpnConnectionWideEventOverallStartTime != nil || vpnConnectionWideEventBrowserStartError != nil else { return }
@@ -994,11 +994,11 @@ private extension NetworkProtectionTunnelController {
         vpnConnectionWideEventOverallStartTime = nil
         vpnConnectionWideEventBrowserStartError = nil
     }
-    
+
     func resetControllerStartWideEventMeasurement() {
         self.connectionWideEventData?.controllerStartDuration = nil
     }
-    
+
     func completeAtStepWithFailure(
         _ step: VPNConnectionWideEventData.Step,
         with error: Error,

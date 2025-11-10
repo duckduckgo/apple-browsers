@@ -53,7 +53,7 @@ final class NetworkProtectionIPCTunnelController {
                 return [NSUnderlyingErrorKey: error as NSError]
             }
         }
-        
+
         var caseDescription: String {
             switch self {
             case .notAuthorizedToEnableLoginItem:
@@ -74,20 +74,20 @@ final class NetworkProtectionIPCTunnelController {
     private let knownFailureStore: NetworkProtectionKnownFailureStore
     private let wideEvent: WideEventManaging
     private let featureFlagger: FeatureFlagger
-    
+
     // MARK: - User Defaults
-    
+
     @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartTime, defaultValue: nil, defaults: .netP)
     private var vpnConnectionWideEventBrowserStartTime: Date?
-    
+
     @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartError, defaultValue: nil, defaults: .netP)
     private var vpnConnectionWideEventBrowserStartError: WideEventErrorData?
-    
+
     @UserDefaultsWrapper(key: .vpnConnectionWideEventOverallStartTime, defaultValue: nil, defaults: .netP)
     private var vpnConnectionWideEventOverallStartTime: Date?
-    
+
     // MARK: - Wide Event
-    
+
     private var isConnectionWideEventMeasurementEnabled: Bool {
         featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
     }
@@ -291,7 +291,7 @@ extension NetworkProtectionIPCTunnelController {
 // MARK: - Wide Event
 
 private extension NetworkProtectionIPCTunnelController {
-    
+
     func setupAndStartConnectionWideEvent() {
         guard isConnectionWideEventMeasurementEnabled else { return }
         let data = VPNConnectionWideEventData(
@@ -305,7 +305,7 @@ private extension NetworkProtectionIPCTunnelController {
         wideEvent.startFlow(data)
         self.connectionWideEventData?.overallDuration = WideEvent.MeasuredInterval.startingNow()
     }
-    
+
     func completeAndCleanupConnectionWideEvent(with error: Error, description: String? = nil) {
         guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
         data.browserStartDuration?.complete()
@@ -314,7 +314,7 @@ private extension NetworkProtectionIPCTunnelController {
         wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
         self.connectionWideEventData = nil
     }
-    
+
     func discardAndSetConnectionWideEvent() {
         guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
         vpnConnectionWideEventBrowserStartTime = data.browserStartDuration?.start

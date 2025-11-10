@@ -540,6 +540,7 @@ final class TabBarItemCellView: NSView {
     func clear() {
         if displaysTabsProgressIndicator {
             faviconView.image = nil
+            faviconView.stopSpinner()
         } else {
             faviconImageView.image = nil
         }

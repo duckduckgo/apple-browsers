@@ -113,7 +113,7 @@ private extension TabFaviconView {
 
     func refreshImageLayerLocation() {
         let targetPositionX = bounds.width * 0.5
-        let targetPositionY = bounds.width * 0.5
+        let targetPositionY = bounds.height * 0.5
 
         guard let layer = imageView.layer else {
             return

@@ -11,6 +11,9 @@ on:
       - 'SharedPackages/**'
       - 'macOS/**'
   pull_request:
+    # opened, synchronize, reopened are the default triggering events for a pull request
+    # We're adding ready_for_review to run checks when a draft PR becomes ready for review.
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - '.github/**'
       - '.xcode-version'
@@ -57,11 +60,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  should-run-checks:
+    name: Determine if checks should run
+    uses: ./.github/workflows/should_run_pr_checks.yml
+
   shellcheck:
 
     name: ShellCheck
 
     runs-on: ubuntu-latest
+
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
 
     steps:
     - name: Check out the code
@@ -89,6 +99,9 @@ jobs:
 
     runs-on: macos-15
 
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
+
     steps:
     - name: Check out the code
       if: github.event_name == 'pull_request' || github.event_name == 'push'
@@ -115,6 +128,9 @@ jobs:
 
   tests:
     name: Test
+
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
 
     strategy:
       fail-fast: false
@@ -392,12 +408,15 @@ jobs:
 
     name: Make Release Build
 
+    needs: should-run-checks
+
     # Dependabot doesn't have access to all secrets, so we skip this job
     # workflow_call is used by bump_internal_release and is followed by a proper release job
     if: >
       github.actor != 'dependabot[bot]' &&
       (github.event_name == 'push' || github.event_name == 'pull_request') &&
-      inputs.skip-release-build != true
+      inputs.skip-release-build != true &&
+      needs.should-run-checks.outputs.should_run == 'true'
 
     runs-on: macos-15
     timeout-minutes: 60
@@ -502,6 +521,10 @@ jobs:
   verify-npm-bundles:
     name: 'Verify npm bundles (iOS & macOS autoconsent, content-scope-scripts)'
     runs-on: ubuntu-latest
+
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
+
     defaults:
       run:
         working-directory: .

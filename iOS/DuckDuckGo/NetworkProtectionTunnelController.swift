@@ -25,6 +25,7 @@ import Foundation
 import NetworkExtension
 import VPN
 import Subscription
+import PixelKit
 
 enum VPNConfigurationRemovalReason: String {
     case didBecomeActiveCheck
@@ -47,6 +48,10 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     private let persistentPixel: PersistentPixelFiring
     private let settings: VPNSettings
     private var cancellables = Set<AnyCancellable>()
+    
+    // Wide Event
+    private let wideEvent: WideEventManaging
+    private var connectionWideEventData: VPNConnectionWideEventData?
 
     // MARK: - Manager, Session, & Connection
 
@@ -123,6 +128,29 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 return [NSUnderlyingErrorKey: error]
             }
         }
+        
+        public var caseDescription: String {
+            switch self {
+                case .simulateControllerFailureError:
+                    return "simulateControllerFailureError"
+                case .loadFromPreferencesFailed:
+                    return "loadFromPreferencesFailed"
+                case .saveToPreferencesFailed:
+                    return "saveToPreferencesFailed"
+                case .startVPNFailed:
+                    return "startVPNFailed"
+                case .failedToFetchAuthToken:
+                    return "failedToFetchAuthToken"
+                case .configSystemPermissionsDenied:
+                    return "configSystemPermissionsDenied"
+                case .noAuthToken:
+                    return "noAuthToken"
+                }
+        }
+    }
+    
+    private var isConnectionWideEventMeasurementEnabled: Bool {
+        featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
     }
 
     // MARK: - Initializers
@@ -130,12 +158,15 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     init(tokenHandler: any SubscriptionTokenHandling,
          featureFlagger: FeatureFlagger,
          persistentPixel: PersistentPixelFiring,
-         settings: VPNSettings) {
+         settings: VPNSettings,
+         wideEvent: WideEventManaging
+    ) {
 
         self.featureFlagger = featureFlagger
         self.persistentPixel = persistentPixel
         self.settings = settings
         self.tokenHandler = tokenHandler
+        self.wideEvent = wideEvent
 
         subscribeToSnoozeTimingChanges()
         subscribeToStatusChanges()
@@ -145,6 +176,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     /// Starts the VPN connection used for Network Protection
     ///
     func start() async {
+        setupAndStartConnectionWideEvent()
         persistentPixel.fire(
             pixel: .networkProtectionControllerStartAttempt,
             error: nil,
@@ -154,6 +186,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
         do {
             try await startWithError()
+            completeAndCleanupConnectionWideEvent()
 
             persistentPixel.fire(
                 pixel: .networkProtectionControllerStartSuccess,
@@ -162,6 +195,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 withAdditionalParameters: [:],
                 onComplete: { _ in })
         } catch {
+            // Top level catch-all
+            completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             if case StartError.configSystemPermissionsDenied = error {
                 return
             }
@@ -251,14 +286,18 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         let tunnelManager: NETunnelProviderManager
 
         do {
+            self.connectionWideEventData?.controllerStartDuration = WideEvent.MeasuredInterval.startingNow()
             tunnelManager = try await loadOrMakeTunnelManager()
+            self.connectionWideEventData?.controllerStartDuration?.complete()
         } catch {
+            completeAtStepWithFailure(.controllerStart, with: error, description: error.contextualizedDescription())
             throw error
         }
 
         switch tunnelManager.connection.status {
         case .invalid:
             clearInternalManager()
+            resetControllerStartWideEventMeasurement()
             try await startWithError()
         case .connected:
             // Intentional no-op
@@ -282,18 +321,24 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
         options["activationAttemptId"] = UUID().uuidString as NSString
 
+        
         do {
+            self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
             try await tokenHandler.getToken()
+            self.connectionWideEventData?.oauthDuration?.complete()
         } catch {
             switch error {
             case SubscriptionManagerError.noTokenAvailable:
+                completeAtStepWithFailure(.oauth, with: error, description: error.contextualizedDescription())
                 throw StartError.noAuthToken
             default:
+                completeAtStepWithFailure(.oauth, with: error, description: error.contextualizedDescription())
                 throw StartError.failedToFetchAuthToken(error)
             }
         }
 
         do {
+            self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
             try tunnelManager.connection.startVPNTunnel(options: options)
             UniquePixel.fire(pixel: .networkProtectionNewUser, includedParameters: [.appVersion, .atb]) { error in
                 guard error != nil else { return }
@@ -301,7 +346,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                     uniquePixelStorage: UniquePixel.storage
                 )
             }
+            self.connectionWideEventData?.tunnelStartDuration?.complete()
         } catch {
+            completeAtStepWithFailure(.tunnelStart, with: error, description: error.contextualizedDescription())
             Pixel.fire(pixel: .networkProtectionActivationRequestFailed, error: error)
             throw StartError.startVPNFailed(error)
         }
@@ -463,5 +510,56 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         tunnelManager.isOnDemandEnabled = false
 
         try await tunnelManager.saveToPreferences()
+    }
+}
+
+// MARK: Wide Event Helpers
+
+private extension NetworkProtectionTunnelController {
+    
+    func setupAndStartConnectionWideEvent() {
+        guard isConnectionWideEventMeasurementEnabled else { return }
+        let data = VPNConnectionWideEventData(
+            extensionType: .app,
+            startupMethod: .manualByMainApp,
+            contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
+        )
+        self.connectionWideEventData = data
+        wideEvent.startFlow(data)
+        self.connectionWideEventData?.overallDuration = WideEvent.MeasuredInterval.startingNow()
+    }
+    
+    func resetControllerStartWideEventMeasurement() {
+        self.connectionWideEventData?.controllerStartDuration = nil
+    }
+
+    func completeAtStepWithFailure(
+        _ step: VPNConnectionWideEventData.Step,
+        with error: Error,
+        description: String? = nil
+    ) {
+        self.connectionWideEventData?[keyPath: step.errorPath] = .init(error: error, description: description)
+        self.connectionWideEventData?[keyPath: step.durationPath]?.complete()
+        completeAndCleanupConnectionWideEvent(with: error, description: description)
+    }
+
+    func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil) {
+        guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
+        data.overallDuration?.complete()
+        if let error {
+            data.errorData = .init(error: error, description: description)
+            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+        } else {
+            wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
+        }
+        self.connectionWideEventData = nil
+    }
+}
+
+// MARK: - Error Description Helper
+
+private extension Error {
+    func contextualizedDescription() -> String? {
+        return (self as? NetworkProtectionTunnelController.StartError)?.caseDescription
     }
 }

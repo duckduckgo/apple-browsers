@@ -48,6 +48,12 @@ final class PreferencesViewController: NSViewController {
         aiChatRemoteSettings: AIChatRemoteSettingsProvider = AIChatRemoteSettings(),
         featureFlagger: FeatureFlagger,
         defaultBrowserPreferences: DefaultBrowserPreferences,
+        downloadsPreferences: DownloadsPreferences,
+        searchPreferences: SearchPreferences,
+        tabsPreferences: TabsPreferences,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+        cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
+        aiChatPreferences: AIChatPreferences,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
@@ -63,7 +69,12 @@ final class PreferencesViewController: NSViewController {
                                         includeAIChat: aiChatRemoteSettings.isAIChatEnabled,
                                         subscriptionManager: subscriptionManager,
                                         defaultBrowserPreferences: defaultBrowserPreferences,
-                                        aiFeaturesStatusProvider: AIChatPreferences.shared,
+                                        downloadsPreferences: downloadsPreferences,
+                                        searchPreferences: searchPreferences,
+                                        tabsPreferences: tabsPreferences,
+                                        webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                        cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+                                        aiChatPreferences: aiChatPreferences,
                                         winBackOfferVisibilityManager: winBackOfferVisibilityManager)
         super.init(nibName: nil, bundle: nil)
     }

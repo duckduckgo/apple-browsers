@@ -112,7 +112,7 @@ final class MacWatchdogDiagnosticProviderTests: XCTestCase {
         let tabCollectionViewModel = TabCollectionViewModel(
             tabCollection: TabCollection(),
             pinnedTabsManagerProvider: pinnedTabsProvider,
-            tabsPreferences: TabsPreferences(persistor: persistor)
+            tabsPreferences: TabsPreferences(persistor: persistor, windowControllersManager: WindowControllersManagerMock())
         )
 
         // Remove any automatically added tabs

@@ -37,7 +37,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
     private var mockPrivacyConfigurationManager: MockPrivacyConfigurationManager!
     private var mockSyncService: MockDDGSyncing!
     private var mockVPNGatekeeper: DefaultVPNFeatureGatekeeper!
-    private var mockAIChatPreferences: MockAIChatPreferences!
+    private var mockAIChatPreferences: AIChatPreferences!
     private var mockWinBackOfferVisibilityManager: MockWinBackOfferVisibilityManager!
     var cancellables = Set<AnyCancellable>()
 
@@ -46,7 +46,12 @@ final class PreferencesSidebarModelTests: XCTestCase {
         testNotificationCenter = NotificationCenter()
         mockDefaultBrowserPreferences = DefaultBrowserPreferences(defaultBrowserProvider: DefaultBrowserProviderMock())
         mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
-        mockAIChatPreferences = MockAIChatPreferences()
+        mockAIChatPreferences = AIChatPreferences(
+            storage: MockAIChatPreferencesStorage(),
+            aiChatMenuConfiguration: MockAIChatConfig(),
+            windowControllersManager: WindowControllersManagerMock(),
+            featureFlagger: MockFeatureFlagger()
+        )
         mockWinBackOfferVisibilityManager = MockWinBackOfferVisibilityManager()
         let startedAt = Date().startOfDay
         let expiresAt = Date().startOfDay.daysAgo(-10)
@@ -88,6 +93,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
     }
 
     private func PreferencesSidebarModel(loadSections: [PreferencesSection]? = nil, tabSwitcherTabs: [Tab.TabContent] = Tab.TabContent.displayableTabTypes) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
+        let windowControllersManager = WindowControllersManagerMock()
         return DuckDuckGo_Privacy_Browser.PreferencesSidebarModel(
             loadSections: { _ in loadSections ?? PreferencesSection.defaultSections(includingDuckPlayer: false, includingSync: false, includingAIChat: false, subscriptionState: PreferencesSidebarSubscriptionState()) },
             tabSwitcherTabs: tabSwitcherTabs,
@@ -98,12 +104,18 @@ final class PreferencesSidebarModelTests: XCTestCase {
             isUsingAuthV2: true,
             pixelFiring: pixelFiringMock,
             defaultBrowserPreferences: mockDefaultBrowserPreferences,
-            aiFeaturesStatusProvider: mockAIChatPreferences,
+            downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
+            searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            aiChatPreferences: mockAIChatPreferences,
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
     }
 
     private func PreferencesSidebarModel(loadSections: @escaping (PreferencesSidebarSubscriptionState) -> [PreferencesSection]) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
+        let windowControllersManager = WindowControllersManagerMock()
         return DuckDuckGo_Privacy_Browser.PreferencesSidebarModel(
             loadSections: loadSections,
             tabSwitcherTabs: [],
@@ -115,7 +127,12 @@ final class PreferencesSidebarModelTests: XCTestCase {
             isUsingAuthV2: true,
             pixelFiring: pixelFiringMock,
             defaultBrowserPreferences: mockDefaultBrowserPreferences,
-            aiFeaturesStatusProvider: mockAIChatPreferences,
+            downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
+            searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            aiChatPreferences: mockAIChatPreferences,
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
     }
@@ -134,6 +151,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
             )
         }
 
+        let windowControllersManager = WindowControllersManagerMock()
+
         return DuckDuckGo_Privacy_Browser.PreferencesSidebarModel(
             loadSections: loadSections,
             tabSwitcherTabs: [],
@@ -144,7 +163,12 @@ final class PreferencesSidebarModelTests: XCTestCase {
             isUsingAuthV2: isUsingAuthV2,
             pixelFiring: pixelFiringMock,
             defaultBrowserPreferences: mockDefaultBrowserPreferences,
-            aiFeaturesStatusProvider: mockAIChatPreferences,
+            downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
+            searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            aiChatPreferences: mockAIChatPreferences,
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
     }
@@ -684,20 +708,5 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertTrue(model.isSidebarItemEnabled(for: .paidAIChat))
         let protectionStatus = model.protectionStatus(for: .paidAIChat)
         XCTAssertEqual(protectionStatus?.status, .off)
-    }
-
-}
-
-// MARK: - MockAIChatPreferences
-
-public class MockAIChatPreferences: AIFeaturesStatusProviding {
-    @Published public var isAIFeaturesEnabled: Bool = false
-
-    public var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> {
-        $isAIFeaturesEnabled.eraseToAnyPublisher()
-    }
-
-    public func simulateAIFeaturesChange(enabled: Bool) {
-        isAIFeaturesEnabled = enabled
     }
 }

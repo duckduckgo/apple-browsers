@@ -57,6 +57,7 @@ final class PrivacyDashboardViewController: NSViewController {
     }()
 
     private let permissionHandler: PrivacyDashboardPermissionHandler
+    private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private var preferredMaxHeight: CGFloat = Constants.initialContentHeight
     func setPreferredMaxHeight(_ height: CGFloat) {
         guard height > Constants.initialContentHeight else { return }
@@ -82,11 +83,14 @@ final class PrivacyDashboardViewController: NSViewController {
     init(privacyInfo: PrivacyInfo? = nil,
          entryPoint: PrivacyDashboardEntryPoint = .dashboard,
          contentBlocking: ContentBlockingProtocol,
-         permissionManager: PermissionManagerProtocol) {
+         permissionManager: PermissionManagerProtocol,
+         webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+    ) {
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: contentBlocking.privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
         let toggleReportingManager = ToggleReportingManager(feature: toggleReportingFeature)
         self.permissionHandler = PrivacyDashboardPermissionHandler(permissionManager: permissionManager)
+        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.privacyDashboardController = PrivacyDashboardController(privacyInfo: privacyInfo,
                                                                      entryPoint: entryPoint,
                                                                      toggleReportingManager: toggleReportingManager,
@@ -404,7 +408,7 @@ extension PrivacyDashboardViewController {
                                                configVersion: configuration.version,
                                                blockedTrackerDomains: blockedTrackerDomains,
                                                installedSurrogates: installedSurrogates,
-                                               isGPCEnabled: WebTrackingProtectionPreferences.shared.isGPCEnabled,
+                                               isGPCEnabled: webTrackingProtectionPreferences.isGPCEnabled,
                                                ampURL: ampURL,
                                                urlParametersRemoved: urlParametersRemoved,
                                                protectionsState: protectionsState,

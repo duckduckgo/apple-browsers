@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "messages": [
+    {
+      "id": "1",
+      "surfaces": [
+        "new_tab_page",
+        "modal"
+      ],
+      "content": {
+        "messageType": "small",
+        "titleText": "title",
+        "descriptionText": "description"
+      }
+    },
+    {
+      "id": "2",
+      "surfaces": [
+        "modal",
+        "new_tab_page",
+        "dedicated_tab"
+      ],
+      "content": {
+        "messageType": "medium",
+        "titleText": "Here goes a title",
+        "descriptionText": "description",
+        "placeholder": "CriticalUpdate"
+      },
+      "metrics": {
+        "state": "enabled"
+      }
+    },
+    {
+      "id": "3",
+      "surfaces": [
+        "modal",
+        "dedicated_tab"
+      ],
+      "content": {
+        "messageType": "big_single_action",
+        "titleText": "Here goes a titl",
+        "descriptionText": "description",
+        "placeholder": "DDGAnnounce",
+        "primaryActionText": "Ok",
+        "primaryAction": {
+          "type": "url",
+          "value": "https://duckduckgo.com"
+        }
+      },
+      "metrics": {
+        "state": "enabled"
+      }
+    },
+    {
+      "id": "4",
+      "surfaces": [
+        "dedicated_tab",
+        "unsupported_value"
+      ],
+      "content": {
+        "messageType": "big_two_action",
+        "titleText": "Here goes a title",
+        "descriptionText": "description",
+        "placeholder": "AppUpdate",
+        "primaryActionText": "Ok",
+        "primaryAction": {
+          "type": "appstore",
+          "value": "com.duckduckgo.mobile.ios"
+        },
+        "secondaryActionText": "Cancel",
+        "secondaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      },
+      "metrics": {
+        "state": "enabled"
+      }
+    },
+    {
+      "id": "5",
+      "surfaces": [
+        "new_tab_page",
+        "unsupported_value"
+      ],
+      "content": {
+        "messageType": "promo_single_action",
+        "titleText": "Promo Title",
+        "descriptionText": "Promo Description",
+        "placeholder": "NewForMacAndWindows",
+        "actionText": "Promo Action",
+        "action": {
+          "type": "dismiss",
+          "value": ""
+        }
+      },
+      "metrics": {
+        "state": "enabled"
+      }
+    }
+  ],
+  "rules": []
+}
+

@@ -1,0 +1,37 @@
+// Fire Window configuration pixels
+{
+    "m_mac_daily_active_user_d": {
+        "description": "Daily pixel indicating active user",
+        "owners": ["jotaemepereira"],
+        "triggers": ["scheduled"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_default-browser": {
+        "description": "Daily pixel fired when DuckDuckGo is set as the default browser",
+        "owners": ["miasma13"],
+        "triggers": ["scheduled"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_non-default-browser": {
+        "description": "Daily pixel fired when DuckDuckGo is not set as the default browser",
+        "owners": ["miasma13"],
+        "triggers": ["scheduled"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_added-to-dock": {
+        "description": "Daily pixel fired when DuckDuckGo is added to the dock",
+        "owners": ["miasma13"],
+        "triggers": ["scheduled"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_not-added-to-dock": {
+        "description": "Daily pixel fired when DuckDuckGo is not added to the dock",
+        "owners": ["miasma13"],
+        "triggers": ["scheduled"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
+    }
+}

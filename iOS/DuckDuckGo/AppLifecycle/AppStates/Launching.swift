@@ -91,24 +91,9 @@ struct Launching: LaunchingHandling {
 
         let daxDialogs = configuration.onboardingConfiguration.daxDialogs
 
-        // Service to handle Win-back offer
-#if DEBUG || ALPHA
-        let winBackOfferDebugStore = WinBackOfferDebugStore(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
-        let dateProvider: () -> Date = { winBackOfferDebugStore.simulatedTodayDate }
-#else
-        let dateProvider: () -> Date = Date.init
-#endif
-        
-        let winBackOfferVisibilityManager = WinBackOfferVisibilityManager(
-            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-            winbackOfferStore: WinbackOfferStore(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore),
-            winbackOfferFeatureFlagProvider: WinBackOfferFeatureFlagger(featureFlagger: featureFlagger),
-            dateProvider: dateProvider
-        )
-        let winBackOfferService = WinBackOfferService(
-            visibilityManager: winBackOfferVisibilityManager,
-            isOnboardingCompletedProvider: { !daxDialogs.isEnabled }
-        )
+        let winBackOfferService = WinBackOfferFactory.makeService(keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
+                                                                  featureFlagger: featureFlagger,
+                                                                  daxDialogs: daxDialogs)
 
         let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                                             database: configuration.persistentStoresConfiguration.database,
@@ -118,7 +103,8 @@ struct Launching: LaunchingHandling {
                                                             privacyConfigurationManager: privacyConfigurationManager,
                                                             configurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
                                                             syncService: syncService.sync,
-                                                            winBackOfferService: winBackOfferService)
+                                                            winBackOfferService: winBackOfferService,
+                                                            subscriptionDataReporter: reportingService.subscriptionDataReporter)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
@@ -141,32 +127,33 @@ struct Launching: LaunchingHandling {
 
         // Initialise modal prompts coordination
         let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
-            launchSourceManager: launchSourceManager,
-            daxDialogs: daxDialogs,
-            keyValueFileStoreService: appKeyValueFileStoreService.keyValueFilesStore,
-            privacyConfigurationManager: privacyConfigurationManager,
-            providersDependency: .init(
-                newAddressBarPicker: .init(
-                    featureFlagger: featureFlagger,
-                    appSettings: appSettings,
-                    aiChatSettings: aiChatSettings,
-                    experimentalAIChatManager: ExperimentalAIChatManager()
-                ),
-                defaultBrowserPrompt: .init(
-                    presenter: defaultBrowserPromptService.presenter
-                ),
-                winBackOffer: .init(
-                    presenter: winBackOfferService.presenter,
-                    coordinator: winBackOfferService.coordinator
-                )
+            dependency: .init(
+                launchSourceManager: launchSourceManager,
+                contextualOnboardingStatusProvider: daxDialogs,
+                keyValueFileStoreService: appKeyValueFileStoreService.keyValueFilesStore,
+                privacyConfigurationManager: privacyConfigurationManager,
+                featureFlagger: featureFlagger,
+                remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
+                remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
+                remoteMessagingPixelReporter: remoteMessagingService.pixelReporter,
+                appSettings: appSettings,
+                aiChatSettings: aiChatSettings,
+                experimentalAIChatManager: ExperimentalAIChatManager(),
+                defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
+                winBackOfferPresenter: winBackOfferService.presenter,
+                winBackOfferCoordinator: winBackOfferService.coordinator
             )
         )
+        
+        let contentBlockingService = ContentBlockingService(appSettings: appSettings,
+                                                            fireproofing: fireproofing)
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
 
         mainCoordinator = try MainCoordinator(syncService: syncService,
+                                              contentBlockingService: contentBlockingService,
                                               bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                               remoteMessagingService: remoteMessagingService,
                                               daxDialogs: configuration.onboardingConfiguration.daxDialogs,
@@ -194,6 +181,7 @@ struct Launching: LaunchingHandling {
 
         systemSettingsPiPTutorialService.setPresenter(mainCoordinator)
         syncService.presenter = mainCoordinator.controller
+        remoteMessagingService.messageNavigator = DefaultMessageNavigator(delegate: mainCoordinator.controller)
         
         let notificationServiceManager = NotificationServiceManager(mainCoordinator: mainCoordinator)
         
@@ -223,6 +211,7 @@ struct Launching: LaunchingHandling {
 
         services = AppServices(screenshotService: screenshotService,
                                authenticationService: authenticationService,
+                               contentBlockingService: contentBlockingService,
                                syncService: syncService,
                                vpnService: vpnService,
                                dbpService: dbpService,

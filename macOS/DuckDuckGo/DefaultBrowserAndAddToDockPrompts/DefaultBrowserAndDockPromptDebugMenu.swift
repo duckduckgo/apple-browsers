@@ -25,6 +25,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     private let promptPermanentlyDismissedMenuItem = NSMenuItem(title: "")
     private let numberOfBannersShownMenuItem = NSMenuItem(title: "")
     private let inactiveDaysMenuItem = NSMenuItem(title: "")
+    private let inactiveWillShowDateMenuItem = NSMenuItem(title: "")
     private let store = NSApp.delegateTyped.defaultBrowserAndDockPromptService.store
     private let debugStore = DefaultBrowserAndDockPromptDebugStore()
     private let defaultBrowserAndDockPromptFeatureFlagger = NSApp.delegateTyped.defaultBrowserAndDockPromptService.featureFlagger
@@ -56,6 +57,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
             numberOfBannersShownMenuItem
             promptPermanentlyDismissedMenuItem
             inactiveDaysMenuItem
+            inactiveWillShowDateMenuItem
         }
     }
 
@@ -81,6 +83,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
         debugStore.reset()
         store.popoverShownDate = nil
         store.bannerShownDate = nil
+        store.inactiveUserModalShownDate = nil
         store.isBannerPermanentlyDismissed = false
         userActivityStore.save(DefaultBrowserAndDockPromptUserActivity(lastActiveDate: Date()))
         updateMenuItemsState()
@@ -134,6 +137,32 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
             userActivityManager.recordActivity()
             let inactiveDays = userActivityManager.numberOfInactiveDays()
             inactiveDaysMenuItem.title = "Number of inactive days: \(inactiveDays)"
+
+            if let inactiveShownDate = store.inactiveUserModalShownDate {
+                let inactiveShownDate = Date(timeIntervalSince1970: inactiveShownDate)
+                inactiveWillShowDateMenuItem.title = "Inactive User prompt has shown: \(Self.dateFormatter.string(from: inactiveShownDate))"
+            } else if let installDate = localStatisticsStore.installDate {
+                let firstDateAfterInstall = installDate.advanced(by: .days(defaultBrowserAndDockPromptFeatureFlagger.inactiveModalNumberOfDaysSinceInstall))
+                let nextDateAfterInactivity = debugStore.simulatedTodayDate.advanced(by: .days(defaultBrowserAndDockPromptFeatureFlagger.inactiveModalNumberOfInactiveDays + 1))
+
+                let installDateCriteriaMet = debugStore.simulatedTodayDate >= firstDateAfterInstall
+                let inactiveDaysCriteriaMet = inactiveDays >= defaultBrowserAndDockPromptFeatureFlagger.inactiveModalNumberOfInactiveDays
+
+                var inactiveWillShowDate: Date?
+                switch (installDateCriteriaMet, inactiveDaysCriteriaMet) {
+                case (true, true): // Prompt can be shown today
+                    inactiveWillShowDate = debugStore.simulatedTodayDate
+                case (true, false): // Prompt can be shown after another period of inactivity
+                    inactiveWillShowDate = nextDateAfterInactivity
+                case (false, _): // Prompt can be shown after install date criteria is met and another period of inactivity
+                    inactiveWillShowDate = max(firstDateAfterInstall, nextDateAfterInactivity)
+                }
+
+                let formattedWillShowDate = inactiveWillShowDate.flatMap { Self.dateFormatter.string(from: $0) } ?? "N/A"
+                inactiveWillShowDateMenuItem.title = "Inactive User prompt will show: \(formattedWillShowDate)"
+            } else {
+                inactiveWillShowDateMenuItem.title = "N/A"
+            }
         }
 
         simulatedTodayDateMenuItem.title = "Today's Date: \(Self.dateFormatter.string(from: debugStore.simulatedTodayDate))"

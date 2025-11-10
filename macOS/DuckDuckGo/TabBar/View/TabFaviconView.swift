@@ -50,6 +50,7 @@ final class TabFaviconView: NSView {
         super.init(frame: frame)
         setupSubviews()
         setupImageView()
+        setupSpinnerView()
         setupConstraints()
     }
 
@@ -68,13 +69,17 @@ extension TabFaviconView {
     func displaySpinnerIfNeeded(url: URL?, isLoading: Bool, error: Error?) {
         let policy = DefaultLoadingIndicatorPolicy()
         guard policy.shouldShowLoadingIndicator(url: url, isLoading: isLoading, error: error) else {
-            spinnerView.stopAnimating()
+            stopSpinner()
             resizeImageIfNeeded(scaleDown: false)
             return
         }
 
         spinnerView.startAnimating()
         resizeImageIfNeeded(scaleDown: true)
+    }
+
+    func stopSpinner() {
+        spinnerView.stopAnimating()
     }
 }
 
@@ -88,6 +93,11 @@ private extension TabFaviconView {
     func setupImageView() {
         imageView.imageScaling = .scaleProportionallyDown
         imageView.wantsLayer = true
+    }
+
+    func setupSpinnerView() {
+        spinnerView.setAccessibilityLabel("TabFaviconView.spinner")
+        spinnerView.setAccessibilityRole(.progressIndicator)
     }
 
     func setupConstraints() {

@@ -118,6 +118,13 @@ struct SettingsAppearanceView: View {
     }
 
     @ViewBuilder
+    func accessoryImage(_ image: UIImage) -> AnyView {
+        AnyView(Image(uiImage: image).tint(
+            Color(designSystemColor: .iconsSecondary)
+        ))
+    }
+
+    @ViewBuilder
     func addressBarButtonSetting() -> some View {
 
         let destination = AddressBarCustomizationPickerView(isAIChatEnabled: viewModel.isAIChatEnabled, selectedAddressBarButton: viewModel.selectedAddressBarButton)
@@ -128,7 +135,7 @@ struct SettingsAppearanceView: View {
         NavigationLink(destination: destination, isActive: $showAddressBarSettings) {
 
             if let image = viewModel.selectedAddressBarButton.wrappedValue.smallIcon {
-                SettingsCellView(label: "Address Bar", accessory: .image(Image(uiImage: image)))
+                SettingsCellView(label: "Address Bar", accessory: .custom(accessoryImage(image)))
             } else if viewModel.selectedAddressBarButton.wrappedValue == .none {
                 SettingsCellView(label: "Address Bar", accessory: .rightDetail("None"))
             } else {
@@ -150,7 +157,7 @@ struct SettingsAppearanceView: View {
         NavigationLink(destination: destination, isActive: $showToolbarSettings) {
 
             if let image = viewModel.selectedToolbarButton.wrappedValue.smallIcon {
-                SettingsCellView(label: "Toolbar", accessory: .image(Image(uiImage: image)))
+                SettingsCellView(label: "Toolbar", accessory: .custom(accessoryImage(image)))
             } else {
                 FailedAssertionView("Expected image for selection")
                 SettingsCellView(label: "Toolbar", accessory: .rightDetail("None"))

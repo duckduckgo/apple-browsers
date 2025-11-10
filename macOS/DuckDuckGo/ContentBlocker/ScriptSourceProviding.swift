@@ -44,6 +44,7 @@ protocol ScriptSourceProviding {
     var windowControllersManager: WindowControllersManagerProtocol { get }
     var currentCohorts: [ContentScopeExperimentData]? { get }
     var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
+    var cookiePopupProtectionPreferences: CookiePopupProtectionPreferences { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
 
 }
@@ -55,6 +56,7 @@ protocol ScriptSourceProviding {
         configStorage: Application.appDelegate.configurationStore,
         privacyConfigurationManager: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
         webTrackingProtectionPreferences: Application.appDelegate.webTrackingProtectionPreferences,
+        cookiePopupProtectionPreferences: Application.appDelegate.cookiePopupProtectionPreferences,
         contentBlockingManager: Application.appDelegate.privacyFeatures.contentBlocking.contentBlockingManager,
         trackerDataManager: Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager,
         experimentManager: Application.appDelegate.contentScopeExperimentsManager,
@@ -90,6 +92,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let contentBlockingManager: ContentBlockerRulesManagerProtocol
     let trackerDataManager: TrackerDataManager
     let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+    let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let tld: TLD
     let experimentManager: ContentScopeExperimentsManaging
     let bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
@@ -101,6 +104,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     init(configStorage: ConfigurationStoring,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
          contentBlockingManager: ContentBlockerRulesManagerProtocol,
          trackerDataManager: TrackerDataManager,
          experimentManager: ContentScopeExperimentsManaging,
@@ -121,6 +125,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.configStorage = configStorage
         self.privacyConfigurationManager = privacyConfigurationManager
         self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
+        self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
         self.contentBlockingManager = contentBlockingManager
         self.trackerDataManager = trackerDataManager
         self.experimentManager = experimentManager

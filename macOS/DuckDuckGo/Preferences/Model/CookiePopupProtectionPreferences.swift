@@ -34,8 +34,6 @@ struct CookiePopupProtectionPreferencesUserDefaultsPersistor: CookiePopupProtect
 
 final class CookiePopupProtectionPreferences: ObservableObject, PreferencesTabOpening {
 
-    static let shared = CookiePopupProtectionPreferences(windowControllersManager: Application.appDelegate.windowControllersManager)
-
     @Published
     var isAutoconsentEnabled: Bool {
         didSet {

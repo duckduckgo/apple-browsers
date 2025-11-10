@@ -590,7 +590,7 @@ extension TabSwitcherViewController: TabObserver {
         guard let index = self.tabsModel.indexOf(tab: tab),
               let cell = collectionView.cellForItem(at: IndexPath(row: index, section: 0)) as? TabViewCell,
 
-                // Check the current tab is the one we want to udpate, if not it might have been updated elsewhere
+              // Check the current tab is the one we want to update, if not it might have been updated elsewhere
               cell.tab?.uid == tab.uid else { return  }
     
         cell.update(withTab: tab,

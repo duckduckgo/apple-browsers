@@ -25,6 +25,7 @@ import Foundation
 import NetworkExtension
 import UserNotifications
 import os.log
+import PixelKit
 
 open class PacketTunnelProvider: NEPacketTunnelProvider {
 
@@ -472,6 +473,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private let knownFailureStore: NetworkProtectionKnownFailureStore
     private let snoozeTimingStore: NetworkProtectionSnoozeTimingStore
     private let wireGuardInterface: WireGuardInterface
+    
+    // MARK: - WideEvent
+    
+    private var wideEvent: WideEventManaging
+    private lazy var isConnectionWideEventMeasurementEnabled: Bool = false
+    private var connectionWideEventData: VPNConnectionWideEventData?
+    
 
     // MARK: - Cancellables
 
@@ -496,6 +504,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 providerEvents: EventMapping<Event>,
                 settings: VPNSettings,
                 defaults: UserDefaults,
+                wideEvent: WideEventManaging = WideEvent(),
                 entitlementCheck: (() async -> Result<Bool, Error>)?) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
@@ -511,6 +520,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.wireGuardInterface = wireGuardInterface
         self.settings = settings
         self.defaults = defaults
+        self.wideEvent = wideEvent
         self.entitlementCheck = entitlementCheck
 
         super.init()
@@ -658,6 +668,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         let startupOptions = StartupOptions(options: options ?? [:])
         Logger.networkProtection.log("Starting tunnel with options: \(startupOptions.description, privacy: .public)")
+        isConnectionWideEventMeasurementEnabled = startupOptions.isConnectionWideEventMeasurementEnabled
+        setupAndStartConnectionWideEvent(with: startupOptions.startupMethod)
 
         // Reset snooze if the VPN is restarting.
         self.snoozeTimingStore.reset()
@@ -690,11 +702,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
 
             Logger.networkProtection.error("🔴 Stopping VPN due to no auth token")
+            completeAndCleanupConnectionWideEvent(with: error)
             throw error
         }
 
         do {
             providerEvents.fire(.tunnelStartAttempt(.begin))
+            setupAndStartConnectionWideEvent(with: startupOptions.startupMethod)
             connectionStatus = .connecting
             resetIssueStateOnTunnelStart(startupOptions)
 
@@ -702,6 +716,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             try await startTunnel(onDemand: startupOptions.startupMethod == .automaticOnDemand)
 
             providerEvents.fire(.tunnelStartAttempt(.success))
+            completeAndCleanupConnectionWideEvent()
         } catch {
             Logger.networkProtection.error("🔴 Failed to start tunnel \(error.localizedDescription, privacy: .public)")
 
@@ -721,6 +736,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             self.knownFailureStore.lastKnownFailure = KnownFailure(error)
 
             providerEvents.fire(.tunnelStartAttempt(.failure(error)))
+            completeAndCleanupConnectionWideEvent(with: error)
             throw error
         }
     }
@@ -1869,5 +1885,38 @@ extension WireGuardAdapterError: LocalizedError, CustomDebugStringConvertible {
 
     public var debugDescription: String {
         errorDescription!
+    }
+}
+
+// MARK: - WideEvent
+
+extension PacketTunnelProvider {
+    
+    func setupAndStartConnectionWideEvent(with startupMethod: StartupOptions.StartupMethod) {
+        guard isConnectionWideEventMeasurementEnabled else { return }
+        // Already measured
+        guard startupMethod != .manualByMainApp else { return }
+        let data = VPNConnectionWideEventData(
+            extensionType: .unknown,
+            startupMethod: startupMethod == .automaticOnDemand ? .automaticOnDemand : .manualByTheSystem,
+            contextData: WideEventContextData(name: startupMethod == .automaticOnDemand ? NetworkProtectionFunnelOrigin.others.rawValue : NetworkProtectionFunnelOrigin.systemSettings.rawValue)
+        )
+        self.connectionWideEventData = data
+        wideEvent.startFlow(data)
+        self.connectionWideEventData?.overallDuration = WideEvent.MeasuredInterval.startingNow()
+        self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
+    }
+    
+    func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil) {
+        guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
+        data.tunnelStartDuration?.complete()
+        data.overallDuration?.complete()
+        if let error {
+            data.errorData = .init(error: error, description: description)
+            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+        } else {
+            wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
+        }
+        self.connectionWideEventData = nil
     }
 }

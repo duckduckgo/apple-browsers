@@ -522,7 +522,7 @@ private extension NetworkProtectionTunnelController {
         let data = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
+            contextData: WideEventContextData(name: iOSNetworkProtectionFunnelOrigin.appSettings.rawValue)
         )
         self.connectionWideEventData = data
         wideEvent.startFlow(data)

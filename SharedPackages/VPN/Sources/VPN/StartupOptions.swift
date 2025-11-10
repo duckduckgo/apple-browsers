@@ -158,6 +158,7 @@ public struct StartupOptions {
     public let tokenContainer: StoredOption<TokenContainer>
 #endif
     let enableTester: StoredOption<Bool>
+    let isConnectionWideEventMeasurementEnabled: Bool
 
     init(options: [String: Any]) {
         let startupMethod: StartupMethod = {
@@ -175,12 +176,14 @@ public struct StartupOptions {
         simulateError = options[NetworkProtectionOptionKey.tunnelFailureSimulation] as? Bool ?? false
         simulateCrash = options[NetworkProtectionOptionKey.tunnelFatalErrorCrashSimulation] as? Bool ?? false
         simulateMemoryCrash = options[NetworkProtectionOptionKey.tunnelMemoryCrashSimulation] as? Bool ?? false
+        isConnectionWideEventMeasurementEnabled = options[NetworkProtectionOptionKey.isConnectionWideEventMeasurementEnabled] as? Bool ?? false
 
         let resetStoredOptionsIfNil = startupMethod == .manualByMainApp
 #if os(macOS)
         isAuthV2Enabled = Self.readIsAuthV2Enabled(from: options, resetIfNil: resetStoredOptionsIfNil)
         authToken = Self.readAuthToken(from: options, resetIfNil: resetStoredOptionsIfNil)
         tokenContainer = Self.readTokenContainer(from: options, resetIfNil: resetStoredOptionsIfNil)
+        
 #endif
         enableTester = Self.readEnableTester(from: options, resetIfNil: resetStoredOptionsIfNil)
         vpnSettings = Self.readVPNSettings(from: options, resetIfNil: resetStoredOptionsIfNil)
@@ -195,6 +198,7 @@ public struct StartupOptions {
             simulateMemoryCrash: \(self.simulateMemoryCrash.description),
             vpnSettings: \(self.vpnSettings.description),
             enableTester: \(self.enableTester),
+            isConnectionWideEventMeasurementEnabled: \(self.isConnectionWideEventMeasurementEnabled),
         """
 #if os(macOS)
         result += """

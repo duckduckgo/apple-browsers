@@ -728,6 +728,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
         options[NetworkProtectionOptionKey.activationAttemptId] = UUID().uuidString as NSString
         options[NetworkProtectionOptionKey.isAuthV2Enabled] = NSNumber(value: vpnAppState.isAuthV2Enabled)
+        options[NetworkProtectionOptionKey.isConnectionWideEventMeasurementEnabled] = NSNumber(value: isConnectionWideEventMeasurementEnabled)
         if !vpnAppState.isAuthV2Enabled {
             Logger.networkProtection.log("Using Auth V1")
             self.connectionWideEventData?.oauthDuration = WideEvent.MeasuredInterval.startingNow()
@@ -969,7 +970,7 @@ private extension NetworkProtectionTunnelController {
         let data = VPNConnectionWideEventData(
             extensionType: .unknown,
             startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.agent.rawValue)
+            contextData: WideEventContextData(name: MacOSNetworkProtectionFunnelOrigin.agent.rawValue)
         )
         self.connectionWideEventData = data
         prefillBrowserStartDataIfAvailable()
@@ -979,7 +980,6 @@ private extension NetworkProtectionTunnelController {
     func prefillBrowserStartDataIfAvailable() {
         guard let data = self.connectionWideEventData else { return }
         guard vpnConnectionWideEventBrowserStartTime != nil || vpnConnectionWideEventOverallStartTime != nil || vpnConnectionWideEventBrowserStartError != nil else { return }
-        self.connectionWideEventData?.contextData = WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
         if let vpnConnectionWideEventBrowserStartTime {
             data.browserStartDuration = WideEvent.MeasuredInterval(start: vpnConnectionWideEventBrowserStartTime)
             data.browserStartDuration?.complete()

@@ -118,7 +118,7 @@
                 "key": "context.name",
                 "type": "string",
                 "description": "Context name for the flow",
-                "enum": ["funnel_appsettings_ios", "funnel_systemsettings_ios", "funnel_others_ios"]
+                "enum": ["funnel_appsettings_ios", "funnel_systemsettings_multiple", "funnel_others_multiple"]
             }
         ]
     }

@@ -20,7 +20,7 @@ import AppKit
 
 enum FaviconPlaceholderStyle {
     case dot
-    case url(URL?)
+    case domainPrefix(URL?)
 }
 
 final class TabFaviconView: NSView {
@@ -211,7 +211,7 @@ private enum FaviconAnimation {
 extension FaviconPlaceholderStyle {
 
     var url: URL? {
-        guard case .url(let url) = self else {
+        guard case .domainPrefix(let url) = self else {
             return nil
         }
 

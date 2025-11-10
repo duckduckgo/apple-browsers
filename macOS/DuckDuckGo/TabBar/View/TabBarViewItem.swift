@@ -1135,7 +1135,7 @@ final class TabBarViewItem: NSCollectionViewItem {
             return .dot
         }
 
-        return .url(tabViewModel?.tabContent.urlForWebView)
+        return .domainPrefix(tabViewModel?.tabContent.urlForWebView)
     }
 
     private func updateAudioPlayState(_ audioState: WKWebView.AudioState) {

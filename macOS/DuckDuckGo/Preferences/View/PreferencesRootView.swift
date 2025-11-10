@@ -108,25 +108,26 @@ enum Preferences {
             VStack(alignment: .leading) {
                 switch model.selectedPane {
                 case .defaultBrowser:
-                    DefaultBrowserView(defaultBrowserModel: DefaultBrowserPreferences.shared,
+                    DefaultBrowserView(defaultBrowserModel: model.defaultBrowserPreferences,
                                        dockCustomizer: DockCustomizer(),
                                        protectionStatus: model.protectionStatus(for: .defaultBrowser))
                 case .privateSearch:
-                    PrivateSearchView(model: SearchPreferences.shared)
+                    PrivateSearchView(model: model.searchPreferences)
                 case .webTrackingProtection:
-                    WebTrackingProtectionView(model: WebTrackingProtectionPreferences.shared)
+                    WebTrackingProtectionView(model: model.webTrackingProtectionPreferences)
                 case .threatProtection:
                     ThreatProtectionView(model: MaliciousSiteProtectionPreferences.shared)
                 case .cookiePopupProtection:
-                    CookiePopupProtectionView(model: CookiePopupProtectionPreferences.shared)
+                    CookiePopupProtectionView(model: model.cookiePopupProtectionPreferences)
                 case .emailProtection:
                     EmailProtectionView(emailManager: EmailManager(),
-                                        protectionStatus: model.protectionStatus(for: .emailProtection))
+                                        protectionStatus: model.protectionStatus(for: .emailProtection),
+                                        windowControllersManager: model.searchPreferences.windowControllersManager)
                 case .general:
                     GeneralView(startupModel: NSApp.delegateTyped.startupPreferences,
-                                downloadsModel: DownloadsPreferences.shared,
-                                searchModel: SearchPreferences.shared,
-                                tabsModel: TabsPreferences.shared,
+                                downloadsModel: model.downloadsPreferences,
+                                searchModel: model.searchPreferences,
+                                tabsModel: model.tabsPreferences,
                                 dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
                                 dockCustomizer: DockCustomizer())
@@ -134,7 +135,7 @@ enum Preferences {
                     SyncView()
                 case .appearance:
                     AppearanceView(model: NSApp.delegateTyped.appearancePreferences,
-                                   aiChatModel: AIChatPreferences.shared,
+                                   aiChatModel: model.aiChatPreferences,
                                    themeManager: themeManager,
                                    isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
                 case .dataClearing:
@@ -164,7 +165,7 @@ enum Preferences {
                 case .about:
                     AboutView(model: AboutPreferences.shared)
                 case .aiChat:
-                    AIChatView(model: AIChatPreferences.shared)
+                    AIChatView(model: model.aiChatPreferences)
                 }
             }
             .frame(maxWidth: Const.paneContentWidth, maxHeight: .infinity, alignment: .topLeading)
@@ -378,25 +379,26 @@ enum Preferences {
             VStack(alignment: .leading) {
                 switch model.selectedPane {
                 case .defaultBrowser:
-                    DefaultBrowserView(defaultBrowserModel: DefaultBrowserPreferences.shared,
+                    DefaultBrowserView(defaultBrowserModel: model.defaultBrowserPreferences,
                                        dockCustomizer: DockCustomizer(),
                                        protectionStatus: model.protectionStatus(for: .defaultBrowser))
                 case .privateSearch:
-                    PrivateSearchView(model: SearchPreferences.shared)
+                    PrivateSearchView(model: model.searchPreferences)
                 case .webTrackingProtection:
-                    WebTrackingProtectionView(model: WebTrackingProtectionPreferences.shared)
+                    WebTrackingProtectionView(model: model.webTrackingProtectionPreferences)
                 case .threatProtection:
                     ThreatProtectionView(model: MaliciousSiteProtectionPreferences.shared)
                 case .cookiePopupProtection:
-                    CookiePopupProtectionView(model: CookiePopupProtectionPreferences.shared)
+                    CookiePopupProtectionView(model: model.cookiePopupProtectionPreferences)
                 case .emailProtection:
                     EmailProtectionView(emailManager: EmailManager(),
-                                        protectionStatus: model.protectionStatus(for: .emailProtection))
+                                        protectionStatus: model.protectionStatus(for: .emailProtection),
+                                        windowControllersManager: model.searchPreferences.windowControllersManager)
                 case .general:
                     GeneralView(startupModel: NSApp.delegateTyped.startupPreferences,
-                                downloadsModel: DownloadsPreferences.shared,
-                                searchModel: SearchPreferences.shared,
-                                tabsModel: TabsPreferences.shared,
+                                downloadsModel: model.downloadsPreferences,
+                                searchModel: model.searchPreferences,
+                                tabsModel: model.tabsPreferences,
                                 dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
                                 dockCustomizer: DockCustomizer())
@@ -404,7 +406,7 @@ enum Preferences {
                     SyncView()
                 case .appearance:
                     AppearanceView(model: NSApp.delegateTyped.appearancePreferences,
-                                   aiChatModel: AIChatPreferences.shared,
+                                   aiChatModel: model.aiChatPreferences,
                                    themeManager: themeManager,
                                    isThemeSwitcherEnabled: featureFlagger.isFeatureOn(.themes))
                 case .dataClearing:
@@ -433,7 +435,7 @@ enum Preferences {
                 case .about:
                     AboutView(model: AboutPreferences.shared)
                 case .aiChat:
-                    AIChatView(model: AIChatPreferences.shared)
+                    AIChatView(model: model.aiChatPreferences)
                 }
             }
             .frame(maxWidth: Const.paneContentWidth, maxHeight: .infinity, alignment: .topLeading)

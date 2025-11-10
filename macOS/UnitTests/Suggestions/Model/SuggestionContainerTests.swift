@@ -22,6 +22,7 @@ import History
 import InlineSnapshotTesting
 import NetworkingTestingUtils
 import os.log
+import SharedTestUtilities
 import Suggestions
 import WebKit
 import XCTest

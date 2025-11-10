@@ -134,14 +134,7 @@ struct SettingsCellView: View, Identifiable {
     }
 
     private var cellContent: some View {
-        Group {
-            switch accessory {
-            case .custom(let customView):
-                customView
-            default:
-                defaultView
-            }
-        }
+        defaultView
     }
 
     private var defaultView: some View {

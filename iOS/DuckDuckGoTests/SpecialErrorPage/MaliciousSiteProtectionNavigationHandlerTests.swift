@@ -24,16 +24,22 @@ import MaliciousSiteProtection
 @testable import DuckDuckGo
 
 @Suite("Special Error Pages - Malicious Site Protection Navigation Handler Unit Tests", .serialized)
-struct MaliciousSiteProtectionNavigationHandlerTests {
+final class MaliciousSiteProtectionNavigationHandlerTests {
     private var sut: MaliciousSiteProtectionNavigationHandler!
     private var mockMaliciousSiteProtectionManager: MockMaliciousSiteProtectionManager!
     private var webView: MockWebView!
 
     @MainActor
     init() {
+        WKNavigationResponse.swizzleDealloc()
+
         webView = MockWebView()
         mockMaliciousSiteProtectionManager = MockMaliciousSiteProtectionManager()
         sut = MaliciousSiteProtectionNavigationHandler(maliciousSiteProtectionManager: mockMaliciousSiteProtectionManager)
+    }
+
+    deinit {
+        WKNavigationResponse.restoreDealloc()
     }
 
     @MainActor
@@ -168,7 +174,7 @@ struct MaliciousSiteProtectionNavigationHandlerTests {
         #expect(sut.maliciousSiteDetectionTasks[url] != nil)
 
         // WHEN
-        _ = try #require(sut.getMaliciousSiteDectionTask(for: navigationResponse, webView: webView))
+        _ = try #require(sut.getMaliciousSiteDetectionTask(for: navigationResponse, webView: webView))
 
         // THEN
         #expect(sut.maliciousSiteDetectionTasks[url] == nil)
@@ -185,7 +191,7 @@ struct MaliciousSiteProtectionNavigationHandlerTests {
         let navigationResponse = MockNavigationResponse.with(url: url)
 
         // WHEN
-        let result = try #require(sut.getMaliciousSiteDectionTask(for: navigationResponse, webView: webView))
+        let result = try #require(sut.getMaliciousSiteDetectionTask(for: navigationResponse, webView: webView))
 
         // THEN
         #expect(await result.value == .navigationNotHandled)
@@ -208,7 +214,7 @@ struct MaliciousSiteProtectionNavigationHandlerTests {
         let navigationResponse = MockNavigationResponse.with(url: url)
 
         // WHEN
-        let result = try #require(sut.getMaliciousSiteDectionTask(for: navigationResponse, webView: webView))
+        let result = try #require(sut.getMaliciousSiteDetectionTask(for: navigationResponse, webView: webView))
 
         // THEN
         #expect(await result.value == .navigationHandled(.mainFrame(MaliciousSiteDetectionNavigationResponse(navigationAction: navigationAction, errorData: .maliciousSite(kind: threat, url: url)))))
@@ -231,7 +237,7 @@ struct MaliciousSiteProtectionNavigationHandlerTests {
         let navigationResponse = MockNavigationResponse.with(url: url)
 
         // WHEN
-        let result = try #require(sut.getMaliciousSiteDectionTask(for: navigationResponse, webView: webView))
+        let result = try #require(sut.getMaliciousSiteDetectionTask(for: navigationResponse, webView: webView))
 
         // THEN
         #expect(await result.value == .navigationHandled(.iFrame(maliciousURL: url, error: .maliciousSite(kind: threat, url: url))))

@@ -40,6 +40,7 @@ final class DBPHomeViewController: NSViewController {
 
     private let prerequisiteVerifier: DataBrokerPrerequisitesStatusVerifier
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private lazy var errorViewController: DataBrokerProtectionErrorViewController = {
         DataBrokerProtectionErrorViewController()
     }()
@@ -60,7 +61,7 @@ final class DBPHomeViewController: NSViewController {
                                                   inputFocusApi: false,
                                                   autocompleteAttributeSupport: false)
 
-        let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
+        let isGPCEnabled = webTrackingProtectionPreferences.isGPCEnabled
         let sessionKey = UUID().uuidString
         let messageSecret = UUID().uuidString
         let prefs = ContentScopeProperties(gpcEnabled: isGPCEnabled,
@@ -84,11 +85,13 @@ final class DBPHomeViewController: NSViewController {
          vpnBypassService: VPNBypassFeatureProvider,
          prerequisiteVerifier: DataBrokerPrerequisitesStatusVerifier = DefaultDataBrokerPrerequisitesStatusVerifier(),
          privacyConfigurationManager: PrivacyConfigurationManaging,
+         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          freemiumDBPFeature: FreemiumDBPFeature) {
         self.dataBrokerProtectionManager = dataBrokerProtectionManager
         self.vpnBypassService = vpnBypassService
         self.prerequisiteVerifier = prerequisiteVerifier
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.freemiumDBPFeature = freemiumDBPFeature
         super.init(nibName: nil, bundle: nil)
     }

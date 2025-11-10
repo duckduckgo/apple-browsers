@@ -44,10 +44,15 @@ final class ContentScopePreferences: ObservableObject, PreferencesTabOpening {
         }
     }
 
-    init(persistor: ContentScopePreferencesPersistor = ContentScopePreferencesUserDefaultsPersistor()) {
+    init(
+        persistor: ContentScopePreferencesPersistor = ContentScopePreferencesUserDefaultsPersistor(),
+        windowControllersManager: WindowControllersManagerProtocol
+    ) {
         self.persistor = persistor
+        self.windowControllersManager = windowControllersManager
         isDebugStateEnabled = persistor.debugStateEnabled
     }
 
+    let windowControllersManager: WindowControllersManagerProtocol
     private var persistor: ContentScopePreferencesPersistor
 }

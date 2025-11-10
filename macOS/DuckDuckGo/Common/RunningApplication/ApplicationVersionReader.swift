@@ -24,7 +24,7 @@ internal class ApplicationVersionReader {
 
     static func getVersion(of appPath: String) -> String? {
         guard let plist = NSDictionary(contentsOfFile: appPath + "/" + plistRelativePath),
-              let versionNumber = plist.object(forKey: Bundle.Keys.versionNumber) as? String else {
+              let versionNumber = plist.object(forKey: Bundle.Key.versionNumber) as? String else {
             return nil
         }
 

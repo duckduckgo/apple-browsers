@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Combine
 import PersistenceTestingUtils
 import PixelKitTestingUtilities
+import SharedTestUtilities
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AppStateRestorationManagerTests: XCTestCase {
@@ -27,6 +29,7 @@ final class AppStateRestorationManagerTests: XCTestCase {
     private var mockFileStore: FileStoreMock!
     private var mockService: StatePersistenceService!
     private var mockStartupPreferences: StartupPreferences!
+    private var mockTabsPreferences: TabsPreferences!
     private var mockKeyValueStore: MockKeyValueFileStore!
     private var mockPromptCoordinator: SessionRestorePromptCoordinatorMock!
     private var appStateManager: AppStateRestorationManager!
@@ -38,9 +41,11 @@ final class AppStateRestorationManagerTests: XCTestCase {
         try await super.setUp()
         mockFileStore = FileStoreMock()
         mockService = StatePersistenceService(fileStore: mockFileStore, fileName: "test_persistent_state")
+        let windowControllersManager = WindowControllersManagerMock()
         let persistor = MockStartupPreferencesPersistor()
         let appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
-        mockStartupPreferences = StartupPreferences(persistor: persistor, appearancePreferences: appearancePreferences)
+        mockStartupPreferences = StartupPreferences(persistor: persistor, windowControllersManager: windowControllersManager, appearancePreferences: appearancePreferences)
+        mockTabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager)
         mockKeyValueStore = try MockKeyValueFileStore()
         mockPromptCoordinator = SessionRestorePromptCoordinatorMock()
         mockPixelKit = PixelKitMock()
@@ -49,6 +54,7 @@ final class AppStateRestorationManagerTests: XCTestCase {
             fileStore: mockFileStore,
             service: mockService,
             startupPreferences: mockStartupPreferences,
+            tabsPreferences: mockTabsPreferences,
             keyValueStore: mockKeyValueStore,
             sessionRestorePromptCoordinator: mockPromptCoordinator,
             pixelFiring: mockPixelKit
@@ -59,6 +65,7 @@ final class AppStateRestorationManagerTests: XCTestCase {
         appStateManager = nil
         mockKeyValueStore = nil
         mockStartupPreferences = nil
+        mockTabsPreferences = nil
         mockService = nil
         mockFileStore = nil
         mockPromptCoordinator = nil

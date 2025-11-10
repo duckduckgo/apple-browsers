@@ -265,6 +265,16 @@ class CommonUserAttributeMatcherTests: XCTestCase {
         ), .fail)
     }
 
+    func testWhenSubscriptionFreeTrialActiveMatchesThenReturnMatch() throws {
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: SubscriptionFreeTrialActiveMatchingAttribute(value: true, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenSubscriptionFreeTrialActiveDoesNotMatchThenReturnFail() throws {
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: SubscriptionFreeTrialActiveMatchingAttribute(value: false, fallback: nil)),
+                       .fail)
+    }
+
     // MARK: - Duck.ai
 
     func testWhenDaysSinceDuckAiUsedEqualOrLowerThanMaxThenReturnMatch() throws {
@@ -447,6 +457,7 @@ class CommonUserAttributeMatcherTests: XCTestCase {
             isSubscriptionActive: true,
             isSubscriptionExpiring: false,
             isSubscriptionExpired: false,
+            subscriptionFreeTrialActive: true,
             isDuckPlayerOnboarded: false,
             isDuckPlayerEnabled: false,
             dismissedMessageIds: dismissedMessageIds,

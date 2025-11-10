@@ -491,6 +491,7 @@ class OmniBarViewController: UIViewController, OmniBar {
             return
         }
 
+        barView.isCustomizableButtonHidden = !self.state.showCustomizableButton || state.currentAddressBarButton == .none
         let largeIcon = dependencies.mobileCustomization.largeIconForButton(state.currentAddressBarButton)
         barView.customizableButton.setImage(largeIcon, for: .normal)
         barView.isCustomizableButtonHidden = largeIcon == nil
@@ -610,7 +611,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     private func onClearButtonPressed() {
-        omniDelegate?.onClearPressed()
+        omniDelegate?.onClearTextPressed()
         refreshState(state.onTextClearedState)
     }
 

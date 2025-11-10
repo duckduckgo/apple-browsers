@@ -126,6 +126,7 @@ class TestFailureObserver: NSObject, XCTestObservation {
     }
 }
 
+@objc(UITestCase)
 class UITestCase: XCTestCase {
     var app: XCUIApplication!
 

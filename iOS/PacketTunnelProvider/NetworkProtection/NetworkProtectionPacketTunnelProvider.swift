@@ -17,20 +17,20 @@
 //  limitations under the License.
 //
 
-import Foundation
+import BrowserServicesKit
+import Combine
 import Common
 import Configuration
-import Combine
 import Core
-import Networking
+import Foundation
 import NetworkExtension
-import VPN
+import Networking
 import os.log
+import PixelKit
 import Subscription
+import VPN
 import WidgetKit
 import WireGuard
-import BrowserServicesKit
-import PixelKit
 
 final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 

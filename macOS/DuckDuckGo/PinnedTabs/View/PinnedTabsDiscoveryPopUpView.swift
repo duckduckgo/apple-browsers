@@ -82,7 +82,7 @@ struct PinnedTabsDiscoveryPopUpView: View {
 
     private func setPerWindowPinnedTabs() {
         Task.detached { @MainActor in
-            TabsPreferences.shared.pinnedTabsMode = .separate
+            Application.appDelegate.tabsPreferences.pinnedTabsMode = .separate
         }
     }
 

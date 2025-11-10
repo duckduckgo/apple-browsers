@@ -24,6 +24,22 @@ import TrackerRadarKit
 import BrowserServicesKit
 @testable import DuckDuckGo
 
+class FireproofingMock: Fireproofing {
+    var loginDetectionEnabled: Bool = false
+
+    var allowedDomains = [String]()
+
+    func isAllowed(cookieDomain: String) -> Bool { return true }
+
+    func isAllowed(fireproofDomain domain: String) -> Bool { return true }
+
+    func addToAllowed(domain: String) {}
+    
+    func remove(domain: String) {}
+    
+    func clearAll() {}
+}
+
 final class ContentBlockingUpdatingTests: XCTestCase {
     let appSettings = AppSettingsMock()
     let configManager = PrivacyConfigurationManagerMock()
@@ -34,7 +50,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         super.setUp()
         updating = ContentBlockingUpdating(appSettings: appSettings,
                                            contentBlockerRulesManager: rulesManager,
-                                           privacyConfigurationManager: configManager)
+                                           privacyConfigurationManager: configManager,
+                                           fireproofing: FireproofingMock())
     }
 
     override static func setUp() {

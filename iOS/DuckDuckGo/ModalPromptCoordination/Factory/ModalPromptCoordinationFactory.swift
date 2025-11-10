@@ -23,6 +23,7 @@ import SetDefaultBrowserUI
 import BrowserServicesKit
 import enum Common.DevicePlatform
 import AIChat
+import RemoteMessaging
 
 // MARK: - Factory
 
@@ -30,26 +31,31 @@ import AIChat
 enum ModalPromptCoordinationFactory {
 
     static func makeService(
-        launchSourceManager: LaunchSourceManager,
-        daxDialogs: DaxDialogs,
-        keyValueFileStoreService: ThrowingKeyValueStoring,
-        privacyConfigurationManager: PrivacyConfigurationManaging,
-        providersDependency: ProvidersDependency,
+        dependency: Dependency
     ) -> ModalPromptCoordinationService {
 
-        let newAddressBarPickerModalPromptProvider = makeNewAddressBarPickerModalPromptProvider(dependency: providersDependency.newAddressBarPicker)
-        let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: providersDependency.defaultBrowserPrompt.presenter)
-        let winBackOfferModalPromptProvider = WinBackOfferModalPromptProvider(presenter: providersDependency.winBackOffer.presenter, coordinator: providersDependency.winBackOffer.coordinator)
+        let isIPad = DevicePlatform.isIpad
+
+        let newAddressBarPickerModalPromptProvider = makeNewAddressBarPickerModalPromptProvider(dependency: dependency, isIPad: isIPad)
+        let defaultBrowserModalPromptProvider = DefaultBrowserModalPromptProvider(presenter: dependency.defaultBrowserPromptPresenter)
+        let winBackOfferModalPromptProvider = WinBackOfferModalPromptProvider(presenter: dependency.winBackOfferPresenter, coordinator: dependency.winBackOfferCoordinator)
+        let whatsNewModalPromptProvider = WhatsNewCoordinator(
+            remoteMessageStore: dependency.remoteMessagingStore,
+            remoteMessageActionHandler: dependency.remoteMessagingActionHandler,
+            isIPad: isIPad,
+            pixelReporter: dependency.remoteMessagingPixelReporter
+        )
 
         return ModalPromptCoordinationService(
-            launchSourceManager: launchSourceManager,
-            keyValueStore: keyValueFileStoreService,
-            contextualOnboardingStatusProvider: daxDialogs,
-            privacyConfigManager: privacyConfigurationManager,
+            launchSourceManager: dependency.launchSourceManager,
+            keyValueStore: dependency.keyValueFileStoreService,
+            contextualOnboardingStatusProvider: dependency.contextualOnboardingStatusProvider,
+            privacyConfigManager: dependency.privacyConfigurationManager,
             providers: .init(
                 newAddressBarPicker: newAddressBarPickerModalPromptProvider,
                 defaultBrowser: defaultBrowserModalPromptProvider,
-                winBackOffer: winBackOfferModalPromptProvider
+                winBackOffer: winBackOfferModalPromptProvider,
+                whatsNew: whatsNewModalPromptProvider
             )
         )
     }
@@ -60,7 +66,7 @@ enum ModalPromptCoordinationFactory {
 
 private extension ModalPromptCoordinationFactory {
 
-    static func makeNewAddressBarPickerModalPromptProvider(dependency: ProvidersDependency.NewAddressBarPickerDependency) -> NewAddressBarPickerModalPromptProvider {
+    static func makeNewAddressBarPickerModalPromptProvider(dependency: Dependency, isIPad: Bool) -> NewAddressBarPickerModalPromptProvider {
 
         let store = NewAddressBarPickerStore()
         let aiChatSettings = dependency.aiChatSettings
@@ -77,7 +83,7 @@ private extension ModalPromptCoordinationFactory {
             validator: validator,
             store: store,
             aiChatSettings: aiChatSettings,
-            isIPad: DevicePlatform.isIpad
+            isIPad: isIPad
         )
     }
 
@@ -87,30 +93,21 @@ private extension ModalPromptCoordinationFactory {
 
 extension ModalPromptCoordinationFactory {
 
-    struct ProvidersDependency {
-        let newAddressBarPicker: NewAddressBarPickerDependency
-        let defaultBrowserPrompt: DefaultBrowserDependency
-        let winBackOffer: WinBackOfferDependency
-    }
-
-}
-
-extension ModalPromptCoordinationFactory.ProvidersDependency {
-
-    struct NewAddressBarPickerDependency {
+    struct Dependency {
+        let launchSourceManager: LaunchSourceManager
+        let contextualOnboardingStatusProvider: ContextualDaxDialogStatusProvider
+        let keyValueFileStoreService: ThrowingKeyValueStoring
+        let privacyConfigurationManager: PrivacyConfigurationManaging
         let featureFlagger: FeatureFlagger
+        let remoteMessagingStore: RemoteMessagingStoring
+        let remoteMessagingActionHandler: RemoteMessagingActionHandling
+        let remoteMessagingPixelReporter: RemoteMessagingPixelReporting
         let appSettings: AppSettings
         let aiChatSettings: AIChatSettingsProvider
         let experimentalAIChatManager: ExperimentalAIChatManager
-    }
-
-    struct DefaultBrowserDependency {
-        let presenter: DefaultBrowserPromptPresenting
-    }
-
-    struct WinBackOfferDependency {
-        let presenter: WinBackOfferPresenting
-        let coordinator: WinBackOfferCoordinating
+        let defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
+        let winBackOfferPresenter: WinBackOfferPresenting
+        let winBackOfferCoordinator: WinBackOfferCoordinating
     }
 
 }

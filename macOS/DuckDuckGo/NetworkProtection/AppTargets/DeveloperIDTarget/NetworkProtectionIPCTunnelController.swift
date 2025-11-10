@@ -24,6 +24,7 @@ import PixelKit
 import UDSHelper
 import os.log
 import BrowserServicesKit
+import VPNAppState
 
 /// VPN tunnel controller through IPC.
 ///
@@ -158,11 +159,11 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
                 if let error {
                     let error = RequestError.ipcControlError(error)
                     handleFailure(error)
-                    self.connectionWideEventData?.browserStartError = WideEventErrorData(error: error, description: error.caseDescription)
+                    self.completeAndCleanupConnectionWideEvent(with: error, description: error.caseDescription)
                 } else {
                     pixelKit?.fire(StartAttempt.success, frequency: .legacyDailyAndCount)
+                    self.discardAndSetConnectionWideEvent()
                 }
-                self.discardAndPassonConnectionWideEvent()
             }
         } catch {
             handleFailure(error)
@@ -294,6 +295,9 @@ private extension NetworkProtectionIPCTunnelController {
     func setupAndStartConnectionWideEvent() {
         guard isConnectionWideEventMeasurementEnabled else { return }
         let data = VPNConnectionWideEventData(
+            // Only the main tunnel controller can know whether a system extension is being used.
+            // At this step we don't know the type of extension yet
+            extensionType: .unknown,
             startupMethod: .manualByMainApp,
             contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
         )
@@ -311,7 +315,7 @@ private extension NetworkProtectionIPCTunnelController {
         self.connectionWideEventData = nil
     }
     
-    func discardAndPassonConnectionWideEvent() {
+    func discardAndSetConnectionWideEvent() {
         guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
         vpnConnectionWideEventBrowserStartTime = data.browserStartDuration?.start
         vpnConnectionWideEventOverallStartTime = data.overallDuration?.start

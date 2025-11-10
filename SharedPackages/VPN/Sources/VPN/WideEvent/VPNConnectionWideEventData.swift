@@ -32,8 +32,8 @@ public class VPNConnectionWideEventData: WideEventData {
     public var appData: WideEventAppData
 
     // VPN-specific
-    public var extensionType: ExtensionType?
-    public let startupMethod: StartupMethod
+    public var extensionType: ExtensionType
+    public var startupMethod: StartupMethod
 
     // Overall duration
     public var overallDuration: WideEvent.MeasuredInterval?
@@ -52,8 +52,8 @@ public class VPNConnectionWideEventData: WideEventData {
 
     public var errorData: WideEventErrorData?
 
-    public init(startupMethod: StartupMethod,
-                extensionType: ExtensionType? = nil,
+    public init(extensionType: ExtensionType,
+                startupMethod: StartupMethod,
                 overallDuration: WideEvent.MeasuredInterval? = nil,
                 browserStartDuration: WideEvent.MeasuredInterval? = nil,
                 controllerStartDuration: WideEvent.MeasuredInterval? = nil,
@@ -99,6 +99,7 @@ extension VPNConnectionWideEventData {
     public enum ExtensionType: String, Codable, CaseIterable {
         case app
         case system
+        case unknown
     }
 
     public enum StartupMethod: String, Codable, CaseIterable {
@@ -141,12 +142,9 @@ extension VPNConnectionWideEventData {
         var params: [String: String] = [:]
 
         params[WideEventParameter.Feature.name] = Self.featureName
+        params[WideEventParameter.VPNConnectionFeature.extensionType] = extensionType.rawValue
         params[WideEventParameter.VPNConnectionFeature.startupMethod] = startupMethod.rawValue
         
-        if let extensionType {
-            params[WideEventParameter.VPNConnectionFeature.extensionType] = extensionType.rawValue
-        }
-
         // Overall latency
         if let overallDuration = overallDuration?.durationMilliseconds {
             params[WideEventParameter.VPNConnectionFeature.latency] = String(Int(overallDuration))

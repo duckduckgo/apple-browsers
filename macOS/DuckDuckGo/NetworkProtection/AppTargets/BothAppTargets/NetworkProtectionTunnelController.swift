@@ -616,6 +616,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         VPNOperationErrorRecorder().beginRecordingControllerStart()
         PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionControllerStartAttempt,
                       frequency: .legacyDailyAndCount)
+
         controllerErrorStore.lastErrorMessage = nil
 
         do {
@@ -717,12 +718,12 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             completeAtStepWithFailure(.controllerStart, with: StartError.connectionAlreadyStarted, description: StartError.connectionAlreadyStarted.caseDescription)
             throw StartError.connectionAlreadyStarted
         default:
-            self.connectionWideEventData?.controllerStartDuration?.complete()
             try await start(tunnelManager)
         }
     }
 
     private func start(_ tunnelManager: NETunnelProviderManager) async throws {
+        self.connectionWideEventData?.controllerStartDuration?.complete()
         var options = [String: NSObject]()
 
         options[NetworkProtectionOptionKey.activationAttemptId] = UUID().uuidString as NSString
@@ -966,6 +967,7 @@ private extension NetworkProtectionTunnelController {
     func setupAndStartConnectionWideEvent() {
         guard isConnectionWideEventMeasurementEnabled else { return }
         let data = VPNConnectionWideEventData(
+            extensionType: .unknown,
             startupMethod: .manualByMainApp,
             contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.agent.rawValue)
         )
@@ -976,10 +978,11 @@ private extension NetworkProtectionTunnelController {
     
     func prefillBrowserStartDataIfAvailable() {
         guard let data = self.connectionWideEventData else { return }
+        guard vpnConnectionWideEventBrowserStartTime != nil || vpnConnectionWideEventOverallStartTime != nil || vpnConnectionWideEventBrowserStartError != nil else { return }
+        self.connectionWideEventData?.contextData = WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
         if let vpnConnectionWideEventBrowserStartTime {
             data.browserStartDuration = WideEvent.MeasuredInterval(start: vpnConnectionWideEventBrowserStartTime)
             data.browserStartDuration?.complete()
-            data.contextData = WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
         }
         if let vpnConnectionWideEventOverallStartTime {
             data.overallDuration = WideEvent.MeasuredInterval(start: vpnConnectionWideEventOverallStartTime)

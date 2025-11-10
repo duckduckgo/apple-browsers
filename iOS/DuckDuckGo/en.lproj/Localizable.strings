@@ -2701,6 +2701,9 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Show Full Site Address";
 
+/* Title for the 'Add Duck.ai Shortcut' option in the AI experimental picker */
+"settings.ai.experimental.picker.duckai_shortcut" = "Add Duck.ai Shortcut";
+
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Search & Duck.ai";
 

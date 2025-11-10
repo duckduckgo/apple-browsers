@@ -1851,6 +1851,7 @@ public struct UserText {
     public static let newAddressBarPickerNotNow = NSLocalizedString("new.address.bar.picker.not.now", value: "Not Now", comment: "Not now button for the new address bar picker")
     public static let newAddressBarPickerFooter = NSLocalizedString("new.address.bar.picker.footer", value: "Adjust in Settings > AI Features", comment: "Footer text for the new address bar picker")
     public static let settingsAIPickerSearchAndDuckAI = NSLocalizedString("settings.ai.experimental.picker.search_and_duckai", value: "Search & Duck.ai", comment: "Title for the 'Search & Duck.ai' option in the AI experimental picker")
+    public static let settingsAIPickerAddDuckAIShortcut = NSLocalizedString("settings.ai.experimental.picker.duckai_shortcut", value: "Add Duck.ai Shortcut", comment: "Title for the 'Add Duck.ai Shortcut' option in the AI experimental picker")
 
     public enum MaliciousSiteProtectionSettings {
         public static let header = NSLocalizedString("malicious-site-protection.settings.header", value: "Site Safety Warnings", comment: "Header text for Malicious Site Protection settings")

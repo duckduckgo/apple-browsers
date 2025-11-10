@@ -52,6 +52,7 @@ final class TabFaviconView: NSView {
         super.init(frame: frame)
         setupSubviews()
         setupImageView()
+        setupSpinnerView()
         setupConstraints()
     }
 
@@ -70,13 +71,17 @@ extension TabFaviconView {
     func displaySpinnerIfNeeded(url: URL?, isLoading: Bool, error: Error?) {
         let policy = DefaultLoadingIndicatorPolicy()
         guard policy.shouldShowLoadingIndicator(url: url, isLoading: isLoading, error: error) else {
-            spinnerView.stopAnimating()
+            stopSpinner()
             resizeImageIfNeeded(scaleDown: false)
             return
         }
 
         spinnerView.startAnimating()
         resizeImageIfNeeded(scaleDown: true)
+    }
+
+    func stopSpinner() {
+        spinnerView.stopAnimating()
     }
 
     func displayFavicon(image: NSImage?, placeholderStyle: FaviconPlaceholderStyle) {
@@ -120,7 +125,6 @@ extension FaviconPlaceholderStyle {
         let tinting = NSColor(designSystemColor: .iconsTertiary)
         return NSImage(systemSymbolName: "circle.fill", accessibilityDescription: nil)?
             .tinted(with: tinting)
-
     }
 }
 
@@ -135,6 +139,11 @@ private extension TabFaviconView {
     func setupImageView() {
         imageView.imageScaling = .scaleProportionallyDown
         imageView.wantsLayer = true
+    }
+
+    func setupSpinnerView() {
+        spinnerView.setAccessibilityLabel("TabFaviconView.spinner")
+        spinnerView.setAccessibilityRole(.progressIndicator)
     }
 
     func setupConstraints() {
@@ -168,7 +177,7 @@ private extension TabFaviconView {
 
     func refreshImageLayerLocation() {
         let targetPositionX = bounds.width * 0.5
-        let targetPositionY = bounds.width * 0.5
+        let targetPositionY = bounds.height * 0.5
 
         guard let layer = imageView.layer else {
             return

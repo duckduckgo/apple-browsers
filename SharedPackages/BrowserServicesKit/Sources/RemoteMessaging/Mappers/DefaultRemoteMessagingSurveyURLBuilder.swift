@@ -19,7 +19,6 @@
 import BrowserServicesKit
 import Common
 import Foundation
-import Subscription
 
 public protocol VPNActivationDateProviding {
     func daysSinceActivation() -> Int?
@@ -30,18 +29,18 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
 
     private let statisticsStore: StatisticsStore
     private let vpnActivationDateStore: VPNActivationDateProviding
-    private let subscription: DuckDuckGoSubscription?
+    private let subscriptionDataProvider: SubscriptionSurveyDataProviding?
     private let localeIdentifier: String
     private let autofillUsageStore: AutofillUsageStore?
 
     public init(statisticsStore: StatisticsStore,
                 vpnActivationDateStore: VPNActivationDateProviding,
-                subscription: DuckDuckGoSubscription?,
+                subscriptionDataProvider: SubscriptionSurveyDataProviding?,
                 localeIdentifier: String = Locale.current.identifier,
                 autofillUsageStore: AutofillUsageStore?) {
         self.statisticsStore = statisticsStore
         self.vpnActivationDateStore = vpnActivationDateStore
-        self.subscription = subscription
+        self.subscriptionDataProvider = subscriptionDataProvider
         self.localeIdentifier = localeIdentifier
         self.autofillUsageStore = autofillUsageStore
     }
@@ -86,25 +85,25 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
                 let formattedLocale = LocaleMatchingAttribute.localeIdentifierAsJsonFormat(localeIdentifier)
                 queryItems.append(URLQueryItem(name: parameter.rawValue, value: formattedLocale))
             case .subscriptionStatus:
-                if let subscriptionStatusSurveyParameter = subscription?.subscriptionStatusSurveyParameter {
-                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: subscriptionStatusSurveyParameter))
+                if let status = subscriptionDataProvider?.subscriptionStatus {
+                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: status))
                 }
             case .subscriptionPlatform:
-                if let subscriptionPlatformSurveyParameter = subscription?.subscriptionPlatformSurveyParameter {
-                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: subscriptionPlatformSurveyParameter))
+                if let platform = subscriptionDataProvider?.subscriptionPlatform {
+                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: platform))
                 }
             case .subscriptionBilling:
-                if let subscriptionBillingSurveyParameter = subscription?.subscriptionBillingSurveyParameter {
-                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: subscriptionBillingSurveyParameter))
+                if let billing = subscriptionDataProvider?.subscriptionBilling {
+                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: billing))
                 }
 
             case .subscriptionDaysSincePurchase:
-                if let startDate = subscription?.startedAt,
+                if let startDate = subscriptionDataProvider?.subscriptionStartDate,
                    let daysSincePurchase = Calendar.current.numberOfDaysBetween(startDate, and: Date()) {
                     queryItems.append(URLQueryItem(name: parameter.rawValue, value: String(describing: daysSincePurchase)))
                 }
             case .subscriptionDaysUntilExpiry:
-                if let expiryDate = subscription?.expiresOrRenewsAt,
+                if let expiryDate = subscriptionDataProvider?.subscriptionExpiryDate,
                    let daysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: expiryDate) {
                     queryItems.append(URLQueryItem(name: parameter.rawValue, value: String(describing: daysUntilExpiry)))
                 }
@@ -175,48 +174,5 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
         ]
 
         return comps.url?.absoluteString ?? urlString
-    }
-}
-
-extension DuckDuckGoSubscription {
-    var subscriptionStatusSurveyParameter: String {
-        switch status {
-        case .autoRenewable:
-            return "auto_renewable"
-        case .notAutoRenewable:
-            return "not_auto_renewable"
-        case .gracePeriod:
-            return "grace_period"
-        case .inactive:
-            return "inactive"
-        case .expired:
-            return "expired"
-        case .unknown:
-            return "unknown"
-        }
-    }
-
-    var subscriptionPlatformSurveyParameter: String {
-        switch platform {
-        case .apple:
-            return "apple"
-        case .google:
-            return "google"
-        case .stripe:
-            return "stripe"
-        case .unknown:
-            return "unknown"
-        }
-    }
-
-    var subscriptionBillingSurveyParameter: String {
-        switch billingPeriod {
-        case .monthly:
-            return "monthly"
-        case .yearly:
-            return "yearly"
-        case .unknown:
-            return "unknown"
-        }
     }
 }

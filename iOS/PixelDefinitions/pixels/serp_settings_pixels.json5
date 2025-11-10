@@ -1,0 +1,24 @@
+// SERP settings failure pixels
+{
+    "m_serp_settings_serialization_failed": {
+        "description": "Fired when converting SERP settings dictionary to JSON fails during serialization",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_serp_settings_keyvalue_store_read_error": {
+        "description": "Fired when reading SERP settings from persistent storage fails",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_serp_settings_keyvalue_store_write_error": {
+        "description": "Fired when writing SERP settings to persistent storage fails",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    }
+}

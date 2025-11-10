@@ -69,6 +69,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                                               errorReporting: nil),
                                        configStorage: MockConfigurationStore(),
                                        webTrackingProtectionPreferences: preferences,
+                                       cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
                                        experimentManager: MockContentScopeExperimentManager(),
                                        tld: TLD(),
                                        featureFlagger: MockFeatureFlagger(),

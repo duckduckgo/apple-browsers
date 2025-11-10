@@ -1456,6 +1456,7 @@
 		BB1D99E02EB9F3860050D8CF /* MockWinBackOfferCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1D99DC2EB9F3860050D8CF /* MockWinBackOfferCoordinator.swift */; };
 		BB1D99E12EB9F3860050D8CF /* MockWinBackOfferCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1D99DC2EB9F3860050D8CF /* MockWinBackOfferCoordinator.swift */; };
 		BB490ECF2EBDF36B00649B5B /* WinBackOfferFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB490ECE2EBDF36B00649B5B /* WinBackOfferFactory.swift */; };
+		BB343F392EBE1EFD00F206F5 /* SERPSettingsEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB343F382EBE1EF600F206F5 /* SERPSettingsEventHandler.swift */; };
 		BB631D162DE0D9020099977D /* DesignResourcesKitIcons in Frameworks */ = {isa = PBXBuildFile; productRef = BB631D152DE0D9020099977D /* DesignResourcesKitIcons */; };
 		BB6696372E9E6613003CB6AD /* WinBackOffer.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB6696362E9E6613003CB6AD /* WinBackOffer.xcassets */; };
 		BB77957B2E9D4B0B00CF58F4 /* WinBackOfferLaunchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7795762E9D4B0B00CF58F4 /* WinBackOfferLaunchView.swift */; };
@@ -3731,6 +3732,7 @@
 		BB1D99D62EB9F3710050D8CF /* MockWinBackOfferPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockWinBackOfferPresenter.swift; sourceTree = "<group>"; };
 		BB1D99DC2EB9F3860050D8CF /* MockWinBackOfferCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockWinBackOfferCoordinator.swift; sourceTree = "<group>"; };
 		BB490ECE2EBDF36B00649B5B /* WinBackOfferFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferFactory.swift; sourceTree = "<group>"; };
+		BB343F382EBE1EF600F206F5 /* SERPSettingsEventHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SERPSettingsEventHandler.swift; sourceTree = "<group>"; };
 		BB631D142DE0D8B70099977D /* DesignResourcesKitIcons */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKitIcons; path = ../SharedPackages/DesignResourcesKitIcons; sourceTree = SOURCE_ROOT; };
 		BB6696362E9E6613003CB6AD /* WinBackOffer.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = WinBackOffer.xcassets; sourceTree = "<group>"; };
 		BB7795762E9D4B0B00CF58F4 /* WinBackOfferLaunchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferLaunchView.swift; sourceTree = "<group>"; };
@@ -8241,6 +8243,7 @@
 		CB1A79722E4CAD54009C96C1 /* SERP */ = {
 			isa = PBXGroup;
 			children = (
+				BB343F382EBE1EF600F206F5 /* SERPSettingsEventHandler.swift */,
 				BB10B2A12EABF99D0005F174 /* SERPSettingsProvider.swift */,
 			);
 			path = SERP;
@@ -10929,6 +10932,7 @@
 				D668D92B2B696840008E2FF2 /* IdentityTheftRestorationPagesFeature.swift in Sources */,
 				85F2FFCF2211F8E5006BB258 /* TabSwitcherViewController+KeyCommands.swift in Sources */,
 				3157B43327F497E90042D3D7 /* SaveLoginView.swift in Sources */,
+				BB343F392EBE1EFD00F206F5 /* SERPSettingsEventHandler.swift in Sources */,
 				852E766D2E4638AF00BA92F1 /* AIChatSettingsMigration.swift in Sources */,
 				316AA45A2CF8E31F00A2ED28 /* AIChatSettings.swift in Sources */,
 				F17922E01E71BB59006E3D97 /* AutocompleteViewControllerDelegate.swift in Sources */,

@@ -127,7 +127,7 @@ final class WinBackOfferDebugMenu: NSMenuItem {
 
     @objc
     func completeCooldown() {
-        let cooldownDuration = TimeInterval.seconds(10)
+        let cooldownDuration = TimeInterval(.days(270))
         let availabilityOffset = TimeInterval.days(3)
 
         let cooldownExpiryDate = debugStore.simulatedTodayDate.addingTimeInterval(cooldownDuration)

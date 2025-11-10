@@ -34,7 +34,6 @@ enum WinBackOfferFactory {
             subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
             winbackOfferStore: WinbackOfferStore(keyValueStore: keyValueFilesStore),
             winbackOfferFeatureFlagProvider: WinBackOfferFeatureFlagger(featureFlagger: featureFlagger),
-            cooldownPeriod: TimeInterval.seconds(10),
             dateProvider: { winBackOfferDebugStore.simulatedTodayDate }
         )
 #else

@@ -33,13 +33,16 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     @MainActor
     override func setUp() async throws{
         try await super.setUp()
+
+        let preferences = CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock())
+        preferences.isAutoconsentEnabled = true
+
         userScript = AutoconsentUserScript(
             config: MockPrivacyConfiguration(),
             statsManager: MockAutoconsentDailyStat(),
-            management: AutoconsentManagement()
+            management: AutoconsentManagement(),
+            preferences: preferences
         )
-
-        CookiePopupProtectionPreferences.shared.isAutoconsentEnabled = true
     }
 
     override func tearDown() {

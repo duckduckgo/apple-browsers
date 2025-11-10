@@ -122,7 +122,7 @@ final class WinBackOfferDebugViewModel: ObservableObject {
 
     /// Complete the cooldown period and advance to the first day of the new offer window.
     func completeCooldown() {
-        let cooldownDuration = TimeInterval.seconds(10)
+        let cooldownDuration = TimeInterval(.days(270))
         let availabilityOffset = TimeInterval.days(3)
 
         let cooldownExpiryDate = debugStore.simulatedTodayDate.addingTimeInterval(cooldownDuration)

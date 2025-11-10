@@ -129,6 +129,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let searchPreferences: SearchPreferences
     let tabsPreferences: TabsPreferences
     let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+    let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
 
     let database: Database!
     let bookmarkDatabase: BookmarkDatabase
@@ -179,6 +180,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSidebarProvider: AIChatSidebarProviding
+    let aiChatPreferences: AIChatPreferences
 
     let privacyStats: PrivacyStatsCollecting
     let activeRemoteMessageModel: ActiveRemoteMessageModel
@@ -264,7 +266,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                                       winbackOfferStore: winbackOfferStore,
                                                                       winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider,
-                                                                      cooldownPeriod: TimeInterval.seconds(10),
                                                                       dateProvider: dateProvider)
 #else
         winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
@@ -676,6 +677,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
+        cookiePopupProtectionPreferences = CookiePopupProtectionPreferences(persistor: CookiePopupProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
+        aiChatPreferences = AIChatPreferences(
+            storage: DefaultAIChatPreferencesStorage(),
+            aiChatMenuConfiguration: aiChatMenuConfiguration,
+            windowControllersManager: windowControllersManager,
+            featureFlagger: featureFlagger
+        )
 
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(
             tabShower: windowControllersManager,
@@ -749,6 +757,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 appearancePreferences: appearancePreferences,
                 startupPreferences: startupPreferences,
                 webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
                 windowControllersManager: windowControllersManager,
                 bookmarkManager: bookmarkManager,
                 historyCoordinator: historyCoordinator,
@@ -775,6 +784,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
             webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
             windowControllersManager: windowControllersManager,
             bookmarkManager: bookmarkManager,
             historyCoordinator: historyCoordinator,
@@ -1153,7 +1163,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard didFinishLaunching else { return }
 
         fireDailyActiveUserPixels()
-        fireDailyFireWindowConfigurationPixel()
+        fireDailyFireWindowConfigurationPixels()
+
         autoconsentDailyStats.sendDailyPixelIfNeeded()
 
         initializeSync()
@@ -1192,10 +1203,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
     }
 
-    private func fireDailyFireWindowConfigurationPixel() {
-        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfiguration(
-            startupFireWindow: startupPreferences.startupWindowType == .fireWindow,
-            openFireWindowByDefault: dataClearingPreferences.shouldOpenFireWindowByDefault,
+    private func fireDailyFireWindowConfigurationPixels() {
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfigurationStartupFireWindowEnabled(
+            startupFireWindow: startupPreferences.startupWindowType == .fireWindow
+        )), frequency: .daily)
+
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled(
+            openFireWindowByDefault: dataClearingPreferences.shouldOpenFireWindowByDefault
+        )), frequency: .daily)
+
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfigurationFireAnimationEnabled(
             fireAnimationEnabled: dataClearingPreferences.isFireAnimationEnabled
         )), frequency: .daily)
     }

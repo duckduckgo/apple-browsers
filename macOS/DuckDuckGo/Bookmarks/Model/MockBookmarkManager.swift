@@ -65,37 +65,37 @@ final class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding, Re
         return []
     }
 
-    func getBookmark(for url: URL) -> DuckDuckGo_Privacy_Browser.Bookmark? {
+    func getBookmark(for url: URL) -> Bookmark? {
         return nil
     }
 
-    func getBookmark(forUrl url: String) -> DuckDuckGo_Privacy_Browser.Bookmark? {
+    func getBookmark(forUrl url: String) -> Bookmark? {
         return nil
     }
 
-    func getBookmark(forVariantUrl url: URL) -> DuckDuckGo_Privacy_Browser.Bookmark? {
+    func getBookmark(forVariantUrl url: URL) -> Bookmark? {
         return nil
     }
 
-    func getBookmarkFolder(withId id: String) -> DuckDuckGo_Privacy_Browser.BookmarkFolder? {
+    func getBookmarkFolder(withId id: String) -> BookmarkFolder? {
         return nil
     }
 
-    func makeBookmark(for url: URL, title: String, isFavorite: Bool, index: Int?, parent: BookmarkFolder?) -> DuckDuckGo_Privacy_Browser.Bookmark? {
+    func makeBookmark(for url: URL, title: String, isFavorite: Bool, index: Int?, parent: BookmarkFolder?) -> Bookmark? {
         return nil
     }
 
-    func makeBookmarks(for websitesInfo: [DuckDuckGo_Privacy_Browser.WebsiteInfo], inNewFolderNamed folderName: String?, withinParentFolder parent: DuckDuckGo_Privacy_Browser.ParentFolderType) {}
+    func makeBookmarks(for websitesInfo: [WebsiteInfo], inNewFolderNamed folderName: String?, withinParentFolder parent: ParentFolderType) {}
 
     func makeFolder(named title: String, parent: BookmarkFolder?, completion: @escaping (Result<BookmarkFolder, Error>) -> Void) {}
 
     var removeBookmarkCalled = false
-    func remove(bookmark: DuckDuckGo_Privacy_Browser.Bookmark, undoManager: UndoManager?) {
+    func remove(bookmark: Bookmark, undoManager: UndoManager?) {
         removeBookmarkCalled = true
     }
 
     var removeFolderCalled = false
-    func remove(folder: DuckDuckGo_Privacy_Browser.BookmarkFolder, undoManager: UndoManager?) {
+    func remove(folder: BookmarkFolder, undoManager: UndoManager?) {
         removeFolderCalled = true
     }
 
@@ -105,37 +105,37 @@ final class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding, Re
     }
 
     var updateBookmarkCalled: Bookmark?
-    func update(bookmark: DuckDuckGo_Privacy_Browser.Bookmark) {
+    func update(bookmark: Bookmark) {
         updateBookmarkCalled = bookmark
     }
 
-    func update(bookmark: DuckDuckGo_Privacy_Browser.Bookmark, withURL url: URL, title: String, isFavorite: Bool) {}
+    func update(bookmark: Bookmark, withURL url: URL, title: String, isFavorite: Bool) {}
 
-    func update(folder: DuckDuckGo_Privacy_Browser.BookmarkFolder) {}
+    func update(folder: BookmarkFolder) {}
 
-    func update(folder: DuckDuckGo_Privacy_Browser.BookmarkFolder, andMoveToParent parent: DuckDuckGo_Privacy_Browser.ParentFolderType) {}
+    func update(folder: BookmarkFolder, andMoveToParent parent: ParentFolderType) {}
 
-    func updateUrl(of bookmark: DuckDuckGo_Privacy_Browser.Bookmark, to newUrl: URL) -> DuckDuckGo_Privacy_Browser.Bookmark? {
+    func updateUrl(of bookmark: Bookmark, to newUrl: URL) -> Bookmark? {
         return nil
     }
 
-    func add(bookmark: DuckDuckGo_Privacy_Browser.Bookmark, to parent: DuckDuckGo_Privacy_Browser.BookmarkFolder?, completion: @escaping (Error?) -> Void) {}
+    func add(bookmark: Bookmark, to parent: BookmarkFolder?, completion: @escaping (Error?) -> Void) {}
 
-    func add(objectsWithUUIDs uuids: [String], to parent: DuckDuckGo_Privacy_Browser.BookmarkFolder?, completion: @escaping (Error?) -> Void) {}
+    func add(objectsWithUUIDs uuids: [String], to parent: BookmarkFolder?, completion: @escaping (Error?) -> Void) {}
 
-    func update(objectsWithUUIDs uuids: [String], update: @escaping (DuckDuckGo_Privacy_Browser.BaseBookmarkEntity) -> Void, completion: @escaping (Error?) -> Void) {}
+    func update(objectsWithUUIDs uuids: [String], update: @escaping (BaseBookmarkEntity) -> Void, completion: @escaping (Error?) -> Void) {}
 
-    func canMoveObjectWithUUID(objectUUID uuid: String, to parent: DuckDuckGo_Privacy_Browser.BookmarkFolder) -> Bool {
+    func canMoveObjectWithUUID(objectUUID uuid: String, to parent: BookmarkFolder) -> Bool {
         return false
     }
 
     struct MoveArgs: Equatable {
         var objectUUIDs: [String] = []
         var toIndex: Int?
-        var withinParentFolder: DuckDuckGo_Privacy_Browser.ParentFolderType
+        var withinParentFolder: ParentFolderType
     }
     var moveObjectsCalled: MoveArgs?
-    func move(objectUUIDs: [String], toIndex: Int?, withinParentFolder: DuckDuckGo_Privacy_Browser.ParentFolderType, completion: @escaping (Error?) -> Void) {
+    func move(objectUUIDs: [String], toIndex: Int?, withinParentFolder: ParentFolderType, completion: @escaping (Error?) -> Void) {
         moveObjectsCalled = .init(objectUUIDs: objectUUIDs, toIndex: toIndex, withinParentFolder: withinParentFolder)
     }
 
@@ -169,7 +169,7 @@ final class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding, Re
 }
 
 extension MockBookmarkManager: HistoryViewBookmarksHandling {
-    func addNewBookmarks(for websiteInfos: [DuckDuckGo_Privacy_Browser.WebsiteInfo]) {
+    func addNewBookmarks(for websiteInfos: [WebsiteInfo]) {
         makeBookmarks(for: websiteInfos, inNewFolderNamed: nil, withinParentFolder: .root)
     }
 

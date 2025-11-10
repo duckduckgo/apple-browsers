@@ -33,7 +33,9 @@ enum GeneralPixel: PixelKitEvent {
     case dailyActiveUser
     case dailyDefaultBrowser(isDefault: Bool)
     case dailyAddedToDock(isAddedToDock: Bool)
-    case dailyFireWindowConfiguration(startupFireWindow: Bool, openFireWindowByDefault: Bool, fireAnimationEnabled: Bool)
+    case dailyFireWindowConfigurationStartupFireWindowEnabled(startupFireWindow: Bool)
+    case dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled(openFireWindowByDefault: Bool)
+    case dailyFireWindowConfigurationFireAnimationEnabled(fireAnimationEnabled: Bool)
 
     case navigation(NavigationKind)
     case navigationToExternalURL
@@ -586,8 +588,14 @@ enum GeneralPixel: PixelKitEvent {
         case .dailyAddedToDock(isAddedToDock: let isAddedToDock):
             return  "m_mac_\(isAddedToDock ? "added" : "not-added")-to-dock"
 
-        case .dailyFireWindowConfiguration:
-            return "m_mac_fire_window_configuration"
+        case .dailyFireWindowConfigurationStartupFireWindowEnabled(startupFireWindow: let startupFireWindow):
+            return "m_mac_fire_window_configuration_startup_fire_window_is_\(startupFireWindow ? "enabled" : "disabled")"
+
+        case .dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled(openFireWindowByDefault: let openFireWindowByDefault):
+            return "m_mac_fire_window_configuration_open_fire_window_by_default_is_\(openFireWindowByDefault ? "enabled" : "disabled")"
+
+        case .dailyFireWindowConfigurationFireAnimationEnabled(fireAnimationEnabled: let fireAnimationEnabled):
+            return "m_mac_fire_window_configuration_fire_animation_is_\(fireAnimationEnabled ? "enabled" : "disabled")"
 
         case .navigation:
             return "m_mac_navigation"
@@ -1296,13 +1304,6 @@ enum GeneralPixel: PixelKitEvent {
         switch self {
         case .loginItemUpdateError(let loginItemBundleID, let action, let buildType, let osVersion):
             return ["loginItemBundleID": loginItemBundleID, "action": action, "buildType": buildType, "macosVersion": osVersion]
-
-        case .dailyFireWindowConfiguration(let startupFireWindow, let openFireWindowByDefault, let fireAnimationEnabled):
-            return [
-                "startup_fire_window": startupFireWindow ? "true" : "false",
-                "open_fire_window_by_default": openFireWindowByDefault ? "true" : "false",
-                "fire_animation_enabled": fireAnimationEnabled ? "true" : "false"
-            ]
 
         case .navigation(let kind):
             return ["kind": kind.description]

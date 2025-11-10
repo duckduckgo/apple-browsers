@@ -150,7 +150,7 @@ public final class WideEvent: WideEventManaging {
 
             try firePixel(named: T.pixelName, parameters: parameters, onComplete: onComplete)
 
-            Self.logger.info("👀 Completed wide event flow: \(T.pixelName, privacy: .public) with global ID: \(data.globalData.id, privacy: .public) status: \(status, privacy: .public), parameters: \(data.jsonParameters(), privacy: .public), errors if any \(data.errorData?.domain ?? "None", privacy: .public)")
+            Self.logger.info("Completed wide event flow: \(T.pixelName, privacy: .public) with global ID: \(data.globalData.id, privacy: .public)")
         } catch {
             if case WideEventError.flowNotFound = error {
                 // Expected if the flow wasn't sampled when it was started

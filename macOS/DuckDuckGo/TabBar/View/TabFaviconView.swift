@@ -104,7 +104,7 @@ private extension TabFaviconView {
     }
 
     func setupImageView() {
-        imageView.imageScaling = .scaleProportionallyUpOrDown
+        imageView.imageScaling = .scaleProportionallyDown
         imageView.wantsLayer = true
     }
 

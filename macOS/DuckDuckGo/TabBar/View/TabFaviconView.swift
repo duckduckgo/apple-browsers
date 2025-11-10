@@ -27,7 +27,7 @@ final class TabFaviconView: NSView {
         imageView.image != nil
     }
 
-    private var image: NSImage? {
+    var image: NSImage? {
         get {
             imageView.image
         }
@@ -79,13 +79,48 @@ extension TabFaviconView {
         resizeImageIfNeeded(scaleDown: true)
     }
 
-    func displayFavicon(image: NSImage?, for url: URL?) {
-        self.image = image
-        placeholderView.displayURL(url)
+    func displayFavicon(image: NSImage?, placeholderStyle: FaviconPlaceholderStyle) {
+        let targetURL = placeholderStyle.url
+        let targetImage = image ?? placeholderStyle.placeholderImage
+
+        self.image = targetImage
+        self.placeholderView.isHidden = !displaysPlaceholderLetter(image: image, placeholderStyle: placeholderStyle)
+
+        if let targetURL {
+            placeholderView.displayURL(targetURL)
+        }
     }
 
-    func displayPlaceholderImage() {
-        image = nil
+    private func displaysPlaceholderLetter(image: NSImage?, placeholderStyle: FaviconPlaceholderStyle) -> Bool {
+        image == nil && placeholderStyle.url != nil
+    }
+}
+
+
+enum FaviconPlaceholderStyle {
+    case dot
+    case url(URL?)
+}
+
+extension FaviconPlaceholderStyle {
+
+    var url: URL? {
+        guard case .url(let url) = self else {
+            return nil
+        }
+
+        return url
+    }
+
+    var placeholderImage: NSImage? {
+        guard case .dot = self else {
+            return nil
+        }
+
+        let tinting = NSColor(designSystemColor: .iconsTertiary)
+        return NSImage(systemSymbolName: "circle.fill", accessibilityDescription: nil)?
+            .tinted(with: tinting)
+
     }
 }
 

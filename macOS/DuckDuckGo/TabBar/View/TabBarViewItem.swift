@@ -539,7 +539,7 @@ final class TabBarItemCellView: NSView {
 
     func clear() {
         if displaysTabsProgressIndicator {
-            faviconView.displayPlaceholderImage()
+            faviconView.image = nil
         } else {
             faviconImageView.image = nil
         }
@@ -1112,8 +1112,13 @@ final class TabBarViewItem: NSCollectionViewItem {
         cell.needsLayout = true
 
         /// When using `faviconView`, we'll never display `faviconPlaceholderView`.
+        if cell.displaysTabsProgressIndicator, isPinned {
+            cell.faviconView.displayFavicon(image: favicon, placeholderStyle: .url(tabViewModel?.tabContent.urlForWebView))
+            return
+        }
+
         if cell.displaysTabsProgressIndicator {
-            cell.faviconView.displayFavicon(image: favicon, for: tabViewModel?.tabContent.urlForWebView)
+            cell.faviconView.displayFavicon(image: favicon, placeholderStyle: .dot)
             return
         }
 

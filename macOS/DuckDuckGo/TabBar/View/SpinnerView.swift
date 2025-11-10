@@ -69,7 +69,7 @@ final class SpinnerView: NSView {
 extension SpinnerView {
 
     var isAnimating: Bool {
-        gradientLayer.animation(forKey: SpinnerConstants.roationAnimationKey) != nil
+        gradientLayer.animation(forKey: SpinnerConstants.rotationAnimationKey) != nil
     }
 
     func startAnimating() {
@@ -85,11 +85,11 @@ extension SpinnerView {
         rotation.isRemovedOnCompletion = false
 
         gradientLayer.isHidden = false
-        gradientLayer.add(rotation, forKey: SpinnerConstants.roationAnimationKey)
+        gradientLayer.add(rotation, forKey: SpinnerConstants.rotationAnimationKey)
     }
 
     func stopAnimating() {
-        gradientLayer.removeAnimation(forKey: SpinnerConstants.roationAnimationKey)
+        gradientLayer.removeAnimation(forKey: SpinnerConstants.rotationAnimationKey)
         gradientLayer.isHidden = hidesWhenStopped
     }
 }
@@ -166,5 +166,5 @@ private enum SpinnerConstants {
     static let animationKeyPath = "transform.rotation.z"
     static let defaultLineWidth: CGFloat = 1.5
     static let defaultLineLength: CGFloat = CGFloat.pi * 2 * 0.6
-    static let roationAnimationKey = "rotation"
+    static let rotationAnimationKey = "rotation"
 }

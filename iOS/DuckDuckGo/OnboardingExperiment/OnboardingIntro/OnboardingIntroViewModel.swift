@@ -156,7 +156,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     func skipOnboardingAction() {
         pixelReporter.measureSkipOnboardingCTAAction()
     }
-#warning("Another entry point for skipping dax dialogs!")
+
     func confirmSkipOnboardingAction() {
         pixelReporter.measureConfirmSkipOnboardingCTAAction()
         contextualDaxDialogs.disableContextualDaxDialogs()

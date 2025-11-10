@@ -1116,13 +1116,8 @@ final class TabBarViewItem: NSCollectionViewItem {
         cell.needsLayout = true
 
         /// When using `faviconView`, we'll never display `faviconPlaceholderView`.
-        if cell.displaysTabsProgressIndicator, isPinned {
-            cell.faviconView.displayFavicon(image: favicon, placeholderStyle: .url(tabViewModel?.tabContent.urlForWebView))
-            return
-        }
-
         if cell.displaysTabsProgressIndicator {
-            cell.faviconView.displayFavicon(image: favicon, placeholderStyle: .dot)
+            cell.faviconView.displayFavicon(image: favicon, placeholderStyle: faviconPlaceholderStyle())
             return
         }
 
@@ -1134,6 +1129,14 @@ final class TabBarViewItem: NSCollectionViewItem {
         } else {
             cell.faviconPlaceholderView.isHidden = true
         }
+    }
+
+    private func faviconPlaceholderStyle() -> FaviconPlaceholderStyle {
+        guard isPinned else {
+            return .dot
+        }
+
+        return .url(tabViewModel?.tabContent.urlForWebView)
     }
 
     private func updateAudioPlayState(_ audioState: WKWebView.AudioState) {

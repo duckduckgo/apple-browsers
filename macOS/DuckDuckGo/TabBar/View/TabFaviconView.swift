@@ -18,6 +18,11 @@
 
 import AppKit
 
+enum FaviconPlaceholderStyle {
+    case dot
+    case url(URL?)
+}
+
 final class TabFaviconView: NSView {
 
     private let placeholderView = LetterView()
@@ -89,42 +94,11 @@ extension TabFaviconView {
         let targetImage = image ?? placeholderStyle.placeholderImage
 
         self.image = targetImage
-        self.placeholderView.isHidden = !displaysPlaceholderLetter(image: image, placeholderStyle: placeholderStyle)
+        self.placeholderView.isHidden = !shouldDisplayPlaceholderView(faviconImage: image, placeholderStyle: placeholderStyle)
 
         if let targetURL {
             placeholderView.displayURL(targetURL)
         }
-    }
-
-    private func displaysPlaceholderLetter(image: NSImage?, placeholderStyle: FaviconPlaceholderStyle) -> Bool {
-        image == nil && placeholderStyle.url != nil
-    }
-}
-
-
-enum FaviconPlaceholderStyle {
-    case dot
-    case url(URL?)
-}
-
-extension FaviconPlaceholderStyle {
-
-    var url: URL? {
-        guard case .url(let url) = self else {
-            return nil
-        }
-
-        return url
-    }
-
-    var placeholderImage: NSImage? {
-        guard case .dot = self else {
-            return nil
-        }
-
-        let tinting = NSColor(designSystemColor: .iconsTertiary)
-        return NSImage(systemSymbolName: "circle.fill", accessibilityDescription: nil)?
-            .tinted(with: tinting)
     }
 }
 
@@ -225,6 +199,10 @@ private extension TabFaviconView {
     func imageTransform(scaleDown: Bool) -> CATransform3D {
         scaleDown ? CATransform3DMakeScale(FaviconAnimation.scaleDownRatio, FaviconAnimation.scaleDownRatio, 1.0) : CATransform3DIdentity
     }
+
+    func shouldDisplayPlaceholderView(faviconImage: NSImage?, placeholderStyle: FaviconPlaceholderStyle) -> Bool {
+        faviconImage == nil && placeholderStyle.url != nil
+    }
 }
 
 private enum TabFaviconMetrics {
@@ -237,4 +215,25 @@ private enum FaviconAnimation {
     static let animationDuration = TimeInterval(0.15)
     static let animationTimingFunction = CAMediaTimingFunction(controlPoints: 0.25, 0.1, 0.25, 1.0)
     static let scaleDownRatio: CGFloat = 0.75
+}
+
+extension FaviconPlaceholderStyle {
+
+    var url: URL? {
+        guard case .url(let url) = self else {
+            return nil
+        }
+
+        return url
+    }
+
+    var placeholderImage: NSImage? {
+        guard case .dot = self else {
+            return nil
+        }
+
+        let tinting = NSColor(designSystemColor: .iconsTertiary)
+        return NSImage(systemImageName: .circleFill)?
+            .tinted(with: tinting)
+    }
 }

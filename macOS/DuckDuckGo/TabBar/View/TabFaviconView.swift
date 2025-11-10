@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKit
 
 enum FaviconPlaceholderStyle {
     case dot
@@ -80,7 +81,8 @@ extension TabFaviconView {
     }
 
     func displayFavicon(favicon: NSImage?, placeholderStyle: FaviconPlaceholderStyle) {
-        imageView.image = favicon ?? placeholderStyle.placeholderImage
+        let targetImage = favicon ?? placeholderStyle.placeholderImage
+        imageView.image = targetImage
 
         placeholderView.isShown = shouldDisplayPlaceholderView(favicon: favicon, placeholderStyle: placeholderStyle)
         placeholderView.displayURL(placeholderStyle.url)
@@ -102,7 +104,7 @@ private extension TabFaviconView {
     }
 
     func setupImageView() {
-        imageView.imageScaling = .scaleProportionallyDown
+        imageView.imageScaling = .scaleProportionallyUpOrDown
         imageView.wantsLayer = true
     }
 
@@ -116,16 +118,16 @@ private extension TabFaviconView {
         NSLayoutConstraint.activate([
             imageView.centerXAnchor.constraint(equalTo: centerXAnchor),
             imageView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            imageView.widthAnchor.constraint(equalToConstant: TabFaviconMetrics.imageSize.width),
-            imageView.heightAnchor.constraint(equalToConstant: TabFaviconMetrics.imageSize.height)
+            imageView.widthAnchor.constraint(equalToConstant: FaviconMetrics.imageSize.width),
+            imageView.heightAnchor.constraint(equalToConstant: FaviconMetrics.imageSize.height)
         ])
 
         spinnerView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             spinnerView.centerXAnchor.constraint(equalTo: centerXAnchor),
             spinnerView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            spinnerView.widthAnchor.constraint(equalTo: imageView.widthAnchor, constant: TabFaviconMetrics.spinnerPadding * 2),
-            spinnerView.heightAnchor.constraint(equalTo: imageView.heightAnchor, constant: TabFaviconMetrics.spinnerPadding * 2)
+            spinnerView.widthAnchor.constraint(equalTo: imageView.widthAnchor, constant: FaviconMetrics.spinnerPadding * 2),
+            spinnerView.heightAnchor.constraint(equalTo: imageView.heightAnchor, constant: FaviconMetrics.spinnerPadding * 2)
         ])
 
         placeholderView.translatesAutoresizingMaskIntoConstraints = false
@@ -148,11 +150,11 @@ private extension TabFaviconView {
             return
         }
 
-        guard layer.position.x != targetPositionX || layer.position.y != targetPositionY || layer.anchorPoint != TabFaviconMetrics.imageLayerAnchorPoint else {
+        guard layer.position.x != targetPositionX || layer.position.y != targetPositionY || layer.anchorPoint != FaviconMetrics.imageLayerAnchorPoint else {
             return
         }
 
-        layer.anchorPoint = TabFaviconMetrics.imageLayerAnchorPoint
+        layer.anchorPoint = FaviconMetrics.imageLayerAnchorPoint
         layer.position.x = targetPositionX
         layer.position.y = targetPositionY
      }
@@ -196,19 +198,7 @@ private extension TabFaviconView {
     }
 }
 
-private enum TabFaviconMetrics {
-    static let imageSize = NSSize(width: 16, height: 16)
-    static let imageLayerAnchorPoint = CGPoint(x: 0.5, y: 0.5)
-    static let spinnerPadding = CGFloat(2)
-}
-
-private enum FaviconAnimation {
-    static let animationDuration = TimeInterval(0.15)
-    static let animationTimingFunction = CAMediaTimingFunction(controlPoints: 0.25, 0.1, 0.25, 1.0)
-    static let scaleDownRatio: CGFloat = 0.75
-}
-
-extension FaviconPlaceholderStyle {
+private extension FaviconPlaceholderStyle {
 
     var url: URL? {
         guard case .domainPrefix(let url) = self else {
@@ -223,8 +213,41 @@ extension FaviconPlaceholderStyle {
             return nil
         }
 
-        let tinting = NSColor(designSystemColor: .iconsTertiary)
-        return NSImage(systemImageName: .circleFill)?
-            .tinted(with: tinting)
+        // Note: We're not using the `circle.fill` symbol since it's just impossible to get it to render in 16x16.
+        return NSImage.drawFilledCircle(size: FaviconPlaceholder.imageSize, foregroundColorName: FaviconPlaceholder.foregroundColorName)
     }
+}
+
+private extension NSImage {
+
+    static func drawFilledCircle(size: NSSize, foregroundColorName: DesignSystemColor) -> NSImage {
+        let targetFrame = NSRect(origin: .zero, size: size)
+        let image = NSImage(size: size)
+
+        image.lockFocus()
+
+        NSColor(designSystemColor: foregroundColorName).setFill()
+        NSBezierPath(ovalIn: targetFrame).fill()
+
+        image.unlockFocus()
+
+        return image
+    }
+}
+
+private enum FaviconMetrics {
+    static let imageSize = NSSize(width: 16, height: 16)
+    static let imageLayerAnchorPoint = CGPoint(x: 0.5, y: 0.5)
+    static let spinnerPadding = CGFloat(2)
+}
+
+private enum FaviconAnimation {
+    static let animationDuration = TimeInterval(0.15)
+    static let animationTimingFunction = CAMediaTimingFunction(controlPoints: 0.25, 0.1, 0.25, 1.0)
+    static let scaleDownRatio: CGFloat = 0.75
+}
+
+private enum FaviconPlaceholder {
+    static let imageSize = FaviconMetrics.imageSize
+    static let foregroundColorName: DesignSystemColor = .iconsTertiary
 }

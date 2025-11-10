@@ -2806,8 +2806,6 @@
 		B313C0502E1FD91200C34AE6 /* AutoconsentPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B313C04E2E1FD91200C34AE6 /* AutoconsentPixels.swift */; };
 		B52B61802E94331B008888E3 /* ThemeUpdateListening.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52B617F2E94331B008888E3 /* ThemeUpdateListening.swift */; };
 		B52B61812E94331B008888E3 /* ThemeUpdateListening.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52B617F2E94331B008888E3 /* ThemeUpdateListening.swift */; };
-		B53C27EB2EC29AEB00A22EA1 /* NSImageExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B53C27EA2EC29AEB00A22EA1 /* NSImageExtension.swift */; };
-		B53C27EC2EC29AEB00A22EA1 /* NSImageExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B53C27EA2EC29AEB00A22EA1 /* NSImageExtension.swift */; };
 		B53D46B22E9D9710000D59F7 /* ThemeUpdateListeningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B53D46B02E9D9710000D59F7 /* ThemeUpdateListeningTests.swift */; };
 		B53D46B42E9D9710000D59F7 /* ThemeUpdateListeningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B53D46B02E9D9710000D59F7 /* ThemeUpdateListeningTests.swift */; };
 		B53F4E922EA917AB0043B5EF /* LetterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B53F4E912EA917AB0043B5EF /* LetterView.swift */; };
@@ -5459,7 +5457,6 @@
 		B31055C327A1BA1D001AC618 /* autoconsent-bundle.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "autoconsent-bundle.js"; sourceTree = "<group>"; };
 		B313C04E2E1FD91200C34AE6 /* AutoconsentPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentPixels.swift; sourceTree = "<group>"; };
 		B52B617F2E94331B008888E3 /* ThemeUpdateListening.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeUpdateListening.swift; sourceTree = "<group>"; };
-		B53C27EA2EC29AEB00A22EA1 /* NSImageExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSImageExtension.swift; sourceTree = "<group>"; };
 		B53D46B02E9D9710000D59F7 /* ThemeUpdateListeningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeUpdateListeningTests.swift; sourceTree = "<group>"; };
 		B53F4E912EA917AB0043B5EF /* LetterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LetterView.swift; sourceTree = "<group>"; };
 		B541A3532E858041004AEAAD /* ThemeColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeColors.swift; sourceTree = "<group>"; };
@@ -10452,7 +10449,6 @@
 				F41D174025CB131900472416 /* NSColorExtension.swift */,
 				843965112C6F2FFE004C8899 /* NSDragOperationExtension.swift */,
 				B657841E25FA497600D8DB33 /* NSException+Catch.swift */,
-				B53C27EA2EC29AEB00A22EA1 /* NSImageExtension.swift */,
 				B6B71C572B23379600487131 /* NSLayoutConstraintExtension.swift */,
 				AA72D5FD25FFF94E00C77619 /* NSMenuItemExtension.swift */,
 				4B980E202817604000282EE1 /* NSNotificationName+Debug.swift */,
@@ -13498,7 +13494,6 @@
 				1D36E65C298ACD2900AA485D /* AppIconChanger.swift in Sources */,
 				3706FAE9293F65D500E42796 /* PDFSearchTextMenuItemHandler.swift in Sources */,
 				3706FAEB293F65D500E42796 /* HistoryMenu.swift in Sources */,
-				B53C27EC2EC29AEB00A22EA1 /* NSImageExtension.swift in Sources */,
 				C1935A1C2C88F9ED001AD72D /* SyncPromoViewModel.swift in Sources */,
 				84F1C8D02C7705B500716446 /* BookmarksBarMenuPopover.swift in Sources */,
 				3797C7A42C62C38800DA77FB /* NewTabPageCustomizationModel.swift in Sources */,
@@ -15358,7 +15353,6 @@
 				1D2FA6542E968BBD008C53F8 /* NewTabPageStateProvider.swift in Sources */,
 				85D33F1225C82EB3002B91A6 /* ConfigurationManager.swift in Sources */,
 				31F28C4F28C8EEC500119F70 /* YoutubePlayerUserScript.swift in Sources */,
-				B53C27EB2EC29AEB00A22EA1 /* NSImageExtension.swift in Sources */,
 				4B41EDAE2B168AFF001EEDF4 /* UnifiedFeedbackFormViewController.swift in Sources */,
 				9FB19C832E94C04D00B651B1 /* DefaultRemoteMessagingSurfacesProvider.swift in Sources */,
 				7BFF35732C10D75000F89673 /* IPCServiceLauncher.swift in Sources */,

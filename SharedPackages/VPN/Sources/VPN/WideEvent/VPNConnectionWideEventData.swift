@@ -22,9 +22,9 @@ import PixelKit
 public class VPNConnectionWideEventData: WideEventData {
 
     #if DEBUG
-    public static let pixelName = "m_ios_wide_vpn_connection_debug"
+    public static let pixelName = "vpn_connection_debug"
     #else
-    public static let pixelName = "m_ios_wide_vpn_connection"
+    public static let pixelName = "vpn_connection"
     #endif
 
     public var globalData: WideEventGlobalData

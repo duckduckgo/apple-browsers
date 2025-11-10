@@ -200,7 +200,7 @@ final class NewAddressBarPickerDisplayValidatorTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
-    func testShouldDisplayPicker_WhenOnboardingSearchExperienceFeatureFlagIsOn_AndUserEnabledAIChatSearchInputDuringOnboarding_ReturnsTrue() {
+    func testShouldDisplayPicker_WhenOnboardingSearchExperienceFeatureFlagIsOn_AndUserEnabledAIChatSearchInputDuringOnboarding_ReturnsFalse() {
         // Given
         setupShowCriteriaMet()
         mockFeatureFlagger.enabledFeatureFlags = [.showAIChatAddressBarChoiceScreen, .onboardingSearchExperience]

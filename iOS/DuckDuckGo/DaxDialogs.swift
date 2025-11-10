@@ -316,15 +316,12 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, Con
 
     func isStillOnboarding() -> Bool {
         if peekNextHomeScreenMessageExperiment() != nil {
-            print("🇳🇴 [DaxDialogs] isStillOnboarding: true")
             return true
         }
-        print("🇳🇴 [DaxDialogs] isStillOnboarding: false")
         return false
     }
 
     func dismiss() {
-        print("🇳🇴🟡 [DaxDialog] SETTING DISMISS TO TRUE!")
         settings.isDismissed = true
         // Reset last shown dialog as we don't have to show it anymore.
         isDismissedPublisher.send(true)

@@ -82,5 +82,5 @@ private enum Metrics {
 // MARK: - Preview
 
 #Preview {
-    OnboardingView.AddressBarPositionContent(isSkipped: .constant(false), action: {})
+    OnboardingView.SearchExperienceContent(isSkipped: .constant(false), action: {})
 }

@@ -76,7 +76,7 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         guard isFeatureFlagEnabled else { return false }
         Logger.addressBarPicker.info("✓ Feature flag is enabled")
 
-        guard canShowPickerAfterOnboardingSelection else { return false}
+        guard canShowPickerAfterOnboardingSelection else { return false }
         Logger.addressBarPicker.info("✓ Passes onboarding selection check")
 
         guard !isAIChatSearchInputEnabled else { return false }

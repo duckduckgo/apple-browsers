@@ -42,6 +42,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         segueToSettingsCallCount = 0
         segueToFeedbackCallCount = 0
         segueToSyncSettingsCallCount = 0
+        segueToSettingsAppearanceCallCount = 0
     }
 
     override func tearDownWithError() throws {

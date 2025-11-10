@@ -20,18 +20,20 @@ import AppKit
 
 final class TabFaviconView: NSView {
 
+    private let placeholderView = LetterView()
     private let imageView = NSImageView()
 
     var displaysImage: Bool {
         imageView.image != nil
     }
 
-    var image: NSImage? {
+    private var image: NSImage? {
         get {
             imageView.image
         }
         set {
             imageView.image = newValue
+            placeholderView.isHidden = newValue != nil
         }
     }
 
@@ -76,6 +78,15 @@ extension TabFaviconView {
         spinnerView.startAnimating()
         resizeImageIfNeeded(scaleDown: true)
     }
+
+    func displayFavicon(image: NSImage?, for url: URL?) {
+        self.image = image
+        placeholderView.displayURL(url)
+    }
+
+    func displayPlaceholderImage() {
+        image = nil
+    }
 }
 
 private extension TabFaviconView {
@@ -83,6 +94,7 @@ private extension TabFaviconView {
     func setupSubviews() {
         addSubview(imageView)
         addSubview(spinnerView)
+        imageView.addSubview(placeholderView)
     }
 
     func setupImageView() {
@@ -105,6 +117,14 @@ private extension TabFaviconView {
             spinnerView.centerYAnchor.constraint(equalTo: centerYAnchor),
             spinnerView.widthAnchor.constraint(equalTo: imageView.widthAnchor, constant: TabFaviconMetrics.spinnerPadding * 2),
             spinnerView.heightAnchor.constraint(equalTo: imageView.heightAnchor, constant: TabFaviconMetrics.spinnerPadding * 2)
+        ])
+
+        placeholderView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            placeholderView.leadingAnchor.constraint(equalTo: imageView.leadingAnchor),
+            placeholderView.trailingAnchor.constraint(equalTo: imageView.trailingAnchor),
+            placeholderView.topAnchor.constraint(equalTo: imageView.topAnchor),
+            placeholderView.bottomAnchor.constraint(equalTo: imageView.bottomAnchor)
         ])
     }
 }

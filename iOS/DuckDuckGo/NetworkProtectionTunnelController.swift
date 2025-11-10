@@ -320,6 +320,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
 
         options["activationAttemptId"] = UUID().uuidString as NSString
+        options[NetworkProtectionOptionKey.isConnectionWideEventMeasurementEnabled] = NSNumber(value: isConnectionWideEventMeasurementEnabled)
 
         
         do {

@@ -176,7 +176,8 @@ public struct StartupOptions {
         simulateError = options[NetworkProtectionOptionKey.tunnelFailureSimulation] as? Bool ?? false
         simulateCrash = options[NetworkProtectionOptionKey.tunnelFatalErrorCrashSimulation] as? Bool ?? false
         simulateMemoryCrash = options[NetworkProtectionOptionKey.tunnelMemoryCrashSimulation] as? Bool ?? false
-        isConnectionWideEventMeasurementEnabled = options[NetworkProtectionOptionKey.isConnectionWideEventMeasurementEnabled] as? Bool ?? false
+        // This is added as an emergency turnoff option. As this guards a very low risk pixel measurement, we keep it enabled as default
+        isConnectionWideEventMeasurementEnabled = options[NetworkProtectionOptionKey.isConnectionWideEventMeasurementEnabled] as? Bool ?? true
 
         let resetStoredOptionsIfNil = startupMethod == .manualByMainApp
 #if os(macOS)

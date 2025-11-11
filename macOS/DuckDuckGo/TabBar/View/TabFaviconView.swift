@@ -116,14 +116,6 @@ private extension TabFaviconView {
             spinnerView.widthAnchor.constraint(equalTo: imageView.widthAnchor, constant: TabFaviconMetrics.spinnerPadding * 2),
             spinnerView.heightAnchor.constraint(equalTo: imageView.heightAnchor, constant: TabFaviconMetrics.spinnerPadding * 2)
         ])
-
-        spinnerView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            spinnerView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            spinnerView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            spinnerView.widthAnchor.constraint(equalTo: imageView.widthAnchor, constant: TabFaviconMetrics.spinnerPadding * 2),
-            spinnerView.heightAnchor.constraint(equalTo: imageView.heightAnchor, constant: TabFaviconMetrics.spinnerPadding * 2)
-        ])
     }
 }
 
@@ -144,7 +136,7 @@ private extension TabFaviconView {
         layer.anchorPoint = TabFaviconMetrics.imageLayerAnchorPoint
         layer.position.x = targetPositionX
         layer.position.y = targetPositionY
-     }
+    }
 
     func resizeImageIfNeeded(scaleDown: Bool) {
         let targetRadius = imageCornerRadius(scaleDown: scaleDown)

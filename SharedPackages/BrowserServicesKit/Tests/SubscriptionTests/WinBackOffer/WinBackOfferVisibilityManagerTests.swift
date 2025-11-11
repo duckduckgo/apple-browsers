@@ -107,10 +107,24 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         XCTAssertFalse(isAvailable)
     }
 
+    func testWhenOfferNotYetPresented_TheOfferIsNotAvailable() {
+        // Given
+        mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
+        mockStore.churnDate = Date().addingTimeInterval(-4 * .day) // 4 days ago, enough time has passed
+        mockStore.offerPresentationDate = nil // But modal has not been shown yet
+
+        // When
+        let isAvailable = manager.isOfferAvailable
+
+        // Then
+        XCTAssertFalse(isAvailable, "Offer should not be available until launch message is presented")
+    }
+
     func testFourDaysAfterChurnDate_TheOfferIsAvailable() {
         // Given
         mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
         mockStore.churnDate = Date().addingTimeInterval(-4 * .day) // 4 days ago, within the 3-8 day window
+        mockStore.offerPresentationDate = Date().addingTimeInterval(-1 * .day) // Presented 1 day ago
 
         // When
         let isAvailable = manager.isOfferAvailable
@@ -149,8 +163,28 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
     func testWhenLastDayOfOffer_TheUrgencyMessageIsShown() {
         // Given
         mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
-        // Offer starts at day 3, lasts 5 days, so last day is at day 7 (3 + 5 - 1)
-        mockStore.churnDate = Date().addingTimeInterval(-7 * .day)
+        mockStore.churnDate = Date().addingTimeInterval(-7 * .day) // Churned 7 days ago
+        mockStore.offerPresentationDate = Date().addingTimeInterval(-3 * .day) // Presented 3 days ago (urgency window)
+
+        // When
+        let shouldShow = manager.shouldShowUrgencyMessage
+
+        // Then
+        XCTAssertTrue(shouldShow)
+    }
+
+    func testUrgencyMessageShowsDuringFinalCalendarDay() {
+        // Given
+        mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
+        let now = Date()
+        let presentationDate = now.addingTimeInterval(.days(-3) + .seconds(25))
+        mockStore.offerPresentationDate = presentationDate
+        manager = WinBackOfferVisibilityManager(
+            subscriptionManager: mockSubscriptionManager,
+            winbackOfferStore: mockStore,
+            winbackOfferFeatureFlagProvider: mockFeatureFlagProvider,
+            dateProvider: { now }
+        )
 
         // When
         let shouldShow = manager.shouldShowUrgencyMessage
@@ -189,7 +223,7 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         // Given
         mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
         mockStore.churnDate = Date().addingTimeInterval(-4 * .day)
-        mockStore.firstDayModalShown = false
+        mockStore.offerPresentationDate = nil
 
         // When
         let shouldShow = manager.shouldShowLaunchMessage
@@ -202,7 +236,7 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         // Given
         mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
         mockStore.churnDate = Date().addingTimeInterval(-4 * .day)
-        mockStore.firstDayModalShown = true
+        mockStore.offerPresentationDate = Date().addingTimeInterval(-1 * .day) // Already presented
 
         // When
         let shouldShow = manager.shouldShowLaunchMessage
@@ -215,7 +249,6 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         // Given
         mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
         mockStore.churnDate = nil
-        mockStore.firstDayModalShown = false
 
         // When
         let shouldShow = manager.shouldShowLaunchMessage
@@ -229,7 +262,7 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         manager.setLaunchMessagePresented(true)
 
         // Then
-        XCTAssertTrue(mockStore.firstDayModalShown)
+        XCTAssertNotNil(mockStore.offerPresentationDate)
     }
 
     // MARK: - Offer redemption
@@ -264,7 +297,7 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         // Then
         XCTAssertNotNil(mockStore.churnDate)
         XCTAssertFalse(mockStore.offerRedeemed)
-        XCTAssertFalse(mockStore.firstDayModalShown)
+        XCTAssertNil(mockStore.offerPresentationDate)
     }
 
     func testWhenSubscriptionStillActive_ItDoesNotStoreChurnDate() async {
@@ -294,7 +327,7 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         let oldChurnDate = Date().addingTimeInterval(-300 * .day) // 300 days ago, beyond 270-day cooldown
         mockStore.churnDate = oldChurnDate
         mockStore.offerRedeemed = true
-        mockStore.firstDayModalShown = true
+        mockStore.offerPresentationDate = Date().addingTimeInterval(-295 * .day)
 
         let newSubscription = createMockSubscription(status: .expired)
 
@@ -314,7 +347,7 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         XCTAssertNotNil(mockStore.churnDate)
         XCTAssertNotEqual(mockStore.churnDate, oldChurnDate)
         XCTAssertFalse(mockStore.offerRedeemed)
-        XCTAssertFalse(mockStore.firstDayModalShown)
+        XCTAssertNil(mockStore.offerPresentationDate)
     }
 
     func testWhenChurningWithinCooldownPeriod_ItDoesNotResetOffer() async {
@@ -339,7 +372,11 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 100_000_000)
 
         // Then
-        XCTAssertEqual(mockStore.churnDate, recentChurnDate)
+        guard let updatedChurnDate = mockStore.churnDate else {
+            XCTFail("Churn date should be stored when churning within cooldown period")
+            return
+        }
+        XCTAssertGreaterThan(updatedChurnDate, recentChurnDate)
         XCTAssertTrue(mockStore.offerRedeemed)
     }
 
@@ -366,6 +403,7 @@ class MockWinbackOfferStore: WinbackOfferStoring {
     var offerRedeemed: Bool = false
     var firstDayModalShown: Bool = false
     var didDismissUrgencyMessage: Bool = false
+    var offerPresentationDate: Date?
 
     func storeChurnDate(_ churnDate: Date) {
         self.churnDate = churnDate
@@ -382,6 +420,16 @@ class MockWinbackOfferStore: WinbackOfferStoring {
     func hasRedeemedOffer() -> Bool {
         return offerRedeemed
     }
+
+    func storeOfferPresentationDate(_ date: Date?) {
+        offerPresentationDate = date
+    }
+
+    func getOfferPresentationDate() -> Date? {
+        return offerPresentationDate
+    }
+
+    func clearChurnDate() { }
 }
 
 class MockWinBackOfferFeatureFlagProvider: WinBackOfferFeatureFlagProvider {

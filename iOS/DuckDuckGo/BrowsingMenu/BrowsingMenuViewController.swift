@@ -249,8 +249,13 @@ final class BrowsingMenuViewController: UIViewController {
     private func recalculateHeightConstraints() {
         tableView.contentInset = UIEdgeInsets(top: 10, left: 0, bottom: 10, right: 0)
         tableView.reloadData()
-        tableView.superview?.layoutIfNeeded()
+
+        // Layout the table view so the contentSize is known
+        tableView.layoutIfNeeded()
         tableViewHeight.constant = tableView.contentSize.height + tableView.contentInset.bottom + tableView.contentInset.top
+
+        // Layout the view so the tableViewHeight is applied properly (e.g. before transition)
+        view.layoutIfNeeded()
     }
 }
 

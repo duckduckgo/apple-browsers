@@ -57,18 +57,12 @@ final class SERPSettingsProvider: SERPSettingsProviding {
     ///
     /// Defaults to the app's global key-value store, which uses UserDefaults
     /// for macOS application settings.
-    var keyValueStore: ThrowingKeyValueStoring
+    var keyValueStore: ThrowingKeyValueStoring?
 
     /// AI chat preferences storage for querying AI feature state.
     ///
     /// Used to determine the value of `isAIChatEnabled`.
     var aiChatPreferencesStorage: AIChatPreferencesStorage
-
-    /// Serial dispatch queue for thread-safe storage access.
-    ///
-    /// All read and write operations to the key-value store are serialized
-    /// through this queue to prevent race conditions.
-    var settingsQueue: DispatchQueue = DispatchQueue(label: "com.duckduckgo.serp.settings")
 
     /// Optional event mapper for error reporting.
     ///
@@ -120,6 +114,6 @@ final class SERPSettingsProvider: SERPSettingsProviding {
     ///
     /// - Returns: `true` (feature is always enabled)
     func isSERPSettingsFeatureOn() -> Bool {
-        return featureFlagger.isFeatureOn(.serpSettings)
+        return featureFlagger.isFeatureOn(.storeSerpSettings)
     }
 }

@@ -160,9 +160,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1210625630564796?focus=true
     case newTabPageOmnibar
 
-    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1210733970843912?focus=true
-    case newFeedbackForm
-
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210561963620632?focus=true
     case vpnToolbarUpsell
 
@@ -206,9 +203,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1211260578559159?focus=true
     case unifiedURLPredictor
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211396583578252?focus=true
-    case unifiedURLPredictorMetrics
-
     /// https://app.asana.com/1/137249556945/task/1211354430557015?focus=true
     case subscriptionRestoreWidePixelMeasurement
 
@@ -237,10 +231,28 @@ public enum FeatureFlag: String, CaseIterable {
     case cpmCountPixel
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211708648644692?focus=true
-    case serpSettings
+    case storeSerpSettings
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211757211733009?focus=true
+    case dataImportNewExperience
+
+    /// https://app.asana.com/1/137249556945/project/492600419927320/task/1210863200265479?focus=true
+    case scheduledDefaultBrowserAndDockPromptsInactiveUser
+
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1209949983074592?focus=true
+    case pinnedTabsViewRewrite
+
+    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1211708489642640?focus=true
+    case tabProgressIndicator
+
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211579914062173?focus=true
+    case showHideAIGeneratedImagesSection
+
+    /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
+    case standaloneMigration
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -264,7 +276,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportNewSafariFilePicker,
                 .fireDialog,
                 .fireDialogIndividualSitesLink,
-                .blurryAddressBarTahoeFix:
+                .blurryAddressBarTahoeFix,
+                .pinnedTabsViewRewrite,
+                .showHideAIGeneratedImagesSection:
             true
         default:
             false
@@ -324,7 +338,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newTabPageOmnibar,
                 .newTabPagePerTab,
                 .newTabPageTabIDs,
-                .newFeedbackForm,
                 .vpnToolbarUpsell,
                 .supportsAlternateStripePaymentFlow,
                 .restoreSessionPrompt,
@@ -340,7 +353,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .themes,
                 .appStoreUpdateFlow,
                 .unifiedURLPredictor,
-                .unifiedURLPredictorMetrics,
                 .authV2WideEventEnabled,
                 .webKitPerformanceReporting,
                 .fireDialog,
@@ -349,8 +361,13 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncIdentities,
                 .aiChatDataClearing,
                 .dataImportNewSafariFilePicker,
-                .serpSettings,
-                .blurryAddressBarTahoeFix:
+                .storeSerpSettings,
+                .blurryAddressBarTahoeFix,
+                .dataImportNewExperience,
+                .pinnedTabsViewRewrite,
+                .tabProgressIndicator,
+                .showHideAIGeneratedImagesSection,
+                .standaloneMigration:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -361,7 +378,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .credentialsImportPromotionForExistingUsers,
                 .scheduledSetDefaultBrowserAndAddToDockPrompts,
                 .cpmCountPixel,
-                .fireDialogIndividualSitesLink:
+                .fireDialogIndividualSitesLink,
+                .scheduledDefaultBrowserAndDockPromptsInactiveUser:
             return false
         }
     }
@@ -476,8 +494,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:
             return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.omnibar))
-        case .newFeedbackForm:
-            return .remoteReleasable(.feature(.feedbackForm))
         case .vpnToolbarUpsell:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnToolbarUpsell))
         case .newTabPagePerTab:
@@ -510,8 +526,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
-        case .unifiedURLPredictorMetrics:
-            return .disabled
         case .authV2WideEventEnabled:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
         case .webKitPerformanceReporting:
@@ -526,10 +540,22 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.duckAiDataClearing))
         case .cpmCountPixel:
             return .internalOnly()
-        case .serpSettings:
-            return .disabled
+        case .storeSerpSettings:
+            return .remoteReleasable(.feature(.storeSerpSettings))
         case .blurryAddressBarTahoeFix:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
+        case .dataImportNewExperience:
+            return .disabled
+        case .scheduledDefaultBrowserAndDockPromptsInactiveUser:
+            return .remoteDevelopment(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
+        case .pinnedTabsViewRewrite:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.pinnedTabsViewRewrite))
+        case .tabProgressIndicator:
+            return .disabled
+        case .showHideAIGeneratedImagesSection:
+            return .remoteReleasable(.feature(.showHideAIGeneratedImagesSection))
+        case .standaloneMigration:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
         }
     }
 }

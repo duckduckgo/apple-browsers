@@ -24,6 +24,7 @@ import DDGSync
 import History
 import BrowserServicesKit
 import RemoteMessaging
+import RemoteMessagingTestsUtils
 @testable import Configuration
 import Core
 import SubscriptionTestingUtilities
@@ -31,6 +32,7 @@ import Common
 @testable import DuckDuckGo
 @testable import PersistenceTestingUtils
 import SystemSettingsPiPTutorialTestSupport
+import Combine
 
 // swiftlint:disable force_try
 
@@ -59,20 +61,7 @@ import SystemSettingsPiPTutorialTestSupport
             featureFlagger: MockFeatureFlagger()
         )
 
-        let remoteMessagingClient = RemoteMessagingClient(
-            bookmarksDatabase: db,
-            appSettings: AppSettingsMock(),
-            internalUserDecider: MockInternalUserDecider(),
-            configurationStore: MockConfigurationStoring(),
-            database: db,
-            errorEvents: nil,
-            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProviding(),
-            duckPlayerStorage: MockDuckPlayerStorage(),
-            configurationURLProvider: MockCustomURLProvider(),
-            syncService: MockDDGSyncing(),
-            winBackOfferService: .mocked
-        )
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
         let tabsModel = TabsModel(desktop: true)
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
@@ -96,6 +85,7 @@ import SystemSettingsPiPTutorialTestSupport
                                     bookmarksDatabase: db,
                                     historyManager: historyManager,
                                     syncService: syncService,
+                                    contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
                                     subscriptionDataReporter: subscriptionDataReporter,
                                     contextualOnboardingPresenter: contextualOnboardingPresenter,
                                     contextualOnboardingLogic: contextualOnboardingLogicMock,
@@ -110,7 +100,8 @@ import SystemSettingsPiPTutorialTestSupport
                                     maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                                     featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
                                     keyValueStore: try! MockKeyValueFileStore(),
-                                    daxDialogsManager: DummyDaxDialogsManager()
+                                    daxDialogsManager: DummyDaxDialogsManager(),
+                                    aiChatSettings: MockAIChatSettingsProvider()
         )
         sut = MainViewController(
             bookmarksDatabase: db,
@@ -119,6 +110,7 @@ import SystemSettingsPiPTutorialTestSupport
             homePageConfiguration: homePageConfiguration,
             syncService: syncService,
             syncDataProviders: dataProviders,
+            contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
             appSettings: AppSettingsMock(),
             previewsSource: MockTabPreviewsSource(),
             tabManager: tabManager,
@@ -144,7 +136,8 @@ import SystemSettingsPiPTutorialTestSupport
             daxDialogsManager: DummyDaxDialogsManager(),
             dbpIOSPublicInterface: nil,
             launchSourceManager: LaunchSourceManager(),
-            winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager()
+            winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
+            remoteMessagingActionHandler: MockRemoteMessagingActionHandler()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

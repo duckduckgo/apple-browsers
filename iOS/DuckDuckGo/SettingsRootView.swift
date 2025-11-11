@@ -226,6 +226,7 @@ struct SettingsRootView: View {
         case .dbp:
             if viewModel.isPIREnabled, let vcProvider = viewModel.dataBrokerProtectionViewControllerProvider {
                 DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
+                    .edgesIgnoringSafeArea(.bottom)
             } else {
                 SubscriptionPIRMoveToDesktopView()
             }
@@ -244,6 +245,8 @@ struct SettingsRootView: View {
             SettingsAIFeaturesView().environmentObject(viewModel)
         case .privateSearch:
             PrivateSearchView().environmentObject(viewModel)
+        case .customizeAddressBarButton, .customizeToolbarButton:
+            SettingsAppearanceView().environmentObject(viewModel)
         case .subscriptionSettings:
             if let configuration = subscriptionSettingsConfiguration() {
                 SubscriptionSettingsViewV2(configuration: configuration, settingsViewModel: viewModel)

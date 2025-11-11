@@ -1129,6 +1129,57 @@
             }
         ]
     },
+    "m_mac_wide_pir_scan_attempt": {
+        "description": "Wide pixel representing a broker scan attempt",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "widePixelAppName",
+            "widePixelAppVersion",
+            "widePixelInternalUser",
+            "widePixelPlatform",
+            "widePixelType",
+            "widePixelSampleRate",
+            "widePixelFeatureStatus",
+            "widePixelErrorDomain",
+            "widePixelErrorCode",
+            "widePixelUnderlyingErrorDomain",
+            "widePixelUnderlyingErrorCode",
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["pir-scan-attempt"]
+            },
+            {
+                "key": "feature.data.ext.data_broker",
+                "type": "string",
+                "description": "The URL of the data broker associated with this scan"
+            },
+            {
+                "key": "feature.data.ext.data_broker_version",
+                "type": "string",
+                "description": "Version of the broker JSON file"
+            },
+            {
+                "key": "feature.data.ext.scan.attempt_type",
+                "type": "string",
+                "description": "Category of the scan attempt",
+                "enum": ["new-data", "regular-check", "removal-verification"]
+            },
+            {
+                "key": "feature.data.ext.scan.attempt_number",
+                "type": "string",
+                "description": "Ordinal number for attempts within the current scan cycle"
+            },
+            {
+                "key": "feature.data.ext.scan.latency_ms",
+                "type": "string",
+                "description": "Duration in milliseconds between the scan attempt start and completion"
+            }
+        ]
+    },
     "m_mac_wide_pir_opt_out_confirmation": {
         "description": "Wide pixel sent when an opt-out confirmation flow completes",
         "owners": ["quanganhdo"],

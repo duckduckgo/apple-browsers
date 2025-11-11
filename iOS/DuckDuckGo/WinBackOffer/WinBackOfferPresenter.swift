@@ -25,11 +25,8 @@ import Core
 /// 
 /// Responsible for presenting the launch prompt.
 protocol WinBackOfferPresenting: AnyObject {
-    /// Presents the launch prompt if it should be shown.
-    /// 
-    /// Eligibility is decided by WinBackOfferVisibilityManager, via the coordinator.
-    @MainActor
-    func tryPresentWinBackOfferPrompt(from viewController: UIViewController)
+    /// Returns a view controller for the win-back offer prompt.
+    func makeWinBackOfferPrompt() -> UIViewController
 }
 
 final class WinBackOfferPresenter: NSObject, WinBackOfferPresenting {
@@ -39,15 +36,27 @@ final class WinBackOfferPresenter: NSObject, WinBackOfferPresenting {
         self.coordinator = coordinator
     }
 
-    @MainActor
-    func tryPresentWinBackOfferPrompt(from viewController: UIViewController) {
-        Logger.subscription.debug("[Win-Back Offer] Attempting to present win-back offer prompt.")
+    func makeWinBackOfferPrompt() -> UIViewController {
+        let hostingController = UIHostingController(rootView: AnyView(EmptyView()))
 
-        guard coordinator.shouldPresentLaunchPrompt() else {
-            return
-        }
+        let rootView = WinBackOfferLaunchView(
+            closeAction: { [weak hostingController, weak coordinator] in
+                coordinator?.handleDismissAction()
+                hostingController?.dismiss(animated: true)
+            },
+            ctaAction: { [weak hostingController, weak coordinator] in
+                coordinator?.handleCTAAction()
+                hostingController?.dismiss(animated: true)
+            }
+        )
 
-        presentLaunchPrompt(from: viewController)
+        hostingController.rootView = AnyView(rootView)
+        hostingController.modalPresentationStyle = .pageSheet
+        hostingController.modalTransitionStyle = .coverVertical
+
+        configurePresentationStyle(hostingController: hostingController)
+
+        return hostingController
     }
 }
 
@@ -55,32 +64,7 @@ final class WinBackOfferPresenter: NSObject, WinBackOfferPresenting {
 
 private extension WinBackOfferPresenter {
 
-    @MainActor
-    func presentLaunchPrompt(from viewController: UIViewController) {
-        let rootView = WinBackOfferLaunchView(
-            closeAction: { [weak viewController, weak coordinator] in
-                coordinator?.handleDismissAction()
-                viewController?.dismiss(animated: true)
-            },
-            ctaAction: { [weak viewController, weak coordinator] in
-                coordinator?.handleCTAAction()
-                viewController?.dismiss(animated: true)
-            }
-        )
-
-        let hostingController = UIHostingController(rootView: rootView)
-        hostingController.modalPresentationStyle = .pageSheet
-        hostingController.modalTransitionStyle = .coverVertical
-
-        configurePresentationStyle(hostingController: hostingController)
-
-        // Mark as presented after successful configuration
-        coordinator.markLaunchPromptPresented()
-
-        viewController.present(hostingController, animated: true)
-    }
-
-    func configurePresentationStyle(hostingController: UIHostingController<WinBackOfferLaunchView>) {
+    func configurePresentationStyle(hostingController: UIHostingController<AnyView>) {
         guard let presentationController = hostingController.sheetPresentationController else { return }
 
         if #available(iOS 16.0, *) {

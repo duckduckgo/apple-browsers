@@ -376,7 +376,7 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         // Given
         let persistor = MockTabsPreferencesPersistor()
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
-                                                            tabsPreferences: TabsPreferences(persistor: persistor))
+                                                            tabsPreferences: TabsPreferences(persistor: persistor, windowControllersManager: WindowControllersManagerMock()))
         tabCollectionViewModel.append(tab: Tab(uuid: "tab1", content: .url(URL.duckDuckGo, source: .ui)))
         tabCollectionViewModel.append(tab: Tab(uuid: "tab2", content: .url(URL.duckDuckGo, source: .ui)))
 

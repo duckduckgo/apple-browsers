@@ -62,13 +62,13 @@
 "action.title.enable.protection" = "Enable Privacy Protection";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Close Tabs and Clear Data";
+"action.title.forgetAll" = "Clear Tabs and Data";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Tabs and data cleared";
 
 /* Fire button title when AI chat clearing is enabled */
-"action.title.forgetAllWithAIChat" = "Close Tabs, Data and Duck.ai Chats";
+"action.title.forgetAllWithAIChat" = "Clear Tabs, Data, and Duck.ai Chats";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Open in Background";
@@ -2275,6 +2275,9 @@ https://duckduckgo.com/mac";
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Address bar option";
 
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies Managed";
 
@@ -2286,9 +2289,6 @@ https://duckduckgo.com/mac";
 
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Choose Your Browser";
-
-/* Message to highlight browser capability of private searches */
-"onboarding.browsers.features.privateSearch.title" = "Search privately by default";
 
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo also has an %1$@, available with a %2$@ and %3$@.";
@@ -2331,18 +2331,6 @@ https://duckduckgo.com/mac";
 
 /* The title of the onboarding dialog popup to select the preferred App icon. */
 "onboarding.highlights.appIconSelection.title" = "Which color looks best on me?";
-
-/* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Block cookie pop-ups";
-
-/* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Block targeted ads";
-
-/* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Delete browsing data with one button";
-
-/* Message to highlight browser capability of blocking 3rd-party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Block 3rd-party trackers";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Protections activated!";
@@ -2710,6 +2698,12 @@ Take back control of your personal information with the browser designed for dat
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Settings";
 
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Hide AI-Generated Images";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filters out AI-Generated images from image search results";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Always On";
 
@@ -2775,6 +2769,12 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings title for the customize section */
 "settings.customize" = "Customize";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Clears all tabs, Duck.ai chats, and data for any sites you haven't fireproofed.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Clears all tabs and data for any sites you haven't fireproofed.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Data Clearing";
@@ -3739,18 +3739,6 @@ Take back control of your personal information with the browser designed for dat
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "A message from %@:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "See Offer";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Not Now";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "Last day to save 25%!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "SAVE 25%";
 
@@ -3785,7 +3773,10 @@ Take back control of your personal information with the browser designed for dat
 "win-back.campaign.subscription.settings.menu.title" = "Resubscribe and Save 25%";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Resubscribe and Save 25%";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Resubscribe";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Stay protected with our VPN, private AI, and more.\nLimited time offer.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Looking for the Mac version?";

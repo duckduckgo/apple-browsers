@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
-@testable import DuckDuckGo_Privacy_Browser
-import SwiftUI
 import Persistence
+import SharedTestUtilities
+import SwiftUI
+import XCTest
+
+@testable import DuckDuckGo_Privacy_Browser
 
 class OnboardingManagerTests: XCTestCase {
 
@@ -51,7 +53,7 @@ class OnboardingManagerTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             aiChatHistoryCleaner: MockAIChatHistoryCleaner()
         )
-        startupPreferences = StartupPreferences(persistor: startupPersistor, appearancePreferences: appearancePreferences)
+        startupPreferences = StartupPreferences(persistor: startupPersistor, windowControllersManager: WindowControllersManagerMock(), appearancePreferences: appearancePreferences)
         importProvider = CapturingDataImportProvider()
         manager = OnboardingActionsManager(navigationDelegate: navigationDelegate, dockCustomization: dockCustomization, defaultBrowserProvider: defaultBrowserProvider, appearancePreferences: appearancePreferences, startupPreferences: startupPreferences, dataImportProvider: importProvider)
     }

@@ -32,6 +32,7 @@ import VPN
 import AIChat
 import DataBrokerProtection_iOS
 import SystemSettingsPiPTutorial
+import SERPSettings
 
 final class SettingsViewModel: ObservableObject {
 
@@ -65,6 +66,7 @@ final class SettingsViewModel: ObservableObject {
     private let urlOpener: URLOpener
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
+    weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
 
     // Subscription Dependencies
@@ -126,6 +128,10 @@ final class SettingsViewModel: ObservableObject {
     // This affects UI: shows Done button and hides Search Assist link
     var openedFromSERPSettingsButton: Bool = false
 
+    var isForgetAllInSettingsEnabled: Bool {
+        featureFlagger.isFeatureOn(.forgetAllInSettings)
+    }
+
     // Indicates if the Paid AI Chat feature flag is enabled for the current user/session.
     var isPaidAIChatEnabled: Bool {
         featureFlagger.isFeatureOn(.paidAIChat)
@@ -144,18 +150,6 @@ final class SettingsViewModel: ObservableObject {
     var isUpdatedAIFeaturesSettingsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
     }
-    
-    var firstSectionTitle: String {
-        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) ? UserText.aiChatSettingsBrowserShortcutsSectionTitle : ""
-    }
-    
-    var secondSectionTitle: String {
-        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) ? UserText.aiChatSettingsAllowFollowUpQuestionsSectionTitle : ""
-    }
-    
-    var shouldShowSERPSettingsFollowUpQuestions: Bool {
-        featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) && serpSettings.didMigrate
-    }
 
     var embedSERPSettings: Bool {
         featureFlagger.isFeatureOn(.embeddedSERPSettings)
@@ -163,6 +157,10 @@ final class SettingsViewModel: ObservableObject {
 
     var isDuckAiDataClearingEnabled: Bool {
         featureFlagger.isFeatureOn(.duckAiDataClearing)
+    }
+
+    var shouldShowHideAIGeneratedImagesSection: Bool {
+        featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
     }
 
     var shouldShowNoMicrophonePermissionAlert: Bool = false
@@ -1090,6 +1088,8 @@ extension SettingsViewModel {
         case aiChat
         case privateSearch
         case subscriptionSettings
+        case customizeToolbarButton
+        case customizeAddressBarButton
         // Add other cases as needed
 
         var id: String {
@@ -1103,6 +1103,8 @@ extension SettingsViewModel {
             case .aiChat: return "aiChat"
             case .privateSearch: return "privateSearch"
             case .subscriptionSettings: return "subscriptionSettings"
+            case .customizeToolbarButton: return "customizeToolbarButton"
+            case .customizeAddressBarButton: return "customizeAddressButton"
             // Ensure all cases are covered
             }
         }
@@ -1111,7 +1113,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings:
+            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .customizeToolbarButton, .customizeAddressBarButton:
                 return .navigationLink
             }
         }
@@ -1256,6 +1258,10 @@ extension SettingsViewModel {
                 }
             }
         }
+    }
+
+    func forgetAll() {
+        autoClearActionDelegate?.performDataClearing()
     }
 
     func restoreAccountPurchase() async {
@@ -1434,16 +1440,6 @@ extension SettingsViewModel {
             get: { self.aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled },
             set: { newValue in
                 self.aiChatSettings.enableAIChatTabSwitcherUserSettings(enable: newValue)
-            }
-        )
-    }
-    
-    var serpSettingsFollowUpQuestionsBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: {
-                self.serpSettings.isAllowFollowUpQuestionsEnabled ?? true },
-            set: { newValue in
-                self.serpSettings.enableAllowFollowUpQuestions(enable: newValue)
             }
         )
     }

@@ -43,10 +43,10 @@ final class DefaultOmniBarSearchView: UIView {
     let reloadButton = BrowserChromeButton()
     let clearButton = BrowserChromeButton(.secondary)
 
-    let shareButton = BrowserChromeButton()
+    let customizableButton = BrowserChromeButton()
     let cancelButton = BrowserChromeButton(.secondary)
     let voiceSearchButton = BrowserChromeButton()
-    let accessoryButton = BrowserChromeButton()
+    let aiChatButton = BrowserChromeButton()
 
     private let mainStackView = UIStackView()
 
@@ -98,9 +98,9 @@ final class DefaultOmniBarSearchView: UIView {
         trailingItemsContainer.addArrangedSubview(voiceSearchButton)
         trailingItemsContainer.addArrangedSubview(reloadButton)
         trailingItemsContainer.addArrangedSubview(cancelButton)
-        trailingItemsContainer.addArrangedSubview(shareButton)
+        trailingItemsContainer.addArrangedSubview(customizableButton)
         trailingItemsContainer.addArrangedSubview(separatorView)
-        trailingItemsContainer.addArrangedSubview(accessoryButton)
+        trailingItemsContainer.addArrangedSubview(aiChatButton)
 
         leftIconContainer.addSubview(loupeIconView)
         leftIconContainer.addSubview(dismissButtonView)
@@ -134,9 +134,9 @@ final class DefaultOmniBarSearchView: UIView {
         DefaultOmniBarView.activateItemSizeConstraints(for: voiceSearchButton)
         DefaultOmniBarView.activateItemSizeConstraints(for: reloadButton)
         DefaultOmniBarView.activateItemSizeConstraints(for: clearButton)
-        DefaultOmniBarView.activateItemSizeConstraints(for: shareButton)
+        DefaultOmniBarView.activateItemSizeConstraints(for: customizableButton)
         DefaultOmniBarView.activateItemSizeConstraints(for: cancelButton)
-        DefaultOmniBarView.activateItemSizeConstraints(for: accessoryButton)
+        DefaultOmniBarView.activateItemSizeConstraints(for: aiChatButton)
         DefaultOmniBarView.activateItemSizeConstraints(for: leftIconContainer)
 
         // Use autoresizing mask here so it's less code
@@ -161,8 +161,8 @@ final class DefaultOmniBarSearchView: UIView {
         textField.spellCheckingType = .no
         textField.keyboardType = .webSearch
 
-        accessoryButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat)
-        DefaultOmniBarView.setUpCommonProperties(for: accessoryButton)
+        aiChatButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat)
+        DefaultOmniBarView.setUpCommonProperties(for: aiChatButton)
 
         reloadButton.setImage(DesignSystemImages.Glyphs.Size24.reload)
         DefaultOmniBarView.setUpCommonProperties(for: reloadButton)
@@ -170,8 +170,8 @@ final class DefaultOmniBarSearchView: UIView {
         clearButton.setImage(DesignSystemImages.Glyphs.Size24.closeCircleSmall)
         DefaultOmniBarView.setUpCommonProperties(for: clearButton)
 
-        shareButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple)
-        DefaultOmniBarView.setUpCommonProperties(for: shareButton)
+        customizableButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple)
+        DefaultOmniBarView.setUpCommonProperties(for: customizableButton)
 
         cancelButton.setImage(DesignSystemImages.Glyphs.Size24.close)
         DefaultOmniBarView.setUpCommonProperties(for: cancelButton)

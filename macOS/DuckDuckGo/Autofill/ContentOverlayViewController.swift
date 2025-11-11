@@ -63,10 +63,12 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
     init?(
         coder: NSCoder,
         privacyConfigurationManager: PrivacyConfigurationManaging,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         featureFlagger: FeatureFlagger,
         tld: TLD
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.featureFlagger = featureFlagger
         self.tld = tld
         super.init(coder: coder)
@@ -79,6 +81,7 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
     lazy var passwordManagerCoordinator: PasswordManagerCoordinating = PasswordManagerCoordinator.shared
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private let featureFlagger: FeatureFlagger
     private let tld: TLD
 
@@ -405,7 +408,7 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
     }
 
     public func secureVaultManager(_: SecureVaultManager, didRequestRuntimeConfigurationForDomain domain: String, completionHandler: @escaping (String?) -> Void) {
-        let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
+        let isGPCEnabled = webTrackingProtectionPreferences.isGPCEnabled
         let properties = ContentScopeProperties(gpcEnabled: isGPCEnabled,
                                                 sessionKey: topAutofillUserScript?.sessionKey ?? "",
                                                 messageSecret: topAutofillUserScript?.messageSecret ?? "",
@@ -429,7 +432,6 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
 extension ContentOverlayViewController: AutofillCredentialsImportPresentationDelegate {
     public func autofillDidRequestCredentialsImportFlow(onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
-        let viewModel = DataImportViewModel(onFinished: onFinished, onCancelled: onCancelled)
-        DataImportFlowLauncher().launchDataImport(model: viewModel, isDataTypePickerExpanded: true)
+        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true, onFinished: onFinished, onCancelled: onCancelled)
     }
 }

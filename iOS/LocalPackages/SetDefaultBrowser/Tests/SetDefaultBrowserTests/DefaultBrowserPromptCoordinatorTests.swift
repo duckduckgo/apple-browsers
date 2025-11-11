@@ -26,7 +26,6 @@ import SetDefaultBrowserTestSupport
 @MainActor
 @Suite("Set Default Browser - Prompt Coordinator")
 final class DefaultBrowserPromptCoordinatorTests {
-    private var isOnboardingCompleted: Bool = true
     private var dateProviderMock: MockDateProvider
     private var promptStoreMock: MockDefaultBrowserPromptStore
     private var userActivityManagerMock: MockDefaultBrowserPromptUserActivityManager
@@ -44,7 +43,6 @@ final class DefaultBrowserPromptCoordinatorTests {
         eventMapperMock = MockDefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>()
 
         sut = DefaultBrowserPromptCoordinator(
-            isOnboardingCompleted: { self.isOnboardingCompleted },
             promptStore: promptStoreMock,
             userActivityManager: userActivityManagerMock,
             promptTypeDecider: promptTypeDeciderMock,
@@ -52,34 +50,6 @@ final class DefaultBrowserPromptCoordinatorTests {
             eventMapper: eventMapperMock,
             dateProvider: dateProviderMock.getDate
         )
-    }
-
-    @Test("Check Prompt Is Nil When Onboarding Is Not Completed")
-    func whenOnboardingNotCompletedThenPromptIsNil() {
-        // GIVEN
-        isOnboardingCompleted = false
-        #expect(!promptTypeDeciderMock.didCallPromptType)
-
-        // WHEN
-        let result = sut.getPrompt()
-
-        // THEN
-        #expect(!promptTypeDeciderMock.didCallPromptType)
-        #expect(result == nil)
-    }
-
-    @Test("Check Prompt Is Nil When Onboarding Is Not Completed")
-    func whenPromptDeciderReturnsNilThenPromptIsNil() {
-        // GIVEN
-        promptTypeDeciderMock.promptToReturn = nil
-        #expect(!promptTypeDeciderMock.didCallPromptType)
-
-        // WHEN
-        let result = sut.getPrompt()
-
-        // THEN
-        #expect(promptTypeDeciderMock.didCallPromptType)
-        #expect(result == nil)
     }
 
     @Test(
@@ -104,26 +74,40 @@ final class DefaultBrowserPromptCoordinatorTests {
     }
 
     @Test(
-        "Check Prompt Is Set Seen When Prompt Is Not Nil",
+        "Check Prompt Occurrency Is Incremented for Active Modal When Prompt Is Not Nil",
         arguments: [
             DefaultBrowserPromptType.active(.firstModal),
             .active(.secondModal),
             .active(.subsequentModal),
-            .inactive
         ]
     )
-    func whenPromptIsNotNilThenPromptIsSetSeen(promptType: DefaultBrowserPromptType) {
+    func whenPromptIsNotNilAndPromptIsActiveThenIncrementOccurrency(promptType: DefaultBrowserPromptType) {
         // GIVEN
         let now = Date(timeIntervalSince1970: 1750896000) // 26 June 2025 12:00:00 AM GMT
         dateProviderMock.setNowDate(now)
         promptTypeDeciderMock.promptToReturn = promptType
-        #expect(promptStoreMock.lastModalShownDate == nil)
+        #expect(promptStoreMock.modalShownOccurrences == 0)
 
         // WHEN
         _ = sut.getPrompt()
 
         // THEN
-        #expect(promptStoreMock.lastModalShownDate == now.timeIntervalSince1970)
+        #expect(promptStoreMock.modalShownOccurrences == 1)
+    }
+
+    @Test("Check Inactive Prompt Seen Flag Is Set for Inactive Modal When Prompt Is Not Nil")
+    func whenPromptIsNotNilAndPromptIsInactiveThenSetSeen() {
+        // GIVEN
+        let now = Date(timeIntervalSince1970: 1750896000) // 26 June 2025 12:00:00 AM GMT
+        dateProviderMock.setNowDate(now)
+        promptTypeDeciderMock.promptToReturn = .inactive
+        #expect(!promptStoreMock.hasInactiveModalShown)
+
+        // WHEN
+        _ = sut.getPrompt()
+
+        // THEN
+        #expect(promptStoreMock.hasInactiveModalShown)
     }
 
     @Test(

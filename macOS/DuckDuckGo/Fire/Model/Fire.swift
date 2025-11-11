@@ -244,7 +244,7 @@ final class Fire: FireProtocol {
          historyCoordinating: HistoryCoordinating? = nil,
          permissionManager: PermissionManagerProtocol? = nil,
          savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating = AccessibilityPreferences.shared,
-         downloadListCoordinator: DownloadListCoordinator = DownloadListCoordinator.shared,
+         downloadListCoordinator: DownloadListCoordinator? = nil,
          windowControllersManager: WindowControllersManagerProtocol? = nil,
          faviconManagement: FaviconManagement? = nil,
          fireproofDomains: FireproofDomains? = nil,
@@ -267,11 +267,11 @@ final class Fire: FireProtocol {
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
         self.permissionManager = permissionManager ?? NSApp.delegateTyped.permissionManager
         self.savedZoomLevelsCoordinating = savedZoomLevelsCoordinating
-        self.downloadListCoordinator = downloadListCoordinator
+        self.downloadListCoordinator = downloadListCoordinator ?? NSApp.delegateTyped.downloadListCoordinator
         self.windowControllersManager = windowControllersManager ?? Application.appDelegate.windowControllersManager
         self.faviconManagement = faviconManagement ?? NSApp.delegateTyped.faviconManager
         self.fireproofDomains = fireproofDomains ?? NSApp.delegateTyped.fireproofDomains
-        self.recentlyClosedCoordinator = recentlyClosedCoordinator ?? RecentlyClosedCoordinator.shared
+        self.recentlyClosedCoordinator = recentlyClosedCoordinator ?? NSApp.delegateTyped.recentlyClosedCoordinator
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider ?? Application.appDelegate.pinnedTabsManagerProvider
         self.bookmarkManager = bookmarkManager ?? NSApp.delegateTyped.bookmarkManager
         self.syncService = syncService ?? NSApp.delegateTyped.syncService
@@ -280,7 +280,7 @@ final class Fire: FireProtocol {
         self.tld = tld
         self.getPrivacyStats = getPrivacyStats ?? { NSApp.delegateTyped.privacyStats }
         self.getVisitedLinkStore = getVisitedLinkStore ?? { WKWebViewConfiguration.sharedVisitedLinkStore }
-        self.autoconsentManagement = autoconsentManagement ?? AutoconsentManagement.shared
+        self.autoconsentManagement = autoconsentManagement ?? NSApp.delegateTyped.autoconsentManagement
         self.visualizeFireAnimationDecider = visualizeFireAnimationDecider ?? NSApp.delegateTyped.visualizeFireSettingsDecider
         self.isAppActiveProvider = isAppActiveProvider
         if let stateRestorationManager = stateRestorationManager {
@@ -411,8 +411,7 @@ final class Fire: FireProtocol {
             if includeChatHistory {
                 await burnChatHistory()
             }
-            self.burnAllVisitedLinks()
-            self.burnAllHistory {
+            self.burnHistory(ofEntity: .allWindows(mainWindowControllers: windowControllers, selectedDomains: [], customURLToOpen: nil, close: false)) {
                 self.burnPermissions {
                     self.burnFavicons {
                         self.burnDownloads()
@@ -567,9 +566,9 @@ final class Fire: FireProtocol {
 
         let newTabContent: Tab.TabContent = customURL.map { .contentFromURL($0, source: .ui) } ?? .newtab
         let newTab = Tab(content: newTabContent, shouldLoadInBackground: false, burnerMode: .regular)
-        windowController.mainViewController.tabCollectionViewModel.append(tab: newTab, selected: false)
+        let insertionIndex = windowController.mainViewController.tabCollectionViewModel.append(tab: newTab, selected: false, forceChange: true)
 
-        return windowController.mainViewController.tabCollectionViewModel.tabs.count - 1
+        return insertionIndex
     }
 
     // MARK: - Web cache
@@ -606,29 +605,16 @@ final class Fire: FireProtocol {
 
         case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _, _):
             visits = tabCollectionViewModel.localHistory
-            // clear tabs navigation history
-            for vm in tabCollectionViewModel.tabViewModels.values {
-                vm.tab.clearNavigationHistory(keepingCurrent: true)
-            }
-            // also handle pinned tabs
-            tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.forEach {
-                $0.clearNavigationHistory(keepingCurrent: true)
-            }
+            tabCollectionViewModel.clearLocalHistory(keepingCurrent: true)
 
         case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _, close: _):
-            burnAllVisitedLinks()
-            burnAllHistory(completion: completion)
-
             // clear all tabs navigation history
             mainWindowControllers.forEach { wc in
-                let vm = wc.mainViewController.tabCollectionViewModel
-                vm.tabViewModels.values.forEach {
-                    $0.tab.clearNavigationHistory(keepingCurrent: true)
-                }
-                vm.pinnedTabsManager?.tabCollection.tabs.forEach {
-                    $0.clearNavigationHistory(keepingCurrent: true)
-                }
+                wc.mainViewController.tabCollectionViewModel.clearLocalHistory(keepingCurrent: true)
             }
+
+            burnAllVisitedLinks()
+            burnAllHistory(completion: completion)
 
             return
         }
@@ -637,10 +623,12 @@ final class Fire: FireProtocol {
         historyCoordinating.burnVisits(visits, completion: completion)
     }
 
+    @MainActor
     private func burnHistory(of baseDomains: Set<String>, completion: @escaping @MainActor (Set<URL>) -> Void) {
         historyCoordinating.burnDomains(baseDomains, tld: tld, completion: completion)
     }
 
+    @MainActor
     private func burnAllHistory(completion: @escaping @MainActor () -> Void) {
         historyCoordinating.burnAll(completion: completion)
     }

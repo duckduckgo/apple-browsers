@@ -43,10 +43,6 @@ final class MainWindowController: NSWindowController {
         // swiftlint:enable force_cast
     }
 
-    var titlebarView: NSView? {
-        return window?.standardWindowButton(.closeButton)?.superview
-    }
-
     @MainActor
     init(window: NSWindow? = nil,
          mainViewController: MainViewController,
@@ -184,6 +180,10 @@ final class MainWindowController: NSWindowController {
     }
 
     private func setupToolbar() {
+#if DEBUG
+        // animation retains the toolbar in tests
+        if [.unitTests, .integrationTests].contains(AppVersion.runType) { return }
+#endif
         // Empty toolbar ensures that window buttons are centered vertically
         window?.toolbar = NSToolbar()
         window?.toolbar?.showsBaselineSeparator = true
@@ -215,31 +215,9 @@ final class MainWindowController: NSWindowController {
         burningDataCancellable = fireViewModel.fire.burningDataPublisher
             .dropFirst()
             .removeDuplicates()
-            .sink(receiveValue: { [weak self] burningData in
-                guard let self else { return }
-
-                if burningData != nil {
-                    // Burning started - delay showing the blocking overlay by 1 second
-                    // This prevents visual chaos for quick burns
-                    let workItem = DispatchWorkItem { [weak self] in
-                        guard let self else { return }
-                        // Double-check that burning is still in progress
-                        if self.fireViewModel.fire.burningData != nil {
-                            self.userInteraction(prevented: true, forBurning: true)
-                        }
-                    }
-                    self.delayedBlockingWorkItem = workItem
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
-                } else {
-                    // Burning finished - immediately remove the blocking overlay
-                    // Cancel any pending delayed blocking
-                    self.delayedBlockingWorkItem?.cancel()
-                    self.delayedBlockingWorkItem = nil
-                    self.userInteraction(prevented: false, forBurning: true)
-                }
-
-                self.moveTabBarView(toTitlebarView: burningData == nil)
-            })
+            .sink { [weak self] burningData in
+                self?.moveTabBarView(toTitlebarView: burningData == nil)
+            }
     }
 
     func userInteraction(prevented: Bool, forBurning: Bool = false) {
@@ -265,7 +243,7 @@ final class MainWindowController: NSWindowController {
     }
 
     private func moveTabBarView(toTitlebarView: Bool) {
-        guard let newParentView = toTitlebarView ? titlebarView : mainViewController.view else {
+        guard let newParentView = toTitlebarView ? window?.titlebarView : mainViewController.view else {
             assertionFailure("Failed to move tab bar view")
             return
         }
@@ -524,7 +502,7 @@ extension MainWindowController: NSWindowDelegate {
         }
         // only check if it‘s the last Fire Window from the Burner Session
         guard fireWindowSession.windows == [window] else { return false }
-        let fireWindowDownloads = Set(FileDownloadManager.shared.downloads.filter { $0.fireWindowSession == fireWindowSessionRef && $0.state.isDownloading })
+        let fireWindowDownloads = Set(mainViewController.downloadManager.downloads.filter { $0.fireWindowSession == fireWindowSessionRef && $0.state.isDownloading })
         guard !fireWindowDownloads.isEmpty else { return false }
 
         let alert = NSAlert.activeDownloadsFireWindowClosingAlert(for: fireWindowDownloads)

@@ -50,16 +50,39 @@ class MockDownloadSession: DownloadSession {
     }
 }
 
+extension WKNavigationResponse {
+
+    private static var isSwizzled = false
+    private static let originalDealloc = { class_getInstanceMethod(WKNavigationResponse.self, NSSelectorFromString("dealloc"))! }()
+    private static let swizzledDealloc = { class_getInstanceMethod(WKNavigationResponse.self, #selector(swizzled_dealloc))! }()
+
+    static func swizzleDealloc() {
+        guard !self.isSwizzled else { return }
+        self.isSwizzled = true
+        method_exchangeImplementations(originalDealloc, swizzledDealloc)
+    }
+
+    static func restoreDealloc() {
+        guard self.isSwizzled else { return }
+        self.isSwizzled = false
+        method_exchangeImplementations(originalDealloc, swizzledDealloc)
+    }
+
+    @objc
+    func swizzled_dealloc() { }
+
+}
+
 class MockNavigationResponse: WKNavigationResponse {
     var url = URL(string: "https://www.duck.com")!
     var suggestedFileName: String?
     var mimeType: String?
-    
+
     override var response: URLResponse {
         let response = MockURLResponse(url: url,
-                        mimeType: mimeType!,
-                        expectedContentLength: 1234,
-                        textEncodingName: "")
+                                       mimeType: mimeType!,
+                                       expectedContentLength: 1234,
+                                       textEncodingName: "")
         response.mockFileName = suggestedFileName
         return response
     }

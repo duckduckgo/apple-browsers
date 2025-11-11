@@ -35,6 +35,7 @@ protocol ScriptSourceProviding {
     var surrogatesConfig: SurrogatesUserScriptConfig? { get }
     var privacyConfigurationManager: PrivacyConfigurationManaging { get }
     var autofillSourceProvider: AutofillUserScriptSourceProvider? { get }
+    var autoconsentManagement: AutoconsentManagement { get }
     var sessionKey: String? { get }
     var messageSecret: String? { get }
     var onboardingActionsManager: OnboardingActionsManaging? { get }
@@ -42,6 +43,8 @@ protocol ScriptSourceProviding {
     var historyViewActionsManager: HistoryViewActionsManager? { get }
     var windowControllersManager: WindowControllersManagerProtocol { get }
     var currentCohorts: [ContentScopeExperimentData]? { get }
+    var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
+    var cookiePopupProtectionPreferences: CookiePopupProtectionPreferences { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
 
 }
@@ -52,7 +55,8 @@ protocol ScriptSourceProviding {
     ScriptSourceProvider(
         configStorage: Application.appDelegate.configurationStore,
         privacyConfigurationManager: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
-        webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared,
+        webTrackingProtectionPreferences: Application.appDelegate.webTrackingProtectionPreferences,
+        cookiePopupProtectionPreferences: Application.appDelegate.cookiePopupProtectionPreferences,
         contentBlockingManager: Application.appDelegate.privacyFeatures.contentBlocking.contentBlockingManager,
         trackerDataManager: Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager,
         experimentManager: Application.appDelegate.contentScopeExperimentsManager,
@@ -66,6 +70,7 @@ protocol ScriptSourceProviding {
         historyCoordinator: Application.appDelegate.historyCoordinator,
         fireproofDomains: Application.appDelegate.fireproofDomains,
         fireCoordinator: Application.appDelegate.fireCoordinator,
+        autoconsentManagement: Application.appDelegate.autoconsentManagement,
         newTabPageActionsManager: nil
     )
 }
@@ -86,17 +91,20 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let privacyConfigurationManager: PrivacyConfigurationManaging
     let contentBlockingManager: ContentBlockerRulesManagerProtocol
     let trackerDataManager: TrackerDataManager
-    let webTrakcingProtectionPreferences: WebTrackingProtectionPreferences
+    let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+    let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let tld: TLD
     let experimentManager: ContentScopeExperimentsManaging
     let bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
     let historyCoordinator: HistoryDataSource
     let windowControllersManager: WindowControllersManagerProtocol
+    let autoconsentManagement: AutoconsentManagement
 
     @MainActor
     init(configStorage: ConfigurationStoring,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
          contentBlockingManager: ContentBlockerRulesManagerProtocol,
          trackerDataManager: TrackerDataManager,
          experimentManager: ContentScopeExperimentsManaging,
@@ -110,12 +118,14 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          historyCoordinator: HistoryDataSource,
          fireproofDomains: DomainFireproofStatusProviding,
          fireCoordinator: FireCoordinator,
+         autoconsentManagement: AutoconsentManagement,
          newTabPageActionsManager: NewTabPageActionsManager?
     ) {
 
         self.configStorage = configStorage
         self.privacyConfigurationManager = privacyConfigurationManager
-        self.webTrakcingProtectionPreferences = webTrackingProtectionPreferences
+        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
+        self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
         self.contentBlockingManager = contentBlockingManager
         self.trackerDataManager = trackerDataManager
         self.experimentManager = experimentManager
@@ -124,6 +134,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.bookmarkManager = bookmarkManager
         self.historyCoordinator = historyCoordinator
         self.windowControllersManager = windowControllersManager
+        self.autoconsentManagement = autoconsentManagement
 
         self.newTabPageActionsManager = newTabPageActionsManager
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
@@ -151,7 +162,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         let privacyConfig = self.privacyConfigurationManager.privacyConfig
         do {
             return try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
-                                                             properties: ContentScopeProperties(gpcEnabled: webTrakcingProtectionPreferences.isGPCEnabled,
+                                                             properties: ContentScopeProperties(gpcEnabled: webTrackingProtectionPreferences.isGPCEnabled,
                                                                                                 sessionKey: self.sessionKey ?? "",
                                                                                                 messageSecret: self.messageSecret ?? "",
                                                                                                 featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig)),

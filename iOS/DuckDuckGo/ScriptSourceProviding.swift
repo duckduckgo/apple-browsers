@@ -23,7 +23,7 @@ import Combine
 import BrowserServicesKit
 import enum UserScript.UserScriptError
 
-protocol ScriptSourceProviding {
+public protocol ScriptSourceProviding {
 
     var loginDetectionEnabled: Bool { get }
     var sendDoNotSell: Bool { get }

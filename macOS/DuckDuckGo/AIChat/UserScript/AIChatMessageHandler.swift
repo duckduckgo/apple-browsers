@@ -89,6 +89,7 @@ extension AIChatMessageHandler {
                                             supportsClosingAIChat: true,
                                             supportsOpeningSettings: true,
                                             supportsNativePrompt: true,
+                                            supportsStandaloneMigration: featureFlagger.isFeatureOn(.standaloneMigration),
                                             supportsNativeChatInput: false,
                                             supportsURLChatIDRestoration: true,
                                             supportsFullChatRestoration: true,

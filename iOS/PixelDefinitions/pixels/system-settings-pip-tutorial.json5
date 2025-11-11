@@ -4,7 +4,7 @@
         "description": "Fires when the the Picture-in-Picture video tutorial Fails to load.",
         "owners": ["alessandroboron"],
         "triggers": ["other"],
-        "suffixes": ["form_factor", "first_daily_count"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": [
             // Commonly used param, defined in params_dictionary.json.
             "appVersion",

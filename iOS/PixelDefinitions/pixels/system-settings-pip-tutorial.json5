@@ -1,6 +1,6 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
-    "systemSettingsPiPTutorialFailedToLoadVideo": {
+    "m_picture-in-picture-tutorial_failed-to-load-video": {
         "description": "Fires when the the Picture-in-Picture video tutorial Fails to load.",
         "owners": ["alessandroboron"],
         "triggers": ["other"],

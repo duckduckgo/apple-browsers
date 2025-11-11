@@ -215,6 +215,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteImportPasswordsInPasswordManagement
     case canPromoteImportPasswordsInBrowser
     case createFireproofFaviconUpdaterSecureVaultInBackground
+    case migrateKeychainAccessibility
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {

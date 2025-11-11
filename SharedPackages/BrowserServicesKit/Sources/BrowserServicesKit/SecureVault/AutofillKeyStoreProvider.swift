@@ -28,7 +28,7 @@ public protocol KeyStorePlatformProviding {
     var keychainSecurityGroup: String { get }
 }
 
-public struct iOSKeyStorePlatformProvider: KeyStorePlatformProviding {
+struct iOSKeyStorePlatformProvider: KeyStorePlatformProviding {
     private let appGroupName: String
 
     // Using appGroupName in the initializer, allowing injection for tests
@@ -36,15 +36,15 @@ public struct iOSKeyStorePlatformProvider: KeyStorePlatformProviding {
         self.appGroupName = appGroupName
     }
 
-    public var keychainServiceName: String {
+    var keychainServiceName: String {
         return AutofillKeyStoreProvider.Constants.v4ServiceName
     }
 
-    public func keychainIdentifier(for rawValue: String) -> String {
+    func keychainIdentifier(for rawValue: String) -> String {
         return appGroupName + rawValue
     }
 
-    public var keychainSecurityGroup: String {
+    var keychainSecurityGroup: String {
         return appGroupName
     }
 }

@@ -217,6 +217,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
     case standaloneMigration
+
+    /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211326076710245?focus=true
+    case migrateKeychainAccessibility
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -306,7 +309,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .vpnConnectionWidePixelMeasurement,
              .storeSerpSettings,
              .showHideAIGeneratedImagesSection,
-             .standaloneMigration:
+             .standaloneMigration,
+             .migrateKeychainAccessibility:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -524,6 +528,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.showHideAIGeneratedImagesSection))
         case .standaloneMigration:
             return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
+        case .migrateKeychainAccessibility:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.migrateKeychainAccessibility))
         }
     }
 }

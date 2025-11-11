@@ -33,20 +33,22 @@ final class AutofillService {
     private let autofillUsageMonitor = AutofillUsageMonitor()
     private var autofillPixelReporter: AutofillPixelReporter?
     private let keyValueStore: ThrowingKeyValueStoring
+    private let featureFlagger: FeatureFlagger
 
     var syncService: SyncService?
 
-    init(keyValueStore: ThrowingKeyValueStoring) {
+    init(keyValueStore: ThrowingKeyValueStoring,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.keyValueStore = keyValueStore
+        self.featureFlagger = featureFlagger
+
         if AppDependencyProvider.shared.appSettings.autofillIsNewInstallForOnByDefault == nil {
             AppDependencyProvider.shared.appSettings.setAutofillIsNewInstallForOnByDefault()
         }
         autofillPixelReporter = makeAutofillPixelReporter()
         registerForAutofillEnabledChanges()
 
-        #if os(iOS)
         migrateVaultAccessibilityIfNeeded()
-        #endif
     }
 
     private func makeAutofillPixelReporter() -> AutofillPixelReporter {
@@ -118,9 +120,9 @@ final class AutofillService {
 
     // MARK: - Vault Accessibility Migration
 
-    #if os(iOS)
     private func migrateVaultAccessibilityIfNeeded() {
-        guard (try? keyValueStore.object(forKey: Keys.vaultAccessibilityMigration) as? Bool) != true else {
+        guard featureFlagger.isFeatureOn(.migrateKeychainAccessibility),
+              (try? keyValueStore.object(forKey: Keys.vaultAccessibilityMigration) as? Bool) != true else {
             return
         }
 
@@ -131,6 +133,4 @@ final class AutofillService {
             try? keyValueStore.set(true, forKey: Keys.vaultAccessibilityMigration)
         }
     }
-    #endif
-
 }

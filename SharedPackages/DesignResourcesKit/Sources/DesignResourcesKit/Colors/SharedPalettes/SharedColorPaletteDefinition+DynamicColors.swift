@@ -159,6 +159,11 @@ extension SharedColorPaletteDefinition {
         case .iconsTertiary:
             return iconsTertiary
 
+        /// Placeholder
+        case .placeholderShade12:
+            // Non-specialized, we'll always use the default
+            return FigmaColorPalette.placeholderShade12
+
         /// System
         case .lines:
             return lines

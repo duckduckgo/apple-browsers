@@ -116,6 +116,7 @@ private extension TabFaviconView {
 
     func setupPlaceholderView() {
         placeholderView.backgroundShape = .circle
+        placeholderView.labelFont = NSFont.systemFont(ofSize: 9, weight: .bold)
     }
 
     func setupConstraints() {
@@ -254,5 +255,5 @@ private enum FaviconAnimation {
 
 private enum FaviconPlaceholder {
     static let imageSize = FaviconMetrics.imageSize
-    static let foregroundColorName: DesignSystemColor = .iconsTertiary
+    static let foregroundColorName: DesignSystemColor = .placeholderShade12
 }

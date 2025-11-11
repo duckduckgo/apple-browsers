@@ -79,6 +79,15 @@ final class LetterView: NSView {
         }
     }
 
+    var labelFont: NSFont? {
+        get {
+            label.font
+        }
+        set {
+            label.font = newValue
+        }
+    }
+
     override var intrinsicContentSize: NSSize { NSSize(width: 16, height: 16) }
 
     override func layout() {

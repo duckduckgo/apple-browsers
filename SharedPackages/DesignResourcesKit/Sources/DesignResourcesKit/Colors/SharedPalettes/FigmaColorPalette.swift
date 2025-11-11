@@ -112,6 +112,7 @@ struct FigmaColorPalette: SharedColorPaletteDefinition {
     static let lines = DynamicColor(lightHex: 0x1F1F1F, lightOpacity: 0.09, darkHex: 0xF9F9F9, darkOpacity: 0.12)
     static let spinner = DynamicColor(lightColor: .green80, darkColor: .green30)
     static let toneShadePrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x0f, darkHex: 0x161617, darkOpacityHex: 0x51)
+    static let placeholderShade12 = DynamicColor(lightHex: 0x000000, lightOpacity: 0.12, darkHex: 0xffffff, darkOpacity: 0.12)
 }
 
 #endif

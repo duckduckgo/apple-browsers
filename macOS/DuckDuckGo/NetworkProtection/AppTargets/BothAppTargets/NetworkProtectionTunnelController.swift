@@ -980,6 +980,9 @@ extension NetworkProtectionTunnelController {
         self.connectionWideEventData = data
         prefillBrowserStartDataIfAvailable()
         wideEvent.startFlow(data)
+        if data.overallDuration == nil {
+            data.overallDuration = WideEvent.MeasuredInterval.startingNow()
+        }
     }
 
     func prefillBrowserStartDataIfAvailable() {

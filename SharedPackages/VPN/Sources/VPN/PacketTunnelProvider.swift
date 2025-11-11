@@ -1893,8 +1893,8 @@ extension PacketTunnelProvider {
 
     func setupAndStartConnectionWideEvent(with startupMethod: StartupOptions.StartupMethod) {
         guard isConnectionWideEventMeasurementEnabled else { return }
-        // Already measured
         completeAllPendingVPNConnectionPixels()
+        // Already measured
         guard startupMethod != .manualByMainApp else { return }
         let data = VPNConnectionWideEventData(
             extensionType: .unknown,

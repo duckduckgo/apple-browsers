@@ -128,7 +128,7 @@ private enum State: CustomDebugStringConvertible {
 }
 
 // swiftlint:disable:next type_body_length
-public class WireGuardAdapter {
+public class WireGuardAdapter: WireGuardAdapterProtocol {
     public typealias LogHandler = (WireGuardLogLevel, String) -> Void
 
     /// WireGuard configuration fields

@@ -22,7 +22,7 @@ import NetworkExtension
 import os.log
 import Combine
 
-public actor NetworkProtectionTunnelFailureMonitor {
+public actor NetworkProtectionTunnelFailureMonitor: TunnelFailureMonitoring {
     public enum Result {
         case failureDetected
         case failureRecovered
@@ -48,7 +48,7 @@ public actor NetworkProtectionTunnelFailureMonitor {
         }
     }
 
-    var isStarted: Bool {
+    public var isStarted: Bool {
         task?.isCancelled == false
     }
 
@@ -77,7 +77,7 @@ public actor NetworkProtectionTunnelFailureMonitor {
 
     // MARK: - Start/Stop monitoring
 
-    func start(callback: @escaping (Result) -> Void) {
+    public func start(callback: @escaping (Result) -> Void) {
         Logger.networkProtectionTunnelFailureMonitor.log("⚫️ Starting tunnel failure monitor")
 
         failureReported = false
@@ -92,7 +92,7 @@ public actor NetworkProtectionTunnelFailureMonitor {
         }
     }
 
-    func stop() {
+    public func stop() {
         Logger.networkProtectionTunnelFailureMonitor.log("⚫️ Stopping tunnel failure monitor")
 
         networkMonitor.cancel()

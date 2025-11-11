@@ -479,6 +479,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private var wideEvent: WideEventManaging
     private var isConnectionWideEventMeasurementEnabled: Bool = false
     private var connectionWideEventData: VPNConnectionWideEventData?
+    private let connectionTunnelTimeoutInterval: TimeInterval = .minutes(15)
 
     // MARK: - Cancellables
 
@@ -1893,6 +1894,7 @@ extension PacketTunnelProvider {
     func setupAndStartConnectionWideEvent(with startupMethod: StartupOptions.StartupMethod) {
         guard isConnectionWideEventMeasurementEnabled else { return }
         // Already measured
+        completeAllPendingVPNConnectionPixels()
         guard startupMethod != .manualByMainApp else { return }
         let data = VPNConnectionWideEventData(
             extensionType: .unknown,
@@ -1916,6 +1918,20 @@ extension PacketTunnelProvider {
             wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
         }
         self.connectionWideEventData = nil
+    }
+    
+    func completeAllPendingVPNConnectionPixels() {
+        let pending = wideEvent.getAllFlowData(VPNConnectionWideEventData.self)
+        for data in pending {
+            guard let start = data.overallDuration?.start, data.overallDuration?.end == nil else {
+                wideEvent.completeFlow(data, status: .unknown(reason: VPNConnectionWideEventData.StatusReason.partialData.rawValue), onComplete: { _, _ in })
+                continue
+            }
+
+            let timeoutDate = start.addingTimeInterval(connectionTunnelTimeoutInterval)
+            let reason: VPNConnectionWideEventData.StatusReason = Date() >= timeoutDate ? .timeout : .partialData
+            wideEvent.completeFlow(data, status: .unknown(reason: reason.rawValue), onComplete: { _, _ in })
+        }
     }
 }
 

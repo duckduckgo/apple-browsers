@@ -631,7 +631,11 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             //
             PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionControllerStartSuccess, frequency: .legacyDailyAndCount)
             Logger.networkProtection.log("Controller start tunnel success")
-            completeAndCleanupConnectionWideEvent(with: .success)
+            if self.onboardingStatusRawValue == OnboardingStatus.completed.rawValue {
+                completeAndCleanupConnectionWideEvent()
+            } else {
+                completeAtStepWithPartialSuccess()
+            }
         } catch {
             Logger.networkProtection.error("Controller start tunnel failure: \(error, privacy: .public)")
 
@@ -654,7 +658,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             }
 
             // Top level catch-all
-            completeAndCleanupConnectionWideEvent(with: .failure, error: error, description: error.contextualizedDescription())
+            completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
         }
     }
 
@@ -680,7 +684,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             //
             if onboardingStatusRawValue == OnboardingStatus.isOnboarding(step: .userNeedsToAllowExtension).rawValue {
                 onboardingStatusRawValue = OnboardingStatus.isOnboarding(step: .userNeedsToAllowVPNConfiguration).rawValue
-                completeAtStepWithSuccess(.controllerStart, reason: .partialData)
                 return
             }
         } else {
@@ -974,6 +977,7 @@ extension NetworkProtectionTunnelController {
         connectionWideEventData = VPNConnectionWideEventData(
             extensionType: .unknown,
             startupMethod: .manualByMainApp,
+            isSetup: self.onboardingStatusRawValue != OnboardingStatus.completed.rawValue,
             contextData: WideEventContextData(name: MacOSNetworkProtectionFunnelOrigin.agent.rawValue)
         )
         prefillBrowserStartDataIfAvailable()
@@ -1008,22 +1012,24 @@ extension NetworkProtectionTunnelController {
         guard isConnectionWideEventMeasurementEnabled else { return }
         connectionWideEventData?[keyPath: step.errorPath] = .init(error: error, description: description)
         connectionWideEventData?[keyPath: step.durationPath]?.complete()
-        completeAndCleanupConnectionWideEvent(with: .failure, error: error, description: description)
+        completeAndCleanupConnectionWideEvent(with: error, description: description)
     }
 
-    func completeAtStepWithSuccess(_ step: VPNConnectionWideEventData.Step, reason: VPNConnectionWideEventData.StatusReason? = nil) {
+    func completeAtStepWithPartialSuccess(_ step: VPNConnectionWideEventData.Step = .controllerStart) {
         guard isConnectionWideEventMeasurementEnabled else { return }
         connectionWideEventData?[keyPath: step.durationPath]?.complete()
-        completeAndCleanupConnectionWideEvent(with: .success(reason: reason?.rawValue))
+        completeAndCleanupConnectionWideEvent(successReason: VPNConnectionWideEventData.StatusReason.partialData.rawValue)
     }
 
-    func completeAndCleanupConnectionWideEvent(with status: WideEventStatus, error: Error? = nil, description: String? = nil) {
+    func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil, successReason: String? = nil) {
         guard isConnectionWideEventMeasurementEnabled, let data = connectionWideEventData else { return }
         data.overallDuration?.complete()
         if let error {
             data.errorData = .init(error: error, description: description)
+            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+        } else {
+            wideEvent.completeFlow(data, status: .success(reason: successReason), onComplete: { _, _ in })
         }
-        wideEvent.completeFlow(data, status: status, onComplete: { _, _ in })
         connectionWideEventData = nil
     }
 

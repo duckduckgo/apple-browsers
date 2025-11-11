@@ -34,6 +34,7 @@ public class VPNConnectionWideEventData: WideEventData {
     // VPN-specific
     public var extensionType: ExtensionType
     public var startupMethod: StartupMethod
+    public var isSetup: Bool
 
     // Overall duration
     public var overallDuration: WideEvent.MeasuredInterval?
@@ -54,6 +55,7 @@ public class VPNConnectionWideEventData: WideEventData {
 
     public init(extensionType: ExtensionType,
                 startupMethod: StartupMethod,
+                isSetup: Bool = false,
                 overallDuration: WideEvent.MeasuredInterval? = nil,
                 browserStartDuration: WideEvent.MeasuredInterval? = nil,
                 controllerStartDuration: WideEvent.MeasuredInterval? = nil,
@@ -69,6 +71,7 @@ public class VPNConnectionWideEventData: WideEventData {
                 globalData: WideEventGlobalData = WideEventGlobalData()) {
         self.extensionType = extensionType
         self.startupMethod = startupMethod
+        self.isSetup = isSetup
         self.overallDuration = overallDuration
 
         // Per-step latencies
@@ -144,7 +147,8 @@ extension VPNConnectionWideEventData {
         params[WideEventParameter.Feature.name] = Self.featureName
         params[WideEventParameter.VPNConnectionFeature.extensionType] = extensionType.rawValue
         params[WideEventParameter.VPNConnectionFeature.startupMethod] = startupMethod.rawValue
-        
+        params[WideEventParameter.VPNConnectionFeature.isSetup] = isSetup ? "true" : "false"
+
         // Overall latency
         if let overallDuration = overallDuration?.durationMilliseconds {
             params[WideEventParameter.VPNConnectionFeature.latency] = String(Int(overallDuration))
@@ -209,6 +213,7 @@ extension WideEventParameter {
     public enum VPNConnectionFeature {
         static let extensionType = "feature.data.ext.extension_type"
         static let startupMethod = "feature.data.ext.startup_method"
+        static let isSetup = "feature.data.ext.is_setup"
         static let latency = "feature.data.ext.latency_ms"
 
         static func latency(at step: VPNConnectionWideEventData.Step) -> String {

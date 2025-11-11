@@ -17,6 +17,8 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+
 struct AppDependencies {
 
     let mainCoordinator: MainCoordinator
@@ -24,13 +26,14 @@ struct AppDependencies {
     let launchTaskManager: LaunchTaskManager
     let launchSourceManager: LaunchSourceManaging
     let aiChatSettings: AIChatSettings
+    let featureFlagger: FeatureFlagger
+    let voiceSearchHelper: VoiceSearchHelperProtocol
+    let appSettings: AppSettings
 
 }
 
 struct AppServices {
 
-    let screenshotService: ScreenshotService
-    let authenticationService: AuthenticationService
     let contentBlockingService: ContentBlockingService
     let syncService: SyncService
     let vpnService: VPNService
@@ -38,7 +41,6 @@ struct AppServices {
     let autofillService: AutofillService
     let remoteMessagingService: RemoteMessagingService
     let configurationService: RemoteConfigurationService
-    let autoClearService: AutoClearService
     let reportingService: ReportingService
     let subscriptionService: SubscriptionService
     let crashCollectionService: CrashCollectionService
@@ -51,5 +53,13 @@ struct AppServices {
     let inactivityNotificationSchedulerService: InactivityNotificationSchedulerService
     let wideEventService: WideEventService
     let aiChatService: AIChatService
+
+}
+
+struct SceneDependencies {
+
+    let screenshotService: ScreenshotService
+    let authenticationService: AuthenticationService
+    let autoClearService: AutoClearService
 
 }

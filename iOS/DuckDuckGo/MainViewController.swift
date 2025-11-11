@@ -3889,7 +3889,16 @@ extension MainViewController: MessageNavigationDelegate {
             assertionFailure("Not implemented yet.")
         }
     }
-    
+
+    func segueToSettingsAppearance(presentationStyle: PresentationContext.Style) {
+        switch presentationStyle {
+        case .dismissModalsAndPresentFromRoot:
+            segueToAppearanceSettings()
+        case .withinCurrentContext:
+            assertionFailure("Not implemented yet.")
+        }
+    }
+
     func segueToFeedback(presentationStyle: PresentationContext.Style) {
         switch presentationStyle {
         case .dismissModalsAndPresentFromRoot:

@@ -132,12 +132,17 @@ final class TabBarItemCellView: NSView {
     let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
 
-    fileprivate let faviconImageView = {
+    fileprivate let displaysTabsProgressIndicator: Bool = NSApp.delegateTyped.featureFlagger.isFeatureOn(.tabProgressIndicator)
+    fileprivate lazy var faviconView = TabFaviconView()
+
+    /// Will be removed in favor of `faviconView`
+    fileprivate lazy var faviconImageView = {
         let faviconImageView = NSImageView()
         faviconImageView.imageScaling = .scaleProportionallyDown
         return faviconImageView
     }()
 
+    /// Will be removed in favor of `faviconView`
     fileprivate let faviconPlaceholderView = LetterView()
 
     fileprivate let crashIndicatorButton = {
@@ -303,8 +308,13 @@ final class TabBarItemCellView: NSView {
             addSubview(roundedBackgroundColorView)
         }
 
-        faviconImageView.setAccessibilityIdentifier("TabBarViewItem.favicon")
-        faviconPlaceholderView.setAccessibilityIdentifier("TabBarViewItem.faviconPlaceholder")
+        if displaysTabsProgressIndicator {
+            faviconView.setAccessibilityIdentifier("TabBarViewItem.favicon")
+        } else {
+            faviconImageView.setAccessibilityIdentifier("TabBarViewItem.favicon")
+            faviconPlaceholderView.setAccessibilityIdentifier("TabBarViewItem.faviconPlaceholder")
+        }
+
         titleTextField.setAccessibilityIdentifier("TabBarViewItem.title")
 
         closeButton.toolTip = UserText.closeTab
@@ -326,8 +336,13 @@ final class TabBarItemCellView: NSView {
         crashIndicatorButton.setAccessibilityLabel(UserText.tabCrashPopoverMessage)
         crashIndicatorButton.cornerRadius = theme.tabStyleProvider.tabButtonActionsCornerRadius
 
-        addSubview(faviconImageView)
-        addSubview(faviconPlaceholderView)
+        if displaysTabsProgressIndicator {
+            addSubview(faviconView)
+        } else {
+            addSubview(faviconImageView)
+            addSubview(faviconPlaceholderView)
+        }
+
         addSubview(crashIndicatorButton)
         addSubview(audioButton)
         addSubview(titleTextField)
@@ -388,7 +403,11 @@ final class TabBarItemCellView: NSView {
 
     private func layoutForNormalMode() {
         var minX: CGFloat = 12
-        if faviconImageView.isShown {
+
+        if displaysTabsProgressIndicator && faviconView.isShown {
+            faviconView.frame = NSRect(x: minX, y: bounds.midY - 8, width: 16, height: 16)
+            minX = faviconView.frame.maxX + 4
+        } else if !displaysTabsProgressIndicator && faviconImageView.isShown {
             faviconImageView.frame = NSRect(x: minX, y: bounds.midY - 8, width: 16, height: 16)
             minX = faviconImageView.frame.maxX + 4
         }
@@ -430,7 +449,8 @@ final class TabBarItemCellView: NSView {
     }
 
     private func layoutForCompactMode() {
-        let numberOfElements: CGFloat = (faviconImageView.isShown ? 1 : 0) + (crashIndicatorButton.isShown || audioButton.isShown ? 1 : 0) + (permissionButton.isShown ? 1 : 0) + (closeButton.isShown ? 1 : 0) + (titleTextField.isShown ? 1 : 0)
+        let isFaviconShown = displaysTabsProgressIndicator ? faviconView.isShown : faviconImageView.isShown
+        let numberOfElements: CGFloat = (isFaviconShown ? 1 : 0) + (crashIndicatorButton.isShown || audioButton.isShown ? 1 : 0) + (permissionButton.isShown ? 1 : 0) + (closeButton.isShown ? 1 : 0) + (titleTextField.isShown ? 1 : 0)
         let elementWidth: CGFloat = 16
         var totalWidth = numberOfElements * elementWidth
         // tighten elements to fit all
@@ -438,7 +458,12 @@ final class TabBarItemCellView: NSView {
         totalWidth += (numberOfElements - 1) * spacing
         // shift all shown elements from center
         var x = (bounds.width - totalWidth) / 2
-        if faviconImageView.isShown {
+
+        if displaysTabsProgressIndicator && faviconView.isShown {
+            assert(closeButton.isHidden)
+            faviconView.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
+            x = faviconView.frame.maxX + spacing
+        } else if !displaysTabsProgressIndicator && faviconImageView.isShown {
             assert(closeButton.isHidden)
             faviconImageView.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
             x = faviconImageView.frame.maxX + spacing
@@ -474,7 +499,9 @@ final class TabBarItemCellView: NSView {
         let elementWidth: CGFloat = 16
         let x = (bounds.width - elementWidth) / 2
         let faviconFrame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
-        if faviconImageView.isShown {
+        if displaysTabsProgressIndicator {
+            faviconView.frame = faviconFrame
+        } else if faviconImageView.isShown {
             faviconImageView.frame = faviconFrame
         } else if faviconPlaceholderView.isShown {
             faviconPlaceholderView.frame = faviconFrame
@@ -498,6 +525,16 @@ final class TabBarItemCellView: NSView {
                 borderLayer.borderColor = NSColor.tabShadowLine.cgColor
             }
         }
+    }
+
+    func clear() {
+        if displaysTabsProgressIndicator {
+            faviconView.image = nil
+        } else {
+            faviconImageView.image = nil
+        }
+
+        titleTextField.stringValue = ""
     }
 }
 
@@ -903,8 +940,7 @@ final class TabBarViewItem: NSCollectionViewItem {
         clearSubscriptions()
         usedPermissions = Permissions()
         isLeftToSelected = false
-        cell.faviconImageView.image = nil
-        cell.titleTextField.stringValue = ""
+        cell.clear()
     }
 
     private func showCrashIndicatorButton() {
@@ -955,7 +991,16 @@ final class TabBarViewItem: NSCollectionViewItem {
             }
         }
 
-        if isPinned {
+        if cell.displaysTabsProgressIndicator && isPinned {
+            cell.closeButton.isShown = false
+            cell.faviconView.isShown = true
+            cell.titleTextField.isShown = false
+        } else if cell.displaysTabsProgressIndicator {
+            let showCloseButton = (isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected
+            cell.closeButton.isShown = showCloseButton
+            cell.faviconView.isShown = (widthStage != .withoutTitle || !showCloseButton)
+            cell.titleTextField.isShown = !widthStage.isTitleHidden || (cell.faviconView.displaysImage == false && !showCloseButton)
+        } else if isPinned {
             cell.closeButton.isShown = false
             cell.faviconImageView.isShown = cell.faviconImageView.image != nil
             cell.faviconPlaceholderView.isShown = !cell.faviconImageView.isShown
@@ -967,13 +1012,17 @@ final class TabBarViewItem: NSCollectionViewItem {
             cell.faviconPlaceholderView.isShown = false
             cell.titleTextField.isShown = !widthStage.isTitleHidden || (cell.faviconImageView.image == nil && !showCloseButton)
         }
+
         updateSeparatorView()
 
         // Adjust colors for burner window
-        if isBurner && cell.titleTextField.stringValue == UserText.burnerTabHomeTitle {
-            cell.faviconImageView.contentTintColor = .textColor
+        let isBurnerTab = isBurner && cell.titleTextField.stringValue == UserText.burnerTabHomeTitle
+        let tintColor: NSColor? = isBurnerTab ? .textColor : nil
+
+        if cell.displaysTabsProgressIndicator {
+            cell.faviconView.imageTintColor = tintColor
         } else {
-            cell.faviconImageView.contentTintColor = nil
+            cell.faviconImageView.contentTintColor = tintColor
         }
     }
 
@@ -1038,6 +1087,13 @@ final class TabBarViewItem: NSCollectionViewItem {
 
     private func updateFavicon(_ favicon: NSImage?) {
         cell.needsLayout = true
+
+        /// When using `faviconView`, we'll never display `faviconPlaceholderView`.
+        if cell.displaysTabsProgressIndicator {
+            cell.faviconView.image = favicon
+            return
+        }
+
         cell.faviconImageView.isHidden = (favicon == nil)
         cell.faviconImageView.image = favicon
         if isPinned && cell.faviconImageView.isHidden {

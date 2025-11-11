@@ -3361,12 +3361,20 @@ extension TabViewController: SecureVaultManagerDelegate {
             responseSent = true
             completionHandler(account)
 
-            self?.extensionPromotionManager.shouldShowPromotion(for: .browser, totalCredentialsCount: nil, completion: { [weak self] shouldShow in
-                if shouldShow {
-                    self?.shouldShowAutofillExtensionPrompt = true
-                    self?.detectedLoginURL = self?.webView.url
-                }
-            })
+            if account != nil {
+                self?.extensionPromotionManager.shouldShowPromotion(for: .browser, totalCredentialsCount: nil, completion: { [weak self] shouldShow in
+                    if shouldShow {
+                        self?.shouldShowAutofillExtensionPrompt = true
+                        self?.detectedLoginURL = self?.webView.url
+                    } else {
+                        self?.shouldShowAutofillExtensionPrompt = false
+                        self?.detectedLoginURL = nil
+                    }
+                })
+            } else {
+                self?.shouldShowAutofillExtensionPrompt = false
+                self?.detectedLoginURL = nil
+            }
         }
 
         let autofillPromptViewController = AutofillLoginPromptViewController(accounts: accountMatches,
@@ -3458,6 +3466,9 @@ extension TabViewController: SecureVaultManagerDelegate {
         guard let eTLDplus1 = storageCache.tld.eTLDplus1(url?.host), extensionPromotionManager.domainExtensionPromptLastShownOn != eTLDplus1 else {
             return
         }
+
+        // Ensure keyboard doesn't block prompt
+        dismissKeyboardIfPresent()
 
         extensionPromotionManager.domainExtensionPromptLastShownOn = eTLDplus1
 

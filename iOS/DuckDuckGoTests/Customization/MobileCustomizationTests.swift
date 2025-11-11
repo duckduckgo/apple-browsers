@@ -20,13 +20,185 @@
 import Foundation
 import Testing
 @testable import DuckDuckGo
+import PersistenceTestingUtils
 
 @Suite("Mobile Customization Tests", .serialized)
 final class MobileCustomizationTests {
 
-    @Test("X")
-    func x() {
+    var canEditFavoriteFlag = false
+    var canEditBookmarkFlag = false
 
+    @Test("Validate initial state on phone when feature is enabled")
+    func initialStateOnPhoneWhenFeatureIsEnabled() {
+        let keyValueStore = MockThrowingKeyValueStore()
+        let customization = MobileCustomization(isFeatureEnabled: true,
+                                                keyValueStore: keyValueStore,
+                                                isPad: false) { _ in }
+
+        #expect(customization.isFeatureEnabled)
+        #expect(customization.isEnabled)
+        #expect(customization.hasFireButton)
+        #expect(customization.state.isEnabled)
+        #expect(customization.state.currentAddressBarButton == .share)
+        #expect(customization.state.currentToolbarButton == .fire)
+    }
+
+    @Test("Validate initial state on ipad when feature is enabled")
+    func initialStateOnPadWhenFeatureIsEnabled() {
+        let keyValueStore = MockThrowingKeyValueStore()
+        let customization = MobileCustomization(isFeatureEnabled: true,
+                                                keyValueStore: keyValueStore,
+                                                isPad: true) { _ in }
+
+        #expect(customization.isFeatureEnabled)
+        #expect(!customization.isEnabled)
+        #expect(customization.hasFireButton)
+        #expect(!customization.state.isEnabled)
+        #expect(customization.state.currentAddressBarButton == .share)
+        #expect(customization.state.currentToolbarButton == .fire)
+    }
+
+    @Test("Validate initial state on phone when feature is disable")
+    func initialStateOnPhoneWhenFeatureIsDisabled() {
+        let keyValueStore = MockThrowingKeyValueStore()
+        let customization = MobileCustomization(isFeatureEnabled: false,
+                                                keyValueStore: keyValueStore,
+                                                isPad: false) { _ in }
+
+        #expect(!customization.isFeatureEnabled)
+        #expect(!customization.isEnabled)
+        #expect(customization.hasFireButton)
+        #expect(!customization.state.isEnabled)
+        #expect(customization.state.currentAddressBarButton == .share)
+        #expect(customization.state.currentToolbarButton == .fire)
+    }
+
+    @Test("Validate when state is updated externally then notificaiton is posted")
+    func whenStateIsUpdatedExternallyThenNotificationIsPosted() {
+
+        var posted = false
+
+        let keyValueStore = MockThrowingKeyValueStore()
+        let customization = MobileCustomization(isFeatureEnabled: true,
+                                                keyValueStore: keyValueStore,
+                                                isPad: false)  { _ in
+            posted = true
+        }
+
+        var state = customization.state
+        state.currentAddressBarButton = .addEditBookmark
+        customization.persist(state)
+
+        #expect(posted)
+    }
+
+    @Test("Validate when state is updated externally then state is persisted")
+    func whenStateIsUpdatedExternallyThenStateIsPersisted() {
+
+        let keyValueStore = MockThrowingKeyValueStore()
+
+        let customization = MobileCustomization(isFeatureEnabled: true,
+                                                keyValueStore: keyValueStore,
+                                                isPad: false) { _ in }
+
+        var state = customization.state
+        state.currentAddressBarButton = .addEditBookmark
+        state.currentToolbarButton = .home
+        customization.persist(state)
+
+
+        let customizationLoaded = MobileCustomization(isFeatureEnabled: true,
+                                                      keyValueStore: keyValueStore,
+                                                      isPad: false) { _ in }
+
+        let loadedState = customizationLoaded.state
+        #expect(loadedState.currentToolbarButton == .home)
+        #expect(loadedState.currentAddressBarButton == .addEditBookmark)
+
+    }
+
+    @Test("Validate alt icon provided for button when flags are set")
+    func altIconProvidedForButtonWhenFlagsAreSet() {
+
+        let keyValueStore = MockThrowingKeyValueStore()
+
+        let customization = MobileCustomization(isFeatureEnabled: true,
+                                                keyValueStore: keyValueStore,
+                                                isPad: false) { _ in }
+
+        customization.delegate = self
+
+        var state = customization.state
+        state.currentAddressBarButton = .addEditBookmark
+        state.currentToolbarButton = .home
+        customization.persist(state)
+
+        // Check the edit button
+        #expect(customization.largeIconForButton(.addEditBookmark) == MobileCustomization.Button.addEditBookmark.largeIcon)
+
+        canEditBookmarkFlag = true
+
+        #expect(customization.largeIconForButton(.addEditBookmark) == MobileCustomization.Button.addEditBookmark.altLargeIcon)
+
+        // Check the favorite button
+        #expect(customization.largeIconForButton(.addEditFavorite) == MobileCustomization.Button.addEditFavorite.largeIcon)
+
+        canEditFavoriteFlag = true
+
+        #expect(customization.largeIconForButton(.addEditFavorite) == MobileCustomization.Button.addEditFavorite.altLargeIcon)
+
+        // None should return nothing
+        #expect(customization.largeIconForButton(.none) == nil)
+
+        // Check some image is returned otehrs
+        #expect(customization.largeIconForButton(.bookmarks) != nil)
+        #expect(customization.largeIconForButton(.downloads) != nil)
+        #expect(customization.largeIconForButton(.fire) != nil)
+        #expect(customization.largeIconForButton(.home) != nil)
+        #expect(customization.largeIconForButton(.newTab) != nil)
+        #expect(customization.largeIconForButton(.passwords) != nil)
+        #expect(customization.largeIconForButton(.share) != nil)
+        #expect(customization.largeIconForButton(.vpn) != nil)
+        #expect(customization.largeIconForButton(.zoom) != nil)
+
+    }
+
+    @Test("Validate defaults when invalid state persisted")
+    func returnDefaultsWhenInvalidStatePersisted() {
+
+        let keyValueStore = MockThrowingKeyValueStore()
+
+        let customization = MobileCustomization(isFeatureEnabled: true,
+                                                keyValueStore: keyValueStore,
+                                                isPad: false) { _ in }
+
+        var state = customization.state
+        state.currentAddressBarButton = .passwords
+        state.currentToolbarButton = .zoom
+        customization.persist(state)
+
+
+        let customizationLoaded = MobileCustomization(isFeatureEnabled: true,
+                                                      keyValueStore: keyValueStore,
+                                                      isPad: false) { _ in }
+
+        let loadedState = customizationLoaded.state
+        #expect(loadedState.currentToolbarButton == .fire)
+        #expect(loadedState.currentAddressBarButton == .share)
+
+
+    }
+
+}
+
+extension MobileCustomizationTests: MobileCustomization.Delegate {
+
+    func canEditBookmark() -> Bool {
+        return canEditBookmarkFlag
+    }
+
+    func canEditFavorite() -> Bool {
+        return canEditFavoriteFlag
     }
 
 }

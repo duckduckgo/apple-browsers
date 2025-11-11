@@ -24,10 +24,10 @@ import Foundation
 /// including starting, stopping, updating configuration, and monitoring connection state.
 ///
 protocol WireGuardAdapterProtocol: AnyObject, HandshakeReporting {
-    
+
     /// The name of the tunnel interface, if available.
     var interfaceName: String? { get }
-    
+
     /// Starts the WireGuard tunnel with the specified configuration.
     ///
     /// - Parameters:
@@ -35,12 +35,12 @@ protocol WireGuardAdapterProtocol: AnyObject, HandshakeReporting {
     ///   - completionHandler: Called when the operation completes, with an error if it failed
     func start(tunnelConfiguration: TunnelConfiguration,
                completionHandler: @escaping (WireGuardAdapterError?) -> Void)
-    
+
     /// Stops the WireGuard tunnel.
     ///
     /// - Parameter completionHandler: Called when the operation completes, with an error if it failed
     func stop(completionHandler: @escaping (WireGuardAdapterError?) -> Void)
-    
+
     /// Updates the tunnel configuration and optionally reasserts the connection.
     ///
     /// - Parameters:
@@ -50,21 +50,20 @@ protocol WireGuardAdapterProtocol: AnyObject, HandshakeReporting {
     func update(tunnelConfiguration: TunnelConfiguration,
                 reassert: Bool,
                 completionHandler: @escaping (WireGuardAdapterError?) -> Void)
-    
+
     /// Retrieves the number of bytes transmitted and received.
     ///
     /// - Returns: A tuple containing received (rx) and transmitted (tx) byte counts
     /// - Throws: An error if the operation fails
     func getBytesTransmitted() async throws -> (rx: UInt64, tx: UInt64)
-    
+
     /// Retrieves the current runtime configuration.
     ///
     /// - Parameter completionHandler: Called with the configuration string, or nil if unavailable
     func getRuntimeConfiguration(completionHandler: @escaping (String?) -> Void)
-    
+
     /// Puts the adapter into snooze mode, temporarily pausing the tunnel.
     ///
     /// - Parameter completionHandler: Called when the operation completes, with an error if it failed
     func snooze(completionHandler: @escaping (WireGuardAdapterError?) -> Void)
 }
-

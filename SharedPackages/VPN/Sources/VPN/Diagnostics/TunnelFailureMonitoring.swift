@@ -24,16 +24,15 @@ import Foundation
 /// WireGuard handshakes and detecting connection failures.
 ///
 protocol TunnelFailureMonitoring: Actor {
-    
+
     /// Indicates whether the monitor is currently running.
     var isStarted: Bool { get async }
-    
+
     /// Starts monitoring tunnel failures.
     ///
     /// - Parameter callback: Called when a tunnel failure is detected or recovered
     func start(callback: @escaping (NetworkProtectionTunnelFailureMonitor.Result) -> Void) async
-    
+
     /// Stops monitoring tunnel failures.
     func stop() async
 }
-

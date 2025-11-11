@@ -24,10 +24,10 @@ import Foundation
 /// and detecting when server migration is required.
 ///
 protocol ServerStatusMonitoring: Actor {
-    
+
     /// Indicates whether the monitor is currently running.
     var isStarted: Bool { get async }
-    
+
     /// Starts monitoring the status of the specified server.
     ///
     /// - Parameters:
@@ -35,8 +35,7 @@ protocol ServerStatusMonitoring: Actor {
     ///   - callback: Called when server status changes or migration is needed
     func start(serverName: String,
                callback: @escaping (NetworkProtectionServerStatusMonitor.ServerStatusResult) -> Void) async
-    
+
     /// Stops monitoring server status.
     func stop() async
 }
-

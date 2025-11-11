@@ -69613,58 +69613,10 @@
       "comment" : "Support link text displayed beneath the feedback form description",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Brauchst du Hilfe? [Support kontaktieren.](https://duckduckgo.com/subscription-support)"
-          }
-        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Need help? [Contact support.](https://duckduckgo.com/subscription-support)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Necesitas ayuda? [Contacta con el servicio de soporte.](https://duckduckgo.com/subscription-support)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Besoin d'aide ? [Contactez le support.](https://duckduckgo.com/subscription-support)"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hai bisogno di aiuto? [Contatta l'assistenza.](https://duckduckgo.com/subscription-support)"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hulp nodig? [Neem contact op met support.](https://duckduckgo.com/subscription-support)"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Potrzebujesz pomocy? [Skontaktuj się z pomocą techniczną.](https://duckduckgo.com/subscription-support)"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Precisas de ajuda? [Contacta o suporte.](https://duckduckgo.com/subscription-support)"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Нужна помощь? [Обратитесь в службу поддержки.](https://duckduckgo.com/subscription-support)"
           }
         }
       }

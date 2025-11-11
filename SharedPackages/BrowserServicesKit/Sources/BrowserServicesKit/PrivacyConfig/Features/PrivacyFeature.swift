@@ -377,6 +377,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case authV2WideEventEnabled
     case winBackOffer
     case vpnMenuItem
+    case blackFridayCampaign
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

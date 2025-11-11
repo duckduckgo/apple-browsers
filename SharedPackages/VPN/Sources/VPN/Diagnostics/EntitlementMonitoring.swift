@@ -24,10 +24,10 @@ import Foundation
 /// status and detecting when access is revoked.
 ///
 protocol EntitlementMonitoring: Actor {
-    
+
     /// Indicates whether the monitor is currently running.
     var isStarted: Bool { get async }
-    
+
     /// Starts monitoring entitlement status.
     ///
     /// - Parameters:
@@ -35,7 +35,7 @@ protocol EntitlementMonitoring: Actor {
     ///   - callback: Called with entitlement check results
     func start(entitlementCheck: @escaping () async -> Result<Bool, Error>,
                callback: @escaping (NetworkProtectionEntitlementMonitor.Result) async -> Void) async
-    
+
     /// Stops monitoring entitlement status.
     func stop() async
 }

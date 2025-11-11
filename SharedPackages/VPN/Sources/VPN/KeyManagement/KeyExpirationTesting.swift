@@ -24,21 +24,20 @@ import Foundation
 /// and triggering automatic rekeying when keys expire.
 ///
 protocol KeyExpirationTesting: Actor {
-    
+
     /// Starts the key expiration tester.
     ///
     /// - Parameter testImmediately: If `true`, performs an immediate key expiration check
     func start(testImmediately: Bool) async
-    
+
     /// Stops the key expiration tester.
     func stop() async
-    
+
     /// Sets a custom key validity interval or resets to automatic.
     ///
     /// - Parameter validity: The validity interval in seconds, or `nil` to use automatic
     func setKeyValidity(_ validity: TimeInterval?) async
-    
+
     /// Checks if the key is expired and performs rekeying if necessary.
     func rekeyIfExpired() async
 }
-

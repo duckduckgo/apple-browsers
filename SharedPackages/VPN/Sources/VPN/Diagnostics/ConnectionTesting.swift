@@ -25,7 +25,7 @@ import Foundation
 ///
 @MainActor
 protocol ConnectionTesting: AnyObject {
-    
+
     /// Starts the connection tester.
     ///
     /// - Parameters:
@@ -33,10 +33,10 @@ protocol ConnectionTesting: AnyObject {
     ///   - testImmediately: If `true`, performs an immediate connection test
     /// - Throws: An error if the tester fails to start
     func start(tunnelIfName: String, testImmediately: Bool) async throws
-    
+
     /// Stops the connection tester.
     func stop()
-    
+
     /// Forces the next connection test to fail (for testing purposes).
     func failNextTest()
 }

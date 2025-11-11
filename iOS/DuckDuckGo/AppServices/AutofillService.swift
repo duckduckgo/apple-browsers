@@ -44,7 +44,9 @@ final class AutofillService {
         autofillPixelReporter = makeAutofillPixelReporter()
         registerForAutofillEnabledChanges()
 
+        #if os(iOS)
         migrateVaultAccessibilityIfNeeded()
+        #endif
     }
 
     private func makeAutofillPixelReporter() -> AutofillPixelReporter {
@@ -116,6 +118,7 @@ final class AutofillService {
 
     // MARK: - Vault Accessibility Migration
 
+    #if os(iOS)
     private func migrateVaultAccessibilityIfNeeded() {
         guard (try? keyValueStore.object(forKey: Keys.vaultAccessibilityMigration) as? Bool) != true else {
             return
@@ -128,5 +131,6 @@ final class AutofillService {
             try? keyValueStore.set(true, forKey: Keys.vaultAccessibilityMigration)
         }
     }
+    #endif
 
 }

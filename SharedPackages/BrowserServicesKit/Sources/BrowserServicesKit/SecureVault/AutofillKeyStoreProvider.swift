@@ -335,8 +335,6 @@ private final class KeychainAccessibilityMigrator {
 
         Logger.autofill.debug("Starting Autofill Keystore accessibility migration for v4")
 
-        var allSucceeded = true
-
         for entry in AutofillKeyStoreProvider.EntryName.allCases {
             let query = [
                 kSecClass: kSecClassGenericPassword,

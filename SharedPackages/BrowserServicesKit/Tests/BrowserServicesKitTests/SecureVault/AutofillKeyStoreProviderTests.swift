@@ -157,24 +157,21 @@ final class AutofillKeyStoreProviderTests: XCTestCase {
 
         // Then
         XCTAssertFalse(result)
-        XCTAssertEqual(keychainService.updateCallCount, 3) // Should attempt all items despite failures
+        XCTAssertEqual(keychainService.updateCallCount, 1) // Should stop after first failure
     }
 
-    func testMigrateKeychainAccessibility_UpdatesAllThreeEntries() {
+    func testMigrateKeychainAccessibility_WhenAllSucceed_UpdatesAllThreeEntries() {
         // Given
         let keychainService = MockKeychainService()
         keychainService.updateStatusToReturn = errSecSuccess
         let sut = AutofillKeyStoreProvider(keychainService: keychainService, platformProvider: iOSPlatformProvider)
 
         // When
-        _ = sut.migrateKeychainAccessibility()
+        let result = sut.migrateKeychainAccessibility()
 
         // Then
-        // Verify all three entry types were updated
-        let expectedEntries = Set(AutofillKeyStoreProvider.EntryName.allCases.map {
-            $0.keychainIdentifier(using: self.iOSPlatformProvider)
-        })
-        XCTAssertEqual(keychainService.updateCallCount, expectedEntries.count)
+        XCTAssertTrue(result)
+        XCTAssertEqual(keychainService.updateCallCount, 3) // All three entries attempted
     }
 
     func testMigrateKeychainAccessibility_UsesCorrectV4Service() {

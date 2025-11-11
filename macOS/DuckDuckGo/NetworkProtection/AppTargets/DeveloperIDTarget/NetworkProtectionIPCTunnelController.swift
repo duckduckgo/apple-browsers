@@ -80,9 +80,6 @@ final class NetworkProtectionIPCTunnelController {
     @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartTime, defaultValue: nil, defaults: .netP)
     private var vpnConnectionWideEventBrowserStartTime: Date?
 
-    @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartError, defaultValue: nil, defaults: .netP)
-    private var vpnConnectionWideEventBrowserStartError: WideEventErrorData?
-
     @UserDefaultsWrapper(key: .vpnConnectionWideEventOverallStartTime, defaultValue: nil, defaults: .netP)
     private var vpnConnectionWideEventOverallStartTime: Date?
 
@@ -315,14 +312,12 @@ private extension NetworkProtectionIPCTunnelController {
         self.connectionWideEventData = nil
         vpnConnectionWideEventBrowserStartTime = nil
         vpnConnectionWideEventOverallStartTime = nil
-        vpnConnectionWideEventBrowserStartError = nil
     }
 
     func discardAndSetConnectionWideEvent() {
         guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
         vpnConnectionWideEventBrowserStartTime = data.browserStartDuration?.start
         vpnConnectionWideEventOverallStartTime = data.overallDuration?.start
-        vpnConnectionWideEventBrowserStartError = data.browserStartError
         wideEvent.discardFlow(data)
         self.connectionWideEventData = nil
     }

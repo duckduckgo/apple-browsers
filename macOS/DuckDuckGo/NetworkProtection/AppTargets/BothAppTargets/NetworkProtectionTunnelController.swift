@@ -115,9 +115,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartTime, defaultValue: nil, defaults: .netP)
     private var vpnConnectionWideEventBrowserStartTime: Date?
 
-    @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartError, defaultValue: nil, defaults: .netP)
-    private var vpnConnectionWideEventBrowserStartError: WideEventErrorData?
-
     @UserDefaultsWrapper(key: .vpnConnectionWideEventOverallStartTime, defaultValue: nil, defaults: .netP)
     private var vpnConnectionWideEventOverallStartTime: Date?
 
@@ -987,7 +984,7 @@ extension NetworkProtectionTunnelController {
 
     func prefillBrowserStartDataIfAvailable() {
         guard let data = connectionWideEventData else { return }
-        guard vpnConnectionWideEventBrowserStartTime != nil || vpnConnectionWideEventOverallStartTime != nil || vpnConnectionWideEventBrowserStartError != nil else { return }
+        guard vpnConnectionWideEventBrowserStartTime != nil || vpnConnectionWideEventOverallStartTime != nil else { return }
         data.contextData = WideEventContextData(name: MacOSNetworkProtectionFunnelOrigin.appSettings.rawValue)
         if let vpnConnectionWideEventBrowserStartTime {
             data.browserStartDuration = WideEvent.MeasuredInterval(start: vpnConnectionWideEventBrowserStartTime)
@@ -996,12 +993,8 @@ extension NetworkProtectionTunnelController {
         if let vpnConnectionWideEventOverallStartTime {
             data.overallDuration = WideEvent.MeasuredInterval(start: vpnConnectionWideEventOverallStartTime)
         }
-        if let vpnConnectionWideEventBrowserStartError {
-            data.browserStartError = vpnConnectionWideEventBrowserStartError
-        }
         vpnConnectionWideEventBrowserStartTime = nil
         vpnConnectionWideEventOverallStartTime = nil
-        vpnConnectionWideEventBrowserStartError = nil
     }
 
     func resetControllerStartWideEventMeasurement() {

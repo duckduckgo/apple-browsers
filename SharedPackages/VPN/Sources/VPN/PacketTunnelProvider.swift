@@ -1919,7 +1919,7 @@ extension PacketTunnelProvider {
         }
         self.connectionWideEventData = nil
     }
-    
+
     func completeAllPendingVPNConnectionPixels() {
         let pending = wideEvent.getAllFlowData(VPNConnectionWideEventData.self)
         for data in pending {

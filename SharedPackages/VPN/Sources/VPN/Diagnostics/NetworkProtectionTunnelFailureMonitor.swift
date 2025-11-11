@@ -48,7 +48,7 @@ public actor NetworkProtectionTunnelFailureMonitor: TunnelFailureMonitoring {
         }
     }
 
-    public var isStarted: Bool {
+    var isStarted: Bool {
         task?.isCancelled == false
     }
 
@@ -77,7 +77,7 @@ public actor NetworkProtectionTunnelFailureMonitor: TunnelFailureMonitoring {
 
     // MARK: - Start/Stop monitoring
 
-    public func start(callback: @escaping (Result) -> Void) {
+    func start(callback: @escaping (Result) -> Void) {
         Logger.networkProtectionTunnelFailureMonitor.log("⚫️ Starting tunnel failure monitor")
 
         failureReported = false
@@ -92,7 +92,7 @@ public actor NetworkProtectionTunnelFailureMonitor: TunnelFailureMonitoring {
         }
     }
 
-    public func stop() {
+    func stop() {
         Logger.networkProtectionTunnelFailureMonitor.log("⚫️ Stopping tunnel failure monitor")
 
         networkMonitor.cancel()

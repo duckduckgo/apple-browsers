@@ -40,4 +40,3 @@ protocol ConnectionTesting: AnyObject {
     /// Forces the next connection test to fail (for testing purposes).
     func failNextTest()
 }
-

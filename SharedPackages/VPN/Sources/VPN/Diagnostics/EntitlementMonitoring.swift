@@ -39,4 +39,3 @@ protocol EntitlementMonitoring: Actor {
     /// Stops monitoring entitlement status.
     func stop() async
 }
-

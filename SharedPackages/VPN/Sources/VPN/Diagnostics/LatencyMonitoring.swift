@@ -25,10 +25,10 @@ import Network
 /// by periodically measuring ping times to the VPN server.
 ///
 protocol LatencyMonitoring: Actor {
-    
+
     /// Indicates whether the monitor is currently running.
     var isStarted: Bool { get async }
-    
+
     /// Starts monitoring latency to the specified server.
     ///
     /// - Parameters:
@@ -36,8 +36,7 @@ protocol LatencyMonitoring: Actor {
     ///   - callback: Called with latency measurements and quality assessments
     func start(serverIP: IPv4Address,
                callback: @escaping (NetworkProtectionLatencyMonitor.Result) -> Void) async
-    
+
     /// Stops monitoring latency.
     func stop() async
 }
-

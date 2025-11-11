@@ -48,4 +48,3 @@ protocol BandwidthAnalyzing: Actor {
     /// This is typically called when switching servers.
     func reset() async
 }
-

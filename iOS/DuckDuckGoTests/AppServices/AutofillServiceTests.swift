@@ -25,30 +25,49 @@ import Persistence
 
 final class AutofillServiceTests {
 
-    var mockKeyValueStore: ThrowingKeyValueStoring!
+    private var mockKeyValueStore: ThrowingKeyValueStoring!
+    private var mockFeatureFlagger: MockFeatureFlagger!
 
     init() throws {
         let store = try MockKeyValueFileStore()
         mockKeyValueStore = store
+        mockFeatureFlagger = MockFeatureFlagger()
     }
 
-    @Test("init() when migration not completed should attempt migration and set flag on success")
-    func initMigratesAccessibilityOnFirstLaunch() async {
+    @Test("init() when feature enabled and migration not completed should attempt migration and set flag on success")
+    func initMigratesAccessibilityWhenFeatureEnabled() async {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.migrateKeychainAccessibility]
+
         // When
-        _ = AutofillService(keyValueStore: mockKeyValueStore)
+        _ = AutofillService(keyValueStore: mockKeyValueStore, featureFlagger: mockFeatureFlagger)
 
         // Then
         let migrationCompleted = try? mockKeyValueStore.object(forKey: "com.duckduckgo.autofill.keystore.accessibility.migrated.v4") as? Bool
         #expect(migrationCompleted == true || migrationCompleted == nil)
     }
 
+    @Test("init() when feature disabled should not attempt migration")
+    func initSkipsMigrationWhenFeatureDisabled() async throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        // When
+        _ = AutofillService(keyValueStore: mockKeyValueStore, featureFlagger: mockFeatureFlagger)
+
+        // Then
+        let migrationCompleted = try? mockKeyValueStore.object(forKey: "com.duckduckgo.autofill.keystore.accessibility.migrated.v4") as? Bool
+        #expect(migrationCompleted == nil)
+    }
+
     @Test("init() when migration already completed should not set flag again")
     func initSkipsMigrationWhenAlreadyCompleted() async throws {
         // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.migrateKeychainAccessibility]
         try mockKeyValueStore.set(true, forKey: "com.duckduckgo.autofill.keystore.accessibility.migrated.v4")
 
         // When
-        _ = AutofillService(keyValueStore: mockKeyValueStore)
+        _ = AutofillService(keyValueStore: mockKeyValueStore, featureFlagger: mockFeatureFlagger)
 
         // Then
         let migrationCompleted = try mockKeyValueStore.object(forKey: "com.duckduckgo.autofill.keystore.accessibility.migrated.v4") as? Bool
@@ -57,8 +76,11 @@ final class AutofillServiceTests {
 
     @Test("init() when migration fails should not set flag")
     func initDoesNotSetFlagWhenMigrationFails() async {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.migrateKeychainAccessibility]
+
         // When
-        _ = AutofillService(keyValueStore: mockKeyValueStore)
+        _ = AutofillService(keyValueStore: mockKeyValueStore, featureFlagger: mockFeatureFlagger)
 
         // Then
         let migrationCompleted = try? mockKeyValueStore.object(forKey: "com.duckduckgo.autofill.keystore.accessibility.migrated.v4") as? Bool

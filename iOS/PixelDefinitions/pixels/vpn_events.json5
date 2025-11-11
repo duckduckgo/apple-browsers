@@ -56,7 +56,7 @@
                 "key": "feature.data.ext.extension_type",
                 "type": "string",
                 "description": "VPN extension type used",
-                "enum": ["app", "system"]
+                "enum": ["app", "system", "unknown"]
             },
             {
                 "key": "feature.data.ext.startup_method",

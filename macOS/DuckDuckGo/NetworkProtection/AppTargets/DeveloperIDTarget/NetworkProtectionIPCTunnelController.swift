@@ -155,14 +155,14 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
 
             knownFailureStore.reset()
 
-            ipcClient.start { [pixelKit] error in
+            ipcClient.start { [pixelKit, weak self] error in
                 if let error {
                     let error = RequestError.ipcControlError(error)
                     handleFailure(error)
-                    self.completeAndCleanupConnectionWideEvent(with: error, description: error.caseDescription)
+                    self?.completeAndCleanupConnectionWideEvent(with: error, description: error.caseDescription)
                 } else {
                     pixelKit?.fire(StartAttempt.success, frequency: .legacyDailyAndCount)
-                    self.discardAndSetConnectionWideEvent()
+                    self?.discardAndSetConnectionWideEvent()
                 }
             }
         } catch {

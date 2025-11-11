@@ -707,7 +707,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         do {
             providerEvents.fire(.tunnelStartAttempt(.begin))
-            setupAndStartConnectionWideEvent(with: startupOptions.startupMethod)
             connectionStatus = .connecting
             resetIssueStateOnTunnelStart(startupOptions)
 
@@ -1901,9 +1900,9 @@ extension PacketTunnelProvider {
             contextData: WideEventContextData(name: (startupMethod == .automaticOnDemand ? NetworkProtectionFunnelOrigin.others : NetworkProtectionFunnelOrigin.systemSettings).rawValue)
         )
         self.connectionWideEventData = data
-        wideEvent.startFlow(data)
         self.connectionWideEventData?.overallDuration = WideEvent.MeasuredInterval.startingNow()
         self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
+        wideEvent.startFlow(data)
     }
 
     func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil) {

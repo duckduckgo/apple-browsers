@@ -634,7 +634,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             if self.onboardingStatusRawValue == OnboardingStatus.completed.rawValue {
                 completeAndCleanupConnectionWideEvent()
             } else {
-                completeAtStepWithPartialSuccess()
+                completeAndCleanupAtStepWithPartialSuccess()
             }
         } catch {
             Logger.networkProtection.error("Controller start tunnel failure: \(error, privacy: .public)")
@@ -974,14 +974,15 @@ extension NetworkProtectionTunnelController {
     func setupAndStartConnectionWideEvent() {
         guard isConnectionWideEventMeasurementEnabled else { return }
         completeAllPendingVPNConnectionPixels()
-        connectionWideEventData = VPNConnectionWideEventData(
+        let data = VPNConnectionWideEventData(
             extensionType: .unknown,
             startupMethod: .manualByMainApp,
             isSetup: self.onboardingStatusRawValue != OnboardingStatus.completed.rawValue,
             contextData: WideEventContextData(name: MacOSNetworkProtectionFunnelOrigin.agent.rawValue)
         )
+        self.connectionWideEventData = data
         prefillBrowserStartDataIfAvailable()
-        wideEvent.startFlow(connectionWideEventData!)
+        wideEvent.startFlow(data)
     }
 
     func prefillBrowserStartDataIfAvailable() {
@@ -1015,7 +1016,7 @@ extension NetworkProtectionTunnelController {
         completeAndCleanupConnectionWideEvent(with: error, description: description)
     }
 
-    func completeAtStepWithPartialSuccess(_ step: VPNConnectionWideEventData.Step = .controllerStart) {
+    func completeAndCleanupAtStepWithPartialSuccess(_ step: VPNConnectionWideEventData.Step = .controllerStart) {
         guard isConnectionWideEventMeasurementEnabled else { return }
         connectionWideEventData?[keyPath: step.durationPath]?.complete()
         completeAndCleanupConnectionWideEvent(successReason: VPNConnectionWideEventData.StatusReason.partialData.rawValue)
@@ -1033,7 +1034,7 @@ extension NetworkProtectionTunnelController {
         connectionWideEventData = nil
     }
 
-    private func completeAllPendingVPNConnectionPixels() {
+    func completeAllPendingVPNConnectionPixels() {
         let pending = wideEvent.getAllFlowData(VPNConnectionWideEventData.self)
         for data in pending {
             guard let start = data.overallDuration?.start, data.overallDuration?.end == nil else {

@@ -527,8 +527,8 @@ private extension NetworkProtectionTunnelController {
             contextData: WideEventContextData(name: iOSNetworkProtectionFunnelOrigin.appSettings.rawValue)
         )
         self.connectionWideEventData = data
-        wideEvent.startFlow(data)
         self.connectionWideEventData?.overallDuration = WideEvent.MeasuredInterval.startingNow()
+        wideEvent.startFlow(data)
     }
     
     func resetControllerStartWideEventMeasurement() {

@@ -247,7 +247,7 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1211708489642640?focus=true
     case tabProgressIndicator
-    
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211388368219934?focus=true
     case vpnConnectionWidePixelMeasurement
 

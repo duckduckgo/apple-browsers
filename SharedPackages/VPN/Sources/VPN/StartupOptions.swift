@@ -184,7 +184,7 @@ public struct StartupOptions {
         isAuthV2Enabled = Self.readIsAuthV2Enabled(from: options, resetIfNil: resetStoredOptionsIfNil)
         authToken = Self.readAuthToken(from: options, resetIfNil: resetStoredOptionsIfNil)
         tokenContainer = Self.readTokenContainer(from: options, resetIfNil: resetStoredOptionsIfNil)
-        
+
 #endif
         enableTester = Self.readEnableTester(from: options, resetIfNil: resetStoredOptionsIfNil)
         vpnSettings = Self.readVPNSettings(from: options, resetIfNil: resetStoredOptionsIfNil)

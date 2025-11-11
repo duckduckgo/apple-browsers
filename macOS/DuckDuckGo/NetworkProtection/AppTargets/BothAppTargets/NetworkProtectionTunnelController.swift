@@ -45,8 +45,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     let settings: VPNSettings
     let vpnAppState: VPNAppState
     let defaults: UserDefaults
+    let wideEvent: WideEventManaging
     private let featureFlagger: FeatureFlagger
-    private let wideEvent: WideEventManaging
 
     // MARK: - Combine Cancellables
 
@@ -127,6 +127,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
     }
     private var connectionWideEventData: VPNConnectionWideEventData?
+    private let connectionControllerTimeoutInterval: TimeInterval = .hours(24)
 
     // MARK: - Tunnel Manager
 
@@ -630,7 +631,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             //
             PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionControllerStartSuccess, frequency: .legacyDailyAndCount)
             Logger.networkProtection.log("Controller start tunnel success")
-            completeAndCleanupConnectionWideEvent()
+            completeAndCleanupConnectionWideEvent(with: .success)
         } catch {
             Logger.networkProtection.error("Controller start tunnel failure: \(error, privacy: .public)")
 
@@ -653,7 +654,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             }
 
             // Top level catch-all
-            completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
+            completeAndCleanupConnectionWideEvent(with: .failure, error: error, description: error.contextualizedDescription())
         }
     }
 
@@ -679,6 +680,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             //
             if onboardingStatusRawValue == OnboardingStatus.isOnboarding(step: .userNeedsToAllowExtension).rawValue {
                 onboardingStatusRawValue = OnboardingStatus.isOnboarding(step: .userNeedsToAllowVPNConfiguration).rawValue
+                completeAtStepWithSuccess(.controllerStart, reason: .partialData)
                 return
             }
         } else {
@@ -718,12 +720,12 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             completeAtStepWithFailure(.controllerStart, with: StartError.connectionAlreadyStarted, description: StartError.connectionAlreadyStarted.caseDescription)
             throw StartError.connectionAlreadyStarted
         default:
+            self.connectionWideEventData?.controllerStartDuration?.complete()
             try await start(tunnelManager)
         }
     }
 
     private func start(_ tunnelManager: NETunnelProviderManager) async throws {
-        self.connectionWideEventData?.controllerStartDuration?.complete()
         var options = [String: NSObject]()
 
         options[NetworkProtectionOptionKey.activationAttemptId] = UUID().uuidString as NSString
@@ -962,24 +964,26 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     }
 }
 
-// MARK: Wide Event
+// MARK: - Wide Event
 
-private extension NetworkProtectionTunnelController {
+extension NetworkProtectionTunnelController {
+
     func setupAndStartConnectionWideEvent() {
         guard isConnectionWideEventMeasurementEnabled else { return }
-        let data = VPNConnectionWideEventData(
+        completeAllPendingVPNConnectionPixels()
+        connectionWideEventData = VPNConnectionWideEventData(
             extensionType: .unknown,
             startupMethod: .manualByMainApp,
             contextData: WideEventContextData(name: MacOSNetworkProtectionFunnelOrigin.agent.rawValue)
         )
-        self.connectionWideEventData = data
         prefillBrowserStartDataIfAvailable()
-        wideEvent.startFlow(data)
+        wideEvent.startFlow(connectionWideEventData!)
     }
 
     func prefillBrowserStartDataIfAvailable() {
-        guard let data = self.connectionWideEventData else { return }
+        guard let data = connectionWideEventData else { return }
         guard vpnConnectionWideEventBrowserStartTime != nil || vpnConnectionWideEventOverallStartTime != nil || vpnConnectionWideEventBrowserStartError != nil else { return }
+        data.contextData = WideEventContextData(name: MacOSNetworkProtectionFunnelOrigin.appSettings.rawValue)
         if let vpnConnectionWideEventBrowserStartTime {
             data.browserStartDuration = WideEvent.MeasuredInterval(start: vpnConnectionWideEventBrowserStartTime)
             data.browserStartDuration?.complete()
@@ -996,29 +1000,45 @@ private extension NetworkProtectionTunnelController {
     }
 
     func resetControllerStartWideEventMeasurement() {
-        self.connectionWideEventData?.controllerStartDuration = nil
+        connectionWideEventData?.controllerStartDuration = nil
     }
 
-    func completeAtStepWithFailure(
-        _ step: VPNConnectionWideEventData.Step,
-        with error: Error,
-        description: String? = nil
+    func completeAtStepWithFailure(_ step: VPNConnectionWideEventData.Step, with error: Error, description: String? = nil
     ) {
-        self.connectionWideEventData?[keyPath: step.errorPath] = .init(error: error, description: description)
-        self.connectionWideEventData?[keyPath: step.durationPath]?.complete()
-        completeAndCleanupConnectionWideEvent(with: error, description: description)
+        guard isConnectionWideEventMeasurementEnabled else { return }
+        connectionWideEventData?[keyPath: step.errorPath] = .init(error: error, description: description)
+        connectionWideEventData?[keyPath: step.durationPath]?.complete()
+        completeAndCleanupConnectionWideEvent(with: .failure, error: error, description: description)
     }
 
-    func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil) {
-        guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
+    func completeAtStepWithSuccess(_ step: VPNConnectionWideEventData.Step, reason: VPNConnectionWideEventData.StatusReason? = nil) {
+        guard isConnectionWideEventMeasurementEnabled else { return }
+        connectionWideEventData?[keyPath: step.durationPath]?.complete()
+        completeAndCleanupConnectionWideEvent(with: .success(reason: reason?.rawValue))
+    }
+
+    func completeAndCleanupConnectionWideEvent(with status: WideEventStatus, error: Error? = nil, description: String? = nil) {
+        guard isConnectionWideEventMeasurementEnabled, let data = connectionWideEventData else { return }
         data.overallDuration?.complete()
         if let error {
             data.errorData = .init(error: error, description: description)
-            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
-        } else {
-            wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
         }
-        self.connectionWideEventData = nil
+        wideEvent.completeFlow(data, status: status, onComplete: { _, _ in })
+        connectionWideEventData = nil
+    }
+
+    private func completeAllPendingVPNConnectionPixels() {
+        let pending = wideEvent.getAllFlowData(VPNConnectionWideEventData.self)
+        for data in pending {
+            guard let start = data.overallDuration?.start, data.overallDuration?.end == nil else {
+                wideEvent.completeFlow(data, status: .unknown(reason: VPNConnectionWideEventData.StatusReason.partialData.rawValue), onComplete: { _, _ in })
+                continue
+            }
+
+            let timeoutDate = start.addingTimeInterval(connectionControllerTimeoutInterval)
+            let reason: VPNConnectionWideEventData.StatusReason = Date() >= timeoutDate ? .timeout : .partialData
+            wideEvent.completeFlow(data, status: .unknown(reason: reason.rawValue), onComplete: { _, _ in })
+        }
     }
 }
 

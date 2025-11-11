@@ -28,7 +28,7 @@ final class WideEventService {
     private let subscriptionBridge: SubscriptionAuthV1toV2Bridge
     private let activationTimeoutInterval: TimeInterval = .hours(4)
     private let restoreTimeoutInterval: TimeInterval = .minutes(15)
-    private let vpnConnectionTimeoutInterval: TimeInterval = .hours(24)
+    private let vpnConnectionBrowserStartTimeoutInterval: TimeInterval = .minutes(15)
 
     init(wideEvent: WideEventManaging, featureFlagger: FeatureFlagger, subscriptionBridge: SubscriptionAuthV1toV2Bridge) {
         self.wideEvent = wideEvent
@@ -156,7 +156,7 @@ final class WideEventService {
             _ = try? await wideEvent.completeFlow(data, status: .unknown(reason: SubscriptionRestoreWideEventData.StatusReason.timeout.rawValue))
         }
     }
-    
+
     // MARK: - VPN Connection
 
     // In the vpn connection flow, we consider the pixel abandoned if:
@@ -186,7 +186,7 @@ final class WideEventService {
                 continue
             }
 
-            let deadline = start.addingTimeInterval(vpnConnectionTimeoutInterval)
+            let deadline = start.addingTimeInterval(vpnConnectionBrowserStartTimeoutInterval)
             if Date() < deadline {
                 continue
             }

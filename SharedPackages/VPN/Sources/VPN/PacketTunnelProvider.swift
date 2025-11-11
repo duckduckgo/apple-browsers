@@ -473,13 +473,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private let knownFailureStore: NetworkProtectionKnownFailureStore
     private let snoozeTimingStore: NetworkProtectionSnoozeTimingStore
     private let wireGuardInterface: WireGuardInterface
-    
+
     // MARK: - WideEvent
-    
+
     private var wideEvent: WideEventManaging
-    private lazy var isConnectionWideEventMeasurementEnabled: Bool = false
+    private var isConnectionWideEventMeasurementEnabled: Bool = false
     private var connectionWideEventData: VPNConnectionWideEventData?
-    
 
     // MARK: - Cancellables
 
@@ -702,7 +701,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
 
             Logger.networkProtection.error("🔴 Stopping VPN due to no auth token")
-            completeAndCleanupConnectionWideEvent(with: error)
+            completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             throw error
         }
 
@@ -736,7 +735,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             self.knownFailureStore.lastKnownFailure = KnownFailure(error)
 
             providerEvents.fire(.tunnelStartAttempt(.failure(error)))
-            completeAndCleanupConnectionWideEvent(with: error)
+            completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             throw error
         }
     }
@@ -1891,7 +1890,7 @@ extension WireGuardAdapterError: LocalizedError, CustomDebugStringConvertible {
 // MARK: - WideEvent
 
 extension PacketTunnelProvider {
-    
+
     func setupAndStartConnectionWideEvent(with startupMethod: StartupOptions.StartupMethod) {
         guard isConnectionWideEventMeasurementEnabled else { return }
         // Already measured
@@ -1899,14 +1898,14 @@ extension PacketTunnelProvider {
         let data = VPNConnectionWideEventData(
             extensionType: .unknown,
             startupMethod: startupMethod == .automaticOnDemand ? .automaticOnDemand : .manualByTheSystem,
-            contextData: WideEventContextData(name: startupMethod == .automaticOnDemand ? NetworkProtectionFunnelOrigin.others.rawValue : NetworkProtectionFunnelOrigin.systemSettings.rawValue)
+            contextData: WideEventContextData(name: (startupMethod == .automaticOnDemand ? NetworkProtectionFunnelOrigin.others : NetworkProtectionFunnelOrigin.systemSettings).rawValue)
         )
         self.connectionWideEventData = data
         wideEvent.startFlow(data)
         self.connectionWideEventData?.overallDuration = WideEvent.MeasuredInterval.startingNow()
         self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
     }
-    
+
     func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil) {
         guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
         data.tunnelStartDuration?.complete()
@@ -1918,5 +1917,13 @@ extension PacketTunnelProvider {
             wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
         }
         self.connectionWideEventData = nil
+    }
+}
+
+// MARK: - Error Description Helper
+
+private extension Error {
+    func contextualizedDescription() -> String? {
+        return (self as? PacketTunnelProvider.TunnelError)?.errorDescription
     }
 }

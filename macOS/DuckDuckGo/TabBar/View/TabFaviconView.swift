@@ -49,6 +49,7 @@ final class TabFaviconView: NSView {
         setupSubviews()
         setupImageView()
         setupSpinnerView()
+        setupPlaceholderView()
         setupConstraints()
     }
 
@@ -111,6 +112,10 @@ private extension TabFaviconView {
     func setupSpinnerView() {
         spinnerView.setAccessibilityLabel("TabFaviconView.spinner")
         spinnerView.setAccessibilityRole(.progressIndicator)
+    }
+
+    func setupPlaceholderView() {
+        placeholderView.backgroundShape = .circle
     }
 
     func setupConstraints() {

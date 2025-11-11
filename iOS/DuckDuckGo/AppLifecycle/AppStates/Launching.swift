@@ -27,13 +27,9 @@ import Subscription
 /// - Usage:
 ///   - This state is typically associated with the `application(_:didFinishLaunchingWithOptions:)` method.
 ///   - It is responsible for performing the app's initial setup, including configuring dependencies and preparing the UI.
-///   - As part of this state, the `MainViewController` is created and set as the `rootViewController` of the app's primary `UIWindow`.
+///   - As part of this state, the `MainViewController` is created.
 /// - Transitions:
-///   - `Foreground`: Standard transition when the app completes its launch process and becomes active.
-///   - `Background`: Occurs when the app is launched but transitions directly to the background, e.g:
-///     - The app is protected by a FaceID lock mechanism (introduced in iOS 18.0). If the user opens the app
-///       but does not authenticate and then leaves.
-///     - The app is launched by the system for background execution but does not immediately become active.
+///   - `Connected`: Standard transition when the app completes its launch setup and the scene is connected.
 /// - Notes:
 ///   - Avoid performing heavy or blocking operations during this phase to ensure smooth app startup.
 @MainActor
@@ -49,7 +45,6 @@ struct Launching: LaunchingHandling {
 
     private let didFinishLaunchingStartTime = CFAbsoluteTimeGetCurrent()
     private let isAppLaunchedInBackground = UIApplication.shared.applicationState == .background
-    private let window: UIWindow = UIWindow(frame: UIScreen.main.bounds)
 
     private let configuration: AppConfiguration
     private let services: AppServices
@@ -186,15 +181,6 @@ struct Launching: LaunchingHandling {
         let notificationServiceManager = NotificationServiceManager(mainCoordinator: mainCoordinator)
         
         let vpnService = VPNService(mainCoordinator: mainCoordinator, notificationServiceManager: notificationServiceManager)
-        let overlayWindowManager = OverlayWindowManager(window: window,
-                                                        appSettings: appSettings,
-                                                        voiceSearchHelper: voiceSearchHelper,
-                                                        featureFlagger: featureFlagger,
-                                                        aiChatSettings: aiChatSettings,
-                                                        mobileCustomization: mainCoordinator.controller.mobileCustomization)
-        let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
-        let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
-        let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
         let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
             featureFlagger: featureFlagger,
             notificationServiceManager: notificationServiceManager,
@@ -209,16 +195,13 @@ struct Launching: LaunchingHandling {
         // 2. Persist throughout the app's runtime
         // 3. Provide core functionality across different parts of the app
 
-        services = AppServices(screenshotService: screenshotService,
-                               authenticationService: authenticationService,
-                               contentBlockingService: contentBlockingService,
+        services = AppServices(contentBlockingService: contentBlockingService,
                                syncService: syncService,
                                vpnService: vpnService,
                                dbpService: dbpService,
                                autofillService: autofillService,
                                remoteMessagingService: remoteMessagingService,
                                configurationService: configurationService,
-                               autoClearService: autoClearService,
                                reportingService: reportingService,
                                subscriptionService: subscriptionService,
                                crashCollectionService: crashCollectionService,
@@ -233,10 +216,6 @@ struct Launching: LaunchingHandling {
                                aiChatService: AIChatService(aiChatSettings: aiChatSettings)
         )
 
-        // Register background tasks that run after app is ready
-        launchTaskManager.register(task: ClearInteractionStateTask(autoClearService: autoClearService,
-                                                                   interactionStateSource: mainCoordinator.interactionStateSource,
-                                                                   tabManager: mainCoordinator.tabManager))
         
         // Clean up wide event data at launch
         launchTaskManager.register(task: WideEventLaunchCleanupTask(wideEventService: wideEventService))
@@ -250,9 +229,7 @@ struct Launching: LaunchingHandling {
             launchTaskManager: launchTaskManager
         )
 
-        setupWindow()
         logAppLaunchTime()
-
         // Keep this init method minimal and think twice before adding anything here.
         // - Use AppConfiguration for one-time setup.
         // - Use a service for functionality that persists throughout the app's lifecycle.
@@ -260,12 +237,10 @@ struct Launching: LaunchingHandling {
         // For a broader overview: https://app.asana.com/0/1202500774821704/1209445353536490/f
     }
 
-    private func setupWindow() {
-        ThemeManager.shared.updateUserInterfaceStyle(window: window)
-        window.rootViewController = mainCoordinator.controller
-        UIApplication.shared.setWindow(window)
-        window.makeKeyAndVisible()
-        mainCoordinator.start()
+    private func logAppLaunchTime() {
+        let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
+        Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
+                   withAdditionalParameters: [PixelParameters.time: String(launchTime)])
     }
 
     // MARK: -
@@ -276,21 +251,13 @@ struct Launching: LaunchingHandling {
             services: services,
             launchTaskManager: launchTaskManager,
             launchSourceManager: launchSourceManager,
-            aiChatSettings: aiChatSettings
+            aiChatSettings: aiChatSettings,
+            featureFlagger: featureFlagger,
+            voiceSearchHelper: voiceSearchHelper,
+            appSettings: appSettings
         )
     }
     
-}
-
-// MARK: - Logging
-
-private extension Launching {
-    
-    func logAppLaunchTime() {
-        let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
-        Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
-                   withAdditionalParameters: [PixelParameters.time: String(launchTime)])
-    }
 }
 
 extension Launching {
@@ -307,12 +274,8 @@ extension Launching {
               appDependencies: appDependencies)
     }
 
-    func makeBackgroundState() -> any BackgroundHandling {
-        Background(stateContext: makeStateContext())
-    }
-
-    func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
-        Foreground(stateContext: makeStateContext(), actionToHandle: actionToHandle)
+    func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling {
+        Connected(stateContext: makeStateContext(), actionToHandle: actionToHandle, window: window)
     }
 
 }

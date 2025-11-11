@@ -163,7 +163,7 @@ private extension TabFaviconView {
         layer.anchorPoint = FaviconMetrics.imageLayerAnchorPoint
         layer.position.x = targetPositionX
         layer.position.y = targetPositionY
-     }
+    }
 
     func resizeImageIfNeeded(scaleDown: Bool) {
         let targetRadius = imageCornerRadius(scaleDown: scaleDown)

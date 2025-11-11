@@ -24,6 +24,7 @@ class MockMessageNavigationDelegate: MessageNavigationDelegate {
     private(set) var didCallSegueToAIChatSettings: Bool = false
     private(set) var capturedAIChatOpenedFromSERPSettingsButton: Bool?
     private(set) var didCallSegueToSettings: Bool = false
+    private(set) var didCallSegueToSettingsAppearance: Bool = false
     private(set) var didCallSegueToFeedback: Bool = false
     private(set) var didCallSegueToSettingsSync: Bool = false
     private(set) var capturedSettingsSyncSource: String?
@@ -58,6 +59,11 @@ class MockMessageNavigationDelegate: MessageNavigationDelegate {
 
     func segueToImportPasswords(presentationStyle: PresentationContext.Style) {
         didCallSegueToImportPasswords = true
+        capturedPresentationStyle = presentationStyle
+    }
+
+    func segueToSettingsAppearance(presentationStyle: PresentationContext.Style) {
+        didCallSegueToSettingsAppearance = true
         capturedPresentationStyle = presentationStyle
     }
 }

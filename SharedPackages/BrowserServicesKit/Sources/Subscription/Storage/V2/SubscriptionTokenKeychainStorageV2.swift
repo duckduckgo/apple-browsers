@@ -40,8 +40,8 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
     private let userDefaults: UserDefaults
 
     public init(keychainManager: any KeychainManaging,
-                errorEventsHandler: @escaping (AccountKeychainAccessType, AccountKeychainAccessError) -> Void,
-                userDefaults: UserDefaults = .standard) {
+                userDefaults: UserDefaults,
+                errorEventsHandler: @escaping (AccountKeychainAccessType, AccountKeychainAccessError) -> Void) {
         self.errorEventsHandler = errorEventsHandler
         self.keychainManager = keychainManager
         self.userDefaults = userDefaults

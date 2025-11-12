@@ -170,7 +170,6 @@ final class DefaultBrowserPromptDebugViewModel: ObservableObject {
     func resetAllSettings() {
         currentDateDebugStore.reset()
         promptActivityStore.isPromptPermanentlyDismissed = false
-        promptActivityStore.lastModalShownDate = nil
         promptActivityStore.modalShownOccurrences = 0
         promptActivityStore.hasInactiveModalShown = false
         userActivityStore.save(DefaultBrowserPromptUserActivity(numberOfActiveDays: 0, lastActiveDate: currentDateDebugStore.simulatedTodayDate))

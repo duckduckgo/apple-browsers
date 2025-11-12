@@ -34,7 +34,7 @@ final class OptOutConfirmationWideEventRecorder: OptOutWideEventRecording {
                                identifier: OptOutWideEventIdentifier,
                                dataBrokerURL: String,
                                dataBrokerVersion: String?,
-                               recordFoundDate: Date) -> OptOutConfirmationWideEventRecorder? {
+                               recordFoundDate: Date?) -> OptOutConfirmationWideEventRecorder? {
         guard let recorder = WideEventRecorder<OptOutConfirmationWideEventData>.makeIfPossible(
             wideEvent: wideEvent,
             identifier: identifier.toGlobalId,
@@ -70,17 +70,17 @@ final class OptOutConfirmationWideEventRecorder: OptOutWideEventRecording {
                                 identifier: OptOutWideEventIdentifier,
                                 dataBrokerURL: String,
                                 dataBrokerVersion: String?,
-                                recordFoundDateProvider: () -> Date?) -> OptOutConfirmationWideEventRecorder? {
+                                recordFoundDate: Date?) -> OptOutConfirmationWideEventRecorder? {
         guard let recorder = WideEventRecorder<OptOutConfirmationWideEventData>.startIfPossible(
             wideEvent: wideEvent,
             identifier: identifier.toGlobalId,
             sampleRate: sampleRate,
-            intervalStartProvider: recordFoundDateProvider,
+            intervalStart: recordFoundDate,
             makeData: { global, interval in
                 OptOutConfirmationWideEventData(globalData: global,
-                                                 dataBrokerURL: dataBrokerURL,
-                                                 dataBrokerVersion: dataBrokerVersion,
-                                                 confirmationInterval: interval)
+                                                dataBrokerURL: dataBrokerURL,
+                                                dataBrokerVersion: dataBrokerVersion,
+                                                confirmationInterval: interval)
             }
         ) else {
             return nil

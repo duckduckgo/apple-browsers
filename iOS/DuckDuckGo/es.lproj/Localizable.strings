@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Activar la protección de privacidad";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Cerrar pestañas y borrar datos";
+"action.title.forgetAll" = "Borrar datos y pestañas";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Pestañas y datos borrados";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Borrar pestañas, datos y chats de Duck.ai";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Abrir en segundo plano";
@@ -2356,9 +2359,6 @@
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Elige tu navegador";
 
-/* Message to highlight browser capability of private searches */
-"onboarding.browsers.features.privateSearch.title" = "Búsqueda privada por defecto";
-
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo también cuenta con una %1$@, disponible con una %2$@ e %3$@.";
 
@@ -2400,18 +2400,6 @@
 
 /* The title of the onboarding dialog popup to select the preferred App icon. */
 "onboarding.highlights.appIconSelection.title" = "¿Qué color me queda mejor?";
-
-/* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Bloqueo de ventanas emergentes de cookies";
-
-/* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Bloqueo de anuncios segmentados";
-
-/* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Elimina los datos de navegación con un solo botón";
-
-/* Message to highlight browser capability of blocking 3rd-party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Bloquea rastreadores de terceros";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "¡Protecciones activadas!";
@@ -2812,6 +2800,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Configuración de Asistente de búsqueda";
 
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Ocultar imágenes generadas por IA";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtra las imágenes generadas por IA de los resultados de búsqueda de imágenes";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Siempre activado";
 
@@ -2826,6 +2820,12 @@
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Desactivar para evitar que los enlaces se abran automáticamente en otras aplicaciones instaladas.";
+
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Borrar datos y pestañas";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Borra pestañas, datos y chats de Duck.ai";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sugerencias de búsqueda";
@@ -2871,6 +2871,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Personalizar";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Borra todas las pestañas, los chats de Duck.ai y los datos de los sitios que no hayas protegido con Fireproof.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Borrar todas las pestañas y los datos de los sitios no protegidos con Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Eliminación de datos";

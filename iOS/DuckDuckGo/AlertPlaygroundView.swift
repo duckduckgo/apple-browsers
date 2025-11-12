@@ -54,8 +54,8 @@ struct AlertPlaygroundView: View {
     }
     
     func showUIAlert() {
-        guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
-        
+        guard let controller = UIApplication.shared.firstKeyWindow?.rootViewController?.presentedViewController else { return }
+
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(title: primary, style: primaryStyle.uikitStyle)
         alert.addAction(title: secondary, style: secondaryStyle.uikitStyle)

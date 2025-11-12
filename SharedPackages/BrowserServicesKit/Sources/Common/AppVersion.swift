@@ -38,6 +38,10 @@ public struct AppVersion: OSVersionProviding {
         return bundle.object(forInfoDictionaryKey: Bundle.Key.name) as? String ?? ""
     }
 
+    public var productName: String {
+        return bundle.object(forInfoDictionaryKey: Bundle.Key.executableName) as? String ?? ""
+    }
+
     public var identifier: String {
         return bundle.object(forInfoDictionaryKey: Bundle.Key.identifier) as? String ?? ""
     }

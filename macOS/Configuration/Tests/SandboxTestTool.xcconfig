@@ -36,3 +36,4 @@ INFOPLIST_KEY_NSPrincipalClass = SandboxTestToolApp
 
 SWIFT_OPTIMIZATION_LEVEL[config=*][arch=*][sdk=*] = -Onone
 FEATURE_FLAGS[arch=*][sdk=*] = SANDBOX_TEST_TOOL
+ENABLE_DEBUG_DYLIB = NO

@@ -31,11 +31,32 @@ import DataBrokerProtection_iOS
 
 extension MainViewController {
 
+    func segueToAppearanceSettings() {
+        launchSettings {
+            $0.triggerDeepLinkNavigation(to: .appearance)
+        }
+    }
+
+    func segueToCustomizeAddressBarSettings() {
+        launchSettings {
+            $0.triggerDeepLinkNavigation(to: .customizeAddressBarButton)
+        }
+    }
+
+    func segueToCustomizeToolbarSettings() {
+        launchSettings {
+            $0.triggerDeepLinkNavigation(to: .customizeToolbarButton)
+        }
+    }
+
     func segueToDaxOnboarding() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        let controller = OnboardingIntroViewController(onboardingPixelReporter: contextualOnboardingPixelReporter, systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager, daxDialogsManager: daxDialogsManager)
+        let controller = OnboardingIntroViewController(
+            onboardingPixelReporter: contextualOnboardingPixelReporter,
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+            daxDialogsManager: daxDialogsManager)
         controller.delegate = self
         controller.modalPresentationStyle = .overFullScreen
         present(controller, animated: false)
@@ -320,7 +341,8 @@ extension MainViewController {
                                                             dbpIOSPublicInterface: dbpIOSPublicInterface)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
-        let serpSettings = SERPSettings(aiChatSettings: aiChatSettings)
+        let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
+                                                        featureFlagger: featureFlagger)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
                                                   isAuthV2Enabled: isAuthV2Enabled,
@@ -335,7 +357,7 @@ extension MainViewController {
                                                   subscriptionDataReporter: subscriptionDataReporter,
                                                   textZoomCoordinator: textZoomCoordinator,
                                                   aiChatSettings: aiChatSettings,
-                                                  serpSettings: serpSettings,
+                                                  serpSettings: serpSettingsProvider,
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
                                                   themeManager: themeManager,
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),

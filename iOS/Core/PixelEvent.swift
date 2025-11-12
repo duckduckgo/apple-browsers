@@ -229,6 +229,9 @@ extension Pixel {
         case onboardingIntroChooseCustomAppIconColorCTAPressed
         case onboardingIntroChooseAddressBarImpressionUnique
         case onboardingIntroBottomAddressBarSelected
+        case onboardingIntroChooseSearchExperienceImpressionUnique
+        case onboardingIntroAIChatSelected
+        case onboardingIntroSearchOnlySelected
 
         case onboardingContextualSearchOptionTappedUnique
         case onboardingContextualSearchCustomUnique
@@ -712,7 +715,9 @@ extension Pixel {
         case remoteMessagePrimaryActionClicked
         case remoteMessageSecondaryActionClicked
         case remoteMessageSheet
-        
+        case remoteMessageCardShown
+        case remoteMessageCardClicked
+
         // MARK: debug pixels
         case dbCrashDetected(appIdentifier: String?)
         case dbCrashDetectedDaily(appIdentifier: String?)
@@ -823,6 +828,9 @@ extension Pixel {
         case debugBreakageExperiment
 
         case debugWebViewInVisibleTabHidden
+
+        case debugPromptCoordinationFailedToSaveLastPresentationDate
+        case debugPromptCoordinationFailedToRetrieveLastPresentationDate
 
         // Return user measurement
         case debugReturnUserAddATB
@@ -1146,6 +1154,18 @@ extension Pixel {
          */
         case subscriptionOnboardingPromotionDismiss
 
+        // Win-back Offer
+        case subscriptionWinBackOfferLaunchPromptShown
+        case subscriptionWinBackOfferLaunchPromptCTAClicked
+        case subscriptionWinBackOfferLaunchPromptDismissed
+
+        case subscriptionWinBackOfferSettingsLoggedOutOfferShown
+        case subscriptionWinBackOfferSettingsLoggedOutOfferCTAClicked
+        case subscriptionWinBackOfferSettingsLoggedInOfferShown
+
+        case subscriptionWinBackOfferSubscriptionSettingsShown
+        case subscriptionWinBackOfferSubscriptionSettingsCTAClicked
+
         // MARK: Pixel Experiment
         case pixelExperimentEnrollment
 
@@ -1298,6 +1318,9 @@ extension Pixel {
         // MARK: Launch time
         case appDidFinishLaunchingTime(time: BucketAggregation)
         case appDidShowUITime(time: BucketAggregation)
+
+        // MARK: Scene lifecycle
+        case sceneDidDisconnectAndAttemptedToReconnect
 
         // MARK: AI Chat
         case aiChatNoRemoteSettingsFound(settings: String)
@@ -1637,6 +1660,9 @@ extension Pixel.Event {
         case .onboardingIntroChooseCustomAppIconColorCTAPressed: return "m_preonboarding_icon_color_chosen"
         case .onboardingIntroChooseAddressBarImpressionUnique: return "m_preonboarding_choose_address_bar_impressions_unique"
         case .onboardingIntroBottomAddressBarSelected: return "m_preonboarding_bottom_address_bar_selected"
+        case .onboardingIntroChooseSearchExperienceImpressionUnique: return "m_preonboarding_choose_search_experience_impressions_unique"
+        case .onboardingIntroAIChatSelected: return "m_preonboarding_aichat_selected"
+        case .onboardingIntroSearchOnlySelected: return "m_preonboarding_search_only_selected"
 
         case .onboardingContextualSearchOptionTappedUnique: return "m_onboarding_search_option_tapped_unique"
         case .onboardingContextualSiteOptionTappedUnique: return "m_onboarding_visit_site_option_tapped_unique"
@@ -2045,6 +2071,8 @@ extension Pixel.Event {
         case .remoteMessagePrimaryActionClicked: return "m_remote_message_primary_action_clicked"
         case .remoteMessageSecondaryActionClicked: return "m_remote_message_secondary_action_clicked"
         case .remoteMessageSheet: return "m_remote_message_sheet"
+        case .remoteMessageCardShown: return "m_remote_message_card_shown"
+        case .remoteMessageCardClicked: return "m_remote_message_card_clicked"
 
             // MARK: debug pixels
 
@@ -2214,6 +2242,11 @@ extension Pixel.Event {
             // MARK: Debug Web View
 
         case .debugWebViewInVisibleTabHidden: return "m_debug_webview_in_visible_tab_hidden"
+
+            // MARK: - Debug Prompt Coordination
+
+        case .debugPromptCoordinationFailedToSaveLastPresentationDate: return "m_debug_prompt-coordination_failed-to-save_last-presentation-date"
+        case .debugPromptCoordinationFailedToRetrieveLastPresentationDate: return "m_debug_prompt-coordination_failed-to-retrieve_last-presentation-date"
 
             // MARK: Ad Attribution
 
@@ -2462,6 +2495,16 @@ extension Pixel.Event {
 
         case .subscriptionOnboardingPromotionDismiss: return "m_privacy-pro_onboarding_promotion_dismiss"
 
+        // Win-back Offer
+        case .subscriptionWinBackOfferLaunchPromptShown: return "m_privacy-pro_winback_launch_prompt_shown"
+        case .subscriptionWinBackOfferLaunchPromptCTAClicked: return "m_privacy-pro_winback_launch_prompt_clicked"
+        case .subscriptionWinBackOfferLaunchPromptDismissed: return "m_privacy-pro_winback_launch_prompt_dismissed"
+        case .subscriptionWinBackOfferSettingsLoggedOutOfferShown: return "m_privacy-pro_winback_settings_logged_out_offer_shown"
+        case .subscriptionWinBackOfferSettingsLoggedOutOfferCTAClicked: return "m_privacy-pro_winback_settings_logged_out_offer_clicked"
+        case .subscriptionWinBackOfferSettingsLoggedInOfferShown: return "m_privacy-pro_winback_settings_logged_in_offer_shown"
+        case .subscriptionWinBackOfferSubscriptionSettingsShown: return "m_privacy-pro_winback_subscription_settings_shown"
+        case .subscriptionWinBackOfferSubscriptionSettingsCTAClicked: return "m_privacy-pro_winback_subscription_settings_clicked"
+
         // MARK: Pixel Experiment
         case .pixelExperimentEnrollment: return "pixel_experiment_enrollment"
 
@@ -2618,6 +2661,9 @@ extension Pixel.Event {
         // MARK: Launch time
         case .appDidFinishLaunchingTime(let time): return "m_debug_app-did-finish-launching-time-\(time)"
         case .appDidShowUITime(let time): return "m_debug_app-did-show-ui-time-2-\(time)"
+
+        // MARK: Scene lifecycle
+        case .sceneDidDisconnectAndAttemptedToReconnect: return "m_debug_scene-did-disconnect-and-attempted-to-reconnect"
 
         // MARK: AI Chat
         case .aiChatNoRemoteSettingsFound(let settings):

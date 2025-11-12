@@ -44,6 +44,7 @@ import Navigation
 import Subscription
 import WKAbstractions
 import AIChat
+import SERPSettings
 
 class TabViewController: UIViewController {
 
@@ -237,6 +238,8 @@ class TabViewController: UIViewController {
     var storedSpecialErrorPageUserScript: SpecialErrorPageUserScript?
     let syncService: DDGSyncing
 
+    let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
+
     private let daxDialogsDebouncer = Debouncer(mode: .common)
     var pullToRefreshViewAdapter: PullToRefreshViewAdapter?
 
@@ -373,6 +376,7 @@ class TabViewController: UIViewController {
                                    bookmarksDatabase: CoreDataDatabase,
                                    historyManager: HistoryManaging,
                                    syncService: DDGSyncing,
+                                   contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
                                    duckPlayer: DuckPlayerControlling?,
                                    subscriptionDataReporter: SubscriptionDataReporting,
                                    contextualOnboardingPresenter: ContextualOnboardingPresenting,
@@ -397,6 +401,7 @@ class TabViewController: UIViewController {
                               bookmarksDatabase: bookmarksDatabase,
                               historyManager: historyManager,
                               syncService: syncService,
+                              contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
                               duckPlayer: duckPlayer,
                               subscriptionDataReporter: subscriptionDataReporter,
                               contextualOnboardingPresenter: contextualOnboardingPresenter,
@@ -465,6 +470,7 @@ class TabViewController: UIViewController {
                    bookmarksDatabase: CoreDataDatabase,
                    historyManager: HistoryManaging,
                    syncService: DDGSyncing,
+                   contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
                    certificateTrustEvaluator: CertificateTrustEvaluating = CertificateTrustEvaluator(),
                    duckPlayer: DuckPlayerControlling?,
                    subscriptionDataReporter: SubscriptionDataReporting,
@@ -491,6 +497,7 @@ class TabViewController: UIViewController {
         self.historyManager = historyManager
         self.historyCapture = HistoryCapture(historyManager: historyManager)
         self.syncService = syncService
+        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.certificateTrustEvaluator = certificateTrustEvaluator
         self.duckPlayer = duckPlayer
         self.subscriptionDataReporter = subscriptionDataReporter
@@ -514,6 +521,7 @@ class TabViewController: UIViewController {
         
         self.aiChatSettings = aiChatSettings
         self.aiChatViewControllerManager = AIChatViewControllerManager(
+            contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             experimentalAIChatManager: .init(featureFlagger: featureFlagger),
             featureFlagger: featureFlagger,
             featureDiscovery: featureDiscovery,
@@ -550,6 +558,8 @@ class TabViewController: UIViewController {
         decorate()
         addTextZoomObserver()
         setupAIChatViewContainer()
+        updateContainerVisibility()
+
         subscribeToEmailProtectionSignOutNotification()
         registerForDownloadsNotifications()
         registerForAddressBarLocationNotifications()
@@ -563,6 +573,11 @@ class TabViewController: UIViewController {
         
         // Link DuckPlayer to current Tab
         duckPlayerNavigationHandler.setHostViewController(self)
+        
+        // Restore AI Chat view controller if this tab is an AI Chat tab
+        if tabModel.isAITab {
+            loadAIChat()
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -699,7 +714,7 @@ class TabViewController: UIViewController {
                        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil) {
         instrumentation.willPrepareWebView()
 
-        let userContentController = UserContentController()
+        let userContentController = UserContentController(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher)
         configuration.userContentController = userContentController
         userContentController.delegate = self
 
@@ -991,29 +1006,22 @@ class TabViewController: UIViewController {
         guard url.isDuckDuckGoSearch else { return false }
         
         var shouldReissue = !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
-        
-        // SerpSettingsFollowUpQuestions takes precedence over duckAISearchParameter
-        // If it's enabled, don't evaluate shouldReissue
-        if !featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) {
-            // Only check DuckAI params if the feature flag is enabled
-            if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-                let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-                shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
-            }
+
+        // Only check DuckAI params if the feature flag is enabled
+        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+            shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
         }
         return shouldReissue
     }
     
     private func reissueSearchWithRequiredParams(for url: URL) {
         var mobileSearch = url.applyingStatsParams()
-        
-        // SerpSettingsFollowUpQuestions takes precedence over duckAISearchParameter
+
         // If it's enabled, don't evaluate shouldReissue
-        if !featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) {
-            if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-                let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-                mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
-            }
+        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+            mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
         }
         
         reissueNavigationWithSearchHeaderParams(for: mobileSearch)
@@ -1679,7 +1687,25 @@ extension TabViewController: WKNavigationDelegate {
             completion(image)
         }
     }
+
     
+    /// Prepares a tab preview for ai chat tabs
+    /// 
+    /// - Parameter completion: Handles the rendered preview image
+    func prepareAIChatPreview(completion: @escaping (UIImage?) -> Void) {
+        DispatchQueue.main.async { [weak self] in
+            guard let container = self?.aiChatViewContainer,
+                  container.bounds.height > 0 && container.bounds.width > 0 else { completion(nil); return }
+
+            let renderer = UIGraphicsImageRenderer(size: container.bounds.size)
+            let image = renderer.image { _ in
+                container.drawHierarchy(in: container.bounds, afterScreenUpdates: true)
+            }
+
+            completion(image)
+        }
+    }
+
     private func updatePreview() {
         preparePreview { image in
             if let image = image {
@@ -2851,6 +2877,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.autoconsentUserScript.delegate = self
         userScripts.contentScopeUserScript.delegate = self
         userScripts.serpSettingsUserScript.delegate = self
+        userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
         
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages
@@ -3700,8 +3727,9 @@ extension WKWebView {
 extension UserContentController {
 
     @MainActor
-    public convenience init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
-        self.init(assetsPublisher: ContentBlocking.shared.contentBlockingUpdating.userContentBlockingAssets,
+    convenience init(contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
+                     privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
+        self.init(assetsPublisher: contentBlockingAssetsPublisher,
                   privacyConfigurationManager: privacyConfigurationManager)
     }
 
@@ -3881,22 +3909,9 @@ extension TabViewController {
 }
 
 extension TabViewController: SERPSettingsUserScriptDelegate {
-    
 
-    func serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
-        guard let mainVC = parent as? MainViewController else { return }
-        mainVC.segueToSettingsPrivateSearch {
-            mainVC.closeTab(self.tabModel)
-            mainVC.showBars()
-        }
-    }
-    
-    func serpSettingsUserScriptDidRequestToCloseTabAndOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
-        guard let mainVC = parent as? MainViewController else { return }
-        mainVC.segueToSettingsAIChat(openedFromSERPSettingsButton: false) { // false because we're reopening previously closed settings
-            mainVC.closeTab(self.tabModel)
-            mainVC.showBars()
-        }
+    func serpSettingsUserScriptDidRequestToCloseTab(_ userScript: SERPSettingsUserScript) {
+        // macOS Only
     }
 
     func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
@@ -3940,6 +3955,14 @@ extension TabViewController {
         }
 
         updateContainerVisibility()
+    }
+    
+    /// Exits AI Chat mode and switches back to web browsing.
+    func prepareUIForWebModeIfModeIsAI() {
+        guard tabModel.isAITab else { return }
+        tabModel.type = .web
+        updateContainerVisibility()
+        view.layoutIfNeeded()
     }
 
     // MARK: Private API

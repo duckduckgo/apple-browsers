@@ -161,14 +161,9 @@ package final class DefaultBrowserPromptTypeDecider: DefaultBrowserPromptTypeDec
 private extension DefaultBrowserPromptTypeDecider {
 
     func decidePromptType() -> DefaultBrowserPromptType? {
-        // If user has already seen any prompt Today do not show another one.
-        guard !hasAlreadySeenAnyModalToday() else {
-            Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Already Seen a Prompt Today. Skipping it.")
-            return nil
-        }
-
         // First, check if we need to display the prompt for inactive users.
         // Second, check if we need to display one of the prompt for active users.
+        // Note: Cooldown is now managed globally within the client in (See ModalPromptCoordinationService).
         if let inactivePrompt = inactiveUserPromptDecider.promptType() {
             return inactivePrompt
         } else if let activePrompt = activeUserPromptDecider.promptType() {
@@ -176,11 +171,6 @@ private extension DefaultBrowserPromptTypeDecider {
         } else {
             return nil
         }
-    }
-
-    func hasAlreadySeenAnyModalToday() -> Bool {
-        guard let lastModalShownDate = store.lastModalShownDate else { return false }
-        return Calendar.current.isDate(Date(timeIntervalSince1970: lastModalShownDate), inSameDayAs: dateProvider())
     }
 
 }

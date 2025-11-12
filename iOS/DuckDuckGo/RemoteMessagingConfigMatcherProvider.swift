@@ -87,6 +87,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         var isSubscriptionActive: Bool = false
         var isSubscriptionExpiring: Bool = false
         var isSubscriptionExpired: Bool = false
+        var subscriptionFreeTrialActive: Bool = false
 
         var isDuckPlayerOnboarded: Bool {
             duckPlayerStorage.userInteractedWithDuckPlayer
@@ -106,6 +107,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
             subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
             subscriptionPurchasePlatform = subscription.platform.rawValue
+            subscriptionFreeTrialActive = subscription.hasActiveTrialOffer
 
             switch subscription.status {
             case .autoRenewable, .gracePeriod:
@@ -120,12 +122,12 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(statisticsStore: statisticsStore,
                                                                         vpnActivationDateStore: DefaultVPNActivationDateStore(),
-                                                                        subscription: subscription,
+                                                                        subscriptionDataProvider: subscription,
                                                                         autofillUsageStore: autofillUsageStore)
         } else {
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(statisticsStore: statisticsStore,
                                                                         vpnActivationDateStore: DefaultVPNActivationDateStore(),
-                                                                        subscription: nil,
+                                                                        subscriptionDataProvider: nil,
                                                                         autofillUsageStore: autofillUsageStore)
         }
 
@@ -156,6 +158,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isSubscriptionActive: isSubscriptionActive,
                                                        isSubscriptionExpiring: isSubscriptionExpiring,
                                                        isSubscriptionExpired: isSubscriptionExpired,
+                                                       subscriptionFreeTrialActive: subscriptionFreeTrialActive,
                                                        isDuckPlayerOnboarded: isDuckPlayerOnboarded,
                                                        isDuckPlayerEnabled: isDuckPlayerEnabled,
                                                        dismissedMessageIds: dismissedMessageIds,
@@ -167,5 +170,27 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds
         )
+    }
+}
+
+extension DuckDuckGoSubscription: @retroactive SubscriptionSurveyDataProviding {
+    public var subscriptionStatus: String? {
+        return status.remoteMessagingFrameworkValue
+    }
+
+    public var subscriptionPlatform: String? {
+        return platform.rawValue
+    }
+
+    public var subscriptionBilling: String? {
+        return billingPeriod.remoteMessagingFrameworkValue
+    }
+
+    public var subscriptionStartDate: Date? {
+        return startedAt
+    }
+
+    public var subscriptionExpiryDate: Date? {
+        return expiresOrRenewsAt
     }
 }

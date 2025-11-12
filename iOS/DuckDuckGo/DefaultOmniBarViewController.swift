@@ -118,7 +118,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         omniBarView.isUsingCompactLayout = !state.hasLargeWidth
 
         // Should show separator only when there is another button next to accessory button
-        let isShowingSeparator = state.showAIChatButton && (state.showClear || state.showVoiceSearch || state.showRefresh || state.showAbort || state.showShare)
+        let isShowingSeparator = state.showAIChatButton && (state.showClear || state.showVoiceSearch || state.showRefresh || state.showAbort || state.showCustomizableButton)
         omniBarView.isShowingSeparator = isShowingSeparator
 
         updateShadowAppearanceByApplyingLayerMask()
@@ -216,7 +216,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
                                                 storage: UserDefaults.standard, aiChatSettings: aiChatSettings,
                                                 sessionStateMetrics: sessionStateMetrics)
 
-        guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty else {
+        guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty, omniBarView.isFullAIChatHidden else {
             return switchBarHandler
         }
 

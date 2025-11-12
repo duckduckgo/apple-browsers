@@ -16,13 +16,14 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Combine
 import Common
 import PixelKitTestingUtilities
+import SharedTestUtilities
 import Testing
 import UserScript
 import WebKit
-import AIChat
 
 @testable import DuckDuckGo_Privacy_Browser
 

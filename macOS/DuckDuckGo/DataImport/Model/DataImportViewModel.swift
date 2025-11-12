@@ -184,7 +184,7 @@ struct DataImportViewModel {
         self.loadProfiles = loadProfiles
         self.dataImporterFactory = dataImporterFactory
 
-        self.screen = screen ?? importSource.initialScreen
+        self.screen = screen ?? .profileAndDataTypesPicker
 
         self.browserProfiles = ThirdPartyBrowser.browser(for: importSource).map(loadProfiles)
         self.selectedProfile = browserProfiles?.defaultProfile
@@ -432,7 +432,7 @@ struct DataImportViewModel {
 
     mutating func goBack() {
         // reset to initial screen
-        screen = importSource.initialScreen
+        screen = .profileAndDataTypesPicker
         summary.removeAll()
     }
 
@@ -479,7 +479,7 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
                             faviconManager: NSApp.delegateTyped.faviconManager,
                             featureFlagger: Application.appDelegate.featureFlagger)
     case .safari, .safariTechnologyPreview:
-        if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker), !source.archiveImportSupportedFiles.isEmpty {
+        if #available(macOS 15.2, *), !source.archiveImportSupportedFiles.isEmpty {
             SafariArchiveImporter(archiveURL: url,
                                   bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
                                   loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
@@ -506,28 +506,6 @@ private var openPanelDirectoryURL: URL? {
     }
 }
 
-extension DataImport.Source {
-
-    var initialScreen: DataImportViewModel.Screen {
-        switch self {
-        case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera,
-             .operaGX, .tor, .vivaldi, .yandex:
-            return .profileAndDataTypesPicker
-        case .safari, .safariTechnologyPreview:
-            if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {
-                return .archiveImport(dataTypes: supportedDataTypes)
-            } else {
-                return .profileAndDataTypesPicker
-            }
-        case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv:
-            return .fileImport(dataType: .passwords)
-        case .bookmarksHTML:
-            return .fileImport(dataType: .bookmarks)
-        }
-    }
-
-}
-
 extension DataImport.DataType {
 
     static func dataTypes(before dataType: DataImport.DataType, inclusive: Bool) -> [Self].SubSequence {
@@ -551,7 +529,6 @@ extension DataImport.DataType {
         case .creditCards: [.json]
         }
     }
-
 }
 
 extension DataImportViewModel {
@@ -638,7 +615,7 @@ extension DataImportViewModel {
     }
 
     var isImportSourcePickerDisabled: Bool {
-        importSource.initialScreen != screen || importTask != nil
+        importTask != nil
     }
 
     // AsyncStream of Data Import task progress events
@@ -691,8 +668,10 @@ extension DataImportViewModel {
                                     /* dataType: */ nil,
                                     /* profileURL: */ $0.profileURL,
                                     /* primaryPassword: */ nil)
-            }),
-                  selectedDataTypes.intersects(importer.importableTypes) else {
+            }), selectedDataTypes.intersects(importer.importableTypes) else {
+                if #available(macOS 15.2, *), .safari == importSource {
+                    return .next(.archiveImport(dataTypes: importSource.supportedDataTypes))
+                }
                 // no profiles found
                 // or selected data type not supported by selected browser data importer
                 guard let type = DataType.allCases.filter(selectedDataTypes.contains).first else {
@@ -714,16 +693,13 @@ extension DataImportViewModel {
         case .getReadPermission:
             return .initiateImport(disabled: true)
 
-        case .fileImport where screen == importSource.initialScreen:
-            // no default action for File Import sources
-            return nil
         case .fileImport(dataType: let dataType, summary: _)
             // exlude all skipped datatypes that are ordered before
             where selectedDataTypes.subtracting(DataType.dataTypes(before: dataType, inclusive: true)).isEmpty
             // and no failures recorded - otherwise will skip to Feedback
             && !summary.contains(where: { !$0.result.isSuccess }):
             // no other data types to skip:
-            return .cancel
+            return nil
         case .archiveImport:
             return nil
         case .fileImport:
@@ -749,9 +725,9 @@ extension DataImportViewModel {
     var secondaryButton: ButtonType? {
         if importTask == nil {
             switch screen {
-            case importSource.initialScreen, .feedback:
+            case .profileAndDataTypesPicker, .feedback:
                 return .cancel
-            case .moreInfo, .getReadPermission:
+            case .moreInfo, .getReadPermission, .fileImport, .archiveImport:
                 return .back
             default:
                 return nil
@@ -779,7 +755,14 @@ extension DataImportViewModel {
     }
 
     mutating func update(with importSource: Source) {
-        self = .init(importSource: importSource, isPasswordManagerAutolockEnabled: isPasswordManagerAutolockEnabled, loadProfiles: loadProfiles, dataImporterFactory: dataImporterFactory, requestPrimaryPasswordCallback: requestPrimaryPasswordCallback, reportSenderFactory: reportSenderFactory, onFinished: onFinished, onCancelled: onCancelled)
+        self = .init(importSource: importSource,
+                     isPasswordManagerAutolockEnabled: isPasswordManagerAutolockEnabled,
+                     loadProfiles: loadProfiles,
+                     dataImporterFactory: dataImporterFactory,
+                     requestPrimaryPasswordCallback: requestPrimaryPasswordCallback,
+                     reportSenderFactory: reportSenderFactory,
+                     onFinished: onFinished,
+                     onCancelled: onCancelled)
     }
 
     @MainActor

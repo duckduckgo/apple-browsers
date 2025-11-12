@@ -408,12 +408,10 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                                                   extractedProfileId: Int64) {
         guard let wideEvent = jobDependencies.wideEvent else { return }
 
-        let recordFoundDateProvider = {
-            RecordFoundDateResolver.resolve(repository: self.jobDependencies.database,
-                                            brokerId: brokerId,
-                                            profileQueryId: profileQueryId,
-                                            extractedProfileId: extractedProfileId)
-        }
+        let recordFoundDate = RecordFoundDateResolver.resolve(repository: self.jobDependencies.database,
+                                                              brokerId: brokerId,
+                                                              profileQueryId: profileQueryId,
+                                                              extractedProfileId: extractedProfileId)
         let wideEventId = OptOutWideEventIdentifier(profileIdentifier: profileIdentifier,
                                                             brokerId: brokerId,
                                                             profileQueryId: profileQueryId,
@@ -423,7 +421,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
             identifier: wideEventId,
             dataBrokerURL: broker.url,
             dataBrokerVersion: broker.version,
-            recordFoundDateProvider: recordFoundDateProvider
+            recordFoundDate: recordFoundDate
         )?.markCompleted(at: Date())
     }
 

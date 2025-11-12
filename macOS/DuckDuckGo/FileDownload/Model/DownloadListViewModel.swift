@@ -32,7 +32,7 @@ final class DownloadListViewModel {
     @Published private(set) var items: [DownloadViewModel]
     @Published private(set) var shouldShowErrorBanner: Bool = false
 
-    init(fireWindowSession: FireWindowSessionRef?, coordinator: DownloadListCoordinator = DownloadListCoordinator.shared) {
+    init(fireWindowSession: FireWindowSessionRef?, coordinator: DownloadListCoordinator) {
         self.fireWindowSession = fireWindowSession
         self.coordinator = coordinator
 

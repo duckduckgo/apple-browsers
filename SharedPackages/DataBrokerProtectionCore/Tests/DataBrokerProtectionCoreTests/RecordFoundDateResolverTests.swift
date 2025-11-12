@@ -36,27 +36,12 @@ final class RecordFoundDateResolverTests: XCTestCase {
 
     func testUsesBrokerProfileQueryDataWhenProvided() {
         let now = Date()
-        let historyEvents = [
-            HistoryEvent(extractedProfileId: 1, brokerId: 1, profileQueryId: 2, type: .matchesFound(count: 1), date: now)
+        mockDatabase.optOutEvents = []
+        mockDatabase.scanEvents = [
+            HistoryEvent(brokerId: 1, profileQueryId: 2, type: .matchesFound(count: 1), date: now)
         ]
-        mockDatabase.optOutToReturn = nil
 
-        let brokerQueryData = BrokerProfileQueryData.mock(
-            optOutJobData: [OptOutJobData(
-                brokerId: 1,
-                profileQueryId: 2,
-                createdDate: .distantPast,
-                preferredRunDate: nil,
-                historyEvents: historyEvents,
-                lastRunDate: nil,
-                attemptCount: 0,
-                submittedSuccessfullyDate: nil,
-                extractedProfile: .mockWithoutRemovedDate
-            )]
-        )
-
-        let result = RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerQueryData,
-                                                     repository: mockDatabase,
+        let result = RecordFoundDateResolver.resolve(repository: mockDatabase,
                                                      brokerId: 1,
                                                      profileQueryId: 2,
                                                      extractedProfileId: 1)
@@ -65,15 +50,16 @@ final class RecordFoundDateResolverTests: XCTestCase {
 
     func testUsesFetchedOptOutOtherwise() {
         let now = Date()
-        let historyEvents = [
-            HistoryEvent(extractedProfileId: 1, brokerId: 1, profileQueryId: 2, type: .matchesFound(count: 1), date: now)
+        mockDatabase.optOutEvents = []
+        mockDatabase.scanEvents = [
+            HistoryEvent(brokerId: 1, profileQueryId: 2, type: .matchesFound(count: 1), date: now)
         ]
         mockDatabase.optOutToReturn = OptOutJobData(
             brokerId: 1,
             profileQueryId: 2,
             createdDate: .distantPast,
             preferredRunDate: nil,
-            historyEvents: historyEvents,
+            historyEvents: [],
             lastRunDate: nil,
             attemptCount: 0,
             submittedSuccessfullyDate: nil,
@@ -93,17 +79,17 @@ final class RecordFoundDateResolverTests: XCTestCase {
         let matchDate = Date(timeIntervalSince1970: 5_000)
         let laterMatchDate = Date(timeIntervalSince1970: 10_000)
 
-        let events = [
-            HistoryEvent(extractedProfileId: 3, brokerId: 1, profileQueryId: 2, type: .matchesFound(count: 1), date: laterMatchDate),
-            HistoryEvent(extractedProfileId: 3, brokerId: 1, profileQueryId: 2, type: .matchesFound(count: 1), date: matchDate)
+        mockDatabase.optOutEvents = []
+        mockDatabase.scanEvents = [
+            HistoryEvent(brokerId: 1, profileQueryId: 2, type: .matchesFound(count: 1), date: laterMatchDate),
+            HistoryEvent(brokerId: 1, profileQueryId: 2, type: .matchesFound(count: 1), date: matchDate)
         ]
-
         mockDatabase.optOutToReturn = OptOutJobData(
             brokerId: 1,
             profileQueryId: 2,
             createdDate: invalidDate,
             preferredRunDate: nil,
-            historyEvents: events,
+            historyEvents: [],
             lastRunDate: nil,
             attemptCount: 0,
             submittedSuccessfullyDate: nil,
@@ -118,26 +104,22 @@ final class RecordFoundDateResolverTests: XCTestCase {
         XCTAssertEqual(result, matchDate)
     }
 
-    func testFallsBackToFirstFoundDateInRepository() throws {
-        let events = [
-            HistoryEvent(extractedProfileId: 3, brokerId: 1, profileQueryId: 2, type: .reAppearence, date: .now)
-        ]
-        mockDatabase.optOutToReturn = OptOutJobData(
-            brokerId: 1,
-            profileQueryId: 2,
-            createdDate: Date(timeIntervalSince1970: 0),
-            preferredRunDate: nil,
-            historyEvents: events,
-            lastRunDate: nil,
-            attemptCount: 0,
-            submittedSuccessfullyDate: nil,
-            extractedProfile: .mockWithoutRemovedDate
-        )
-
+    func testFallsBackToFirstFoundDateInRepository() {
         let repositoryDate = Date(timeIntervalSince1970: 20_000)
-        try mockDatabase.add(
-            HistoryEvent(extractedProfileId: 3, brokerId: 1, profileQueryId: 2, type: .matchesFound(count: 1), date: repositoryDate)
-        )
+        mockDatabase.optOutEvents = [
+            HistoryEvent(extractedProfileId: 3,
+                         brokerId: 1,
+                         profileQueryId: 2,
+                         type: .reAppearence,
+                         date: .now)
+        ]
+        mockDatabase.scanEvents = [
+            HistoryEvent(brokerId: 1,
+                         profileQueryId: 2,
+                         type: .matchesFound(count: 1),
+                         date: repositoryDate)
+        ]
+        mockDatabase.optOutToReturn = nil
 
         let result = RecordFoundDateResolver.resolve(repository: mockDatabase,
                                                      brokerId: 1,
@@ -152,18 +134,34 @@ final class RecordFoundDateResolverTests: XCTestCase {
         let clearDate = Date(timeIntervalSince1970: 2_000)
         let reappearanceMatchDate = Date(timeIntervalSince1970: 3_000)
 
-        let events = [
-            HistoryEvent(extractedProfileId: 3, brokerId: 1, profileQueryId: 2, type: .matchesFound(count: 1), date: initialMatchDate),
-            HistoryEvent(extractedProfileId: 3, brokerId: 1, profileQueryId: 2, type: .optOutConfirmed, date: clearDate),
-            HistoryEvent(extractedProfileId: 3, brokerId: 1, profileQueryId: 2, type: .matchesFound(count: 1), date: reappearanceMatchDate)
+        mockDatabase.optOutEvents = [
+            HistoryEvent(extractedProfileId: 3,
+                         brokerId: 1,
+                         profileQueryId: 2,
+                         type: .optOutConfirmed,
+                         date: clearDate),
+            HistoryEvent(extractedProfileId: 3,
+                         brokerId: 1,
+                         profileQueryId: 2,
+                         type: .reAppearence,
+                         date: reappearanceMatchDate)
         ]
-
+        mockDatabase.scanEvents = [
+            HistoryEvent(brokerId: 1,
+                         profileQueryId: 2,
+                         type: .matchesFound(count: 1),
+                         date: initialMatchDate),
+            HistoryEvent(brokerId: 1,
+                         profileQueryId: 2,
+                         type: .matchesFound(count: 1),
+                         date: reappearanceMatchDate)
+        ]
         mockDatabase.optOutToReturn = OptOutJobData(
             brokerId: 1,
             profileQueryId: 2,
             createdDate: Date(timeIntervalSince1970: 0),
             preferredRunDate: nil,
-            historyEvents: events,
+            historyEvents: [],
             lastRunDate: nil,
             attemptCount: 0,
             submittedSuccessfullyDate: nil,
@@ -182,17 +180,25 @@ final class RecordFoundDateResolverTests: XCTestCase {
         let initialMatchDate = Date(timeIntervalSince1970: 1_000)
         let clearDate = Date(timeIntervalSince1970: 2_000)
 
-        let events = [
-            HistoryEvent(extractedProfileId: 3, brokerId: 1, profileQueryId: 2, type: .matchesFound(count: 1), date: initialMatchDate),
-            HistoryEvent(extractedProfileId: 3, brokerId: 1, profileQueryId: 2, type: .matchRemovedByUser, date: clearDate)
+        mockDatabase.optOutEvents = [
+            HistoryEvent(extractedProfileId: 3,
+                         brokerId: 1,
+                         profileQueryId: 2,
+                         type: .matchRemovedByUser,
+                         date: clearDate)
         ]
-
+        mockDatabase.scanEvents = [
+            HistoryEvent(brokerId: 1,
+                         profileQueryId: 2,
+                         type: .matchesFound(count: 1),
+                         date: initialMatchDate)
+        ]
         mockDatabase.optOutToReturn = OptOutJobData(
             brokerId: 1,
             profileQueryId: 2,
             createdDate: Date(timeIntervalSince1970: 0),
             preferredRunDate: nil,
-            historyEvents: events,
+            historyEvents: [],
             lastRunDate: nil,
             attemptCount: 0,
             submittedSuccessfullyDate: nil,
@@ -214,20 +220,43 @@ final class RecordFoundDateResolverTests: XCTestCase {
         let secondClear = Date(timeIntervalSince1970: 4_000)
         let thirdMatch = Date(timeIntervalSince1970: 5_000)
 
-        let events = [
-            HistoryEvent(extractedProfileId: 3, brokerId: 1, profileQueryId: 2, type: .matchesFound(count: 1), date: firstMatch),
-            HistoryEvent(extractedProfileId: 3, brokerId: 1, profileQueryId: 2, type: .optOutConfirmed, date: firstClear),
-            HistoryEvent(extractedProfileId: 3, brokerId: 1, profileQueryId: 2, type: .matchesFound(count: 1), date: secondMatch),
-            HistoryEvent(extractedProfileId: 3, brokerId: 1, profileQueryId: 2, type: .matchRemovedByUser, date: secondClear),
-            HistoryEvent(extractedProfileId: 3, brokerId: 1, profileQueryId: 2, type: .matchesFound(count: 1), date: thirdMatch)
+        mockDatabase.optOutEvents = [
+            HistoryEvent(extractedProfileId: 3,
+                         brokerId: 1,
+                         profileQueryId: 2,
+                         type: .optOutConfirmed,
+                         date: firstClear),
+            HistoryEvent(extractedProfileId: 3,
+                         brokerId: 1,
+                         profileQueryId: 2,
+                         type: .matchRemovedByUser,
+                         date: secondClear),
+            HistoryEvent(extractedProfileId: 3,
+                         brokerId: 1,
+                         profileQueryId: 2,
+                         type: .reAppearence,
+                         date: secondMatch)
         ]
-
+        mockDatabase.scanEvents = [
+            HistoryEvent(brokerId: 1,
+                         profileQueryId: 2,
+                         type: .matchesFound(count: 1),
+                         date: firstMatch),
+            HistoryEvent(brokerId: 1,
+                         profileQueryId: 2,
+                         type: .matchesFound(count: 1),
+                         date: secondMatch),
+            HistoryEvent(brokerId: 1,
+                         profileQueryId: 2,
+                         type: .matchesFound(count: 1),
+                         date: thirdMatch)
+        ]
         mockDatabase.optOutToReturn = OptOutJobData(
             brokerId: 1,
             profileQueryId: 2,
             createdDate: Date(timeIntervalSince1970: 0),
             preferredRunDate: nil,
-            historyEvents: events,
+            historyEvents: [],
             lastRunDate: nil,
             attemptCount: 0,
             submittedSuccessfullyDate: nil,
@@ -243,7 +272,8 @@ final class RecordFoundDateResolverTests: XCTestCase {
     }
 
     func testReturnsNilWhenNoDataAvailable() {
-        mockDatabase.optOutToReturn = nil
+        mockDatabase.optOutEvents = []
+        mockDatabase.scanEvents = []
 
         let result = RecordFoundDateResolver.resolve(repository: mockDatabase,
                                                      brokerId: 1,

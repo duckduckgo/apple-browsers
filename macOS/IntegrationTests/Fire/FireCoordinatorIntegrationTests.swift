@@ -19,6 +19,7 @@
 import AppKit
 import History
 import HistoryView
+import SharedTestUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser

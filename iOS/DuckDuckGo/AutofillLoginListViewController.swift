@@ -730,16 +730,18 @@ final class AutofillLoginListViewController: UIViewController {
         }
 
         viewModel.shouldShowExtensionPromo { [weak self] shouldShowExtensionPromo in
-            guard shouldShowExtensionPromo, let self else { return }
-            if !self.importPromoPresented, !self.surveyPromptPresented, !self.syncPromoPresented, self.shouldUpdateHeaderView(for: .extensionPromo) {
-                self.configureTableHeaderView(for: .extensionPromo)
-                self.extensionPromoPresented = true
-            }
-            return
-        }
+            guard let self else { return }
 
-        // No header view is needed, clear the table header
-        clearTableHeaderView()
+            if shouldShowExtensionPromo {
+                if !self.importPromoPresented, !self.surveyPromptPresented, !self.syncPromoPresented, self.shouldUpdateHeaderView(for: .extensionPromo) {
+                    self.configureTableHeaderView(for: .extensionPromo)
+                    self.extensionPromoPresented = true
+                }
+            } else {
+                // No extension promo needed, clear the table header if no other promos were shown
+                self.clearTableHeaderView()
+            }
+        }
     }
 
     private func shouldUpdateHeaderView(for type: AutofillHeaderViewFactory.ViewType) -> Bool {

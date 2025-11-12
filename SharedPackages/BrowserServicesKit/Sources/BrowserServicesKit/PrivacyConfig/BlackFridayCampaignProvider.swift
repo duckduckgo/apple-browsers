@@ -1,6 +1,5 @@
 //
 //  BlackFridayCampaignProvider.swift
-//  BrowserServicesKit
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -80,4 +79,3 @@ public struct DefaultBlackFridayCampaignProvider: BlackFridayCampaignProviding {
         }
     }
 }
-

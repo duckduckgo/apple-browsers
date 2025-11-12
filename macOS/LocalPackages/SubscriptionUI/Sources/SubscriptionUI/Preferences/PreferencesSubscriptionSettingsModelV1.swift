@@ -70,7 +70,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
         self.userEventHandler = userEventHandler
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.blackFridayCampaignProvider = blackFridayCampaignProvider
-        
+
         Task {
             await self.updateSubscription(cachePolicy: .returnCacheDataElseLoad)
         }

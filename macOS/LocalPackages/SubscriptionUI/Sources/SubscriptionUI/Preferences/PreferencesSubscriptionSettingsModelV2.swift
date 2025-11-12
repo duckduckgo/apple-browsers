@@ -50,7 +50,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
             UserText.viewPlansExpiredButtonTitle
         }
     }
-    
+
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
     private let subscriptionManager: SubscriptionManagerV2

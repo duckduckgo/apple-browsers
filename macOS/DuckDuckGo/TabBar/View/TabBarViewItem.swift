@@ -956,7 +956,7 @@ final class TabBarViewItem: NSCollectionViewItem {
                         return
                     }
 
-                    self.cell.faviconView.displaySpinnerIfNeeded(url: self.tabViewModel?.url, isLoading: isLoading, error: error)
+                    self.cell.faviconView.startSpinnerIfNeeded(url: self.tabViewModel?.url, isLoading: isLoading, error: error)
                 }
                 .store(in: &cancellables)
         }
@@ -1135,7 +1135,7 @@ final class TabBarViewItem: NSCollectionViewItem {
             return .dot
         }
 
-        return .domainPrefix(tabViewModel?.tabContent.urlForWebView)
+        return .domainPrefix(tabViewModel?.url)
     }
 
     private func updateAudioPlayState(_ audioState: WKWebView.AudioState) {

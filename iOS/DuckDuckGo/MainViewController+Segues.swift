@@ -225,19 +225,25 @@ extension MainViewController {
     func segueToDuckDuckGoSubscription() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings(deepLinkTarget: .subscriptionFlow())
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: .subscriptionFlow())
+        }, deepLinkTarget: .subscriptionFlow())
     }
 
     func segueToSubscriptionRestoreFlow() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings(deepLinkTarget: .restoreFlow)
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: .restoreFlow)
+        }, deepLinkTarget: .restoreFlow)
     }
 
     func segueToVPN() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings(deepLinkTarget: .netP)
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: .netP)
+        }, deepLinkTarget: .netP)
     }
 
     func segueToDebugSettings() {

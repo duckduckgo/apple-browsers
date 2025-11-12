@@ -92,7 +92,7 @@ final class VPNService: NSObject {
         let alertController = CriticalAlerts.makeExpiredEntitlementAlert {
             self.mainCoordinator.segueToDuckDuckGoSubscription()
         }
-        application.window?.rootViewController?.present(alertController, animated: true) {
+        application.firstKeyWindow?.rootViewController?.present(alertController, animated: true) {
             self.tunnelDefaults.showEntitlementAlert = false
         }
     }

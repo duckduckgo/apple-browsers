@@ -31,6 +31,12 @@ import DataBrokerProtection_iOS
 
 extension MainViewController {
 
+    func segueToAppearanceSettings() {
+        launchSettings {
+            $0.triggerDeepLinkNavigation(to: .appearance)
+        }
+    }
+
     func segueToCustomizeAddressBarSettings() {
         launchSettings {
             $0.triggerDeepLinkNavigation(to: .customizeAddressBarButton)

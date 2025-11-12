@@ -26,8 +26,9 @@ import Foundation
 struct RemoteMessagingActionHandlerIntegrationTests {
 
     @Test(
-        "Check Sync Navigation Target Asks Delegate To Perform Segue",
+        "Check Navigation Target Asks Delegate To Perform Segue",
         arguments: [
+            (.appearance, \MockMessageNavigationDelegate.didCallSegueToSettingsAppearance),
             (.sync, \MockMessageNavigationDelegate.didCallSegueToSettingsSync),
             (.settings, \MockMessageNavigationDelegate.didCallSegueToSettings),
             (.duckAISettings, \MockMessageNavigationDelegate.didCallSegueToAIChatSettings),

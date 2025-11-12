@@ -1,6 +1,5 @@
 //
-//  UIWindowExtension.swift
-//  DuckDuckGo
+//  LoadingIndicatorPolicy.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,20 +16,19 @@
 //  limitations under the License.
 //
 
-import UIKit
+import Foundation
 
-extension UIWindow {
+protocol LoadingIndicatorPolicy {
+    func shouldShowLoadingIndicator(url: URL?, isLoading: Bool, error: Error?) -> Bool
+}
 
-    static func makeBlank() -> UIWindow {
-        let window = UIWindow(frame: UIScreen.main.bounds)
-        window.backgroundColor = .white
+struct DefaultLoadingIndicatorPolicy: LoadingIndicatorPolicy {
 
-        let rootViewController = UIViewController()
-        rootViewController.view.backgroundColor = .white
-        window.rootViewController = rootViewController
-        window.makeKeyAndVisible()
+    func shouldShowLoadingIndicator(url: URL?, isLoading: Bool, error: Error?) -> Bool {
+        guard isLoading, error == nil, let url else {
+            return false
+        }
 
-        return window
+        return !url.isDuckDuckGoSearch && !url.isDuckPlayer && url.navigationalScheme?.isHypertextScheme == true
     }
-
 }

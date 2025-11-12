@@ -26,13 +26,13 @@ import Foundation
 protocol TunnelFailureMonitoring: Actor {
 
     /// Indicates whether the monitor is currently running.
-    var isStarted: Bool { get async }
+    var isStarted: Bool { get }
 
     /// Starts monitoring tunnel failures.
     ///
     /// - Parameter callback: Called when a tunnel failure is detected or recovered
-    func start(callback: @escaping (NetworkProtectionTunnelFailureMonitor.Result) -> Void) async
+    func start(callback: @escaping (NetworkProtectionTunnelFailureMonitor.Result) -> Void)
 
     /// Stops monitoring tunnel failures.
-    func stop() async
+    func stop()
 }

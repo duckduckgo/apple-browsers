@@ -44,11 +44,9 @@ public final class WireGuardAdapterEventHandler: WireGuardAdapterEventHandling {
         case .endTemporaryShutdownStateAttemptFailure(let error):
             Logger.networkProtection.error("Adapter failed to exit temporary shutdown: \(error.localizedDescription)")
             providerEvents.fire(.adapterEndTemporaryShutdownStateAttemptFailure(error))
-
         case .endTemporaryShutdownStateRecoveryFailure(let error):
             Logger.networkProtection.error("Adapter recovery from temporary shutdown failed: \(error.localizedDescription)")
             providerEvents.fire(.adapterEndTemporaryShutdownStateRecoveryFailure(error))
-
         case .endTemporaryShutdownStateRecoverySuccess:
             Logger.networkProtection.log("Adapter recovery from temporary shutdown succeeded")
             providerEvents.fire(.adapterEndTemporaryShutdownStateRecoverySuccess)

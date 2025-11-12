@@ -54,6 +54,10 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureAddToDockPromoDismissCTAAction = false
     private(set) var didCallMeasureAddToDockTutorialDismissCTAAction = false
 
+    private(set) var didCallMeasureSearchExperienceSelectionImpression = false
+    private(set) var didCallMeasureChooseAIChat = false
+    private(set) var didCallMeasureChooseSearchOnly = false
+
     private(set) var didCallMeasureTrySearchDialogNewTabDismissButtonTapped = false
     private(set) var didCallMeasureSearchResultDialogDismissButtonTapped = false
     private(set) var didCallMeasureTryVisitSiteDialogNewTabDismissButtonTapped = false
@@ -151,6 +155,18 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
 
     func measureAddToDockTutorialDismissCTAAction() {
         didCallMeasureAddToDockTutorialDismissCTAAction = true
+    }
+
+    func measureSearchExperienceSelectionImpression() {
+        didCallMeasureSearchExperienceSelectionImpression = true
+    }
+
+    func measureChooseAIChat() {
+        didCallMeasureChooseAIChat = true
+    }
+
+    func measureChooseSearchOnly() {
+        didCallMeasureChooseSearchOnly = true
     }
 
     func measureTrySearchDialogNewTabDismissButtonTapped() {

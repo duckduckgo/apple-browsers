@@ -2341,6 +2341,33 @@ https://duckduckgo.com/mac";
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Hi there.\n\nReady for a faster browser that keeps you protected?";
 
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Next";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "AI features are private and optional. You can make changes in Settings > AI Features.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "AI features are private and optional. You can make changes in %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Settings > AI Features.";
+
+/* The explanation of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.subtitle" = "Add a Duck.ai shortcut to new tabs and the address bar. Don't want this? Select Search Only.";
+
+/* Bold text 'Duck.ai shortcut'. This will replace the first placeholder (%1$@) in the subtitle string. */
+"onboarding.highlights.searchExperience.subtitle.duckai-shortcut-bold" = "Duck.ai shortcut";
+
+/* Full message with placeholders: %1$@ will be replaced with 'Duck.ai shortcut' (bold), %2$@ will be replaced with 'Search Only' (bold). */
+"onboarding.highlights.searchExperience.subtitle.formatted" = "Add a %1$@ to new tabs and the address bar. Don't want this? Select %2$@.";
+
+/* Bold text 'Search Only'. This will replace the second placeholder (%2$@) in the subtitle string. */
+"onboarding.highlights.searchExperience.subtitle.search-only-bold" = "Search Only";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Want easier access to private AI Chat?";
+
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Let’s do it!";
 
@@ -2673,6 +2700,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Show Full Site Address";
+
+/* Title for the 'Add Duck.ai Shortcut' option in the AI experimental picker */
+"settings.ai.experimental.picker.duckai_shortcut" = "Add Duck.ai Shortcut";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Search & Duck.ai";

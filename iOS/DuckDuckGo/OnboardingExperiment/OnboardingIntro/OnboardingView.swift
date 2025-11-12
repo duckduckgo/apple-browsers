@@ -88,6 +88,8 @@ struct OnboardingView: View {
                                 appIconPickerView
                             case .chooseAddressBarPositionDialog:
                                 addressBarPreferenceSelectionView
+                            case .chooseSearchExperienceDialog:
+                                searchExperienceSelectionView
                             }
                         }
                     }
@@ -198,6 +200,15 @@ struct OnboardingView: View {
         .onboardingDaxDialogStyle()
     }
 
+    private var searchExperienceSelectionView: some View {
+        SearchExperienceContent(
+            animateTitle: $model.searchExperienceContentState.animateTitle,
+            isSkipped: $model.isSkipped,
+            action: model.selectSearchExperienceAction
+        )
+        .onboardingDaxDialogStyle()
+    }
+
     private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {
         // Hide content of Intro dialog before animating
         model.introState.showIntroViewContent = false
@@ -263,6 +274,7 @@ extension OnboardingView.ViewState.Intro {
         case addToDockPromoDialog
         case chooseAppIconDialog
         case chooseAddressBarPositionDialog
+        case chooseSearchExperienceDialog
     }
 
     struct StepInfo: Equatable {

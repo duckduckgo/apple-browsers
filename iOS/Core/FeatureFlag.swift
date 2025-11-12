@@ -206,6 +206,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1211652685709096?focus=true
     case fullDuckAIMode
     
+    /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709099?focus=true
+    case onboardingSearchExperience
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211388368219934?focus=true
     case vpnConnectionWidePixelMeasurement
 
@@ -301,6 +304,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .mobileCustomization,
              .vpnMenuItem,
              .forgetAllInSettings,
+             .onboardingSearchExperience,
              .duckAiDataClearing,
              .fullDuckAIMode,
              .vpnConnectionWidePixelMeasurement,
@@ -518,6 +522,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
         case .vpnConnectionWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
+        case .onboardingSearchExperience:
+            return .internalOnly()
         case .storeSerpSettings:
             return .remoteReleasable(.feature(.storeSerpSettings))
         case .showHideAIGeneratedImagesSection:

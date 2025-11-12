@@ -471,7 +471,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private let controllerErrorStore: NetworkProtectionTunnelErrorStore
     private let knownFailureStore: NetworkProtectionKnownFailureStore
     private let snoozeTimingStore: NetworkProtectionSnoozeTimingStore
-    private let wireGuardInterface: WireGuardInterface
+    private let wireGuardInterface: WireGuardGoInterface
 
     // MARK: - Cancellables
 
@@ -489,7 +489,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 controllerErrorStore: NetworkProtectionTunnelErrorStore,
                 knownFailureStore: NetworkProtectionKnownFailureStore = NetworkProtectionKnownFailureStore(),
                 snoozeTimingStore: NetworkProtectionSnoozeTimingStore,
-                wireGuardInterface: WireGuardInterface,
+                wireGuardInterface: WireGuardGoInterface,
                 keychainType: KeychainType,
                 tokenHandlerProvider: @escaping () -> any SubscriptionTokenHandling,
                 debugEvents: EventMapping<NetworkProtectionError>,

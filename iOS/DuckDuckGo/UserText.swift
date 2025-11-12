@@ -1851,6 +1851,7 @@ public struct UserText {
     public static let newAddressBarPickerNotNow = NSLocalizedString("new.address.bar.picker.not.now", value: "Not Now", comment: "Not now button for the new address bar picker")
     public static let newAddressBarPickerFooter = NSLocalizedString("new.address.bar.picker.footer", value: "Adjust in Settings > AI Features", comment: "Footer text for the new address bar picker")
     public static let settingsAIPickerSearchAndDuckAI = NSLocalizedString("settings.ai.experimental.picker.search_and_duckai", value: "Search & Duck.ai", comment: "Title for the 'Search & Duck.ai' option in the AI experimental picker")
+    public static let settingsAIPickerAddDuckAIShortcut = NSLocalizedString("settings.ai.experimental.picker.duckai_shortcut", value: "Add Duck.ai Shortcut", comment: "Title for the 'Add Duck.ai Shortcut' option in the AI experimental picker")
 
     public enum MaliciousSiteProtectionSettings {
         public static let header = NSLocalizedString("malicious-site-protection.settings.header", value: "Site Safety Warnings", comment: "Header text for Malicious Site Protection settings")
@@ -1900,6 +1901,73 @@ public struct UserText {
             public static let bottomTitle = NSLocalizedString("onboarding.highlights.addressBarPosition.bottom.title", value: "Bottom", comment: "The title of the option to set the address bar to the bottom.")
             public static let bottomMessage = NSLocalizedString("onboarding.highlights.addressBarPosition.bottom.message", value: "Easy to reach", comment: "The message of the option to set the address bar to the bottom.")
             public static let cta = NSLocalizedString("onboarding.highlights.addressBarPosition.cta", value: "Next", comment: "The title of the CTA to progress to the next onboarding screen.")
+        }
+
+        enum SearchExperience {
+            public static let title = NSLocalizedString("onboarding.highlights.searchExperience.title", value: "Want easier access to private AI Chat?", comment: "The title of the onboarding dialog popup to select the preferred search experience.")
+            public static let subtitle = NSLocalizedString("onboarding.highlights.searchExperience.subtitle", value: "Add a Duck.ai shortcut to new tabs and the address bar. Don't want this? Select Search Only.", comment: "The explanation of the onboarding dialog popup to select the preferred search experience.")
+            public static let footer = NSLocalizedString("onboarding.highlights.searchExperience.footer", value: "AI features are private and optional. You can make changes in Settings > AI Features.", comment: "The footer disclaimer text for the search experience onboarding screen.")
+            public static let cta = NSLocalizedString("onboarding.highlights.searchExperience.cta", value: "Next", comment: "The title of the CTA to progress to the next onboarding screen.")
+            
+            static func subtitleAttributed() -> NSAttributedString {
+                let duckAIShortcutBold = NSLocalizedString(
+                    "onboarding.highlights.searchExperience.subtitle.duckai-shortcut-bold",
+                    value: "Duck.ai shortcut",
+                    comment: "Bold text 'Duck.ai shortcut'. This will replace the first placeholder (%1$@) in the subtitle string."
+                )
+                
+                let searchOnlyBold = NSLocalizedString(
+                    "onboarding.highlights.searchExperience.subtitle.search-only-bold",
+                    value: "Search Only",
+                    comment: "Bold text 'Search Only'. This will replace the second placeholder (%2$@) in the subtitle string."
+                )
+                
+                let fullText = String(format: NSLocalizedString(
+                    "onboarding.highlights.searchExperience.subtitle.formatted",
+                    value: "Add a %1$@ to new tabs and the address bar. Don't want this? Select %2$@.",
+                    comment: "Full message with placeholders: %1$@ will be replaced with 'Duck.ai shortcut' (bold), %2$@ will be replaced with 'Search Only' (bold)."), duckAIShortcutBold, searchOnlyBold)
+                
+                let attributedString = NSMutableAttributedString(string: fullText)
+                
+                let boldAttributes: [NSAttributedString.Key: Any] = [
+                    .font: UIFont.daxBodyBold()
+                ]
+                
+                if let duckAIRange = fullText.range(of: duckAIShortcutBold) {
+                    attributedString.addAttributes(boldAttributes, range: NSRange(duckAIRange, in: fullText))
+                }
+                
+                if let searchOnlyRange = fullText.range(of: searchOnlyBold) {
+                    attributedString.addAttributes(boldAttributes, range: NSRange(searchOnlyRange, in: fullText))
+                }
+                
+                return attributedString
+            }
+            
+            static func footerAttributed() -> NSAttributedString {
+                let settingsPathBold = NSLocalizedString(
+                    "onboarding.highlights.searchExperience.footer.settings-path-bold",
+                    value: "Settings > AI Features.",
+                    comment: "Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string."
+                )
+                
+                let fullText = String(format: NSLocalizedString(
+                    "onboarding.highlights.searchExperience.footer.formatted",
+                    value: "AI features are private and optional. You can make changes in %@",
+                    comment: "Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold)."), settingsPathBold)
+                
+                let attributedString = NSMutableAttributedString(string: fullText)
+                
+                let boldAttributes: [NSAttributedString.Key: Any] = [
+                    .font: UIFont.daxFootnoteSemibold()
+                ]
+                
+                if let settingsPathRange = fullText.range(of: settingsPathBold) {
+                    attributedString.addAttributes(boldAttributes, range: NSRange(settingsPathRange, in: fullText))
+                }
+                
+                return attributedString
+            }
         }
 
         enum ContextualOnboarding {

@@ -7,11 +7,11 @@ import NetworkExtension
 import os.log
 import Common
 
-// MARK: - WireGuard Interface
+// MARK: - WireGuard Go Interface
 
 /// This protocol abstracts the WireGuard Go library.
 /// The Go library is only included in VPN packet tunnel provider targets that need it, to avoid being embedded in other targets such as apps and login items that don't use it.
-public protocol WireGuardInterface {
+public protocol WireGuardGoInterface {
     func turnOn(settings: UnsafePointer<CChar>, handle: Int32) -> Int32
     func turnOff(handle: Int32)
     func getConfig(handle: Int32) -> UnsafeMutablePointer<CChar>?
@@ -128,7 +128,7 @@ private enum State: CustomDebugStringConvertible {
 }
 
 // swiftlint:disable:next type_body_length
-public class WireGuardAdapter {
+public class WireGuardAdapter: WireGuardAdapterProtocol {
     public typealias LogHandler = (WireGuardLogLevel, String) -> Void
 
     /// WireGuard configuration fields
@@ -171,7 +171,7 @@ public class WireGuardAdapter {
     /// Keeps track of whether a recovery attempt from temporary shutdown has already failed.
     private var temporaryShutdownRecoveryFailed = false
 
-    private let wireGuardInterface: WireGuardInterface
+    private let wireGuardInterface: WireGuardGoInterface
 
     /// Tunnel device file descriptor.
     private var tunnelFileDescriptor: Int32? {
@@ -245,7 +245,7 @@ public class WireGuardAdapter {
     /// - Parameter logHandler: a log handler closure.
 
     public init(with packetTunnelProvider: NEPacketTunnelProvider,
-                wireGuardInterface: WireGuardInterface,
+                wireGuardInterface: WireGuardGoInterface,
                 eventMapper: EventMapping<WireGuardAdapterEvent>,
                 logHandler: @escaping LogHandler) {
         Logger.networkProtectionMemory.debug("[+] WireGuardAdapter")

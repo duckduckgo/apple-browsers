@@ -22,7 +22,7 @@ import Common
 import Combine
 import os.log
 
-public actor NetworkProtectionServerStatusMonitor {
+public actor NetworkProtectionServerStatusMonitor: ServerStatusMonitoring {
 
     public enum ServerStatusResult {
         case serverMigrationRequested

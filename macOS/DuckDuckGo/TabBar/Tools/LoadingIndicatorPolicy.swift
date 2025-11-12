@@ -1,8 +1,7 @@
 //
-//  OnboardingManagerMock.swift
-//  DuckDuckGo
+//  LoadingIndicatorPolicy.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,11 +17,18 @@
 //
 
 import Foundation
-import Core
-@testable import DuckDuckGo
 
-final class OnboardingManagerMock: OnboardingStepsProvider {
-    private(set) var didCallSettingsURLPath = false
+protocol LoadingIndicatorPolicy {
+    func shouldShowLoadingIndicator(url: URL?, isLoading: Bool, error: Error?) -> Bool
+}
 
-    var onboardingSteps: [DuckDuckGo.OnboardingIntroStep] = OnboardingStepsHelper.expectedIPhoneSteps(isReturningUser: false)
+struct DefaultLoadingIndicatorPolicy: LoadingIndicatorPolicy {
+
+    func shouldShowLoadingIndicator(url: URL?, isLoading: Bool, error: Error?) -> Bool {
+        guard isLoading, error == nil, let url else {
+            return false
+        }
+
+        return !url.isDuckDuckGoSearch && !url.isDuckPlayer && url.navigationalScheme?.isHypertextScheme == true
+    }
 }

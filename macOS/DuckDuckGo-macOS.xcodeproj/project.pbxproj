@@ -2816,6 +2816,8 @@
 		B55C8F752E81A8730024B421 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B55C8F732E81A8730024B421 /* ThemeManager.swift */; };
 		B5AE99532E84A5D900F45912 /* ThemeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5AE99522E84A5D900F45912 /* ThemeName.swift */; };
 		B5AE99542E84A5D900F45912 /* ThemeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5AE99522E84A5D900F45912 /* ThemeName.swift */; };
+		B5DE8DA92EBE292F005C5EF4 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */; };
+		B5DE8DAA2EBE292F005C5EF4 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */; };
 		B5E197EB2E8C645500C447CC /* ThemeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */; };
 		B5E197EC2E8C646700C447CC /* ThemeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */; };
 		B5F7BDC92EBD1D9D00ECE33A /* TabFaviconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */; };
@@ -5462,6 +5464,7 @@
 		B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabFaviconView.swift; sourceTree = "<group>"; };
 		B5ACEDAB2E8DC635008EC8B9 /* MockThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockThemeManager.swift; sourceTree = "<group>"; };
 		B5AE99522E84A5D900F45912 /* ThemeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeName.swift; sourceTree = "<group>"; };
+		B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
 		B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManagerTests.swift; sourceTree = "<group>"; };
 		B602E7CE2A93A5FF00F12201 /* WKBackForwardListExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKBackForwardListExtension.swift; sourceTree = "<group>"; };
 		B602E8152A1E2570006D261F /* URL+NetworkProtection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "URL+NetworkProtection.swift"; sourceTree = "<group>"; };
@@ -6063,6 +6066,10 @@
 		FD23FD2A28816606007F6985 /* AutoconsentMessageProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AutoconsentMessageProtocolTests.swift; path = UnitTests/Autoconsent/AutoconsentMessageProtocolTests.swift; sourceTree = SOURCE_ROOT; };
 		FD23FD2C2886A81D007F6985 /* AutoconsentManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentManagement.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		B5DE8DAE2EBE3EA9005C5EF4 /* Tools */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Tools; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		3706FCA6293F65D500E42796 /* Frameworks */ = {
@@ -9933,6 +9940,7 @@
 		AA86491124D8318F001BABEE /* TabBar */ = {
 			isa = PBXGroup;
 			children = (
+				B5DE8DAE2EBE3EA9005C5EF4 /* Tools */,
 				AA86491224D831A1001BABEE /* View */,
 				AA8EDF1F2491FCC10071C2E8 /* ViewModel */,
 				AA9FF95724A1ECE20039E328 /* Model */,
@@ -9954,8 +9962,9 @@
 				AA9E9A5D25A4867200D1959D /* TabDragAndDropManager.swift */,
 				311B262628E73E0A00FD181A /* TabShadowConfig.swift */,
 				3154FD1328E6011A00909769 /* TabShadowView.swift */,
-				B53F4E912EA917AB0043B5EF /* LetterView.swift */,
 				B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */,
+				B53F4E912EA917AB0043B5EF /* LetterView.swift */,
+				B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -11714,6 +11723,9 @@
 				4BBA2D292B6ACD4D00F6A470 /* PBXTargetDependency */,
 				4B5F14FE2A1529230060320F /* PBXTargetDependency */,
 			);
+			fileSystemSynchronizedGroups = (
+				B5DE8DAE2EBE3EA9005C5EF4 /* Tools */,
+			);
 			name = "DuckDuckGo Privacy Browser App Store";
 			packageProductDependencies = (
 				3706FA71293F65D500E42796 /* BrowserServicesKit */,
@@ -12252,6 +12264,9 @@
 				8417B7CF2D958D5E00C0A379 /* PBXTargetDependency */,
 				7BC3E42F2D6DF1F6009787CD /* PBXTargetDependency */,
 				31C6E9AD2B0C07BA0086DC30 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B5DE8DAE2EBE3EA9005C5EF4 /* Tools */,
 			);
 			name = "DuckDuckGo Privacy Browser";
 			packageProductDependencies = (
@@ -14260,6 +14275,7 @@
 				3706FC63293F65D500E42796 /* CircularProgressView.swift in Sources */,
 				3706FC64293F65D500E42796 /* SuggestionContainer.swift in Sources */,
 				C16127EF2BDFB46400966BB9 /* DataImportShortcutsView.swift in Sources */,
+				B5DE8DAA2EBE292F005C5EF4 /* SpinnerView.swift in Sources */,
 				56F0CB2F2E20FBD2000FF58B /* SubscriptionTabExtension.swift in Sources */,
 				3706FC65293F65D500E42796 /* BurnerHomePageViewController.swift in Sources */,
 				371209262C232E76003ADF3D /* RemoteMessagingClient.swift in Sources */,
@@ -16177,6 +16193,7 @@
 				4B9292D92667124B00AD2C21 /* BookmarkListTreeControllerDataSource.swift in Sources */,
 				B65536A62685B82B00085A79 /* Permissions.swift in Sources */,
 				EE3ED86F2E561B770026B962 /* DismissableSyncDeviceButtonModel.swift in Sources */,
+				B5DE8DA92EBE292F005C5EF4 /* SpinnerView.swift in Sources */,
 				AAC82C60258B6CB5009B6B42 /* TabPreviewWindowController.swift in Sources */,
 				AA6820EB25503D6A005ED0D5 /* Fire.swift in Sources */,
 				BD6367252C877BE1009DE7A8 /* UpdateUserDriver.swift in Sources */,

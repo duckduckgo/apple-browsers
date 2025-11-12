@@ -844,6 +844,9 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Update username?";
 
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Save %d%% on First Year";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Add Bookmark";
 

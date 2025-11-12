@@ -2804,6 +2804,8 @@
 		B31055CB27A1BA1D001AC618 /* autoconsent-bundle.js in Resources */ = {isa = PBXBuildFile; fileRef = B31055C327A1BA1D001AC618 /* autoconsent-bundle.js */; };
 		B313C04F2E1FD91200C34AE6 /* AutoconsentPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B313C04E2E1FD91200C34AE6 /* AutoconsentPixels.swift */; };
 		B313C0502E1FD91200C34AE6 /* AutoconsentPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B313C04E2E1FD91200C34AE6 /* AutoconsentPixels.swift */; };
+		B520EBE22EC4D66A00D286E4 /* LoadingIndicatorPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B520EBE02EC4D66A00D286E4 /* LoadingIndicatorPolicy.swift */; };
+		B520EBE32EC4D66A00D286E4 /* LoadingIndicatorPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B520EBE02EC4D66A00D286E4 /* LoadingIndicatorPolicy.swift */; };
 		B52B61802E94331B008888E3 /* ThemeUpdateListening.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52B617F2E94331B008888E3 /* ThemeUpdateListening.swift */; };
 		B52B61812E94331B008888E3 /* ThemeUpdateListening.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52B617F2E94331B008888E3 /* ThemeUpdateListening.swift */; };
 		B53D46B22E9D9710000D59F7 /* ThemeUpdateListeningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B53D46B02E9D9710000D59F7 /* ThemeUpdateListeningTests.swift */; };
@@ -5456,6 +5458,7 @@
 		B31055BE27A1BA1D001AC618 /* userscript.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = userscript.js; sourceTree = "<group>"; };
 		B31055C327A1BA1D001AC618 /* autoconsent-bundle.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "autoconsent-bundle.js"; sourceTree = "<group>"; };
 		B313C04E2E1FD91200C34AE6 /* AutoconsentPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentPixels.swift; sourceTree = "<group>"; };
+		B520EBE02EC4D66A00D286E4 /* LoadingIndicatorPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingIndicatorPolicy.swift; sourceTree = "<group>"; };
 		B52B617F2E94331B008888E3 /* ThemeUpdateListening.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeUpdateListening.swift; sourceTree = "<group>"; };
 		B53D46B02E9D9710000D59F7 /* ThemeUpdateListeningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeUpdateListeningTests.swift; sourceTree = "<group>"; };
 		B53F4E912EA917AB0043B5EF /* LetterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LetterView.swift; sourceTree = "<group>"; };
@@ -6066,10 +6069,6 @@
 		FD23FD2A28816606007F6985 /* AutoconsentMessageProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AutoconsentMessageProtocolTests.swift; path = UnitTests/Autoconsent/AutoconsentMessageProtocolTests.swift; sourceTree = SOURCE_ROOT; };
 		FD23FD2C2886A81D007F6985 /* AutoconsentManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentManagement.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		B5DE8DAE2EBE3EA9005C5EF4 /* Tools */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Tools; sourceTree = "<group>"; };
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		3706FCA6293F65D500E42796 /* Frameworks */ = {
@@ -9940,7 +9939,7 @@
 		AA86491124D8318F001BABEE /* TabBar */ = {
 			isa = PBXGroup;
 			children = (
-				B5DE8DAE2EBE3EA9005C5EF4 /* Tools */,
+				B520EBE12EC4D66A00D286E4 /* Tools */,
 				AA86491224D831A1001BABEE /* View */,
 				AA8EDF1F2491FCC10071C2E8 /* ViewModel */,
 				AA9FF95724A1ECE20039E328 /* Model */,
@@ -10624,6 +10623,14 @@
 				56EF4ACF2E9E6987004AA82C /* AutoconsentDailyStats.swift */,
 			);
 			path = Autoconsent;
+			sourceTree = "<group>";
+		};
+		B520EBE12EC4D66A00D286E4 /* Tools */ = {
+			isa = PBXGroup;
+			children = (
+				B520EBE02EC4D66A00D286E4 /* LoadingIndicatorPolicy.swift */,
+			);
+			path = Tools;
 			sourceTree = "<group>";
 		};
 		B5E197EA2E8C645500C447CC /* VisualRefresh */ = {
@@ -11723,9 +11730,6 @@
 				4BBA2D292B6ACD4D00F6A470 /* PBXTargetDependency */,
 				4B5F14FE2A1529230060320F /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				B5DE8DAE2EBE3EA9005C5EF4 /* Tools */,
-			);
 			name = "DuckDuckGo Privacy Browser App Store";
 			packageProductDependencies = (
 				3706FA71293F65D500E42796 /* BrowserServicesKit */,
@@ -12264,9 +12268,6 @@
 				8417B7CF2D958D5E00C0A379 /* PBXTargetDependency */,
 				7BC3E42F2D6DF1F6009787CD /* PBXTargetDependency */,
 				31C6E9AD2B0C07BA0086DC30 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				B5DE8DAE2EBE3EA9005C5EF4 /* Tools */,
 			);
 			name = "DuckDuckGo Privacy Browser";
 			packageProductDependencies = (
@@ -13422,6 +13423,7 @@
 				9FA173E42B7A12B600EE4E6E /* BookmarkDialogFolderManagementView.swift in Sources */,
 				3706FABD293F65D500E42796 /* NSNotificationName+PasswordManager.swift in Sources */,
 				3706FABE293F65D500E42796 /* RulesCompilationMonitor.swift in Sources */,
+				B520EBE22EC4D66A00D286E4 /* LoadingIndicatorPolicy.swift in Sources */,
 				3706FABF293F65D500E42796 /* CrashReportReader.swift in Sources */,
 				B6B4D1C62B0B3B5400C26286 /* DataImportReportModel.swift in Sources */,
 				3768D8452C2CC884004120AE /* RemoteMessagingConfigMatcherProvider.swift in Sources */,
@@ -15364,6 +15366,7 @@
 				843965122C6F2FFE004C8899 /* NSDragOperationExtension.swift in Sources */,
 				31D5375C291D944100407A95 /* PasswordManagementBitwardenItemView.swift in Sources */,
 				1D9297BF2C1B062900A38521 /* ApplicationUpdateDetector.swift in Sources */,
+				B520EBE32EC4D66A00D286E4 /* LoadingIndicatorPolicy.swift in Sources */,
 				7BAA30D32EA79545001F217A /* SparkleUpdateWideEvent.swift in Sources */,
 				B6104E9B2BA9C173008636B2 /* DownloadResumeData.swift in Sources */,
 				85D885B026A590A90077C374 /* NSNotificationName+PasswordManager.swift in Sources */,

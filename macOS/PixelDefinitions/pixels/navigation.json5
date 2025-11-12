@@ -99,7 +99,7 @@
         "suffixes": [
             {
                 "description": "Sampling percentage (between 1 and 100 inclusive)",
-                "pattern": "^sample(?:100|0?[1-9]|[1-9]\d)$"
+                "pattern": "sample(?:100|0?[1-9]|[1-9]\d)$"
             }
         ],
         "parameters": [

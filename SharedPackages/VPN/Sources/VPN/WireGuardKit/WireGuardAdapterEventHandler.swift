@@ -30,7 +30,7 @@ public final class WireGuardAdapterEventHandler: WireGuardAdapterEventHandling {
     private let providerEvents: EventMapping<PacketTunnelProvider.Event>
     private let settings: VPNSettings
     private let notificationsPresenter: VPNNotificationsPresenting
-    
+
     public init(providerEvents: EventMapping<PacketTunnelProvider.Event>,
                 settings: VPNSettings,
                 notificationsPresenter: VPNNotificationsPresenting) {
@@ -38,25 +38,25 @@ public final class WireGuardAdapterEventHandler: WireGuardAdapterEventHandling {
         self.settings = settings
         self.notificationsPresenter = notificationsPresenter
     }
-    
+
     public func handle(_ event: WireGuardAdapterEvent) {
         switch event {
         case .endTemporaryShutdownStateAttemptFailure(let error):
             Logger.networkProtection.error("Adapter failed to exit temporary shutdown: \(error.localizedDescription)")
             providerEvents.fire(.adapterEndTemporaryShutdownStateAttemptFailure(error))
-            
+
         case .endTemporaryShutdownStateRecoveryFailure(let error):
             Logger.networkProtection.error("Adapter recovery from temporary shutdown failed: \(error.localizedDescription)")
             providerEvents.fire(.adapterEndTemporaryShutdownStateRecoveryFailure(error))
-            
+
         case .endTemporaryShutdownStateRecoverySuccess:
             Logger.networkProtection.log("Adapter recovery from temporary shutdown succeeded")
             providerEvents.fire(.adapterEndTemporaryShutdownStateRecoverySuccess)
         }
-        
+
         if settings.showDebugVPNEventNotifications {
             let notificationText: String
-            
+
             switch event {
             case .endTemporaryShutdownStateAttemptFailure(let error):
                 notificationText = "VPN failed to end temporary shutdown: \(error.localizedDescription)"
@@ -65,9 +65,8 @@ public final class WireGuardAdapterEventHandler: WireGuardAdapterEventHandling {
             case .endTemporaryShutdownStateRecoverySuccess:
                 notificationText = "VPN recovered after extended temporary shutdown"
             }
-            
+
             notificationsPresenter.showDebugEventNotification(message: notificationText)
         }
     }
 }
-

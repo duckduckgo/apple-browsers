@@ -137,7 +137,7 @@ final class WireGuardAdapterEventHandlerTests: XCTestCase {
 
     private class MockProviderEvents {
         var firedEvents: [PacketTunnelProvider.Event] = []
-        
+
         lazy var eventMapping: EventMapping<PacketTunnelProvider.Event> = {
             EventMapping<PacketTunnelProvider.Event> { [weak self] event, _, _, _ in
                 self?.firedEvents.append(event)
@@ -155,10 +155,9 @@ final class WireGuardAdapterEventHandlerTests: XCTestCase {
         func showSupersededNotification() {}
         func showTestNotification() {}
         func showEntitlementNotification() {}
-        
+
         func showDebugEventNotification(message: String) {
             shownMessages.append(message)
         }
     }
 }
-

@@ -225,25 +225,19 @@ extension MainViewController {
     func segueToDuckDuckGoSubscription() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
-            $0.triggerDeepLinkNavigation(to: .subscriptionFlow())
-        }
+        launchSettings(deepLinkTarget: .subscriptionFlow())
     }
 
     func segueToSubscriptionRestoreFlow() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
-            $0.triggerDeepLinkNavigation(to: .restoreFlow)
-        }
+        launchSettings(deepLinkTarget: .restoreFlow)
     }
 
     func segueToVPN() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
-            $0.triggerDeepLinkNavigation(to: .netP)
-        }
+        launchSettings(deepLinkTarget: .netP)
     }
 
     func segueToDebugSettings() {
@@ -452,6 +446,17 @@ class SettingsUINavigationController: UINavigationController {
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         NotificationCenter.default.post(name: .settingsDidDisappear, object: nil)
+    }
+
+    override func pushViewController(_ viewController: UIViewController, animated: Bool) {
+        // Settings uses NavigationLink for deep linking, but because we don't use it within a NavigationStack, it talks
+        // to the hosting navigation controller. It offers no control over navigation animation, so this workaround
+        // disables animation any time a view controller is pushed while deep linking is being processed.
+        if let settingsHostingController = self.viewControllers.first as? SettingsHostingController, settingsHostingController.isDeepLinking {
+            super.pushViewController(viewController, animated: false)
+        } else {
+            super.pushViewController(viewController, animated: animated)
+        }
     }
 
 }

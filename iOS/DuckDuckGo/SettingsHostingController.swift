@@ -26,6 +26,10 @@ class SettingsHostingController: UIHostingController<AnyView> {
     var viewModel: SettingsViewModel
     var viewProvider: SettingsLegacyViewProvider
 
+    public var isDeepLinking: Bool {
+        return viewModel.deepLinkTarget != nil
+    }
+
     init(viewModel: SettingsViewModel, viewProvider: SettingsLegacyViewProvider) {
         self.viewModel = viewModel
         self.viewProvider = viewProvider

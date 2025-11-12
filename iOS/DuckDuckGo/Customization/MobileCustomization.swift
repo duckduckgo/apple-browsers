@@ -169,10 +169,11 @@ class MobileCustomization {
     }
 
     var isEnabled: Bool {
-        featureFlagger.isFeatureOn(.mobileCustomization) && !isPad
+        isFeatureEnabled && !isPad
     }
 
-    private let featureFlagger: FeatureFlagger
+    var isFeatureEnabled: Bool
+    
     private let keyValueStore: ThrowingKeyValueStoring
     private let isPad: Bool
     private let postChangeNotification: (State) -> Void
@@ -186,14 +187,14 @@ class MobileCustomization {
 
     }
 
-    init(featureFlagger: FeatureFlagger,
+    init(isFeatureEnabled: Bool,
          keyValueStore: ThrowingKeyValueStoring,
          isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
          postChangeNotification: @escaping ((State) -> Void) = {
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.customizationSettingsChanged, object: $0)
         }
     ) {
-        self.featureFlagger = featureFlagger
+        self.isFeatureEnabled = isFeatureEnabled
         self.keyValueStore = keyValueStore
         self.isPad = isPad
         self.postChangeNotification = postChangeNotification

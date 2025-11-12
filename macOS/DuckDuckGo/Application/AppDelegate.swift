@@ -292,6 +292,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return WinBackOfferPromotionViewCoordinator(winBackOfferVisibilityManager: winBackOfferVisibilityManager)
     }()
 
+    let blackFridayCampaignProvider: BlackFridayCampaignProviding
+
     // MARK: - Wide Event Service
 
     private lazy var wideEventService: WideEventService = {
@@ -935,6 +937,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             windowControllersManager: windowControllersManager
         )
 #endif
+
+        blackFridayCampaignProvider = DefaultBlackFridayCampaignProvider(
+            privacyConfigurationManager: privacyConfigurationManager,
+            isFeatureEnabled: { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.blackFridayCampaign) ?? false
+            }
+        )
 
         super.init()
 

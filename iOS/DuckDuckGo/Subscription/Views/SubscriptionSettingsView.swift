@@ -24,6 +24,7 @@ import Core
 import Networking
 import VPN
 import UIComponents
+import BrowserServicesKit
 
 enum SubscriptionSettingsViewConfiguration {
     case subscribed
@@ -158,6 +159,10 @@ struct SubscriptionSettingsView: View {
                                 .foregroundColor(Color.init(designSystemColor: .accent))
                         } else if isEligibleForWinBackCampaign {
                             resubscribeWithWinBackOfferView
+                        } else if settingsViewModel.isBlackFridayCampaignEnabled {
+                            Text(UserText.blackFridayCampaignViewPlansCTA(discountPercent: settingsViewModel.blackFridayDiscountPercent))
+                                .daxBodyRegular()
+                                .foregroundColor(Color.init(designSystemColor: .accent))
                         } else {
                             Text(UserText.subscriptionRestoreNotFoundPlans)
                                 .daxBodyRegular()
@@ -553,6 +558,10 @@ struct SubscriptionSettingsViewV2: View {
                                 .foregroundColor(Color.init(designSystemColor: .accent))
                         } else if isEligibleForWinBackCampaign {
                             resubscribeWithWinBackOfferView
+                        } else if settingsViewModel.isBlackFridayCampaignEnabled {
+                            Text(UserText.blackFridayCampaignViewPlansCTA(discountPercent: settingsViewModel.blackFridayDiscountPercent))
+                                .daxBodyRegular()
+                                .foregroundColor(Color.init(designSystemColor: .accent))
                         } else {
                             Text(UserText.subscriptionRestoreNotFoundPlans)
                                 .daxBodyRegular()

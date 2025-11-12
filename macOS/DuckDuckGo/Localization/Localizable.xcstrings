@@ -94242,6 +94242,66 @@
         }
       }
     },
+    "vpn.uninstalled" : {
+      "comment" : "Notification that the DuckDuckGo VPN was uninstalled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die DuckDuckGo-VPN wurde deinstalliert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo VPN was uninstalled"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se ha desinstalado DuckDuckGo VPN"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le VPN DuckDuckGo a été désinstallé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo VPN è stata disinstallata"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo VPN is verwijderd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo VPN został odinstalowany"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A VPN DuckDuckGo foi desinstalada"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервис DuckDuckGo VPN удален"
+          }
+        }
+      }
+    },
     "warn.before.quit" : {
       "comment" : "Label after the checkbox in Settings which configures a warning before clearing data on the application termination.",
       "extractionState" : "extracted_with_value",

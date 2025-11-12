@@ -79,6 +79,14 @@ final class SettingsViewModel: ObservableObject {
     var duckPlayerContingencyHandler: DuckPlayerContingencyHandler {
         DefaultDuckPlayerContingencyHandler(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
     }
+    var blackFridayCampaignProvider: BlackFridayCampaignProviding {
+        DefaultBlackFridayCampaignProvider(
+            privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+            isFeatureEnabled: { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.blackFridayCampaign) ?? false
+            }
+        )
+    }
 
     private enum UserDefaultsCacheKey: String, UserDefaultsCacheKeyStore {
         case subscriptionState = "com.duckduckgo.ios.subscription.state"
@@ -161,6 +169,24 @@ final class SettingsViewModel: ObservableObject {
 
     var shouldShowHideAIGeneratedImagesSection: Bool {
         featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
+    }
+
+    var isBlackFridayCampaignEnabled: Bool {
+        blackFridayCampaignProvider.isCampaignEnabled
+    }
+
+    var blackFridayDiscountPercent: Int {
+        blackFridayCampaignProvider.discountPercent
+    }
+
+    var purchaseButtonText: String {
+        if isBlackFridayCampaignEnabled {
+            return UserText.blackFridayCampaignViewPlansCTA(discountPercent: blackFridayDiscountPercent)
+        } else if state.subscription.isEligibleForTrialOffer {
+            return UserText.trySubscriptionButton
+        } else {
+            return UserText.getSubscriptionButton
+        }
     }
 
     var shouldShowNoMicrophonePermissionAlert: Bool = false
@@ -1090,6 +1116,7 @@ extension SettingsViewModel {
         case subscriptionSettings
         case customizeToolbarButton
         case customizeAddressBarButton
+        case appearance
         // Add other cases as needed
 
         var id: String {
@@ -1105,6 +1132,7 @@ extension SettingsViewModel {
             case .subscriptionSettings: return "subscriptionSettings"
             case .customizeToolbarButton: return "customizeToolbarButton"
             case .customizeAddressBarButton: return "customizeAddressButton"
+            case .appearance: return "appearance"
             // Ensure all cases are covered
             }
         }
@@ -1113,7 +1141,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .customizeToolbarButton, .customizeAddressBarButton:
+            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .customizeToolbarButton, .customizeAddressBarButton, .appearance:
                 return .navigationLink
             }
         }

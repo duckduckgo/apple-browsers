@@ -212,6 +212,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1210594645229050/task/1211494295271901?focus=true
     case winBackOffer
 
+    /// https://app.asana.com/1/137249556945/project/1210594645229050/task/1211612114679665?focus=true
+    case blackFridayCampaign
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210417832822045
     case fireDialog
     /// Toggle for showing the "Manage individual sites" link in Fire dialog
@@ -367,7 +370,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .pinnedTabsViewRewrite,
                 .tabProgressIndicator,
                 .showHideAIGeneratedImagesSection,
-                .standaloneMigration:
+                .standaloneMigration,
+                .blackFridayCampaign:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -534,6 +538,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         case .winBackOffer:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
+        case .blackFridayCampaign:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.blackFridayCampaign))
         case .dataImportNewSafariFilePicker:
             return .remoteReleasable(.subfeature(DataImportSubfeature.newSafariFilePicker))
         case .aiChatDataClearing:

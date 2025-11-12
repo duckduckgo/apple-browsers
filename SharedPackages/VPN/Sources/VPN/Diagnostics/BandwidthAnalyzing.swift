@@ -30,21 +30,21 @@ protocol BandwidthAnalyzing: Actor {
     /// - Parameters:
     ///   - rxBytes: Total bytes received
     ///   - txBytes: Total bytes transmitted
-    func record(rxBytes: UInt64, txBytes: UInt64) async
+    func record(rxBytes: UInt64, txBytes: UInt64)
 
     /// Prevents the connection from being marked as idle.
     ///
     /// This is useful when external conditions indicate the connection should not be
     /// considered idle, even if bandwidth measurements might suggest otherwise.
-    func preventIdle() async
+    func preventIdle()
 
     /// Returns whether the connection is currently idle based on bandwidth analysis.
     ///
     /// - Returns: `true` if the connection is idle, `false` otherwise
-    func isConnectionIdle() async -> Bool
+    func isConnectionIdle() -> Bool
 
     /// Resets the bandwidth analyzer, clearing all recorded measurements.
     ///
     /// This is typically called when switching servers.
-    func reset() async
+    func reset()
 }

@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import Core
 
 struct DataAuditDebugScreen: View {
 
@@ -29,19 +30,33 @@ struct DataAuditDebugScreen: View {
 
     @ViewBuilder func list() -> some View {
         List {
-            Section("Actions") {
-                Button("Scan") {
+            Section {
+                Button {
                     model.scan()
+                } label: {
+                    Text(verbatim: "Scan")
                 }
+
+                if !model.results.isEmpty {
+                    Button {
+                        model.copy()
+                    } label: {
+                        Text(verbatim: "Copy")
+                    }
+                }
+            } header: {
+                Text(verbatim: "Actions")
             }
 
             if !model.results.isEmpty {
-                Section("Results") {
+                Section {
                     ForEach(model.results) { result in
                         NavigationLink(destination: LazyView(ResultDetail(result: result))) {
                             Text(result.title)
                         }
                     }
+                } header: {
+                    Text(verbatim: "Results")
                 }
             }
         }
@@ -66,6 +81,12 @@ struct DataAuditDebugScreen: View {
 
 class DataAuditModel: ObservableObject {
 
+    enum ScanError: Error {
+
+        case general(_ message: String)
+
+    }
+
     struct Result: Identifiable, Hashable {
         let id = UUID()
         let title: String
@@ -74,40 +95,126 @@ class DataAuditModel: ObservableObject {
 
     @Published var results = [Result]()
 
+    func copy() {
+        var md = "# Data Audit Scan \(Date())\n\n"
+
+        results.forEach {
+            md += "\n## " + $0.title + "\n"
+            md += $0.details
+        }
+
+        UIPasteboard.general.string = md
+    }
+
     func scan() {
         Task { @MainActor in
+            results.removeAll()
 
             do {
-                results.append(.init(title: "Caches", details: try await scanCachesDirectory()))
+                results.append(.init(title: "Caches", details: try await scanDirectory(.cachesDirectory)))
             } catch {
                 results.append(.init(title: "❌ Caches", details: error.localizedDescription))
+            }
+
+            do {
+                results.append(.init(title: "Documents", details: try await scanDirectory(.documentDirectory)))
+            } catch {
+                results.append(.init(title: "❌ Documents", details: error.localizedDescription))
+            }
+
+            do {
+                results.append(.init(title: "Container (Bookmarks)", details: try await scanContainerDirectory(suffix: "bookmarks")))
+            } catch {
+                results.append(.init(title: "❌ Container (Bookmarks)", details: error.localizedDescription))
+            }
+
+            do {
+                results.append(.init(title: "Container (Database)", details: try await scanContainerDirectory(suffix: "database")))
+            } catch {
+                results.append(.init(title: "❌ Container (Database)", details: error.localizedDescription))
+            }
+
+            do {
+                results.append(.init(title: "Container (ContentBlocker)", details: try await scanContainerDirectory(suffix: "contentblocker")))
+            } catch {
+                results.append(.init(title: "❌ Container (ContentBlocker)", details: error.localizedDescription))
+            }
+
+            do {
+                results.append(.init(title: "Container (Statistics)", details: try await scanContainerDirectory(suffix: "statistics")))
+            } catch {
+                results.append(.init(title: "❌ Container (Statistics)", details: error.localizedDescription))
+            }
+
+            do {
+                results.append(.init(title: "Container (Netp)", details: try await scanContainerDirectory(suffix: "netp")))
+            } catch {
+                results.append(.init(title: "❌ Container (Netp)", details: error.localizedDescription))
+            }
+
+            do {
+                results.append(.init(title: "Container (App Configuration)", details: try await scanContainerDirectory(suffix: "app-configuration")))
+            } catch {
+                results.append(.init(title: "❌ Container (App Configuration)", details: error.localizedDescription))
             }
 
         }
     }
 
-    func scanCachesDirectory() async throws -> String {
-        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-        return caches.path + "\n" + (try listContentsOf(caches, level: 0))
+    func scanContainerDirectory(suffix: String) async throws -> String {
+        let groupID = "\(Global.groupIdPrefix).\(suffix)"
+        guard let dir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupID) else {
+            throw ScanError.general("No URL for group ID \(groupID)")
+        }
+        return dir.path + "\n" + (try listContentsOf(dir, level: 0))
+    }
+
+    func scanDirectory(_ dir: FileManager.SearchPathDirectory) async throws -> String {
+        let dir = FileManager.default.urls(for: dir, in: .userDomainMask)[0]
+        return dir.path + "\n" + (try listContentsOf(dir, level: 0))
     }
 
     func listContentsOf(_ dir: URL, level: Int) throws -> String {
         let contents = try FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.isHiddenKey])
-        let indent = String(repeatElement("*", count: level + 1))
+        let indent = String(repeatElement(" ", count: level * 4)) + "*"
         var result = ""
         for item in contents {
-            let path = item.absoluteString.dropping(prefix: dir.absoluteString)
-            result += indent + " " + path + "\n"
-
             var isDir = ObjCBool(false)
             FileManager.default.fileExists(atPath: item.path, isDirectory: &isDir)
 
+            let path = item.absoluteString.dropping(prefix: dir.absoluteString)
+
             if isDir.boolValue {
+                result += indent + " " + path + "\n"
                 result += try listContentsOf(item, level: level + 1)
+            } else {
+                let size = item.fileSize
+                result += indent + " " + path + " (" + fileSize(size) + ")\n"
             }
         }
 
         return result
     }
 
+    func fileSize(_ bytes: Int) -> String {
+        let f = ByteCountFormatter()
+        f.allowedUnits = .useAll
+        f.countStyle = .file
+        f.includesUnit = true
+        f.includesCount = true
+        return f.string(fromByteCount: Int64(bytes))
+    }
+
+}
+
+extension String.StringInterpolation {
+    mutating func appendInterpolation<T: Encodable>(zxx value: T) {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+
+        if let result = try? encoder.encode(value) {
+            let str = String(decoding: result, as: UTF8.self)
+            appendLiteral(str)
+        }
+    }
 }

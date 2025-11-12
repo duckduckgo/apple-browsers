@@ -41,6 +41,7 @@ final class OnboardingSearchExperience: OnboardingSearchExperienceProvider {
     }
 
     var didApplyOnboardingChoiceSettings: Bool {
+        // Only check if the variable has been set
         get { storage.object(forKey: .didApplyOnboardingChoiceSettings) != nil }
         set { storage.set(newValue, forKey: .didApplyOnboardingChoiceSettings) }
     }

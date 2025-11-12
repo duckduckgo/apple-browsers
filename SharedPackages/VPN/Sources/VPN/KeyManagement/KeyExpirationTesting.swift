@@ -28,7 +28,7 @@ protocol KeyExpirationTesting: Actor {
     /// Starts the key expiration tester.
     ///
     /// - Parameter testImmediately: If `true`, performs an immediate key expiration check
-    func start(testImmediately: Bool)
+    func start(testImmediately: Bool) async
 
     /// Stops the key expiration tester.
     func stop()
@@ -39,5 +39,5 @@ protocol KeyExpirationTesting: Actor {
     func setKeyValidity(_ validity: TimeInterval?)
 
     /// Checks if the key is expired and performs rekeying if necessary.
-    func rekeyIfExpired()
+    func rekeyIfExpired() async
 }

@@ -642,7 +642,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     }
 }
 
-final class DefaultWireGuardInterface: WireGuardInterface {
+final class DefaultWireGuardInterface: WireGuardGoInterface {
     func turnOn(settings: UnsafePointer<CChar>, handle: Int32) -> Int32 {
         wgTurnOn(settings, handle)
     }

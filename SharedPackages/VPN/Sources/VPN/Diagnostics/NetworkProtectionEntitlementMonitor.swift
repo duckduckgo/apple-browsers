@@ -19,7 +19,7 @@
 import Foundation
 import os.log
 
-public actor NetworkProtectionEntitlementMonitor {
+public actor NetworkProtectionEntitlementMonitor: EntitlementMonitoring {
     public enum Result {
         case validEntitlement
         case invalidEntitlement

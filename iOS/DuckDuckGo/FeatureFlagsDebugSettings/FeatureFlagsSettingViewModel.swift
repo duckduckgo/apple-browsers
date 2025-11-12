@@ -28,6 +28,15 @@ class FeatureFlagsSettingViewModel: ObservableObject {
 
     @Published var featureFlags: [FeatureFlag] = []
     @Published var experiments: [FeatureFlag] = []
+    @Published var searchText: String = ""
+
+    var filteredFeatureFlags: [FeatureFlag] {
+        if searchText.isEmpty {
+            return featureFlags
+        } else {
+            return featureFlags.filter { $0.rawValue.localizedCaseInsensitiveContains(searchText) }
+        }
+    }
 
     init() {
         self.featureFlags = FeatureFlag.allCases.filter { $0.supportsLocalOverriding && $0.cohortType == nil }.sorted(by: { $0.rawValue < $1.rawValue })

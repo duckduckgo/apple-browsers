@@ -39,11 +39,7 @@ public struct PreferencesPurchaseSubscriptionView: View {
                     SubscriptionAccessView(model: model.sheetModel)
                 }
 
-            if model.shouldDisplayWinBackOffer {
-                purchaseWithWinBackOfferSection
-            } else {
-                purchaseSection
-            }
+            purchaseSection
 
             featuresSection
 
@@ -63,51 +59,11 @@ public struct PreferencesPurchaseSubscriptionView: View {
                 .cornerRadius(4)
 
             VStack(alignment: .leading, spacing: 8) {
-                TextMenuItemHeader(UserText.preferencesSubscriptionInactiveHeader(isPaidAIChatEnabled: model.isPaidAIChatEnabled))
-                TextMenuItemCaption(UserText.preferencesSubscriptionInactiveCaption(region: model.subscriptionStorefrontRegion, isPaidAIChatEnabled: model.isPaidAIChatEnabled))
-
-                let purchaseButtonText = model.isUserEligibleForFreeTrial ? UserText.purchaseFreeTrialButton : UserText.purchaseButton
+                TextMenuItemHeader(model.purchaseSectionHeader)
+                TextMenuItemCaption(model.purchaseSectionCaption)
 
                 HStack {
-                    Button(purchaseButtonText) { model.purchaseAction() }
-                        .buttonStyle(DefaultActionButtonStyle(enabled: true))
-                    Button(UserText.haveSubscriptionButton) {
-                        if model.shouldDirectlyLaunchActivationFlow {
-                            model.sheetModel.handleEmailAction()
-                        } else {
-                            showingActivateSubscriptionSheet.toggle()
-                        }
-
-                        model.didClickIHaveASubscription()
-                    }
-                    .buttonStyle(DismissActionButtonStyle())
-                }
-                .padding(.top, 10)
-            }
-
-            Spacer()
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 20)
-        .roundedBorder()
-    }
-
-    @ViewBuilder
-    private var purchaseWithWinBackOfferSection: some View {
-        HStack(alignment: .top) {
-            Image(.privacyPro)
-                .padding(4)
-                .background(Color("BadgeBackground", bundle: .module))
-                .cornerRadius(4)
-
-            VStack(alignment: .leading, spacing: 8) {
-                TextMenuItemHeader(UserText.winBackCampaignLoggedOutPreferencesTitle)
-                TextMenuItemCaption(UserText.winBackCampaignLoggedInPreferencesMessage)
-
-                let purchaseButtonText = UserText.winBackCampaignLoggedOutPreferencesCTA
-
-                HStack {
-                    Button(purchaseButtonText) { model.purchaseAction() }
+                    Button(model.purchaseButtonTitle) { model.purchaseAction() }
                         .buttonStyle(DefaultActionButtonStyle(enabled: true))
                     Button(UserText.haveSubscriptionButton) {
                         if model.shouldDirectlyLaunchActivationFlow {

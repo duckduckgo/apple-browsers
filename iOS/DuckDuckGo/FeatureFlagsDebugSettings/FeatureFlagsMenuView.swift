@@ -32,6 +32,7 @@ struct FeatureFlagsMenuView: View {
                 experimentsSection()
                 resetAllOverridesSection()
             }
+            .searchable(text: $viewModel.searchText, prompt: "Filter")
             .navigationTitle(Text(verbatim: "Feature Flags"))
         } else {
             internalUserMessage()
@@ -50,7 +51,7 @@ struct FeatureFlagsMenuView: View {
     // MARK: - Feature Flags Section
     private func featureFlagsSection() -> some View {
         Section(header: Text(verbatim: "Feature Flags")) {
-            ForEach(viewModel.featureFlags, id: \.self) { flag in
+            ForEach(viewModel.filteredFeatureFlags, id: \.self) { flag in
                 featureFlagRow(flag: flag)
             }
         }

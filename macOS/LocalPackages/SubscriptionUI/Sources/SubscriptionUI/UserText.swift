@@ -275,10 +275,21 @@ enum UserText {
     // MARK: - Rebranding Message
     static let preferencesSubscriptionRebrandingMessage = NSLocalizedString("subscription.preferences.subscription.rebranding.message", bundle: Bundle.module, value: "Privacy Pro is now just called the DuckDuckGo subscription", comment: "Message informing users that Subscription is now called the DuckDuckGo subscription")
 
+    // MARK: - Win-back Offer
     static let winBackCampaignLoggedOutPreferencesTitle = NSLocalizedString("win-back.campaign.logged-out.preferences.title", value: "We want you back! Get 25% off.", comment: "Title of the message displayed for logged out users to resubscribe during the win-back campaign")
     static let winBackCampaignLoggedInPreferencesMessage = NSLocalizedString("win-back.campaign.logged-in.preferences.message", value: "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%. Limited time offer.", comment: "Message of the message displayed for logged in users to resubscribe during the win-back campaign")
     static let winBackCampaignLoggedOutPreferencesCTA = NSLocalizedString("win-back.campaign.logged-out.preferences.cta", value: "See Offer", comment: "CTA of the message displayed for logged out users to resubscribe during the win-back campaign")
     static let winBackCampaignLoggedOutPreferencesExistingSubscriptionButton = NSLocalizedString("win-back.campaign.logged-out.preferences.existing.subscription.button", value: "I Have a Subscription", comment: "Button for logged out users to resubscribe during the win-back campaign")
 
     static let winBackCampaignLoggedInPreferencesCTA = NSLocalizedString("win-back.campaign.logged-in.preferences.cta", value: "Resubscribe and Save 25%", comment: "CTA of the message displayed for logged in users to resubscribe during the win-back campaign")
+
+    // MARK: - Black Friday Campaign
+    static let blackFridayCampaignPreferencesCTAFormat = NSLocalizedString("black-friday.campaign.preferences.cta",
+                                                                                  bundle: Bundle.module,
+                                                                                  value: "Save %d%% on First Year",
+                                                                                  comment: "CTA of the message displayed for logged in users during the Black Friday campaign")
+
+    static func blackFridayCampaignPreferencesCTA(discountPercent: Int) -> String {
+        String(format: blackFridayCampaignPreferencesCTAFormat, discountPercent)
+    }
 }

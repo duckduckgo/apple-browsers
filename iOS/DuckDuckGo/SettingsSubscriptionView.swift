@@ -156,9 +156,8 @@ struct SettingsSubscriptionView: View {
             .disabled(true)
 
             // Get Subscription
-            let getText = settingsViewModel.state.subscription.isEligibleForTrialOffer ? UserText.trySubscriptionButton : UserText.getSubscriptionButton
             SettingsCustomCell(content: {
-                Text(getText)
+                Text(settingsViewModel.purchaseButtonText)
                     .daxBodyRegular()
                     .foregroundColor(Color.init(designSystemColor: .accent))
                     .padding(.leading, 32.0)

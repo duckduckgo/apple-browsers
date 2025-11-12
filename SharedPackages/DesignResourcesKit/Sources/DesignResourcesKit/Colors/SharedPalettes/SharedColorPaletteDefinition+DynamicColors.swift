@@ -162,6 +162,9 @@ extension SharedColorPaletteDefinition {
         /// System
         case .lines:
             return lines
+        case .spinner:
+            // Non-specialized, we'll always use the default
+            return FigmaColorPalette.spinner
 
         /// Shadow Colors
         case .shadowPrimary:

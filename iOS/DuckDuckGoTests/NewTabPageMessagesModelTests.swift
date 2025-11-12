@@ -33,6 +33,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     private var segueToSettingsCallCount = 0
     private var segueToFeedbackCallCount = 0
     private var segueToSyncSettingsCallCount = 0
+    private var segueToSettingsAppearanceCallCount = 0
 
     override func setUpWithError() throws {
         messagesConfiguration = HomePageMessagesConfigurationMock(homeMessages: [])
@@ -41,6 +42,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         segueToSettingsCallCount = 0
         segueToFeedbackCallCount = 0
         segueToSyncSettingsCallCount = 0
+        segueToSettingsAppearanceCallCount = 0
     }
 
     override func tearDownWithError() throws {
@@ -138,10 +140,17 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
     func testMessageNavigator() async throws {
 
-        XCTAssertEqual(segueToSettingsCallCount, 0)
-        XCTAssertEqual(segueToAIChatSettingsCallCount, 0)
-        XCTAssertEqual(segueToFeedbackCallCount, 0)
+        func assertSegueCount(_ count: Int) {
+            XCTAssertEqual(segueToSettingsCallCount, count)
+            XCTAssertEqual(segueToAIChatSettingsCallCount, count)
+            XCTAssertEqual(segueToFeedbackCallCount, count)
+            XCTAssertEqual(segueToSettingsAppearanceCallCount, count)
+        }
 
+        // Start state
+        assertSegueCount(0)
+
+        // Individual states
         DefaultMessageNavigator(delegate: self).navigateTo(.settings, presentationStyle: .dismissModalsAndPresentFromRoot)
         XCTAssertEqual(segueToSettingsCallCount, 1)
 
@@ -150,6 +159,12 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         
         DefaultMessageNavigator(delegate: self).navigateTo(.feedback, presentationStyle: .dismissModalsAndPresentFromRoot)
         XCTAssertEqual(segueToFeedbackCallCount, 1)
+
+        DefaultMessageNavigator(delegate: self).navigateTo(.appearance, presentationStyle: .dismissModalsAndPresentFromRoot)
+        XCTAssertEqual(segueToSettingsAppearanceCallCount, 1)
+
+        // End state
+        assertSegueCount(1)
 
     }
 
@@ -299,6 +314,10 @@ extension NewTabPageMessagesModelTests: MessageNavigationDelegate {
 
     func segueToImportPasswords(presentationStyle: DuckDuckGo.PresentationContext.Style) {
         assertionFailure("Not implemented yet")
+    }
+
+    func segueToSettingsAppearance(presentationStyle: PresentationContext.Style) {
+        segueToSettingsAppearanceCallCount += 1
     }
 
 }

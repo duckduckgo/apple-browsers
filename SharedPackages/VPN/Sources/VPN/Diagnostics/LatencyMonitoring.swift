@@ -27,7 +27,7 @@ import Network
 protocol LatencyMonitoring: Actor {
 
     /// Indicates whether the monitor is currently running.
-    var isStarted: Bool { get async }
+    var isStarted: Bool { get }
 
     /// Starts monitoring latency to the specified server.
     ///
@@ -35,8 +35,8 @@ protocol LatencyMonitoring: Actor {
     ///   - serverIP: The IPv4 address of the server to monitor
     ///   - callback: Called with latency measurements and quality assessments
     func start(serverIP: IPv4Address,
-               callback: @escaping (NetworkProtectionLatencyMonitor.Result) -> Void) async
+               callback: @escaping (NetworkProtectionLatencyMonitor.Result) -> Void)
 
     /// Stops monitoring latency.
-    func stop() async
+    func stop()
 }

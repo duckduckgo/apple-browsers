@@ -589,10 +589,12 @@ extension TabSwitcherViewController: TabObserver {
     func didChange(tab: Tab) {
         guard let index = self.tabsModel.indexOf(tab: tab),
               let cell = collectionView.cellForItem(at: IndexPath(row: index, section: 0)) as? TabViewCell,
-
               // Check the current tab is the one we want to update, if not it might have been updated elsewhere
-              cell.tab?.uid == tab.uid else { return  }
-    
+              cell.tab?.uid == tab.uid else {
+            DailyPixel.fireDaily(.debugTabSwitcherDidChangeInvalidState)
+            return
+        }
+
         cell.update(withTab: tab,
                     isSelectionModeEnabled: self.isEditing,
                     preview: previewsSource.preview(for: tab))

@@ -344,7 +344,7 @@ final class FaviconManager: FaviconManagement {
                                               dateCreated: Date())
                         return favicon
                     } catch {
-                        Logger.faviconFetcher.error("Error downloading Favicon: \(error.localizedDescription)")
+                        Logger.favicons.error("Error downloading Favicon: \(error.localizedDescription)")
                         return nil
                     }
                 }

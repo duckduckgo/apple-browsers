@@ -156,8 +156,8 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
     /// Packet tunnel provider.
     private weak var packetTunnelProvider: NEPacketTunnelProvider?
 
-    /// Emits events for pixel and logging purposes.
-    private let eventMapper: EventMapping<WireGuardAdapterEvent>
+    /// Handles events from the adapter.
+    private let eventHandler: WireGuardAdapterEventHandling
 
     /// Log handler closure.
     private let logHandler: LogHandler
@@ -246,13 +246,13 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
 
     public init(with packetTunnelProvider: NEPacketTunnelProvider,
                 wireGuardInterface: WireGuardGoInterface,
-                eventMapper: EventMapping<WireGuardAdapterEvent>,
+                eventHandler: WireGuardAdapterEventHandling,
                 logHandler: @escaping LogHandler) {
         Logger.networkProtectionMemory.debug("[+] WireGuardAdapter")
 
         self.packetTunnelProvider = packetTunnelProvider
         self.wireGuardInterface = wireGuardInterface
-        self.eventMapper = eventMapper
+        self.eventHandler = eventHandler
         self.logHandler = logHandler
 
         setupLogHandler()
@@ -697,7 +697,7 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
                 )
 
                 if self.temporaryShutdownRecoveryFailed {
-                    self.eventMapper.fire(.endTemporaryShutdownStateRecoverySuccess)
+                    self.eventHandler.handle(.endTemporaryShutdownStateRecoverySuccess)
                 }
 
                 self.temporaryShutdownRecoveryFailed = false
@@ -705,9 +705,9 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
                 self.logHandler(.error, "Failed to restart backend: \(error.localizedDescription)")
 
                 if self.temporaryShutdownRecoveryFailed {
-                    self.eventMapper.fire(.endTemporaryShutdownStateRecoveryFailure(error))
+                    self.eventHandler.handle(.endTemporaryShutdownStateRecoveryFailure(error))
                 } else {
-                    self.eventMapper.fire(.endTemporaryShutdownStateAttemptFailure(error))
+                    self.eventHandler.handle(.endTemporaryShutdownStateAttemptFailure(error))
                     self.temporaryShutdownRecoveryFailed = true
                 }
             }

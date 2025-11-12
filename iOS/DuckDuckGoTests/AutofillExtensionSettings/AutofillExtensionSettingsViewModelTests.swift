@@ -61,7 +61,7 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.isExtensionEnabled)
     }
 
-    func testEnableExtensionDoesNotShowActivationWhenRequestReturnsFalse() async {
+    func testEnableExtensionThrottlesWhenUserChoosesNotNow() async {
         let store = MockASCredentialIdentityStore()
         store.isEnabled = false
         let settingsHelper = MockAutofillExtensionSettingsHelper(requestResult: false)
@@ -79,7 +79,7 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isShowingActivationView)
         XCTAssertFalse(viewModel.isExtensionEnabled)
         XCTAssertTrue(viewModel.isEnableRequestThrottled)
-        XCTAssertEqual(settingsHelper.openCallCount, 1)
+        XCTAssertEqual(settingsHelper.openCallCount, 0) // Should NOT open settings when user chooses "Not Now"
         XCTAssertNotNil(viewModel.remainingEnableRequestThrottleInterval)
     }
 
@@ -147,7 +147,15 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
         await viewModel.enableExtension()
         XCTAssertTrue(viewModel.isEnableRequestThrottled)
 
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        // Poll until throttle expires or timeout
+        let expectation = expectation(description: "Throttle expires")
+        Task {
+            while viewModel.isEnableRequestThrottled {
+                try? await Task.sleep(nanoseconds: 10_000_000) // 0.01 seconds
+            }
+            expectation.fulfill()
+        }
+        await fulfillment(of: [expectation], timeout: 1.0)
 
         XCTAssertFalse(viewModel.isEnableRequestThrottled)
         XCTAssertNil(viewModel.remainingEnableRequestThrottleInterval)
@@ -211,12 +219,11 @@ private final class MockAutofillExtensionSettingsHelper: AutofillExtensionSettin
 }
 
 @available(iOS 18.0, *)
-@MainActor
 private final class MockAutofillExtensionSettingsViewModelDelegate: AutofillExtensionSettingsViewModelDelegate {
 
     var authDisabledStates: [Bool] = []
 
-    func autofillExtensionSettingsViewModel(_ viewModel: AutofillExtensionSettingsViewModel, authDisabled: Bool) {
-        authDisabledStates.append(authDisabled)
+    func autofillExtensionSettingsViewModel(_ viewModel: AutofillExtensionSettingsViewModel, shouldDisableAuth: Bool) {
+        authDisabledStates.append(shouldDisableAuth)
     }
 }

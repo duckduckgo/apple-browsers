@@ -63,7 +63,7 @@ extension OnboardingView {
                         .fixedSize(horizontal: false, vertical: true)
 
                     Button(action: action) {
-                        Text(UserText.onboardingStartBrowsing)
+                        Text(UserText.Onboarding.SearchExperience.cta)
                     }
                     .buttonStyle(PrimaryButtonStyle())
                 }

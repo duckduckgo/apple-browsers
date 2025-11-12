@@ -111,8 +111,8 @@ final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
         return hostingController
     }
 
-    private func makeExtensionPromoView() -> UIHostingController<ExtensionPromotionHeaderView> {
-        let headerView = ExtensionPromotionHeaderView(
+    private func makeExtensionPromoView() -> UIHostingController<AutofillExtensionPromotionHeaderView> {
+        let headerView = AutofillExtensionPromotionHeaderView(
             primaryButtonAction: { [weak delegate] in
                 delegate?.handlePrimaryAction(for: .extensionPromo)
             },

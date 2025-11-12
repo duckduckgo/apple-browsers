@@ -1,5 +1,5 @@
 //
-//  ExtensionPromotionHeaderView.swift
+//  AutofillExtensionPromotionHeaderView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -23,7 +23,7 @@ import DesignResourcesKitIcons
 import DuckUI
 import Lottie
 
-struct ExtensionPromotionHeaderView: View {
+struct AutofillExtensionPromotionHeaderView: View {
     var primaryButtonAction: (() -> Void)?
     var dismissButtonAction: (() -> Void)?
 
@@ -101,5 +101,5 @@ struct ExtensionPromotionHeaderView: View {
 }
 
 #Preview {
-    ExtensionPromotionHeaderView()
+    AutofillExtensionPromotionHeaderView()
 }

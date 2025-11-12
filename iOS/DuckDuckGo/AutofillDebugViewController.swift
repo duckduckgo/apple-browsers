@@ -159,7 +159,7 @@ class AutofillDebugViewController: UITableViewController {
                     ActionMessageView.present(message: "Failed to reset Import Prompts")
                     return
                 }
-                let extensionPromotionManager = ExtensionPromotionManager(keyValueStore: keyValueStore)
+                let extensionPromotionManager = AutofillExtensionPromotionManager(keyValueStore: keyValueStore)
                 extensionPromotionManager.resetPromotionDismissal()
                 ActionMessageView.present(message: "Extension Promos reset")
             }

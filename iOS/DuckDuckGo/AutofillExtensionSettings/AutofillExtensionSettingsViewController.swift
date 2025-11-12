@@ -59,7 +59,6 @@ class AutofillExtensionSettingsViewController: UIViewController {
         super.viewWillDisappear(animated)
 
         if isMovingFromParent {
-            print("isMovingFromParent")
             self.delegate?.autofillExtensionSettingsViewController(self, authDisabled: false)
         }
     }

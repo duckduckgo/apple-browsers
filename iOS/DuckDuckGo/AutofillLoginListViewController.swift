@@ -768,7 +768,7 @@ final class AutofillLoginListViewController: UIViewController {
             }
         case .extensionPromo:
             currentHeaderHostingController = headerViewFactory.makeHeaderView(for: .extensionPromo)
-            if let hostingController = currentHeaderHostingController as? UIHostingController<ExtensionPromotionHeaderView> {
+            if let hostingController = currentHeaderHostingController as? UIHostingController<AutofillExtensionPromotionHeaderView> {
                 setupTableHeaderView(with: hostingController)
             }
         }

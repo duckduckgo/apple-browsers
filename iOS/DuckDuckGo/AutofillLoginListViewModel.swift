@@ -71,7 +71,7 @@ class AutofillLoginListViewModel: ObservableObject {
     private let keyValueStore: ThrowingKeyValueStoring
     private let locale: Locale
     private var showBreakageReporter: Bool = false
-    private let extensionPromotionManager: ExtensionPromotionManaging
+    private let extensionPromotionManager: AutofillExtensionPromotionManaging
 
     private lazy var reporterDateFormatter = {
         let dateFormatter = DateFormatter()
@@ -126,7 +126,7 @@ class AutofillLoginListViewModel: ObservableObject {
          syncService: DDGSyncing,
          keyValueStore: ThrowingKeyValueStoring,
          locale: Locale = Locale.current,
-         extensionPromotionManager: ExtensionPromotionManaging? = nil) {
+         extensionPromotionManager: AutofillExtensionPromotionManaging? = nil) {
         self.appSettings = appSettings
         self.tld = tld
         self.secureVault = secureVault
@@ -136,7 +136,7 @@ class AutofillLoginListViewModel: ObservableObject {
         self.syncService = syncService
         self.keyValueStore = keyValueStore
         self.locale = locale
-        self.extensionPromotionManager = extensionPromotionManager ?? ExtensionPromotionManager(keyValueStore: keyValueStore)
+        self.extensionPromotionManager = extensionPromotionManager ?? AutofillExtensionPromotionManager(keyValueStore: keyValueStore)
 
         if let count = getAccountsCount() {
             authenticationNotRequired = count == 0 || AppDependencyProvider.shared.autofillLoginSession.isSessionValid

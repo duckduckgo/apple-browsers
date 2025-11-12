@@ -1,5 +1,5 @@
 //
-//  ExtensionPromotionManager.swift
+//  AutofillExtensionPromotionManager.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -23,13 +23,13 @@ import BrowserServicesKit
 import Core
 import Persistence
 
-protocol ExtensionPromotionManaging {
+protocol AutofillExtensionPromotionManaging {
     func shouldShowPromotion(totalCredentialsCount: Int, completion: @escaping (Bool) -> Void)
     func markPromotionDismissed()
     func resetPromotionDismissal()
 }
 
-final class ExtensionPromotionManager: ExtensionPromotionManaging {
+final class AutofillExtensionPromotionManager: AutofillExtensionPromotionManaging {
 
     private enum Constants {
         static let minimumCredentialCount = 4
@@ -37,7 +37,8 @@ final class ExtensionPromotionManager: ExtensionPromotionManaging {
     }
 
     private enum Key {
-        static let promotionDismissedAt = "com.duckduckgo.autofill.extension.promo.dismissedAt"
+        static let passwordsPromotionDismissed = "com.duckduckgo.autofill.extension.promo.passwords.dismissed"
+
     }
 
     private let featureFlagger: FeatureFlagger
@@ -74,16 +75,22 @@ final class ExtensionPromotionManager: ExtensionPromotionManaging {
         }
     }
 
+    func markPromotionDismissed() {
+        promotionDismissed = true
+    }
+
+    func resetPromotionDismissal() {
+        promotionDismissed = false
+    }
+
+    // MARK: - Private
+
     private func evaluateShouldShowPromotion(totalCredentialsCount: Int) async -> Bool {
         guard #available(iOS 18.0, *) else {
             return false
         }
 
         guard featureFlagger.isFeatureOn(.canPromoteAutofillExtensionInPasswordManagement) else {
-            return false
-        }
-
-        guard totalCredentialsCount >= Constants.minimumCredentialCount else {
             return false
         }
 
@@ -99,19 +106,27 @@ final class ExtensionPromotionManager: ExtensionPromotionManaging {
             return false
         }
 
+        guard totalCredentialsCount >= Constants.minimumCredentialCount else {
+            return false
+        }
+
         return true
     }
 
-    func markPromotionDismissed() {
-        promotionDismissedAt = true
-    }
-
-    func resetPromotionDismissal() {
-        promotionDismissedAt = false
-    }
-
     private var hasBeenDismissed: Bool {
-        promotionDismissedAt
+        promotionDismissed
+    }
+
+    private var promotionDismissed: Bool {
+        get {
+            guard let didDismiss = try? keyValueStore.object(forKey: Key.passwordsPromotionDismissed) as? Bool else {
+                return false
+            }
+            return didDismiss
+        }
+        set {
+            try? keyValueStore.set(newValue, forKey: Key.passwordsPromotionDismissed)
+        }
     }
 
     private var hasSatisfiedInstallAge: Bool {
@@ -125,17 +140,5 @@ final class ExtensionPromotionManager: ExtensionPromotionManaging {
     @available(iOS 18.0, *)
     private func credentialProviderState() async -> Bool {
         return await credentialStore.state().isEnabled
-    }
-
-    private var promotionDismissedAt: Bool {
-        get {
-            guard let didDismiss = try? keyValueStore.object(forKey: Key.promotionDismissedAt) as? Bool else {
-                return false
-            }
-            return didDismiss
-        }
-        set {
-            try? keyValueStore.set(newValue, forKey: Key.promotionDismissedAt)
-        }
     }
 }

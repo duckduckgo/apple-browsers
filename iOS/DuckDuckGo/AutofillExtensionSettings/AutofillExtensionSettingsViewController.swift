@@ -22,7 +22,7 @@ import SwiftUI
 
 @available(iOS 18.0, *)
 protocol AutofillExtensionSettingsViewControllerDelegate: AnyObject {
-    func autofillExtensionSettingsViewController(_ controller: AutofillExtensionSettingsViewController, authDisabled: Bool)
+    func autofillExtensionSettingsViewController(_ controller: AutofillExtensionSettingsViewController, shouldDisableAuth: Bool)
 }
 
 @available(iOS 18.0, *)
@@ -59,7 +59,7 @@ class AutofillExtensionSettingsViewController: UIViewController {
         super.viewWillDisappear(animated)
 
         if isMovingFromParent {
-            self.delegate?.autofillExtensionSettingsViewController(self, authDisabled: false)
+            self.delegate?.autofillExtensionSettingsViewController(self, shouldDisableAuth: false)
         }
     }
 
@@ -75,7 +75,7 @@ class AutofillExtensionSettingsViewController: UIViewController {
 @available(iOS 18.0, *)
 extension AutofillExtensionSettingsViewController: AutofillExtensionSettingsViewModelDelegate {
 
-    func autofillExtensionSettingsViewModel(_ viewModel: AutofillExtensionSettingsViewModel, authDisabled: Bool) {
-        delegate?.autofillExtensionSettingsViewController(self, authDisabled: authDisabled)
+    func autofillExtensionSettingsViewModel(_ viewModel: AutofillExtensionSettingsViewModel, shouldDisableAuth: Bool) {
+        delegate?.autofillExtensionSettingsViewController(self, shouldDisableAuth: shouldDisableAuth)
     }
 }

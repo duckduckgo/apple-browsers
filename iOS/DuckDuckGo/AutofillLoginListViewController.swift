@@ -349,9 +349,13 @@ final class AutofillLoginListViewController: UIViewController {
 
     private func configureNotification() {
         addObserver(for: UIApplication.didBecomeActiveNotification, selector: #selector(appDidBecomeActiveCallback))
+        addObserversForResignActive()
+        addObserver(for: AutofillLoginListAuthenticator.Notifications.invalidateContext, selector: #selector(authenticatorInvalidateContext))
+    }
+
+    private func addObserversForResignActive() {
         addObserver(for: UIApplication.willResignActiveNotification, selector: #selector(appWillResignActiveCallback))
         addObserver(for: UIApplication.didEnterBackgroundNotification, selector: #selector(appWillResignActiveCallback))
-        addObserver(for: AutofillLoginListAuthenticator.Notifications.invalidateContext, selector: #selector(authenticatorInvalidateContext))
     }
 
     private func addObserver(for notification: Notification.Name, selector: Selector) {
@@ -547,13 +551,11 @@ final class AutofillLoginListViewController: UIViewController {
 
     private func configureObserversBasedOnAuthConfirmationPrompt(isAuthenticating: Bool) {
         if isAuthenticating {
-//            addObserver(for: UIApplication.didEnterBackgroundNotification, selector: #selector(appWillResignActiveCallback))
+            addObserver(for: UIApplication.didEnterBackgroundNotification, selector: #selector(appWillResignActiveCallback))
             removeObserver(for: UIApplication.willResignActiveNotification)
-            removeObserver(for: UIApplication.didEnterBackgroundNotification)
         } else {
             addObserver(for: UIApplication.willResignActiveNotification, selector: #selector(appWillResignActiveCallback))
-            addObserver(for: UIApplication.didEnterBackgroundNotification, selector: #selector(appWillResignActiveCallback))
-//            removeObserver(for: UIApplication.didEnterBackgroundNotification)
+            removeObserver(for: UIApplication.didEnterBackgroundNotification)
         }
     }
 
@@ -1175,9 +1177,12 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
 @available(iOS 18, *)
 extension AutofillLoginListViewController: AutofillExtensionSettingsViewControllerDelegate {
 
-    func autofillExtensionSettingsViewController(_ controller: AutofillExtensionSettingsViewController, authDisabled: Bool) {
-        configureObserversBasedOnAuthConfirmationPrompt(isAuthenticating: authDisabled)
-        if !authDisabled {
+    func autofillExtensionSettingsViewController(_ controller: AutofillExtensionSettingsViewController, shouldDisableAuth: Bool) {
+        if shouldDisableAuth {
+            removeObserver(for: UIApplication.willResignActiveNotification)
+            removeObserver(for: UIApplication.didEnterBackgroundNotification)
+        } else {
+            addObserversForResignActive()
             updateTableHeaderView()
         }
     }

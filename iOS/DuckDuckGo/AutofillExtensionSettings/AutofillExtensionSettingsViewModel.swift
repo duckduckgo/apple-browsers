@@ -23,7 +23,7 @@ import BrowserServicesKit
 
 @available(iOS 18.0, *)
 protocol AutofillExtensionSettingsViewModelDelegate: AnyObject {
-    func autofillExtensionSettingsViewModel(_ viewModel: AutofillExtensionSettingsViewModel, authDisabled: Bool)
+    func autofillExtensionSettingsViewModel(_ viewModel: AutofillExtensionSettingsViewModel, shouldDisableAuth: Bool)
 }
 
 @available(iOS 18.0, *)
@@ -80,34 +80,53 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
     func enableExtension() async {
         if isEnableRequestThrottled {
             if let remaining = remainingEnableRequestThrottleInterval, remaining > 0 {
+                // Still throttled - redirect to settings instead
                 await disableExtension()
                 return
             }
+            // Throttle expired
             clearEnableRequestThrottle()
         }
 
-        delegate?.autofillExtensionSettingsViewModel(self, authDisabled: true)
-        let result = await settingsHelper.requestToTurnOnCredentialProviderExtension()
-        Logger.autofill.debug("Extension enabled result: \(result)")
+        // System prompts trigger authentication on passwords screen, so disabling observers temporarily
+        delegate?.autofillExtensionSettingsViewModel(self, shouldDisableAuth: true)
+        defer {
+            delegate?.autofillExtensionSettingsViewModel(self, shouldDisableAuth: false)
+        }
+
+        let userChoseToEnable = await settingsHelper.requestToTurnOnCredentialProviderExtension()
+        Logger.autofill.debug("User chose to enable: \(userChoseToEnable)")
+
+        guard userChoseToEnable else {
+            // User chose "Not Now" - throttle future requests
+            startEnableRequestThrottle()
+            return
+        }
+
+        // User chose to enable - verify the result
+        await handleEnableAttempt()
+    }
+
+    private func handleEnableAttempt() async {
         await updateExtensionStatus()
+
         if isExtensionEnabled {
+            // Success - show activation confirmation
             isShowingActivationView = true
         } else {
-            if result {
-                await disableExtension()
-            }
+            // User chose to enable but extension not enabled - guide user to settings
+            await disableExtension()
             startEnableRequestThrottle()
             isShowingActivationView = false
         }
-        delegate?.autofillExtensionSettingsViewModel(self, authDisabled: false)
     }
 
     func disableExtension() async {
         do {
-            delegate?.autofillExtensionSettingsViewModel(self, authDisabled: true)
+            delegate?.autofillExtensionSettingsViewModel(self, shouldDisableAuth: true)
             try await settingsHelper.openCredentialProviderAppSettings()
         } catch {
-            delegate?.autofillExtensionSettingsViewModel(self, authDisabled: false)
+            delegate?.autofillExtensionSettingsViewModel(self, shouldDisableAuth: false)
             Logger.autofill.error("Failed to open credential provider settings: \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -129,9 +148,10 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
         isEnableRequestThrottled = true
         throttleExpiresAt = Date().addingTimeInterval(enableRetryThrottleDuration)
 
-        enableRetryTimer = Timer.scheduledTimer(withTimeInterval: enableRetryThrottleDuration, repeats: false) { [weak self] _ in
-            guard let self else { return }
-            self.clearEnableRequestThrottle()
+        enableRetryTimer = Timer.scheduledTimer(withTimeInterval: enableRetryThrottleDuration, repeats: false) { _ in
+            Task { @MainActor [weak self] in
+                self?.clearEnableRequestThrottle()
+            }
         }
     }
 

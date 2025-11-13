@@ -27,6 +27,10 @@ import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
+class MockSearchPreferencesPersistor: SearchPreferencesPersistor {
+    var showAutocompleteSuggestions: Bool = false
+}
+
 // swiftlint:disable opening_brace
 @available(macOS 12.0, *)
 final class SearchNonexistentDomainTests: XCTestCase {
@@ -240,7 +244,13 @@ final class SearchNonexistentDomainTests: XCTestCase {
                                                       bookmarkProvider: bookmarkProviderMock,
                                                       burnerMode: .regular,
                                                       isUrlIgnored: { _ in false })
-        addressBar.suggestionContainerViewModel = SuggestionContainerViewModel(isHomePage: true, isBurner: false, suggestionContainer: suggestionContainer, themeManager: MockThemeManager())
+        addressBar.suggestionContainerViewModel = SuggestionContainerViewModel(
+            isHomePage: true,
+            isBurner: false,
+            suggestionContainer: suggestionContainer,
+            searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
+            themeManager: MockThemeManager()
+        )
 
         suggestionContainer.getSuggestions(for: enteredString)
         suggestionLoadingMock.completion!(.init(topHits: [.website(url: url)], duckduckgoSuggestions: [], localSuggestions: []), nil)

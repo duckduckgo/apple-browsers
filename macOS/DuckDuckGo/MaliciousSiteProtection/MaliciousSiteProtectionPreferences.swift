@@ -32,8 +32,10 @@ struct MaliciousSiteProtectionPreferencesUserDefaultsPersistor: MaliciousSitePro
 
 final class MaliciousSiteProtectionPreferences: ObservableObject, PreferencesTabOpening {
 
-    static let shared = MaliciousSiteProtectionPreferences()
-    private let featureFlagger: FeatureFlagger
+    static let shared = MaliciousSiteProtectionPreferences(
+        featureFlagger: Application.appDelegate.featureFlagger,
+        windowControllersManager: Application.appDelegate.windowControllersManager
+    )
 
     @Published
     var isEnabled: Bool {
@@ -47,12 +49,16 @@ final class MaliciousSiteProtectionPreferences: ObservableObject, PreferencesTab
     }
 
     init(persistor: MaliciousSiteProtectionPreferencesPersistor = MaliciousSiteProtectionPreferencesUserDefaultsPersistor(),
-         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
+         featureFlagger: FeatureFlagger,
+         windowControllersManager: WindowControllersManagerProtocol
     ) {
         self.persistor = persistor
         self.isEnabled = persistor.isEnabled
         self.featureFlagger = featureFlagger
+        self.windowControllersManager = windowControllersManager
     }
 
+    let windowControllersManager: WindowControllersManagerProtocol
+    private let featureFlagger: FeatureFlagger
     private var persistor: MaliciousSiteProtectionPreferencesPersistor
 }

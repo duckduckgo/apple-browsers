@@ -113,7 +113,7 @@ extension URL {
 
         if NSApp.delegateTyped.featureFlagger.isFeatureOn(.duckAISearchParameter) {
             /// Append the kbg disable parameter only when Duck AI features are not shown
-            if !AIChatPreferences.shared.shouldShowAIFeatures {
+            if !NSApp.delegateTyped.aiChatPreferences.shouldShowAIFeatures {
                 url = url.appendingParameter(name: URL.DuckDuckGoParameters.KBG.kbg,
                                              value: URL.DuckDuckGoParameters.KBG.kbgDisabledValue)
             }

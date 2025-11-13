@@ -48,8 +48,11 @@ class AutoClearHandlerTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger()
         )
-        startupPreferences = StartupPreferences(persistor: persistor2,
-                                                appearancePreferences: appearancePreferences)
+        startupPreferences = StartupPreferences(
+            persistor: persistor2,
+            windowControllersManager: WindowControllersManagerMock(),
+            appearancePreferences: appearancePreferences
+        )
 
         fireViewModel = FireViewModel(tld: Application.appDelegate.tld,
                                       visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider())
@@ -59,6 +62,7 @@ class AutoClearHandlerTests: XCTestCase {
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                                     service: service,
                                                                     startupPreferences: NSApp.delegateTyped.startupPreferences,
+                                                                    tabsPreferences: NSApp.delegateTyped.tabsPreferences,
                                                                     keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                                     sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator,
                                                                     pixelFiring: nil)

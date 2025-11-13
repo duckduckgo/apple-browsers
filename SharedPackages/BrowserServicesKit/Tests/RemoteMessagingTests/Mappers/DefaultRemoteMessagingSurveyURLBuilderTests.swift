@@ -20,7 +20,6 @@ import XCTest
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import RemoteMessagingTestsUtils
-@testable import Subscription
 @testable import RemoteMessaging
 
 class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
@@ -172,21 +171,19 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
             daysSinceLastActive: vpnDaysSinceLastActive
         )
 
-        let subscription = DuckDuckGoSubscription(productId: "product-id",
-                                           name: "product-name",
-                                           billingPeriod: .monthly,
-                                           startedAt: Date(timeIntervalSince1970: 1000),
-                                           expiresOrRenewsAt: Date(timeIntervalSince1970: 2000),
-                                           platform: .apple,
-                                           status: .autoRenewable,
-                                           activeOffers: [])
+        let mockSubscription = MockDuckDuckGoSubscription()
+        mockSubscription.billing = "monthly"
+        mockSubscription.platform = "apple"
+        mockSubscription.status = "auto_renewable"
+        mockSubscription.started = Date(timeIntervalSince1970: 1000)
+        mockSubscription.expiry = Date(timeIntervalSince1970: 2000)
 
         standardDefaults.set(lastSearchDate, forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey)
 
         return DefaultRemoteMessagingSurveyURLBuilder(
             statisticsStore: mockStatisticsStore,
             vpnActivationDateStore: vpnActivationDateStore,
-            subscription: subscription,
+            subscriptionDataProvider: mockSubscription,
             localeIdentifier: locale.identifier,
             autofillUsageStore: autofillUsageStore
         )
@@ -194,7 +191,7 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
 
 }
 
-private class MockVPNActivationDateStore: VPNActivationDateProviding {
+private final class MockVPNActivationDateStore: VPNActivationDateProviding {
 
     var _daysSinceActivation: Int
     var _daysSinceLastActive: Int
@@ -212,4 +209,33 @@ private class MockVPNActivationDateStore: VPNActivationDateProviding {
         return _daysSinceLastActive
     }
 
+}
+
+private final class MockDuckDuckGoSubscription: SubscriptionSurveyDataProviding {
+
+    var status: String?
+    var platform: String?
+    var billing: String?
+    var started: Date?
+    var expiry: Date?
+
+    public var subscriptionStatus: String? {
+        return status
+    }
+
+    public var subscriptionPlatform: String? {
+        return platform
+    }
+
+    public var subscriptionBilling: String? {
+        return billing
+    }
+
+    public var subscriptionStartDate: Date? {
+        return started
+    }
+
+    public var subscriptionExpiryDate: Date? {
+        return expiry
+    }
 }

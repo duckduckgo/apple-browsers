@@ -192,7 +192,7 @@ extension WideEventAppData: WideEventParameterProviding {
         parameters[WideEventParameter.App.version] = version
 
         if let formFactor = formFactor {
-            parameters[WideEventParameter.Global.formFactor] = formFactor
+            parameters[WideEventParameter.App.formFactor] = formFactor
         }
 
         if let internalUser {

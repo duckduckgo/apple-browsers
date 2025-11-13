@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import Bookmarks
 import Foundation
 import PixelKit
 import SecureStorage
@@ -87,9 +86,6 @@ public enum DataImport {
             self.successful = successful
             self.duplicate = duplicate
             self.failed = failed
-        }
-        public init(_ bookmarksImportSummary: BookmarksImportSummary) {
-            self.init(successful: bookmarksImportSummary.successful, duplicate: bookmarksImportSummary.duplicates, failed: bookmarksImportSummary.failed)
         }
     }
 

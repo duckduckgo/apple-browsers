@@ -79,7 +79,11 @@ final class OverlayWindowManager: OverlayWindowManaging {
 
     func displayOverlay(with viewController: UIViewController) {
         guard overlayWindow == nil else { return }
-        overlayWindow = UIWindow(frame: window.frame)
+        if let windowScene = window.windowScene {
+            overlayWindow = UIWindow(windowScene: windowScene)
+        } else {
+            overlayWindow = UIWindow(frame: window.frame)
+        }
         overlayWindow?.windowLevel = .alert
         overlayWindow?.rootViewController = viewController
         overlayWindow?.makeKeyAndVisible()

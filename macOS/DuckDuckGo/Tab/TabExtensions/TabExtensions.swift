@@ -84,6 +84,8 @@ protocol TabExtensionDependencies {
     var newTabPageShownPixelSender: NewTabPageShownPixelSender { get }
     var aiChatSidebarProvider: AIChatSidebarProviding { get }
     var tabCrashAggregator: TabCrashAggregator { get }
+    var tabsPreferences: TabsPreferences { get }
+    var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -171,17 +173,23 @@ extension TabExtensionsBuilder {
         }
 
         add {
-            NavigationProtectionTabExtension(contentBlocking: dependencies.privacyFeatures.contentBlocking)
+            NavigationProtectionTabExtension(
+                contentBlocking: dependencies.privacyFeatures.contentBlocking,
+                webTrackingProtectionPreferences: dependencies.webTrackingProtectionPreferences
+            )
+
         }
 
         add {
             AutofillTabExtension(autofillUserScriptPublisher: userScripts.map(\.?.autofillScript),
                                  privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                                 webTrackingProtectionPreferences: dependencies.webTrackingProtectionPreferences,
                                  isBurner: args.isTabBurner)
         }
         add {
             ContextMenuManager(contextMenuScriptPublisher: userScripts.map(\.?.contextMenuScript),
                                contentPublisher: args.contentPublisher,
+                               tabsPreferences: dependencies.tabsPreferences,
                                isLoadedInSidebar: args.isTabLoadedInSidebar,
                                internalUserDecider: dependencies.featureFlagger.internalUserDecider,
                                aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration,
@@ -230,7 +238,7 @@ extension TabExtensionsBuilder {
             ExternalAppSchemeHandler(workspace: dependencies.workspace, permissionModel: args.permissionModel, contentPublisher: args.contentPublisher)
         }
         add {
-            NavigationHotkeyHandler(isTabPinned: args.isTabPinned, isBurner: args.isTabBurner)
+            NavigationHotkeyHandler(isTabPinned: args.isTabPinned, isBurner: args.isTabBurner, tabsPreferences: dependencies.tabsPreferences)
         }
 
         let duckPlayerOnboardingDecider = DefaultDuckPlayerOnboardingDecider()
@@ -239,6 +247,7 @@ extension TabExtensionsBuilder {
                                    isBurner: args.isTabBurner,
                                    scriptsPublisher: userScripts.compactMap { $0 },
                                    webViewPublisher: args.webViewFuture,
+                                   tabsPreferences: dependencies.tabsPreferences,
                                    onboardingDecider: duckPlayerOnboardingDecider)
         }
 

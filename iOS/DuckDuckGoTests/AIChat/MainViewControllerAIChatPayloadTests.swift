@@ -150,6 +150,7 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
             dbpIOSPublicInterface: nil,
             launchSourceManager: LaunchSourceManager(),
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
+            mobileCustomization: MobileCustomization(isFeatureEnabled: false, keyValueStore: MockThrowingKeyValueStore()),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler()
         )
         

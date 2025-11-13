@@ -52,7 +52,7 @@ extension DebugScreensViewModel {
                 try? d.keyValueStore.set(nil, forKey: SettingsViewModel.Constants.shouldCheckIfDefaultBrowserKey)
             }),
             .action(title: "Generate Diagnostic Report", { d in
-                guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
+                guard let controller = UIApplication.shared.firstKeyWindow?.rootViewController?.presentedViewController else { return }
 
                 class Delegate: NSObject, DiagnosticReportDataSourceDelegate {
                     func dataGatheringStarted() {
@@ -245,8 +245,8 @@ extension DebugScreensViewModel {
     }
     
     private func showNewAddressBarModal(_ dependencies: DebugScreen.Dependencies) {
-        guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
-        
+        guard let controller = UIApplication.shared.firstKeyWindow?.rootViewController?.presentedViewController else { return }
+
         let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: AIChatSettings())
         pickerViewController.modalPresentationStyle = .pageSheet
         pickerViewController.modalTransitionStyle = .coverVertical

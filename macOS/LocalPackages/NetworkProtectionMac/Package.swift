@@ -43,7 +43,7 @@ let package = Package(
         .package(path: "../XPCHelper"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../LoginItems"),
-        .package(path: "../VPN"),
+        .package(path: "../../../SharedPackages/VPN"),
     ],
     targets: [
 

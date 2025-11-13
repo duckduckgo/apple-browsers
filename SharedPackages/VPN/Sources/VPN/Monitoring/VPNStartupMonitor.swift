@@ -115,4 +115,3 @@ public final class VPNStartupMonitor {
         }
     }
 }
-

@@ -115,4 +115,3 @@ final class VPNEnabledObserverTests: XCTestCase {
         XCTAssertFalse(result)
     }
 }
-

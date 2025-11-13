@@ -579,19 +579,13 @@ final class TabBarItemCellView: NSView {
         titleView.reset()
     }
 
-    // TODO: FIX
-    var title: String {
-        get {
-            displaysTabsProgressIndicator ? titleView.title : titleTextField.stringValue
+    func displayTabTitle(_ title: String) {
+        guard displaysTabsProgressIndicator else {
+            titleTextField.stringValue = title
+            return
         }
-        set {
-            guard displaysTabsProgressIndicator else {
-                titleTextField.stringValue = newValue
-                return
-            }
 
-            titleView.displayTitle(newValue)
-        }
+        titleView.displayTitle(title)
     }
 
     var displaysBurnerHomeTitle: Bool {
@@ -956,7 +950,7 @@ final class TabBarViewItem: NSCollectionViewItem {
 
         representedObject = tabViewModel
         tabViewModel.titlePublisher.sink { [weak self] title in
-            self?.cell.title = title
+            self?.cell.displayTabTitle(title)
         }.store(in: &cancellables)
 
         tabViewModel.faviconPublisher.sink { [weak self] favicon in

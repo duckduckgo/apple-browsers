@@ -20,24 +20,21 @@ import Foundation
 
 /// Represents the origin point from which the user enters the network protection funnel.
 public enum NetworkProtectionFunnelOrigin: String {
-    /// User entered the funnel via the System Settings screen
-    case systemSettings = "funnel_systemsettings_multiple"
 
-    /// User entered the funnel via other entries
-    case others = "funnel_others_multiple"
-}
-
-/// Represents the origin point from which the user enters the network protection funnel in the MacOS app.
-public enum MacOSNetworkProtectionFunnelOrigin: String {
+#if os(iOS)
+    /// User entered the funnel via the App Settings screen
+   case appSettings = "funnel_appsettings_ios"
+#elseif os(macOS)
     /// User entered the funnel via the App Settings screen
     case appSettings = "funnel_appsettings_macos"
 
     /// User entered the funnel via the agent in the menu bar
     case agent = "funnel_agent_macos"
-}
+#endif
+    
+    /// User entered the funnel via the System Settings screen
+    case systemSettings = "funnel_systemsettings_multiple"
 
-/// Represents the origin point from which the user enters the network protection funnel in the iOS app.
-public enum iOSNetworkProtectionFunnelOrigin: String {
-    /// User entered the funnel via the App Settings screen
-    case appSettings = "funnel_appsettings_ios"
+    /// User entered the funnel via other entries
+    case others = "funnel_others_multiple"
 }

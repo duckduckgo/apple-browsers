@@ -371,7 +371,7 @@ final class VPNConnectionWideEventTests: XCTestCase {
         let eventData = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: "funnel_ios_appsettings")
+            contextData: WideEventContextData(name: "Text-Context")
         )
 
         // Create deep nested underlying errors

@@ -115,11 +115,6 @@
                 "pattern": "^-?\\d+$"
             },
             {
-                "key": "app.native_apps_experiments",
-                "type": "string",
-                "description": "Enrolled Native Apps experiments (comma-separated)"
-            },
-            {
                 "key": "context.name",
                 "type": "string",
                 "description": "Context name for the flow",

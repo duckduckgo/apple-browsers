@@ -296,7 +296,7 @@ private extension NetworkProtectionIPCTunnelController {
             // At this step we don't know the type of extension yet
             extensionType: .unknown,
             startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: MacOSNetworkProtectionFunnelOrigin.appSettings.rawValue)
+            contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
         )
         self.connectionWideEventData = data
         wideEvent.startFlow(data)

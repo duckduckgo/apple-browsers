@@ -975,7 +975,7 @@ extension NetworkProtectionTunnelController {
             extensionType: .unknown,
             startupMethod: .manualByMainApp,
             isSetup: self.onboardingStatusRawValue != OnboardingStatus.completed.rawValue,
-            contextData: WideEventContextData(name: MacOSNetworkProtectionFunnelOrigin.agent.rawValue)
+            contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.agent.rawValue)
         )
         self.connectionWideEventData = data
         prefillBrowserStartDataIfAvailable()
@@ -988,7 +988,7 @@ extension NetworkProtectionTunnelController {
     func prefillBrowserStartDataIfAvailable() {
         guard let data = connectionWideEventData else { return }
         guard vpnConnectionWideEventBrowserStartTime != nil || vpnConnectionWideEventOverallStartTime != nil else { return }
-        data.contextData = WideEventContextData(name: MacOSNetworkProtectionFunnelOrigin.appSettings.rawValue)
+        data.contextData = WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
         if let vpnConnectionWideEventBrowserStartTime {
             data.browserStartDuration = WideEvent.MeasuredInterval(start: vpnConnectionWideEventBrowserStartTime)
             data.browserStartDuration?.complete()

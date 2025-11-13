@@ -1392,6 +1392,12 @@ extension Pixel {
         case aiChatHistoryDeleteSuccessful
         case aiChatHistoryDeleteFailed
 
+        // MARK: Customization
+        case customizationAddressBarStarted
+        case customizationAddressBarSelected
+        case customizationToolbarStarted
+        case customizationToolbarSelected
+
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
 
@@ -2862,6 +2868,13 @@ extension Pixel.Event {
         case .recreateTmpWebViewFallbackFailed: return "m_debug_recreate-tmp-webview-fallback-failed"
         case .contentBlockingCompilationFailedMissingTmpDir: return "m_debug_content-blocking-compilation-failed-missing-tmp-dir"
         case .tmpDirStillMissingAfterRecreation: return "m_debug_tmp-dir-still-missing-after-recreation"
+
+        // MARK: Customization
+        case .customizationAddressBarStarted: return "m_customization_addressbar_started"
+        case .customizationAddressBarSelected: return "m_customization_addressbar_selected"
+        case .customizationToolbarStarted: return "m_customization_toolbar_started"
+        case .customizationToolbarSelected: return "m_customization_toolbar_selected"
+
         }
     }
 }

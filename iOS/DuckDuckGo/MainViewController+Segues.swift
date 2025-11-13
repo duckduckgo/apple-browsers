@@ -32,21 +32,21 @@ import DataBrokerProtection_iOS
 extension MainViewController {
 
     func segueToAppearanceSettings() {
-        launchSettings {
+        launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: .appearance)
-        }
+        }, deepLinkTarget: .appearance)
     }
 
     func segueToCustomizeAddressBarSettings() {
-        launchSettings {
+        launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: .customizeAddressBarButton)
-        }
+        }, deepLinkTarget: .customizeAddressBarButton)
     }
 
     func segueToCustomizeToolbarSettings() {
-        launchSettings {
+        launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: .customizeToolbarButton)
-        }
+        }, deepLinkTarget: .customizeToolbarButton)
     }
 
     func segueToDaxOnboarding() {

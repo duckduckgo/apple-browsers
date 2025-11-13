@@ -206,15 +206,3 @@ class DataAuditModel: ObservableObject {
     }
 
 }
-
-extension String.StringInterpolation {
-    mutating func appendInterpolation<T: Encodable>(zxx value: T) {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
-
-        if let result = try? encoder.encode(value) {
-            let str = String(decoding: result, as: UTF8.self)
-            appendLiteral(str)
-        }
-    }
-}

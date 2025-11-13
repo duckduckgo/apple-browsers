@@ -10,7 +10,8 @@
             {
                 "key": "source",
                 "description": "Where the action was initiated from",
-                "type": "string"
+                "type": "string",
+                "enum": ["settings", "passwords_promo", "inline_promo"]
             }
         ]
     },
@@ -25,7 +26,8 @@
             {
                 "key": "source",
                 "description": "Where the action was initiated from",
-                "type": "string"
+                "type": "string",
+                "enum": ["settings", "passwords_promo", "inline_promo"]
             }
         ]
     },
@@ -40,7 +42,8 @@
             {
                 "key": "source",
                 "description": "Where the action was initiated from",
-                "type": "string"
+                "type": "string",
+                "enum": ["settings", "passwords_promo", "inline_promo"]
             }
         ]
     },
@@ -55,7 +58,8 @@
             {
                 "key": "source",
                 "description": "Where the action was initiated from",
-                "type": "string"
+                "type": "string",
+                "enum": ["settings", "passwords_promo", "inline_promo"]
             }
         ]
     },
@@ -70,7 +74,8 @@
             {
                 "key": "source",
                 "description": "Where the action was initiated from",
-                "type": "string"
+                "type": "string",
+                "enum": ["settings", "passwords_promo", "inline_promo"]
             }
         ]
     },
@@ -85,7 +90,8 @@
             {
                 "key": "source",
                 "description": "Where the action was initiated from",
-                "type": "string"
+                "type": "string",
+                "enum": ["settings", "passwords_promo", "inline_promo"]
             }
         ]
     }

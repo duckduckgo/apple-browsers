@@ -484,14 +484,14 @@ extension Pixel {
         case autofillExtensionInlinePromoDisplayed
         case autofillExtensionInlinePromoConfirmed
         case autofillExtensionInlinePromoDismissed
-        case autofillExtensionInlinePromoNeverAgainClicked
+        case autofillExtensionInlinePromoDismissedPermanently
 
-        case autofillExtensionSettingsTurnOnTapped(source: String)
-        case autofillExtensionSettingsTurnOffTapped(source: String)
-        case autofillExtensionSettingsTurnOnSuccess(source: String)
-        case autofillExtensionSettingsTurnOnThrottled(source: String)
-        case autofillExtensionSettingsTurnOnCancelled(source: String)
-        case autofillExtensionSettingsTurnOnFailed(source: String)
+        case autofillExtensionSettingsTurnOnTapped
+        case autofillExtensionSettingsTurnOffTapped
+        case autofillExtensionSettingsTurnOnSuccess
+        case autofillExtensionSettingsTurnOnThrottled
+        case autofillExtensionSettingsTurnOnCancelled
+        case autofillExtensionSettingsTurnOnFailed
 
         case autofillJSPixelFired(_ pixel: AutofillUserScript.JSPixel)
         
@@ -1881,7 +1881,7 @@ extension Pixel.Event {
         case .autofillExtensionInlinePromoDisplayed: return "autofill_extension_inline_promo_displayed"
         case .autofillExtensionInlinePromoConfirmed: return "autofill_extension_inline_promo_confirmed"
         case .autofillExtensionInlinePromoDismissed: return "autofill_extension_inline_promo_dismissed"
-        case .autofillExtensionInlinePromoNeverAgainClicked: return "autofill_extension_inline_promo_never_again_clicked"
+        case .autofillExtensionInlinePromoDismissedPermanently: return "autofill_extension_inline_promo_dismissed_permanently"
 
         case .autofillExtensionSettingsTurnOnTapped: return "autofill_extension_settings_turn_on_tapped"
         case .autofillExtensionSettingsTurnOffTapped: return "autofill_extension_settings_turn_off_tapped"

@@ -472,10 +472,16 @@
 /* Header text shown when the autofill extension is enabled */
 "autofill.extension.header.enabled" = "Autofill in Other Apps Enabled";
 
-/* CTA button title for the Autofill extension promotion banner shown in the Passwords screen */
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Set up Later in Settings";
+
+/* CTA button title for the Autofill extension promotion */
 "autofill.extension.promo.button.title" = "Turn On Autofill in Other Apps";
 
-/* Title for the Autofill extension promotion banner shown in the Passwords screen */
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Use DuckDuckGo to securely autofill passwords for all your apps.";
+
+/* Title for the Autofill extension promotion */
 "autofill.extension.promo.title" = "Quickly sign in to your apps without typing passwords";
 
 /* Title for screen showing autofill extension settings */

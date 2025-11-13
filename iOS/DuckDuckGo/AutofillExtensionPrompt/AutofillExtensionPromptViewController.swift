@@ -65,11 +65,7 @@ class AutofillExtensionPromptViewController: UIViewController {
 
 extension AutofillExtensionPromptViewController: UISheetPresentationControllerDelegate {
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-//        manager.incrementCredentialsImportPromptPresentationCount()
-//        self.completion?(false)
-//
-//        Pixel.fire(pixel: .importCredentialsFlowCancelled)
-//        manager.markPromotionPresented(for: .browser)
+        Pixel.fire(pixel: .autofillExtensionInlinePromoDismissed)
     }
 }
 
@@ -83,7 +79,7 @@ extension AutofillExtensionPromptViewController: AutofillExtensionPromptViewMode
     }
 
     func autofillExtensionPromptViewModelDidSelectSetUpLater(_ viewModel: AutofillExtensionPromptViewModel) {
-        Pixel.fire(pixel: .autofillExtensionInlinePromoDismissed)
+        Pixel.fire(pixel: .autofillExtensionInlinePromoDismissedPermanently)
 
         manager.markPromotionDismissed(for: .browser)
         dismiss(animated: true)

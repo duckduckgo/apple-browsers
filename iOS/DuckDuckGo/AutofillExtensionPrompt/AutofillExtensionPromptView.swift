@@ -47,7 +47,7 @@ struct AutofillExtensionPromptView: View {
                 AutofillViews.Headline(title: UserText.extensionPromotionTitle)
                 Spacer()
                     .frame(height: Const.Size.headlineTopPadding)
-                AutofillViews.Description(text: "Use DuckDuckGo to securely autofill passwords for all your apps.")
+                AutofillViews.Description(text: UserText.extensionPromotionMessage)
                 contentViewSpacer
                 ctaView
                     .padding(.bottom, AutofillViews.isIPad(verticalSizeClass, horizontalSizeClass) ? Const.Size.bottomPaddingIPad
@@ -72,15 +72,7 @@ struct AutofillExtensionPromptView: View {
     }
 
     private func shouldUseScrollView() -> Bool {
-        var useScrollView: Bool = false
-
-        if #available(iOS 16.0, *) {
-            useScrollView = AutofillViews.contentHeightExceedsScreenHeight(viewModel.contentHeight)
-        } else {
-            useScrollView = viewModel.contentHeight > frame.height + Const.Size.ios15scrollOffset
-        }
-
-        return useScrollView
+        AutofillViews.contentHeightExceedsScreenHeight(viewModel.contentHeight)
     }
 
     private struct AnimationView: View {
@@ -97,7 +89,7 @@ struct AutofillExtensionPromptView: View {
                 loopMode: .mode(.loop),
                 isAnimating: $isAnimating
             )
-            .frame(width: 300)
+            .frame(width: Const.Size.animationWidth)
             .aspectRatio(contentMode: .fit)
         }
     }
@@ -117,7 +109,7 @@ struct AutofillExtensionPromptView: View {
             AutofillViews.PrimaryButton(title: UserText.extensionPromotionButtonTitle,
                                         action: viewModel.enableExtensionPressed)
 
-            AutofillViews.TertiaryButton(title: "Set up Later in Settings",
+            AutofillViews.TertiaryButton(title: UserText.extensionPromotionButtonDismissTitle,
                                          action: viewModel.setUpLaterButtonPressed)
         }
     }
@@ -143,11 +135,11 @@ private enum Const {
         static let closeButtonOffsetPortrait: CGFloat = 44.0
         static let closeButtonOffsetPortraitSmallFrame: CGFloat = 16.0
         static let headlineTopPadding: CGFloat = 16.0
-        static let ios15scrollOffset: CGFloat = 80.0
         static let contentSpacerHeight: CGFloat = 24.0
         static let contentSpacerHeightLandscape: CGFloat = 30.0
         static let ctaVerticalSpacing: CGFloat = 8.0
         static let bottomPadding: CGFloat = 12.0
         static let bottomPaddingIPad: CGFloat = 24.0
+        static let animationWidth: CGFloat = 300.0
     }
 }

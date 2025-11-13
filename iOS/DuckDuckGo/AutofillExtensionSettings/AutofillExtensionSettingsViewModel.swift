@@ -72,7 +72,6 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
         self.credentialStore = credentialStore
         self.settingsHelper = settingsHelper
         self.enableRetryThrottleDuration = enableRetryThrottleDuration
-
         Task { await updateExtensionStatus() }
     }
 
@@ -82,14 +81,14 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
     }
 
     func enableExtension() async {
-        Pixel.fire(pixel: .autofillExtensionSettingsTurnOnTapped(source: pixelSource),
+        Pixel.fire(pixel: .autofillExtensionSettingsTurnOnTapped,
                    withAdditionalParameters: [PixelParameters.source: pixelSource])
 
         if isEnableRequestThrottled {
             if let remaining = remainingEnableRequestThrottleInterval, remaining > 0 {
                 // Still throttled - redirect to settings instead
                 await openSettings()
-                Pixel.fire(pixel: .autofillExtensionSettingsTurnOnThrottled(source: pixelSource),
+                Pixel.fire(pixel: .autofillExtensionSettingsTurnOnThrottled,
                            withAdditionalParameters: [PixelParameters.source: pixelSource])
                 return
             }
@@ -109,7 +108,7 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
         guard userChoseToEnable else {
             // User chose "Not Now" - throttle future requests
             startEnableRequestThrottle()
-            Pixel.fire(pixel: .autofillExtensionSettingsTurnOnCancelled(source: pixelSource),
+            Pixel.fire(pixel: .autofillExtensionSettingsTurnOnCancelled,
                        withAdditionalParameters: [PixelParameters.source: pixelSource])
             return
         }
@@ -125,7 +124,7 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
             // Success - show activation confirmation
             isShowingActivationView = true
 
-            Pixel.fire(pixel: .autofillExtensionSettingsTurnOnSuccess(source: pixelSource),
+            Pixel.fire(pixel: .autofillExtensionSettingsTurnOnSuccess,
                        withAdditionalParameters: [PixelParameters.source: pixelSource])
         } else {
             // User chose to enable but extension not enabled - guide user to settings
@@ -133,7 +132,7 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
             startEnableRequestThrottle()
             isShowingActivationView = false
 
-            Pixel.fire(pixel: .autofillExtensionSettingsTurnOnFailed(source: pixelSource),
+            Pixel.fire(pixel: .autofillExtensionSettingsTurnOnFailed,
                        withAdditionalParameters: [PixelParameters.source: pixelSource])
         }
     }
@@ -141,7 +140,7 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
     func disableExtension() async {
         await openSettings()
 
-        Pixel.fire(pixel: .autofillExtensionSettingsTurnOffTapped(source: pixelSource),
+        Pixel.fire(pixel: .autofillExtensionSettingsTurnOffTapped,
                    withAdditionalParameters: [PixelParameters.source: pixelSource])
     }
 

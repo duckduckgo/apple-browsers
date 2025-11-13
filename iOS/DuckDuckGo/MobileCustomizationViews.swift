@@ -95,7 +95,7 @@ struct AddressBarCustomizationPickerView: View, MobileCustomizationView {
                 descriptionForOption($0, isAIChatEnabled: isAIChatEnabled)
             },
             iconProvider: buttonIconProvider)
-        .onAppear() {
+        .onAppear {
             mobileCustomization.fireAddressBarCustomizationStartedPixel()
             startingOption = selectedAddressBarButton
         }
@@ -135,11 +135,11 @@ struct ToolbarCustomizationPickerView: View, MobileCustomizationView {
                 descriptionForOption($0, isAIChatEnabled: isAIChatEnabled)
             },
             iconProvider: buttonIconProvider)
-        .onAppear() {
+        .onAppear {
             startingOption = selectedToolbarButton
             mobileCustomization.fireToolbarCustomizationStartedPixel()
         }
-        .onDisappear() {
+        .onDisappear {
             guard let startingOption else {
                 assertionFailure()
                 return

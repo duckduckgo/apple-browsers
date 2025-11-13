@@ -736,7 +736,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     @MainActor
     private func start(_ tunnelManager: NETunnelProviderManager) async throws {
 
-        let options = try await prepateStartupOptions()
+        let options = try await prepareStartupOptions()
 
         if Self.simulationOptions.isEnabled(.controllerFailure) {
             Self.simulationOptions.setEnabled(false, option: .controllerFailure)
@@ -769,7 +769,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             }
     }
 
-    private func prepateStartupOptions() async throws -> [String: NSObject] {
+    private func prepareStartupOptions() async throws -> [String: NSObject] {
         var options = [String: NSObject]()
 
         options[NetworkProtectionOptionKey.activationAttemptId] = UUID().uuidString as NSString

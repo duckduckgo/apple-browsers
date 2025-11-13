@@ -33,6 +33,7 @@ final class TunnelControllerViewModelTests: XCTestCase {
             serverLocation: TunnelControllerViewModelTests.serverAttributes(),
             serverAddress: "127.0.0.1")
 
+        let vpnEnabledObserver: VPNEnabledObserver
         let statusObserver: ConnectionStatusObserver
         let serverInfoObserver: ConnectionServerInfoObserver
         let connectionErrorObserver: ConnectionErrorObserver
@@ -47,7 +48,12 @@ final class TunnelControllerViewModelTests: XCTestCase {
              tunnelErrorMessage: String? = nil,
              controllerErrorMessage: String? = nil,
              dataVolume: DataVolume = .init(),
-             failure: KnownFailure? = nil) {
+             failure: KnownFailure? = nil,
+             isVPNEnabled: Bool = false) {
+
+            let mockVPNEnabledObserver = MockVPNEnabledObserver()
+            mockVPNEnabledObserver.subject.send(isVPNEnabled)
+            vpnEnabledObserver = mockVPNEnabledObserver
 
             let mockStatusObserver = MockConnectionStatusObserver()
             mockStatusObserver.subject.send(status)

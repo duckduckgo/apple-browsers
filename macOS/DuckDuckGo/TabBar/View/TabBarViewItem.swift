@@ -501,6 +501,7 @@ final class TabBarItemCellView: NSView {
         } else if displaysTabsProgressIndicator && titleView.isShown {
             assert(closeButton.isHidden)
             titleView.frame = NSRect(x: 4, y: bounds.midY - 8, width: bounds.maxX - 8, height: 16)
+            updateTitleTextFieldMask()
         } else if !displaysTabsProgressIndicator && titleTextField.isShown {
             assert(closeButton.isHidden)
             titleTextField.frame = NSRect(x: 4, y: bounds.midY - 8, width: bounds.maxX - 8, height: 16)

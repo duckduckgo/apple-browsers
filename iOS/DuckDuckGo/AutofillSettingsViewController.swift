@@ -201,7 +201,8 @@ final class AutofillSettingsViewController: UIViewController {
 
     private func segueToExtensionManagement() {
         if #available(iOS 18, *) {
-            let autofillExtensionSettingsViewController = AutofillExtensionSettingsViewController(source: .autofillSettings)
+            let extensionSource: AutofillExtensionSettingsViewController.Source = source == .extensionEnablePrompt ? .inlinePromotion : .autofillSettings
+            let autofillExtensionSettingsViewController = AutofillExtensionSettingsViewController(source: extensionSource)
             navigationController?.pushViewController(autofillExtensionSettingsViewController, animated: true)
         }
     }

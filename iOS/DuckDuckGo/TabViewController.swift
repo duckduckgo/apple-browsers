@@ -134,7 +134,7 @@ class TabViewController: UIViewController {
     private lazy var autofillNeverPromptWebsitesManager = AppDependencyProvider.shared.autofillNeverPromptWebsitesManager
     private lazy var autofillWebsiteAccountMatcher = AutofillWebsiteAccountMatcher(autofillUrlMatcher: AutofillDomainNameUrlMatcher(),
                                                                                    tld: TabViewController.tld)
-    private lazy var extensionPromotionManager: ExtensionPromotionManaging = ExtensionPromotionManager(keyValueStore: keyValueStore)
+    private lazy var extensionPromotionManager: AutofillExtensionPromotionManaging = AutofillExtensionPromotionManager(keyValueStore: keyValueStore)
     private(set) var tabModel: Tab
     private(set) var privacyInfo: PrivacyInfo?
     private var previousPrivacyInfosByURL: [URL: PrivacyInfo] = [:]

@@ -478,6 +478,21 @@ extension Pixel {
         case autofillExtensionPasswordSelected
         case autofillExtensionPasswordsSearch
 
+        case autofillExtensionPasswordsPromoDisplayed
+        case autofillExtensionPasswordsPromoConfirmed
+        case autofillExtensionPasswordsPromoDismissed
+        case autofillExtensionInlinePromoDisplayed
+        case autofillExtensionInlinePromoConfirmed
+        case autofillExtensionInlinePromoDismissed
+        case autofillExtensionInlinePromoNeverAgainClicked
+
+        case autofillExtensionSettingsTurnOnTapped(source: String)
+        case autofillExtensionSettingsTurnOffTapped(source: String)
+        case autofillExtensionSettingsTurnOnSuccess(source: String)
+        case autofillExtensionSettingsTurnOnThrottled(source: String)
+        case autofillExtensionSettingsTurnOnCancelled(source: String)
+        case autofillExtensionSettingsTurnOnFailed(source: String)
+
         case autofillJSPixelFired(_ pixel: AutofillUserScript.JSPixel)
         
         case secureVaultError
@@ -1859,6 +1874,21 @@ extension Pixel.Event {
         case .autofillExtensionPasswordsDismissed: return "autofill_extension_passwords_dismissed"
         case .autofillExtensionPasswordSelected: return "autofill_extension_password_selected"
         case .autofillExtensionPasswordsSearch: return "autofill_extension_passwords_search"
+
+        case .autofillExtensionPasswordsPromoDisplayed: return "autofill_extension_passwords_promo_displayed"
+        case .autofillExtensionPasswordsPromoConfirmed: return "autofill_extension_passwords_promo_confirmed"
+        case .autofillExtensionPasswordsPromoDismissed: return "autofill_extension_passwords_promo_dismissed"
+        case .autofillExtensionInlinePromoDisplayed: return "autofill_extension_inline_promo_displayed"
+        case .autofillExtensionInlinePromoConfirmed: return "autofill_extension_inline_promo_confirmed"
+        case .autofillExtensionInlinePromoDismissed: return "autofill_extension_inline_promo_dismissed"
+        case .autofillExtensionInlinePromoNeverAgainClicked: return "autofill_extension_inline_promo_never_again_clicked"
+
+        case .autofillExtensionSettingsTurnOnTapped: return "autofill_extension_settings_turn_on_tapped"
+        case .autofillExtensionSettingsTurnOffTapped: return "autofill_extension_settings_turn_off_tapped"
+        case .autofillExtensionSettingsTurnOnSuccess: return "autofill_extension_settings_turn_on_success"
+        case .autofillExtensionSettingsTurnOnThrottled: return "autofill_extension_settings_turn_on_throttled"
+        case .autofillExtensionSettingsTurnOnCancelled: return "autofill_extension_settings_turn_on_cancelled"
+        case .autofillExtensionSettingsTurnOnFailed: return "autofill_extension_settings_turn_on_failed"
 
         case .autofillJSPixelFired(let pixel):
             return "m_ios_\(pixel.pixelName)"

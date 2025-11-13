@@ -249,7 +249,7 @@ extension MainViewController {
         if showCardManagement || showSettingsScreen != nil {
             launchSettings(configure: { viewModel, controller in
                 controller.decorateNavigationBar()
-                viewModel.shouldPresentAutofillViewWith(accountDetails: nil, card: nil, showCreditCardManagement: showCardManagement, showSettingsScreen: showSettingsScreen, source: nil)
+                viewModel.shouldPresentAutofillViewWith(accountDetails: nil, card: nil, showCreditCardManagement: showCardManagement, showSettingsScreen: showSettingsScreen, source: source)
             })
         } else {
             launchSettings {

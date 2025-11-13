@@ -121,6 +121,8 @@ final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
             }
         )
 
+        Pixel.fire(pixel: .autofillExtensionPasswordsPromoDisplayed)
+
         let hostingController = UIHostingController(rootView: headerView)
         hostingController.view.backgroundColor = .clear
         return hostingController

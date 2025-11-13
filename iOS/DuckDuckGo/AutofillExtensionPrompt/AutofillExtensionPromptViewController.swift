@@ -20,15 +20,16 @@
 import UIKit
 import Persistence
 import SwiftUI
+import Core
 
 class AutofillExtensionPromptViewController: UIViewController {
 
     typealias AutofillExtensionPromptViewControllerCompletion = (_ enableExtension: Bool) -> Void
     let completion: AutofillExtensionPromptViewControllerCompletion
 
-    private let manager: ExtensionPromotionManaging
+    private let manager: AutofillExtensionPromotionManaging
 
-    internal init(extensionPromotionManager: ExtensionPromotionManaging, completion: @escaping AutofillExtensionPromptViewControllerCompletion) {
+    internal init(extensionPromotionManager: AutofillExtensionPromotionManaging, completion: @escaping AutofillExtensionPromptViewControllerCompletion) {
         self.completion = completion
         self.manager = extensionPromotionManager
 
@@ -45,6 +46,7 @@ class AutofillExtensionPromptViewController: UIViewController {
         setupView()
 
         manager.markPromotionPresented(for: .browser)
+        Pixel.fire(pixel: .autofillExtensionInlinePromoDisplayed)
     }
 
     private func setupView() {
@@ -73,6 +75,7 @@ extension AutofillExtensionPromptViewController: UISheetPresentationControllerDe
 
 extension AutofillExtensionPromptViewController: AutofillExtensionPromptViewModelDelegate {
     func autofillExtensionPromptViewModelDidSelectEnableExtension(_ viewModel: AutofillExtensionPromptViewModel) {
+        Pixel.fire(pixel: .autofillExtensionInlinePromoConfirmed)
 
         dismiss(animated: true) { [weak self] in
             self?.completion(true)
@@ -80,12 +83,14 @@ extension AutofillExtensionPromptViewController: AutofillExtensionPromptViewMode
     }
 
     func autofillExtensionPromptViewModelDidSelectSetUpLater(_ viewModel: AutofillExtensionPromptViewModel) {
+        Pixel.fire(pixel: .autofillExtensionInlinePromoDismissed)
 
         manager.markPromotionDismissed(for: .browser)
         dismiss(animated: true)
     }
 
     func autofillExtensionPromptViewModelDidDismiss(_ viewModel: AutofillExtensionPromptViewModel) {
+        Pixel.fire(pixel: .autofillExtensionInlinePromoDismissed)
         dismiss(animated: true)
     }
 

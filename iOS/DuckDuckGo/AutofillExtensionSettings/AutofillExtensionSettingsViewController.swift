@@ -28,9 +28,10 @@ protocol AutofillExtensionSettingsViewControllerDelegate: AnyObject {
 @available(iOS 18.0, *)
 class AutofillExtensionSettingsViewController: UIViewController {
 
-    enum Source {
-        case autofillSettings
-        case passwordsPromotion
+    enum Source: String {
+        case autofillSettings = "settings"
+        case passwordsPromotion = "passwords_promo"
+        case inlinePromotion = "inline_promo"
     }
 
     private let source: Source
@@ -39,7 +40,7 @@ class AutofillExtensionSettingsViewController: UIViewController {
 
     init(source: Source) {
         self.source = source
-        self.viewModel = AutofillExtensionSettingsViewModel()
+        self.viewModel = AutofillExtensionSettingsViewModel(source: source)
         super.init(nibName: nil, bundle: nil)
     }
 

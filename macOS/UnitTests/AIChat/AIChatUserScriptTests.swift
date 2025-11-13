@@ -94,6 +94,38 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertTrue(mockHandler.didGetAIChatPageContext, "getAIChatPageContext should be called")
         XCTAssertNil(result, "Expected result to be nil")
     }
+
+    @MainActor func testStoreMigrationData() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.storeMigrationData.rawValue))
+        let result = try await handler([""], WKScriptMessage())
+
+        XCTAssertTrue(mockHandler.didStoreMigrationData, "storeMigrationData should be called")
+        XCTAssertNil(result, "Expected result to be nil")
+    }
+
+    @MainActor func testGetMigrationDataByIndex() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getMigrationDataByIndex.rawValue))
+        let result = try await handler([""], WKScriptMessage())
+
+        XCTAssertTrue(mockHandler.didGetMigrationDataByIndex, "getMigrationDataByIndex should be called")
+        XCTAssertNil(result, "Expected result to be nil")
+    }
+
+    @MainActor func testGetMigrationInfo() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getMigrationInfo.rawValue))
+        let result = try await handler([""], WKScriptMessage())
+
+        XCTAssertTrue(mockHandler.didGetMigrationInfo, "getMigrationInfo should be called")
+        XCTAssertNil(result, "Expected result to be nil")
+    }
+
+    @MainActor func testClearMigrationData() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.clearMigrationData.rawValue))
+        let result = try await handler([""], WKScriptMessage())
+
+        XCTAssertTrue(mockHandler.didClearMigrationData, "clearMigrationData should be called")
+        XCTAssertNil(result, "Expected result to be nil")
+    }
 }
 
 final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -121,6 +153,12 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
 
     var didReportMetric = false
+
+    // Migration tracking flags
+    var didStoreMigrationData = false
+    var didGetMigrationDataByIndex = false
+    var didGetMigrationInfo = false
+    var didClearMigrationData = false
 
     var messageHandling: any DuckDuckGo_Privacy_Browser.AIChatMessageHandling
 
@@ -219,6 +257,24 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func togglePageContextTelemetry(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
         didTogglePageContextTelemetry = true
+        return nil
+    }
+
+    // Migration data mocks
+    func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
+        didStoreMigrationData = true
+        return nil
+    }
+    func getMigrationDataByIndex(params: Any, message: UserScriptMessage) -> Encodable? {
+        didGetMigrationDataByIndex = true
+        return nil
+    }
+    func getMigrationInfo(params: Any, message: UserScriptMessage) -> Encodable? {
+        didGetMigrationInfo = true
+        return nil
+    }
+    func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
+        didClearMigrationData = true
         return nil
     }
 

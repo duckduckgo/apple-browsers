@@ -81,6 +81,7 @@ final class UserContentUpdating {
          trackerDataManager: TrackerDataManager,
          configStorage: ConfigurationStoring,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
          experimentManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
          tld: TLD,
          featureFlagger: FeatureFlagger,
@@ -92,6 +93,7 @@ final class UserContentUpdating {
          historyCoordinator: HistoryDataSource,
          fireproofDomains: DomainFireproofStatusProviding,
          fireCoordinator: FireCoordinator,
+         autoconsentManagement: AutoconsentManagement,
          contentScopePreferences: ContentScopePreferences
     ) {
         func onNotificationWithInitial(_ name: Notification.Name) -> AnyPublisher<Notification, Never> {
@@ -115,6 +117,7 @@ final class UserContentUpdating {
             let sourceProvider = ScriptSourceProvider(configStorage: configStorage,
                                                       privacyConfigurationManager: privacyConfigurationManager,
                                                       webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                                      cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
                                                       contentBlockingManager: contentBlockerRulesManager,
                                                       trackerDataManager: trackerDataManager,
                                                       experimentManager: experimentManager(),
@@ -128,6 +131,7 @@ final class UserContentUpdating {
                                                       historyCoordinator: historyCoordinator,
                                                       fireproofDomains: fireproofDomains,
                                                       fireCoordinator: fireCoordinator,
+                                                      autoconsentManagement: autoconsentManagement,
                                                       newTabPageActionsManager: self?.newTabPageActionsManager)
             return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider, contentScopePreferences: contentScopePreferences)
         }

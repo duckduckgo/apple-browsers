@@ -527,13 +527,10 @@ struct BrokerProfileScanSubJob {
                                                     brokerId: Int64,
                                                     profileQueryId: Int64,
                                                     extractedProfileId: Int64) {
-        let recordFoundDateProvider = {
-            RecordFoundDateResolver.resolve(brokerQueryProfileData: brokerProfileQueryData,
-                                            repository: database,
-                                            brokerId: brokerId,
-                                            profileQueryId: profileQueryId,
-                                            extractedProfileId: extractedProfileId)
-        }
+        let recordFoundDate = RecordFoundDateResolver.resolve(repository: database,
+                                                              brokerId: brokerId,
+                                                              profileQueryId: profileQueryId,
+                                                              extractedProfileId: extractedProfileId)
         let wideEventId = OptOutWideEventIdentifier(profileIdentifier: profileIdentifier,
                                                     brokerId: brokerId,
                                                     profileQueryId: profileQueryId,
@@ -543,7 +540,7 @@ struct BrokerProfileScanSubJob {
             identifier: wideEventId,
             dataBrokerURL: brokerProfileQueryData.dataBroker.url,
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-            recordFoundDateProvider: recordFoundDateProvider
+            recordFoundDate: recordFoundDate
         )?.markCompleted(at: Date())
     }
 

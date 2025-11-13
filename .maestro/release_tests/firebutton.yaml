@@ -55,8 +55,8 @@ tags:
 - tapOn: "Example Domain"
 
 # Fire button
-- tapOn: "Close Tabs and Clear Data"
-- tapOn: "Close Tabs and Clear Data"
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 
 - assertNotVisible: "https://example.com/"
 - assertVisible: "Search or enter address"
@@ -88,8 +88,8 @@ tags:
 
 - tapOn: "Tab Switcher"
 - assertVisible: "1 Private Tab"
-- tapOn: "Close all tabs and clear data"
-- tapOn: "Close Tabs and Clear Data"
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 
 - assertNotVisible: "https://privacy-test-pages.site/features/local-storage.html"
 - assertVisible: "Search or enter address"
@@ -99,6 +99,40 @@ tags:
 - assertVisible: "1 Private Tab"
 - tapOn: "Done"
 
+# Load Site
+- assertVisible:
+    id: "searchEntry"
+- tapOn: 
+    id: "searchEntry"
 
+- inputText: "ex"
+- assertNotVisible: "example.com"
+- assertNotVisible: "Example Domain"
 
+- pressKey: Backspace
+- pressKey: Backspace
+
+- inputText: "https://privacy-test-pages.site/features/local-storage.html"
+- pressKey: Enter
+- assertVisible: "Storage Counter: undefined"
+- assertVisible: "Cookie Counter:"
+
+# Clear from Data Clearing Settings
+
+- tapOn: "Browsing Menu"
+- tapOn: "Settings"
+- scrollUntilVisible: 
+    element: "Data Clearing"
+- tapOn: "Data Clearing"
+- tapOn: 
+    id: "Settings.DataClearing.Button.ForgetAll"
+- tapOn: 
+    id: "alert.forget-data.confirm"
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn: "Settings"
+- tapOn: "Done"
+
+- assertNotVisible: "https://privacy-test-pages.site/features/local-storage.html"
+- assertVisible: "Search or enter address"
 

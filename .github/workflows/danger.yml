@@ -1,11 +1,16 @@
 name: Shared - Danger JS
 on:
   pull_request:
-    types: [labeled, unlabeled, opened, reopened, edited, synchronize]
+    types: [labeled, unlabeled, opened, reopened, edited, synchronize, ready_for_review]
 
 jobs:
-  build:
+  should-run-checks:
+    name: Determine if checks should run
+    uses: ./.github/workflows/should_run_pr_checks.yml
+  danger:
     name: Danger JS
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -20,22 +20,18 @@ import XCTest
 import Combine
 @testable import DuckDuckGo_Privacy_Browser
 
-class MockTabsPreferencesPersistor: TabsPreferencesPersistor {
-    var preferNewTabsToWindows: Bool = false
-    var switchToNewTabWhenOpened: Bool = false
-    var newTabPosition: NewTabPosition = .atEnd
-    var sharedPinnedTabs: Bool = false
-}
-
 final class PinnedTabsManagerProviderTests: XCTestCase {
 
     private var provider: PinnedTabsManagerProvider!
     private var tabsPreferences: TabsPreferences!
     private var cancellables: Set<AnyCancellable> = []
 
+    @MainActor
     override func setUp() {
-        tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor())
-        provider = PinnedTabsManagerProvider(tabsPreferences: tabsPreferences)
+        tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock())
+        provider = PinnedTabsManagerProvider(sharedPinedTabsManager: Application.appDelegate.pinnedTabsManager)
+        provider.tabsPreferences = tabsPreferences
+        provider.windowControllersManager = Application.appDelegate.windowControllersManager
         clearSharedPinnedTabs()
     }
 

@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Privacybescherming inschakelen";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Tabbladen sluiten en gegevens wissen";
+"action.title.forgetAll" = "Tabbladen en gegevens wissen";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Tabbladen en gegevens gewist";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Tabbladen, gegevens en Duck.ai-chats wissen";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Openen op de achtergrond";
@@ -2356,9 +2359,6 @@
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Kies je browser";
 
-/* Message to highlight browser capability of private searches */
-"onboarding.browsers.features.privateSearch.title" = "Standaard privé zoeken";
-
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo heeft ook een %1$@, beschikbaar met een %2$@ en %3$@.";
 
@@ -2400,18 +2400,6 @@
 
 /* The title of the onboarding dialog popup to select the preferred App icon. */
 "onboarding.highlights.appIconSelection.title" = "Welke kleur staat mij het beste?";
-
-/* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Blokkeer cookiepop-ups";
-
-/* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokkeer gerichte advertenties";
-
-/* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Verwijder browsegegevens met één knop";
-
-/* Message to highlight browser capability of blocking 3rd-party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokkeer trackers van derden";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Bescherming geactiveerd!";
@@ -2812,6 +2800,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Instellingen voor zoek Assist";
 
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Verberg door AI gegenereerde afbeeldingen";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtert door AI gegenereerde afbeeldingen uit de zoekresultaten van afbeeldingen";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Altijd aan";
 
@@ -2826,6 +2820,12 @@
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Uitschakelen om te voorkomen dat links automatisch geopend worden in andere geïnstalleerde apps.";
+
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Tabbladen en gegevens wissen";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Tabbladen, gegevens en Duck.ai-chats wissen";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Zoeksuggesties";
@@ -2871,6 +2871,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Aanpassen";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Sluit alle tabbladen, Duck.ai-chats en wist gegevens van sites die je niet Fireproof hebt gemaakt.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Wist alle tabbladen en gegevens van sites die je niet Fireproof hebt gemaakt.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Gegevens wissen";

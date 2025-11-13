@@ -126,6 +126,8 @@ class TabSwitcherViewController: UIViewController {
 
     private var tabObserverCancellable: AnyCancellable?
     private let appSettings: AppSettings
+    
+    private(set) var aichatFullModeFeature: AIChatFullModeFeatureProviding
 
     required init?(coder: NSCoder,
                    bookmarksDatabase: CoreDataDatabase,
@@ -134,7 +136,8 @@ class TabSwitcherViewController: UIViewController {
                    favicons: Favicons = Favicons.shared,
                    tabManager: TabManager,
                    aiChatSettings: AIChatSettingsProvider,
-                   appSettings: AppSettings) {
+                   appSettings: AppSettings,
+                   aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
@@ -142,6 +145,7 @@ class TabSwitcherViewController: UIViewController {
         self.tabManager = tabManager
         self.aiChatSettings = aiChatSettings
         self.appSettings = appSettings
+        self.aichatFullModeFeature = aichatFullModeFeature
         super.init(coder: coder)
     }
 

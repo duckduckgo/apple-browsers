@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Ενεργοποίηση Προστασίας προσωπικών δεδομένων";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Κλείσιμο καρτελών και εκκαθάριση δεδομένων";
+"action.title.forgetAll" = "Εκκαθάριση καρτελών και δεδομένων";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Έγινε εκκαθάριση καρτελών και δεδομένων";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Εκκαθάριση καρτελών, δεδομένων και συνομιλιών Duck.ai";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Άνοιγμα στο παρασκήνιο";
@@ -2356,9 +2359,6 @@
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Επιλέξτε το πρόγραμμα περιήγησής σας";
 
-/* Message to highlight browser capability of private searches */
-"onboarding.browsers.features.privateSearch.title" = "Ιδιωτική αναζήτηση βάσει προεπιλογής";
-
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "Το DuckDuckGo διαθέτει επίσης μια %1$@, διαθέσιμη με %2$@ και %3$@.";
 
@@ -2400,18 +2400,6 @@
 
 /* The title of the onboarding dialog popup to select the preferred App icon. */
 "onboarding.highlights.appIconSelection.title" = "Ποιο χρώμα μου ταιριάζει καλύτερα;";
-
-/* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Αποκλεισμός αναδυόμενων παραθύρων cookie";
-
-/* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Αποκλεισμός στοχευμένων διαφημίσεων";
-
-/* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Διαγράψτε τα δεδομένα περιήγησης με ένα κουμπί";
-
-/* Message to highlight browser capability of blocking 3rd-party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Αποκλείστε εφαρμογές παρακολούθησης τρίτων";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Η προστασία ενεργοποιήθηκε!";
@@ -2812,6 +2800,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Ρυθμίσεις αναζήτησης Assist";
 
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Απόκρυψη εικόνων που δημιουργήθηκαν από τεχνητή νοημοσύνη";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Φιλτράρει εικόνες που δημιουργήθηκαν από τεχνητή νοημοσύνη από τα αποτελέσματα αναζήτησης εικόνων";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Πάντα σε λειτουργία";
 
@@ -2826,6 +2820,12 @@
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Απενεργοποιήστε για να αποτρέψετε το αυτόματο άνοιγμα συνδέσμων σε άλλες εγκατεστημένες εφαρμογές.";
+
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Εκκαθάριση καρτελών και δεδομένων";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Εκκαθάριση καρτελών, δεδομένων και συνομιλιών Duck.ai";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Προτάσεις αναζήτησης";
@@ -2871,6 +2871,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Προσαρμογή";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Εκκαθαρίζει όλες τις καρτέλες, τις συνομιλίες Duck.ai και τα δεδομένα για οποιονδήποτε ιστότοπο δεν έχετε προστατεύσει με Fireproof.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Εκκαθαρίζει όλες τις καρτέλες και τα δεδομένα για ιστότοπους που δεν έχετε προστατεύσει με Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Διαγραφή δεδομένων";

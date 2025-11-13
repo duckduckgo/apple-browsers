@@ -16,10 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
 import CoreData
+import Foundation
 import Persistence
-import BrowserServicesKit
 
 public class BookmarkCoreDataImporter {
 

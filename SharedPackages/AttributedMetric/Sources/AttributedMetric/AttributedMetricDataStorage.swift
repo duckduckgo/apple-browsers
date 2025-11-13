@@ -36,6 +36,8 @@ public protocol AttributedMetricDataStoring {
 
     /// Date when user purchased the Subscription
     var subscriptionDate: Date? { get set }
+    var subscriptionFreeTrialFired: Bool { get set }
+    var subscriptionMonth1Fired: Bool { get set }
 
     /// Removes all stored metric data.
     func removeAll()
@@ -79,12 +81,12 @@ public enum DataStorageError: DDGError {
 }
 
 /// UserDefaults-backed implementation for storing attributed metric data.
-final class AttributedMetricDataStorage: AttributedMetricDataStoring {
+public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
 
     private let userDefaults: UserDefaults
     private let errorHandler: AttributedMetricErrorHandler
 
-    init(userDefaults: UserDefaults, errorHandler: AttributedMetricErrorHandler) {
+    public init(userDefaults: UserDefaults, errorHandler: AttributedMetricErrorHandler) {
         self.userDefaults = userDefaults
         self.errorHandler = errorHandler
     }
@@ -100,6 +102,8 @@ final class AttributedMetricDataStorage: AttributedMetricDataStoring {
         case adClick8Days
         case duckAIChat8Days
         case subscriptionDate
+        case subscriptionFreeTrial
+        case subscriptionMonth1
     }
 
     // MARK: - Utilities
@@ -138,33 +142,43 @@ final class AttributedMetricDataStorage: AttributedMetricDataStoring {
 
     // MARK: - Retention
 
-    var installDate: Date? {
+    public var installDate: Date? {
         get { return decode(from: userDefaults, key: .installDate) }
         set { encode(newValue, to: userDefaults, key: .installDate) }
     }
 
-    var lastRetentionThreshold: QuantisedTimePast? {
+    public var lastRetentionThreshold: QuantisedTimePast? {
         get { return decode(from: userDefaults, key: .lastRetentionThreshold)}
         set { encode(newValue, to: userDefaults, key: .lastRetentionThreshold) }
     }
 
-    var search8Days: RollingEightDaysInt {
+    public var search8Days: RollingEightDaysInt {
         get { return decode(from: userDefaults, key: .search8Days) ?? RollingEightDaysInt() }
         set { encode(newValue, to: userDefaults, key: .search8Days) }
     }
 
-    var adClick8Days: RollingEightDaysInt {
+    public var adClick8Days: RollingEightDaysInt {
         get { return decode(from: userDefaults, key: .adClick8Days) ?? RollingEightDaysInt() }
         set { encode(newValue, to: userDefaults, key: .adClick8Days) }
     }
 
-    var duckAIChat8Days: RollingEightDaysInt {
+    public var duckAIChat8Days: RollingEightDaysInt {
         get { return decode(from: userDefaults, key: .duckAIChat8Days) ?? RollingEightDaysInt() }
         set { encode(newValue, to: userDefaults, key: .duckAIChat8Days) }
     }
 
-    var subscriptionDate: Date? {
+    public var subscriptionDate: Date? {
         get { return decode(from: userDefaults, key: .subscriptionDate) }
         set { encode(newValue, to: userDefaults, key: .subscriptionDate) }
+    }
+
+    public var subscriptionFreeTrialFired: Bool {
+        get { return decode(from: userDefaults, key: .subscriptionFreeTrial) ?? false }
+        set { encode(newValue, to: userDefaults, key: .subscriptionFreeTrial) }
+    }
+
+    public var subscriptionMonth1Fired: Bool {
+        get { return decode(from: userDefaults, key: .subscriptionMonth1) ?? false }
+        set { encode(newValue, to: userDefaults, key: .subscriptionMonth1) }
     }
 }

@@ -28,7 +28,7 @@ extension WindowsManager {
             throw coder.error ?? NSError(domain: "WindowsManagerStateRestoration", code: -1, userInfo: nil)
         }
 
-        TabsPreferences.shared.migratePinnedTabsSettingIfNecessary(state.applicationPinnedTabs)
+        Application.appDelegate.tabsPreferences.migratePinnedTabsSettingIfNecessary(state.applicationPinnedTabs)
         if let pinnedTabsCollection = state.applicationPinnedTabs {
             Application.appDelegate.windowControllersManager.restorePinnedTabs(pinnedTabsCollection)
         }

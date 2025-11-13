@@ -344,7 +344,7 @@ class AddressBarUITests: UITestCase {
         XCTAssertTrue(helloWorldResult.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Should show Hello, world! result")
 
         let searchURL = app.addressBarValueActivatingIfNeeded() ?? ""
-        XCTAssertTrue(searchURL.hasPrefix("https://duckduckgo.com/?q=hello+world&"), "URL should be a DuckDuckGo search")
+        XCTAssertTrue(searchURL.hasPrefix("https://duckduckgo.com/?q=hello+world&"), "1: URL should be a DuckDuckGo search, got “\(searchURL)”")
 
         // Test email-like input
         app.openNewTab()
@@ -356,7 +356,7 @@ class AddressBarUITests: UITestCase {
         XCTAssertTrue(emailResult.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Should show search results for email")
 
         let emailURL = app.addressBarValueActivatingIfNeeded() ?? ""
-        XCTAssertTrue(emailURL.hasPrefix("https://duckduckgo.com/?q=test%40example.com&"), "URL should be a DuckDuckGo search")
+        XCTAssertTrue(emailURL.hasPrefix("https://duckduckgo.com/?q=test%40example.com&"), "2: URL should be a DuckDuckGo search, got “\(emailURL)”")
 
         // Test file protocol (should fail)
         app.openNewTab()

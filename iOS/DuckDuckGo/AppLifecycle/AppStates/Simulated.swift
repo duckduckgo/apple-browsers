@@ -23,25 +23,34 @@ import UIKit
 @MainActor
 struct Simulated {
 
+    private let rootViewController: UIViewController
+
     init() {
         Pixel.isDryRun = true
         _ = DefaultUserAgentManager.shared
         Database.shared.loadStore { _, _ in }
         try? BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: BookmarksDatabase.make())
 
-        let window = UIWindow(frame: UIScreen.main.bounds)
-        window.rootViewController = UIStoryboard.init(name: "LaunchScreen", bundle: nil).instantiateInitialViewController()
-
+        rootViewController = UIStoryboard.init(name: "LaunchScreen", bundle: nil).instantiateInitialViewController()!
         let blockingDelegate = BlockingNavigationDelegate()
         let webView = blockingDelegate.prepareWebView()
-        window.rootViewController?.view.addSubview(webView)
-        window.rootViewController?.view.backgroundColor = .red
+        rootViewController.view.addSubview(webView)
+        rootViewController.view.backgroundColor = .red
         webView.frame = CGRect(x: 10, y: 10, width: 300, height: 300)
 
-        UIApplication.shared.setWindow(window)
+        if !Bundle.main.supportsScenes {
+            let window = UIWindow(frame: UIScreen.main.bounds)
+            configure(window)
+            UIApplication.shared.setWindow(window)
+        }
 
         let request = URLRequest(url: URL(string: "about:blank")!)
         webView.load(request)
+    }
+
+    func configure(_ window: UIWindow) {
+        window.makeKeyAndVisible()
+        window.rootViewController = rootViewController
     }
 
 }

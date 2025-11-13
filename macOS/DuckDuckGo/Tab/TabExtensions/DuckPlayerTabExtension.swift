@@ -45,6 +45,7 @@ final class DuckPlayerTabExtension {
         preferences.duckPlayerMode == .enabled
     }
     private let preferences: DuckPlayerPreferences
+    private let tabsPreferences: TabsPreferences
 
     private weak var webView: WKWebView? {
         didSet {
@@ -67,11 +68,13 @@ final class DuckPlayerTabExtension {
          scriptsPublisher: some Publisher<some YoutubeScriptsProvider, Never>,
          webViewPublisher: some Publisher<WKWebView, Never>,
          preferences: DuckPlayerPreferences = .shared,
+         tabsPreferences: TabsPreferences,
          onboardingDecider: DuckPlayerOnboardingDecider,
          duckPlayerOverlayPixels: DuckPlayerOverlayPixelFiring = DuckPlayerOverlayUsagePixels()) {
         self.duckPlayer = duckPlayer
         self.isBurner = isBurner
         self.preferences = preferences
+        self.tabsPreferences = tabsPreferences
         self.onboardingDecider = onboardingDecider
         self.duckPlayerOverlayUsagePixels = duckPlayerOverlayPixels
 
@@ -186,7 +189,7 @@ extension DuckPlayerTabExtension: YoutubeOverlayUserScriptDelegate {
         }
 
         let linkOpenBehavior = LinkOpenBehavior(event: NSApp.currentEvent,
-                                                switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+                                                switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
                                                 canOpenLinkInCurrentTab: !(shouldOpenInNewTab || webView.window is PopUpWindow),
                                                 shouldSelectNewTab: true) // select new tab by default; ⌘-click modifies the selection state
         switch linkOpenBehavior {

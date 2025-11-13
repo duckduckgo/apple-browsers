@@ -104,12 +104,11 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
         var appTargets: [XcodeTarget] = []
         var unitTestsTargets: [XcodeTarget] = []
         var integrationTestsTargets: [XcodeTarget] = []
+        var otherTargets: [XcodeTarget] = []
 
         context.xcodeProject.targets.forEach { target in
             switch target.product?.kind {
-            case .application where target.displayName.starts(with: "DuckDuckGo Privacy Browser"):
-                appTargets.append(target)
-            case .application where target.displayName == "DuckDuckGo Privacy Pro": // To be removed after the target is deleted
+            case .application where target.displayName.starts(with: "DuckDuckGo Privacy Browser") && !target.displayName.hasSuffix("launcher"):
                 appTargets.append(target)
             case .other("com.apple.product-type.bundle.unit-test"):
                 if target.displayName.starts(with: "Unit Tests") {
@@ -118,7 +117,7 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
                     integrationTestsTargets.append(target)
                 }
             default:
-                break
+                otherTargets.append(target)
             }
         }
 
@@ -127,6 +126,8 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
         }
 
         var errors = [Error]()
+
+        // Validate sources for App Store and DMG builds are present in both targets
         for targets in [appTargets, unitTestsTargets, integrationTestsTargets] {
             do {
                 try check(targets)
@@ -134,9 +135,103 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
                 errors.append(error)
             }
         }
+
+        // Validate target sources are only in the target's sources folder
+        do {
+            try validateTargetSourceFolders(allTargets: appTargets + unitTestsTargets + integrationTestsTargets + otherTargets, projectDirectory: context.xcodeProject.directory)
+        } catch {
+            errors.append(error)
+        }
+
         try CombinedError(errors: errors).throwIfNonEmpty()
 
         return []
+    }
+
+    /// Validates that files belonging to a target are located in the target's expected sources subfolder
+    /// This validation can be easily disabled by commenting out the call to this function
+    private func validateTargetSourceFolders(allTargets: [XcodeTarget], projectDirectory: Path) throws {
+        var errors = [Error]()
+
+        let fileTargets: [Path: [XcodeTarget]] = allTargets.reduce(into: [:]) { result, target in
+            for file in target.inputFiles where file.type != .unknown {
+                result[file.path, default: []].append(target)
+            }
+        }
+        var missedFiles: Set<Path> = []
+        for target in allTargets {
+            let expectedSourcesFolder = determineExpectedSourcesFolder(for: target)
+
+            for file in target.inputFiles where file.type != .unknown {
+                let filePath = file.path
+
+                // Skip validation for files that don't have a clear expected folder
+                guard !expectedSourcesFolder.isEmpty else { continue }
+                if filePath.lastComponent == "privacy-reference-tests" { continue }
+
+                // Check if the file path starts with the expected sources folder path
+                let expectedSourcesPath = projectDirectory.appending(expectedSourcesFolder)
+                if !filePath.string.hasPrefix(expectedSourcesPath.string) {
+                    missedFiles.insert(filePath)
+                }
+            }
+
+        }
+        for missedFile in missedFiles.sorted(by: { $0.string < $1.string }) where !missedFile.string.hasSuffix(".xcstrings") && !missedFile.string.hasSuffix(".plist") {
+            let error = FileNotInTargetSourcesFolderError(
+                targets: Set(fileTargets[missedFile]!.map(\.displayName)),
+                filePath: missedFile.string
+            )
+            errors.append(error)
+        }
+
+        try CombinedError(errors: errors).throwIfNonEmpty()
+    }
+
+    /// Determines the expected sources folder name for a given target
+    private func determineExpectedSourcesFolder(for target: XcodeTarget) -> String {
+        switch target.displayName {
+        // Test targets
+        case let name where name.starts(with: "Unit Tests"):
+            return "UnitTests"
+        case let name where name.starts(with: "Integration Tests"):
+            return "IntegrationTests"
+        case "UI Tests":
+            return "UITests"
+        case let name where name.starts(with: "SyncE2EUITests"):
+            return "SyncE2EUITests"
+        case "DBPE2ETests":
+            return "DBPE2ETests"
+
+        // Main browser app targets
+        case let name where name.starts(with: "DuckDuckGo Privacy Browser"):
+            return "DuckDuckGo" // Main app sources are in macOS/DuckDuckGo/
+
+        // Utility/test tool targets
+        case "sandbox-test-tool":
+            return "sandbox-test-tool"
+        case "tests-server":
+            return "tests-server"
+
+        // Data Broker Protection app targets
+        case "DuckDuckGoDBPBackgroundAgent", "DuckDuckGoDBPBackgroundAgentAppStore":
+            return "" // "DuckDuckGoDBPBackgroundAgent" // - mixed up for now
+
+        // VPN extension targets
+        case "DuckDuckGoVPN", "DuckDuckGoVPNAppStore", "VPNProxyExtension":
+            return "" // "DuckDuckGoVPN"// - mixed up for now
+        // VPN app targets
+        case "DuckDuckGoVPNSysexAppStore", "NetworkProtectionSystemExtension":
+            return "" // "NetworkExtensions" // - mixed up for now
+        case "NetworkProtectionAppExtension":
+            return "" // "NetworkProtectionAppExtension"  // - mixed up for now
+
+        // Notification app
+        case "DuckDuckGoNotifications":
+            return "" // "DuckDuckGoNotifications" // - mixed up for now
+        default:
+            return target.displayName
+        }
     }
 
     private func check(_ targets: [XcodeTarget]) throws {

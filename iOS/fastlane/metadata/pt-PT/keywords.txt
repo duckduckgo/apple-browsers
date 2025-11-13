@@ -1,1 +1,1 @@
-ddg,duckduckgo,duck duck go,Pesquisa Web,Pesquisa,Browser,Dicionário,Respostas,Referência,Internet
+web,encriptar,pesquisa,seguro,rastreador,dados,anónimo,anúncio,bloqueio,vpn,ai,chat,bot,assistente

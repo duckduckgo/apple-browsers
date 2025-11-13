@@ -269,6 +269,9 @@
         "pproSubscriber": {
           "value": true
         },
+        "subscriptionFreeTrialActive": {
+          "value": true
+        },
         "pproPurchasePlatform": {
           "value": ["apple", "stripe"]
         },

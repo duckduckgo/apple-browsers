@@ -22,6 +22,12 @@ import Combine
 import WebKit
 import SwiftUI
 
+/// Defines how the AI Chat view controller should be presented
+public enum AIChatPresentationMode {
+    case modal        // Shows title bar with close button for modal presentation
+    case container    // No title bar, fills available space for container presentation
+}
+
 /// A protocol that defines the delegate methods for `AIChatViewController`.
 public protocol AIChatViewControllerDelegate: AnyObject {
     /// Tells the delegate that a request to load a URL has been made.
@@ -49,6 +55,7 @@ public final class AIChatViewController: UIViewController {
     private let chatModel: AIChatViewModeling
     private var webViewController: AIChatWebViewController?
     private var cancellables = Set<AnyCancellable>()
+    private let presentationMode: AIChatPresentationMode
 
     public var webView: WKWebView? {
         webViewController?.webView
@@ -72,23 +79,26 @@ public final class AIChatViewController: UIViewController {
     ///   - requestAuthHandler: A `AIChatRequestAuthorizationHandling` object to handle decide policy callbacks
     ///   - inspectableWebView: Boolean indicating if the webView should be inspectable
     ///   - downloadsPath: URL indicating the path where downloads should be saved
+    ///   - presentationMode: How the view controller should be presented (modal with title bar or container without)
     public convenience init(settings: AIChatSettingsProvider,
                             webViewConfiguration: WKWebViewConfiguration,
                             requestAuthHandler: AIChatRequestAuthorizationHandling,
                             inspectableWebView: Bool,
                             downloadsPath: URL,
-                            userAgentManager: AIChatUserAgentProviding) {
+                            userAgentManager: AIChatUserAgentProviding,
+                            presentationMode: AIChatPresentationMode = .modal) {
         let chatModel = AIChatViewModel(webViewConfiguration: webViewConfiguration,
                                         settings: settings,
                                         requestAuthHandler: requestAuthHandler,
                                         inspectableWebView: inspectableWebView,
                                         downloadsPath: downloadsPath,
                                         userAgentManager: userAgentManager)
-        self.init(chatModel: chatModel)
+        self.init(chatModel: chatModel, presentationMode: presentationMode)
     }
 
-    internal init(chatModel: AIChatViewModeling) {
+    internal init(chatModel: AIChatViewModeling, presentationMode: AIChatPresentationMode = .modal) {
         self.chatModel = chatModel
+        self.presentationMode = presentationMode
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -103,7 +113,11 @@ extension AIChatViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
         self.view.backgroundColor = .black
-        setupTitleBar()
+
+        if presentationMode == .modal {
+            setupTitleBar()
+        }
+
         addWebViewController()
     }
 }
@@ -153,8 +167,18 @@ extension AIChatViewController {
         view.addSubview(viewController.view)
         viewController.view.translatesAutoresizingMaskIntoConstraints = false
 
+        let topAnchor: NSLayoutYAxisAnchor
+        switch presentationMode {
+        case .modal:
+            // In modal mode, web view starts below title bar
+            topAnchor = titleBarView.bottomAnchor
+        case .container:
+            // In container mode, web view fills entire available space
+            topAnchor = view.safeAreaLayoutGuide.topAnchor
+        }
+
         NSLayoutConstraint.activate([
-            viewController.view.topAnchor.constraint(equalTo: titleBarView.bottomAnchor),
+            viewController.view.topAnchor.constraint(equalTo: topAnchor),
             viewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             viewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             viewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)

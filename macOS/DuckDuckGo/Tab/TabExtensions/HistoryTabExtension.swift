@@ -29,6 +29,7 @@ final class HistoryTabExtension: NSObject {
     private let historyCoordinating: HistoryCoordinating
     private let isCapturingHistory: Bool
 
+    @MainActor
     private(set) var localHistory: [Visit] {
         get {
             loadRestoredLocalHistoryIfNeeded()
@@ -50,7 +51,9 @@ final class HistoryTabExtension: NSObject {
     private var url: URL? {
         willSet {
             guard let oldValue = url else { return }
-            historyCoordinating.commitChanges(url: oldValue)
+            MainActor.assumeMainThread {
+                historyCoordinating.commitChanges(url: oldValue)
+            }
         }
         didSet {
             visitState = .expected
@@ -77,13 +80,15 @@ final class HistoryTabExtension: NSObject {
             guard let self,
                   let url = URL(string: tracker.request.pageUrl) else { return }
 
-            switch tracker.type {
-            case .tracker:
-                self.historyCoordinating.addDetectedTracker(tracker.request, on: url)
-            case .trackerWithSurrogate:
-                self.historyCoordinating.addDetectedTracker(tracker.request, on: url)
-            case .thirdPartyRequest:
-                break
+            MainActor.assumeMainThread {
+                switch tracker.type {
+                case .tracker:
+                    self.historyCoordinating.addDetectedTracker(tracker.request, on: url)
+                case .trackerWithSurrogate:
+                    self.historyCoordinating.addDetectedTracker(tracker.request, on: url)
+                case .thirdPartyRequest:
+                    break
+                }
             }
         }.store(in: &cancellables)
 
@@ -95,7 +100,9 @@ final class HistoryTabExtension: NSObject {
             .sink { [weak self] title in
                 guard let self,
                       let title else { return }
-                self.updateVisitTitle(title)
+                MainActor.assumeMainThread {
+                    self.updateVisitTitle(title)
+                }
             }
             .store(in: &cancellables)
 
@@ -105,6 +112,7 @@ final class HistoryTabExtension: NSObject {
                                                object: nil)
     }
 
+    @MainActor
     private func addVisit() {
         guard isCapturingHistory else { return }
 
@@ -122,6 +130,7 @@ final class HistoryTabExtension: NSObject {
         self.visitState = .added
     }
 
+    @MainActor
     private func updateVisitTitle(_ title: String) {
         guard isCapturingHistory else { return }
 
@@ -133,9 +142,12 @@ final class HistoryTabExtension: NSObject {
         guard isCapturingHistory else { return }
 
         guard let url else { return }
-        historyCoordinating.commitChanges(url: url)
+        DispatchQueue.main.asyncOrNow { [historyCoordinating] in
+            historyCoordinating.commitChanges(url: url)
+        }
     }
 
+    @MainActor
     private func loadRestoredLocalHistoryIfNeeded() {
         if !localHistoryIDs.isEmpty {
             let storedLocalHistory = localHistoryIDs.compactMap { id in
@@ -148,14 +160,15 @@ final class HistoryTabExtension: NSObject {
         }
     }
 
+    @MainActor
     func clearNavigationHistory(keepingCurrent: Bool) {
-        var indices = localHistory.indices
+        var indicesToRemove = localHistory.indices
         if keepingCurrent,
            let lastVisit = localHistory.last, lastVisit.historyEntry?.url == self.url {
-            indices.removeLast()
+            indicesToRemove.removeLast()
         }
-        if !indices.isEmpty {
-            localHistory.removeSubrange(indices)
+        if !indicesToRemove.isEmpty {
+            localHistory.removeSubrange(indicesToRemove)
         }
     }
 
@@ -180,14 +193,17 @@ extension HistoryTabExtension: NSCodingExtension {
     }
 
     func encode(using coder: NSCoder) {
-        let ids = localHistory.compactMap { $0.identifier }
-        coder.encode(ids, forKey: NSSecureCodingKeys.visitedDomains)
+        MainActor.assumeMainThread {
+            let ids = localHistory.compactMap { $0.identifier }
+            coder.encode(ids, forKey: NSSecureCodingKeys.visitedDomains)
+        }
     }
 
 }
 
 extension HistoryCoordinating {
 
+    @MainActor
     func addDetectedTracker(_ tracker: DetectedRequest, on url: URL) {
         trackerFound(on: url)
 

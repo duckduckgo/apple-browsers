@@ -104,6 +104,7 @@ class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
         self.showAIChatButton = showAIChatButton
 
         self.fireButton.accessibilityLabel = "Close all tabs and clear data"
+        self.fireButton.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
         self.tabSwitcherStyleButton.accessibilityLabel = "Toggle between grid and list view"
         self.duckChatButton.accessibilityLabel = UserText.duckAiFeatureName
 

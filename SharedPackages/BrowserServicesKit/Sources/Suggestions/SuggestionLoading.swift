@@ -20,6 +20,7 @@ import Foundation
 
 public protocol SuggestionLoading: AnyObject {
 
+    @MainActor
     func getSuggestions(query: String,
                         usingDataSource dataSource: SuggestionLoadingDataSource,
                         completion: @escaping (SuggestionResult?, Error?) -> Void)
@@ -46,6 +47,7 @@ public class SuggestionLoader: SuggestionLoading {
         self.isUrlIgnored = isUrlIgnored
     }
 
+    @MainActor
     public func getSuggestions(query: String,
                                usingDataSource dataSource: SuggestionLoadingDataSource,
                                completion: @escaping (SuggestionResult?, Error?) -> Void) {
@@ -115,11 +117,11 @@ public protocol SuggestionLoadingDataSource: AnyObject {
 
     func bookmarks(for suggestionLoading: SuggestionLoading) -> [Bookmark]
 
-    func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion]
+    @MainActor func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion]
 
-    func internalPages(for suggestionLoading: SuggestionLoading) -> [InternalPage]
+    @MainActor func internalPages(for suggestionLoading: SuggestionLoading) -> [InternalPage]
 
-    func openTabs(for suggestionLoading: SuggestionLoading) -> [BrowserTab]
+    @MainActor func openTabs(for suggestionLoading: SuggestionLoading) -> [BrowserTab]
 
     func suggestionLoading(_ suggestionLoading: SuggestionLoading,
                            suggestionDataFromUrl url: URL,

@@ -107,7 +107,7 @@ extension MainViewController: EmailManagerAliasPermissionDelegate {
 
         let emailSignupPromptViewController = EmailSignupPromptViewController { shouldContinue in
             if shouldContinue {
-                let signupViewController = EmailSignupViewController { shouldContinue in
+                let signupViewController = EmailSignupViewController(contentBlockingAssetsPublisher: self.contentBlockingAssetsPublisher) { shouldContinue in
                     completionHandler(shouldContinue)
                 }
                 let signupNavigationController = UINavigationController(rootViewController: signupViewController)

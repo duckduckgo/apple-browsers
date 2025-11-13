@@ -7,7 +7,7 @@
         "parameters": ["appVersion"]
     },
     "m_customization_toolbar_started": {
-        "description": "Fires when the user starts the address bar customization page",
+        "description": "Fires when the user starts the toolbar customization page",
         "owners": ["brindy"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],

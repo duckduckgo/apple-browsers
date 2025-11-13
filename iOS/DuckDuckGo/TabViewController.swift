@@ -1852,6 +1852,7 @@ extension TabViewController: WKNavigationDelegate {
             detectedLoginURL = nil
             saveLoginPromptLastDismissed = nil
             saveLoginPromptIsPresenting = false
+            shouldShowAutofillExtensionPrompt = false
         }
     }
 

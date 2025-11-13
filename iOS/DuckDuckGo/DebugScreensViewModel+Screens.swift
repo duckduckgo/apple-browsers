@@ -52,7 +52,7 @@ extension DebugScreensViewModel {
                 try? d.keyValueStore.set(nil, forKey: SettingsViewModel.Constants.shouldCheckIfDefaultBrowserKey)
             }),
             .action(title: "Generate Diagnostic Report", { d in
-                guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
+                guard let controller = UIApplication.shared.firstKeyWindow?.rootViewController?.presentedViewController else { return }
 
                 class Delegate: NSObject, DiagnosticReportDataSourceDelegate {
                     func dataGatheringStarted() {
@@ -68,6 +68,7 @@ extension DebugScreensViewModel {
             }),
             .action(title: "Show New AddressBar Modal", showNewAddressBarModal),
             .action(title: "Reset New Address Bar Picker Data", resetNewAddressBarPickerData),
+            .action(title: "Reset Prompts Cooldown Period", resetModalPromptsCooldownPeriod),
 
             // MARK: SwiftUI Views
             .view(title: "AI Chat", { _ in
@@ -129,6 +130,12 @@ extension DebugScreensViewModel {
             }),
             .view(title: "Win-back Offer", { d in
                 WinBackOfferDebugView(keyValueStore: d.keyValueStore)
+            }),
+            .view(title: "Modal Prompt Coordination", { d in
+                ModalPromptCoordinationDebugView(keyValueStore: d.keyValueStore)
+            }),
+            .view(title: "What's New", { d in
+                WhatsNewDebugView(keyValueStore: d.keyValueStore)
             }),
 
             // MARK: Controllers
@@ -238,8 +245,8 @@ extension DebugScreensViewModel {
     }
     
     private func showNewAddressBarModal(_ dependencies: DebugScreen.Dependencies) {
-        guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
-        
+        guard let controller = UIApplication.shared.firstKeyWindow?.rootViewController?.presentedViewController else { return }
+
         let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: AIChatSettings())
         pickerViewController.modalPresentationStyle = .pageSheet
         pickerViewController.modalTransitionStyle = .coverVertical
@@ -249,10 +256,19 @@ extension DebugScreensViewModel {
     }
     
     private func resetNewAddressBarPickerData(_ dependencies: DebugScreen.Dependencies) {
-        let pickerStorage = NewAddressBarPickerStorage()
+        let pickerStorage = NewAddressBarPickerStore()
         pickerStorage.reset()
         
         ActionMessageView.present(message: "New Address Bar Picker data reset successfully")
+    }
+
+    private func resetModalPromptsCooldownPeriod(_ dependencies: DebugScreen.Dependencies) {
+        let store = PromptCooldownKeyValueFilesStore(
+            keyValueStore: dependencies.keyValueStore,
+            eventMapper: .init(mapping: { _, _, _, _ in })
+        )
+
+        store.lastPresentationTimestamp = nil
     }
 
 }

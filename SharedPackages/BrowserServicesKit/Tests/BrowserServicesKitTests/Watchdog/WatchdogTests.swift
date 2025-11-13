@@ -112,13 +112,13 @@ final class WatchdogTests: XCTestCase {
         XCTAssertFalse(isPaused, "Should not be paused initially")
 
         await watchdog.pause()
-        XCTAssertTrue(watchdog.isRunning, "Watchdog should still be running after pause")
+        XCTAssertFalse(watchdog.isRunning, "Watchdog should not be running after pause")
 
         isPaused = await watchdog.isPaused
         XCTAssertTrue(isPaused, "Should be paused after pause()")
 
         await watchdog.resume()
-        XCTAssertTrue(watchdog.isRunning, "Watchdog should still be running after resume")
+        XCTAssertTrue(watchdog.isRunning, "Watchdog should be running after resume")
 
         isPaused = await watchdog.isPaused
         XCTAssertFalse(isPaused, "Should not be paused after resume()")
@@ -416,11 +416,11 @@ final class WatchdogTests: XCTestCase {
         throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/project/1200194497630846/task/1211604496994582?focus=true")
 
         let minimumDuration = 0.2
-        let maximumDuration = 0.4
+        let maximumDuration = 1.0
         let checkInterval   = 0.1
 
         let mockKill = MockKillAppFunction()
-        let watchdog = Watchdog(minimumHangDuration: minimumDuration, maximumHangDuration: maximumDuration, checkInterval: checkInterval, killAppFunction: mockKill.killApp)
+        let watchdog = Watchdog(minimumHangDuration: minimumDuration, maximumHangDuration: maximumDuration, checkInterval: checkInterval, requiredRecoveryHeartbeats: 2, killAppFunction: mockKill.killApp)
 
         var receivedStates: [(hangState: Watchdog.HangState, duration: TimeInterval?)] = []
         let cancellable = await watchdog.hangStatePublisher

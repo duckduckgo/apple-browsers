@@ -40,4 +40,5 @@ final class MockDefaultBrowserAndDockPromptStore: DefaultBrowserAndDockPromptSto
     var bannerShownDate: TimeInterval?
     var bannerShownOccurrences: Int = 0
     var isBannerPermanentlyDismissed = false
+    var inactiveUserModalShownDate: TimeInterval?
 }

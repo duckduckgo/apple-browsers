@@ -41,21 +41,21 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     private var hostingController: UIHostingController<AnyView>?
 
-    private let messageNavigationDelegate: MessageNavigationDelegate
-
     private let appSettings: AppSettings
     private let appWidthObserver: AppWidthObserver
 
     private let internalUserCommands: URLBasedDebugCommands
 
-    init(tab: Tab,
+    init(isFocussedState: Bool,
+         dismissKeyboardOnScroll: Bool,
+         tab: Tab,
          interactionModel: FavoritesListInteracting,
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
          subscriptionDataReporting: SubscriptionDataReporting? = nil,
          newTabDialogFactory: any NewTabDaxDialogProvider,
          daxDialogsManager: NewTabDialogSpecProvider & SubscriptionPromotionCoordinating,
          faviconLoader: FavoritesFaviconLoading,
-         messageNavigationDelegate: MessageNavigationDelegate,
+         remoteMessagingActionHandler: RemoteMessagingActionHandling,
          appSettings: AppSettings,
          internalUserCommands: URLBasedDebugCommands,
          narrowLayoutInLandscape: Bool = false,
@@ -64,19 +64,20 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         self.associatedTab = tab
         self.newTabDialogFactory = newTabDialogFactory
         self.daxDialogsManager = daxDialogsManager
-        self.messageNavigationDelegate = messageNavigationDelegate
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
         self.internalUserCommands = internalUserCommands
 
         newTabPageViewModel = NewTabPageViewModel()
-        favoritesModel = FavoritesViewModel(favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
+        favoritesModel = FavoritesViewModel(isFocussedState: isFocussedState,
+                                            favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader)
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 subscriptionDataReporter: subscriptionDataReporting,
-                                                navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate))
+                                                messageActionHandler: remoteMessagingActionHandler)
 
         super.init(rootView: NewTabPageView(narrowLayoutInLandscape: narrowLayoutInLandscape,
+                                            dismissKeyboardOnScroll: dismissKeyboardOnScroll,
                                             viewModel: self.newTabPageViewModel,
                                             messagesModel: self.messagesModel,
                                             favoritesViewModel: self.favoritesModel))

@@ -23,11 +23,13 @@ import History
 import MaliciousSiteProtection
 import OHHTTPStubs
 import OHHTTPStubsSwift
+import os.log
 import PrivacyDashboard
+import SharedTestUtilities
 import SpecialErrorPages
 import Suggestions
 import XCTest
-import os.log
+
 @testable import DuckDuckGo_Privacy_Browser
 
 @available(macOS 12.0, *)
@@ -85,7 +87,7 @@ class AddressBarTests: XCTestCase {
         NSApp.delegateTyped.startupPreferences.customHomePageURL = URL.duckDuckGo.absoluteString
         NSApp.delegateTyped.startupPreferences.launchToCustomHomePage = false
 
-        TabsPreferences.shared.pinnedTabsMode = .shared
+        NSApp.delegateTyped.tabsPreferences.pinnedTabsMode = .shared
 
         NSApp.activate(ignoringOtherApps: true)
     }
@@ -107,7 +109,7 @@ class AddressBarTests: XCTestCase {
             NSError.disableSwizzledDescription = false
             NSApp.delegateTyped.startupPreferences.launchToCustomHomePage = false
 
-            TabsPreferences.shared.pinnedTabsMode = .separate
+            NSApp.delegateTyped.tabsPreferences.pinnedTabsMode = .separate
 
             HTTPStubs.removeAllStubs()
         }

@@ -291,7 +291,7 @@ struct LegacyDataImportView: ModalView {
         .padding(.bottom, 20)
         VStack(alignment: .leading) {
             // manual file import instructions for CSV/HTML
-            NewFileImportView(source: model.importSource, allowedFileTypes: Array(fileTypes), isButtonDisabled: model.isSelectFileButtonDisabled) {
+            NewFileImportView(source: model.importSource, allowedFileTypes: Array(fileTypes), isButtonDisabled: model.isSelectFileButtonDisabled, kind: .archive) {
                 model.selectFile()
             } onFileDrop: { url in
                 model.initiateImport(fileURL: url)

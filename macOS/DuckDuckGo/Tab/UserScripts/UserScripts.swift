@@ -87,7 +87,7 @@ final class UserScripts: UserScriptsProvider {
         )
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider())
 
-        let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
+        let isGPCEnabled = sourceProvider.webTrackingProtectionPreferences.isGPCEnabled
         let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig
         let sessionKey = sourceProvider.sessionKey ?? ""
         let messageSecret = sourceProvider.messageSecret ?? ""
@@ -111,7 +111,12 @@ final class UserScripts: UserScriptsProvider {
 
         autofillScript = WebsiteAutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider!)
 
-        autoconsentUserScript = AutoconsentUserScript(scriptSource: sourceProvider, config: sourceProvider.privacyConfigurationManager.privacyConfig, statsManager: NSApp.delegateTyped.autoconsentDailyStats)
+        autoconsentUserScript = AutoconsentUserScript(
+            config: sourceProvider.privacyConfigurationManager.privacyConfig,
+            statsManager: NSApp.delegateTyped.autoconsentDailyStats,
+            management: sourceProvider.autoconsentManagement,
+            preferences: sourceProvider.cookiePopupProtectionPreferences
+        )
 
         let lenguageCode = Locale.current.languageCode ?? "en"
         specialErrorPageUserScript = SpecialErrorPageUserScript(localeStrings: SpecialErrorPageUserScript.localeStrings(for: lenguageCode),

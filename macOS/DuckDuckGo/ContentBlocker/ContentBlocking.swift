@@ -72,12 +72,15 @@ final class AppContentBlocking {
         onboardingNavigationDelegate: OnboardingNavigating,
         appearancePreferences: AppearancePreferences,
         startupPreferences: StartupPreferences,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+        cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
         windowControllersManager: WindowControllersManagerProtocol,
         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
         historyCoordinator: HistoryDataSource,
         fireproofDomains: DomainFireproofStatusProviding,
         fireCoordinator: FireCoordinator,
         tld: TLD,
+        autoconsentManagement: AutoconsentManagement,
         contentScopePreferences: ContentScopePreferences
     ) {
         let privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
@@ -95,12 +98,15 @@ final class AppContentBlocking {
             onboardingNavigationDelegate: onboardingNavigationDelegate,
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
             windowControllersManager: windowControllersManager,
             bookmarkManager: bookmarkManager,
             historyCoordinator: historyCoordinator,
             fireproofDomains: fireproofDomains,
             fireCoordinator: fireCoordinator,
             tld: tld,
+            autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences
         )
     }
@@ -115,12 +121,15 @@ final class AppContentBlocking {
         onboardingNavigationDelegate: OnboardingNavigating,
         appearancePreferences: AppearancePreferences,
         startupPreferences: StartupPreferences,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+        cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
         windowControllersManager: WindowControllersManagerProtocol,
         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
         historyCoordinator: HistoryDataSource,
         fireproofDomains: DomainFireproofStatusProviding,
         fireCoordinator: FireCoordinator,
         tld: TLD,
+        autoconsentManagement: AutoconsentManagement,
         contentScopePreferences: ContentScopePreferences
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -144,7 +153,8 @@ final class AppContentBlocking {
                                                   privacyConfigurationManager: privacyConfigurationManager,
                                                   trackerDataManager: trackerDataManager,
                                                   configStorage: configurationStore,
-                                                  webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared,
+                                                  webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                                  cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
                                                   experimentManager: contentScopeExperimentsManager(),
                                                   tld: tld,
                                                   featureFlagger: featureFlagger,
@@ -156,6 +166,7 @@ final class AppContentBlocking {
                                                   historyCoordinator: historyCoordinator,
                                                   fireproofDomains: fireproofDomains,
                                                   fireCoordinator: fireCoordinator,
+                                                  autoconsentManagement: autoconsentManagement,
                                                   contentScopePreferences: contentScopePreferences)
 
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,

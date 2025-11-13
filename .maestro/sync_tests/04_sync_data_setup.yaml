@@ -13,8 +13,8 @@ name: 04_sync_data_setup
 # Add local favorite and bookmark
 - runFlow:
     file: ../shared/add_bookmarks_and_favorites.yaml
-- tapOn: Close Tabs and Clear Data
-- tapOn: Close Tabs and Clear Data
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 
 # Add local login
 - runFlow:

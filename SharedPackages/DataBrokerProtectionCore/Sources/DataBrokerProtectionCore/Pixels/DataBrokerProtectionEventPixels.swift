@@ -51,10 +51,10 @@ public final class DataBrokerProtectionEventPixelsUserDefaults: DataBrokerProtec
 
 public final class DataBrokerProtectionEventPixels {
 
-    enum Consts {
-        static let orphanedSessionThreshold: TimeInterval = .hours(1)
-        static let minimumValidDurationMs: Double = 0
-        static let maximumValidDurationMs: Double = TimeInterval.day * 1000.0
+    public enum Consts {
+        public static let orphanedSessionThreshold: TimeInterval = .hours(1)
+        public static let minimumValidDurationMs: Double = 0
+        public static let maximumValidDurationMs: Double = TimeInterval.day * 1000.0
     }
 
     private let database: DataBrokerProtectionRepository
@@ -121,48 +121,21 @@ public final class DataBrokerProtectionEventPixels {
         do {
             let events = try database.fetchBackgroundTaskEvents(since: .daysAgo(7))
 
-            // Group events by sessionId to calculate metrics
-            let sessionGroups = Dictionary(grouping: events, by: \.sessionId)
-
-            var startedCount = 0
-            var orphanedCount = 0
-            var completedCount = 0
-            var terminatedCount = 0
-            var durations: [Double] = []
-
-            for (_, sessionEvents) in sessionGroups where sessionEvents[.started] != nil {
-                startedCount += 1
-
-                if let endEvent = sessionEvents[.completed] ?? sessionEvents[.terminated] {
-                    if endEvent.eventType == .completed {
-                        completedCount += 1
-                    } else {
-                        terminatedCount += 1
-                    }
-
-                    // Exclude invalid durations (negative) & outliers (session lasting more than a day)
-                    if let durationMs = endEvent.metadata?.duration, durationMs > Consts.minimumValidDurationMs, durationMs < Consts.maximumValidDurationMs {
-                        durations.append(durationMs)
-                    }
-                } else if let startEvent = sessionEvents[.started],
-                          Date().timeIntervalSince(startEvent.timestamp) > Consts.orphanedSessionThreshold {
-                    // Consider orphaned if the session started more than the threshold
-                    orphanedCount += 1
-                }
-            }
-
-            let durationMinMs = durations.min() ?? 0
-            let durationMaxMs = durations.max() ?? 0
-            let durationMedianMs = durations.median()
+            let metrics = BackgroundTaskEvent.calculateSessionMetrics(
+                from: events,
+                orphanedThreshold: Consts.orphanedSessionThreshold,
+                durationRange: Consts.minimumValidDurationMs...Consts.maximumValidDurationMs,
+                now: Date()
+            )
 
             handler.fire(.weeklyReportBackgroundTaskSession(
-                started: startedCount,
-                orphaned: orphanedCount,
-                completed: completedCount,
-                terminated: terminatedCount,
-                durationMinMs: Double(durationMinMs),
-                durationMaxMs: Double(durationMaxMs),
-                durationMedianMs: durationMedianMs
+                started: metrics.started,
+                orphaned: metrics.orphaned,
+                completed: metrics.completed,
+                terminated: metrics.terminated,
+                durationMinMs: Double(metrics.durationMinMs),
+                durationMaxMs: Double(metrics.durationMaxMs),
+                durationMedianMs: metrics.durationMedianMs
             ))
         } catch {
             Logger.dataBrokerProtection.error("Failed to fetch background task events: \(error.localizedDescription, privacy: .public)")
@@ -305,21 +278,6 @@ private extension Int {
             return "75-100"
         } else {
             return "error"
-        }
-    }
-}
-
-private extension Array where Element == Double {
-    func median() -> Double {
-        guard !isEmpty else { return 0 }
-
-        let sorted = self.sorted()
-        let count = sorted.count
-
-        if count % 2 == 0 {
-            return Double((sorted[count / 2 - 1] + sorted[count / 2]) / 2)
-        } else {
-            return Double(sorted[count / 2])
         }
     }
 }

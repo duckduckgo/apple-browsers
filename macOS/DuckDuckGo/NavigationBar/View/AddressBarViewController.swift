@@ -85,6 +85,8 @@ final class AddressBarViewController: NSViewController {
     private var tabViewModel: TabViewModel?
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
+    private let searchPreferences: SearchPreferences
+    private let tabsPreferences: TabsPreferences
     private let featureFlagger: FeatureFlagger
 
     private var aiChatSettings: AIChatPreferencesStorage
@@ -152,6 +154,8 @@ final class AddressBarViewController: NSViewController {
           permissionManager: PermissionManagerProtocol,
           burnerMode: BurnerMode,
           popovers: NavigationBarPopovers?,
+          searchPreferences: SearchPreferences,
+          tabsPreferences: TabsPreferences,
           themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
           aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
@@ -172,11 +176,14 @@ final class AddressBarViewController: NSViewController {
                 burnerMode: burnerMode,
                 isUrlIgnored: { _ in false }
             ),
+            searchPreferences: searchPreferences,
             themeManager: themeManager
         )
         self.isBurner = burnerMode.isBurner
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatSettings = aiChatSettings
+        self.searchPreferences = searchPreferences
+        self.tabsPreferences = tabsPreferences
         self.themeManager = themeManager
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
@@ -191,6 +198,7 @@ final class AddressBarViewController: NSViewController {
                                                          bookmarkManager: bookmarkManager,
                                                          privacyConfigurationManager: privacyConfigurationManager,
                                                          permissionManager: permissionManager,
+                                                         tabsPreferences: tabsPreferences,
                                                          popovers: popovers,
                                                          aiChatTabOpener: NSApp.delegateTyped.aiChatTabOpener,
                                                          aiChatMenuConfig: aiChatMenuConfig,
@@ -225,6 +233,8 @@ final class AddressBarViewController: NSViewController {
         activeBackgroundView.interceptClickEvents = true
 
         addressBarTextField.focusDelegate = self
+        addressBarTextField.searchPreferences = searchPreferences
+        addressBarTextField.tabsPreferences = tabsPreferences
 
         setupInactiveShadowView()
         setupActiveOuterBorderSize()
@@ -299,12 +309,16 @@ final class AddressBarViewController: NSViewController {
             .debounce(for: 0.05, scheduler: DispatchQueue.main)
             .sink { [weak self] childWindows in
                 guard let self, let childWindows, childWindows.contains(where: {
-                    !($0.windowController is TabPreviewWindowController || $0.contentViewController is SuggestionViewController)
+                    !(
+                        $0.windowController is TabPreviewWindowController
+                        || $0.contentViewController is SuggestionViewController
+                        || $0 === self.view.window?.titlebarView?.window // fullscreen titlebar owning window
+                    )
                 }) else { return }
 
                 addressBarTextField.hideSuggestionWindow()
             }
-            .store(in: &cancellables)
+            .store(in: &cancellables) // hide Suggestions on Minimuze/Enter Full Screen
 
         NSApp.publisher(for: \.effectiveAppearance)
             .sink { [weak self] _ in
@@ -331,7 +345,7 @@ final class AddressBarViewController: NSViewController {
 
                 subscribeToTabContent()
                 subscribeToPassiveAddressBarString()
-                subscribeToProgressEvents()
+                subscribeToProgressEventsIfNeeded()
 
                 // don't resign first responder on tab switching
                 clickPoint = nil
@@ -370,8 +384,12 @@ final class AddressBarViewController: NSViewController {
             .store(in: &tabViewModelCancellables)
     }
 
-    private func subscribeToProgressEvents() {
-        guard let tabViewModel else {
+    private var displaysLoadingProgressIndicator: Bool {
+        featureFlagger.isFeatureOn(.tabProgressIndicator) == false
+    }
+
+    private func subscribeToProgressEventsIfNeeded() {
+        guard let tabViewModel, displaysLoadingProgressIndicator else {
             progressIndicator.hide(animated: false)
             return
         }

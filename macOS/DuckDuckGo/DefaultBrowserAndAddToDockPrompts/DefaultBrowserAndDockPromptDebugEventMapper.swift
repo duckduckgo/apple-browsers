@@ -40,6 +40,8 @@ extension DefaultBrowserAndDockPromptDebugEvent.Storage {
         case bannerShownDate(Error)
         case bannerShownOccurrences(Error)
         case permanentlyDismissPrompt(Error)
+        case inactiveUserModalShownDate(Error)
+        case currentActivity(Error)
     }
 
 }
@@ -55,6 +57,10 @@ enum DefaultBrowserAndDockPromptDebugEventMapper {
             debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToRetrieveBannerSeenDate, error: error)
         case let .storage(.failedToRetrieveValue(.bannerShownOccurrences(error))):
             debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToRetrieveNumberOfBannerShown, error: error)
+        case let .storage(.failedToRetrieveValue(.inactiveUserModalShownDate(error))):
+            debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToRetrieveInactiveUserModalShown, error: error)
+        case let .storage(.failedToRetrieveValue(.currentActivity(error))):
+            debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToRetrieveCurrentActivity, error: error)
         case let .storage(.failedToSaveValue(.bannerShownOccurrences(error))):
             debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToSaveNumberOfBannerShown, error: error)
         case let .storage(.failedToRetrieveValue(.permanentlyDismissPrompt(error))):
@@ -65,6 +71,10 @@ enum DefaultBrowserAndDockPromptDebugEventMapper {
             debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToSaveBannerSeenDate, error: error)
         case let .storage(.failedToSaveValue(.permanentlyDismissPrompt(error))):
             debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToSaveBannerPermanentlyDismissedValue, error: error)
+        case let .storage(.failedToSaveValue(.inactiveUserModalShownDate(error))):
+            debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToSaveInactiveUserModalShown, error: error)
+        case let .storage(.failedToSaveValue(.currentActivity(error))):
+            debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToSaveCurrentActivity, error: error)
         }
         PixelKit.fire(debugEvent, frequency: .dailyAndCount)
     }

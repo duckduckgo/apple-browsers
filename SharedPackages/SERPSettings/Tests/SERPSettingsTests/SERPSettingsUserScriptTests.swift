@@ -72,7 +72,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
         XCTAssertNil(result, "Should return nil when feature flag is off, even if data exists")
     }
 
-    func testGetNativeSettingsIsNil_ifNoDataIsPresentAndFeatureFlagIsOn() async throws {
+    func testGetNativeSettingsIsEmpty_ifNoDataIsPresentAndFeatureFlagIsOn() async throws {
         // Given - Feature flag is ON but no data exists
         mockProvider.mockIsSERPSettingsFeatureOn = true
         // Don't store any data
@@ -85,8 +85,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         let result = try await handler([:], WKScriptMessage())
 
-        // Then - Should return nil because no data is stored
-        XCTAssertNil(result, "Should return nil when no data is present")
+        XCTAssertTrue(result is EmptyPayload, "Result should be an empty payload, not any other object.")
     }
 
     func testGetNativeSettingsReturnsPersistedSettings_whenSettingsArePersistedInNative() async throws {
@@ -140,7 +139,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
         // Then - Should return nil and storeSERPSettings should have not been called
         XCTAssertNil(result, "Should return nil when feature flag is off, even if data exists")
         XCTAssertFalse(mockProvider.wasStoreSettingsCalled)
-        XCTAssertNil(try mockProvider.keyValueStore.object(forKey: SERPSettingsConstants.serpSettingsStorage))
+        XCTAssertNil(try mockProvider.keyValueStore?.object(forKey: SERPSettingsConstants.serpSettingsStorage))
     }
 
     func testUpdateNativeSettingsReturnsNilAndStoresSERPSettings_ifFeatureFlagIsOn() async throws {
@@ -187,8 +186,8 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         let result = try await handler([:], WKScriptMessage())
 
-        if let result = result as? Bool {
-            XCTAssertTrue(result)
+        if let result = result as? NativeDuckAIState {
+            XCTAssertTrue(result.enabled)
         } else {
             XCTFail("Result should be a boolean")
         }
@@ -204,8 +203,8 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         let result = try await handler([:], WKScriptMessage())
 
-        if let result = result as? Bool {
-            XCTAssertFalse(result)
+        if let result = result as? NativeDuckAIState {
+            XCTAssertFalse(result.enabled)
         } else {
             XCTFail("Result should be a boolean")
         }
@@ -227,7 +226,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         // Then - Should call the correct delegate method and return nil
         XCTAssertNil(result, "Should always return nil")
-        XCTAssertEqual(mockDelegate.closeTabAndOpenPrivacySettingsCallCount, 1)
+        XCTAssertEqual(mockDelegate.closeTabCallCount, 1)
         XCTAssertEqual(mockDelegate.openAIFeaturesSettingsCallCount, 0)
     }
 
@@ -245,8 +244,8 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         // Then - Should call the correct delegate method and return nil
         XCTAssertNil(result, "Should always return nil")
-        XCTAssertEqual(mockDelegate.closeTabAndOpenPrivacySettingsCallCount, 0)
-        XCTAssertEqual(mockDelegate.openAIFeaturesSettingsCallCount, 1)
+        XCTAssertEqual(mockDelegate.closeTabCallCount, 1)
+        XCTAssertEqual(mockDelegate.openAIFeaturesSettingsCallCount, 0)
     }
 
     func testOpenNativeSettings_withScreenAIFeatures_callsOpenAIFeaturesSettings() async throws {
@@ -263,7 +262,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         // Then - Should call the correct delegate method and return nil
         XCTAssertNil(result, "Should always return nil")
-        XCTAssertEqual(mockDelegate.closeTabAndOpenPrivacySettingsCallCount, 0)
+        XCTAssertEqual(mockDelegate.closeTabCallCount, 0)
         XCTAssertEqual(mockDelegate.openAIFeaturesSettingsCallCount, 1)
     }
 
@@ -281,7 +280,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         // Then - Should not call any delegate methods and return nil
         XCTAssertNil(result, "Should always return nil")
-        XCTAssertEqual(mockDelegate.closeTabAndOpenPrivacySettingsCallCount, 0)
+        XCTAssertEqual(mockDelegate.closeTabCallCount, 0)
         XCTAssertEqual(mockDelegate.openAIFeaturesSettingsCallCount, 0)
     }
 
@@ -299,7 +298,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         // Then - Should not call any delegate methods and return nil
         XCTAssertNil(result, "Should always return nil")
-        XCTAssertEqual(mockDelegate.closeTabAndOpenPrivacySettingsCallCount, 0)
+        XCTAssertEqual(mockDelegate.closeTabCallCount, 0)
         XCTAssertEqual(mockDelegate.openAIFeaturesSettingsCallCount, 0)
     }
 
@@ -317,7 +316,7 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         // Then - Should return nil and not call any delegate methods
         XCTAssertNil(result, "Should return nil for invalid parameters")
-        XCTAssertEqual(mockDelegate.closeTabAndOpenPrivacySettingsCallCount, 0)
+        XCTAssertEqual(mockDelegate.closeTabCallCount, 0)
         XCTAssertEqual(mockDelegate.openAIFeaturesSettingsCallCount, 0)
     }
 

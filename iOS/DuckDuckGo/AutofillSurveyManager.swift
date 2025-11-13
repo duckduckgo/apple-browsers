@@ -87,7 +87,7 @@ final class AutofillSurveyManager: AutofillSurveyManaging {
 
         let surveyURLBuilder = DefaultRemoteMessagingSurveyURLBuilder(statisticsStore: StatisticsUserDefaults(),
                                                                       vpnActivationDateStore: DefaultVPNActivationDateStore(),
-                                                                      subscription: nil,
+                                                                      subscriptionDataProvider: nil,
                                                                       autofillUsageStore: nil)
         let url = surveyURLBuilder.add(parameters: [.appVersion, .atb, .atbVariant, .daysInstalled, .hardwareModel, .osVersion, .vpnFirstUsed, .vpnLastUsed], to: surveyURL)
         return addPasswordsCountSurveyParameter(to: url, accountsCount: accountsCount)

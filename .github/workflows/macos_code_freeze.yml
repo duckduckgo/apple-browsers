@@ -65,10 +65,20 @@ jobs:
 
   run_tests:
 
-    name: Run Tests
+    name: Unit Tests
 
     needs: create_release_branch
     uses: ./.github/workflows/macos_pr_checks.yml
+    with:
+      branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+    secrets: inherit
+
+  ui_tests:
+
+    name: UI Tests
+
+    needs: create_release_branch
+    uses: ./.github/workflows/macos_ui_tests.yml
     with:
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
     secrets: inherit

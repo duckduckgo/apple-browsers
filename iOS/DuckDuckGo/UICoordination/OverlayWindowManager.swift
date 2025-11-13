@@ -49,17 +49,20 @@ final class OverlayWindowManager: OverlayWindowManaging {
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let featureFlagger: FeatureFlagger
     private let aiChatSettings: AIChatSettings
+    private let mobileCustomization: MobileCustomization
 
     init(window: UIWindow,
          appSettings: AppSettings,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          featureFlagger: FeatureFlagger,
-         aiChatSettings: AIChatSettings) {
+         aiChatSettings: AIChatSettings,
+         mobileCustomization: MobileCustomization) {
         self.window = window
         self.appSettings = appSettings
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
+        self.mobileCustomization = mobileCustomization
     }
 
     func displayBlankSnapshotWindow(for reason: BlankSnapshotOverlayReason) {
@@ -68,14 +71,19 @@ final class OverlayWindowManager: OverlayWindowManaging {
                                                                       aiChatSettings: aiChatSettings,
                                                                       voiceSearchHelper: voiceSearchHelper,
                                                                       featureFlagger: featureFlagger,
-                                                                      appSettings: appSettings)
+                                                                      appSettings: appSettings,
+                                                                      mobileCustomization: mobileCustomization)
         blankSnapshotViewController.delegate = self
         displayOverlay(with: blankSnapshotViewController)
     }
 
     func displayOverlay(with viewController: UIViewController) {
         guard overlayWindow == nil else { return }
-        overlayWindow = UIWindow(frame: window.frame)
+        if let windowScene = window.windowScene {
+            overlayWindow = UIWindow(windowScene: windowScene)
+        } else {
+            overlayWindow = UIWindow(frame: window.frame)
+        }
         overlayWindow?.windowLevel = .alert
         overlayWindow?.rootViewController = viewController
         overlayWindow?.makeKeyAndVisible()

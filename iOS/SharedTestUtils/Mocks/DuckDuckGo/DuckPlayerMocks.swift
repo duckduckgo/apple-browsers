@@ -136,6 +136,7 @@ class MockWebView: WKWebView {
 class MockNavigationAction: WKNavigationAction {
     private let _request: URLRequest
     private let _navigationType: WKNavigationType
+    private let _sourceFrame: WKFrameInfo
     private let _targetFrame: WKFrameInfo?
     var isTargetingMainFrameResult = true
 
@@ -143,6 +144,7 @@ class MockNavigationAction: WKNavigationAction {
         self._request = request
         self._navigationType = navigationType
         self._targetFrame = targetFrame
+        self._sourceFrame = MockFrameInfo(isMainFrame: true, request: request)
     }
 
     override var request: URLRequest {
@@ -153,6 +155,10 @@ class MockNavigationAction: WKNavigationAction {
         return _navigationType
     }
 
+    override var sourceFrame: WKFrameInfo {
+        return _sourceFrame
+    }
+
     override var targetFrame: WKFrameInfo? {
         return _targetFrame
     }
@@ -160,14 +166,27 @@ class MockNavigationAction: WKNavigationAction {
 
 class MockFrameInfo: WKFrameInfo {
     private let _isMainFrame: Bool
+    private let _request: URLRequest?
 
-    init(isMainFrame: Bool) {
+    init(isMainFrame: Bool, request: URLRequest? = nil) {
         self._isMainFrame = isMainFrame
+        self._request = request
     }
 
     override var isMainFrame: Bool {
         return _isMainFrame
     }
+
+    // swiftlint:disable identifier_name
+    override var request: URLRequest {
+        if let _request {
+            return _request
+        } else {
+            return super.request
+        }
+    }
+    // swiftlint:enable identifier_name
+
 }
 
 final class MockDuckPlayerSettings: DuckPlayerSettings {
@@ -398,6 +417,10 @@ enum MockFeatureFlag: Hashable {
 }
 
 final class MockDuckPlayerFeatureFlagger: FeatureFlagger {
+    var updatesPublisher: AnyPublisher<Void, Never> {
+        PassthroughSubject().eraseToAnyPublisher()
+    }
+
     var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
     var localOverrides: FeatureFlagLocalOverriding?
 

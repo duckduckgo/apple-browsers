@@ -21,13 +21,16 @@ import Foundation
 public struct RemoteMessageModel: Equatable, Codable {
 
     public let id: String
+    /// Specify the surface area where the message will be displayed. E.g. new tab page, dedicated tab or modal.
+    public let surfaces: RemoteMessageSurfaceType
     public var content: RemoteMessageModelType?
     public let matchingRules: [Int]
     public let exclusionRules: [Int]
     public let isMetricsEnabled: Bool
 
-    public init(id: String, content: RemoteMessageModelType?, matchingRules: [Int], exclusionRules: [Int], isMetricsEnabled: Bool) {
+    public init(id: String, surfaces: RemoteMessageSurfaceType, content: RemoteMessageModelType?, matchingRules: [Int], exclusionRules: [Int], isMetricsEnabled: Bool) {
         self.id = id
+        self.surfaces = surfaces
         self.content = content
         self.matchingRules = matchingRules
         self.exclusionRules = exclusionRules
@@ -36,6 +39,7 @@ public struct RemoteMessageModel: Equatable, Codable {
 
     enum CodingKeys: CodingKey {
         case id
+        case surfaces
         case content
         case matchingRules
         case exclusionRules
@@ -45,6 +49,7 @@ public struct RemoteMessageModel: Equatable, Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = try container.decode(String.self, forKey: .id)
+        self.surfaces = try container.decodeIfPresent(RemoteMessageSurfaceType.self, forKey: .surfaces) ?? .newTabPage
         self.content = try container.decodeIfPresent(RemoteMessageModelType.self, forKey: .content)
         self.matchingRules = try container.decode([Int].self, forKey: .matchingRules)
         self.exclusionRules = try container.decode([Int].self, forKey: .exclusionRules)
@@ -86,8 +91,27 @@ public struct RemoteMessageModel: Equatable, Codable {
                                             actionText: translation.primaryActionText ?? actionText,
                                             action: action)
 
+        case .cardsList(let titleText, let placeholder, let items, let primaryActionText, let primaryAction):
+            self.content = .cardsList(titleText: titleText, placeholder: placeholder, items: items, primaryActionText: primaryActionText, primaryAction: primaryAction)
         }
     }
+}
+
+public struct RemoteMessageSurfaceType: OptionSet, Codable, Hashable, Equatable {
+    public var rawValue: Int16
+
+    public init(rawValue: Int16) {
+        self.rawValue = rawValue
+    }
+
+    /// Used to show a remote message as widgets in the browser new tab page.
+    public static let newTabPage = RemoteMessageSurfaceType(rawValue: 1 << 0)
+    /// Used to show a remote message in a modal prompt.
+    public static let modal = RemoteMessageSurfaceType(rawValue: 1 << 1)
+    /// Used to show a remote message in a dedicated tab.
+    public static let dedicatedTab = RemoteMessageSurfaceType(rawValue: 1 << 2)
+
+    public static let allCases: RemoteMessageSurfaceType = [.newTabPage, .modal, .dedicatedTab]
 }
 
 public enum RemoteMessageModelType: Codable, Equatable {
@@ -100,6 +124,52 @@ public enum RemoteMessageModelType: Codable, Equatable {
                       secondaryAction: RemoteAction)
     case promoSingleAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
                            actionText: String, action: RemoteAction)
+    case cardsList(titleText: String, placeholder: RemotePlaceholder?, items: [ListItem], primaryActionText: String, primaryAction: RemoteAction)
+}
+
+extension RemoteMessageModelType {
+
+    var listItems: [ListItem]? {
+        switch self {
+        case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
+            return nil
+        case let .cardsList(_, _, items, _, _):
+            return items
+        }
+    }
+}
+
+public extension RemoteMessageModelType {
+
+    struct ListItem: Codable, Equatable {
+        public let id: String
+        public let type: ListItemType
+        public let titleText: String
+        public let descriptionText: String
+        public let placeholderImage: RemotePlaceholder
+        public let action: RemoteAction?
+        public let matchingRules: [Int]
+        public let exclusionRules: [Int]
+
+        public init(id: String, type: ListItemType, titleText: String, descriptionText: String, placeholderImage: RemotePlaceholder, action: RemoteAction?, matchingRules: [Int], exclusionRules: [Int]) {
+            self.id = id
+            self.type = type
+            self.titleText = titleText
+            self.descriptionText = descriptionText
+            self.placeholderImage = placeholderImage
+            self.action = action
+            self.matchingRules = matchingRules
+            self.exclusionRules = exclusionRules
+        }
+    }
+}
+
+public extension RemoteMessageModelType.ListItem {
+
+    enum ListItemType: Codable, Equatable {
+        case twoLinesItem
+    }
+
 }
 
 public enum NavigationTarget: String, Codable, Equatable {
@@ -107,18 +177,23 @@ public enum NavigationTarget: String, Codable, Equatable {
     case settings
     case feedback
     case sync
+    case importPasswords = "import.passwords"
+    case appearance
 }
 
 public enum RemoteAction: Codable, Equatable {
     case share(value: String, title: String?)
+    /// Used to open a URL from a browser tab.
     case url(value: String)
+    /// Used to open a URL from an embedded web view.
+    case urlInContext(value: String)
     case survey(value: String)
     case appStore
     case dismiss
     case navigation(value: NavigationTarget)
 }
 
-public enum RemotePlaceholder: String, Codable {
+public enum RemotePlaceholder: String, Codable, CaseIterable {
     case announce = "RemoteMessageAnnouncement"
     case ddgAnnounce = "RemoteMessageDDGAnnouncement"
     case criticalUpdate = "RemoteMessageCriticalAppUpdate"
@@ -128,4 +203,7 @@ public enum RemotePlaceholder: String, Codable {
     case privacyShield = "RemoteMessagePrivacyShield"
     case aiChat = "RemoteDuckAi"
     case visualDesignUpdate = "RemoteVisualDesignUpdate"
+    case imageAI = "RemoteImageAI"
+    case radar = "RemoteRadar"
+    case keyImport = "RemoteKeyImport"
 }

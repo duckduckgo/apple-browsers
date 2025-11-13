@@ -118,6 +118,10 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
      */
     @Published private(set) var isInInitialState: Bool = true
     @Published private(set) var mainWindowControllers = [MainWindowController]()
+
+    /// `TabsPreferences` reference is needed to compute `shouldSwitchToNewTabWhenOpened`.
+    weak var tabsPreferences: TabsPreferences?
+
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let internalUserDecider: InternalUserDecider
@@ -236,7 +240,7 @@ extension WindowControllersManager {
 
         // For pinned tabs or popup windows, force new tab by disallowing current tab
         let canOpenLinkInCurrentTab = !(isPinnedTab || isPopUpWindow)
-        let switchToNewTabWhenOpened = TabsPreferences.shared.switchToNewTabWhenOpened
+        let switchToNewTabWhenOpened = shouldSwitchToNewTabWhenOpened
 
         let behavior = LinkOpenBehavior(
             event: event,
@@ -281,7 +285,7 @@ extension WindowControllersManager {
     ///   - newTab: A Boolean value indicating whether to create a new tab instead of reusing an existing one.
     ///             The default is `false`.
     ///   - selected: An optional Boolean value that determines whether the new tab should be selected (active) or opened in the background.
-    ///               If `nil`, the new tab activation setting value will be followed (`TabsPreferences.shared.switchToNewTabWhenOpened`).
+    ///               If `nil`, the new tab activation setting value will be followed (`TabsPreferences.switchToNewTabWhenOpened`).
     ///               The default is `true`.
     func show(url: URL?, tabId: String? = nil, source: Tab.TabContent.URLSource, newTab: Bool = false, selected: Bool? = true) {
         let nonPopupMainWindowControllers = mainWindowControllers.filter { $0.window?.isPopUpWindow == false }
@@ -310,13 +314,13 @@ extension WindowControllersManager {
                     // close the window if no more non-pinned tabs are open
                     if tabCollectionViewModel.tabs.isEmpty, let window = windowController.window, window.isVisible,
                        mainWindowController?.mainViewController.tabCollectionViewModel.selectedTabIndex?.isPinnedTab != true {
-                        window.performClose(nil)
+                        window.close()
                     }
                 }
                 return
             }
 
-            let selected = selected ?? TabsPreferences.shared.switchToNewTabWhenOpened
+            let selected = selected ?? shouldSwitchToNewTabWhenOpened
             show(url: url, in: windowController, source: source, newTab: newTab, selected: selected)
             return
         }
@@ -327,6 +331,14 @@ extension WindowControllersManager {
         } else {
             WindowsManager.openNewWindow() // Use default behavior which respects user preference
         }
+    }
+
+    var shouldSwitchToNewTabWhenOpened: Bool {
+        guard let tabsPreferences else {
+            assertionFailure("tabsPreferences must not be nil")
+            return false
+        }
+        return tabsPreferences.switchToNewTabWhenOpened
     }
 
     private func switchToOpenTab(withId tabId: String?, url: URL, preferring mainWindowController: MainWindowController) -> Bool {

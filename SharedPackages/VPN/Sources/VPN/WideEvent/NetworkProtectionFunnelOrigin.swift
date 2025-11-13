@@ -31,7 +31,7 @@ public enum NetworkProtectionFunnelOrigin: String {
     /// User entered the funnel via the agent in the menu bar
     case agent = "funnel_agent_macos"
 #endif
-    
+
     /// User entered the funnel via the System Settings screen
     case systemSettings = "funnel_systemsettings_multiple"
 

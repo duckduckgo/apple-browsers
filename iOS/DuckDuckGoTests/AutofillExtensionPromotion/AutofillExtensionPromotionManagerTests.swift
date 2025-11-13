@@ -60,7 +60,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
         // When
         let expectation = expectation(description: "Completion called")
         var result = false
-        manager.shouldShowPromotion(totalCredentialsCount: 5) { shouldShow in
+        manager.shouldShowPromotion(for: .passwords, totalCredentialsCount: 5) { shouldShow in
             result = shouldShow
             expectation.fulfill()
         }
@@ -80,7 +80,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
         // When
         let expectation = expectation(description: "Completion called")
         var result = false
-        manager.shouldShowPromotion(totalCredentialsCount: 5) { shouldShow in
+        manager.shouldShowPromotion(for: .passwords, totalCredentialsCount: 5) { shouldShow in
             result = shouldShow
             expectation.fulfill()
         }
@@ -99,7 +99,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
         // When
         let expectation = expectation(description: "Completion called")
         var result = false
-        manager.shouldShowPromotion(totalCredentialsCount: 5) { shouldShow in
+        manager.shouldShowPromotion(for: .passwords, totalCredentialsCount: 5) { shouldShow in
             result = shouldShow
             expectation.fulfill()
         }
@@ -117,7 +117,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
         // When
         let expectation = expectation(description: "Completion called")
         var result = false
-        manager.shouldShowPromotion(totalCredentialsCount: 5) { shouldShow in
+        manager.shouldShowPromotion(for: .passwords, totalCredentialsCount: 5) { shouldShow in
             result = shouldShow
             expectation.fulfill()
         }
@@ -137,7 +137,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
         // When
         let expectation = expectation(description: "Completion called")
         var result = false
-        manager.shouldShowPromotion(totalCredentialsCount: 5) { shouldShow in
+        manager.shouldShowPromotion(for: .passwords, totalCredentialsCount: 5) { shouldShow in
             result = shouldShow
             expectation.fulfill()
         }
@@ -156,7 +156,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
         // When
         let expectation = expectation(description: "Completion called")
         var result = false
-        manager.shouldShowPromotion(totalCredentialsCount: 3) { shouldShow in // Less than minimum of 4
+        manager.shouldShowPromotion(for: .passwords, totalCredentialsCount: 3) { shouldShow in // Less than minimum of 4
             result = shouldShow
             expectation.fulfill()
         }
@@ -176,7 +176,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
         // When
         let expectation = expectation(description: "Completion called")
         var result = false
-        manager.shouldShowPromotion(totalCredentialsCount: 5) { shouldShow in
+        manager.shouldShowPromotion(for: .passwords, totalCredentialsCount: 5) { shouldShow in
             result = shouldShow
             expectation.fulfill()
         }
@@ -196,7 +196,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
         // When
         let expectation = expectation(description: "Completion called")
         var result = false
-        manager.shouldShowPromotion(totalCredentialsCount: 4) { shouldShow in // Exactly at minimum
+        manager.shouldShowPromotion(for: .passwords, totalCredentialsCount: 4) { shouldShow in // Exactly at minimum
             result = shouldShow
             expectation.fulfill()
         }
@@ -216,7 +216,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
         // When
         let expectation = expectation(description: "Completion called")
         var result = false
-        manager.shouldShowPromotion(totalCredentialsCount: 5) { shouldShow in
+        manager.shouldShowPromotion(for: .passwords, totalCredentialsCount: 5) { shouldShow in
             result = shouldShow
             expectation.fulfill()
         }
@@ -235,7 +235,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
         manager = makeManager(installDate: installDate, isEnabled: false)
 
         // When
-        manager.markPromotionDismissed()
+        manager.markPromotionDismissed(for: .passwords)
 
         // Then
         let storedValue = try mockKeyValueStore.object(forKey: "com.duckduckgo.autofill.extension.promo.passwords.dismissed") as? Bool
@@ -249,12 +249,12 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
         manager = makeManager(installDate: installDate, isEnabled: false)
 
         // When
-        manager.markPromotionDismissed()
+        manager.markPromotionDismissed(for: .passwords)
 
         // Then
         let expectation = expectation(description: "Completion called")
         var result = false
-        manager.shouldShowPromotion(totalCredentialsCount: 5) { shouldShow in
+        manager.shouldShowPromotion(for: .passwords, totalCredentialsCount: 5) { shouldShow in
             result = shouldShow
             expectation.fulfill()
         }
@@ -272,7 +272,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
         try mockKeyValueStore.set(true, forKey: "com.duckduckgo.autofill.extension.promo.passwords.dismissed")
 
         // When
-        manager.resetPromotionDismissal()
+        manager.resetPromotionDismissal(for: .passwords)
 
         // Then
         let storedValue = try mockKeyValueStore.object(forKey: "com.duckduckgo.autofill.extension.promo.passwords.dismissed") as? Bool
@@ -288,17 +288,136 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
         try mockKeyValueStore.set(true, forKey: "com.duckduckgo.autofill.extension.promo.passwords.dismissed")
 
         // When
-        manager.resetPromotionDismissal()
+        manager.resetPromotionDismissal(for: .passwords)
 
         // Then
         let expectation = expectation(description: "Completion called")
         var result = false
-        manager.shouldShowPromotion(totalCredentialsCount: 5) { shouldShow in
+        manager.shouldShowPromotion(for: .passwords, totalCredentialsCount: 5) { shouldShow in
             result = shouldShow
             expectation.fulfill()
         }
         await fulfillment(of: [expectation], timeout: 1.0)
         XCTAssertTrue(result)
+    }
+
+    // MARK: - markPromotionPresented Tests
+
+    func testMarkPromotionPresented_ForPasswords_DoesNotIncrementCount() throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.canPromoteAutofillExtensionInPasswordManagement]
+        let installDate = Date().addingTimeInterval(-8 * 24 * 60 * 60)
+        manager = makeManager(installDate: installDate, isEnabled: false)
+
+        // When
+        manager.markPromotionPresented(for: .passwords)
+
+        // Then
+        let storedValue = try? mockKeyValueStore.object(forKey: "com.duckduckgo.autofill.extension.promo.browser.presentationCount") as? Int
+        XCTAssertNil(storedValue)
+    }
+
+    func testMarkPromotionPresented_ForBrowser_IncrementsCount() throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.canPromoteAutofillExtensionInBrowser]
+        let installDate = Date().addingTimeInterval(-8 * 24 * 60 * 60)
+        manager = makeManager(installDate: installDate, isEnabled: false)
+
+        // When
+        manager.markPromotionPresented(for: .browser)
+
+        // Then
+        let storedValue = try mockKeyValueStore.object(forKey: "com.duckduckgo.autofill.extension.promo.browser.presentationCount") as? Int
+        XCTAssertEqual(storedValue, 1)
+    }
+
+    func testMarkPromotionPresented_ForBrowser_IncrementsMultipleTimes() throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.canPromoteAutofillExtensionInBrowser]
+        let installDate = Date().addingTimeInterval(-8 * 24 * 60 * 60)
+        manager = makeManager(installDate: installDate, isEnabled: false)
+
+        // When
+        manager.markPromotionPresented(for: .browser)
+        manager.markPromotionPresented(for: .browser)
+        manager.markPromotionPresented(for: .browser)
+
+        // Then
+        let storedValue = try mockKeyValueStore.object(forKey: "com.duckduckgo.autofill.extension.promo.browser.presentationCount") as? Int
+        XCTAssertEqual(storedValue, 3)
+    }
+
+    @available(iOS 18.0, *)
+    func testShouldShowPromotion_ForBrowser_WhenPresentationCountReachedMax_ReturnsFalse() async throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.canPromoteAutofillExtensionInBrowser]
+        let installDate = Date().addingTimeInterval(-8 * 24 * 60 * 60)
+        manager = makeManager(installDate: installDate, isEnabled: false)
+        try mockKeyValueStore.set(5, forKey: "com.duckduckgo.autofill.extension.promo.browser.presentationCount")
+
+        // When
+        let expectation = expectation(description: "Completion called")
+        var result = false
+        manager.shouldShowPromotion(for: .browser, totalCredentialsCount: 5) { shouldShow in
+            result = shouldShow
+            expectation.fulfill()
+        }
+        await fulfillment(of: [expectation], timeout: 1.0)
+
+        // Then
+        XCTAssertFalse(result)
+    }
+
+    @available(iOS 18.0, *)
+    func testShouldShowPromotion_ForBrowser_WhenPresentationCountBelowMax_ReturnsTrue() async throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.canPromoteAutofillExtensionInBrowser]
+        let installDate = Date().addingTimeInterval(-8 * 24 * 60 * 60)
+        manager = makeManager(installDate: installDate, isEnabled: false)
+        try mockKeyValueStore.set(4, forKey: "com.duckduckgo.autofill.extension.promo.browser.presentationCount")
+
+        // When
+        let expectation = expectation(description: "Completion called")
+        var result = false
+        manager.shouldShowPromotion(for: .browser, totalCredentialsCount: 5) { shouldShow in
+            result = shouldShow
+            expectation.fulfill()
+        }
+        await fulfillment(of: [expectation], timeout: 1.0)
+
+        // Then
+        XCTAssertTrue(result)
+    }
+
+    func testResetPromotionDismissal_ForBrowser_ResetsPresentationCount() throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.canPromoteAutofillExtensionInBrowser]
+        let installDate = Date().addingTimeInterval(-8 * 24 * 60 * 60)
+        manager = makeManager(installDate: installDate, isEnabled: false)
+        try mockKeyValueStore.set(5, forKey: "com.duckduckgo.autofill.extension.promo.browser.presentationCount")
+        try mockKeyValueStore.set(true, forKey: "com.duckduckgo.autofill.extension.promo.browser.dismissed")
+
+        // When
+        manager.resetPromotionDismissal(for: .browser)
+
+        // Then
+        let presentationCount = try mockKeyValueStore.object(forKey: "com.duckduckgo.autofill.extension.promo.browser.presentationCount") as? Int
+        XCTAssertEqual(presentationCount, 0)
+    }
+
+    func testResetPromotionDismissal_ForPasswords_DoesNotResetPresentationCount() throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.canPromoteAutofillExtensionInPasswordManagement]
+        let installDate = Date().addingTimeInterval(-8 * 24 * 60 * 60)
+        manager = makeManager(installDate: installDate, isEnabled: false)
+        try mockKeyValueStore.set(5, forKey: "com.duckduckgo.autofill.extension.promo.browser.presentationCount")
+
+        // When
+        manager.resetPromotionDismissal(for: .passwords)
+
+        // Then - count should remain unchanged
+        let presentationCount = try mockKeyValueStore.object(forKey: "com.duckduckgo.autofill.extension.promo.browser.presentationCount") as? Int
+        XCTAssertEqual(presentationCount, 5)
     }
 
     // MARK: - Helper Methods

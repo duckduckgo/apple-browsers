@@ -129,8 +129,8 @@ extension TabTitleView {
 
         let animationGroup = CAAnimationGroup()
         animationGroup.animations = [
-            CABasicAnimation.buildFadeOutAnimation(duration: TitleAnimation.duration),
-            CABasicAnimation.buildTranslationXAnimation(duration: TitleAnimation.duration, fromValue: TitleAnimation.slidingOutStartX, toValue: TitleAnimation.slidingOutLastX)
+            CASpringAnimation.buildFadeOutAnimation(duration: TitleAnimation.duration),
+            CASpringAnimation.buildTranslationXAnimation(duration: TitleAnimation.duration, fromValue: TitleAnimation.slidingOutStartX, toValue: TitleAnimation.slidingOutLastX)
         ]
 
         previousTextField.stringValue = previousTitle
@@ -145,8 +145,8 @@ extension TabTitleView {
 
         let animationGroup = CAAnimationGroup()
         animationGroup.animations = [
-            CABasicAnimation.buildFadeInAnimation(duration: TitleAnimation.duration),
-            CABasicAnimation.buildTranslationXAnimation(duration: TitleAnimation.duration, fromValue: TitleAnimation.slidingInStartX, toValue: TitleAnimation.slidingInLastX)
+            CASpringAnimation.buildFadeInAnimation(duration: TitleAnimation.duration),
+            CASpringAnimation.buildTranslationXAnimation(duration: TitleAnimation.duration, fromValue: TitleAnimation.slidingInStartX, toValue: TitleAnimation.slidingInLastX)
         ]
 
         titleLayer.add(animationGroup, forKey: TitleAnimation.slideInKey)

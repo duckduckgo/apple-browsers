@@ -181,6 +181,7 @@ final class MainViewController: NSViewController {
             controllerErrorMessageObserver = controllerErrorMessageObserver ?? ControllerErrorMesssageObserverThroughDistributedNotifications()
 
             return DefaultNetworkProtectionStatusReporter(
+                vpnEnabledObserver: vpnXPCClient.ipcVPNEnabledObserver,
                 statusObserver: vpnXPCClient.ipcStatusObserver,
                 serverInfoObserver: vpnXPCClient.ipcServerInfoObserver,
                 connectionErrorObserver: vpnXPCClient.ipcConnectionErrorObserver,

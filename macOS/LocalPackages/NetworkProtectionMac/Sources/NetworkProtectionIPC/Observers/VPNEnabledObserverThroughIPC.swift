@@ -1,7 +1,7 @@
 //
-//  ConnectionStatusObserverThroughIPC.swift
+//  VPNEnabledObserverThroughIPC.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,22 +20,22 @@ import Combine
 import Foundation
 import VPN
 
-public final class ConnectionStatusObserverThroughIPC: ConnectionStatusObserver {
+public final class VPNEnabledObserverThroughIPC: VPNEnabledObserver {
 
-    private let subject = CurrentValueSubject<ConnectionStatus, Never>(.disconnected)
+    private let subject = CurrentValueSubject<Bool, Never>(false)
 
     // MARK: - ConnectionStatusObserver
 
     public lazy var publisher = subject.eraseToAnyPublisher()
 
-    public var recentValue: ConnectionStatus {
+    public var isVPNEnabled: Bool {
         subject.value
     }
 
     // MARK: - Publishing Updates
 
     @MainActor
-    func publish(_ status: ConnectionStatus) {
-        subject.send(status)
+    func publish(_ isVPNEnabled: Bool) {
+        subject.send(isVPNEnabled)
     }
 }

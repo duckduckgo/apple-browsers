@@ -48,8 +48,16 @@ final class TunnelControllerViewModelTests: XCTestCase {
              tunnelErrorMessage: String? = nil,
              controllerErrorMessage: String? = nil,
              dataVolume: DataVolume = .init(),
-             failure: KnownFailure? = nil,
-             isVPNEnabled: Bool = false) {
+             failure: KnownFailure? = nil) {
+
+            // Derive isVPNEnabled from status, matching real behavior
+            let isVPNEnabled: Bool
+            switch status {
+            case .connected, .connecting, .reasserting:
+                isVPNEnabled = true
+            case .disconnected, .disconnecting, .notConfigured, .snoozing:
+                isVPNEnabled = false
+            }
 
             let mockVPNEnabledObserver = MockVPNEnabledObserver()
             mockVPNEnabledObserver.subject.send(isVPNEnabled)

@@ -77,8 +77,6 @@ class MobileCustomization {
                 DesignSystemImages.Glyphs.Size24.vpn
             case .passwords:
                 DesignSystemImages.Glyphs.Size24.key
-            case .voiceSearch:
-                DesignSystemImages.Glyphs.Size24.microphone
             case .downloads:
                 DesignSystemImages.Glyphs.Size24.downloads
             }
@@ -108,8 +106,6 @@ class MobileCustomization {
                 DesignSystemImages.Glyphs.Size16.vpnOn
             case .passwords:
                 DesignSystemImages.Glyphs.Size16.keyLogin
-            case .voiceSearch:
-                DesignSystemImages.Glyphs.Size16.microphone
             case .downloads:
                 DesignSystemImages.Glyphs.Size16.downloads
             }
@@ -119,7 +115,6 @@ class MobileCustomization {
         case share
         case addEditBookmark
         case addEditFavorite
-        case voiceSearch
         case zoom
         case none
 
@@ -128,11 +123,11 @@ class MobileCustomization {
         case newTab
         case bookmarks
         case downloads
+        case passwords
 
         // Shared
         case fire
         case vpn
-        case passwords
     }
 
     static let addressBarDefault: Button = .share

@@ -1416,7 +1416,7 @@ final class NavigationBarViewController: NSViewController {
         guard view.window?.isKeyWindow == true, (self.presentedViewControllers ?? []).isEmpty else { return }
 
         DispatchQueue.main.async {
-            let viewController = PopoverMessageViewController(message: "DuckDuckGo VPN was uninstalled")
+            let viewController = PopoverMessageViewController(message: UserText.vpnWasUninstalled)
             viewController.show(onParent: self, relativeTo: self.optionsButton)
         }
     }

@@ -320,6 +320,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
 
         options["activationAttemptId"] = UUID().uuidString as NSString
+        options[NetworkProtectionOptionKey.isConnectionWideEventMeasurementEnabled] = NSNumber(value: isConnectionWideEventMeasurementEnabled)
 
         
         do {
@@ -356,6 +357,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     private func loadOrMakeTunnelManager() async throws -> NETunnelProviderManager {
         guard let tunnelManager = await tunnelManager else {
+            connectionWideEventData?.isSetup = true
             let tunnelManager = NETunnelProviderManager()
             try await setupAndSave(tunnelManager)
             internalManager = tunnelManager

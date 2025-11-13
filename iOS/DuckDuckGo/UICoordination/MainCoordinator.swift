@@ -80,7 +80,8 @@ final class MainCoordinator {
          dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
          launchSourceManager: LaunchSourceManaging,
          winBackOfferService: WinBackOfferService,
-         modalPromptCoordinationService: ModalPromptCoordinationService
+         modalPromptCoordinationService: ModalPromptCoordinationService,
+         mobileCustomization: MobileCustomization
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -163,6 +164,7 @@ final class MainCoordinator {
                                         dbpIOSPublicInterface: dbpIOSPublicInterface,
                                         launchSourceManager: launchSourceManager,
                                         winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
+                                        mobileCustomization: mobileCustomization,
                                         remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler)
     }
 

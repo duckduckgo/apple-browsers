@@ -76,8 +76,6 @@ class MobileCustomization {
                 DesignSystemImages.Glyphs.Size24.vpn
             case .passwords:
                 DesignSystemImages.Glyphs.Size24.key
-            case .voiceSearch:
-                DesignSystemImages.Glyphs.Size24.microphone
             case .downloads:
                 DesignSystemImages.Glyphs.Size24.downloads
             }
@@ -107,8 +105,6 @@ class MobileCustomization {
                 DesignSystemImages.Glyphs.Size16.vpnOn
             case .passwords:
                 DesignSystemImages.Glyphs.Size16.keyLogin
-            case .voiceSearch:
-                DesignSystemImages.Glyphs.Size16.microphone
             case .downloads:
                 DesignSystemImages.Glyphs.Size16.downloads
             }
@@ -118,7 +114,6 @@ class MobileCustomization {
         case share
         case addEditBookmark
         case addEditFavorite
-        case voiceSearch
         case zoom
         case none
 
@@ -127,11 +122,11 @@ class MobileCustomization {
         case newTab
         case bookmarks
         case downloads
+        case passwords
 
         // Shared
         case fire
         case vpn
-        case passwords
     }
 
     static let addressBarDefault: Button = .share
@@ -169,10 +164,11 @@ class MobileCustomization {
     }
 
     var isEnabled: Bool {
-        featureFlagger.isFeatureOn(.mobileCustomization) && !isPad
+        isFeatureEnabled && !isPad
     }
 
-    private let featureFlagger: FeatureFlagger
+    var isFeatureEnabled: Bool
+    
     private let keyValueStore: ThrowingKeyValueStoring
     private let isPad: Bool
     private let postChangeNotification: (State) -> Void
@@ -186,14 +182,14 @@ class MobileCustomization {
 
     }
 
-    init(featureFlagger: FeatureFlagger,
+    init(isFeatureEnabled: Bool,
          keyValueStore: ThrowingKeyValueStoring,
          isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
          postChangeNotification: @escaping ((State) -> Void) = {
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.customizationSettingsChanged, object: $0)
         }
     ) {
-        self.featureFlagger = featureFlagger
+        self.isFeatureEnabled = isFeatureEnabled
         self.keyValueStore = keyValueStore
         self.isPad = isPad
         self.postChangeNotification = postChangeNotification

@@ -43,9 +43,9 @@ extension MobileCustomizationView {
         case .zoom:
             UserText.textZoomMenuItem
         case .none:
-            "Hide This Button"
+            UserText.mobileCustomizationNoneOptionLong
         case .home:
-            "Home"
+            UserText.homeTabTitle
         case .newTab:
             UserText.keyCommandNewTab
         case .bookmarks:
@@ -56,8 +56,6 @@ extension MobileCustomizationView {
             UserText.actionVPN
         case .passwords:
             UserText.actionOpenPasswords
-        case .voiceSearch:
-            "Voice Search"
         case .downloads:
             UserText.downloadsScreenTitle
         }
@@ -81,7 +79,7 @@ struct AddressBarCustomizationPickerView: View, MobileCustomizationView {
         })
 
         ListBasedPickerWithHeaderImage(
-            title: "Address Bar Button",
+            title: UserText.mobileCustomizationAddressBarButton,
             headerImage: Image(.customAddressBarButtonPreview),
             options: options,
             defaultOption: MobileCustomization.addressBarDefault,
@@ -105,7 +103,7 @@ struct ToolbarCustomizationPickerView: View, MobileCustomizationView {
         })
 
         ListBasedPickerWithHeaderImage(
-            title: "Toolbar Button",
+            title: UserText.mobileCustomizationToolbarButton,
             headerImage: Image(.customToolbarButtonPreview),
             options: options,
             defaultOption: MobileCustomization.toolbarDefault,
@@ -115,5 +113,25 @@ struct ToolbarCustomizationPickerView: View, MobileCustomizationView {
             },
             iconProvider: buttonIconProvider)
     }
+
+}
+
+extension UserText {
+
+    public static let mobileCustomizationSectionTitle = NSLocalizedString("mobile.customization.section.title", value: "Customizable Buttons", comment: "The title of the section in settings containing the customizable buttons.")
+
+    public static let mobileCustomizationAddressBarTitle = NSLocalizedString("mobile.customization.addressbar.title", value: "Address Bar", comment: "The title of the Address Bar button.")
+
+    public static let mobileCustomizationAddressBarButton = NSLocalizedString("mobile.customization.addressbar.button", value: "Address Bar Button", comment: "The name of the Address Bar button when referenced in settings.")
+
+    public static let mobileCustomizationToolbarTitle = NSLocalizedString("mobile.customization.toolbar.title", value: "Toolbar", comment: "A label for the access point to customization of the Toolbar.")
+
+    public static let mobileCustomizationToolbarButton = NSLocalizedString("mobile.customization.toolbar.button", value: "Toolbar Button", comment: "The name of the address bar button when referenced in settings.")
+
+    public static let mobileCustomizationNoneOptionShort = NSLocalizedString("mobile.customization.option.none.short", value: "None", comment: "Indicates that no button was selected to be shown in the specified location.")
+
+    public static let mobileCustomizationNoneOptionLong = NSLocalizedString("mobile.customization.option.none.long", value: "Hide This Button", comment: "A title to indicate that if selected the current button will be hidden from the UI")
+
+    public static let mobileCustomizationShowReloadButtonToggleTitle = NSLocalizedString("mobile.customization.show.reload.button.title", value: "Show Reload Button", comment: "The label for the toggle that hides and shows the reload button.")
 
 }

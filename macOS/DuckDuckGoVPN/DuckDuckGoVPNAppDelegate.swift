@@ -156,6 +156,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         ),
         experimentManager: nil,
         for: FeatureFlag.self)
+    private lazy var wideEvent = WideEvent()
 
     public init(accountManager: any AccountManager,
                 subscriptionManagerV2: any SubscriptionManagerV2,
@@ -275,6 +276,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         featureFlagger: featureFlagger,
         settings: tunnelSettings,
         defaults: userDefaults,
+        wideEvent: wideEvent,
         accessTokenStorage: accessTokenStorage,
         subscriptionManagerV2: subscriptionManagerV2,
         vpnAppState: vpnAppState)

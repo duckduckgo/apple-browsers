@@ -301,7 +301,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dbpRemoteBrokerDelivery,
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
-             .serpSettingsFollowUpQuestions,
              .subscriptionRestoreWidePixelMeasurement,
              .embeddedSERPSettings,
              .authV2WideEventEnabled,
@@ -319,7 +318,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .showHideAIGeneratedImagesSection,
              .standaloneMigration,
              .blackFridayCampaign,
-             .duckAiDataClearing,
              .autofillExtensionSettings,
              .canPromoteAutofillExtensionInBrowser,
              .canPromoteAutofillExtensionInPasswordManagement:

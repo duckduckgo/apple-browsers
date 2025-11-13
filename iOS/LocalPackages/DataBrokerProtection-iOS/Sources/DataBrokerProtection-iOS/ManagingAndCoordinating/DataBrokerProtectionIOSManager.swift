@@ -131,7 +131,7 @@ public final class DataBrokerProtectionIOSManager {
         static let defaultMinBackgroundTaskWaitTime: TimeInterval = .minutes(15)
     }
 
-    private static let backgroundTaskIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
+    public static let backgroundTaskIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
 
     private let database: DataBrokerProtectionRepository
     private var queueManager: JobQueueManaging

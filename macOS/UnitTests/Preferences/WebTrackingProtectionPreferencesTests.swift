@@ -25,17 +25,19 @@ class MockWebTrackingProtectionPreferencesPersistor: WebTrackingProtectionPrefer
 
 class WebTrackingProtectionPreferencesTests: XCTestCase {
 
+    @MainActor
     func testWhenInitializedThenItLoadsPersistedGPCSetting() {
         let mockPersistor = MockWebTrackingProtectionPreferencesPersistor()
         mockPersistor.gpcEnabled = true
-        let webTrackingPreferences = WebTrackingProtectionPreferences(persistor: mockPersistor)
+        let webTrackingPreferences = WebTrackingProtectionPreferences(persistor: mockPersistor, windowControllersManager: WindowControllersManagerMock())
 
         XCTAssertTrue(webTrackingPreferences.isGPCEnabled)
     }
 
+    @MainActor
     func testWhenIsGPCEnabledUpdatedThenPersistorUpdates() {
         let mockPersistor = MockWebTrackingProtectionPreferencesPersistor()
-        let webTrackingPreferences = WebTrackingProtectionPreferences(persistor: mockPersistor)
+        let webTrackingPreferences = WebTrackingProtectionPreferences(persistor: mockPersistor, windowControllersManager: WindowControllersManagerMock())
         webTrackingPreferences.isGPCEnabled = true
 
         XCTAssertTrue(mockPersistor.gpcEnabled)

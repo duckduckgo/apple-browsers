@@ -39,7 +39,30 @@ final class RootViewV2Tests: XCTestCase {
         let vpnGatekeeper = MockVPNFeatureGatekeeper(canStartVPN: false, isInstalled: false, isVPNVisible: false, onboardStatusPublisher: Just(.completed).eraseToAnyPublisher())
         mockWinBackOfferVisibilityManager = MockWinBackOfferVisibilityManager()
 
-        sidebarModel = PreferencesSidebarModel(privacyConfigurationManager: MockPrivacyConfigurationManaging(), featureFlagger: MockFeatureFlagger(), syncService: ddsSyncing, vpnGatekeeper: vpnGatekeeper, includeDuckPlayer: false, includeAIChat: true, subscriptionManager: SubscriptionAuthV1toV2BridgeMock(), aiFeaturesStatusProvider: MockAIChatPreferences(), winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager)
+        let windowControllersManager = WindowControllersManagerMock()
+
+        sidebarModel = PreferencesSidebarModel(
+            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+            featureFlagger: MockFeatureFlagger(),
+            syncService: ddsSyncing,
+            vpnGatekeeper: vpnGatekeeper,
+            includeDuckPlayer: false,
+            includeAIChat: true,
+            subscriptionManager: SubscriptionAuthV1toV2BridgeMock(),
+            defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
+            downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
+            searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            aiChatPreferences: AIChatPreferences(
+                storage: MockAIChatPreferencesStorage(),
+                aiChatMenuConfiguration: MockAIChatConfig(),
+                windowControllersManager: WindowControllersManagerMock(),
+                featureFlagger: MockFeatureFlagger()
+            ),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
+        )
         subscriptionManager = SubscriptionManagerMockV2()
         subscriptionUIHandler = SubscriptionUIHandlerMock( didPerformActionCallback: { _ in })
         showTabCalled = false
@@ -139,6 +162,43 @@ final class RootViewV2Tests: XCTestCase {
             // Success
         } else {
             XCTFail("Expected subscription tab content")
+        }
+    }
+
+    @MainActor
+    func testPurchaseSubscriptionViewModel_WinBackOfferPixel() throws {
+        // Given
+        let expectation = expectation(description: "Wait for pixel to be fired")
+        var capturedPixel: SubscriptionPixel?
+
+        mockWinBackOfferVisibilityManager.isOfferAvailable = true
+        let rootView = Preferences.RootViewV2(
+            model: sidebarModel,
+            subscriptionManager: subscriptionManager,
+            subscriptionUIHandler: subscriptionUIHandler,
+            featureFlagger: MockFeatureFlagger(),
+            aiChatURLSettings: MockRemoteAISettings(),
+            wideEvent: WideEventMock(),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
+            showTab: { _ in },
+            pixelHandler: { pixel, _ in
+                capturedPixel = pixel
+                expectation.fulfill()
+            }
+        )
+
+        let model = rootView.purchaseSubscriptionModel!
+
+        // When
+        model.purchaseAction()
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertNotNil(capturedPixel, "Should have fired a pixel")
+        if case .subscriptionWinBackOfferSettingsPageCTAClicked = capturedPixel! {
+            // Correct pixel fired
+        } else {
+            XCTFail("Should fire subscriptionWinBackOfferSettingsPageCTAClicked pixel")
         }
     }
 

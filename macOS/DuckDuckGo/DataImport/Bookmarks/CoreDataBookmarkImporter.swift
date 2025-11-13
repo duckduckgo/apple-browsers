@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
+import Bookmarks
 import Foundation
-import BrowserServicesKit
 
 final class CoreDataBookmarkImporter: BookmarkImporter {
 

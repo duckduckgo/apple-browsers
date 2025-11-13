@@ -127,6 +127,107 @@ class TabTests: XCTestCase {
         XCTAssertTrue(tab?.viewed ?? false)
     }
 
+    func testWhenTabTypeIsWebThenIsWebTabReturnsTrue() {
+        // Given
+        let tab = Tab(link: link())
+
+        // When
+        tab.type = .web
+
+        // Then
+        XCTAssertTrue(tab.isWebTab)
+        XCTAssertFalse(tab.isAITab)
+    }
+
+    func testWhenTabTypeIsAIChatThenIsAITabReturnsTrue() {
+        // Given
+        let tab = Tab(link: link())
+
+        // When
+        tab.type = .aiChat
+
+        // Then
+        XCTAssertTrue(tab.isAITab)
+        XCTAssertFalse(tab.isWebTab)
+    }
+
+    func testWhenWebTabHasLinkThenIsWebTabWithLinkReturnsTrue() {
+        // Given
+        let tab = Tab(link: link())
+        tab.type = .web
+
+        // Then
+        XCTAssertTrue(tab.isWebTabWithLink)
+    }
+
+    func testWhenWebTabHasNoLinkThenIsWebTabWithLinkReturnsFalse() {
+        // Given
+        let tab = Tab()
+        tab.type = .web
+
+        // Then
+        XCTAssertFalse(tab.isWebTabWithLink)
+    }
+
+    func testWhenAIChatTabThenIsWebTabWithLinkReturnsFalse() {
+        // Given
+        let tab = Tab(link: link())
+        tab.type = .aiChat
+
+        // Then
+        XCTAssertFalse(tab.isWebTabWithLink)
+    }
+
+    func testWhenAIChatTabEncodedThenDecodesAsAIChatType() {
+        // Given
+        let tabToEncode = Tab(link: link())
+        tabToEncode.type = .aiChat
+
+        guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
+                                                           requiringSecureCoding: false) else {
+            XCTFail("Data is nil")
+            return
+        }
+
+        // When
+        let decodedTab = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab
+
+        // Then
+        XCTAssertNotNil(decodedTab)
+        XCTAssertTrue(decodedTab?.isAITab ?? false)
+        XCTAssertFalse(decodedTab?.isWebTab ?? true)
+    }
+
+    func testWhenWebTabEncodedThenDecodesAsWebType() {
+        // Given
+        let tabToEncode = Tab(link: link())
+        tabToEncode.type = .web
+
+        guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
+                                                           requiringSecureCoding: false) else {
+            XCTFail("Data is nil")
+            return
+        }
+
+        // When
+        let decodedTab = try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab
+
+        // Then
+        XCTAssertNotNil(decodedTab)
+        XCTAssertTrue(decodedTab?.isWebTab ?? false)
+        XCTAssertFalse(decodedTab?.isAITab ?? true)
+    }
+
+    func testWhenTabEncodedBeforeTypePropertyAddedIsDecodedThenDefaultsToWebType() {
+        // Given
+        let tab = Tab(coder: CoderStub(properties: ["link": link(), "viewed": false]))
+
+        // Then
+        XCTAssertNotNil(tab?.link)
+        XCTAssertTrue(tab?.isWebTab ?? false)
+        XCTAssertFalse(tab?.isAITab ?? true)
+    }
+
     func testWhenSameObjectThenEqualsPasses() {
         let link = Link(title: Constants.title, url: Constants.url)
         let tab = Tab(link: link)
@@ -170,7 +271,11 @@ private class CoderStub: NSCoder {
     override func decodeBool(forKey key: String) -> Bool {
         return (properties[key] as? Bool)!
     }
-    
+
+    override func decodeInteger(forKey key: String) -> Int {
+        return (properties[key] as? Int) ?? 0
+    }
+
 }
 
 private class MockTabObserver: NSObject, TabObserver {

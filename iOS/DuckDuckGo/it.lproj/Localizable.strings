@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Attiva la tutela della privacy";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Chiudi le schede e cancella i dati";
+"action.title.forgetAll" = "Cancella tutte le schede e i dati";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Schede e dati cancellati";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Chiudi le schede e la chat di Duck.ai ed elimina i dati";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Apri in background";
@@ -2356,9 +2359,6 @@
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Scegli il tuo browser";
 
-/* Message to highlight browser capability of private searches */
-"onboarding.browsers.features.privateSearch.title" = "Cerca privatamente per impostazione predefinita";
-
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo ha anche un %1$@, disponibile con una %2$@ e %3$@.";
 
@@ -2400,18 +2400,6 @@
 
 /* The title of the onboarding dialog popup to select the preferred App icon. */
 "onboarding.highlights.appIconSelection.title" = "Quale colore mi sta meglio?";
-
-/* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Blocca i popup dei cookie";
-
-/* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blocca gli annunci mirati";
-
-/* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Cancella i dati di navigazione con un solo pulsante";
-
-/* Message to highlight browser capability of blocking 3rd-party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Blocca i sistemi di tracciamento di terze parti";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Protezioni attivate!";
@@ -2812,6 +2800,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Impostazioni di Search Assist";
 
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Nascondi immagini generate dall'intelligenza artificiale";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtra le immagini generate dall'intelligenza artificiale dai risultati di ricerca di immagini";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Sempre attiva";
 
@@ -2826,6 +2820,12 @@
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Disattiva per impedire che i collegamenti si aprano automaticamente in altre app installate.";
+
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Cancella tutte le schede e i dati";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Chiudi le schede e la chat di Duck.ai ed elimina i dati";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Suggerimenti di ricerca";
@@ -2871,6 +2871,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Personalizza";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Cancella tutte le schede, le chat di Duck.ai e i dati per tutti i siti che non hai protetto con Fireproof.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Cancella tutte le schede e i dati per tutti i siti che non hai protetto con Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Cancellazione dati";

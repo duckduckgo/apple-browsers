@@ -35,13 +35,15 @@ final class RollingEightDaysIntTests: XCTestCase {
 
     func testInitialization() {
         XCTAssertEqual(rollingInt.values.count, 8)
+        XCTAssertEqual(rollingInt.count, 0)
+        XCTAssertEqual(rollingInt.past7DaysAverage, 0)
         XCTAssertNil(rollingInt.lastDay)
     }
 
     func testIncrementFirstTime() {
         let beforeDate = Date()
 
-        rollingInt.increment()
+        rollingInt.increment(dateProvider: DefaultDateProvider())
 
         let afterDate = Date()
 
@@ -60,12 +62,12 @@ final class RollingEightDaysIntTests: XCTestCase {
 
     func testIncrementSameDay() {
         // Set up initial state
-        rollingInt.increment()
+        rollingInt.increment(dateProvider: DefaultDateProvider())
         let initialLastDay = rollingInt.lastDay
 
         // Call increment again on same day
-        rollingInt.increment()
-        rollingInt.increment()
+        rollingInt.increment(dateProvider: DefaultDateProvider())
+        rollingInt.increment(dateProvider: DefaultDateProvider())
 
         // Should increment the last value, not add new entries
         XCTAssertEqual(rollingInt.count, 1)
@@ -83,7 +85,7 @@ final class RollingEightDaysIntTests: XCTestCase {
         let initialCount = rollingInt.count
 
         // Call increment (should be different day)
-        rollingInt.increment()
+        rollingInt.increment(dateProvider: DefaultDateProvider())
 
         // Should increment count and append new value
         XCTAssertEqual(rollingInt.count, initialCount + 1)
@@ -101,6 +103,16 @@ final class RollingEightDaysIntTests: XCTestCase {
         XCTAssertEqual(rollingInt.past7DaysAverage, 0)
     }
 
+    func testPast7DaysAverageSingleValue() {
+        // Add only one value (today)
+        rollingInt.append(10)
+
+        // With only one value, past7DaysAverage should return 0 (no past days to average)
+        // This tests the guard clause that prevents division by zero
+        XCTAssertEqual(rollingInt.past7DaysAverage, 0)
+        XCTAssertEqual(rollingInt.count, 1)
+    }
+
     func testPast7DaysAverageWithValues() {
         // Add values to fill some slots (including today)
         for i in 1...8 {
@@ -113,35 +125,31 @@ final class RollingEightDaysIntTests: XCTestCase {
         XCTAssertEqual(rollingInt.past7DaysAverage, expectedAverage)
     }
 
-    // Discussion still ongoing, the average will need to be adjusted
+    func testPast7DaysAverageWithUnknownValues() {
+        // Add some values and leave some unknown
+        rollingInt.append(3)
+        rollingInt.append(8)
+        rollingInt.append(11)
+        rollingInt.append(1)
+        // past7DaysAverage should only count known values (excluding today)
+        XCTAssertEqual(rollingInt.past7DaysAverage, 7) // un-rounded average 7.333...
+    }
 
-//    func testPast7DaysAverageWithUnknownValues() {
-//        // Add some values and leave some unknown
-//        rollingInt.append(3)
-//        rollingInt.append(7)
-//        rollingInt.append(11)
-//        rollingInt.append(0)
-//
-//        // past7DaysAverage should only count known values (excluding today)
-//        // Values excluding last: [10, 20, 30], average = (3+7+11)/2 = 10.5
-//        XCTAssertEqual(rollingInt.past7DaysAverage, 11)
-//    }
-//
-//    func testPast7DaysAverageRoundingBehavior() {
-//        // Test specific rounding cases
-//        rollingInt.append(1)  // Will be excluded (today)
-//        rollingInt[0] = 6     // 6
-//        rollingInt[1] = 7     // 7
-//
-//        // Average = (6+7)/2 = 6.5, rounded = 7
-//        XCTAssertEqual(rollingInt.past7DaysAverage, 7)
-//
-//        // Test rounding down case
-//        rollingInt[2] = 5     // 5
-//
-//        // Average = (6+7+5)/3 = 6, no rounding needed
-//        XCTAssertEqual(rollingInt.past7DaysAverage, 6)
-//    }
+    func testPast7DaysAverageRoundingBehavior() {
+        // Test specific rounding cases
+        rollingInt.append(1)  // Will be excluded (today)
+        rollingInt[0] = 6     // 6
+        rollingInt[1] = 7     // 7
+
+        // Average = (6+7)/2 = 6.5, rounded = 7
+        XCTAssertEqual(rollingInt.past7DaysAverage, 7)
+
+        // Test rounding down case
+        rollingInt[2] = 5     // 5
+
+        // Average = (6+7+5)/3 = 6, no rounding needed
+        XCTAssertEqual(rollingInt.past7DaysAverage, 6)
+    }
 
     func testCountPast7DaysEmptyArray() {
         XCTAssertEqual(rollingInt.countPast7Days, 0)
@@ -183,7 +191,7 @@ final class RollingEightDaysIntTests: XCTestCase {
 
             // Perform multiple increments on same day
             for _ in 0..<increments {
-                rollingInt.increment()
+                rollingInt.increment(dateProvider: DefaultDateProvider())
             }
 
             // Verify the last value matches expected increments
@@ -212,5 +220,78 @@ final class RollingEightDaysIntTests: XCTestCase {
 
         let differentDay = Calendar.current.date(byAdding: .day, value: 1, to: testDate)!
         XCTAssertFalse(rollingInt.isSameDay(differentDay))
+    }
+
+    func testIncrementWithMissingDays() {
+        // Set up initial state with day 1
+        let day1 = Calendar.eastern.date(from: DateComponents(year: 2025, month: 1, day: 15))!
+        rollingInt.lastDay = day1
+        rollingInt.append(5)
+
+        // Set lastDay to 3 days ago to simulate missing days
+        rollingInt.lastDay = Calendar.eastern.date(byAdding: .day, value: -3, to: Date())!
+        let initialValue = 7
+        rollingInt.append(initialValue)
+
+        // Now increment (should add 2 unknown days and then 1)
+        rollingInt.increment(dateProvider: DefaultDateProvider())
+
+        // Verify structure: should have removed oldest values and added unknowns
+        // The last value should be 1 (new day)
+        XCTAssertEqual(rollingInt.last, 1)
+
+        // Count should include the initial value, 2 unknowns, and the new value
+        // But we can only reliably check that last is 1 and unknowns exist
+        let allValues = rollingInt.allValues
+        // Should have fewer values than total slots if unknowns were added
+        XCTAssertLessThan(allValues.count, rollingInt.values.count)
+    }
+
+    func testIncrementMultipleMissingDays() {
+        // Day 1: Add value
+        rollingInt.increment(dateProvider: DefaultDateProvider())
+        rollingInt.increment(dateProvider: DefaultDateProvider())
+        XCTAssertEqual(rollingInt.last, 2)
+        XCTAssertEqual(rollingInt.count, 1) // Only one day with data
+
+        // Simulate missing 5 days
+        rollingInt.lastDay = Calendar.eastern.date(byAdding: .day, value: -5, to: Date())!
+
+        // Day 7: Increment
+        rollingInt.increment(dateProvider: DefaultDateProvider())
+
+        // Should have: [2, unknown, unknown, unknown, unknown, 1]
+        XCTAssertEqual(rollingInt.last, 1)
+
+        // Count only non-unknown values
+        let nonUnknownCount = rollingInt.allValues.count
+        XCTAssertEqual(nonUnknownCount, 2) // Original day (2) and new day (1)
+
+        // Total values including unknowns should be more
+        XCTAssertEqual(rollingInt.values.count, 8)
+
+        // Verify the structure contains unknowns
+        var unknownCount = 0
+        for value in rollingInt.values where value == .unknown {
+            unknownCount += 1
+        }
+        XCTAssertEqual(unknownCount, 6) // 5 missing days + initial 1 unknown slot from initialization, then rolling happened
+    }
+
+    func testIncrementSameDayDoesNotAddUnknowns() {
+        // Day 1: First increment
+        rollingInt.increment(dateProvider: DefaultDateProvider())
+        XCTAssertEqual(rollingInt.last, 1)
+
+        let initialValuesCount = rollingInt.values.count
+
+        // Day 1: Same day increments
+        rollingInt.increment(dateProvider: DefaultDateProvider())
+        rollingInt.increment(dateProvider: DefaultDateProvider())
+
+        // Should increment value without adding unknowns
+        XCTAssertEqual(rollingInt.last, 3)
+        XCTAssertEqual(rollingInt.values.count, initialValuesCount) // No structural changes
+        XCTAssertEqual(rollingInt.count, 1) // Still only one day with data
     }
 }

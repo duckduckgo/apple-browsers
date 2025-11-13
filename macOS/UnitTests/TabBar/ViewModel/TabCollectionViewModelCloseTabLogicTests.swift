@@ -110,7 +110,7 @@ final class TabCollectionViewModelCloseTabLogicTests: XCTestCase {
             tabCollectionViewModel.append(tab: normalTab, selected: false)
 
             /// We move the parent to the last position
-            tabCollectionViewModel.moveTab(at: 0, to: 2)
+            tabCollectionViewModel.moveTab(at: .unpinned(0), to: .unpinned(2))
 
             tabCollectionViewModel.remove(at: .unpinned(2))
 
@@ -188,7 +188,7 @@ final class TabCollectionViewModelCloseTabLogicTests: XCTestCase {
 
             let lastTab = Tab()
             tabCollectionViewModel.append(tab: lastTab, selected: true)
-            tabCollectionViewModel.moveTab(at: 100, to: 50)
+            tabCollectionViewModel.moveTab(at: .unpinned(100), to: .unpinned(50))
 
             tabCollectionViewModel.remove(at: .unpinned(50))
 
@@ -245,6 +245,30 @@ final class TabCollectionViewModelCloseTabLogicTests: XCTestCase {
             /// stay in the current active tab.
             XCTAssertEqual(tabCollectionViewModel.selectedTabViewModel?.tab, noRelatedTab)
         }
+    }
+
+    @MainActor
+    func testWhenWeCloseATabAfterPerformingSomeMoveOperation_thenWeSelectTheLastActiveTab() throws {
+        let sourceTabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let destinationTabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+
+        /// Setup: 2x Tabs at Source (accounting for `newtab`)
+        let sourceTabContent: TabContent = .url(.duckDuckGo, source: .link)
+        sourceTabCollectionViewModel.appendNewTab(with: sourceTabContent)
+
+        /// Setup: 3x Tabs at Destination (accounting for `newtab`)
+        let destinationTabContent1: TabContent = .url(.ddgLearnMore, source: .link)
+        let destinationTabContent2: TabContent = .url(.dnsBlocklistLearnMore, source: .link)
+
+        destinationTabCollectionViewModel.appendNewTab(with: destinationTabContent1)
+        destinationTabCollectionViewModel.appendNewTab(with: destinationTabContent2)
+
+        /// Act: Move to the tails + Remove
+        sourceTabCollectionViewModel.moveTab(at: .unpinned(1), to: destinationTabCollectionViewModel, at: .unpinned(3))
+        destinationTabCollectionViewModel.remove(at: .unpinned(3))
+
+        /// Verify: Previously Active Tab goes back to the pre-move state
+        XCTAssertEqual(destinationTabCollectionViewModel.selectedTabIndex, .unpinned(2))
     }
 }
 

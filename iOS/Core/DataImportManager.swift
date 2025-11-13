@@ -248,3 +248,9 @@ public final class DataImportManager: DataImportManaging {
     }
 
 }
+
+extension DataImport.DataTypeSummary {
+    public init(_ bookmarksImportSummary: BookmarksImportSummary) {
+        self.init(successful: bookmarksImportSummary.successful, duplicate: bookmarksImportSummary.duplicates, failed: bookmarksImportSummary.failed)
+    }
+}

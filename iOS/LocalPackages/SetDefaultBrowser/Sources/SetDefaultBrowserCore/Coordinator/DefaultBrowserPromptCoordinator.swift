@@ -46,7 +46,6 @@ package protocol DefaultBrowserPromptCoordinating: AnyObject {
 
 @MainActor
 package final class DefaultBrowserPromptCoordinator {
-    private let isOnboardingCompleted: () -> Bool
     private let promptStore: DefaultBrowserPromptStorage
     private let userActivityManager: DefaultBrowserPromptUserActivityManaging
     private let promptTypeDecider: DefaultBrowserPromptTypeDeciding
@@ -55,7 +54,6 @@ package final class DefaultBrowserPromptCoordinator {
     private let dateProvider: () -> Date
 
     package init(
-        isOnboardingCompleted: @escaping () -> Bool,
         promptStore: DefaultBrowserPromptStorage,
         userActivityManager: DefaultBrowserPromptUserActivityManaging,
         promptTypeDecider: DefaultBrowserPromptTypeDeciding,
@@ -63,7 +61,6 @@ package final class DefaultBrowserPromptCoordinator {
         eventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>,
         dateProvider: @escaping () -> Date = Date.init
     ) {
-        self.isOnboardingCompleted = isOnboardingCompleted
         self.promptStore = promptStore
         self.userActivityManager = userActivityManager
         self.promptTypeDecider = promptTypeDecider
@@ -78,12 +75,6 @@ package final class DefaultBrowserPromptCoordinator {
 extension DefaultBrowserPromptCoordinator: DefaultBrowserPromptCoordinating {
 
     package func getPrompt() -> DefaultBrowserPromptPresentationType? {
-        // If user has not completed the onboarding do not show any prompts.
-        guard isOnboardingCompleted() else {
-            Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Onboarding not completed, not showing prompt.")
-            return nil
-        }
-
         // Set prompt seen
         guard let prompt = promptTypeDecider.promptType() else { return nil }
 
@@ -120,11 +111,9 @@ private extension DefaultBrowserPromptCoordinator {
 
     func setPromptSeen(prompt: DefaultBrowserPromptType) {
         let now = dateProvider()
-        // The last shown date is stored regardless of the prompt type.
         // When displaying a prompt, we calculate the number of active days to determine if an active user prompt should be shown based on the last prompt (active/inactive) the user has seen.
         // We increment the prompt counter only for active prompts, as this counter helps decide whether to show the first or second prompt.
         // For inactive prompts, we set a flag instead, since they are only displayed once.
-        promptStore.lastModalShownDate = now.timeIntervalSince1970
         if prompt == .inactive {
             promptStore.hasInactiveModalShown = true
         } else {

@@ -121,15 +121,18 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
 
         let prompt = promptTypeDecider.promptType()
 
-        // For the popover we mark it as shown when it appears on screen as we don't want to show in every windows.
+        // For the popover and inactive prompts, we mark them as shown when they appear on screen as we don't want to show in every window.
         switch prompt {
-        case .popover:
+        case .active(.popover):
             setPopoverSeen()
             pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.popoverImpression(type: evaluatePromptEligibility))
-        case .banner:
+        case .active(.banner):
             // We set the banner show occurrences only when the user interact with the banner.
             // We cannot increment the number of banners shown here because this returns a value every time the browser is focused.
             pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.bannerImpression(type: evaluatePromptEligibility, numberOfBannersShown: formattedNumberOfBannersShown(value: store.bannerShownOccurrences + 1)), frequency: .uniqueByNameAndParameters)
+        case .inactive:
+            setInactiveUserModalSeen()
+            pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalImpression(type: evaluatePromptEligibility))
         case .none:
             break
         }
@@ -155,7 +158,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
 
         func setPromptSeen() {
             // Do not set popover seen when user interacting with it. Popover is intrusive and we don't want to show in every windows. We set seen when we show it on screen.
-            guard prompt == .banner else { return }
+            guard prompt == .active(.banner) else { return }
             // Set the banner seen only when the user interact with it because we want to show it in every windows.
             setBannerSeen(shouldHidePermanently: false)
         }
@@ -164,10 +167,12 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
             guard let type = evaluatePromptEligibility else { return }
 
             switch prompt {
-            case .popover:
+            case .active(.popover):
                 pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.popoverConfirmButtonClicked(type: type))
-            case .banner:
+            case .active(.banner):
                 pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.bannerConfirmButtonClicked(type: type, numberOfBannersShown: formattedNumberOfBannersShown(value: store.bannerShownOccurrences)))
+            case .inactive:
+                pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalConfirmButtonClicked(type: type))
             }
         }
 
@@ -211,25 +216,31 @@ private extension DefaultBrowserAndDockPromptCoordinator {
         }
     }
 
+    func setInactiveUserModalSeen() {
+        store.inactiveUserModalShownDate = dateProvider().timeIntervalSince1970
+    }
+
     func handleUserInputDismissAction(for prompt: DefaultBrowserAndDockPromptPresentationType, shouldHidePermanently: Bool) {
 
         func fireDismissActionPixel() {
             guard let evaluatePromptEligibility else { return }
 
             switch prompt {
-            case .popover:
+            case .active(.popover):
                 pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.popoverCloseButtonClicked(type: evaluatePromptEligibility))
-            case .banner:
+            case .active(.banner):
                 if shouldHidePermanently {
                     pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.bannerNeverAskAgainButtonClicked(type: evaluatePromptEligibility))
                 } else {
                     pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.bannerCloseButtonClicked(type: evaluatePromptEligibility))
                 }
+            case .inactive:
+                pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalDismissed(type: evaluatePromptEligibility))
             }
         }
 
         // Set the banner seen only when the user interact with it because we want to show it in every windows.
-        if case .banner = prompt {
+        if case .active(.banner) = prompt {
             setBannerSeen(shouldHidePermanently: shouldHidePermanently)
         }
 
@@ -238,7 +249,7 @@ private extension DefaultBrowserAndDockPromptCoordinator {
 
     func handleSystemUpdateDismissAction(for prompt: DefaultBrowserAndDockPromptPresentationType) {
         // The popover is set seen when is presented as we don't want to show it in every windows.
-        guard prompt == .banner else { return }
+        guard prompt == .active(.banner) else { return }
         setBannerSeen(shouldHidePermanently: false)
     }
 

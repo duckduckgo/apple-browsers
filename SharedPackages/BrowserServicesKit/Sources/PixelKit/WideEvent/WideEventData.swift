@@ -156,7 +156,7 @@ public struct WideEventAppData: Codable {
     /// Whether the event was sent by an instance of the app with the internal flag set.
     public var internalUser: Bool?
 
-    public init(name: String = AppVersion.shared.name,
+    public init(name: String = Self.defaultAppName(),
                 version: String = AppVersion.shared.versionNumber,
                 formFactor: String? = nil,
                 internalUser: Bool? = nil) {
@@ -170,6 +170,17 @@ public struct WideEventAppData: Codable {
         #endif
         self.internalUser = internalUser
     }
+
+    /// Returns the appropriate app name for the current platform.
+    /// - macOS: Uses CFBundleName (the bundle name)
+    /// - iOS: Uses CFBundleExecutable (the product name, which maps to Xcode targets)
+    public static func defaultAppName() -> String {
+        #if os(iOS)
+        return AppVersion.shared.productName
+        #else
+        return AppVersion.shared.name
+        #endif
+    }
 }
 
 extension WideEventAppData: WideEventParameterProviding {
@@ -181,7 +192,7 @@ extension WideEventAppData: WideEventParameterProviding {
         parameters[WideEventParameter.App.version] = version
 
         if let formFactor = formFactor {
-            parameters[WideEventParameter.Global.formFactor] = formFactor
+            parameters[WideEventParameter.App.formFactor] = formFactor
         }
 
         if let internalUser {
@@ -219,12 +230,14 @@ public struct WideEventErrorData: Codable {
 
     public var domain: String
     public var code: Int
+    public var description: String?
     public var underlyingErrors: [UnderlyingError]
 
-    public init(error: Error) {
+    public init(error: Error, description: String? = nil) {
         let nsError = error as NSError
         self.domain = nsError.domain
         self.code = nsError.code
+        self.description = description
 
         self.underlyingErrors = Self.collectUnderlyingErrors(from: nsError)
     }
@@ -258,6 +271,7 @@ extension WideEventErrorData: WideEventParameterProviding {
 
         parameters[WideEventParameter.Feature.errorDomain] = domain
         parameters[WideEventParameter.Feature.errorCode] = String(code)
+        parameters[WideEventParameter.Feature.errorDescription] = description
 
         for (index, nested) in underlyingErrors.enumerated() {
             let suffix = index == 0 ? "" : String(index + 1)

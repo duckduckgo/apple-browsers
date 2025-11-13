@@ -1,13 +1,12 @@
 {
-  "originHash" : "0b485833828bb26b278ea5e7d5b9128a6ec148424edd4b33a546d5df84746cb7",
   "pins" : [
     {
       "identity" : "duckduckgo-autofill",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "252082be808ece0ab91d60a27e18bfcf10dcec1b",
-        "version" : "18.3.0"
+        "revision" : "0b91be6b29805466d101b556f775763f7c0c5c18",
+        "version" : "18.4.0"
       }
     },
     {
@@ -83,5 +82,5 @@
       }
     }
   ],
-  "version" : 3
+  "version" : 2
 }

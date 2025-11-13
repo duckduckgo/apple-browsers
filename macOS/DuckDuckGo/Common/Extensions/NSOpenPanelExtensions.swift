@@ -21,7 +21,7 @@ import UniformTypeIdentifiers
 
 extension NSOpenPanel {
 
-    static func downloadDirectoryPanel(downloadsPreferences: DownloadsPreferences = .shared) -> NSOpenPanel {
+    static func downloadDirectoryPanel(downloadsPreferences: DownloadsPreferences) -> NSOpenPanel {
         let panel = NSOpenPanel()
 
         panel.directoryURL = downloadsPreferences.effectiveDownloadLocation

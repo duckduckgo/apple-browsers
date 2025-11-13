@@ -26,10 +26,12 @@ final class NavigationHotkeyHandler {
     private var onNewWindow: ((WKNavigationAction?) -> NavigationDecision)?
     private let isTabPinned: () -> Bool
     private let isBurner: Bool
+    private let tabsPreferences: TabsPreferences
 
-    init(isTabPinned: @escaping () -> Bool, isBurner: Bool) {
+    init(isTabPinned: @escaping () -> Bool, isBurner: Bool, tabsPreferences: TabsPreferences) {
         self.isTabPinned = isTabPinned
         self.isBurner = isBurner
+        self.tabsPreferences = tabsPreferences
     }
 
 }
@@ -64,7 +66,7 @@ extension NavigationHotkeyHandler: NavigationResponder {
         // Get the open behavior with canOpenLinkInCurrentTab=false for pinned tabs
         let canOpenLinkInCurrentTab = !isNavigatingAwayFromPinnedTab
         let button: NSEvent.Button = navigationAction.navigationType.isMiddleButtonClick ? .middle : .left
-        let switchToNewTabWhenOpened = TabsPreferences.shared.switchToNewTabWhenOpened
+        let switchToNewTabWhenOpened = tabsPreferences.switchToNewTabWhenOpened
 
         let linkOpenBehavior = LinkOpenBehavior(button: button, modifierFlags: NSApp.currentEvent?.modifierFlags ?? [], switchToNewTabWhenOpenedPreference: switchToNewTabWhenOpened, canOpenLinkInCurrentTab: canOpenLinkInCurrentTab)
 

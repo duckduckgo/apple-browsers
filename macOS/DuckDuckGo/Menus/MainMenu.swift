@@ -141,9 +141,10 @@ final class MainMenu: NSMenu {
     init(featureFlagger: FeatureFlagger,
          bookmarkManager: BookmarkManager,
          historyCoordinator: HistoryCoordinating & HistoryGroupingDataSource,
+         recentlyClosedCoordinator: RecentlyClosedCoordinating,
          faviconManager: FaviconManagement,
          dockCustomizer: DockCustomization = DockCustomizer(),
-         defaultBrowserPreferences: DefaultBrowserPreferences = .shared,
+         defaultBrowserPreferences: DefaultBrowserPreferences,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
          internalUserDecider: InternalUserDecider,
          appearancePreferences: AppearancePreferences,
@@ -151,7 +152,7 @@ final class MainMenu: NSMenu {
          appVersion: AppVersion = .shared,
          isFireWindowDefault: Bool,
          configurationURLProvider: CustomConfigurationURLProviding,
-         contentScopePreferences: ContentScopePreferences = ContentScopePreferences()) {
+         contentScopePreferences: ContentScopePreferences) {
 
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
@@ -161,7 +162,7 @@ final class MainMenu: NSMenu {
         self.dockCustomizer = dockCustomizer
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.aiChatMenuConfig = aiChatMenuConfig
-        self.historyMenu = HistoryMenu(historyGroupingDataSource: historyCoordinator, featureFlagger: featureFlagger)
+        self.historyMenu = HistoryMenu(historyGroupingDataSource: historyCoordinator, recentlyClosedCoordinator: recentlyClosedCoordinator, featureFlagger: featureFlagger)
         self.configurationURLProvider = configurationURLProvider
         self.contentScopePreferences = contentScopePreferences
         super.init(title: UserText.duckDuckGo)
@@ -844,6 +845,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Simulate hang") {
                     NSMenuItem(title: "0.5 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 0.5)
                     NSMenuItem(title: "2 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 2.0)
+                    NSMenuItem(title: "3.5 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 3.5)
                     NSMenuItem(title: "5 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 5.0)
                     NSMenuItem(title: "10 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 10.0)
                     NSMenuItem(title: "15 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 15.0)

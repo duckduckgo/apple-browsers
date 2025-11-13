@@ -28,6 +28,7 @@ public struct PixelParameters {
     public static let duration = "dur"
     static let test = "test"
     public static let appVersion = "appVersion"
+    public static let osVersion = "osVersion"
 
     public static let autocompleteBookmarkCapable = "bc"
     public static let autocompleteIncludedLocalResults = "sb"
@@ -116,6 +117,8 @@ public struct PixelParameters {
     // Remote messaging
     public static let message = "message"
     public static let sheetResult = "success"
+    public static let card = "card"
+    public static let dismissType = "dismiss_type"
 
     // Network Protection
     public static let keychainFieldName = "fieldName"

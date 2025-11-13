@@ -20,6 +20,7 @@
 import XCTest
 import Foundation
 import PrivacyDashboard
+import Combine
 @testable import DuckDuckGo
 
 final class ContextualOnboardingPresenterMock: ContextualOnboardingPresenting {
@@ -59,6 +60,7 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
     var isShowingSubscriptionPromotion: Bool = false
     var shouldShowFireButtonPulse: Bool = false
     var isAddFavoriteFlow: Bool = false
+    var isDismissedPublisher = PassthroughSubject<Bool, Never>()
 
     func setTryAnonymousSearchMessageSeen() {
         didCallSetTryAnonymousSearchMessageSeen = true
@@ -134,6 +136,8 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, Subscripti
 
 // Use to fill parameter list in injection.
 class DummyDaxDialogsManager: DaxDialogsManaging {
+    var hasSeenOnboarding: Bool = false
+
     var isShowingFireDialog: Bool = false
 
     var shouldShowPrivacyButtonPulse: Bool = false
@@ -149,6 +153,8 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
     var isShowingSubscriptionPromotion: Bool = false
 
     var subscriptionPromotionDialogSeen: Bool = false
+
+    var isDismissedPublisher = PassthroughSubject<Bool, Never>()
 
     func setTryAnonymousSearchMessageSeen() { }
 

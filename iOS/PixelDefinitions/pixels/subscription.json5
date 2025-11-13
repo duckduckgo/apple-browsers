@@ -75,6 +75,83 @@
             }
         ]
     },
+
+    // Win-back Offer Pixels - Impressions
+    "m_privacy-pro_winback_launch_prompt_shown": {
+        "description": "Fired when the win-back offer launch prompt is displayed to an expired subscriber",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_privacy-pro_winback_settings_logged_out_offer_shown": {
+        "description": "Fired when the win-back offer is shown to logged-out users in settings",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_privacy-pro_winback_settings_logged_in_offer_shown": {
+        "description": "Fired when the win-back offer is shown to logged-in expired users in settings",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_privacy-pro_winback_subscription_settings_shown": {
+        "description": "Fired when the user views the subscription settings page with win-back offer",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_privacy-pro_winback_new_tab_page_shown": {
+        "description": "Fired when the win-back offer promotion is displayed on the New Tab Page",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    // Win-back Offer Pixels - CTA Clicks
+    "m_privacy-pro_winback_launch_prompt_clicked": {
+        "description": "Fired when the user clicks the CTA button in the win-back offer launch prompt",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_privacy-pro_winback_settings_logged_out_offer_clicked": {
+        "description": "Fired when logged-out user clicks the win-back offer CTA in settings",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_privacy-pro_winback_subscription_settings_clicked": {
+        "description": "Fired when the user clicks the 'Take Offer' CTA in the subscription settings page",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_privacy-pro_winback_new_tab_page_clicked": {
+        "description": "Fired when the user clicks the CTA button in the win-back offer New Tab Page promotion",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    // Win-back Offer Pixels - Dismissals
+    "m_privacy-pro_winback_launch_prompt_dismissed": {
+        "description": "Fired when the user dismisses the win-back offer launch prompt",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
     // Defined in https://app.asana.com/1/137249556945/task/1210959493759232
     "m_ios_wide_subscription_purchase": {
         "description": "Wide pixel sent at the end of a subscription purchase flow",
@@ -82,18 +159,18 @@
         "triggers": ["other"],
         "suffixes": ["daily"],
         "parameters": [
-            "widePixelAppName",
-            "widePixelAppVersion",
-            "widePixelInternalUser",
-            "widePixelPlatform",
-            "widePixelType",
-            "widePixelFormFactor",
-            "widePixelSampleRate",
-            "widePixelFeatureStatus",
-            "widePixelErrorDomain",
-            "widePixelErrorCode",
-            "widePixelUnderlyingErrorDomain",
-            "widePixelUnderlyingErrorCode",
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventFeatureStatus",
+            "wideEventErrorDomain",
+            "wideEventErrorCode",
+            "wideEventUnderlyingErrorDomain",
+            "wideEventUnderlyingErrorCode",
             {
                 "key": "feature.name",
                 "type": "string",
@@ -166,18 +243,18 @@
         "triggers": ["other"],
         "suffixes": ["daily"],
         "parameters": [
-            "widePixelAppName",
-            "widePixelAppVersion",
-            "widePixelInternalUser",
-            "widePixelPlatform",
-            "widePixelType",
-            "widePixelFormFactor",
-            "widePixelSampleRate",
-            "widePixelFeatureStatus",
-            "widePixelErrorDomain",
-            "widePixelErrorCode",
-            "widePixelUnderlyingErrorDomain",
-            "widePixelUnderlyingErrorCode",
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventFeatureStatus",
+            "wideEventErrorDomain",
+            "wideEventErrorCode",
+            "wideEventUnderlyingErrorDomain",
+            "wideEventUnderlyingErrorCode",
             {
                 "key": "feature.name",
                 "type": "string",
@@ -245,17 +322,18 @@
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
         "parameters": [
-            "widePixelAppName",
-            "widePixelAppVersion",
-            "widePixelPlatform",
-            "widePixelType",
-            "widePixelFormFactor",
-            "widePixelSampleRate",
-            "widePixelFeatureStatus",
-            "widePixelErrorDomain",
-            "widePixelErrorCode",
-            "widePixelUnderlyingErrorDomain",
-            "widePixelUnderlyingErrorCode",
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventFeatureStatus",
+            "wideEventErrorDomain",
+            "wideEventErrorCode",
+            "wideEventUnderlyingErrorDomain",
+            "wideEventUnderlyingErrorCode",
             {
                 "key": "feature.name",
                 "type": "string",

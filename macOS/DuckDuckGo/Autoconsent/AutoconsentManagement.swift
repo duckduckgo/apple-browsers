@@ -19,7 +19,6 @@
 import Foundation
 
 final class AutoconsentManagement {
-    static let shared = AutoconsentManagement()
 
     var sitesNotifiedCache = Set<String>()
 

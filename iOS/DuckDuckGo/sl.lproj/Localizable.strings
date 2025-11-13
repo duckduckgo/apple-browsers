@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Omogoči zaščito zasebnosti";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Zapri zavihke in izbriši podatke";
+"action.title.forgetAll" = "Počisti zavihke in podatke";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Zavihki in podatki so izbrisani";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Počisti zavihke, podatke in klepete Duck.ai";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Odpri v ozadju";
@@ -2356,9 +2359,6 @@
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Izberite brskalnik";
 
-/* Message to highlight browser capability of private searches */
-"onboarding.browsers.features.privateSearch.title" = "Privzeto išče zasebno";
-
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo je na voljo tudi z %1$@, ki vključuje omrežje %2$@ in %3$@.";
 
@@ -2400,18 +2400,6 @@
 
 /* The title of the onboarding dialog popup to select the preferred App icon. */
 "onboarding.highlights.appIconSelection.title" = "Katera barva mi najbolje pristaja?";
-
-/* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Blokirajte pojavna okna za piškotke";
-
-/* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokiranje ciljnih oglasov";
-
-/* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Izbriši podatke o brskanju z enim gumbom";
-
-/* Message to highlight browser capability of blocking 3rd-party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokirajte sledilnike tretjih oseb";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Zaščite so aktivirane!";
@@ -2812,6 +2800,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Nastavitve modula Search Assist";
 
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Skrij slike, ustvarjene z umetno inteligenco";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrira slike, ustvarjene z umetno inteligenco, iz rezultatov iskanja slik";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vedno vklopljeno";
 
@@ -2826,6 +2820,12 @@
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Onemogoči, da preprečiš samodejno odpiranje povezav v drugih nameščenih aplikacijah.";
+
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Počisti zavihke in podatke";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Počisti zavihke, podatke in klepete Duck.ai";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Predlogi za iskanje";
@@ -2871,6 +2871,12 @@
 
 /* Settings title for the customize section */
 "settings.customize" = "Prilagodi";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Počisti vse zavihke, klepete Duck.ai in podatke za vsa spletna mesta, ki jih niste zaščitili s funkcijo Fireproof.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Počisti vse zavihke in podatke za vsa spletna mesta, ki jih niste zaščitili s funkcijo Fireproof.";
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Počiščenje podatkov";

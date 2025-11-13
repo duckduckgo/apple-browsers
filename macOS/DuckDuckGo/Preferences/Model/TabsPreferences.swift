@@ -41,8 +41,6 @@ struct TabsPreferencesUserDefaultsPersistor: TabsPreferencesPersistor {
 
 final class TabsPreferences: ObservableObject, PreferencesTabOpening {
 
-    static let shared = TabsPreferences()
-
     @Published var preferNewTabsToWindows: Bool {
         didSet {
             persistor.preferNewTabsToWindows = preferNewTabsToWindows
@@ -67,14 +65,19 @@ final class TabsPreferences: ObservableObject, PreferencesTabOpening {
         }
     }
 
-    init(persistor: TabsPreferencesPersistor = TabsPreferencesUserDefaultsPersistor()) {
+    init(
+        persistor: TabsPreferencesPersistor = TabsPreferencesUserDefaultsPersistor(),
+        windowControllersManager: WindowControllersManagerProtocol
+    ) {
         self.persistor = persistor
+        self.windowControllersManager = windowControllersManager
         preferNewTabsToWindows = persistor.preferNewTabsToWindows
         switchToNewTabWhenOpened = persistor.switchToNewTabWhenOpened
         newTabPosition = persistor.newTabPosition
         pinnedTabsMode = persistor.sharedPinnedTabs ? .shared : .separate
     }
 
+    let windowControllersManager: WindowControllersManagerProtocol
     private var persistor: TabsPreferencesPersistor
 
     // MARK: - Pinned Tabs Setting Migration
@@ -104,3 +107,12 @@ enum PinnedTabsMode: String, CaseIterable {
     case shared
     case separate
 }
+
+#if DEBUG
+final class MockTabsPreferencesPersistor: TabsPreferencesPersistor {
+    var preferNewTabsToWindows: Bool = false
+    var switchToNewTabWhenOpened: Bool = false
+    var newTabPosition: NewTabPosition = .atEnd
+    var sharedPinnedTabs: Bool = false
+}
+#endif

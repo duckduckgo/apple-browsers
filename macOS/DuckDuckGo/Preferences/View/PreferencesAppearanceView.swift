@@ -255,6 +255,9 @@ extension Preferences {
 
                         ThemesResetView()
                             .environmentObject(model)
+                            .padding(.bottom, 16)
+
+                        ToggleMenuItem(UserText.syncAppIconWithTheme, isOn: $model.syncAppIconWithTheme)
 
                     } else {
                         ThemeAppearancePicker()

@@ -448,7 +448,7 @@ class SmallOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showSearchLoupe)
         XCTAssertFalse(testee.showAbort)
         XCTAssertTrue(testee.showRefresh)
-        XCTAssertTrue(testee.showShare)
+        XCTAssertTrue(testee.showCustomizableButton)
 
         XCTAssertFalse(testee.hasLargeWidth)
         XCTAssertFalse(testee.showBackButton)

@@ -58,4 +58,5 @@ final class TestNetworkProtectionStatusReporter: NetworkProtectionStatusReporter
     var controllerErrorMessageObserver: ControllerErrorMesssageObserver { ipcClient.ipcControllerErrorMessageObserver }
     var dataVolumeObserver: DataVolumeObserver { ipcClient.ipcDataVolumeObserver }
     var knownFailureObserver: KnownFailureObserver { ipcClient.ipcKnownFailureObserver }
+    var vpnEnabledObserver: VPNEnabledObserver { ipcClient.ipcVPNEnabledObserver }
 }

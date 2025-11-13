@@ -41,7 +41,7 @@ final class RollingEightDaysBoolTests: XCTestCase {
     func testSetTodayToTrueFirstTime() {
         let beforeDate = Date()
 
-        rollingBool.setTodayToTrue()
+        rollingBool.setTodayToTrue(dateProvider: DefaultDateProvider())
 
         let afterDate = Date()
 
@@ -59,13 +59,13 @@ final class RollingEightDaysBoolTests: XCTestCase {
 
     func testSetTodayToTrueSameDay() {
         // Set up initial state
-        rollingBool.setTodayToTrue()
+        rollingBool.setTodayToTrue(dateProvider: DefaultDateProvider())
         let initialCount = rollingBool.count
         let initialValues = rollingBool.allValues
         let initialLastDay = rollingBool.lastDay
 
         // Call again on same day
-        rollingBool.setTodayToTrue()
+        rollingBool.setTodayToTrue(dateProvider: DefaultDateProvider())
 
         // Should not change count or values
         XCTAssertEqual(rollingBool.count, initialCount)
@@ -82,7 +82,7 @@ final class RollingEightDaysBoolTests: XCTestCase {
         let initialCount = rollingBool.count
 
         // Call setTodayToTrue (should be different day)
-        rollingBool.setTodayToTrue()
+        rollingBool.setTodayToTrue(dateProvider: DefaultDateProvider())
 
         // Should increment count and append new value
         XCTAssertEqual(rollingBool.count, initialCount + 1)
@@ -133,7 +133,7 @@ final class RollingEightDaysBoolTests: XCTestCase {
                 rollingBool.lastDay = currentDate.addingTimeInterval(-.day)
             }
 
-            rollingBool.setTodayToTrue()
+            rollingBool.setTodayToTrue(dateProvider: DefaultDateProvider())
 
             // Verify count doesn't exceed 8 (rolling behaviour)
             XCTAssertLessThanOrEqual(rollingBool.count, 8)

@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
 import BrowserServicesKit
-import SubscriptionTestingUtilities
+import SharedTestUtilities
 import Subscription
+import SubscriptionTestingUtilities
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class WinBackOfferPromptPresenterTests: XCTestCase {
@@ -27,14 +29,18 @@ final class WinBackOfferPromptPresenterTests: XCTestCase {
     var mockVisibilityManager: MockWinBackOfferVisibilityManager!
     var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
     var lastReceivedURL: URL?
+    var capturedPixels: [SubscriptionPixel]!
 
     override func setUp() {
         super.setUp()
         mockVisibilityManager = MockWinBackOfferVisibilityManager()
         mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        capturedPixels = []
         sut = WinBackOfferPromptPresenter(visibilityManager: mockVisibilityManager, urlOpener: { url in
             self.lastReceivedURL = url
-        }, subscriptionManager: mockSubscriptionManager)
+        }, subscriptionManager: mockSubscriptionManager, pixelHandler: { pixel in
+            self.capturedPixels.append(pixel)
+        })
     }
 
     override func tearDown() {
@@ -42,6 +48,7 @@ final class WinBackOfferPromptPresenterTests: XCTestCase {
         mockVisibilityManager = nil
         mockSubscriptionManager = nil
         lastReceivedURL = nil
+        capturedPixels = nil
         super.tearDown()
     }
 
@@ -60,5 +67,52 @@ final class WinBackOfferPromptPresenterTests: XCTestCase {
         let featurePageQueryItem = try XCTUnwrap(components.queryItems?.first { $0.name == "featurePage" })
         XCTAssertEqual(originQueryItem.value, SubscriptionFunnelOrigin.winBackLaunch.rawValue)
         XCTAssertEqual(featurePageQueryItem.value, SubscriptionURL.FeaturePage.winback)
+    }
+
+    // MARK: - Pixels
+
+    func testWhenLaunchPromptIsPresented_ItFiresPixel() {
+        // Given
+        mockVisibilityManager.shouldShowLaunchMessage = true
+        XCTAssertEqual(capturedPixels.count, 0, "Should not have fired any pixels yet")
+
+        // When
+        sut.tryToShowPrompt(in: MockWindow())
+
+        // Then
+        XCTAssertEqual(capturedPixels.count, 1, "Should have fired exactly one pixel")
+        if case .subscriptionWinBackOfferLaunchPromptShown = capturedPixels.first! {
+            // Correct pixel fired
+        } else {
+            XCTFail("Should fire subscriptionWinBackOfferLaunchPromptShown pixel")
+        }
+    }
+
+    @MainActor
+    func testWhenLaunchPromptCTAIsClicked_ItFiresPixel() {
+        // When
+        sut.handleSeeOffer()
+
+        // Then
+        XCTAssertEqual(capturedPixels.count, 1, "Should have fired exactly one pixel")
+        if case .subscriptionWinBackOfferLaunchPromptCTAClicked = capturedPixels.first! {
+            // Correct pixel fired
+        } else {
+            XCTFail("Should fire subscriptionWinBackOfferLaunchPromptCTAClicked pixel")
+        }
+    }
+
+    @MainActor
+    func testWhenLaunchPromptIsDismissed_ItFiresPixel() {
+        // When
+        sut.handleDismiss()
+
+        // Then
+        XCTAssertEqual(capturedPixels.count, 1, "Should have fired exactly one pixel")
+        if case .subscriptionWinBackOfferLaunchPromptDismissed = capturedPixels.first {
+            // Correct pixel fired
+        } else {
+            XCTFail("Should fire subscriptionWinBackOfferLaunchPromptDismissed pixel")
+        }
     }
 }

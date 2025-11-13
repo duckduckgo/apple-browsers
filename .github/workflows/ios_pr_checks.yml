@@ -11,6 +11,9 @@ on:
       - 'SharedPackages/**'
       - 'iOS/**'
   pull_request:
+    # opened, synchronize, reopened are the default triggering events for a pull request
+    # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - '.github/**'
       - '.xcode-version'
@@ -53,9 +56,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  should-run-checks:
+    name: Determine if checks should run
+    uses: ./.github/workflows/should_run_pr_checks.yml
+
   shellcheck:
 
     name: ShellCheck
+
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
 
     runs-on: ubuntu-latest
 
@@ -81,6 +91,9 @@ jobs:
   unit-tests:
 
     name: Unit Tests
+
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
 
     runs-on: macos-15
     timeout-minutes: 60 # temporary (vs original 20) to fix the issue with GHA slowness
@@ -221,8 +234,13 @@ jobs:
 
     name: Make Release Build
 
+    needs: should-run-checks
+
     # Dependabot doesn't have access to all secrets, so we skip this job, also skip for releases
-    if: github.actor != 'dependabot[bot]' && inputs.skip-release != true
+    if: >
+      github.actor != 'dependabot[bot]' &&
+      inputs.skip-release != true &&
+      needs.should-run-checks.outputs.should_run == 'true'
 
     runs-on: macos-15
     timeout-minutes: 60 # temporary (vs original 20) to fix the issue with GHA slowness

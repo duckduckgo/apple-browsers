@@ -1,6 +1,18 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "black-friday.campaign.preferences.cta" : {
+      "comment" : "CTA of the message displayed for logged in users during the Black Friday campaign",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Save %d%% on First Year"
+          }
+        }
+      }
+    },
     "Close" : {
       "localizations" : {
         "de" : {

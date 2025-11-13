@@ -101,21 +101,14 @@ struct DataImportSummaryView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle())
 
-                if !viewModel.syncIsActive {
-                    Button {
-                        viewModel.launchSync()
-                    } label: {
-                        VStack {
-                            Text(viewModel.syncButtonTitle)
-                                .lineLimit(nil)
-                                .multilineTextAlignment(.center)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                    .buttonStyle(GhostButtonStyle())
-                    .onFirstAppear {
-                        viewModel.fireSyncButtonShownPixel()
-                    }
+                switch viewModel.footer {
+                case .syncButton(let title):
+                    syncButton(title: title)
+                case .message(let body):
+                    footerMessage(body: body)
+                        .padding(.top, 8)
+                case .none:
+                    EmptyView()
                 }
             }
             .frame(maxWidth: 360)
@@ -134,6 +127,32 @@ struct DataImportSummaryView: View {
                 isAnimating = true
             }
         }
+    }
+
+    private func syncButton(title: String) -> some View {
+        Button {
+            viewModel.launchSync()
+        } label: {
+            VStack {
+                Text(title)
+                    .lineLimit(nil)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .buttonStyle(GhostButtonStyle())
+        .onFirstAppear {
+            viewModel.fireSyncButtonShownPixel()
+        }
+    }
+
+    private func footerMessage(body: String) -> some View {
+        Text(body)
+            .font(.system(size: 13))
+            .foregroundStyle(Color.secondary)
+            .lineLimit(nil)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private struct AnimationView: View {

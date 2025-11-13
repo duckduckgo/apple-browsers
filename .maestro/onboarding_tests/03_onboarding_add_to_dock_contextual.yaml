@@ -47,9 +47,8 @@ tags:
 - assertVisible: "Instantly clear your browsing activity with the Fire Button.\n\nGive it a try! 🔥"
 
 # Handle Fire Button
-- assertVisible: "Close Tabs and Clear Data"
-- tapOn: "Close Tabs and Clear Data"
-- tapOn: "Close Tabs and Clear Data"
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 
 # Handle End of Journey Dialog
 - assertVisible: "Add me to your Dock!"

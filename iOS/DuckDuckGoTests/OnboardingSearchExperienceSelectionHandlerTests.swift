@@ -93,6 +93,7 @@ final class OnboardingSearchExperienceSelectionHandlerTests: XCTestCase {
             onboardingSearchExperienceProvider: mockOnboardingSearchExperienceProvider
         )
 
+        // When
         daxDialogs.isDismissedPublisher.send(false)
 
         // Then

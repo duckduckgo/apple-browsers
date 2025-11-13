@@ -90,4 +90,3 @@ private final class ObservingMockOnboardingSearchExperienceProvider: OnboardingS
         lastEnableValue = enable
     }
 }
-

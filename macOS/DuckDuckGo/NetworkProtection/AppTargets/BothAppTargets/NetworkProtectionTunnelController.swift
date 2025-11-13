@@ -395,10 +395,12 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
     }
 
+    @MainActor
     public func activeSession() async -> NETunnelProviderSession? {
         await session
     }
 
+    @MainActor
     public var session: NETunnelProviderSession? {
         get async {
             guard let manager = await manager,

@@ -60,17 +60,9 @@ public class VPNEnabledObserverThroughSession: VPNEnabledObserver {
         self.tunnelSessionProvider = tunnelSessionProvider
 
         // Unfortunately we can't set the initial value from real data without making the init
-        // async, so for now we'll be content to allow this to be false and spawn a task to
-        // update it.
+        // async, so for now we'll be content to allow this to be false. The initial update
+        // will happen in startObservingChanges().
         subject = CurrentValueSubject<Bool, Never>(false)
-
-        Task { [tunnelSessionProvider] in
-            guard let activeSession = await tunnelSessionProvider.activeSession() else {
-                return
-            }
-
-            updateSubject(with: activeSession)
-        }
 
         startObservingChanges()
     }
@@ -93,123 +85,68 @@ public class VPNEnabledObserverThroughSession: VPNEnabledObserver {
 
     // MARK: - Observing VPN status and configuration
 
-    private func fetchCurrentState() async -> (status: NEVPNStatus, isOnDemandEnabled: Bool) {
-        guard let session = await tunnelSessionProvider.activeSession() else {
-            return (.disconnected, false)
-        }
-        return (session.status, session.manager.isOnDemandEnabled)
-    }
-
-    private func createStatusPublisher(initialStatus: NEVPNStatus) -> AnyPublisher<NEVPNStatus, Never> {
-        notificationCenter.publisher(for: .NEVPNStatusDidChange)
-            .compactMap { notification -> NEVPNConnection? in
-                notification.object as? NEVPNConnection
-            }
-            .map { connection -> NEVPNStatus in
-                connection.status
-            }
-            .prepend(initialStatus)
-            .removeDuplicates()
-            .eraseToAnyPublisher()
-    }
-
-    private func createConfigPublisher(initialValue: Bool) -> AnyPublisher<Bool, Never> {
-        notificationCenter.publisher(for: .NEVPNConfigurationChange)
-            .compactMap { notification in
-                notification.object as? NEVPNManager
-            }
-            .flatMap { [extensionResolver] manager -> AnyPublisher<(NEVPNManager, String), Never> in
-                Future { promise in
-                    Task {
-                        let bundleID = await extensionResolver.activeExtensionBundleID
-                        promise(.success((manager, bundleID)))
-                    }
-                }
-                .eraseToAnyPublisher()
-            }
-            .filter { manager, activeExtensionBundleID in
-                guard let tunnelProviderProtocol = (manager.protocolConfiguration as? NETunnelProviderProtocol) else {
-                    return false
-                }
-                return tunnelProviderProtocol.providerBundleIdentifier == activeExtensionBundleID
-            }
-            .map { manager, _ in
-                manager.isOnDemandEnabled
-            }
-            .prepend(initialValue)
-            .removeDuplicates()
-            .eraseToAnyPublisher()
-    }
-
     private func subscribeToRefreshNotifications() {
         notificationCenter.publisher(for: .VPNSnoozeRefreshed)
-            .sink { [weak self] notification in
-                self?.handleRefreshNotification(notification)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    await self?.handleNotification()
+                }
             }.store(in: &cancellables)
 
         platformNotificationCenter.publisher(for: platformDidWakeNotification)
-            .sink { [weak self] notification in
-                self?.handleRefreshNotification(notification)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    await self?.handleNotification()
+                }
             }.store(in: &cancellables)
     }
 
     private func startObservingChanges() {
-        Task { [weak self] in
-            guard let self else { return }
-
-            // Fetch current state
-            let currentState = await self.fetchCurrentState()
-
-            // Create publishers with current values prepended
-            let statusPublisher = self.createStatusPublisher(initialStatus: currentState.status)
-            let configPublisher = self.createConfigPublisher(initialValue: currentState.isOnDemandEnabled)
-
-            // Combine and subscribe
-            Publishers.CombineLatest(statusPublisher, configPublisher)
-                .map { (status, isOnDemandEnabled) -> Bool in
-                    Self.isVPNEnabled(status: status, isOnDemandEnabled: isOnDemandEnabled)
+        // Subscribe to status changes
+        notificationCenter.publisher(for: .NEVPNStatusDidChange)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    await self?.handleNotification()
                 }
-                .sink { [subject = self.subject] isVPNEnabled in
-                    subject.send(isVPNEnabled)
-                }
-                .store(in: &self.cancellables)
+            }
+            .store(in: &cancellables)
 
-            // Subscribe to refresh notifications
-            self.subscribeToRefreshNotifications()
+        // Subscribe to config changes
+        notificationCenter.publisher(for: .NEVPNConfigurationChange)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    await self?.handleNotification()
+                }
+            }
+            .store(in: &cancellables)
+
+        // Subscribe to refresh notifications
+        subscribeToRefreshNotifications()
+
+        // Fetch initial state
+        Task { @MainActor in
+            await handleNotification()
         }
     }
 
-    // MARK: - Handling Notifications
+    // MARK: - Serial Notification Handler
 
-    private func handleRefreshNotification(_ notification: Notification) {
-        Task {
-            guard let session = await tunnelSessionProvider.activeSession() else {
-                return
+    @MainActor
+    private func handleNotification() async {
+        guard let session = await tunnelSessionProvider.activeSession() else {
+            if subject.value != false {
+                subject.send(false)
             }
-
-            updateSubject(with: session)
+            return
         }
-    }
 
-    private func handleChange(in session: NETunnelProviderSession) {
-        updateSubject(with: session)
-    }
+        let isEnabled = Self.isVPNEnabled(
+            status: session.status,
+            isOnDemandEnabled: session.manager.isOnDemandEnabled
+        )
 
-    // MARK: - Update Subject
-
-    private var updateSubjectTask: Task<Void, Error>?
-
-    private func updateSubject(with session: NETunnelProviderSession) {
-        updateSubjectTask?.cancel()
-
-        updateSubjectTask = Task { @MainActor in
-            let isVPNEnabled = Self.isVPNEnabled(status: session.status, isOnDemandEnabled: session.manager.isOnDemandEnabled)
-
-            try Task.checkCancellation()
-
-            if isVPNEnabled != subject.value {
-                subject.send(isVPNEnabled)
-            }
+        if isEnabled != subject.value {
+            subject.send(isEnabled)
         }
     }
 }

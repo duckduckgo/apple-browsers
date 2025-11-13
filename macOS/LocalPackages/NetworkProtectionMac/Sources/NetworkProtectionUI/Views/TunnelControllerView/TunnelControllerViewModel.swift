@@ -114,10 +114,21 @@ public final class TunnelControllerViewModel: ObservableObject {
         self.proxySettings = proxySettings
         self.locationFormatter = locationFormatter
         self.timeLapsedFormatter = timeLapsedFormatter
-        self.timeLapsed = timeLapsedFormatter.string(from: 0)
         self.uiActionHandler = uiActionHandler
 
-        connectionStatus = statusReporter.statusObserver.recentValue
+        // Get initial connection status
+        let initialStatus = statusReporter.statusObserver.recentValue
+        connectionStatus = initialStatus
+
+        // Initialize timeLapsed based on initial connection status instead of hardcoding to 0
+        switch initialStatus {
+        case .connected(let connectedDate):
+            let secondsLapsed = Date().timeIntervalSince(connectedDate)
+            self.timeLapsed = timeLapsedFormatter.string(from: secondsLapsed)
+        default:
+            self.timeLapsed = timeLapsedFormatter.string(from: 0)
+        }
+
         dnsSettings = vpnSettings.dnsSettings
 
         formattedDataVolume = statusReporter.dataVolumeObserver.recentValue.formatted(using: Self.byteCountFormatter)

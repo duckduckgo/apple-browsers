@@ -83,6 +83,9 @@ protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
     func measureChooseCustomAppIconColor()
     func measureAddressBarPositionSelectionImpression()
     func measureChooseBottomAddressBarPosition()
+    func measureSearchExperienceSelectionImpression()
+    func measureChooseAIChat()
+    func measureChooseSearchOnly()
 }
 
 protocol OnboardingCustomInteractionPixelReporting {
@@ -229,6 +232,17 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
         fire(event: .onboardingIntroBottomAddressBarSelected, unique: false)
     }
 
+    func measureSearchExperienceSelectionImpression() {
+        fire(event: .onboardingIntroChooseSearchExperienceImpressionUnique, unique: true)
+    }
+
+    func measureChooseAIChat() {
+        fire(event: .onboardingIntroAIChatSelected, unique: false)
+    }
+
+    func measureChooseSearchOnly() {
+        fire(event: .onboardingIntroSearchOnlySelected, unique: false)
+    }
 }
 
 // MARK: - OnboardingPixelReporter + Custom Interaction

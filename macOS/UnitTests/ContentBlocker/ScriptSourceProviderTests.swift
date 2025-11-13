@@ -74,7 +74,8 @@ final class ScriptSourceProviderTests: XCTestCase {
         let sourceProvider = ScriptSourceProvider(
             configStorage: MockConfigurationStore(),
             privacyConfigurationManager: MockPrivacyConfigurationManaging(),
-            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(windowControllersManager: WindowControllersManagerMock()),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
             contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
             trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()),
             experimentManager: experimentManager,

@@ -70,13 +70,15 @@ private extension ModalPromptCoordinationFactory {
 
         let store = NewAddressBarPickerStore()
         let aiChatSettings = dependency.aiChatSettings
+        let searchExperienceOnboardingProvider = OnboardingSearchExperience()
 
         let validator = NewAddressBarPickerDisplayValidator(
             aiChatSettings: aiChatSettings,
             featureFlagger: dependency.featureFlagger,
             experimentalAIChatManager: dependency.experimentalAIChatManager,
             appSettings: dependency.appSettings,
-            pickerStorage: store
+            pickerStorage: store,
+            searchExperienceOnboardingProvider: searchExperienceOnboardingProvider
         )
 
         return NewAddressBarPickerModalPromptProvider(

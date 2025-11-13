@@ -113,8 +113,15 @@ struct SettingsAppearanceView: View {
             addressBarButtonSetting()
             toolbarButtonSetting()
         } header: {
-            Text(verbatim: "Customizable Buttons")
+            Text(UserText.mobileCustomizationSectionTitle)
         }
+    }
+
+    @ViewBuilder
+    func accessoryImage(_ image: UIImage) -> AnyView {
+        AnyView(Image(uiImage: image).tint(
+            Color(designSystemColor: .iconsSecondary)
+        ))
     }
 
     @ViewBuilder
@@ -128,9 +135,9 @@ struct SettingsAppearanceView: View {
         NavigationLink(destination: destination, isActive: $showAddressBarSettings) {
 
             if let image = viewModel.selectedAddressBarButton.wrappedValue.smallIcon {
-                SettingsCellView(label: "Address Bar", accessory: .image(Image(uiImage: image)))
+                SettingsCellView(label: UserText.mobileCustomizationAddressBarTitle, accessory: .custom(accessoryImage(image)))
             } else if viewModel.selectedAddressBarButton.wrappedValue == .none {
-                SettingsCellView(label: "Address Bar", accessory: .rightDetail("None"))
+                SettingsCellView(label: UserText.mobileCustomizationAddressBarTitle, accessory: .rightDetail(UserText.mobileCustomizationNoneOptionShort))
             } else {
                 FailedAssertionView("Unexpected state")
             }
@@ -150,10 +157,10 @@ struct SettingsAppearanceView: View {
         NavigationLink(destination: destination, isActive: $showToolbarSettings) {
 
             if let image = viewModel.selectedToolbarButton.wrappedValue.smallIcon {
-                SettingsCellView(label: "Toolbar", accessory: .image(Image(uiImage: image)))
+                SettingsCellView(label: UserText.mobileCustomizationToolbarTitle, accessory: .custom(accessoryImage(image)))
             } else {
                 FailedAssertionView("Expected image for selection")
-                SettingsCellView(label: "Toolbar", accessory: .rightDetail("None"))
+                SettingsCellView(label: UserText.mobileCustomizationToolbarTitle, accessory: .rightDetail(UserText.mobileCustomizationNoneOptionShort))
             }
         }
         .listRowBackground(Color(designSystemColor: .surface))
@@ -162,7 +169,7 @@ struct SettingsAppearanceView: View {
 
     @ViewBuilder
     func showReloadButtonSetting() -> some View {
-        SettingsCellView(label: "Show Reload Button",
+        SettingsCellView(label: UserText.mobileCustomizationShowReloadButtonToggleTitle,
                          accessory: .toggle(isOn: showReloadButton))
     }
 
@@ -191,7 +198,7 @@ struct SettingsAppearanceView: View {
     func addressBarPositionSetting() -> some View {
         if viewModel.state.addressBar.enabled {
             SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
-                                   label: UserText.settingsAddressBar,
+                                   label: UserText.settingsAddressBarPosition,
                                    options: AddressBarPosition.allCases,
                                    selectedOption: viewModel.addressBarPositionBinding)
         }

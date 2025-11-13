@@ -212,6 +212,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1210594645229050/task/1211494295271901?focus=true
     case winBackOffer
 
+    /// https://app.asana.com/1/137249556945/project/1210594645229050/task/1211612114679665?focus=true
+    case blackFridayCampaign
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210417832822045
     case fireDialog
     /// Toggle for showing the "Manage individual sites" link in Fire dialog
@@ -248,6 +251,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1211708489642640?focus=true
     case tabProgressIndicator
 
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211388368219934?focus=true
+    case vpnConnectionWidePixelMeasurement
+
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211579914062173?focus=true
     case showHideAIGeneratedImagesSection
 
@@ -278,6 +284,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .fireDialogIndividualSitesLink,
                 .blurryAddressBarTahoeFix,
                 .pinnedTabsViewRewrite,
+                .vpnConnectionWidePixelMeasurement,
                 .showHideAIGeneratedImagesSection:
             true
         default:
@@ -366,8 +373,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportNewExperience,
                 .pinnedTabsViewRewrite,
                 .tabProgressIndicator,
+                .vpnConnectionWidePixelMeasurement,
                 .showHideAIGeneratedImagesSection,
-                .standaloneMigration:
+                .standaloneMigration,
+                .blackFridayCampaign:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -534,6 +543,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         case .winBackOffer:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
+        case .blackFridayCampaign:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.blackFridayCampaign))
         case .dataImportNewSafariFilePicker:
             return .remoteReleasable(.subfeature(DataImportSubfeature.newSafariFilePicker))
         case .aiChatDataClearing:
@@ -552,6 +563,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.pinnedTabsViewRewrite))
         case .tabProgressIndicator:
             return .disabled
+        case .vpnConnectionWidePixelMeasurement:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
         case .showHideAIGeneratedImagesSection:
             return .remoteReleasable(.feature(.showHideAIGeneratedImagesSection))
         case .standaloneMigration:

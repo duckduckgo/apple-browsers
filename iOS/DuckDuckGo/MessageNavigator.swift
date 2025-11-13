@@ -31,6 +31,7 @@ protocol MessageNavigationDelegate: AnyObject {
 
     func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, presentationStyle: PresentationContext.Style)
     func segueToSettings(presentationStyle: PresentationContext.Style)
+    func segueToSettingsAppearance(presentationStyle: PresentationContext.Style)
     func segueToFeedback(presentationStyle: PresentationContext.Style)
     func segueToSettingsSync(with source: String?, pairingInfo: PairingInfo?, presentationStyle: PresentationContext.Style)
     func segueToImportPasswords(presentationStyle: PresentationContext.Style)
@@ -58,6 +59,9 @@ class DefaultMessageNavigator: MessageNavigator {
             delegate?.segueToSettingsSync(with: nil, pairingInfo: nil, presentationStyle: presentationStyle)
         case .importPasswords:
             delegate?.segueToImportPasswords(presentationStyle: presentationStyle)
+        case .appearance:
+            delegate?.segueToSettingsAppearance(presentationStyle: presentationStyle)
+
         }
     }
 

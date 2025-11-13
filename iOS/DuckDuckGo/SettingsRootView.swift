@@ -245,7 +245,7 @@ struct SettingsRootView: View {
             SettingsAIFeaturesView().environmentObject(viewModel)
         case .privateSearch:
             PrivateSearchView().environmentObject(viewModel)
-        case .customizeAddressBarButton, .customizeToolbarButton:
+        case .appearance, .customizeAddressBarButton, .customizeToolbarButton:
             SettingsAppearanceView().environmentObject(viewModel)
         case .subscriptionSettings:
             if let configuration = subscriptionSettingsConfiguration() {

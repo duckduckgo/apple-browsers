@@ -229,6 +229,9 @@ extension Pixel {
         case onboardingIntroChooseCustomAppIconColorCTAPressed
         case onboardingIntroChooseAddressBarImpressionUnique
         case onboardingIntroBottomAddressBarSelected
+        case onboardingIntroChooseSearchExperienceImpressionUnique
+        case onboardingIntroAIChatSelected
+        case onboardingIntroSearchOnlySelected
 
         case onboardingContextualSearchOptionTappedUnique
         case onboardingContextualSearchCustomUnique
@@ -1316,6 +1319,9 @@ extension Pixel {
         case appDidFinishLaunchingTime(time: BucketAggregation)
         case appDidShowUITime(time: BucketAggregation)
 
+        // MARK: Scene lifecycle
+        case sceneDidDisconnectAndAttemptedToReconnect
+
         // MARK: AI Chat
         case aiChatNoRemoteSettingsFound(settings: String)
         case openAIChatFromAddressBar
@@ -1654,6 +1660,9 @@ extension Pixel.Event {
         case .onboardingIntroChooseCustomAppIconColorCTAPressed: return "m_preonboarding_icon_color_chosen"
         case .onboardingIntroChooseAddressBarImpressionUnique: return "m_preonboarding_choose_address_bar_impressions_unique"
         case .onboardingIntroBottomAddressBarSelected: return "m_preonboarding_bottom_address_bar_selected"
+        case .onboardingIntroChooseSearchExperienceImpressionUnique: return "m_preonboarding_choose_search_experience_impressions_unique"
+        case .onboardingIntroAIChatSelected: return "m_preonboarding_aichat_selected"
+        case .onboardingIntroSearchOnlySelected: return "m_preonboarding_search_only_selected"
 
         case .onboardingContextualSearchOptionTappedUnique: return "m_onboarding_search_option_tapped_unique"
         case .onboardingContextualSiteOptionTappedUnique: return "m_onboarding_visit_site_option_tapped_unique"
@@ -2652,6 +2661,9 @@ extension Pixel.Event {
         // MARK: Launch time
         case .appDidFinishLaunchingTime(let time): return "m_debug_app-did-finish-launching-time-\(time)"
         case .appDidShowUITime(let time): return "m_debug_app-did-show-ui-time-2-\(time)"
+
+        // MARK: Scene lifecycle
+        case .sceneDidDisconnectAndAttemptedToReconnect: return "m_debug_scene-did-disconnect-and-attempted-to-reconnect"
 
         // MARK: AI Chat
         case .aiChatNoRemoteSettingsFound(let settings):

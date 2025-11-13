@@ -133,5 +133,20 @@
             }
         ],
         "expires": "2025-12-08"
+    },
+    "m_debug_scene-did-disconnect-and-attempted-to-reconnect": {
+        "description": "Fires when a scene disconnects and then attempts to reconnect, which may indicate iOS is managing scenes unexpectedly",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "osVersion",
+                "description": "iOS version to know which OS versions experience scene reconnection",
+                "type": "string"
+            }
+        ],
+        "expires": "2026-02-05"
     }
 }

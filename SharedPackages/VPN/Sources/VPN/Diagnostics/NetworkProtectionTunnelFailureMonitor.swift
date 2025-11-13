@@ -22,7 +22,7 @@ import NetworkExtension
 import os.log
 import Combine
 
-public actor NetworkProtectionTunnelFailureMonitor {
+public actor NetworkProtectionTunnelFailureMonitor: TunnelFailureMonitoring {
     public enum Result {
         case failureDetected
         case failureRecovered

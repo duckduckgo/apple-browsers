@@ -366,6 +366,7 @@ private class TabBarViewModelMock: TabBarViewModel {
     var width: CGFloat
     var isSelected: Bool
     var isPinned: Bool
+    @Published var url: URL?
     @Published var title: String = ""
     var titlePublisher: Published<String>.Publisher { $title }
     @Published var favicon: NSImage?
@@ -380,7 +381,17 @@ private class TabBarViewModelMock: TabBarViewModel {
     }
     var canKillWebContentProcess: Bool = false
     var crashIndicatorModel = TabCrashIndicatorModel()
-    init(width: CGFloat = 0, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, pinned: Bool = false) {
+
+    @Published var isLoading: Bool
+    @Published var error: WKError?
+    var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> {
+        $isLoading
+            .eraseToAnyPublisher()
+            .combineLatest($error)
+            .eraseToAnyPublisher()
+    }
+
+    init(width: CGFloat = 0, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, pinned: Bool = false, loading: Bool = false, error: WKError? = nil) {
         self.width = width
         self.title = title
         self.favicon = favicon
@@ -389,5 +400,7 @@ private class TabBarViewModelMock: TabBarViewModel {
         self.audioState = audioState ?? .unmuted(isPlayingAudio: false)
         self.isSelected = selected
         self.isPinned = pinned
+        self.isLoading = loading
+        self.error = error
     }
 }

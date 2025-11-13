@@ -143,6 +143,9 @@ struct Launching: LaunchingHandling {
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
                                                             fireproofing: fireproofing)
 
+        let mobileCustomization = MobileCustomization(isFeatureEnabled: featureFlagger.isFeatureOn(.mobileCustomization),
+                                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
@@ -169,7 +172,8 @@ struct Launching: LaunchingHandling {
                                               dbpIOSPublicInterface: dbpService.dbpIOSPublicInterface,
                                               launchSourceManager: launchSourceManager,
                                               winBackOfferService: winBackOfferService,
-                                              modalPromptCoordinationService: modalPromptCoordinationService)
+                                              modalPromptCoordinationService: modalPromptCoordinationService,
+                                              mobileCustomization: mobileCustomization)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components

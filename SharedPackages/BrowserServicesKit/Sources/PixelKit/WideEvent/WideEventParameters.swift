@@ -75,12 +75,12 @@ public enum WideEventParameter {
         static let platform = "global.platform"
         static let type = "global.type"
         static let sampleRate = "global.sample_rate"
-        static let formFactor = "global.form_factor"
     }
 
     public enum App {
         static let name = "app.name"
         static let version = "app.version"
+        static let formFactor = "app.form_factor"
         static let internalUser = "app.internal_user"
     }
 

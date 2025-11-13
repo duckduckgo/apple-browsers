@@ -102,6 +102,9 @@ public enum SharedDesignSystemColor {
     case iconsSecondary
     case iconsTertiary
 
+    // Placeholders
+    case placeholderShade12
+
     // System
     case lines
     case spinner

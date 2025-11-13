@@ -47,63 +47,56 @@
         "description": "Underlying NSError code domain",
         "examples": ["NSURLErrorDomain"]
     },
-    "widePixelAppName": {
+    "wideEventAppName": {
         "key": "app.name",
         "type": "string",
-        "description": "The name of the app sending the pixel",
-        "enum": ["DuckDuckGo macOS App Store", "DuckDuckGo macOS DMG"]
+        "description": "The name of the app sending the pixel"
     },
-    "widePixelAppVersion": {
+    "wideEventAppVersion": {
         "key": "app.version",
         "type": "string",
         "description": "The version of the app sending the pixel"
     },
-    "widePixelInternalUser": {
-        "key": "app.internal_user",
-        "type": "string",
-        "description": "Whether the user is flagged as internal",
-        "enum": ["true", "false"]
-    },
-    "widePixelPlatform": {
+    "wideEventPlatform": {
         "key": "global.platform",
         "type": "string",
         "description": "The name of the platform that the app is running on",
         "enum": ["macOS"]
     },
-    "widePixelType": {
+    "wideEventType": {
         "key": "global.type",
         "type": "string",
         "description": "The type of software sending the wide pixel",
         "enum": ["app"]
     },
-    "widePixelSampleRate": {
+    "wideEventSampleRate": {
         "key": "global.sample_rate",
         "type": "number",
         "description": "Sample rate for this pixel, between 0 and 1"
     },
-    "widePixelFeatureStatus": {
+    "wideEventFeatureStatus": {
         "key": "feature.status",
         "type": "string",
         "description": "Final status of the wide event flow",
         "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
     },
-    "widePixelErrorDomain": {
+    "wideEventErrorDomain": {
         "key": "feature.data.error.domain",
         "type": "string",
         "description": "Error domain for the failure, when applicable, e.g. SKErrorDomain"
     },
-    "widePixelErrorCode": {
+    "wideEventErrorCode": {
         "key": "feature.data.error.code",
         "type": "string",
         "description": "Error code for the failure, when applicable",
         "pattern": "^-?\\d+$"
     },
-    "widePixelUnderlyingErrorDomain": {
+    "wideEventUnderlyingErrorDomain": {
         "keyPattern": "feature\\.data\\.error\\.underlying_domain[0-9]*",
         "type": "string",
         "description": "Underlying error domain (supports optional numeric index for nested errors)"
     },
-    "widePixelUnderlyingErrorCode": {
+    "wideEventUnderlyingErrorCode": {
         "keyPattern": "feature\\.data\\.error\\.underlying_code[0-9]*",
         "type": "string",
         "description": "Underlying error code (supports optional numeric index for nested errors)",

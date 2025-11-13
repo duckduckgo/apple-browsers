@@ -53,7 +53,10 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        let controller = OnboardingIntroViewController(onboardingPixelReporter: contextualOnboardingPixelReporter, systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager, daxDialogsManager: daxDialogsManager)
+        let controller = OnboardingIntroViewController(
+            onboardingPixelReporter: contextualOnboardingPixelReporter,
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+            daxDialogsManager: daxDialogsManager)
         controller.delegate = self
         controller.modalPresentationStyle = .overFullScreen
         present(controller, animated: false)

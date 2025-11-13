@@ -55,6 +55,7 @@ final class MainCoordinator {
     private let featureFlagger: FeatureFlagger
     private let modalPromptCoordinationService: ModalPromptCoordinationService
     private let launchSourceManager: LaunchSourceManaging
+    private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
 
     init(syncService: SyncService,
          contentBlockingService: ContentBlockingService,
@@ -79,7 +80,8 @@ final class MainCoordinator {
          dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
          launchSourceManager: LaunchSourceManaging,
          winBackOfferService: WinBackOfferService,
-         modalPromptCoordinationService: ModalPromptCoordinationService
+         modalPromptCoordinationService: ModalPromptCoordinationService,
+         mobileCustomization: MobileCustomization
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -100,6 +102,12 @@ final class MainCoordinator {
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
         interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
         self.launchSourceManager = launchSourceManager
+        onboardingSearchExperienceSelectionHandler = OnboardingSearchExperienceSelectionHandler(
+            daxDialogs: daxDialogs,
+            aiChatSettings: aiChatSettings,
+            featureFlagger: featureFlagger,
+            onboardingSearchExperienceProvider: OnboardingSearchExperience()
+        )
         tabManager = TabManager(model: tabsModel,
                                 persistence: tabsPersistence,
                                 previewsSource: previewsSource,
@@ -156,6 +164,7 @@ final class MainCoordinator {
                                         dbpIOSPublicInterface: dbpIOSPublicInterface,
                                         launchSourceManager: launchSourceManager,
                                         winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
+                                        mobileCustomization: mobileCustomization,
                                         remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler)
     }
 

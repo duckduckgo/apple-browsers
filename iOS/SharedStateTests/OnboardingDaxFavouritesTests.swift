@@ -137,6 +137,7 @@ import Combine
             dbpIOSPublicInterface: nil,
             launchSourceManager: LaunchSourceManager(),
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
+            mobileCustomization: MobileCustomization(isFeatureEnabled: false, keyValueStore: MockThrowingKeyValueStore()),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)

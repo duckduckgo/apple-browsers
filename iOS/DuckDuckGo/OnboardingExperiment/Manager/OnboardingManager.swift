@@ -46,6 +46,22 @@ final class OnboardingManager {
     private let variantManager: VariantManager
     private let isIphone: Bool
 
+    private let iPhoneFlowWithoutSearchExperience: [OnboardingIntroStep] = [
+        .browserComparison,
+        .addToDockPromo,
+        .appIconSelection,
+        .addressBarPositionSelection
+    ]
+    private let iPhoneFlowWithSearchExperience: [OnboardingIntroStep] = [
+        .browserComparison,
+        .addToDockPromo,
+        .appIconSelection,
+        .addressBarPositionSelection,
+        .searchExperienceSelection
+    ]
+    private let iPadFlowWithoutSearchExperience: [OnboardingIntroStep] = [.browserComparison, .appIconSelection]
+    private let iPadFlowWithSearchExperience: [OnboardingIntroStep] = [.browserComparison, .appIconSelection, .searchExperienceSelection]
+
     var isNewUser: Bool {
 #if DEBUG || ALPHA
         // If debug or alpha build enable testing the experiment with cohort override.
@@ -74,6 +90,36 @@ final class OnboardingManager {
         self.variantManager = variantManager
         self.isIphone = isIphone
     }
+
+    func newUserSteps(isIphone: Bool) -> [OnboardingIntroStep] {
+        let introStep = OnboardingIntroStep.introDialog(isReturningUser: false)
+        return [introStep] + steps(isIphone: isIphone)
+    }
+
+    func returningUserSteps(isIphone: Bool) -> [OnboardingIntroStep] {
+        let introStep = OnboardingIntroStep.introDialog(isReturningUser: true)
+        return [introStep] + steps(isIphone: isIphone)
+    }
+
+    private func steps(isIphone: Bool) -> [OnboardingIntroStep] {
+        isIphone ? iPhoneFlow() : iPadFlow()
+    }
+
+    private func iPhoneFlow() -> [OnboardingIntroStep] {
+        if featureFlagger.isFeatureOn(.onboardingSearchExperience) {
+            return iPhoneFlowWithSearchExperience
+        } else {
+            return iPhoneFlowWithoutSearchExperience
+        }
+    }
+
+    private func iPadFlow() -> [OnboardingIntroStep] {
+        if featureFlagger.isFeatureOn(.onboardingSearchExperience) {
+            return iPadFlowWithSearchExperience
+        } else {
+            return iPadFlowWithoutSearchExperience
+        }
+    }
 }
 
 // MARK: - New User Debugging
@@ -101,24 +147,8 @@ enum OnboardingIntroStep: Equatable {
     case browserComparison
     case appIconSelection
     case addressBarPositionSelection
+    case searchExperienceSelection
     case addToDockPromo
-
-    private static let iPhoneFlow: [OnboardingIntroStep] = [.browserComparison, .addToDockPromo, .appIconSelection, .addressBarPositionSelection]
-    private static let iPadFlow: [OnboardingIntroStep] = [.browserComparison, .appIconSelection]
-
-    static func newUserSteps(isIphone: Bool) -> [OnboardingIntroStep] {
-        let introStep = OnboardingIntroStep.introDialog(isReturningUser: false)
-        return [introStep] + steps(isIphone: isIphone)
-    }
-
-    static func returningUserSteps(isIphone: Bool) -> [OnboardingIntroStep] {
-        let introStep = OnboardingIntroStep.introDialog(isReturningUser: true)
-        return [introStep] + steps(isIphone: isIphone)
-    }
-
-    private static func steps(isIphone: Bool) -> [OnboardingIntroStep] {
-        isIphone ? iPhoneFlow : iPadFlow
-    }
 }
 
 protocol OnboardingStepsProvider: AnyObject {
@@ -128,7 +158,11 @@ protocol OnboardingStepsProvider: AnyObject {
 extension OnboardingManager: OnboardingStepsProvider {
 
     var onboardingSteps: [OnboardingIntroStep] {
-        isNewUser ? OnboardingIntroStep.newUserSteps(isIphone: isIphone) : OnboardingIntroStep.returningUserSteps(isIphone: isIphone)
+        if isNewUser {
+            newUserSteps(isIphone: isIphone)
+        } else {
+            returningUserSteps(isIphone: isIphone)
+        }
     }
 
     var userHasSeenAddToDockPromoDuringOnboarding: Bool {

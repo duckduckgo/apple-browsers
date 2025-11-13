@@ -417,6 +417,10 @@ enum MockFeatureFlag: Hashable {
 }
 
 final class MockDuckPlayerFeatureFlagger: FeatureFlagger {
+    var updatesPublisher: AnyPublisher<Void, Never> {
+        PassthroughSubject().eraseToAnyPublisher()
+    }
+
     var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
     var localOverrides: FeatureFlagLocalOverriding?
 

@@ -539,8 +539,7 @@ final class TabBarItemCellView: NSView {
 
     func clear() {
         if displaysTabsProgressIndicator {
-            faviconView.image = nil
-            faviconView.stopSpinner()
+            faviconView.reset()
         } else {
             faviconImageView.image = nil
         }
@@ -1117,7 +1116,7 @@ final class TabBarViewItem: NSCollectionViewItem {
 
         /// When using `faviconView`, we'll never display `faviconPlaceholderView`.
         if cell.displaysTabsProgressIndicator {
-            cell.faviconView.image = favicon
+            cell.faviconView.displayFavicon(favicon: favicon, placeholderStyle: faviconPlaceholderStyle)
             return
         }
 
@@ -1129,6 +1128,14 @@ final class TabBarViewItem: NSCollectionViewItem {
         } else {
             cell.faviconPlaceholderView.isHidden = true
         }
+    }
+
+    private var faviconPlaceholderStyle: FaviconPlaceholderStyle {
+        guard isPinned else {
+            return .dot
+        }
+
+        return .domainPrefix(tabViewModel?.tabContent.urlForWebView)
     }
 
     private func updateAudioPlayState(_ audioState: WKWebView.AudioState) {

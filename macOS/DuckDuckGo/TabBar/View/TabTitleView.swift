@@ -143,15 +143,20 @@ extension TabTitleView {
             return
         }
 
-        let animation = CABasicAnimation.buildTranslationXAnimation(duration: TitleAnimation.duration, fromValue: TitleAnimation.slidingInStartX, toValue: TitleAnimation.slidingInLastX)
-        titleLayer.add(animation, forKey: TitleAnimation.slideInKey)
+        let animationGroup = CAAnimationGroup()
+        animationGroup.animations = [
+            CABasicAnimation.buildFadeInAnimation(duration: TitleAnimation.duration),
+            CABasicAnimation.buildTranslationXAnimation(duration: TitleAnimation.duration, fromValue: TitleAnimation.slidingInStartX, toValue: TitleAnimation.slidingInLastX)
+        ]
+
+        titleLayer.add(animationGroup, forKey: TitleAnimation.slideInKey)
     }
 }
 
 private enum TitleAnimation {
     static let fadeAndSlideOutKey = "fadeOutAndSlide"
     static let slideInKey = "slideIn"
-    static let duration: TimeInterval = 0.2
+    static let duration: TimeInterval = 0.15
     static let slidingOutStartX = CGFloat(0)
     static let slidingOutLastX = CGFloat(-4)
     static let slidingInStartX = CGFloat(-4)

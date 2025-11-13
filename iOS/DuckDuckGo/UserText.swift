@@ -849,7 +849,7 @@ public struct UserText {
 
     // MARK: Autofill
     public static let autofillSettingsViewSectionHeader = NSLocalizedString("autofill.settings.view.section-header", value: "View", comment: "Section header for the autofill settings screen")
-    public static let autofillSettingsOptionsSectionHeader = NSLocalizedString("autofill.settings.options.section-header", value: "Options", comment: "Section header for the autofill settings screen")
+    public static let autofillSettingsOptionsSectionHeader = NSLocalizedString("autofill.settings.options.section-header", value: "Password Options", comment: "Section header for the autofill passwords options section of the settings screen")
     public static let autofillSettingsAskToSaveAndAutofill = NSLocalizedString("autofill.settings.ask-to-save-and-autofill", value: "Ask to save and autofill", comment: "Title for the toggle that enables autofill")
     public static let autofillSettingsImportPasswordsSectionHeader = NSLocalizedString("autofill.settings.import-passwords.section-header", value: "Import Passwords", comment: "Section header for the autofill settings screen")
 
@@ -953,9 +953,9 @@ public struct UserText {
     public static let autofillLoginListSettingsFooter = NSLocalizedString("autofill.logins.list.settings.footer", value: "Passwords are encrypted. Nobody but you can see them, not even us.", comment: "Subtext under Autofill Settings briefly explaining security to alleviate user concerns.")
     public static let autofillLoginListSettingsPasswordsAndCardsFooter = NSLocalizedString("autofill.logins.list.settings.passwords.cards.footer", value: "Passwords and credit cards are encrypted. Nobody but you can see them, not even us.", comment: "Subtext under Autofill Settings briefly explaining security to alleviate user concerns.")
     public static let autofillLearnMoreLinkTitle = NSLocalizedString("autofill.learn.more.link.title", value: "[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)", comment: "A link that takes the user to the DuckDuckGo help pages explaining password managers")
-    public static let autofillExtensionTitle = NSLocalizedString("autofill.extension.title", value: "Autofill Passwords in Other Apps", comment: "Title for autofill extension settings row")
+    public static let autofillExtensionTitle = NSLocalizedString("autofill.extension.title", value: "Autofill in Other Apps", comment: "Title for autofill extension settings row")
     public static let autofillExtensionStatusOn = NSLocalizedString("autofill.extension.status.on", value: "On", comment: "Status text when autofill extension is enabled")
-    public static let autofillExtensionStatusOff = NSLocalizedString("autofill.extension.status.off", value: "Off", comment: "Status text when autofill extension is disabled")
+    public static let autofillExtensionStatusOff = NSLocalizedString("autofill.extension.status.off", value: "Turn On", comment: "Status text when autofill extension is disabled")
     public static let autofillExtensionScreenTitle = NSLocalizedString("autofill.extension.screen.title", value: "Autofill Passwords in Other Apps", comment: "Title for screen showing autofill extension settings")
     public static let autofillExtensionTurnOffButtonTitle = NSLocalizedString("autofill.extension.turn.off.button.title", value: "Turn Off in System Settings...", comment: "Button title that opens system settings to turn off the autofill extension")
     public static let autofillExtensionTurnOnButtonTitle = NSLocalizedString("autofill.extension.turn.on.button.title", value: "Turn On...", comment: "Button title that triggers system prompt to turn on the autofill extension")

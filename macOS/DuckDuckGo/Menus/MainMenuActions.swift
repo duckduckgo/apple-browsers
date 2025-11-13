@@ -127,7 +127,7 @@ extension AppDelegate {
 
     @objc func reopenLastClosedTab(_ sender: Any?) {
         DispatchQueue.main.async {
-            RecentlyClosedCoordinator.shared.reopenItem()
+            self.recentlyClosedCoordinator.reopenItem()
         }
     }
 
@@ -138,7 +138,7 @@ extension AppDelegate {
             return
         }
         DispatchQueue.main.async {
-            RecentlyClosedCoordinator.shared.reopenItem(cacheItem)
+            self.recentlyClosedCoordinator.reopenItem(cacheItem)
         }
     }
 
@@ -257,7 +257,7 @@ extension AppDelegate {
     @MainActor
     @objc func setAsDefault(_ sender: Any?) {
         PixelKit.fire(GeneralPixel.defaultRequestedFromMainMenu)
-        DefaultBrowserPreferences.shared.becomeDefault()
+        defaultBrowserPreferences.becomeDefault()
     }
 
     @MainActor
@@ -275,11 +275,7 @@ extension AppDelegate {
             if self.internalUserDecider.isInternalUser {
                 Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
             } else {
-                if self.featureFlagger.isFeatureOn(.newFeedbackForm) {
-                    Application.appDelegate.openRequestANewFeature(nil)
-                } else {
-                    FeedbackPresenter.presentFeedbackForm()
-                }
+                Application.appDelegate.openRequestANewFeature(nil)
             }
         }
     }
@@ -289,7 +285,8 @@ extension AppDelegate {
             privacyInfo: nil,
             entryPoint: .report,
             contentBlocking: privacyFeatures.contentBlocking,
-            permissionManager: permissionManager
+            permissionManager: permissionManager,
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences
         )
         privacyDashboardViewController.sizeDelegate = self
 
@@ -688,8 +685,9 @@ extension AppDelegate {
         }
     }
 
+    @MainActor
     @objc func resetPinnedTabs(_ sender: Any?) {
-        for pinnedTabsManager in Application.appDelegate.pinnedTabsManagerProvider.currentPinnedTabManagers {
+        for pinnedTabsManager in pinnedTabsManagerProvider.currentPinnedTabManagers {
             pinnedTabsManager.tabCollection.removeAll()
         }
     }
@@ -1636,7 +1634,7 @@ extension AppDelegate: NSMenuItemValidation {
 
         // Reopen Last Removed Tab
         case #selector(AppDelegate.reopenLastClosedTab(_:)):
-            return RecentlyClosedCoordinator.shared.canReopenRecentlyClosedTab == true
+            return recentlyClosedCoordinator.canReopenRecentlyClosedTab
 
         // Reopen All Windows From Last Session
         case #selector(AppDelegate.reopenAllWindowsFromLastSession(_:)):

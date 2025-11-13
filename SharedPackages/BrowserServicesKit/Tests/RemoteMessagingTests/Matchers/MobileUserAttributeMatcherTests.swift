@@ -120,6 +120,7 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             isSubscriptionActive: true,
             isSubscriptionExpiring: false,
             isSubscriptionExpired: false,
+            subscriptionFreeTrialActive: false,
             isDuckPlayerOnboarded: false,
             isDuckPlayerEnabled: false,
             dismissedMessageIds: dismissedMessageIds,

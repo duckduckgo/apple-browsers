@@ -349,8 +349,10 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar = coordinator.omniBar
         } else {
             // Strong reference while we use the omnibar
+            let tab = tabsModel.safeGetTabAt(indexPath.row)
+            let url = tab?.link?.url
+
             let controller = cell.controller ?? OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
-            let url = tabsModel.safeGetTabAt(indexPath.row)?.link?.url
 
             coordinator.parentController?.addChild(controller)
 
@@ -359,7 +361,9 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar?.showSeparator()
             cell.omniBar?.adjust(for: appSettings.currentAddressBarPosition)
 
-            if let url = tabsModel.safeGetTabAt(indexPath.row)?.link?.url {
+            if tab?.isAITab == true {
+                cell.omniBar?.enterAIChatMode()
+            } else if let url {
                 cell.omniBar?.startBrowsing()
                 cell.omniBar?.resetPrivacyIcon(for: url)
             } else {

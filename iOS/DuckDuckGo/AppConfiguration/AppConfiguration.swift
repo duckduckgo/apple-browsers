@@ -42,9 +42,6 @@ struct AppConfiguration {
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
         PixelConfiguration.configure(with: featureFlagger)
 
-        // Explicitly prepare ContentBlockingUpdating instance before Tabs are created
-        _ = ContentBlockingUpdating.shared
-
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
 
         onboardingConfiguration.migrateToNewOnboarding()
@@ -52,6 +49,7 @@ struct AppConfiguration {
         let isBackground = UIApplication.shared.applicationState == .background
         try persistentStoresConfiguration.configure(syncKeyValueStore: appKeyValueStore, isBackground: isBackground)
         migrateAIChatSettings()
+        migratePromptCooldown()
 
         WidgetCenter.shared.reloadAllTimelines()
         PrivacyFeatures.httpsUpgrade.loadDataAsync()
@@ -68,6 +66,13 @@ struct AppConfiguration {
             }
             return sharedUserDefaults ?? UserDefaults()
         })
+    }
+
+    /// Migrate Default Browser prompt cooldown to global modal prompt cooldown.
+    /// One-time migration from the old Default Browser `lastModalShownDate` to the new global cooldown storage.
+    private func migratePromptCooldown() {
+        let migrator = PromptCooldownMigrator(keyValueStore: appKeyValueStore)
+        migrator.migrateIfNeeded()
     }
 
     private func clearTemporaryDirectory() {

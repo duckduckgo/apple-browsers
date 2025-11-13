@@ -35,22 +35,9 @@ Use these instructions when you need to:
 ## 🔍 Phase 1: Environment Detection
 
 ### Pre-Flight Checks
-Before building, validate your environment:
+Before building, validate your environment.
 
-```bash
-# 1. Verify you're in the project directory
-ls -la | grep DuckDuckGo.xcworkspace
-# Expected: DuckDuckGo.xcworkspace directory exists
-
-# 2. Check Xcode command line tools
-xcodebuild -version
-# Expected: Xcode version output (e.g., "Xcode 15.0")
-
-# 3. Verify xcbeautify is installed
-which xcbeautify
-# Expected: Path to xcbeautify (e.g., "/opt/homebrew/bin/xcbeautify")
-# If missing: brew install xcbeautify
-```
+**Example:** See [pre-flight-checks.sh](development-commands/pre-flight-checks.sh)
 
 ### Required Variables to Detect
 
@@ -62,94 +49,29 @@ which xcbeautify
 
 ### Detection Commands
 
-```bash
-# Step 1: Get workspace path
-WORKSPACE_DIR=$(pwd)
-WORKSPACE_FILE=$(find . -name "DuckDuckGo.xcworkspace" | head -1)
-WORKSPACE_PATH="${WORKSPACE_DIR}/${WORKSPACE_FILE#./}"
-echo "Workspace: ${WORKSPACE_PATH}"
-
-# Step 2: Get architecture (for macOS builds)
-ARCHITECTURE=$(uname -m)
-echo "Architecture: ${ARCHITECTURE}"
-
-# Step 3: Find iOS simulator (for iOS builds)
-SIMULATOR_ID=$(xcrun simctl list devices | grep -E "iPhone.*\([A-F0-9-]{36}\)" | head -1 | grep -oE "[A-F0-9-]{36}")
-echo "Simulator ID: ${SIMULATOR_ID}"
-```
+**Example:** See [environment-detection.sh](development-commands/environment-detection.sh)
 
 ## 🏗️ Phase 2: Build Execution
 
 ### iOS Build Command Template
 
-Replace the placeholders with your detected values:
+Replace the placeholders with your detected values.
 
-```bash
-/bin/sh -c 'set -e -o pipefail && xcodebuild \
-  ONLY_ACTIVE_ARCH=YES \
-  DEBUG_INFORMATION_FORMAT=dwarf \
-  COMPILER_INDEX_STORE_ENABLE=NO \
-  -scheme "iOS Browser" \
-  -configuration Debug \
-  -workspace <REPLACE_WITH_WORKSPACE_PATH> \
-  -destination "platform=iOS Simulator,id=<REPLACE_WITH_SIMULATOR_ID>" \
-  -allowProvisioningUpdates \
-  -parallelizeTargets \
-  build | xcbeautify'
-```
+**Example:** See [ios-build-template.sh](development-commands/ios-build-template.sh)
 
 ### macOS Build Command Template
 
-Replace the placeholders with your detected values:
+Replace the placeholders with your detected values.
 
-```bash
-/bin/sh -c 'set -e -o pipefail && xcodebuild \
-  ONLY_ACTIVE_ARCH=YES \
-  DEBUG_INFORMATION_FORMAT=dwarf \
-  COMPILER_INDEX_STORE_ENABLE=NO \
-  -scheme "macOS Browser" \
-  -configuration Debug \
-  -workspace <REPLACE_WITH_WORKSPACE_PATH> \
-  -destination "platform=macOS,arch=<REPLACE_WITH_ARCHITECTURE>" \
-  -skipPackagePluginValidation \
-  -skipMacroValidation \
-  -disableAutomaticPackageResolution \
-  -parallelizeTargets \
-  build | xcbeautify'
-```
+**Example:** See [macos-build-template.sh](development-commands/macos-build-template.sh)
 
 ### Complete Working Examples
 
 #### iOS Build (Real Values)
-```bash
-/bin/sh -c 'set -e -o pipefail && xcodebuild \
-  ONLY_ACTIVE_ARCH=YES \
-  DEBUG_INFORMATION_FORMAT=dwarf \
-  COMPILER_INDEX_STORE_ENABLE=NO \
-  -scheme "iOS Browser" \
-  -configuration Debug \
-  -workspace /Users/daniel/Developer/browser/apple-browsers/DuckDuckGo.xcworkspace \
-  -destination "platform=iOS Simulator,id=6E6A828D-8C2C-4409-8E56-753DB02090F7" \
-  -allowProvisioningUpdates \
-  -parallelizeTargets \
-  build | xcbeautify'
-```
+**Example:** See [ios-build-example.sh](development-commands/ios-build-example.sh)
 
 #### macOS Build (Real Values)
-```bash
-/bin/sh -c 'set -e -o pipefail && xcodebuild \
-  ONLY_ACTIVE_ARCH=YES \
-  DEBUG_INFORMATION_FORMAT=dwarf \
-  COMPILER_INDEX_STORE_ENABLE=NO \
-  -scheme "macOS Browser" \
-  -configuration Debug \
-  -workspace /Users/daniel/Developer/browser/apple-browsers/DuckDuckGo.xcworkspace \
-  -destination "platform=macOS,arch=arm64" \
-  -allowProvisioningUpdates \
-  -disableAutomaticPackageResolution \
-  -parallelizeTargets \
-  build | xcbeautify'
-```
+**Example:** See [macos-build-example.sh](development-commands/macos-build-example.sh)
 
 ## ✅ Phase 3: Build Verification
 
@@ -180,21 +102,9 @@ Replace the placeholders with your detected values:
 ### If Build Fails - Immediate Actions
 
 1. **Check the error message** - Last few red lines usually indicate the issue
-2. **Clean and retry**:
-   ```bash
-   xcodebuild clean -workspace <WORKSPACE_PATH> -scheme "iOS Browser"
-   # Then retry the build command
-   ```
-3. **If "No such module" errors**:
-   ```bash
-   rm -rf ~/Library/Developer/Xcode/DerivedData/
-   # Then retry the build command
-   ```
-4. **If simulator issues**:
-   ```bash
-   # List available simulators and pick a different one
-   xcrun simctl list devices
-   ```
+2. **Clean and retry:** See [error-recovery-clean.sh](development-commands/error-recovery-clean.sh)
+3. **If "No such module" errors:** See [error-recovery-derived-data.sh](development-commands/error-recovery-derived-data.sh)
+4. **If simulator issues:** See [error-recovery-simulator.sh](development-commands/error-recovery-simulator.sh)
 
 ### Common Problems and Solutions
 
@@ -209,89 +119,9 @@ Replace the placeholders with your detected values:
 
 ## 🤖 Complete Automation Script
 
-Use this script for reliable, automated builds:
+Use this script for reliable, automated builds.
 
-```bash
-#!/bin/bash
-set -e  # Exit on any error
-
-echo "🔍 Phase 1: Environment Detection"
-echo "================================="
-
-# Detect workspace
-WORKSPACE_DIR=$(pwd)
-WORKSPACE_FILE=$(find . -name "DuckDuckGo.xcworkspace" | head -1)
-if [ -z "$WORKSPACE_FILE" ]; then
-    echo "❌ Error: No DuckDuckGo.xcworkspace found"
-    echo "Make sure you're in the project root directory"
-    exit 1
-fi
-WORKSPACE="${WORKSPACE_DIR}/${WORKSPACE_FILE#./}"
-echo "✅ Workspace: ${WORKSPACE}"
-
-# Detect architecture
-ARCH=$(uname -m)
-echo "✅ Architecture: ${ARCH}"
-
-# Find iOS simulator
-SIMULATOR_ID=$(xcrun simctl list devices | grep -E "iPhone.*\([A-F0-9-]{36}\)" | head -1 | grep -oE "[A-F0-9-]{36}")
-if [ -z "$SIMULATOR_ID" ]; then
-    echo "⚠️  Warning: No iOS simulator found"
-    echo "iOS build will be skipped"
-else
-    echo "✅ Simulator ID: ${SIMULATOR_ID}"
-fi
-
-# Check xcbeautify
-if ! command -v xcbeautify &> /dev/null; then
-    echo "❌ Error: xcbeautify not found"
-    echo "Install with: brew install xcbeautify"
-    exit 1
-fi
-echo "✅ xcbeautify: installed"
-
-echo ""
-echo "🏗️  Phase 2: Building Apps"
-echo "========================"
-
-# Build iOS if simulator available
-if [ -n "$SIMULATOR_ID" ]; then
-    echo ""
-    echo "📱 Building iOS Browser..."
-    /bin/sh -c "set -e -o pipefail && xcodebuild \
-      ONLY_ACTIVE_ARCH=YES \
-      DEBUG_INFORMATION_FORMAT=dwarf \
-      COMPILER_INDEX_STORE_ENABLE=NO \
-      -scheme 'iOS Browser' \
-      -configuration Debug \
-      -workspace ${WORKSPACE} \
-      -destination 'platform=iOS Simulator,id=${SIMULATOR_ID}' \
-      -allowProvisioningUpdates \
-      -parallelizeTargets \
-      build | xcbeautify"
-    echo "✅ iOS Browser built successfully"
-fi
-
-# Build macOS
-echo ""
-echo "💻 Building macOS Browser..."
-/bin/sh -c "set -e -o pipefail && xcodebuild \
-  ONLY_ACTIVE_ARCH=YES \
-  DEBUG_INFORMATION_FORMAT=dwarf \
-  COMPILER_INDEX_STORE_ENABLE=NO \
-  -scheme 'macOS Browser' \
-  -configuration Debug \
-  -workspace ${WORKSPACE} \
-  -destination 'platform=macOS,arch=${ARCH}' \
-  -allowProvisioningUpdates \
-  -disableAutomaticPackageResolution \
-  -parallelizeTargets \
-  build | xcbeautify"
-echo "✅ macOS Browser built successfully"
-
-echo ""
-echo "🎉 All builds completed successfully!"
-```
+**Example:** See [complete-automation-script.sh](development-commands/complete-automation-script.sh)
 
 ## 📊 Build Flag Reference
 
@@ -316,19 +146,7 @@ Understanding what each flag does:
 - `macOS Browser` - Main macOS app (sometimes called "DuckDuckGo")
 
 ### Useful Commands
-```bash
-# List all schemes
-xcodebuild -list -workspace DuckDuckGo.xcworkspace
-
-# List all simulators
-xcrun simctl list devices
-
-# Clean everything
-rm -rf ~/Library/Developer/Xcode/DerivedData/
-
-# Open workspace in Xcode
-open DuckDuckGo.xcworkspace
-```
+**Example:** See [useful-commands.sh](development-commands/useful-commands.sh)
 
 ## ✅ Task Completion Checklist
 

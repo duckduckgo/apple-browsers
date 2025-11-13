@@ -87,7 +87,10 @@ extension TabViewController {
         buildShortcutsEntries(state: .newTab)
     }
 
-    func buildBrowsingMenu(with bookmarksInterface: MenuBookmarksInteracting) -> [BrowsingMenuEntry] {
+    func buildBrowsingMenu(with bookmarksInterface: MenuBookmarksInteracting,
+                           mobileCustomization: MobileCustomization,
+                           clearTabsAndData: @escaping () -> Void) -> [BrowsingMenuEntry] {
+        
         var entries = [BrowsingMenuEntry]()
 
         let linkEntries = buildLinkEntries(with: bookmarksInterface)
@@ -109,6 +112,14 @@ extension TabViewController {
                                                      action: { [weak self] in
                 self?.onReportBrokenSiteAction()
             }))
+
+            if mobileCustomization.isEnabled && !mobileCustomization.hasFireButton {
+                entries.append(.separator)
+                entries.append(BrowsingMenuEntry.regular(name: UserText.actionForgetAll,
+                                                         accessibilityLabel: UserText.actionForgetAll,
+                                                         image: DesignSystemImages.Glyphs.Size16.fireSolid,
+                                                         action: clearTabsAndData))
+            }
         }
 
         // Do not add separator if there are no entries so far
@@ -328,16 +339,7 @@ extension TabViewController {
                                            with bookmarksInterface: MenuBookmarksInteracting) {
         Pixel.fire(pixel: .browsingMenuAddToBookmarks)
         DailyPixel.fire(pixel: .addBookmarkDaily)
-        bookmarksInterface.createBookmark(title: link.title ?? "", url: link.url)
-        favicons.loadFavicon(forDomain: link.url.host, intoCache: .fireproof, fromCache: .tabs)
-        syncService.scheduler.notifyDataChanged()
-
-        ActionMessageView.present(message: UserText.webSaveBookmarkDone,
-                                  actionTitle: UserText.actionGenericEdit,
-                                  presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom),
-                                  onAction: {
-            self.performEditBookmarkAction(for: link)
-        })
+        saveAsBookmark(favorite: false, viewModel: bookmarksInterface)
     }
 
     private func performEditBookmarkAction(for link: Link) {

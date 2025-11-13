@@ -1,20 +1,20 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
-    "searchSubmitted": {
+    "m_mac_new-tab-page_search_submitted": {
         "description": "Fires when the user submits a search term via the New Tab Page search box. Used to monitor NTP search engagement.",
         "owners": ["tomasstrba"],
         "triggers": ["search_ddg"],
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
     },
-    "promptSubmitted": {
+    "m_mac_new-tab-page_prompt_submitted": {
         "description": "Fires when a user submits a chat prompt via the New Tab Page AI chat box. Helps track interaction with DuckAI.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
     },
-    "omnibarModeChanged": {
+    "m_mac_new-tab-page_omnibar_mode_changed": {
         "description": "Fires when a user switches between search and DuckAI mode in the omnibar. Used to understand mode preference.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
@@ -30,21 +30,21 @@
             "pixelSource"
         ]
     },
-    "omnibarHidden": {
+    "m_mac_new-tab-page_omnibar_hidden": {
         "description": "Fires when the user hides the omnibar from New Tab Page. Indicates visibility preference.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
     },
-    "omnibarShown": {
+    "m_mac_new-tab-page_omnibar_shown": {
         "description": "Fires when the user reveals the omnibar on New Tab Page. Indicates visibility preference.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
     },
-    "newTabPageLoadingTime": {
+    "m_mac_new-tab-page_loading_time": {
         "description": "Loading time (in ms) for the new tab page",
         "owners": ["tomasstrba"],
         "triggers": ["new_tab"],

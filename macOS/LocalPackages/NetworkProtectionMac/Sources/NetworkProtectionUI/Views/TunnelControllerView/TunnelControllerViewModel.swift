@@ -39,16 +39,9 @@ public final class TunnelControllerViewModel: ObservableObject {
     /// Whether the VPN is enabled
     /// This is determined based on the connection status, same as the iOS version
     ///
-    public var isVPNEnabled: Bool {
-        get {
-            switch connectionStatus {
-            case .connected, .connecting:
-                return true
-            default:
-                return false
-            }
-        }
-    }
+    @MainActor
+    @Published
+    public var isVPNEnabled: Bool
 
     public var isVPNStagingEnvironmentSelected: Bool {
         vpnSettings.selectedEnvironment == .staging
@@ -121,24 +114,36 @@ public final class TunnelControllerViewModel: ObservableObject {
         self.proxySettings = proxySettings
         self.locationFormatter = locationFormatter
         self.timeLapsedFormatter = timeLapsedFormatter
-        self.timeLapsed = timeLapsedFormatter.string(from: 0)
         self.uiActionHandler = uiActionHandler
 
-        connectionStatus = statusReporter.statusObserver.recentValue
+        // Get initial connection status
+        let initialStatus = statusReporter.statusObserver.recentValue
+        connectionStatus = initialStatus
+
+        // Initialize timeLapsed based on initial connection status instead of hardcoding to 0
+        switch initialStatus {
+        case .connected(let connectedDate):
+            let secondsLapsed = Date().timeIntervalSince(connectedDate)
+            self.timeLapsed = timeLapsedFormatter.string(from: secondsLapsed)
+        default:
+            self.timeLapsed = timeLapsedFormatter.string(from: 0)
+        }
+
         dnsSettings = vpnSettings.dnsSettings
 
         formattedDataVolume = statusReporter.dataVolumeObserver.recentValue.formatted(using: Self.byteCountFormatter)
         internalServerAddress = statusReporter.serverInfoObserver.recentValue.serverAddress
         internalServerAttributes = statusReporter.serverInfoObserver.recentValue.serverLocation
-        internalServerLocation = internalServerAttributes?.serverLocation
+        isVPNEnabled = statusReporter.vpnEnabledObserver.isVPNEnabled
 
-        // Particularly useful when unit testing with an initial status of our choosing.
-        refreshInternalIsRunning()
+        internalServerLocation = internalServerAttributes?.serverLocation
 
         subscribeToOnboardingStatusChanges()
         subscribeToStatusChanges()
         subscribeToServerInfoChanges()
         subscribeToDataVolumeUpdates()
+        subscribeToVPNEnabledChanges()
+        subscribeToToggleDisableChanges()
 
         vpnSettings.dnsSettingsPublisher
             .assign(to: \.dnsSettings, onWeaklyHeld: self)
@@ -193,6 +198,30 @@ public final class TunnelControllerViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
+    private func subscribeToVPNEnabledChanges() {
+        statusReporter.vpnEnabledObserver.publisher
+            .removeDuplicates()
+            .assign(to: \.isVPNEnabled, onWeaklyHeld: self)
+            .store(in: &cancellables)
+    }
+
+    /// Subscribes to toggle disable changes, and re-enables the toggle after 2 seconds.
+    ///
+    private func subscribeToToggleDisableChanges() {
+        $isToggleDisabled
+            .filter { $0 }
+            .debounce(for: .seconds(2), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self,
+                      isToggleDisabled else {
+                    return
+                }
+
+                isToggleDisabled = false
+            }
+            .store(in: &cancellables)
+    }
+
     // MARK: - ON/OFF Toggle
 
     private func startTimer() {
@@ -225,36 +254,13 @@ public final class TunnelControllerViewModel: ObservableObject {
         timer = nil
     }
 
-    /// Whether NetP is actually running.
-    ///
-    @Published
-    private var internalIsRunning = false {
-        didSet {
-            if internalIsRunning {
-                startTimer()
-            } else {
-                stopTimer()
-            }
-        }
-    }
-
     @MainActor
-    private func refreshInternalIsRunning() {
+    private func updateRefreshTimer() {
         switch connectionStatus {
-        case .connected, .connecting, .reasserting:
-            guard internalIsRunning == false else {
-                return
-            }
-
-            internalIsRunning = true
-        case .disconnected, .disconnecting:
-            guard internalIsRunning == true else {
-                return
-            }
-
-            internalIsRunning = false
+        case .connected:
+            startTimer()
         default:
-            break
+            stopTimer()
         }
     }
 
@@ -272,11 +278,11 @@ public final class TunnelControllerViewModel: ObservableObject {
                 return false
             }
 
-            return self.internalIsRunning
+            return self.isVPNEnabled
         } set: { [weak self] newValue in
             guard let self else { return }
 
-            guard newValue != self.internalIsRunning else {
+            guard newValue != self.isVPNEnabled else {
                 return
             }
 
@@ -288,14 +294,30 @@ public final class TunnelControllerViewModel: ObservableObject {
                     return
                 }
 
-                self.internalIsRunning = newValue
-
                 if newValue {
                     self.startNetworkProtection()
                 } else {
                     self.stopNetworkProtection()
                 }
             }
+        }
+    }
+
+    var isConnectedOrConnecting: Bool {
+        switch toggleTransition {
+        case .idle:
+            break
+        case .switchingOn:
+            return true
+        case .switchingOff:
+            return false
+        }
+
+        switch connectionStatus {
+        case .connecting, .connected, .reasserting:
+            return true
+        default:
+            return false
         }
     }
 
@@ -309,35 +331,9 @@ public final class TunnelControllerViewModel: ObservableObject {
     @Published
     private var connectionStatus: VPN.ConnectionStatus {
         didSet {
-            detectAndRefreshExternalToggleSwitching()
             previousConnectionStatus = oldValue
-            refreshInternalIsRunning()
+            updateRefreshTimer()
             refreshTimeLapsed()
-        }
-    }
-
-    /// This method serves as a simple mechanism to detect when the toggle is controlled by the agent app, or by another
-    /// external event causing the tunnel to start or stop, so we can disable the toggle as it's transitioning..
-    ///
-    @MainActor
-    private func detectAndRefreshExternalToggleSwitching() {
-        switch toggleTransition {
-        case .idle:
-            // When the toggle transition is idle, if the status changes to connecting or disconnecting
-            // it means the tunnel is being controlled from elsewhere.
-            if connectionStatus == .connecting {
-                toggleTransition = .switchingOn(locallyInitiated: false)
-            } else if connectionStatus == .disconnecting {
-                toggleTransition = .switchingOff(locallyInitiated: false)
-            }
-        case .switchingOn, .switchingOff:
-            if connectionStatus == .connecting {
-                toggleTransition = .switchingOn(locallyInitiated: false)
-            } else if connectionStatus == .disconnecting {
-                toggleTransition = .switchingOff(locallyInitiated: false)
-            } else {
-                toggleTransition = .idle
-            }
         }
     }
 
@@ -354,21 +350,15 @@ public final class TunnelControllerViewModel: ObservableObject {
     @Published
     private(set) var toggleTransition = ToggleTransition.idle
 
-    /// The toggle is disabled while transitioning due to user interaction.
-    ///
-    var isToggleDisabled: Bool {
-        if case .idle = toggleTransition {
-            return false
-        }
-
-        return true
-    }
+    @Published
+    private(set) var isToggleDisabled: Bool = false
 
     // MARK: - Connection Status: Timer
 
     /// The description for the current connection status.
     /// When the status is `connected` this description will also show the time lapsed since connection.
     ///
+    @MainActor
     @Published var timeLapsed: String
 
     @MainActor
@@ -525,27 +515,36 @@ public final class TunnelControllerViewModel: ObservableObject {
 
     // MARK: - Toggling VPN
 
+    private var vpnControlTask: Task<Void, Never>?
+
     /// Start the VPN.
     ///
     func startNetworkProtection() {
-        if shouldFlipToggle {
-            toggleTransition = .switchingOn(locallyInitiated: true)
-        }
+        vpnControlTask?.cancel()
 
-        Task { @MainActor in
+        vpnControlTask = Task { @MainActor in
+            if shouldFlipToggle {
+                isToggleDisabled = true
+                toggleTransition = .switchingOn(locallyInitiated: true)
+                updateRefreshTimer()
+            }
+            defer { toggleTransition = .idle }
+
             await tunnelController.start()
-            refreshInternalIsRunning()
         }
     }
 
     /// Stop the VPN.
     ///
     func stopNetworkProtection() {
-        toggleTransition = .switchingOff(locallyInitiated: true)
+        vpnControlTask?.cancel()
 
-        Task { @MainActor in
+        vpnControlTask = Task { @MainActor in
+            toggleTransition = .switchingOff(locallyInitiated: true)
+            updateRefreshTimer()
+            defer { toggleTransition = .idle }
+
             await tunnelController.stop()
-            refreshInternalIsRunning()
         }
     }
 

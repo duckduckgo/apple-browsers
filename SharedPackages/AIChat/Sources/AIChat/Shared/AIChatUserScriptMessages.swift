@@ -38,4 +38,8 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case submitAIChatPageContext
     case togglePageContextTelemetry
     case openKeyboard
+    case storeMigrationData
+    case getMigrationDataByIndex
+    case getMigrationInfo
+    case clearMigrationData
 }

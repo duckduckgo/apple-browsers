@@ -17,7 +17,9 @@
 //
 
 import Foundation
+import SharedTestUtilities
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 @testable import PixelKit
 

@@ -170,12 +170,12 @@ public struct TunnelControllerView: View {
     private func headerAnimationView(_ animationName: String) -> some View {
         LottieView(animation: .named(animationName))
             .playing(withIntro: .init(
-                    skipIntro: model.isVPNEnabled && !model.isToggleDisabled,
+                    skipIntro: model.isConnectedOrConnecting && !model.isToggleDisabled,
                     introStartFrame: 0,
                     introEndFrame: 100,
                     loopStartFrame: 130,
                     loopEndFrame: 370
-                ), isAnimating: model.isVPNEnabled)
+                ), isAnimating: model.isConnectedOrConnecting)
     }
 
     @ViewBuilder
@@ -312,7 +312,7 @@ public struct TunnelControllerView: View {
 
                 Spacer(minLength: 8)
 
-                statusBadge(isConnected: model.isToggleOn.wrappedValue)
+                statusBadge(isConnected: model.isConnectedOrConnecting)
 
                 Text(model.connectionStatusDescription)
                     .applyTimerAttributes(colorScheme: colorScheme)

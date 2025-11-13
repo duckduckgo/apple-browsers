@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
+import Bookmarks
 import BrowserServicesKit
+import Foundation
 
 enum BookmarkImportSource: Equatable {
     case duckduckgoWebKit
@@ -35,4 +36,10 @@ protocol BookmarkImporter {
 
     func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource, markRootBookmarksAsFavoritesByDefault: Bool, maxFavoritesCount: Int?) -> BookmarksImportSummary
 
+}
+
+extension DataImport.DataTypeSummary {
+    public init(_ bookmarksImportSummary: BookmarksImportSummary) {
+        self.init(successful: bookmarksImportSummary.successful, duplicate: bookmarksImportSummary.duplicates, failed: bookmarksImportSummary.failed)
+    }
 }

@@ -116,30 +116,44 @@ public protocol FeatureFlagLocalOverridesHandling {
     func experimentFlagDidChange<Flag: FeatureFlagDescribing>(_ featureFlag: Flag, cohort: CohortID)
 }
 
+/// This protocol provides a Combine publisher for feature flag override changes.
+///
+/// Handlers that want to support reactive updates should conform to this protocol
+/// in addition to `FeatureFlagLocalOverridesHandling`.
+public protocol FeatureFlagLocalOverridesPublisherProviding {
+    /// A publisher that fires whenever any override is changed (added, toggled, or cleared).
+    var overrideDidChangePublisher: AnyPublisher<Void, Never> { get }
+}
+
 /// `FeatureFlagLocalOverridesHandling` implementation providing Combine publisher for flag changes.
 ///
 /// It can be used by client apps if a more sophisticated handler isn't needed.
 ///
-public struct FeatureFlagOverridesPublishingHandler<F: FeatureFlagDescribing>: FeatureFlagLocalOverridesHandling {
+public struct FeatureFlagOverridesPublishingHandler<F: FeatureFlagDescribing>: FeatureFlagLocalOverridesHandling, FeatureFlagLocalOverridesPublisherProviding {
 
     public let flagDidChangePublisher: AnyPublisher<(F, Bool), Never>
     private let flagDidChangeSubject = PassthroughSubject<(F, Bool), Never>()
     public let experimentFlagDidChangePublisher: AnyPublisher<(F, CohortID), Never>
     private let experimentFlagDidChangeSubject = PassthroughSubject<(F, CohortID), Never>()
+    public let overrideDidChangePublisher: AnyPublisher<Void, Never>
+    private let overrideDidChangeSubject = PassthroughSubject<Void, Never>()
 
     public init() {
         flagDidChangePublisher = flagDidChangeSubject.eraseToAnyPublisher()
         experimentFlagDidChangePublisher = experimentFlagDidChangeSubject.eraseToAnyPublisher()
+        overrideDidChangePublisher = overrideDidChangeSubject.eraseToAnyPublisher()
     }
 
     public func flagDidChange<Flag: FeatureFlagDescribing>(_ featureFlag: Flag, isEnabled: Bool) {
         guard let flag = featureFlag as? F else { return }
         flagDidChangeSubject.send((flag, isEnabled))
+        overrideDidChangeSubject.send()
     }
 
     public func experimentFlagDidChange<Flag: FeatureFlagDescribing>(_ featureFlag: Flag, cohort: CohortID) {
         guard let flag = featureFlag as? F else { return }
         experimentFlagDidChangeSubject.send((flag, cohort))
+        overrideDidChangeSubject.send()
     }
 
 }

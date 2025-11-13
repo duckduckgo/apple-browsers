@@ -30,7 +30,7 @@ import os.log
 /// whenever the regular connection works fine but the tunnel connection doesn't.
 ///
 @MainActor
-final class NetworkProtectionConnectionTester {
+final class NetworkProtectionConnectionTester: ConnectionTesting {
     enum Result {
         case connected
         case reconnected(failureCount: Int)

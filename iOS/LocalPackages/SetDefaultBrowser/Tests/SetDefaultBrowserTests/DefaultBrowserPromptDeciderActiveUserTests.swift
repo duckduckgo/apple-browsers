@@ -69,7 +69,6 @@ final class DefaultBrowserPromptDeciderActiveUserTests {
     )
     func checkFirstPromptIsPresentedForEveryTypeOfUserWhenNoModalHaveShownAndInstallationDateIsGreaterThanOneDay(userType: DefaultBrowserPromptUserType, daysSinceInstall: Int) {
         // GIVEN
-        storeMock.lastModalShownDate = nil
         storeMock.modalShownOccurrences = 0
         makeSUT(numberOfDaysSinceInstall: 1)
 
@@ -89,7 +88,6 @@ final class DefaultBrowserPromptDeciderActiveUserTests {
     )
     func checkSecondModalIsPresentedForNewAndReturningUserWhenFirstModalHasShownAndNumberOfActiveDaysIsFour(userType: DefaultBrowserPromptUserType) {
         // GIVEN
-        storeMock.lastModalShownDate = 1750739150 // Tuesday, 24 June 2025 12:00:00 AM (GMT)
         storeMock.modalShownOccurrences = 1
         userTypeProviderMock.userType = userType
         userActivityProviderMock.numberOfActiveDaysPassed = 4
@@ -111,7 +109,6 @@ final class DefaultBrowserPromptDeciderActiveUserTests {
     )
     func checkSecondModalIsNotPresentedForExistingUserWhenFirstModalHasShownAndNumberOfActiveDaysIsFour(userType: DefaultBrowserPromptUserType) {
         // GIVEN
-        storeMock.lastModalShownDate = 1750739150 // Tuesday, 24 June 2025 12:00:00 AM (GMT)
         storeMock.modalShownOccurrences = 1
         userTypeProviderMock.userType = userType
         userActivityProviderMock.numberOfActiveDaysPassed = 4
@@ -134,7 +131,6 @@ final class DefaultBrowserPromptDeciderActiveUserTests {
     )
     func checkSubsequentModalIsPresentedForNewAndReturningUserWhenSecondModalHasShownAndNumberOfActiveDaysIsFourteen(userType: DefaultBrowserPromptUserType) {
         // GIVEN
-        storeMock.lastModalShownDate = 1750739150 // Tuesday, 24 June 2025 12:00:00 AM (GMT)
         storeMock.modalShownOccurrences = 2
         userTypeProviderMock.userType = userType
         userActivityProviderMock.numberOfActiveDaysPassed = 14
@@ -156,7 +152,6 @@ final class DefaultBrowserPromptDeciderActiveUserTests {
     )
     func checkSubsequentModalIsPresentedForExistingUserWhenFirstModalHasShownAndNumberOfActiveDaysIsFourteen(userType: DefaultBrowserPromptUserType) {
         // GIVEN
-        storeMock.lastModalShownDate = 1750739150 // Tuesday, 24 June 2025 12:00:00 AM (GMT)
         storeMock.modalShownOccurrences = 1
         userTypeProviderMock.userType = userType
         userActivityProviderMock.numberOfActiveDaysPassed = 14
@@ -182,7 +177,6 @@ final class DefaultBrowserPromptDeciderActiveUserTests {
     )
     func checkSubsequentModalIsPresentedForNewOrReturningUserWhenLastModalHasShownAndNumberOfActiveDaysIsFourteen(userType: DefaultBrowserPromptUserType, numberOfModalShown: Int) {
         // GIVEN
-        storeMock.lastModalShownDate = 1750739150 // Tuesday, 24 June 2025 12:00:00 AM (GMT)
         storeMock.modalShownOccurrences = numberOfModalShown
         userTypeProviderMock.userType = userType
         userActivityProviderMock.numberOfActiveDaysPassed = 14
@@ -207,7 +201,6 @@ final class DefaultBrowserPromptDeciderActiveUserTests {
     )
     func checkSubsequentModalIsPresentedForExistingUserWhenLastModalHasShownAndNumberOfActiveDaysIsFourteen(userType: DefaultBrowserPromptUserType, numberOfModalShown: Int) {
         // GIVEN
-        storeMock.lastModalShownDate = 1750739150 // Tuesday, 24 June 2025 12:00:00 AM (GMT)
         storeMock.modalShownOccurrences = numberOfModalShown
         userTypeProviderMock.userType = userType
         userActivityProviderMock.numberOfActiveDaysPassed = 14
@@ -224,7 +217,6 @@ final class DefaultBrowserPromptDeciderActiveUserTests {
     @Test("Check Prompt Is Not Shown If User Type could not be determined")
     func checkPromptIsNotShownIfUserTypeCouldNotBeDetermined() {
         // GIVEN
-        storeMock.lastModalShownDate = nil
         storeMock.modalShownOccurrences = 0
         userTypeProviderMock.userType = nil
         makeSUT(numberOfDaysSinceInstall: 1)

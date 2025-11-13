@@ -251,6 +251,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1211708489642640?focus=true
     case tabProgressIndicator
 
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211388368219934?focus=true
+    case vpnConnectionWidePixelMeasurement
+
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211579914062173?focus=true
     case showHideAIGeneratedImagesSection
 
@@ -281,6 +284,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .fireDialogIndividualSitesLink,
                 .blurryAddressBarTahoeFix,
                 .pinnedTabsViewRewrite,
+                .vpnConnectionWidePixelMeasurement,
                 .showHideAIGeneratedImagesSection:
             true
         default:
@@ -369,6 +373,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportNewExperience,
                 .pinnedTabsViewRewrite,
                 .tabProgressIndicator,
+                .vpnConnectionWidePixelMeasurement,
                 .showHideAIGeneratedImagesSection,
                 .standaloneMigration,
                 .blackFridayCampaign:
@@ -558,6 +563,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.pinnedTabsViewRewrite))
         case .tabProgressIndicator:
             return .disabled
+        case .vpnConnectionWidePixelMeasurement:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
         case .showHideAIGeneratedImagesSection:
             return .remoteReleasable(.feature(.showHideAIGeneratedImagesSection))
         case .standaloneMigration:

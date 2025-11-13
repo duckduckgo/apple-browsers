@@ -26,14 +26,14 @@ final class OnboardingSearchExperienceSelectionHandlerTests: XCTestCase {
     private var sut: OnboardingSearchExperienceSelectionHandler!
     private var daxDialogs: DaxDialogs!
     private var mockDaxDialogsSettings: MockDaxDialogsSettings!
-    private var mockAIChatSettings: TrackingMockAIChatSettingsProvider!
+    private var mockAIChatSettings: ObservingMockAIChatSettingsProvider!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockOnboardingSearchExperienceProvider: MockOnboardingSearchExperienceProvider!
 
     override func setUp() {
         super.setUp()
         mockDaxDialogsSettings = MockDaxDialogsSettings()
-        mockAIChatSettings = TrackingMockAIChatSettingsProvider()
+        mockAIChatSettings = ObservingMockAIChatSettingsProvider()
         mockFeatureFlagger = MockFeatureFlagger()
         mockOnboardingSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
 
@@ -169,9 +169,9 @@ final class OnboardingSearchExperienceSelectionHandlerTests: XCTestCase {
     }
 }
 
-// MARK: - Tracking MockAIChatSettingsProvider
+// MARK: - ObservingMockAIChatSettingsProvider
 
-private final class TrackingMockAIChatSettingsProvider: MockAIChatSettingsProvider {
+private final class ObservingMockAIChatSettingsProvider: MockAIChatSettingsProvider {
     var enableAIChatSearchInputUserSettingsCalled = false
     var lastEnableAIChatSearchInputValue: Bool?
 

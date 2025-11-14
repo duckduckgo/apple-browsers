@@ -141,6 +141,7 @@ class SecureVaultManagerTests: XCTestCase {
             override func secureVaultManager(_ manager: SecureVaultManager,
                                              promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
                                              withTrigger trigger: AutofillUserScript.GetTriggerType,
+                                             isMainFrame: Bool,
                                              completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
                 didCallShouldPromptUserToAutofillCreditCard = true
                 capturedCreditCards = creditCards
@@ -172,7 +173,7 @@ class SecureVaultManagerTests: XCTestCase {
         var resultCard: SecureVaultModels.CreditCard?
         var resultAction: RequestVaultDataAction?
 
-        manager.autofillUserScriptDidRequestCreditCard(mockAutofillUserScript, trigger: triggerType) { card, action in
+        manager.autofillUserScriptDidRequestCreditCard(mockAutofillUserScript, trigger: triggerType, isMainFrame: false) { card, action in
             resultCard = card
             resultAction = action
             expectation.fulfill()
@@ -201,6 +202,7 @@ class SecureVaultManagerTests: XCTestCase {
             override func secureVaultManager(_ manager: SecureVaultManager,
                                              promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
                                              withTrigger trigger: AutofillUserScript.GetTriggerType,
+                                             isMainFrame: Bool,
                                              completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
                 didCallShouldPromptUserToAutofillCreditCard = true
                 capturedCreditCards = creditCards
@@ -216,7 +218,7 @@ class SecureVaultManagerTests: XCTestCase {
         var resultCard: SecureVaultModels.CreditCard?
         var resultAction: RequestVaultDataAction?
 
-        manager.autofillUserScriptDidRequestCreditCard(mockAutofillUserScript, trigger: .userInitiated) { card, action in
+        manager.autofillUserScriptDidRequestCreditCard(mockAutofillUserScript, trigger: .userInitiated, isMainFrame: false) { card, action in
             resultCard = card
             resultAction = action
             expectation.fulfill()
@@ -413,6 +415,7 @@ class SecureVaultManagerTests: XCTestCase {
             override func secureVaultManager(_ manager: SecureVaultManager,
                                              didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
                                              withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                                             isMainFrame: Bool,
                                              completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
                 didCallDidFocusFieldFor = true
                 capturedMainType = mainType
@@ -439,7 +442,7 @@ class SecureVaultManagerTests: XCTestCase {
         var resultCard: SecureVaultModels.CreditCard?
         var resultAction: RequestVaultDataAction?
 
-        manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards) { card, action in
+        manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards, isMainFrame: false) { card, action in
             resultCard = card
             resultAction = action
             expectation.fulfill()
@@ -465,6 +468,7 @@ class SecureVaultManagerTests: XCTestCase {
             override func secureVaultManager(_ manager: SecureVaultManager,
                                              didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
                                              withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                                             isMainFrame: Bool,
                                              completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
                 // Return nil to simulate no selection
                 completionHandler(nil)
@@ -483,7 +487,7 @@ class SecureVaultManagerTests: XCTestCase {
         var resultCard: SecureVaultModels.CreditCard?
         var resultAction: RequestVaultDataAction?
 
-        manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards) { card, action in
+        manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards, isMainFrame: false) { card, action in
             resultCard = card
             resultAction = action
             expectation.fulfill()
@@ -505,6 +509,7 @@ class SecureVaultManagerTests: XCTestCase {
             override func secureVaultManager(_ manager: SecureVaultManager,
                                              didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
                                              withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                                             isMainFrame: Bool,
                                              completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
                 didCallDidFocusFieldFor = true
                 capturedCreditCards = creditCards
@@ -520,7 +525,7 @@ class SecureVaultManagerTests: XCTestCase {
         var resultCard: SecureVaultModels.CreditCard?
         var resultAction: RequestVaultDataAction?
 
-        manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards) { card, action in
+        manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards, isMainFrame: false) { card, action in
             resultCard = card
             resultAction = action
             expectation.fulfill()
@@ -545,6 +550,7 @@ class SecureVaultManagerTests: XCTestCase {
             override func secureVaultManager(_ manager: SecureVaultManager,
                                              didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
                                              withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                                             isMainFrame: Bool,
                                              completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
                 didCallDidFocusFieldFor = true
                 capturedMainType = mainType
@@ -569,7 +575,7 @@ class SecureVaultManagerTests: XCTestCase {
             var resultCard: SecureVaultModels.CreditCard?
             var resultAction: RequestVaultDataAction?
 
-            manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: fieldType) { card, action in
+            manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: fieldType, isMainFrame: false) { card, action in
                 resultCard = card
                 resultAction = action
                 expectation.fulfill()
@@ -598,6 +604,7 @@ class SecureVaultManagerTests: XCTestCase {
             override func secureVaultManager(_ manager: SecureVaultManager,
                                              didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
                                              withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                                             isMainFrame: Bool,
                                              completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
                 didCallDidFocusFieldFor = true
                 capturedCreditCards = creditCards
@@ -615,7 +622,7 @@ class SecureVaultManagerTests: XCTestCase {
         var resultCard: SecureVaultModels.CreditCard?
         var resultAction: RequestVaultDataAction?
 
-        errorManager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards) { card, action in
+        errorManager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards, isMainFrame: false) { card, action in
             resultCard = card
             resultAction = action
             expectation.fulfill()
@@ -639,6 +646,7 @@ class SecureVaultManagerTests: XCTestCase {
             override func secureVaultManager(_ manager: SecureVaultManager,
                                              didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
                                              withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                                             isMainFrame: Bool,
                                              completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
                 callCount += 1
                 let selectedCard = creditCards.first { $0.id == selectedCardId }
@@ -660,7 +668,7 @@ class SecureVaultManagerTests: XCTestCase {
         let expectation1 = self.expectation(description: "First focus")
         var firstResultCard: SecureVaultModels.CreditCard?
 
-        manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards) { card, _ in
+        manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards, isMainFrame: false) { card, _ in
             firstResultCard = card
             expectation1.fulfill()
         }
@@ -674,7 +682,7 @@ class SecureVaultManagerTests: XCTestCase {
         let expectation2 = self.expectation(description: "Second focus")
         var secondResultCard: SecureVaultModels.CreditCard?
 
-        manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards) { card, _ in
+        manager.autofillUserScriptDidFocus(mockAutofillUserScript, mainType: .creditCards, isMainFrame: false) { card, _ in
             secondResultCard = card
             expectation2.fulfill()
         }
@@ -1423,9 +1431,9 @@ private class MockSecureVaultManagerDelegate: SecureVaultManagerDelegate {
                             onAccountSelected account: @escaping (BrowserServicesKit.SecureVaultModels.WebsiteAccount?) -> Void,
                             completionHandler: @escaping (SecureVaultModels.WebsiteAccount?) -> Void) {}
 
-    func secureVaultManager(_: SecureVaultManager, promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {}
+    func secureVaultManager(_: SecureVaultManager, promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, isMainFrame: Bool, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {}
 
-    func secureVaultManager(_: SecureVaultManager, didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType, withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {}
+    func secureVaultManager(_: SecureVaultManager, didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType, withCreditCards creditCards: [SecureVaultModels.CreditCard], isMainFrame: Bool, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {}
 
     func secureVaultManager(_: BrowserServicesKit.SecureVaultManager, promptUserWithGeneratedPassword password: String, completionHandler: @escaping (Bool) -> Void) {}
 

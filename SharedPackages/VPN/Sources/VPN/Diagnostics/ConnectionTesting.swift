@@ -26,6 +26,9 @@ import Foundation
 @MainActor
 protocol ConnectionTesting: AnyObject {
 
+    /// Handler called with connection test results.
+    var resultHandler: (@MainActor (NetworkProtectionConnectionTester.Result) -> Void)? { get set }
+
     /// Starts the connection tester.
     ///
     /// - Parameters:

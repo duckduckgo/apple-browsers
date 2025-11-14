@@ -63,7 +63,7 @@ public final class SyncCreditCardsAdapter {
         secureVaultFactory: AutofillVaultFactory,
         metadataStore: SyncMetadataStore,
         metricsEventsHandler: EventMapping<MetricsEvent>? = nil,
-        privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager
+        privacyConfigurationManager: PrivacyConfigurationManaging
     ) {
         guard provider == nil else {
             return

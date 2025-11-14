@@ -3732,17 +3732,6 @@ extension WKWebView {
 
 }
 
-//extension UserContentController {
-//
-//    @MainActor
-//    convenience init(contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
-//                     privacyConfigurationManager: PrivacyConfigurationManaging) {
-//        self.init(assetsPublisher: contentBlockingAssetsPublisher,
-//                  privacyConfigurationManager: privacyConfigurationManager)
-//    }
-//
-//}
-
 // MARK: - SpecialErrorPageNavigationDelegate
 
 extension TabViewController: SpecialErrorPageNavigationDelegate {

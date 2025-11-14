@@ -7,11 +7,11 @@ import NetworkExtension
 import os.log
 import Common
 
-// MARK: - WireGuard Interface
+// MARK: - WireGuard Go Interface
 
 /// This protocol abstracts the WireGuard Go library.
 /// The Go library is only included in VPN packet tunnel provider targets that need it, to avoid being embedded in other targets such as apps and login items that don't use it.
-public protocol WireGuardInterface {
+public protocol WireGuardGoInterface {
     func turnOn(settings: UnsafePointer<CChar>, handle: Int32) -> Int32
     func turnOff(handle: Int32)
     func getConfig(handle: Int32) -> UnsafeMutablePointer<CChar>?
@@ -128,7 +128,7 @@ private enum State: CustomDebugStringConvertible {
 }
 
 // swiftlint:disable:next type_body_length
-public class WireGuardAdapter {
+public class WireGuardAdapter: WireGuardAdapterProtocol {
     public typealias LogHandler = (WireGuardLogLevel, String) -> Void
 
     /// WireGuard configuration fields
@@ -156,8 +156,8 @@ public class WireGuardAdapter {
     /// Packet tunnel provider.
     private weak var packetTunnelProvider: NEPacketTunnelProvider?
 
-    /// Emits events for pixel and logging purposes.
-    private let eventMapper: EventMapping<WireGuardAdapterEvent>
+    /// Handles events from the adapter.
+    private let eventHandler: WireGuardAdapterEventHandling
 
     /// Log handler closure.
     private let logHandler: LogHandler
@@ -171,7 +171,7 @@ public class WireGuardAdapter {
     /// Keeps track of whether a recovery attempt from temporary shutdown has already failed.
     private var temporaryShutdownRecoveryFailed = false
 
-    private let wireGuardInterface: WireGuardInterface
+    private let wireGuardInterface: WireGuardGoInterface
 
     /// Tunnel device file descriptor.
     private var tunnelFileDescriptor: Int32? {
@@ -245,14 +245,14 @@ public class WireGuardAdapter {
     /// - Parameter logHandler: a log handler closure.
 
     public init(with packetTunnelProvider: NEPacketTunnelProvider,
-                wireGuardInterface: WireGuardInterface,
-                eventMapper: EventMapping<WireGuardAdapterEvent>,
+                wireGuardInterface: WireGuardGoInterface,
+                eventHandler: WireGuardAdapterEventHandling,
                 logHandler: @escaping LogHandler) {
         Logger.networkProtectionMemory.debug("[+] WireGuardAdapter")
 
         self.packetTunnelProvider = packetTunnelProvider
         self.wireGuardInterface = wireGuardInterface
-        self.eventMapper = eventMapper
+        self.eventHandler = eventHandler
         self.logHandler = logHandler
 
         setupLogHandler()
@@ -697,7 +697,7 @@ public class WireGuardAdapter {
                 )
 
                 if self.temporaryShutdownRecoveryFailed {
-                    self.eventMapper.fire(.endTemporaryShutdownStateRecoverySuccess)
+                    self.eventHandler.handle(.endTemporaryShutdownStateRecoverySuccess)
                 }
 
                 self.temporaryShutdownRecoveryFailed = false
@@ -705,9 +705,9 @@ public class WireGuardAdapter {
                 self.logHandler(.error, "Failed to restart backend: \(error.localizedDescription)")
 
                 if self.temporaryShutdownRecoveryFailed {
-                    self.eventMapper.fire(.endTemporaryShutdownStateRecoveryFailure(error))
+                    self.eventHandler.handle(.endTemporaryShutdownStateRecoveryFailure(error))
                 } else {
-                    self.eventMapper.fire(.endTemporaryShutdownStateAttemptFailure(error))
+                    self.eventHandler.handle(.endTemporaryShutdownStateAttemptFailure(error))
                     self.temporaryShutdownRecoveryFailed = true
                 }
             }

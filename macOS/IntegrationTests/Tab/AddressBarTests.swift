@@ -87,7 +87,7 @@ class AddressBarTests: XCTestCase {
         NSApp.delegateTyped.startupPreferences.customHomePageURL = URL.duckDuckGo.absoluteString
         NSApp.delegateTyped.startupPreferences.launchToCustomHomePage = false
 
-        TabsPreferences.shared.pinnedTabsMode = .shared
+        NSApp.delegateTyped.tabsPreferences.pinnedTabsMode = .shared
 
         NSApp.activate(ignoringOtherApps: true)
     }
@@ -109,7 +109,7 @@ class AddressBarTests: XCTestCase {
             NSError.disableSwizzledDescription = false
             NSApp.delegateTyped.startupPreferences.launchToCustomHomePage = false
 
-            TabsPreferences.shared.pinnedTabsMode = .separate
+            NSApp.delegateTyped.tabsPreferences.pinnedTabsMode = .separate
 
             HTTPStubs.removeAllStubs()
         }

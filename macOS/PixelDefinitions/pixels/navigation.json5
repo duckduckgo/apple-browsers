@@ -3,9 +3,18 @@
         "description": "Fired when a website navigation is performed.",
         "owners": ["ayoy"],
         "triggers": ["new_tab", "page_load"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "kind",
+                "type": "string",
+                "enum": ["regular", "client"],
+                "description": "The type of navigation being performed"
+            }
+        ]
     },
-    "navigationToExternalURL": {
+    "m_mac_navigation_url_source-external": {
         "description": "Fires when the browser is activated to open a link from another app. This can only happen when the browser is set as the default browser.",
         "owners": ["ayoy"],
         "triggers": ["other"],
@@ -33,13 +42,13 @@
         ],
         "expires": "2025-10-31"
     },
-    "siteLoadingSuccess": {
+    "m_mac_site_loading_success": {
         "description": "Fired when a site loading navigation completes successfully.",
         "owners": ["diegoreymendez"],
         "triggers": ["page_load"],
         "parameters": ["appVersion", "pixelSource", "duration", "navigation_type"]
     },
-    "siteLoadingFailure": {
+    "m_mac_site_loading_failure": {
         "description": "Fired when a site loading navigation fails.",
         "owners": ["diegoreymendez"],
         "triggers": ["page_load"],
@@ -54,7 +63,7 @@
             "underlyingErrorDomain"
         ]
     },
-    "siteLoadingTiming": {
+    "m_mac_site_loading_timing": {
         "description": "Fired when WKPageLoadTiming data is available for a site loading navigation. Provides detailed performance timing metrics.",
         "owners": ["diegoreymendez"],
         "triggers": ["page_load"],
@@ -83,10 +92,16 @@
             }
         ]
     },
-    "siteLoadingPerformance": {
+    "m_mac_site_loading_performance": {
         "description": "Fired when CSS pushes privacy-aware performance metrics via expandedPerformanceMetricsResult notification",
         "owners": ["diegoreymendez"],
         "triggers": ["page_load"],
+        "suffixes": [
+            {
+                "description": "Sampling percentage (between 1 and 100 inclusive)",
+                "pattern": "^sample(?:100|0?[1-9]|[1-9][0-9])$"
+            }
+        ],
         "parameters": [
             "appVersion",
             "pixelSource",

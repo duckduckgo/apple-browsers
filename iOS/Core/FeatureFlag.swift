@@ -185,6 +185,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1210594645229050/task/1211494295271901?focus=true
     case winBackOffer
 
+    /// https://app.asana.com/1/137249556945/project/1210594645229050/task/1211612114679665?focus=true
+    case blackFridayCampaign
+
     ///  https://app.asana.com/1/137249556945/project/72649045549333/task/1207055705580443?focus=true
     case syncCreditCards
 
@@ -206,6 +209,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1211652685709096?focus=true
     case fullDuckAIMode
     
+    /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709099?focus=true
+    case onboardingSearchExperience
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211388368219934?focus=true
     case vpnConnectionWidePixelMeasurement
 
@@ -301,12 +307,14 @@ extension FeatureFlag: FeatureFlagDescribing {
              .mobileCustomization,
              .vpnMenuItem,
              .forgetAllInSettings,
+             .onboardingSearchExperience,
              .duckAiDataClearing,
              .fullDuckAIMode,
              .vpnConnectionWidePixelMeasurement,
              .storeSerpSettings,
              .showHideAIGeneratedImagesSection,
-             .standaloneMigration:
+             .standaloneMigration,
+             .blackFridayCampaign:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -502,6 +510,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
         case .winBackOffer:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
+        case .blackFridayCampaign:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.blackFridayCampaign))
         case .syncCreditCards:
             return .remoteReleasable(.subfeature(SyncSubfeature.syncCreditCards))
         case .unifiedURLPredictor:
@@ -518,6 +528,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
         case .vpnConnectionWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
+        case .onboardingSearchExperience:
+            return .internalOnly()
         case .storeSerpSettings:
             return .remoteReleasable(.feature(.storeSerpSettings))
         case .showHideAIGeneratedImagesSection:

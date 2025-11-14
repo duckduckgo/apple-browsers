@@ -36,6 +36,7 @@ final class StartupPreferencesPersistorMock: StartupPreferencesPersistor {
 
 class StartupPreferencesTests: XCTestCase {
 
+    @MainActor
     func testWhenInitializedThenItLoadsPersistedValues() throws {
         var model = StartupPreferences(persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: "duckduckgo.com", restorePreviousSession: false))
         XCTAssertEqual(model.launchToCustomHomePage, false)
@@ -67,6 +68,7 @@ class StartupPreferencesTests: XCTestCase {
 
     }
 
+    @MainActor
     func testIsValidURL() {
         XCTAssertFalse(StartupPreferences().isValidURL("invalid url"))
         XCTAssertFalse(StartupPreferences().isValidURL("invalidUrl"))
@@ -113,6 +115,7 @@ class StartupPreferencesTests: XCTestCase {
 
     // MARK: - StartupWindowType Persistence Tests
 
+    @MainActor
     func testWhenInitializedThenItLoadsStartupWindowType() {
         // Test default value
         var model = StartupPreferences(persistor: StartupPreferencesPersistorMock(
@@ -138,6 +141,7 @@ class StartupPreferencesTests: XCTestCase {
         XCTAssertEqual(model.startupWindowType, .window)
     }
 
+    @MainActor
     func testWhenStartupWindowTypeIsUpdatedThenPersistedValueIsUpdated() {
         class TestPersistor: StartupPreferencesPersistor {
             var launchToCustomHomePage: Bool
@@ -185,6 +189,7 @@ class StartupPreferencesTests: XCTestCase {
 
     // MARK: - Enhanced Initialization Tests
 
+    @MainActor
     func testWhenInitializedWithAllPropertiesThenItLoadsAllPersistedValues() {
         let persistor = StartupPreferencesPersistorMock(
             launchToCustomHomePage: true,
@@ -201,6 +206,7 @@ class StartupPreferencesTests: XCTestCase {
         XCTAssertEqual(model.startupWindowType, .fireWindow)
     }
 
+    @MainActor
     func testWhenInitializedWithMixedPropertiesThenItLoadsCorrectValues() {
         // Test various combinations to ensure property independence
         let combinations: [(Bool, String, Bool, StartupWindowType)] = [
@@ -229,6 +235,7 @@ class StartupPreferencesTests: XCTestCase {
 
     // MARK: - Startup Burner Mode Tests
 
+    @MainActor
     func testStartupBurnerModeWithFeatureFlagDisabled() {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [] // Feature flag disabled
@@ -245,6 +252,7 @@ class StartupPreferencesTests: XCTestCase {
         XCTAssertEqual(burnerMode, .regular)
     }
 
+    @MainActor
     func testStartupBurnerModeWithFeatureFlagEnabled() {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.openFireWindowByDefault] // Feature flag enabled
@@ -270,6 +278,7 @@ class StartupPreferencesTests: XCTestCase {
         XCTAssertTrue(burnerMode.isBurner)
     }
 
+    @MainActor
     func testStartupBurnerModeEdgeCases() {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.openFireWindowByDefault]
@@ -295,10 +304,16 @@ class StartupPreferencesTests: XCTestCase {
 }
 
 fileprivate extension StartupPreferences {
+    @MainActor
     convenience init(persistor: StartupPreferencesPersistor = StartupPreferencesPersistorMock()) {
         self.init(
             persistor: persistor,
-            appearancePreferences: NSApp.delegateTyped.appearancePreferences
+            windowControllersManager: WindowControllersManagerMock(),
+            appearancePreferences: AppearancePreferences(
+                persistor: AppearancePreferencesPersistorMock(),
+                privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                featureFlagger: MockFeatureFlagger()
+            )
         )
     }
 }

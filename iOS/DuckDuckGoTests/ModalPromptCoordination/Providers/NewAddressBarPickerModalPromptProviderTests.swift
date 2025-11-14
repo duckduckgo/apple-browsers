@@ -296,7 +296,8 @@ final class NewAddressBarPickerModalPromptProviderIntegrationTests {
             featureFlagger: mockFeatureFlagger,
             experimentalAIChatManager: experimentalAIChatManager,
             appSettings: mockAppSettings,
-            pickerStorage: pickerStorage
+            pickerStorage: pickerStorage,
+            searchExperienceOnboardingProvider: MockOnboardingSearchExperienceProvider()
         )
     }
 

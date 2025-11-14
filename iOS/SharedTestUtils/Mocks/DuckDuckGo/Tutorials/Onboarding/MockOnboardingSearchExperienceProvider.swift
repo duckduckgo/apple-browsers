@@ -1,5 +1,5 @@
 //
-//  NetworkProtectionFunnelOrigin.swift
+//  MockOnboardingSearchExperienceProvider.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -18,15 +18,11 @@
 //
 
 import Foundation
+@testable import DuckDuckGo
 
-/// Represents the origin point from which the user enters the network protection funnel in the iOS app.
-enum NetworkProtectionFunnelOrigin: String {
-    /// User entered the funnel via the App Settings screen
-    case appSettings = "funnel_appsettings_ios"
-    
-    /// User entered the funnel via the System Settings screen
-    case systemSettings = "funnel_systemsettings_ios"
-    
-    /// User entered the funnel via other entries
-    case others = "funnel_others_ios"
+final class MockOnboardingSearchExperienceProvider: OnboardingSearchExperienceProvider {
+    var didEnableAIChatSearchInputDuringOnboarding = false
+    var didApplyOnboardingChoiceSettings = false
+
+    func storeAIChatSearchInputDuringOnboardingChoice(enable: Bool) {}
 }

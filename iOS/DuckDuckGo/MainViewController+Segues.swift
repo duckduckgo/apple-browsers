@@ -31,6 +31,12 @@ import DataBrokerProtection_iOS
 
 extension MainViewController {
 
+    func segueToAppearanceSettings() {
+        launchSettings {
+            $0.triggerDeepLinkNavigation(to: .appearance)
+        }
+    }
+
     func segueToCustomizeAddressBarSettings() {
         launchSettings {
             $0.triggerDeepLinkNavigation(to: .customizeAddressBarButton)
@@ -47,7 +53,10 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        let controller = OnboardingIntroViewController(onboardingPixelReporter: contextualOnboardingPixelReporter, systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager, daxDialogsManager: daxDialogsManager)
+        let controller = OnboardingIntroViewController(
+            onboardingPixelReporter: contextualOnboardingPixelReporter,
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+            daxDialogsManager: daxDialogsManager)
         controller.delegate = self
         controller.modalPresentationStyle = .overFullScreen
         present(controller, animated: false)

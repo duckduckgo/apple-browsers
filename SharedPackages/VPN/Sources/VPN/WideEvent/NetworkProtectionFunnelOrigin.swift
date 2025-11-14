@@ -1,0 +1,40 @@
+//
+//  NetworkProtectionFunnelOrigin.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+
+/// Represents the origin point from which the user enters the network protection funnel.
+public enum NetworkProtectionFunnelOrigin: String {
+
+#if os(iOS)
+    /// User entered the funnel via the App Settings screen
+   case appSettings = "funnel_appsettings_ios"
+#elseif os(macOS)
+    /// User entered the funnel via the App Settings screen
+    case appSettings = "funnel_appsettings_macos"
+
+    /// User entered the funnel via the agent in the menu bar
+    case agent = "funnel_agent_macos"
+#endif
+
+    /// User entered the funnel via the System Settings screen
+    case systemSettings = "funnel_systemsettings_multiple"
+
+    /// User entered the funnel via other entries
+    case others = "funnel_others_multiple"
+}

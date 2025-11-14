@@ -160,7 +160,7 @@ final class TabCollectionViewModel: NSObject {
         pinnedTabsManagerProvider: PinnedTabsManagerProviding?,
         burnerMode: BurnerMode = .regular,
         startupPreferences: StartupPreferences = NSApp.delegateTyped.startupPreferences,
-        tabsPreferences: TabsPreferences = TabsPreferences.shared,
+        tabsPreferences: TabsPreferences = NSApp.delegateTyped.tabsPreferences,
         windowControllersManager: WindowControllersManagerProtocol? = nil
     ) {
         assert(!tabCollection.isPopup || windowControllersManager != nil, "Cannot create TabCollectionViewModel with a popup tab collection without a window controllers manager")

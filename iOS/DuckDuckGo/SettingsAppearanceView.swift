@@ -127,10 +127,10 @@ struct SettingsAppearanceView: View {
     @ViewBuilder
     func addressBarButtonSetting() -> some View {
 
-        let destination = AddressBarCustomizationPickerView(isAIChatEnabled: viewModel.isAIChatEnabled, selectedAddressBarButton: viewModel.selectedAddressBarButton)
-            .applySettingsListModifiers(title: "",
-                                        displayMode: .inline,
-                                        viewModel: viewModel)
+        let destination = AddressBarCustomizationPickerView(isAIChatEnabled: viewModel.isAIChatEnabled,
+                                                            selectedAddressBarButton: viewModel.selectedAddressBarButton,
+                                                            mobileCustomization: viewModel.mobileCustomization)
+            .applySettingsListModifiers(title: "", displayMode: .inline, viewModel: viewModel)
 
         NavigationLink(destination: destination, isActive: $showAddressBarSettings) {
 
@@ -149,10 +149,10 @@ struct SettingsAppearanceView: View {
 
     @ViewBuilder
     func toolbarButtonSetting() -> some View {
-        let destination = ToolbarCustomizationPickerView(isAIChatEnabled: viewModel.isAIChatEnabled, selectedToolbarButton: viewModel.selectedToolbarButton)
-            .applySettingsListModifiers(title: "",
-                                        displayMode: .inline,
-                                        viewModel: viewModel)
+        let destination = ToolbarCustomizationPickerView(isAIChatEnabled: viewModel.isAIChatEnabled,
+                                                         selectedToolbarButton: viewModel.selectedToolbarButton,
+                                                         mobileCustomization: viewModel.mobileCustomization)
+            .applySettingsListModifiers(title: "", displayMode: .inline, viewModel: viewModel)
 
         NavigationLink(destination: destination, isActive: $showToolbarSettings) {
 

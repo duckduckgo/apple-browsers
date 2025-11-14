@@ -197,6 +197,7 @@ class TabViewController: UIViewController {
     // Required to allow grace period between authentication prompts when autofilling credit cards
     // where forms are split into multiple iframes, requiring multiple prompts
     private var domainFillCreditCardPromptLastShownOn: String?
+    private var domainFillCreditCardPixelLastFiredFor: String?
     // Required to prevent fireproof prompt presenting before autofill save login prompt
     private var saveLoginPromptLastDismissed: Date?
     private var saveLoginPromptIsPresenting: Bool = false
@@ -3286,14 +3287,31 @@ extension TabViewController: SecureVaultManagerDelegate {
 
                 if creditCard != nil {
                     NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
+                    self?.fireCreditCardFramePixels(isMainFrame: isMainFrame)
                 }
             }
             shouldShowCreditCardPrompt = false
             autofillCreditCardAccessoryView?.updateCreditCards(creditCards)
         } else {
-            addCreditCardInputAccessoryView(creditCards: creditCards) { card in
+            addCreditCardInputAccessoryView(creditCards: creditCards) { [weak self] card in
                 completionHandler(card)
+
+                self?.fireCreditCardFramePixels(isMainFrame: isMainFrame)
             }
+        }
+    }
+
+    private func fireCreditCardFramePixels(isMainFrame: Bool) {
+        guard domainFillCreditCardPixelLastFiredFor != url?.host else {
+            return
+        }
+
+        domainFillCreditCardPixelLastFiredFor = url?.host
+
+        if isMainFrame {
+            Pixel.fire(pixel: .autofillCardsAutofilledInMainframe)
+        } else {
+            Pixel.fire(pixel: .autofillCardsAutofilledInIframe)
         }
     }
 

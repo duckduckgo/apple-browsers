@@ -23,6 +23,7 @@ import UserScript
 import PrivacyDashboard
 import PixelKit
 import os.log
+
 protocol AutoconsentUserScriptDelegate: AnyObject {
     func autoconsentUserScript(consentStatus: CookieConsentInfo)
 }
@@ -46,8 +47,8 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     private var selfTestFrameInfo: WKFrameInfo?
 
     private var topUrl: URL?
-    private let preferences = CookiePopupProtectionPreferences.shared
-    private let management = AutoconsentManagement.shared
+    private let preferences: CookiePopupProtectionPreferences
+    private let management: AutoconsentManagement
 
     public var messageNames: [String] { MessageName.allCases.map(\.rawValue) }
     let source: String
@@ -55,9 +56,11 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     private let statsManager: AutoconsentDailyStatsManaging
     weak var delegate: AutoconsentUserScriptDelegate?
 
-    init(scriptSource: ScriptSourceProviding,
-         config: PrivacyConfiguration,
-         statsManager: AutoconsentDailyStatsManaging) {
+    init(config: PrivacyConfiguration,
+         statsManager: AutoconsentDailyStatsManaging,
+         management: AutoconsentManagement,
+         preferences: CookiePopupProtectionPreferences
+    ) {
         Logger.autoconsent.debug("Initialising autoconsent userscript")
         do {
             source = try Self.loadJS("autoconsent-bundle", from: .main, withReplacements: [:])
@@ -69,6 +72,8 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
         }
         self.config = config
         self.statsManager = statsManager
+        self.management = management
+        self.preferences = preferences
     }
 
     func userContentController(_ userContentController: WKUserContentController,

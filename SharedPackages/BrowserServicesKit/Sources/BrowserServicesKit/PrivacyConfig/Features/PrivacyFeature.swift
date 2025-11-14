@@ -80,13 +80,14 @@ public enum PrivacyFeature: String {
     case tabCrashRecovery
     case delayedWebviewPresentation
     case disableFireAnimation
-    case feedbackForm
     case htmlNewTabPage
     case daxEasterEggLogos
     case openFireWindowByDefault
     case attributedMetrics
     case dataImport
     case duckAiDataClearing
+    case storeSerpSettings
+    case showHideAIGeneratedImagesSection
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -146,6 +147,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Feature flag for a macOS Tahoe fix only
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
+
+    /// Pinned Tabs AppKit Rewrite Feature Flag
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1209949983074592?focus=true
+    case pinnedTabsViewRewrite
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -273,6 +278,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Signals that the iOS app should display duck.ai chats in "full mode" i.e in a tab, not a sheet
     case fullDuckAIMode
+
+    /// Enables native-side support for standalone migration flows in AI Chat
+    case standaloneMigration
+
+    /// Allows to present Search Experience choice screen during onboarding
+    case onboardingSearchExperience
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -365,9 +376,11 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case supportsAlternateStripePaymentFlow
     case subscriptionPurchaseWidePixelMeasurement
     case subscriptionRestoreWidePixelMeasurement
+    case vpnConnectionWidePixelMeasurement
     case authV2WideEventEnabled
     case winBackOffer
     case vpnMenuItem
+    case blackFridayCampaign
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

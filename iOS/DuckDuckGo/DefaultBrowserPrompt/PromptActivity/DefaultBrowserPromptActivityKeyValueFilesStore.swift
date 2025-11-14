@@ -44,15 +44,6 @@ final class DefaultBrowserPromptActivityKeyValueFilesStore: DefaultBrowserPrompt
         self.eventMapper = eventMapper
     }
 
-    var lastModalShownDate: TimeInterval? {
-        get {
-            getValue(forKey: .lastModalShownDate)
-        }
-        set {
-            write(value: newValue, forKey: .lastModalShownDate)
-        }
-    }
-
     var modalShownOccurrences: Int {
         get {
             getValue(forKey: .modalShownOccurrences) ?? 0

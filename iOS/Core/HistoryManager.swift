@@ -29,8 +29,8 @@ public protocol HistoryManaging {
     
     var historyCoordinator: HistoryCoordinating { get }
     var isEnabledByUser: Bool { get }
-    func removeAllHistory() async
-    func deleteHistoryForURL(_ url: URL) async
+    @MainActor func removeAllHistory() async
+    @MainActor func deleteHistoryForURL(_ url: URL) async
 
 }
 
@@ -65,6 +65,7 @@ public class HistoryManager: HistoryManaging {
         self.isRecentlyVisitedSitesEnabledByUser = isRecentlyVisitedSitesEnabledByUser
     }
 
+    @MainActor
     public func removeAllHistory() async {
         await withCheckedContinuation { continuation in
             dbCoordinator.burnAll {
@@ -73,6 +74,7 @@ public class HistoryManager: HistoryManaging {
         }
     }
 
+    @MainActor
     public func deleteHistoryForURL(_ url: URL) async {
         guard let domain = url.host else { return }
         let baseDomain = tld.eTLDplus1(domain) ?? domain
@@ -245,9 +247,11 @@ extension HistoryManager {
                                             isAutocompleteEnabledByUser: isAutocompleteEnabledByUser(),
                                             isRecentlyVisitedSitesEnabledByUser: isRecentlyVisitedSitesEnabledByUser())
 
-        dbCoordinator.loadHistory(onCleanFinished: {
-            // Do future migrations after clean has finished.  See macOS for an example.
-        })
+        MainActor.assumeMainThread {
+            dbCoordinator.loadHistory(onCleanFinished: {
+                // Do future migrations after clean has finished.  See macOS for an example.
+            })
+        }
 
         return .success(historyManager)
     }

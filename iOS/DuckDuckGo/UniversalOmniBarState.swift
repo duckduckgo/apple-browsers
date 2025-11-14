@@ -39,7 +39,7 @@ enum UniversalOmniBarState {
         var showDismiss: Bool { baseState.showDismiss }
         var showAbort: Bool { baseState.showAbort }
         var showRefresh: Bool { baseState.showRefresh }
-        var showShare: Bool { baseState.showShare }
+        var showCustomizableButton: Bool { baseState.showCustomizableButton }
         var showMenu: Bool { baseState.showMenu }
         var showSettings: Bool { baseState.showSettings }
         var showVoiceSearch: Bool { baseState.showVoiceSearch }
@@ -92,7 +92,7 @@ enum UniversalOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -124,7 +124,11 @@ enum UniversalOmniBarState {
                 ? LargeOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading)
                 : SmallOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading)
         }
-        var onBrowsingStoppedState: any OmniBarState { self }
+        var onBrowsingStoppedState: any OmniBarState {
+            baseState.hasLargeWidth
+                ? LargeOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: isLoading)
+                : SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: isLoading)
+        }
         var onEnterPadState: any OmniBarState {
             let largeBase = LargeOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
             return baseState.hasLargeWidth ? self : UniversalOmniBarState.AIChatModeState(baseState: largeBase, dependencies: dependencies, isLoading: isLoading)

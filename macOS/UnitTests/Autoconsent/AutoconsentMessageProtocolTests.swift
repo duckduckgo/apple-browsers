@@ -34,54 +34,15 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     override func setUp() async throws{
         try await super.setUp()
 
-        let appearancePreferences = AppearancePreferences(
-            keyValueStore: try MockKeyValueFileStore(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
-        )
-        let startupPreferences = StartupPreferences(
-            persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
-            appearancePreferences: appearancePreferences,
-        )
-        let windowControllersManager = WindowControllersManagerMock()
-        let fireCoordinator = FireCoordinator(tld: TLD(),
-                                              featureFlagger: Application.appDelegate.featureFlagger,
-                                              historyCoordinating: HistoryCoordinatingMock(),
-                                              visualizeFireAnimationDecider: nil,
-                                              onboardingContextualDialogsManager: nil,
-                                              fireproofDomains: MockFireproofDomains(),
-                                              faviconManagement: FaviconManagerMock(),
-                                              windowControllersManager: windowControllersManager,
-                                              pixelFiring: nil,
-                                              historyProvider: MockHistoryViewDataProvider())
+        let preferences = CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock())
+        preferences.isAutoconsentEnabled = true
 
         userScript = AutoconsentUserScript(
-            scriptSource: ScriptSourceProvider(configStorage: MockConfigurationStore(),
-                                               privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                                               webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared, // mock
-                                               contentBlockingManager: ContentBlockerRulesManagerMock(),
-                                               trackerDataManager: TrackerDataManager(etag: ConfigurationStore().loadEtag(for: .trackerDataSet),
-                                                                                      data: ConfigurationStore().loadData(for: .trackerDataSet),
-                                                                                      embeddedDataProvider: AppTrackerDataSetProvider(),
-                                                                                      errorReporting: nil),
-                                               experimentManager: MockContentScopeExperimentManager(),
-                                               tld: Application.appDelegate.tld,
-                                               featureFlagger: Application.appDelegate.featureFlagger,
-                                               onboardingNavigationDelegate: CapturingOnboardingNavigation(),
-                                               appearancePreferences: appearancePreferences,
-                                               startupPreferences: startupPreferences,
-                                               windowControllersManager: windowControllersManager,
-                                               bookmarkManager: MockBookmarkManager(),
-                                               historyCoordinator: CapturingHistoryDataSource(),
-                                               fireproofDomains: MockFireproofDomains(domains: []),
-                                               fireCoordinator: fireCoordinator,
-                                               newTabPageActionsManager: nil
-                                              ),
             config: MockPrivacyConfiguration(),
-            statsManager: MockAutoconsentDailyStat()
+            statsManager: MockAutoconsentDailyStat(),
+            management: AutoconsentManagement(),
+            preferences: preferences
         )
-
-        CookiePopupProtectionPreferences.shared.isAutoconsentEnabled = true
     }
 
     override func tearDown() {

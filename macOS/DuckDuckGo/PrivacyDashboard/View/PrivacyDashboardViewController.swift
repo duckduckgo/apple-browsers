@@ -43,7 +43,6 @@ final class PrivacyDashboardViewController: NSViewController {
     private let privacyDashboardController: PrivacyDashboardController
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let contentBlocking: ContentBlockingProtocol
-    private let featureFlagger: FeatureFlagger
 
     public let rulesUpdateObserver: ContentBlockingRulesUpdateObserver
 
@@ -58,6 +57,7 @@ final class PrivacyDashboardViewController: NSViewController {
     }()
 
     private let permissionHandler: PrivacyDashboardPermissionHandler
+    private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private var preferredMaxHeight: CGFloat = Constants.initialContentHeight
     func setPreferredMaxHeight(_ height: CGFloat) {
         guard height > Constants.initialContentHeight else { return }
@@ -84,11 +84,13 @@ final class PrivacyDashboardViewController: NSViewController {
          entryPoint: PrivacyDashboardEntryPoint = .dashboard,
          contentBlocking: ContentBlockingProtocol,
          permissionManager: PermissionManagerProtocol,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+    ) {
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: contentBlocking.privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
         let toggleReportingManager = ToggleReportingManager(feature: toggleReportingFeature)
         self.permissionHandler = PrivacyDashboardPermissionHandler(permissionManager: permissionManager)
+        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.privacyDashboardController = PrivacyDashboardController(privacyInfo: privacyInfo,
                                                                      entryPoint: entryPoint,
                                                                      toggleReportingManager: toggleReportingManager,
@@ -96,7 +98,6 @@ final class PrivacyDashboardViewController: NSViewController {
         self.contentBlocking = contentBlocking
         // swiftlint:disable:next force_cast
         self.rulesUpdateObserver = ContentBlockingRulesUpdateObserver(userContentUpdating: (contentBlocking as! AppContentBlocking).userContentUpdating)
-        self.featureFlagger = featureFlagger
 
         brokenSiteReporter = {
             BrokenSiteReporter(pixelHandler: { parameters in
@@ -282,13 +283,7 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
 
     func privacyDashboardControllerDidRequestShowGeneralFeedback(_ privacyDashboardController: PrivacyDashboardController) {
         dismiss()
-
-        if featureFlagger.isFeatureOn(.newFeedbackForm) {
-            NSApp.delegateTyped.openReportABrowserProblem(nil)
-        } else {
-            NSApp.delegateTyped.openFeedback(nil)
-        }
-
+        NSApp.delegateTyped.openReportABrowserProblem(nil)
     }
 
     func privacyDashboardController(_ privacyDashboardController: PrivacyDashboardController,
@@ -413,7 +408,7 @@ extension PrivacyDashboardViewController {
                                                configVersion: configuration.version,
                                                blockedTrackerDomains: blockedTrackerDomains,
                                                installedSurrogates: installedSurrogates,
-                                               isGPCEnabled: WebTrackingProtectionPreferences.shared.isGPCEnabled,
+                                               isGPCEnabled: webTrackingProtectionPreferences.isGPCEnabled,
                                                ampURL: ampURL,
                                                urlParametersRemoved: urlParametersRemoved,
                                                protectionsState: protectionsState,

@@ -47,7 +47,7 @@ protocol OmniBarDelegate: AnyObject {
 
     func onMenuLongPressed()
 
-    func onClearPressed()
+    func onClearTextPressed()
 
     func onAbortPressed()
 
@@ -57,7 +57,7 @@ protocol OmniBarDelegate: AnyObject {
 
     func onRefreshPressed()
 
-    func onSharePressed()
+    func onCustomizableButtonPressed()
 
     func onBackPressed()
     

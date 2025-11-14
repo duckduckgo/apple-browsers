@@ -21,6 +21,7 @@ import UIKit
 import PrivacyDashboard
 import Core
 import Kingfisher
+import DesignResourcesKitIcons
 
 class OmniBarViewController: UIViewController, OmniBar {
 
@@ -119,7 +120,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.aiChatButton.isPointerInteractionEnabled = true
         barView.menuButton.isPointerInteractionEnabled = true
         barView.refreshButton.isPointerInteractionEnabled = true
-        barView.shareButton.isPointerInteractionEnabled = true
+        barView.customizableButton.isPointerInteractionEnabled = true
         barView.clearButton.isPointerInteractionEnabled = true
     }
 
@@ -189,8 +190,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onRefreshPressed = { [weak self] in
             self?.onRefreshPressed()
         }
-        barView.onSharePressed = { [weak self] in
-            self?.onSharePressed()
+        barView.onCustomizableButtonPressed = { [weak self] in
+            self?.onCustomizableButtonPressed()
         }
         barView.onBackPressed = { [weak self] in
             self?.onBackPressed()
@@ -387,6 +388,10 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
     }
 
+    func refreshCustomizableButton() {
+        applyCustomization()
+    }
+
     func hidePrivacyIcon() {
         barView.privacyInfoContainer.privacyIcon.isHidden = true
     }
@@ -464,7 +469,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isSettingsButtonHidden = !state.showSettings
         barView.isCancelButtonHidden = !state.showCancel
         barView.isRefreshButtonHidden = !state.showRefresh
-        barView.isShareButtonHidden = !state.showShare
+        barView.isCustomizableButtonHidden = !state.showCustomizableButton
         barView.isVoiceSearchButtonHidden = !state.showVoiceSearch
         barView.isAbortButtonHidden = !state.showAbort
         barView.isBackButtonHidden = !state.showBackButton
@@ -472,8 +477,23 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isBookmarksButtonHidden = !state.showBookmarksButton
         barView.isAIChatButtonHidden = !state.showAIChatButton
 
+        applyCustomization()
+
         let shouldShowAIChat = state.showAIChatFullModeBranding
         barView.isFullAIChatHidden = !shouldShowAIChat
+    }
+
+    private func applyCustomization() {
+        let state = dependencies.mobileCustomization.state
+        guard state.isEnabled else {
+            barView.customizableButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple, for: .normal)
+            barView.isCustomizableButtonHidden = false
+            return
+        }
+
+        let largeIcon = dependencies.mobileCustomization.largeIconForButton(state.currentAddressBarButton)
+        barView.customizableButton.setImage(largeIcon, for: .normal)
+        barView.isCustomizableButtonHidden = largeIcon == nil
     }
 
     func onQuerySubmitted() {
@@ -590,7 +610,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     private func onClearButtonPressed() {
-        omniDelegate?.onClearPressed()
+        omniDelegate?.onClearTextPressed()
         refreshState(state.onTextClearedState)
     }
 
@@ -624,8 +644,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         omniDelegate?.onRefreshPressed()
     }
 
-    private func onSharePressed() {
-        omniDelegate?.onSharePressed()
+    private func onCustomizableButtonPressed() {
+        omniDelegate?.onCustomizableButtonPressed()
     }
 
     private func onBackPressed() {

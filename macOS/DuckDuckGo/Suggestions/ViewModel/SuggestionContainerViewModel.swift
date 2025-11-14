@@ -28,16 +28,19 @@ final class SuggestionContainerViewModel {
     var isHomePage: Bool
     let isBurner: Bool
     let suggestionContainer: SuggestionContainer
+    private let searchPreferences: SearchPreferences
     private let themeManager: ThemeManaging
     private var suggestionResultCancellable: AnyCancellable?
 
     init(isHomePage: Bool,
          isBurner: Bool,
          suggestionContainer: SuggestionContainer,
+         searchPreferences: SearchPreferences,
          themeManager: ThemeManaging) {
         self.isHomePage = isHomePage
         self.isBurner = isBurner
         self.suggestionContainer = suggestionContainer
+        self.searchPreferences = searchPreferences
         self.themeManager = themeManager
         subscribeToSuggestionResult()
     }
@@ -93,8 +96,9 @@ final class SuggestionContainerViewModel {
             }
     }
 
+    @MainActor
     func setUserStringValue(_ userStringValue: String, userAppendedStringToTheEnd: Bool) {
-        guard SearchPreferences.shared.showAutocompleteSuggestions else { return }
+        guard searchPreferences.showAutocompleteSuggestions else { return }
 
         let oldValue = self.userStringValue
         self.userStringValue = userStringValue

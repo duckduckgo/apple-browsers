@@ -35,8 +35,8 @@ tags:
 - tapOn: "Fireproof"
 
 # Fire button
-- tapOn: "Close Tabs and Clear Data"
-- tapOn: "Close Tabs and Clear Data"
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 
 - assertNotVisible: "https://privacy-test-pages.site/features/local-storage.html"
 
@@ -56,8 +56,8 @@ tags:
 - tapOn: "Remove Fireproofing"
 
 # Fire button
-- tapOn: "Close Tabs and Clear Data"
-- tapOn: "Close Tabs and Clear Data"
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 
 - assertNotVisible: "https://privacy-test-pages.site/features/local-storage.html"
 

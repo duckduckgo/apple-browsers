@@ -31,6 +31,7 @@ import SubscriptionTestingUtilities
 import Common
 @testable import DuckDuckGo
 @testable import PersistenceTestingUtils
+import RemoteMessagingTestsUtils
 import SystemSettingsPiPTutorialTestSupport
 import AIChat
 
@@ -72,20 +73,7 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
             featureFlagger: MockFeatureFlagger()
         )
 
-        let remoteMessagingClient = RemoteMessagingClient(
-            bookmarksDatabase: db,
-            appSettings: AppSettingsMock(),
-            internalUserDecider: MockInternalUserDecider(),
-            configurationStore: MockConfigurationStoring(),
-            database: db,
-            errorEvents: nil,
-            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProviding(),
-            duckPlayerStorage: MockDuckPlayerStorage(),
-            configurationURLProvider: MockCustomURLProvider(),
-            syncService: MockDDGSyncing(),
-            winBackOfferService: .mocked
-        )
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
         let tabsModel = TabsModel(desktop: true)
         let tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: true)
         let contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
@@ -111,6 +99,7 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
                                     bookmarksDatabase: db,
                                     historyManager: historyManager,
                                     syncService: syncService,
+                                    contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
                                     subscriptionDataReporter: subscriptionDataReporter,
                                     contextualOnboardingPresenter: contextualOnboardingPresenter,
                                     contextualOnboardingLogic: contextualOnboardingLogicMock,
@@ -137,6 +126,7 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
             homePageConfiguration: homePageConfiguration,
             syncService: syncService,
             syncDataProviders: dataProviders,
+            contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
             appSettings: AppSettingsMock(),
             previewsSource: MockTabPreviewsSource(),
             tabManager: tabManager,
@@ -162,7 +152,9 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
             daxDialogsManager: DummyDaxDialogsManager(),
             dbpIOSPublicInterface: nil,
             launchSourceManager: LaunchSourceManager(),
-            winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager()
+            winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
+            mobileCustomization: MobileCustomization(isFeatureEnabled: false, keyValueStore: MockThrowingKeyValueStore()),
+            remoteMessagingActionHandler: MockRemoteMessagingActionHandler()
         )
         
         let window = UIWindow(frame: UIScreen.main.bounds)
@@ -175,7 +167,7 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             viewLoadedExpectation.fulfill()
         }
-        wait(for: [viewLoadedExpectation], timeout: 1.0)
+        wait(for: [viewLoadedExpectation], timeout: 2.0)
     }
 
     override func tearDownWithError() throws {

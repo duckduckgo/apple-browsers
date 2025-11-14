@@ -24,7 +24,7 @@ import os.log
 
 /// Rekey timer for the VPN
 ///
-final actor KeyExpirationTester {
+final actor KeyExpirationTester: KeyExpirationTesting {
 
     private let canRekey: @MainActor () async -> Bool
 

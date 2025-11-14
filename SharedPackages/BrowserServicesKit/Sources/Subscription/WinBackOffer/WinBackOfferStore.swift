@@ -26,18 +26,21 @@ public protocol WinbackOfferStoring {
     func getChurnDate() -> Date?
     func setHasRedeemedOffer(_ didRedeem: Bool)
     func hasRedeemedOffer() -> Bool
-    var firstDayModalShown: Bool { get set }
     var didDismissUrgencyMessage: Bool { get set }
+    func storeOfferPresentationDate(_ date: Date?)
+    func getOfferPresentationDate() -> Date?
+    func clearChurnDate()
 }
 extension WinbackOfferStore {
     enum Key: String {
-        case firstDayModalShown = "winback-offer.first-day-modal-shown"
+        case offerPresentationDate = "winback-offer.offer-presentation-date"
         case didDismissUrgencyMessage = "winback-offer.did-dismiss-urgency-message"
     }
 
     private enum KeychainKey: String {
         case churnDate
         case offerRedemption
+        case offerPresentationDate
 
         var accountName: String {
             (Bundle.main.bundleIdentifier ?? "com.duckduckgo") + "." + rawValue
@@ -50,9 +53,9 @@ extension WinbackOfferStore {
 /// Will store the following data in Keychain:
 /// - churnDate
 /// - offerRedemption
-/// 
+/// - offerPresentationDate
+///
 /// And in user defaults:
-/// - firstDayModalShown
 /// - didDismissUrgencyMessage
 public struct WinbackOfferStore: WinbackOfferStoring {
     private let keychainService: KeychainService
@@ -65,9 +68,23 @@ public struct WinbackOfferStore: WinbackOfferStoring {
         self.keyValueStore = keyValueStore
     }
 
-    public var firstDayModalShown: Bool {
-        get { (try? keyValueStore.object(forKey: Key.firstDayModalShown.rawValue) as? Bool) ?? false }
-        set { try? keyValueStore.set(newValue, forKey: Key.firstDayModalShown.rawValue) }
+    public func getOfferPresentationDate() -> Date? {
+        guard let data = try? retrieveData(forKey: .offerPresentationDate),
+              let timeInterval = try? JSONDecoder().decode(TimeInterval.self, from: data) else {
+            return nil
+        }
+        return Date(timeIntervalSince1970: timeInterval)
+    }
+
+    public func storeOfferPresentationDate(_ date: Date?) {
+        guard let date = date else {
+            // Clear the presentation date
+            try? deleteData(forKey: .offerPresentationDate)
+            return
+        }
+        let timeInterval = date.timeIntervalSince1970
+        guard let data = try? JSONEncoder().encode(timeInterval) else { return }
+        try? storeData(data, forKey: .offerPresentationDate)
     }
 
     public func getChurnDate() -> Date? {
@@ -95,6 +112,10 @@ public struct WinbackOfferStore: WinbackOfferStoring {
             return false
         }
         return didRedeem
+    }
+
+    public func clearChurnDate() {
+        try? deleteData(forKey: .churnDate)
     }
 
     public var didDismissUrgencyMessage: Bool {

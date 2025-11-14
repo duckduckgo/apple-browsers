@@ -17,9 +17,9 @@
 //
 
 import AppKit
-import Foundation
 import AppKitExtensions
 import Common
+import Foundation
 
 extension UserDefaults {
     /// The app group's shared UserDefaults
@@ -196,6 +196,8 @@ public struct UserDefaultsWrapper<T> {
         // or else KVO will just not work as of 2023-08-07
         case hadVPNEntitlements = "hadVPNEntitlements"
         case networkProtectionOnboardingStatusRawValue = "networkProtectionOnboardingStatusRawValue"
+        case vpnConnectionWideEventBrowserStartTime = "vpnConnectionWideEventBrowserStartTime"
+        case vpnConnectionWideEventOverallStartTime = "vpnConnectionWideEventOverallStartTime"
 
         // Updates
         case automaticUpdates = "updates.automatic"

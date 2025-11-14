@@ -333,6 +333,7 @@ public extension DesignSystemImages {
             public static var assistAlt: DesignSystemImage { .init(resource: .assistAlt24) }
             public static var bell: DesignSystemImage { .init(resource: .bell24) }
             public static var bookmark: DesignSystemImage { .init(resource: .bookmark24) }
+            public static var bookmarkSolid: DesignSystemImage { .init(resource: .bookmarkSolid24) }
             public static var bookmarkFavorite: DesignSystemImage { .init(resource: .bookmarkFavorite24) }
             public static var bookmarks: DesignSystemImage { .init(resource: .bookmarks24) }
             public static var bookmarkNew: DesignSystemImage { .init(resource: .bookmarkNew24) }
@@ -345,6 +346,7 @@ public extension DesignSystemImages {
             public static var checkRecolorable: DesignSystemImage { .init(resource: .checkRecolorable24) }
             public static var checkCircle: DesignSystemImage { .init(resource: .checkCircle24) }
             public static var checkSolid: DesignSystemImage { .init(resource: .checkSolid24) }
+            public static var checkSmall: DesignSystemImage { .init(resource: .checkSmall24) }
             public static var chevronCircleDown: DesignSystemImage { .init(resource: .chevronCircleDown24) }
             public static var chevronDown: DesignSystemImage { .init(resource: .chevronDown24) }
             public static var chevronDownSmall: DesignSystemImage { .init(resource: .chevronDown24Small) }
@@ -402,6 +404,7 @@ public extension DesignSystemImages {
             public static var home: DesignSystemImage { .init(resource: .home24) }
             public static var identityTheftRestoration: DesignSystemImage { .init(resource: .identityTheftRestoration24) }
             public static var image: DesignSystemImage { .init(resource: .image24) }
+            public static var imageAIHide: DesignSystemImage { .init(resource: .imageAIHide24) }
             public static var info: DesignSystemImage { .init(resource: .info24) }
             public static var key: DesignSystemImage { .init(resource: .key24) }
             public static var linkSolid: DesignSystemImage { .init(resource: .linkSolid24) }

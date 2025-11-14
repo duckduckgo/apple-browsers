@@ -93,7 +93,7 @@ private struct DummyOmniBarState: OmniBarState, OmniBarLoadingBearerStateCreatin
     var showVoiceSearch = false
     var showAbort = false
     var showDismiss = false
-    var showShare = false
+    var showCustomizableButton = false
     var isBrowsing: Bool = false
 
     var onEditingStoppedState: OmniBarState { DummyOmniBarState() }

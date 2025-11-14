@@ -1,28 +1,45 @@
 // Fire Window configuration pixels
 {
-    "m_mac_fire_window_configuration": {
-        "description": "Daily pixel capturing the current state of Fire Window related settings including whether fire window is set for startup, open fire window by default preference, and fire animation setting",
+    "m_mac_fire_window_configuration_startup-fire-window_enabled": {
+        "description": "Daily pixel fired when fire window is enabled for startup",
         "owners": ["jotaemepereira"],
         "triggers": ["scheduled"],
         "suffixes": ["daily"],
-        "parameters": [
-            {
-                "key": "startup_fire_window",
-                "type": "boolean",
-                "description": "Whether fire window is set to open on startup"
-            },
-            {
-                "key": "open_fire_window_by_default",
-                "type": "boolean",
-                "description": "Whether fire window is set to be opened by default"
-            },
-            {
-                "key": "fire_animation_enabled",
-                "type": "boolean",
-                "description": "Whether fire animation is enabled"
-            },
-            "appVersion",
-            "pixelSource"
-        ]
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_fire_window_configuration_startup-fire-window_disabled": {
+        "description": "Daily pixel fired when fire window is disabled for startup",
+        "owners": ["jotaemepereira"],
+        "triggers": ["scheduled"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_fire_window_configuration_open-fire-window-by-default_enabled": {
+        "description": "Daily pixel fired when open fire window by default preference is enabled",
+        "owners": ["jotaemepereira"],
+        "triggers": ["scheduled"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_fire_window_configuration_open-fire-window-by-default_disabled": {
+        "description": "Daily pixel fired when open fire window by default preference is disabled",
+        "owners": ["jotaemepereira"],
+        "triggers": ["scheduled"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_fire_window_configuration_fire-animation_enabled": {
+        "description": "Daily pixel fired when fire animation is enabled",
+        "owners": ["jotaemepereira"],
+        "triggers": ["scheduled"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_fire_window_configuration_fire-animation_disabled": {
+        "description": "Daily pixel fired when fire animation is disabled",
+        "owners": ["jotaemepereira"],
+        "triggers": ["scheduled"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

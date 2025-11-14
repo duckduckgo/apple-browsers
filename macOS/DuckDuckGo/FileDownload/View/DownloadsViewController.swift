@@ -44,6 +44,7 @@ final class DownloadsViewController: NSViewController {
 
     private let separator = NSBox()
     private let viewModel: DownloadListViewModel
+    private let preferences: DownloadsPreferences
     private var downloadsCancellable: AnyCancellable?
     private var errorBannerCancellable: AnyCancellable?
     private var errorBannerHostingView: NSHostingView<DownloadsErrorBannerView>?
@@ -52,8 +53,10 @@ final class DownloadsViewController: NSViewController {
     var themeUpdateCancellable: AnyCancellable?
 
     init(viewModel: DownloadListViewModel,
+         preferences: DownloadsPreferences,
          themeManager: ThemeManager = NSApp.delegateTyped.themeManager) {
         self.viewModel = viewModel
+        self.preferences = preferences
         self.themeManager = themeManager
         super.init(nibName: nil, bundle: nil)
     }
@@ -318,13 +321,12 @@ final class DownloadsViewController: NSViewController {
     // MARK: User Actions
 
     @objc func openDownloadsFolderAction(_ sender: Any) {
-        let prefs = DownloadsPreferences.shared
         let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
         var url: URL?
         var itemToSelect: URL?
 
-        if prefs.alwaysRequestDownloadLocation {
-            url = prefs.lastUsedCustomDownloadLocation
+        if preferences.alwaysRequestDownloadLocation {
+            url = preferences.lastUsedCustomDownloadLocation
 
             // reveal the last completed download
             if let lastDownloaded = viewModel.items.first/* last added */(where: {
@@ -342,7 +344,7 @@ final class DownloadsViewController: NSViewController {
 
         } else {
             // open preferred downlod location
-            url = prefs.effectiveDownloadLocation
+            url = preferences.effectiveDownloadLocation
         }
 
         let folder = url ?? downloads
@@ -604,7 +606,15 @@ struct DownloadsErrorBannerView: View {
     store.fetchBlock = { completion in
         completion(.success(previewDownloadListItems))
     }
-    let viewModel = DownloadListViewModel(fireWindowSession: nil, coordinator: DownloadListCoordinator(store: store))
-    return DownloadsViewController(viewModel: viewModel)
+    let downloadsPreferences = DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor())
+    let viewModel = DownloadListViewModel(
+        fireWindowSession: nil,
+        coordinator: DownloadListCoordinator(
+            store: store,
+            downloadManager: FileDownloadManager(preferences: downloadsPreferences),
+            windowControllersManager: WindowControllersManagerMock()
+        )
+    )
+    return DownloadsViewController(viewModel: viewModel, preferences: downloadsPreferences)
 }() }
 #endif

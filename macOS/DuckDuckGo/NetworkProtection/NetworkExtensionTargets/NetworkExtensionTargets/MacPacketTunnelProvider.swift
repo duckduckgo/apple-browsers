@@ -16,15 +16,15 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Combine
 import Common
-import VPN
+import Foundation
 import NetworkExtension
 import Networking
+import os.log
 import PixelKit
 import Subscription
-import os.log
+import VPN
 import WireGuard
 
 final class MacPacketTunnelProvider: PacketTunnelProvider {
@@ -736,7 +736,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
 }
 
-final class DefaultWireGuardInterface: WireGuardInterface {
+final class DefaultWireGuardInterface: WireGuardGoInterface {
     func turnOn(settings: UnsafePointer<CChar>, handle: Int32) -> Int32 {
         wgTurnOn(settings, handle)
     }

@@ -35,7 +35,7 @@ struct SmallOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -72,7 +72,7 @@ struct SmallOmniBarState {
         let showClear = true
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -110,7 +110,7 @@ struct SmallOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showDismiss = false
@@ -146,7 +146,7 @@ struct SmallOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -184,7 +184,7 @@ struct SmallOmniBarState {
         let showClear = true
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -223,7 +223,12 @@ struct SmallOmniBarState {
         let showClear = false
         var showAbort: Bool { isLoading }
         var showRefresh: Bool { return !isLoading && dependencies.isRefreshButtonEnabled }
-        let showShare: Bool = true
+        var showCustomizableButton: Bool {
+            guard dependencies.mobileCustomization.state.isEnabled else {
+                return true
+            }
+            return dependencies.mobileCustomization.state.currentAddressBarButton != .none
+        }
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -259,7 +264,7 @@ struct SmallOmniBarState {
         let showClear = true
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showDismiss = true

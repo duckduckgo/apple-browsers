@@ -28,6 +28,7 @@ final class HistoryCaptureTests: XCTestCase {
 
     let mockHistoryCoordinator = MockHistoryCoordinator()
 
+    @MainActor
     func test_whenURLIsCommitted_ThenVisitIsStored() {
         let capture = makeCapture()
         capture.webViewDidCommit(url: URL.example)
@@ -35,6 +36,7 @@ final class HistoryCaptureTests: XCTestCase {
         XCTAssertEqual([URL.example], mockHistoryCoordinator.addVisitCalls)
     }
 
+    @MainActor
     func test_whenTitleIsUpdatedForMatchingURL_ThenTitleIsSaved() {
         let capture = makeCapture()
         capture.webViewDidCommit(url: URL.example)
@@ -44,6 +46,7 @@ final class HistoryCaptureTests: XCTestCase {
         XCTAssertEqual(mockHistoryCoordinator.updateTitleIfNeededCalls[0].url, URL.example)
     }
 
+    @MainActor
     func test_whenTitleIsUpdatedForDifferentURL_ThenTitleIsIgnored() {
         let capture = makeCapture()
         capture.webViewDidCommit(url: URL.example)
@@ -51,6 +54,7 @@ final class HistoryCaptureTests: XCTestCase {
         XCTAssertEqual(0, mockHistoryCoordinator.updateTitleIfNeededCalls.count)
     }
 
+    @MainActor
     func test_whenComittedURLIsASearch_thenCleanURLIsUsed() {
         let capture = makeCapture()
         capture.webViewDidCommit(url: URL(string: "https://duckduckgo.com/?q=search+terms&t=osx&ia=web")!)
@@ -66,6 +70,7 @@ final class HistoryCaptureTests: XCTestCase {
         assertUrlIsExpected(mockHistoryCoordinator.addVisitCalls[0])
     }
 
+    @MainActor
     func test_whenTitleUpdatedForSearchURL_thenCleanURLIsUsed() {
         let capture = makeCapture()
         capture.webViewDidCommit(url: URL(string: "https://duckduckgo.com/?q=search+terms&t=osx&ia=web")!)

@@ -10,47 +10,7 @@ keywords: ["anti-patterns", "common mistakes", "singletons", "memory leaks", "as
 ## Singleton Anti-patterns
 
 ### ❌ NEVER: Static Shared Instances Without Dependency Injection (.shared instance pattern)
-```swift
-// ❌ AVOID - Static shared instance without DI
-final class FeatureManager {
-    static let shared = FeatureManager()
-    private init() {}
-    
-    func performAction() {
-        // Implementation
-    }
-}
-
-// Usage:
-FeatureManager.shared.performAction() // Hard to test and tightly coupled
-
-// ✅ CORRECT - Dependency injection pattern
-protocol FeatureManagerProtocol {
-    func performAction()
-}
-
-final class FeatureManager: FeatureManagerProtocol {
-    func performAction() {
-        // Implementation
-    }
-}
-
-// Register in AppDependencyProvider
-extension AppDependencyProvider {
-    var featureManager: FeatureManagerProtocol {
-        return FeatureManager()
-    }
-}
-
-// Usage:
-final class ViewModel {
-    private let featureManager: FeatureManagerProtocol
-    
-    init(dependencies: DependencyProvider = AppDependencyProvider.shared) {
-        self.featureManager = dependencies.featureManager
-    }
-}
-```
+**Example:** See [singleton-antipattern.swift](anti-patterns/singleton-antipattern.swift)
 
 ### ❌ NEVER: Global State Access
 ```swift
@@ -78,30 +38,7 @@ final class SomeService {
 ## Async/Await Anti-patterns
 
 ### ❌ NEVER: UI Updates Without @MainActor
-```swift
-// ❌ AVOID - UI updates without main thread guarantee
-class ViewModel: ObservableObject {
-    @Published var isLoading = false
-    
-    func loadData() async {
-        isLoading = true // May crash if not on main thread
-        let data = try? await service.fetchData()
-        isLoading = false // May crash if not on main thread
-    }
-}
-
-// ✅ CORRECT - @MainActor for UI updates
-@MainActor
-class ViewModel: ObservableObject {
-    @Published var isLoading = false
-    
-    func loadData() async {
-        isLoading = true
-        let data = try? await service.fetchData()
-        isLoading = false
-    }
-}
-```
+**Example:** See [async-ui-updates.swift](anti-patterns/async-ui-updates.swift)
 
 ### ❌ NEVER: Unhandled Async Errors
 ```swift
@@ -150,37 +87,7 @@ func loadData() async {
 ## Memory Management Anti-patterns
 
 ### ❌ NEVER: Strong Reference Cycles in Closures
-```swift
-// ❌ AVOID - Strong reference cycle
-class ViewController: UIViewController {
-    private var timer: Timer?
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            self.updateUI() // Strong reference cycle - ViewController won't be deallocated
-        }
-    }
-}
-
-// ✅ CORRECT - Weak self to break cycle
-class ViewController: UIViewController {
-    private var timer: Timer?
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.updateUI()
-        }
-    }
-    
-    deinit {
-        timer?.invalidate()
-    }
-}
-```
+**Example:** See [memory-leak-closure.swift](anti-patterns/memory-leak-closure.swift)
 
 ### ❌ NEVER: Retaining View Controllers in Cache
 ```swift
@@ -221,24 +128,7 @@ class NavigationManager {
 ## Error Handling Anti-patterns
 
 ### ❌ NEVER: Force Unwrapping Without Justification
-```swift
-// ❌ AVOID - Force unwrapping
-func processUser() {
-    let user = getCurrentUser()!  // Will crash if no user
-    let name = user.name!         // Will crash if no name
-    displayName(name)
-}
-
-// ✅ CORRECT - Safe unwrapping
-func processUser() {
-    guard let user = getCurrentUser(),
-          let name = user.name else {
-        showErrorMessage("User information unavailable")
-        return
-    }
-    displayName(name)
-}
-```
+**Example:** See [force-unwrapping.swift](anti-patterns/force-unwrapping.swift)
 
 ### ❌ NEVER: Generic Error Messages
 ```swift
@@ -353,35 +243,7 @@ struct ContentView: View {
 ## Design System Anti-patterns
 
 ### ❌ NEVER: Hardcoded Colors or Icons
-```swift
-// ❌ AVOID - Hardcoded colors and system icons
-struct FeatureView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "star.fill") // Use DesignResourcesKit icons
-                .foregroundColor(.blue)   // Use semantic colors
-            
-            Text("Title")
-                .foregroundColor(.black)  // Doesn't adapt to dark mode
-        }
-        .background(.gray)               // Use semantic colors
-    }
-}
-
-// ✅ CORRECT - Design system integration
-struct FeatureView: View {
-    var body: some View {
-        VStack {
-            Image(uiImage: DesignSystemImages.Color.Size16.star)
-                .foregroundColor(Color(designSystemColor: .accent))
-            
-            Text("Title")
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-        }
-        .background(Color(designSystemColor: .surface))
-    }
-}
-```
+**Example:** See [design-system-violation.swift](anti-patterns/design-system-violation.swift)
 
 ## Network and API Anti-patterns
 

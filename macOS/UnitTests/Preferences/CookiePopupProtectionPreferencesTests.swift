@@ -25,17 +25,19 @@ class MockCookiePopupProtectionPreferencesPersistor: CookiePopupProtectionPrefer
 
 class CookiePopupProtectionPreferencesTests: XCTestCase {
 
+    @MainActor
     func testWhenInitializedThenItLoadsPersistedAutoconsentSetting() {
         let mockPersistor = MockCookiePopupProtectionPreferencesPersistor()
         mockPersistor.autoconsentEnabled = true
-        let cookiePopupPreferences = CookiePopupProtectionPreferences(persistor: mockPersistor)
+        let cookiePopupPreferences = CookiePopupProtectionPreferences(persistor: mockPersistor, windowControllersManager: WindowControllersManagerMock())
 
         XCTAssertTrue(cookiePopupPreferences.isAutoconsentEnabled)
     }
 
+    @MainActor
     func testWhenIsAutoconsentEnabledUpdatedThenPersistorUpdates() {
         let mockPersistor = MockCookiePopupProtectionPreferencesPersistor()
-        let cookiePopupPreferences = CookiePopupProtectionPreferences(persistor: mockPersistor)
+        let cookiePopupPreferences = CookiePopupProtectionPreferences(persistor: mockPersistor, windowControllersManager: WindowControllersManagerMock())
         cookiePopupPreferences.isAutoconsentEnabled = false
 
         XCTAssertFalse(mockPersistor.autoconsentEnabled)

@@ -38,12 +38,14 @@ public class HistoryCapture {
         self.historyManager = historyManager
     }
 
+    @MainActor
     public func webViewDidCommit(url: URL) {
         let url = url.urlOrDuckDuckGoCleanQuery
         self.url = url
         coordinator.addVisit(of: url)
     }
 
+    @MainActor
     public func titleDidChange(_ title: String?, forURL url: URL?) {
         guard let url = url?.urlOrDuckDuckGoCleanQuery, self.url == url else {
             return

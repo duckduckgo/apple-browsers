@@ -21,7 +21,7 @@ import Network
 import os.log
 import Combine
 
-public actor NetworkProtectionLatencyMonitor {
+public actor NetworkProtectionLatencyMonitor: LatencyMonitoring {
     public enum ConnectionQuality: String {
         case terrible
         case poor

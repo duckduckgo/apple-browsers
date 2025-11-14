@@ -41,9 +41,8 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     var aiChatButton: UIButton! { get }
     var menuButton: UIButton! { get }
 
-    // To move quickly I'm adding share button rather than removing refresh in case we have to roll back
     var refreshButton: UIButton! { get }
-    var shareButton: UIButton! { get }
+    var customizableButton: UIButton! { get }
 
     var leftIconContainerView: UIView! { get }
 
@@ -72,7 +71,7 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     var onSettingsButtonPressed: (() -> Void)? { get set }
     var onCancelPressed: (() -> Void)? { get set }
     var onRefreshPressed: (() -> Void)? { get set }
-    var onSharePressed: (() -> Void)? { get set }
+    var onCustomizableButtonPressed: (() -> Void)? { get set }
     var onBackPressed: (() -> Void)? { get set }
     var onForwardPressed: (() -> Void)? { get set }
     var onBookmarksPressed: (() -> Void)? { get set }
@@ -103,7 +102,7 @@ protocol OmniBarStatusUpdateable: AnyObject {
     var isSettingsButtonHidden: Bool { get set }
     var isCancelButtonHidden: Bool { get set }
     var isRefreshButtonHidden: Bool { get set }
-    var isShareButtonHidden: Bool { get set }
+    var isCustomizableButtonHidden: Bool { get set }
     var isVoiceSearchButtonHidden: Bool { get set }
     var isAbortButtonHidden: Bool { get set }
     var isBackButtonHidden: Bool { get set }

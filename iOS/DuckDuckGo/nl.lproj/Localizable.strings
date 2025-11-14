@@ -980,6 +980,9 @@
 "Cohort: %@" = "Cohort: %@";
 
 /* No comment provided by engineer. */
+"Configuration" = "Configuratie";
+
+/* No comment provided by engineer. */
 "Confirm" = "Bevestigen";
 
 /* Button to continue the onboarding process */
@@ -1094,7 +1097,7 @@
 "crash.report.dialog.title" = "Automatisch crashrapporten verzenden?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Huidig aantal afwijzingen: %@";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "Aangepaste celinhoud";
@@ -2024,6 +2027,9 @@
 "keyCommandShowAllTabs" = "Alle tabbladen weergeven";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Laatst verwerkt: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Datahandelaars laden...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2085,6 +2091,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Hostnaam van berichtenbeleid";
+
+/* No comment provided by engineer. */
+"Messages" = "Berichten";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Knop Adresbalk";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Adresbalk";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Deze knop verbergen";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Geen";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Aanpasbare knoppen";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Knop 'Opnieuw laden' weergeven";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Knop Werkbalk";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Werkbalk";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Terug";
@@ -2342,10 +2375,19 @@
 "new.address.bar.picker.title" = "Optie voor adresbalk";
 
 /* No comment provided by engineer. */
+"No Logs" = "Geen logboeken";
+
+/* No comment provided by engineer. */
+"No messages" = "Geen berichten";
+
+/* No comment provided by engineer. */
 "No results found" = "Geen resultaten gevonden";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Beheerde cookies";
@@ -2358,9 +2400,6 @@
 
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Kies je browser";
-
-/* Message to highlight browser capability of private searches */
-"onboarding.browsers.features.privateSearch.title" = "Standaard privé zoeken";
 
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo heeft ook een %1$@, beschikbaar met een %2$@ en %3$@.";
@@ -2403,18 +2442,6 @@
 
 /* The title of the onboarding dialog popup to select the preferred App icon. */
 "onboarding.highlights.appIconSelection.title" = "Welke kleur staat mij het beste?";
-
-/* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Blokkeer cookiepop-ups";
-
-/* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokkeer gerichte advertenties";
-
-/* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Verwijder browsegegevens met één knop";
-
-/* Message to highlight browser capability of blocking 3rd-party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokkeer trackers van derden";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Bescherming geactiveerd!";
@@ -2521,12 +2548,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Deactiveren";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "E-mailadres (optioneel)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "name@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Deel je feedback met ons …";
 
@@ -2560,8 +2581,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "SELECTEER EEN CATEGORIE";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Heb je een probleem gevonden dat niet in ons [helpcentrum](duck://) wordt besproken? We willen er zeker meer over weten.\n\nGeef een e-mailadres op als je wilt dat we contact met je opnemen over dit probleem (het is mogelijk dat we niet op alle problemen kunnen reageren):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Hulp nodig? [Neem contact op met support.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Heb je een probleem gevonden dat niet in ons [helpcentrum](duck://) wordt besproken? We willen er zeker meer over weten.\n\nVertel ons wat er aan de hand is:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Naast de gegevens die je hierboven invult, sturen we ook geanonimiseerde informatie mee met je feedback:";
@@ -2711,6 +2735,9 @@
 "prompt.custom.url.scheme.title" = "Openen in een andere app?";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Recente verwerkingslogboeken";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Gezinsleden: %@";
 
 /* No comment provided by engineer. */
@@ -2814,6 +2841,12 @@
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Instellingen voor zoek Assist";
+
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Verberg AI-gegenereerde afbeeldingen.";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtert AI-gegenereerde afbeeldingen uit de zoekresultaten van afbeeldingen.";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Altijd aan";
@@ -3187,6 +3220,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "De DuckDuckGo-browser biedt bescherming tegen tracking die altijd actief is. [Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Toont logboeken van de laatste minuut, om problemen direct na een vernieuwing te diagnosticeren.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Selecteer de optie die het beste je probleem beschrijft.";
 
@@ -3219,6 +3255,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Welke website is defect?";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Status: ongeldig verklaard";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Opgeslagen hostnaam: %@";
@@ -3607,6 +3646,9 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* No comment provided by engineer. */
+"Version: %@" = "Versie: %@";
+
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Zoeken";
 
@@ -3868,18 +3910,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Een bericht van %@:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "Bekijk de aanbieding";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Niet nu";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Blijf beschermd met onze VPN, private AI en meer. Meld je vandaag nog opnieuw aan en bespaar 25%.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "Alleen vandaag nog 25% korting!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "BESPAAR 25%";
 
@@ -3914,7 +3944,10 @@
 "win-back.campaign.subscription.settings.menu.title" = "Abonneer je opnieuw en bespaar 25%";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Abonneer je opnieuw en bespaar 25%";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Opnieuw abonneren";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Blijf beschermd met onze VPN, private AI en meer.\nTijdelijke aanbieding.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Op zoek naar de versie voor Mac?";

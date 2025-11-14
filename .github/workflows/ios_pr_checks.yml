@@ -168,6 +168,7 @@ jobs:
           -skipPackagePluginValidation \
           -skipMacroValidation \
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
+          OTHER_CODE_SIGN_FLAGS="--timestamp=none" \
           | tee xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
 

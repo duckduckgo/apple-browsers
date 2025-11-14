@@ -19,7 +19,7 @@
 import Foundation
 import Network
 
-public protocol PathMonitoring: AnyObject {
+protocol PathMonitoring: AnyObject {
     var pathUpdateHandler: ((NWPath) -> Void)? { get set }
     func start(queue: DispatchQueue)
     func cancel()

@@ -580,18 +580,19 @@ final class TabBarItemCellView: NSView {
         titleView.reset()
     }
 
-    func displayTabTitle(_ title: String) {
+    var displaysBurnerHomeTitle: Bool {
+        let title = displaysTabsProgressIndicator ? titleView.title : titleTextField.stringValue
+        return title == UserText.burnerTabHomeTitle
+    }
+
+    func displayTabTitleIfNeeded(title: String, url: URL?) {
         guard displaysTabsProgressIndicator else {
             titleTextField.stringValue = title
             return
         }
 
-        titleView.displayTitle(title)
-    }
 
-    var displaysBurnerHomeTitle: Bool {
-        let title = displaysTabsProgressIndicator ? titleView.title : titleTextField.stringValue
-        return title == UserText.burnerTabHomeTitle
+        titleView.displayTitleIfNeeded(title: title, url: url)
     }
 }
 
@@ -951,7 +952,7 @@ final class TabBarViewItem: NSCollectionViewItem {
 
         representedObject = tabViewModel
         tabViewModel.titlePublisher.sink { [weak self] title in
-            self?.cell.displayTabTitle(title)
+            self?.displayTabTitle(title)
         }.store(in: &cancellables)
 
         tabViewModel.faviconPublisher.sink { [weak self] favicon in
@@ -999,11 +1000,7 @@ final class TabBarViewItem: NSCollectionViewItem {
                 })
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] isLoading, error in
-                    guard let self else {
-                        return
-                    }
-
-                    self.cell.faviconView.startSpinnerIfNeeded(url: self.tabViewModel?.url, isLoading: isLoading, error: error)
+                    self?.startSpinnerIfNeeded(isLoading: isLoading, error: error)
                 }
                 .store(in: &cancellables)
         }
@@ -1183,6 +1180,16 @@ final class TabBarViewItem: NSCollectionViewItem {
         }
 
         return .domainPrefix(tabViewModel?.url)
+    }
+
+    private func displayTabTitle(_ title: String) {
+        let url = tabViewModel?.url
+        cell.displayTabTitleIfNeeded(title: title, url: url)
+    }
+
+    private func startSpinnerIfNeeded(isLoading: Bool, error: WKError?) {
+        let url = tabViewModel?.url
+        cell.faviconView.startSpinnerIfNeeded(url: url, isLoading: isLoading, error: error)
     }
 
     private func updateAudioPlayState(_ audioState: WKWebView.AudioState) {

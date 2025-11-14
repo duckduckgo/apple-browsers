@@ -22,6 +22,7 @@ final class TabTitleView: NSView {
 
     private lazy var titleTextField: NSTextField = buildTitleTextField()
     private lazy var previousTextField: NSTextField = buildTitleTextField()
+    private(set) var sourceURL: URL?
 
     var title: String {
         get {
@@ -47,9 +48,21 @@ final class TabTitleView: NSView {
 
 extension TabTitleView {
 
-    func displayTitle(_ title: String, animated: Bool = true) {
+    /// Displays the specified Title **Unless** the following conditions are met
+    ///     1. We're already displaying a Title for the same URL
+    ///     2. The new Title is the "Suggested Placeholder" (Domain minus the `www` prefix, and no schema)
+    ///
+    /// This exit mechanism is meant to handle Page Reload scenarios, in which we're already rendering a Title, and we'd wanna
+    /// avoid animating the Placeholder.
+    ///
+    func displayTitleIfNeeded(title: String, url: URL?, animated: Bool = true) {
+        if shouldSkipApplyingTitle(title: title, url: url) {
+            return
+        }
+
         let previousTitle = titleTextField.stringValue
         titleTextField.stringValue = title
+        sourceURL = url
 
         guard animated, title != previousTitle, previousTitle.isEmpty == false else {
             return
@@ -61,6 +74,7 @@ extension TabTitleView {
     func reset() {
         titleTextField.stringValue = ""
         previousTextField.stringValue = ""
+        sourceURL = nil
     }
 }
 
@@ -111,7 +125,11 @@ private extension TabTitleView {
     }
 }
 
-extension TabTitleView {
+private extension TabTitleView {
+
+    func shouldSkipApplyingTitle(title: String, url: URL?) -> Bool {
+        sourceURL == url && url?.suggestedTitlePlaceholder == title
+    }
 
     func transitionToLatestTitle(previousTitle: String) {
         CATransaction.begin()

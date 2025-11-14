@@ -409,6 +409,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private let providerEvents: EventMapping<Event>
     public let entitlementCheck: (() async -> Result<Bool, Error>)?
 
+    @MainActor
     public init(notificationsPresenter: VPNNotificationsPresenting,
                 tunnelHealthStore: NetworkProtectionTunnelHealthStore,
                 controllerErrorStore: NetworkProtectionTunnelErrorStore,

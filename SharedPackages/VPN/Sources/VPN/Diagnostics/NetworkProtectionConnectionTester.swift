@@ -31,11 +31,8 @@ import os.log
 ///
 @MainActor
 final class NetworkProtectionConnectionTester: ConnectionTesting {
-    enum Result {
-        case connected
-        case reconnected(failureCount: Int)
-        case disconnected(failureCount: Int)
-    }
+
+    typealias Result = ConnectionTestingResult
 
     enum TesterError: Error {
         case couldNotFindInterface(named: String)

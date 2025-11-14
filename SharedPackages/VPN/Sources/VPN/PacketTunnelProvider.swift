@@ -476,7 +476,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 settings: VPNSettings,
                 defaults: UserDefaults,
                 wideEvent: WideEventManaging = WideEvent(),
-                bandwidthAnalyzer: BandwidthAnalyzing = NetworkProtectionConnectionBandwidthAnalyzer(),
+                bandwidthAnalyzer: BandwidthAnalyzing? = nil,
                 latencyMonitor: LatencyMonitoring = NetworkProtectionLatencyMonitor(),
                 entitlementMonitor: EntitlementMonitoring = NetworkProtectionEntitlementMonitor(),
                 entitlementCheck: (() async -> Result<Bool, Error>)?) {
@@ -495,7 +495,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.settings = settings
         self.defaults = defaults
         self.wideEvent = wideEvent
-        self.bandwidthAnalyzer = bandwidthAnalyzer
+        self.bandwidthAnalyzer = bandwidthAnalyzer ?? NetworkProtectionConnectionBandwidthAnalyzer()
         self.latencyMonitor = latencyMonitor
         self.entitlementMonitor = entitlementMonitor
         self.entitlementCheck = entitlementCheck

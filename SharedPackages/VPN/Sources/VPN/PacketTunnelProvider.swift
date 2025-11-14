@@ -288,8 +288,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - Registration Key
 
-    private lazy var keyStore = NetworkProtectionKeychainKeyStore(keychainType: keychainType,
-                                                                  errorEvents: debugEvents)
+    private var keyStore: NetworkProtectionKeyStore
 
     public let tokenHandlerProvider: () -> any SubscriptionTokenHandling
     @objc
@@ -470,6 +469,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 snoozeTimingStore: NetworkProtectionSnoozeTimingStore,
                 wireGuardInterface: WireGuardGoInterface,
                 keychainType: KeychainType,
+                keyStore: NetworkProtectionKeyStore? = nil,
                 tokenHandlerProvider: @escaping () -> any SubscriptionTokenHandling,
                 debugEvents: EventMapping<NetworkProtectionError>,
                 providerEvents: EventMapping<Event>,
@@ -493,6 +493,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.defaults = defaults
         self.wideEvent = wideEvent
         self.entitlementCheck = entitlementCheck
+
+        self.keyStore = keyStore ?? NetworkProtectionKeychainKeyStore(
+            keychainType: keychainType,
+            errorEvents: debugEvents
+        )
 
         self.wireGuardAdapterEventHandler = WireGuardAdapterEventHandler(
             providerEvents: providerEvents,

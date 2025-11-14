@@ -420,21 +420,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
     }()
 
-    private lazy var deviceManager: NetworkProtectionDeviceManagement = NetworkProtectionDeviceManager(
-        environment: self.settings.selectedEnvironment,
-        tokenHandler: self.tokenHandlerProvider(),
-        keyStore: self.keyStore,
-        errorEvents: self.debugEvents
-    )
-
     private lazy var tunnelFailureMonitor = NetworkProtectionTunnelFailureMonitor(handshakeReporter: adapter)
 
     public let latencyMonitor: LatencyMonitoring
     public let entitlementMonitor: EntitlementMonitoring
-    public lazy var serverStatusMonitor = NetworkProtectionServerStatusMonitor(
-        networkClient: NetworkProtectionBackendClient(environment: self.settings.selectedEnvironment),
-        tokenHandler: self.tokenHandlerProvider()
-    )
 
     private var lastTestFailed = false
     private let bandwidthAnalyzer: BandwidthAnalyzing
@@ -443,6 +432,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private let knownFailureStore: NetworkProtectionKnownFailureStore
     private let snoozeTimingStore: NetworkProtectionSnoozeTimingStore
     private let wireGuardInterface: WireGuardGoInterface
+    private let deviceManager: NetworkProtectionDeviceManagement
+    public let serverStatusMonitor: NetworkProtectionServerStatusMonitoring
 
     // MARK: - WideEvent
 
@@ -479,6 +470,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 bandwidthAnalyzer: BandwidthAnalyzing? = nil,
                 latencyMonitor: LatencyMonitoring = NetworkProtectionLatencyMonitor(),
                 entitlementMonitor: EntitlementMonitoring = NetworkProtectionEntitlementMonitor(),
+                deviceManager: NetworkProtectionDeviceManagement? = nil,
+                serverStatusMonitor: NetworkProtectionServerStatusMonitoring? = nil,
                 entitlementCheck: (() async -> Result<Bool, Error>)?) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
@@ -500,9 +493,22 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.entitlementMonitor = entitlementMonitor
         self.entitlementCheck = entitlementCheck
 
-        self.keyStore = keyStore ?? NetworkProtectionKeychainKeyStore(
+        let keyStore = keyStore ?? NetworkProtectionKeychainKeyStore(
             keychainType: keychainType,
             errorEvents: debugEvents
+        )
+        self.keyStore = keyStore
+
+        self.deviceManager = deviceManager ?? NetworkProtectionDeviceManager(
+            environment: settings.selectedEnvironment,
+            tokenHandler: tokenHandlerProvider(),
+            keyStore: keyStore,
+            errorEvents: debugEvents
+        )
+
+        self.serverStatusMonitor = serverStatusMonitor ?? NetworkProtectionServerStatusMonitor(
+            networkClient: NetworkProtectionBackendClient(environment: settings.selectedEnvironment),
+            tokenHandler: tokenHandlerProvider()
         )
 
         self.wireGuardAdapterEventHandler = WireGuardAdapterEventHandler(

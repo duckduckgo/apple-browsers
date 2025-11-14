@@ -99,10 +99,10 @@ private enum State: CustomDebugStringConvertible {
     case stopped
 
     /// The tunnel is up and running
-    case started(_ handle: Int32, _ settingsGenerator: PacketTunnelSettingsGenerator)
+    case started(_ handle: Int32, _ settingsGenerator: PacketTunnelSettingsGenerating)
 
     /// The tunnel is temporarily shutdown due to device going offline
-    case temporaryShutdown(_ settingsGenerator: PacketTunnelSettingsGenerator)
+    case temporaryShutdown(_ settingsGenerator: PacketTunnelSettingsGenerating)
 
     case snoozing
 
@@ -543,7 +543,6 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
     /// - Parameters:
     ///   - networkSettings: an instance of type `NEPacketTunnelNetworkSettings`.
     /// - Throws: an error of type `WireGuardAdapterError`.
-    /// - Returns: `PacketTunnelSettingsGenerator`.
     private func setNetworkSettings(_ networkSettings: NEPacketTunnelNetworkSettings?) throws {
 
         guard let packetTunnelProvider else {
@@ -628,8 +627,8 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
     /// Resolves the hostnames in the given tunnel configuration and return settings generator.
     /// - Parameter tunnelConfiguration: an instance of type `TunnelConfiguration`.
     /// - Throws: an error of type `WireGuardAdapterError`.
-    /// - Returns: an instance of type `PacketTunnelSettingsGenerator`.
-    private func makeSettingsGenerator(with tunnelConfiguration: TunnelConfiguration) throws -> PacketTunnelSettingsGenerator {
+    /// - Returns: an instance conforming to `PacketTunnelSettingsGenerating`.
+    private func makeSettingsGenerator(with tunnelConfiguration: TunnelConfiguration) throws -> PacketTunnelSettingsGenerating {
         return PacketTunnelSettingsGenerator(
             tunnelConfiguration: tunnelConfiguration,
             resolvedEndpoints: try self.resolvePeers(for: tunnelConfiguration)

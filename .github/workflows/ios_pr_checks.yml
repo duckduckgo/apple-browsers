@@ -161,70 +161,15 @@ jobs:
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
 
-        RESULT_BUNDLE_PATH="DerivedData/Logs/Test/iOSUnitTests.xcresult"
-        rm -rf "$RESULT_BUNDLE_PATH"
-        mkdir -p "$(dirname "${RESULT_BUNDLE_PATH}")"
-
         set -o pipefail && xcodebuild test \
           -scheme "iOS Browser" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
           -derivedDataPath "DerivedData" \
-          -resultBundlePath "$RESULT_BUNDLE_PATH" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
           | tee xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
-
-    - name: Capture runner diagnostics
-      if: always()
-      run: |
-        set -euo pipefail
-        DIAG_DIR="diagnostics"
-        mkdir -p "$DIAG_DIR"
-
-        {
-          echo "Timestamp: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          echo
-          echo "sw_vers:"
-          sw_vers
-          echo
-          echo "Xcode:"
-          xcodebuild -version
-        } > "$DIAG_DIR/environment.txt"
-
-        ps -axo pid,user,etime,%cpu,%mem,state,command | head -n 200 > "$DIAG_DIR/ps-snapshot.txt"
-        top -l 1 -stats pid,command,cpu,mem | head -n 200 > "$DIAG_DIR/top.txt" || true
-        vm_stat > "$DIAG_DIR/vm_stat.txt" || true
-        df -h > "$DIAG_DIR/disk-usage.txt"
-
-        log show --style syslog --last 30m --predicate '(process == "xcodebuild" || process == "codesign" || process == "securityd" || eventMessage CONTAINS[c] "CodeSign")' > "$DIAG_DIR/unified-signing.log" || true
-        log show --style syslog --last 30m --predicate '(process == "xcodebuild" || process == "rsync" || process == "ditto" || subsystem == "com.apple.dt.Xcode")' > "$DIAG_DIR/unified-build.log" || true
-
-        ls -al DerivedData > "$DIAG_DIR/deriveddata-tree.txt" || true
-
-    - name: Generate xcresult timing summary
-      if: always()
-      run: |
-        set -euo pipefail
-        RESULT_BUNDLE_PATH="DerivedData/Logs/Test/iOSUnitTests.xcresult"
-        DIAG_DIR="diagnostics"
-        mkdir -p "$DIAG_DIR"
-        SUMMARY_FILE="$DIAG_DIR/test-results-summary.json"
-        METRICS_FILE="$DIAG_DIR/test-results-metrics.json"
-
-        if [ -d "$RESULT_BUNDLE_PATH" ]; then
-          if ! xcrun xcresulttool get test-results summary --path "$RESULT_BUNDLE_PATH" --compact > "$SUMMARY_FILE"; then
-            echo '{"error":"xcresult summary command failed"}' > "$SUMMARY_FILE"
-          fi
-
-          if ! xcrun xcresulttool get test-results metrics --path "$RESULT_BUNDLE_PATH" --compact > "$METRICS_FILE"; then
-            echo '{"error":"xcresult metrics command failed"}' > "$METRICS_FILE"
-          fi
-        else
-          echo "{\"error\":\"Result bundle ${RESULT_BUNDLE_PATH} not found\"}" > "$SUMMARY_FILE"
-          echo "{\"error\":\"Result bundle not found\"}" > "$METRICS_FILE"
-        fi
 
     - name: Upload JUnit XML as artifact
       uses: actions/upload-artifact@v4
@@ -237,15 +182,13 @@ jobs:
 
     - name: Upload logs if workflow failed
       uses: actions/upload-artifact@v4
-      if: always()
+      if: failure() || cancelled()
       with:
         name: BuildLogs
         path: |
           iOS/xcodebuild.log
           iOS/DerivedData/Logs/Test/*.xcresult
-          iOS/diagnostics/**
         retention-days: 7
-        if-no-files-found: warn
 
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v3

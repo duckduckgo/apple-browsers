@@ -427,7 +427,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 latencyMonitor: LatencyMonitoring = NetworkProtectionLatencyMonitor(),
                 entitlementMonitor: EntitlementMonitoring = NetworkProtectionEntitlementMonitor(),
                 deviceManager: NetworkProtectionDeviceManagement? = nil,
-                serverStatusMonitor: NetworkProtectionServerStatusMonitoring? = nil,
+                serverStatusMonitor: ServerStatusMonitoring? = nil,
                 connectionTester: ConnectionTesting? = nil,
                 entitlementCheck: (() async -> Result<Bool, Error>)?) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")

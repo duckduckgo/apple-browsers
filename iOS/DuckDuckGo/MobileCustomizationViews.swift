@@ -66,7 +66,12 @@ extension MobileCustomizationView {
 struct AddressBarCustomizationPickerView: View, MobileCustomizationView {
 
     let isAIChatEnabled: Bool
+
     @Binding var selectedAddressBarButton: MobileCustomization.Button
+
+    @State var startingOption: MobileCustomization.Button?
+
+    let mobileCustomization: MobileCustomization
 
     var body: some View {
         let options = MobileCustomization.addressBarButtons.sorted(by: { lhs, rhs in
@@ -88,6 +93,17 @@ struct AddressBarCustomizationPickerView: View, MobileCustomizationView {
                 descriptionForOption($0, isAIChatEnabled: isAIChatEnabled)
             },
             iconProvider: buttonIconProvider)
+        .onAppear {
+            mobileCustomization.fireAddressBarCustomizationStartedPixel()
+            startingOption = selectedAddressBarButton
+        }
+        .onDisappear {
+            guard let startingOption else {
+                assertionFailure()
+                return
+            }
+            mobileCustomization.fireAddressBarCustomizationSelectedPixel(oldValue: startingOption)
+        }
     }
 
 }
@@ -95,7 +111,12 @@ struct AddressBarCustomizationPickerView: View, MobileCustomizationView {
 struct ToolbarCustomizationPickerView: View, MobileCustomizationView {
 
     let isAIChatEnabled: Bool
+
     @Binding var selectedToolbarButton: MobileCustomization.Button
+
+    @State var startingOption: MobileCustomization.Button?
+
+    let mobileCustomization: MobileCustomization
 
     var body: some View {
         let options = MobileCustomization.toolbarButtons.sorted(by: { lhs, rhs in
@@ -112,6 +133,17 @@ struct ToolbarCustomizationPickerView: View, MobileCustomizationView {
                 descriptionForOption($0, isAIChatEnabled: isAIChatEnabled)
             },
             iconProvider: buttonIconProvider)
+        .onAppear {
+            startingOption = selectedToolbarButton
+            mobileCustomization.fireToolbarCustomizationStartedPixel()
+        }
+        .onDisappear {
+            guard let startingOption else {
+                assertionFailure()
+                return
+            }
+            mobileCustomization.fireToolbarCustomizationSelectedPixel(oldValue: startingOption)
+        }
     }
 
 }

@@ -129,6 +129,7 @@ private enum State: CustomDebugStringConvertible {
 // swiftlint:disable:next type_body_length
 class WireGuardAdapter: WireGuardAdapterProtocol {
     public typealias LogHandler = (WireGuardLogLevel, String) -> Void
+    typealias PacketTunnelSettingsGeneratorProvider = (TunnelConfiguration, [Endpoint?]) -> PacketTunnelSettingsGenerating
 
     /// WireGuard configuration fields
     ///
@@ -220,7 +221,9 @@ class WireGuardAdapter: WireGuardAdapterProtocol {
                 eventHandler: WireGuardAdapterEventHandling,
                 logHandler: @escaping LogHandler,
                 pathMonitorProvider: @escaping () -> PathMonitoring = { NWPathMonitor() },
-                packetTunnelSettingsGeneratorProvider: ((TunnelConfiguration, [Endpoint?]) -> PacketTunnelSettingsGenerating)? = nil,
+                packetTunnelSettingsGeneratorProvider: @escaping PacketTunnelSettingsGeneratorProvider = { configuration, resolvedEndpoints in
+                    PacketTunnelSettingsGenerator(tunnelConfiguration: configuration, resolvedEndpoints: resolvedEndpoints)
+                },
                 dnsResolver: DNSResolving = DefaultDNSResolver(),
                 tunnelFileDescriptorProvider: TunnelFileDescriptorProviding = UtunFileDescriptorProvider()) {
         Logger.networkProtectionMemory.debug("[+] WireGuardAdapter")
@@ -230,9 +233,7 @@ class WireGuardAdapter: WireGuardAdapterProtocol {
         self.eventHandler = eventHandler
         self.logHandler = logHandler
         self.pathMonitorProvider = pathMonitorProvider
-        self.packetTunnelSettingsGeneratorProvider = packetTunnelSettingsGeneratorProvider ?? { configuration, resolvedEndpoints in
-            PacketTunnelSettingsGenerator(tunnelConfiguration: configuration, resolvedEndpoints: resolvedEndpoints)
-        }
+        self.packetTunnelSettingsGeneratorProvider = packetTunnelSettingsGeneratorProvider
         self.dnsResolver = dnsResolver
         self.tunnelFileDescriptorProvider = tunnelFileDescriptorProvider
 

@@ -29,6 +29,7 @@ final class ReportingService {
     let subscriptionDataReporter: SubscriptionDataReporting
     let featureFlagging: FeatureFlagger
     let adAttributionPixelReporter: AdAttributionPixelReporter
+    let privacyConfigurationManager: PrivacyConfigurationManaging
 
     var syncService: SyncService? {
         didSet {
@@ -41,6 +42,7 @@ final class ReportingService {
          featureFlagging: FeatureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging) {
         self.featureFlagging = featureFlagging
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.adAttributionPixelReporter = AdAttributionPixelReporter(privacyConfigurationManager: privacyConfigurationManager)
         subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)
         NotificationCenter.default.addObserver(forName: .didFetchConfigurationOnForeground,
@@ -57,7 +59,6 @@ final class ReportingService {
 
     private func sendAppLaunchPostback(marketplaceAdPostbackManager: MarketplaceAdPostbackManaging) {
         // Attribution support
-        let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
         if privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .marketplaceAdPostback) {
             marketplaceAdPostbackManager.sendAppLaunchPostback()
         }

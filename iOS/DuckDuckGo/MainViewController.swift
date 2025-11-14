@@ -231,7 +231,7 @@ class MainViewController: UIViewController {
 
     private lazy var aiChatHistoryCleaner: HistoryCleaning = {
         return HistoryCleaner(featureFlagger: featureFlagger,
-                             privacyConfig: ContentBlocking.shared.privacyConfigurationManager)
+                             privacyConfig: privacyConfigurationManager)
     }()
     
     let isAuthV2Enabled: Bool
@@ -1790,7 +1790,7 @@ class MainViewController: UIViewController {
     }
 
     private var brokenSitePromptViewHostingController: UIHostingController<BrokenSitePromptView>?
-    lazy private var brokenSitePromptLimiter = BrokenSitePromptLimiter(privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
+    lazy private var brokenSitePromptLimiter = BrokenSitePromptLimiter(privacyConfigManager: privacyConfigurationManager,
                                                                        store: BrokenSitePromptLimiterStore())
 
     @objc func attemptToShowBrokenSitePrompt(_ notification: Notification) {

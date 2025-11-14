@@ -322,7 +322,8 @@ final class AIChatViewControllerManager {
     @MainActor
     private func createWebViewConfiguration() -> WKWebViewConfiguration {
         let configuration = WKWebViewConfiguration.persistent()
-        let userContentController = UserContentController(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher)
+        let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
+                                                          privacyConfigurationManager: privacyConfigurationManager)
         userContentController.delegate = self
         configuration.userContentController = userContentController
         self.userContentController = userContentController

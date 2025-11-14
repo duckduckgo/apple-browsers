@@ -84,6 +84,7 @@ struct Launching: LaunchingHandling {
                                                 featureFlagging: featureFlagger,
                                                 privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
+                                      privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         reportingService.syncService = syncService
         autofillService.syncService = syncService
@@ -105,7 +106,8 @@ struct Launching: LaunchingHandling {
                                                             winBackOfferService: winBackOfferService,
                                                             subscriptionDataReporter: reportingService.subscriptionDataReporter)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
-        let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
+        let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
+                                                                            privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
         let wideEventService = WideEventService(
             wideEvent: AppDependencyProvider.shared.wideEvent,

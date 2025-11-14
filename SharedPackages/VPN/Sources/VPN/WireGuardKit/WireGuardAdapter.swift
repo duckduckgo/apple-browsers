@@ -154,6 +154,9 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
     private let pathMonitorProvider: () -> PathMonitoring
     private var networkMonitor: PathMonitoring?
 
+    /// Factory for creating packet tunnel settings generators.
+    private let packetTunnelSettingsGeneratorProvider: (TunnelConfiguration, [Endpoint?]) -> PacketTunnelSettingsGenerating
+
     /// Packet tunnel provider.
     private weak var packetTunnelProvider: PacketTunnelProviding?
 
@@ -249,7 +252,8 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
                 wireGuardInterface: WireGuardGoInterface,
                 eventHandler: WireGuardAdapterEventHandling,
                 logHandler: @escaping LogHandler,
-                pathMonitorProvider: @escaping () -> PathMonitoring = { NWPathMonitor() }) {
+                pathMonitorProvider: @escaping () -> PathMonitoring = { NWPathMonitor() },
+                packetTunnelSettingsGeneratorProvider: ((TunnelConfiguration, [Endpoint?]) -> PacketTunnelSettingsGenerating)? = nil) {
         Logger.networkProtectionMemory.debug("[+] WireGuardAdapter")
 
         self.packetTunnelProvider = packetTunnelProvider
@@ -257,6 +261,9 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
         self.eventHandler = eventHandler
         self.logHandler = logHandler
         self.pathMonitorProvider = pathMonitorProvider
+        self.packetTunnelSettingsGeneratorProvider = packetTunnelSettingsGeneratorProvider ?? { configuration, resolvedEndpoints in
+            PacketTunnelSettingsGenerator(tunnelConfiguration: configuration, resolvedEndpoints: resolvedEndpoints)
+        }
 
         setupLogHandler()
     }
@@ -632,9 +639,9 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
     /// - Throws: an error of type `WireGuardAdapterError`.
     /// - Returns: an instance conforming to `PacketTunnelSettingsGenerating`.
     private func makeSettingsGenerator(with tunnelConfiguration: TunnelConfiguration) throws -> PacketTunnelSettingsGenerating {
-        return PacketTunnelSettingsGenerator(
-            tunnelConfiguration: tunnelConfiguration,
-            resolvedEndpoints: try self.resolvePeers(for: tunnelConfiguration)
+        return packetTunnelSettingsGeneratorProvider(
+            tunnelConfiguration,
+            try self.resolvePeers(for: tunnelConfiguration)
         )
     }
 

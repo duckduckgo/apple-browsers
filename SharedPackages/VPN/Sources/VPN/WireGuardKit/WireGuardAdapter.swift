@@ -151,7 +151,8 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
     }
 
     /// Network routes monitor.
-    private var networkMonitor: NWPathMonitor?
+    private let pathMonitorProvider: () -> PathMonitoring
+    private var networkMonitor: PathMonitoring?
 
     /// Packet tunnel provider.
     private weak var packetTunnelProvider: PacketTunnelProviding?
@@ -247,13 +248,15 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
     public init(with packetTunnelProvider: PacketTunnelProviding,
                 wireGuardInterface: WireGuardGoInterface,
                 eventHandler: WireGuardAdapterEventHandling,
-                logHandler: @escaping LogHandler) {
+                logHandler: @escaping LogHandler,
+                pathMonitorProvider: @escaping () -> PathMonitoring = { NWPathMonitor() }) {
         Logger.networkProtectionMemory.debug("[+] WireGuardAdapter")
 
         self.packetTunnelProvider = packetTunnelProvider
         self.wireGuardInterface = wireGuardInterface
         self.eventHandler = eventHandler
         self.logHandler = logHandler
+        self.pathMonitorProvider = pathMonitorProvider
 
         setupLogHandler()
     }
@@ -365,7 +368,7 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
                 return
             }
 
-            let networkMonitor = NWPathMonitor()
+            let networkMonitor = self.pathMonitorProvider()
             networkMonitor.pathUpdateHandler = { [weak self] path in
                 self?.didReceivePathUpdate(path: path)
             }

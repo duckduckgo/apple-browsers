@@ -591,7 +591,6 @@ final class TabBarItemCellView: NSView {
             return
         }
 
-
         titleView.displayTitleIfNeeded(title: title, url: url)
     }
 }

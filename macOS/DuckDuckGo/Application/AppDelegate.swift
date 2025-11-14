@@ -198,6 +198,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     let themeManager: ThemeManager
 
+    private(set) lazy var displaysLoadingProgressIndicator: Bool = {
+        featureFlagger.isFeatureOn(.tabProgressIndicator)
+    }()
+
     let wideEvent: WideEventManaging
     let isUsingAuthV2: Bool
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge

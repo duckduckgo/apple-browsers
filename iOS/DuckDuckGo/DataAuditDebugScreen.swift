@@ -67,11 +67,12 @@ struct DataAuditDebugScreen: View {
         let result: DataAuditModel.Result
 
         var body: some View {
-            ScrollView {
-                Text(result.details)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal)
+            TextEditor(text: Binding<String>(get: {
+                result.details
+            }, set: { _ in
+                // not supported
             }
+            ))
             .navigationTitle(result.title)
         }
 

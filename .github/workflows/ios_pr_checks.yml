@@ -161,7 +161,21 @@ jobs:
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
 
-        set -o pipefail && xcodebuild test \
+        set -o pipefail
+
+
+        # Start heartbeat logger in the background
+        (
+            while true; do
+            echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') [Heartbeat] Build still running..."
+            sleep 10
+            done
+        ) &
+        HEARTBEAT_PID=$!
+
+        trap 'kill "$HEARTBEAT_PID" 2>/dev/null || true' EXIT INT TERM
+
+        script -q /dev/null xcodebuild test \
           -scheme "iOS Browser" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
           -derivedDataPath "DerivedData" \

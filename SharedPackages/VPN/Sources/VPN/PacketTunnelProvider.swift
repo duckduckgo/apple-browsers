@@ -429,15 +429,15 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     private lazy var tunnelFailureMonitor = NetworkProtectionTunnelFailureMonitor(handshakeReporter: adapter)
 
-    public lazy var latencyMonitor = NetworkProtectionLatencyMonitor()
-    public lazy var entitlementMonitor = NetworkProtectionEntitlementMonitor()
+    public let latencyMonitor: LatencyMonitoring
+    public let entitlementMonitor: EntitlementMonitoring
     public lazy var serverStatusMonitor = NetworkProtectionServerStatusMonitor(
         networkClient: NetworkProtectionBackendClient(environment: self.settings.selectedEnvironment),
         tokenHandler: self.tokenHandlerProvider()
     )
 
     private var lastTestFailed = false
-    private let bandwidthAnalyzer = NetworkProtectionConnectionBandwidthAnalyzer()
+    private let bandwidthAnalyzer: BandwidthAnalyzing
     private let tunnelHealth: NetworkProtectionTunnelHealthStore
     private let controllerErrorStore: NetworkProtectionTunnelErrorStore
     private let knownFailureStore: NetworkProtectionKnownFailureStore
@@ -476,6 +476,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 settings: VPNSettings,
                 defaults: UserDefaults,
                 wideEvent: WideEventManaging = WideEvent(),
+                bandwidthAnalyzer: BandwidthAnalyzing = NetworkProtectionConnectionBandwidthAnalyzer(),
+                latencyMonitor: LatencyMonitoring = NetworkProtectionLatencyMonitor(),
+                entitlementMonitor: EntitlementMonitoring = NetworkProtectionEntitlementMonitor(),
                 entitlementCheck: (() async -> Result<Bool, Error>)?) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
@@ -492,6 +495,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.settings = settings
         self.defaults = defaults
         self.wideEvent = wideEvent
+        self.bandwidthAnalyzer = bandwidthAnalyzer
+        self.latencyMonitor = latencyMonitor
+        self.entitlementMonitor = entitlementMonitor
         self.entitlementCheck = entitlementCheck
 
         self.keyStore = keyStore ?? NetworkProtectionKeychainKeyStore(

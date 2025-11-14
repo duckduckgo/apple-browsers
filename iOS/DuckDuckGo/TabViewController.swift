@@ -3231,6 +3231,7 @@ extension TabViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager,
                             promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
                             withTrigger trigger: AutofillUserScript.GetTriggerType,
+                            isMainFrame: Bool,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         guard isCreditCardAutofillEnabled() else {
             completionHandler(nil)
@@ -3243,7 +3244,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
-        promptToFill(withCreditCards: creditCards) { card in
+        promptToFill(withCreditCards: creditCards, isMainFrame: isMainFrame) { card in
             completionHandler(card)
         }
     }
@@ -3251,6 +3252,7 @@ extension TabViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager,
                             didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
                             withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                            isMainFrame: Bool,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         guard isCreditCardAutofillEnabled(), mainType == .creditCards else {
             completionHandler(nil)
@@ -3258,12 +3260,12 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
-        promptToFill(withCreditCards: creditCards) { card in
+        promptToFill(withCreditCards: creditCards, isMainFrame: isMainFrame) { card in
             completionHandler(card)
         }
     }
 
-    private func promptToFill(withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+    private func promptToFill(withCreditCards creditCards: [SecureVaultModels.CreditCard], isMainFrame: Bool, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         if domainFillCreditCardPromptLastShownOn != url?.host {
             AppDependencyProvider.shared.autofillLoginSession.endSession()
             self.domainFillCreditCardPromptLastShownOn = self.url?.host

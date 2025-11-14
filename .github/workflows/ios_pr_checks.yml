@@ -316,7 +316,7 @@ jobs:
 
         bundle exec fastlane sync_signing
 
-        set -o pipefail && xcodebuild \
+        set -o pipefail && script -q /dev/null xcodebuild \
         -scheme "iOS Browser" \
         -destination "${{ steps.select-simulator.outputs.destination }}" \
         -derivedDataPath "DerivedData" \

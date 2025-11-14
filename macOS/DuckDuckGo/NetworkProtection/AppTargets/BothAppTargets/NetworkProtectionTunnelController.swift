@@ -32,7 +32,6 @@ import os.log
 import Subscription
 import SystemExtensionManager
 import SystemExtensions
-import VPNExtensionManagement
 import VPNAppState
 
 typealias NetworkProtectionStatusChangeHandler = (VPN.ConnectionStatus) -> Void
@@ -79,6 +78,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             await self?.isConfigurationInstalled(extensionBundleID: extensionBundleID) ?? true
         })
     }()
+
+    private lazy var startupMonitor = VPNStartupMonitor()
+
     private let networkExtensionController: NetworkExtensionController
 
     // MARK: - Notification Center
@@ -223,7 +225,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
             switch session.status {
             case .connected:
-                try await enableOnDemand(tunnelManager: manager)
+                if #unavailable(macOS 12) {
+                    try await enableOnDemand(tunnelManager: manager)
+                }
             case .invalid:
                 clearInternalManager()
             default:
@@ -408,10 +412,12 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
     }
 
+    @MainActor
     public func activeSession() async -> NETunnelProviderSession? {
         await session
     }
 
+    @MainActor
     public var session: NETunnelProviderSession? {
         get async {
             guard let manager = await manager,
@@ -608,6 +614,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     ///
     /// Handles all the top level error management logic.
     ///
+    @MainActor
     func start() async {
         Logger.networkProtection.log("🚀 Start VPN")
         setupAndStartConnectionWideEvent()
@@ -659,6 +666,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
     }
 
+    @MainActor
     private func start(isFirstAttempt: Bool) async throws {
         self.connectionWideEventData?.controllerStartDuration = WideEvent.MeasuredInterval.startingNow()
         if await extensionResolver.isUsingSystemExtension {
@@ -725,7 +733,43 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
     }
 
+    @MainActor
     private func start(_ tunnelManager: NETunnelProviderManager) async throws {
+
+        let options = try await prepareStartupOptions()
+
+        if Self.simulationOptions.isEnabled(.controllerFailure) {
+            Self.simulationOptions.setEnabled(false, option: .controllerFailure)
+            throw StartError.simulateControllerFailureError
+        }
+
+        do {
+            Logger.networkProtection.log("🚀 Starting NetworkProtectionTunnelController, options: \(options, privacy: .public)")
+            self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
+            try tunnelManager.connection.startVPNTunnel(options: options)
+
+            if #available(macOS 12, *) {
+                try await startupMonitor.waitForStartSuccess(tunnelManager)
+                try await self.enableOnDemand(tunnelManager: tunnelManager)
+            }
+
+            self.connectionWideEventData?.tunnelStartDuration?.complete()
+        } catch {
+            Logger.networkProtection.fault("🔴 Failed to start VPN tunnel: \(error, privacy: .public)")
+            completeAtStepWithFailure(.tunnelStart, with: error, description: StartError.startTunnelFailure(error).caseDescription)
+            throw StartError.startTunnelFailure(error)
+        }
+
+        PixelKit.fire(
+            NetworkProtectionPixelEvent.networkProtectionNewUser,
+            frequency: .uniqueByName,
+            includeAppVersionParameter: true) { [weak self] fired, error in
+                guard let self, error == nil, fired else { return }
+                self.defaults.vpnFirstEnabled = PixelKit.pixelLastFireDate(event: NetworkProtectionPixelEvent.networkProtectionNewUser)
+            }
+    }
+
+    private func prepareStartupOptions() async throws -> [String: NSObject] {
         var options = [String: NSObject]()
 
         options[NetworkProtectionOptionKey.activationAttemptId] = UUID().uuidString as NSString
@@ -765,29 +809,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             options[NetworkProtectionOptionKey.tunnelFatalErrorCrashSimulation] = NSNumber(value: true)
         }
 
-        if Self.simulationOptions.isEnabled(.controllerFailure) {
-            Self.simulationOptions.setEnabled(false, option: .controllerFailure)
-            throw StartError.simulateControllerFailureError
-        }
-
-        do {
-            Logger.networkProtection.log("🚀 Starting NetworkProtectionTunnelController, options: \(options, privacy: .public)")
-            self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
-            try tunnelManager.connection.startVPNTunnel(options: options)
-            self.connectionWideEventData?.tunnelStartDuration?.complete()
-        } catch {
-            Logger.networkProtection.fault("🔴 Failed to start VPN tunnel: \(error, privacy: .public)")
-            completeAtStepWithFailure(.tunnelStart, with: error, description: StartError.startTunnelFailure(error).caseDescription)
-            throw StartError.startTunnelFailure(error)
-        }
-
-        PixelKit.fire(
-            NetworkProtectionPixelEvent.networkProtectionNewUser,
-            frequency: .uniqueByName,
-            includeAppVersionParameter: true) { [weak self] fired, error in
-                guard let self, error == nil, fired else { return }
-                self.defaults.vpnFirstEnabled = PixelKit.pixelLastFireDate(event: NetworkProtectionPixelEvent.networkProtectionNewUser)
-            }
+        return options
     }
 
     /// Stops the VPN connection

@@ -28,7 +28,8 @@ final class MaliciousSiteProtectionService {
     let preferencesManager = MaliciousSiteProtectionPreferencesManager()
     let manager: MaliciousSiteProtectionManaging
 
-    init(featureFlagger: FeatureFlagger) {
+    init(featureFlagger: FeatureFlagger,
+         privacyConfigurationManager: PrivacyConfigurationManaging) {
         let maliciousSiteProtectionAPI = MaliciousSiteProtectionAPI()
 
         // If Application Support directory is not available leave a trail in crash logs.
@@ -44,7 +45,8 @@ final class MaliciousSiteProtectionService {
             fileNameProvider: MaliciousSiteProtectionManager.fileName(for:)
         )
 
-        let maliciousSiteProtectionFeatureFlagger = MaliciousSiteProtectionFeatureFlags(featureFlagger: featureFlagger)
+        let maliciousSiteProtectionFeatureFlagger = MaliciousSiteProtectionFeatureFlags(featureFlagger: featureFlagger,
+                                                                                        privacyConfigManager: privacyConfigurationManager)
 
         let remoteIntervalProvider: (MaliciousSiteProtection.DataManager.StoredDataType) -> TimeInterval = { dataKind in
             switch dataKind {
@@ -106,7 +108,7 @@ extension MaliciousSiteProtectionFeatureFlags {
 
     init(
         featureFlagger: FeatureFlagger,
-        privacyConfigManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager
+        privacyConfigManager: PrivacyConfigurationManaging
     ) {
         self.init(
             privacyConfigManager: privacyConfigManager,

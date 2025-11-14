@@ -152,19 +152,28 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
 
             knownFailureStore.reset()
 
-            ipcClient.start { [pixelKit, weak self] error in
-                if let error {
-                    let error = RequestError.ipcControlError(error)
-                    handleFailure(error)
-                    self?.completeAndCleanupConnectionWideEvent(with: error, description: error.caseDescription)
-                } else {
-                    pixelKit?.fire(StartAttempt.success, frequency: .legacyDailyAndCount)
-                    self?.discardAndSetConnectionWideEvent()
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                ipcClient.start { error in
+                    if let error {
+                        let error = RequestError.ipcControlError(error)
+                        continuation.resume(throwing: error)
+                    } else {
+                        continuation.resume()
+                    }
                 }
             }
+
+            pixelKit?.fire(StartAttempt.success, frequency: .legacyDailyAndCount)
+            discardAndSetConnectionWideEvent()
         } catch {
             handleFailure(error)
-            completeAndCleanupConnectionWideEvent(with: error)
+
+            switch error {
+            case let requestError as RequestError:
+                completeAndCleanupConnectionWideEvent(with: requestError, description: requestError.caseDescription)
+            default:
+                completeAndCleanupConnectionWideEvent(with: error)
+            }
         }
     }
 
@@ -184,12 +193,15 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
                 throw RequestError.enableLoginItemError(error)
             }
 
-            ipcClient.stop { [pixelKit] error in
-                if let error {
-                    let error = RequestError.ipcControlError(error)
-                    handleFailure(error)
-                } else {
-                    pixelKit?.fire(StopAttempt.success, frequency: .legacyDailyAndCount)
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                ipcClient.stop { [pixelKit] error in
+                    if let error {
+                        let error = RequestError.ipcControlError(error)
+                        continuation.resume(throwing: error)
+                    } else {
+                        pixelKit?.fire(StopAttempt.success, frequency: .legacyDailyAndCount)
+                        continuation.resume()
+                    }
                 }
             }
         } catch {

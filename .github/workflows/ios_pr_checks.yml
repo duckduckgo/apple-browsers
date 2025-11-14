@@ -167,6 +167,7 @@ jobs:
           -derivedDataPath "DerivedData" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
+          -showBuildTimingSummary \
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
           OTHER_CODE_SIGN_FLAGS="--timestamp=none" \
           | tee xcodebuild.log \

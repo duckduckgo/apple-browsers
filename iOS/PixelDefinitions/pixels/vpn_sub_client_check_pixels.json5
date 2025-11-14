@@ -14,8 +14,9 @@
             },
             {
                 "key": "isSubscriptionActive",
-                "type": "boolean",
-                "description": "Whether the subscription is active"
+                "type": "string",
+                "description": "Whether the subscription is active",
+                "enum": ["true", "false", "no_subscription"]
             },
             "appVersion",
             "pixelSource"
@@ -35,8 +36,9 @@
             },
             {
                 "key": "isSubscriptionActive",
-                "type": "boolean",
-                "description": "Whether the subscription is active"
+                "type": "string",
+                "description": "Whether the subscription is active",
+                "enum": ["true", "false", "no_subscription"]
             },
             "appVersion",
             "pixelSource"
@@ -56,8 +58,9 @@
             },
             {
                 "key": "isSubscriptionActive",
-                "type": "boolean",
-                "description": "Whether the subscription is active"
+                "type": "string",
+                "description": "Whether the subscription is active",
+                "enum": ["true", "false", "no_subscription"]
             },
             "appVersion",
             "pixelSource"
@@ -77,8 +80,9 @@
             },
             {
                 "key": "isSubscriptionActive",
-                "type": "boolean",
-                "description": "Whether the subscription is active"
+                "type": "string",
+                "description": "Whether the subscription is active",
+                "enum": ["true", "false", "no_subscription"]
             },
             "appVersion",
             "pixelSource"
@@ -98,8 +102,19 @@
             },
             {
                 "key": "isSubscriptionActive",
-                "type": "boolean",
-                "description": "Whether the subscription is active"
+                "type": "string",
+                "description": "Whether the subscription is active",
+                "enum": ["true", "false", "no_subscription"]
+            },
+            {
+                "key": "d",
+                "type": "string",
+                "description": "Error domain"
+            },
+            {
+                "key": "e",
+                "type": "string",
+                "description": "Error code"
             },
             "appVersion",
             "pixelSource"
@@ -119,8 +134,9 @@
             },
             {
                 "key": "isSubscriptionActive",
-                "type": "boolean",
-                "description": "Whether the subscription is active"
+                "type": "string",
+                "description": "Whether the subscription is active",
+                "enum": ["true", "false", "no_subscription"]
             },
             "appVersion",
             "pixelSource"
@@ -140,8 +156,9 @@
             },
             {
                 "key": "isSubscriptionActive",
-                "type": "boolean",
-                "description": "Whether the subscription is active"
+                "type": "string",
+                "description": "Whether the subscription is active",
+                "enum": ["true", "false", "no_subscription"]
             },
             "appVersion",
             "pixelSource"
@@ -161,8 +178,19 @@
             },
             {
                 "key": "isSubscriptionActive",
-                "type": "boolean",
-                "description": "Whether the subscription is active"
+                "type": "string",
+                "description": "Whether the subscription is active",
+                "enum": ["true", "false", "no_subscription"]
+            },
+            {
+                "key": "d",
+                "type": "string",
+                "description": "Error domain"
+            },
+            {
+                "key": "e",
+                "type": "string",
+                "description": "Error code"
             },
             "appVersion",
             "pixelSource"

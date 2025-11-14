@@ -83,7 +83,7 @@ extension TabFaviconView {
     ///
     func displayFavicon(favicon: NSImage?, placeholderStyle: FaviconPlaceholderStyle) {
         let targetImage = favicon ?? placeholderStyle.placeholderImage
-        if shouldApplyCrossfade {
+        if shouldApplyCrossfade(targetImage: targetImage) {
             imageView.applyCrossfadeTransition(timingFunction: FaviconAnimation.animationTimingFunction, duration: FaviconAnimation.animationDuration)
         }
 
@@ -110,8 +110,8 @@ private extension TabFaviconView {
         spinnerView.stopAnimating(animated: animated)
     }
 
-    var shouldApplyCrossfade: Bool {
-        placeholderView.isShown || imageView.image != nil
+    func shouldApplyCrossfade(targetImage: NSImage?) -> Bool {
+        placeholderView.isShown && targetImage != nil || imageView.image != nil && imageView.image != targetImage
     }
 }
 

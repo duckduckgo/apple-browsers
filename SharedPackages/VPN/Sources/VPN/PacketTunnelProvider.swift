@@ -433,7 +433,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private let snoozeTimingStore: NetworkProtectionSnoozeTimingStore
     private let wireGuardInterface: WireGuardGoInterface
     private let deviceManager: NetworkProtectionDeviceManagement
-    public let serverStatusMonitor: NetworkProtectionServerStatusMonitoring
+    public let serverStatusMonitor: ServerStatusMonitoring
 
     // MARK: - WideEvent
 

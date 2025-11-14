@@ -154,7 +154,7 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
     private var networkMonitor: NWPathMonitor?
 
     /// Packet tunnel provider.
-    private weak var packetTunnelProvider: NEPacketTunnelProvider?
+    private weak var packetTunnelProvider: PacketTunnelProviding?
 
     /// Handles events from the adapter.
     private let eventHandler: WireGuardAdapterEventHandling
@@ -244,7 +244,7 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
     ///   as a weak reference.
     /// - Parameter logHandler: a log handler closure.
 
-    public init(with packetTunnelProvider: NEPacketTunnelProvider,
+    public init(with packetTunnelProvider: PacketTunnelProviding,
                 wireGuardInterface: WireGuardGoInterface,
                 eventHandler: WireGuardAdapterEventHandling,
                 logHandler: @escaping LogHandler) {

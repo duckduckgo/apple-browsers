@@ -22,8 +22,7 @@ import NetworkExtension
 /// Abstraction over `NEPacketTunnelProvider` that enables mocking in tests.
 public protocol PacketTunnelProviding: AnyObject {
     var reasserting: Bool { get set }
-    func setTunnelNetworkSettings(_ networkSettings: NEPacketTunnelNetworkSettings?,
-                                  completionHandler: @escaping (Error?) -> Void)
+    func setTunnelNetworkSettings(_ tunnelNetworkSettings: NETunnelNetworkSettings?, completionHandler: (@Sendable (Error?) -> Void)?)
 }
 
 extension NEPacketTunnelProvider: PacketTunnelProviding {}

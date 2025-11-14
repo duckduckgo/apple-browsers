@@ -147,6 +147,7 @@ extension TabViewController {
     ) -> TabViewController {
         let tab = TabViewController.loadFromStoryboard(
             model: .init(link: Link(title: nil, url: .ddg)),
+            privacyConfigurationManager: PrivacyConfigurationManagerMock(),
             appSettings: AppSettingsMock(),
             bookmarksDatabase: CoreDataDatabase.bookmarksMock,
             historyManager: MockHistoryManager(historyCoordinator: MockHistoryCoordinator(), isEnabledByUser: true, historyFeatureEnabled: true),

@@ -137,7 +137,7 @@ extension MainViewController {
             PrivacyDashboardViewController(coder: coder,
                                            privacyInfo: privacyInfo,
                                            entryPoint: entryPoint,
-                                           privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+                                           privacyConfigurationManager: self.privacyConfigurationManager,
                                            contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
                                            breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo())
         }
@@ -340,7 +340,7 @@ extension MainViewController {
                                                             daxDialogsManager: daxDialogsManager,
                                                             dbpIOSPublicInterface: dbpIOSPublicInterface)
 
-        let aiChatSettings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
+        let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
                                                         featureFlagger: featureFlagger)
 
@@ -361,6 +361,7 @@ extension MainViewController {
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
                                                   themeManager: themeManager,
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
+                                                  privacyConfigurationManager: privacyConfigurationManager,
                                                   keyValueStore: keyValueStore,
                                                   systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                   runPrerequisitesDelegate: dbpIOSPublicInterface,

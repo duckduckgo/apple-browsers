@@ -41,7 +41,6 @@ struct Launching: LaunchingHandling {
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
     private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
     private let aiChatSettings: AIChatSettings
-    private let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
 
     private let didFinishLaunchingStartTime = CFAbsoluteTimeGetCurrent()
     private let isAppLaunchedInBackground = UIApplication.shared.applicationState == .background
@@ -74,12 +73,18 @@ struct Launching: LaunchingHandling {
         // This approach aims to optimize performance and ensure critical functionalities are ready ASAP
         let autofillService = AutofillService()
 
-        let dbpService = DBPService(appDependencies: AppDependencyProvider.shared)
+        let contentBlockingService = ContentBlockingService(appSettings: appSettings,
+                                                            fireproofing: fireproofing)
+
+        let dbpService = DBPService(appDependencies: AppDependencyProvider.shared, contentBlocking: contentBlockingService.common)
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService()
         let statisticsService = StatisticsService()
-        let reportingService = ReportingService(fireproofing: fireproofing, featureFlagging: featureFlagger)
+        let reportingService = ReportingService(fireproofing: fireproofing,
+                                                featureFlagging: featureFlagger,
+                                                privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
+                                      privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         reportingService.syncService = syncService
         autofillService.syncService = syncService
@@ -95,13 +100,14 @@ struct Launching: LaunchingHandling {
                                                             appSettings: appSettings,
                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                             configurationStore: AppDependencyProvider.shared.configurationStore,
-                                                            privacyConfigurationManager: privacyConfigurationManager,
+                                                            privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                                                             configurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
                                                             syncService: syncService.sync,
                                                             winBackOfferService: winBackOfferService,
                                                             subscriptionDataReporter: reportingService.subscriptionDataReporter)
-        let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
-        let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
+        let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
+        let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
+                                                                            privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
         let wideEventService = WideEventService(
             wideEvent: AppDependencyProvider.shared.wideEvent,
@@ -112,7 +118,7 @@ struct Launching: LaunchingHandling {
         // Service to display the Default Browser prompt.
         let defaultBrowserPromptService = DefaultBrowserPromptService(
             featureFlagger: featureFlagger,
-            privacyConfigManager: privacyConfigurationManager,
+            privacyConfigManager: contentBlockingService.common.privacyConfigurationManager,
             keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager
         )
@@ -126,7 +132,7 @@ struct Launching: LaunchingHandling {
                 launchSourceManager: launchSourceManager,
                 contextualOnboardingStatusProvider: daxDialogs,
                 keyValueFileStoreService: appKeyValueFileStoreService.keyValueFilesStore,
-                privacyConfigurationManager: privacyConfigurationManager,
+                privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
                 remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                 remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
@@ -139,9 +145,6 @@ struct Launching: LaunchingHandling {
                 winBackOfferCoordinator: winBackOfferService.coordinator
             )
         )
-        
-        let contentBlockingService = ContentBlockingService(appSettings: appSettings,
-                                                            fireproofing: fireproofing)
 
         let mobileCustomization = MobileCustomization(isFeatureEnabled: featureFlagger.isFeatureOn(.mobileCustomization),
                                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
@@ -150,7 +153,8 @@ struct Launching: LaunchingHandling {
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
 
-        mainCoordinator = try MainCoordinator(syncService: syncService,
+        mainCoordinator = try MainCoordinator(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+                                              syncService: syncService,
                                               contentBlockingService: contentBlockingService,
                                               bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                               remoteMessagingService: remoteMessagingService,
@@ -188,7 +192,7 @@ struct Launching: LaunchingHandling {
         let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
             featureFlagger: featureFlagger,
             notificationServiceManager: notificationServiceManager,
-            privacyConfigurationManager: privacyConfigurationManager
+            privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager
         )
         
         winBackOfferService.setURLHandler(mainCoordinator)

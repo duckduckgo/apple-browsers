@@ -1,0 +1,74 @@
+{
+    "m_customization_addressbar_started": {
+        "description": "Fires when the user starts the address bar customization page",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_customization_toolbar_started": {
+        "description": "Fires when the user starts the toolbar customization page",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_customization_addressbar_selected": {
+        "description": "Fires when the user leaves the address bar customization page but only after changing the value",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "selected",
+                "description": "Selected option",
+                "type": "string",
+                "enum": [
+                    "share",
+                    "addEditBookmark",
+                    "addEditFavorite",
+                    "voiceSearch",
+                    "zoom",
+                    "none",
+                    "home",
+                    "newTab",
+                    "bookmarks",
+                    "downloads",
+                    "fire",
+                    "vpn",
+                    "passwords"
+                ]
+            }
+        ]
+    },
+    "m_customization_toolbar_selected": {
+        "description": "Fires when the user leaves the toolbar customization page but only after changing the value",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "selected",
+                "description": "Selected option",
+                "type": "string",
+                "enum": [
+                    "share",
+                    "addEditBookmark",
+                    "addEditFavorite",
+                    "voiceSearch",
+                    "zoom",
+                    "none",
+                    "home",
+                    "newTab",
+                    "bookmarks",
+                    "downloads",
+                    "fire",
+                    "vpn",
+                    "passwords"
+                ]
+            }
+        ]
+    }
+}

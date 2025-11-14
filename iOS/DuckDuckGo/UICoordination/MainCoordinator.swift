@@ -57,7 +57,8 @@ final class MainCoordinator {
     private let launchSourceManager: LaunchSourceManaging
     private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
 
-    init(syncService: SyncService,
+    init(privacyConfigurationManager: PrivacyConfigurationManaging,
+         syncService: SyncService,
          contentBlockingService: ContentBlockingService,
          bookmarksDatabase: CoreDataDatabase,
          remoteMessagingService: RemoteMessagingService,
@@ -112,6 +113,7 @@ final class MainCoordinator {
                                 persistence: tabsPersistence,
                                 previewsSource: previewsSource,
                                 interactionStateSource: interactionStateSource,
+                                privacyConfigurationManager: privacyConfigurationManager,
                                 bookmarksDatabase: bookmarksDatabase,
                                 historyManager: historyManager,
                                 syncService: syncService.sync,
@@ -132,7 +134,8 @@ final class MainCoordinator {
                                 keyValueStore: keyValueStore,
                                 daxDialogsManager: daxDialogsManager,
                                 aiChatSettings: aiChatSettings)
-        controller = MainViewController(bookmarksDatabase: bookmarksDatabase,
+        controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
+                                        bookmarksDatabase: bookmarksDatabase,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         historyManager: historyManager,
                                         homePageConfiguration: homePageConfiguration,

@@ -77,11 +77,11 @@ final class SettingsViewModel: ObservableObject {
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private var subscriptionSignOutObserver: Any?
     var duckPlayerContingencyHandler: DuckPlayerContingencyHandler {
-        DefaultDuckPlayerContingencyHandler(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
+        DefaultDuckPlayerContingencyHandler(privacyConfigurationManager: privacyConfigurationManager)
     }
     var blackFridayCampaignProvider: BlackFridayCampaignProviding {
         DefaultBlackFridayCampaignProvider(
-            privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+            privacyConfigurationManager: privacyConfigurationManager,
             isFeatureEnabled: { [weak featureFlagger] in
                 featureFlagger?.isFeatureOn(.blackFridayCampaign) ?? false
             }
@@ -109,6 +109,7 @@ final class SettingsViewModel: ObservableObject {
     // Subscription Free Trials
     private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
 
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let keyValueStore: ThrowingKeyValueStoring
     private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
@@ -627,7 +628,6 @@ final class SettingsViewModel: ObservableObject {
          subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          voiceSearchHelper: VoiceSearchHelperProtocol,
-         variantManager: VariantManager = AppDependencyProvider.shared.variantManager,
          deepLink: SettingsDeepLinkSection? = nil,
          historyManager: HistoryManaging,
          syncPausedStateManager: any SyncPausedStateManaging,
@@ -643,6 +643,7 @@ final class SettingsViewModel: ObservableObject {
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
          subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
          urlOpener: URLOpener = UIApplication.shared,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
@@ -674,6 +675,7 @@ final class SettingsViewModel: ObservableObject {
         self.featureDiscovery = featureDiscovery
         self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
         self.urlOpener = urlOpener
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.keyValueStore = keyValueStore
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.runPrerequisitesDelegate = runPrerequisitesDelegate

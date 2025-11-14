@@ -53,8 +53,7 @@ final class SyncCreditCardsAdapterTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Sync did fail")
         let expectedError = NSError(domain: "some error", code: 400)
         adapter.setUpProviderIfNeeded(secureVaultFactory: AutofillSecureVaultFactory,
-                                      metadataStore: metadataStore, privacyConfigurationManager:
-                                        MockPrivacyConfigurationManager())
+                                      metadataStore: metadataStore, privacyConfigurationManager: MockPrivacyConfigurationManager())
         adapter.provider!.syncErrorPublisher
             .sink { _ in
                 expectation.fulfill()

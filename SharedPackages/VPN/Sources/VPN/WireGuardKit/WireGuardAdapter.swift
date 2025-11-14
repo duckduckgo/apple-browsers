@@ -157,6 +157,9 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
     /// Factory for creating packet tunnel settings generators.
     private let packetTunnelSettingsGeneratorProvider: (TunnelConfiguration, [Endpoint?]) -> PacketTunnelSettingsGenerating
 
+    /// DNS resolver used to resolve peer endpoints.
+    private let dnsResolver: DNSResolving
+
     /// Packet tunnel provider.
     private weak var packetTunnelProvider: PacketTunnelProviding?
 
@@ -253,7 +256,8 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
                 eventHandler: WireGuardAdapterEventHandling,
                 logHandler: @escaping LogHandler,
                 pathMonitorProvider: @escaping () -> PathMonitoring = { NWPathMonitor() },
-                packetTunnelSettingsGeneratorProvider: ((TunnelConfiguration, [Endpoint?]) -> PacketTunnelSettingsGenerating)? = nil) {
+                packetTunnelSettingsGeneratorProvider: ((TunnelConfiguration, [Endpoint?]) -> PacketTunnelSettingsGenerating)? = nil,
+                dnsResolver: DNSResolving = DefaultDNSResolver()) {
         Logger.networkProtectionMemory.debug("[+] WireGuardAdapter")
 
         self.packetTunnelProvider = packetTunnelProvider
@@ -264,6 +268,7 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
         self.packetTunnelSettingsGeneratorProvider = packetTunnelSettingsGeneratorProvider ?? { configuration, resolvedEndpoints in
             PacketTunnelSettingsGenerator(tunnelConfiguration: configuration, resolvedEndpoints: resolvedEndpoints)
         }
+        self.dnsResolver = dnsResolver
 
         setupLogHandler()
     }
@@ -592,7 +597,7 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
     /// - Returns: The list of resolved endpoints.
     private func resolvePeers(for tunnelConfiguration: TunnelConfiguration) throws -> [Endpoint?] {
         let endpoints = tunnelConfiguration.peers.map { $0.endpoint }
-        let resolutionResults = DNSResolver.resolveSync(endpoints: endpoints)
+        let resolutionResults = dnsResolver.resolveSync(endpoints: endpoints)
         let resolutionErrors = resolutionResults.compactMap { result -> DNSResolutionError? in
             if case .failure(let error) = result {
                 return error

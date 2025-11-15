@@ -127,7 +127,7 @@ private enum State: CustomDebugStringConvertible {
 }
 
 // swiftlint:disable:next type_body_length
-class WireGuardAdapter: WireGuardAdapterProtocol {
+final class WireGuardAdapter: WireGuardAdapterProtocol {
     public typealias LogHandler = (WireGuardLogLevel, String) -> Void
     typealias PacketTunnelSettingsGeneratorProvider = (TunnelConfiguration, [Endpoint?]) -> PacketTunnelSettingsGenerating
 
@@ -217,15 +217,15 @@ class WireGuardAdapter: WireGuardAdapterProtocol {
     /// - Parameter logHandler: a log handler closure.
 
     init(with packetTunnelProvider: PacketTunnelProviding,
-                wireGuardInterface: WireGuardGoInterface,
-                eventHandler: WireGuardAdapterEventHandling,
-                logHandler: @escaping LogHandler,
-                pathMonitorProvider: @escaping () -> PathMonitoring = { NWPathMonitor() },
-                packetTunnelSettingsGeneratorProvider: @escaping PacketTunnelSettingsGeneratorProvider = { configuration, resolvedEndpoints in
-                    PacketTunnelSettingsGenerator(tunnelConfiguration: configuration, resolvedEndpoints: resolvedEndpoints)
-                },
-                dnsResolver: DNSResolving = DefaultDNSResolver(),
-                tunnelFileDescriptorProvider: TunnelFileDescriptorProviding = UtunFileDescriptorProvider()) {
+         wireGuardInterface: WireGuardGoInterface,
+         eventHandler: WireGuardAdapterEventHandling,
+         logHandler: @escaping LogHandler,
+         pathMonitorProvider: @escaping () -> PathMonitoring = { NWPathMonitor() },
+         packetTunnelSettingsGeneratorProvider: @escaping PacketTunnelSettingsGeneratorProvider = { configuration, resolvedEndpoints in
+        PacketTunnelSettingsGenerator(tunnelConfiguration: configuration, resolvedEndpoints: resolvedEndpoints)
+    },
+         dnsResolver: DNSResolving = DefaultDNSResolver(),
+         tunnelFileDescriptorProvider: TunnelFileDescriptorProviding = UtunFileDescriptorProvider()) {
         Logger.networkProtectionMemory.debug("[+] WireGuardAdapter")
 
         self.packetTunnelProvider = packetTunnelProvider

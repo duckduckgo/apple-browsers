@@ -84,7 +84,7 @@ public final class CustomToggleControl: NSControl {
 
     // MARK: - Initialization
 
-    override init(frame frameRect: NSRect) {
+    override public init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         setup()
     }

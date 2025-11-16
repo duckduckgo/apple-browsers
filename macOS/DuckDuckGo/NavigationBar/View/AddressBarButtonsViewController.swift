@@ -27,6 +27,7 @@ import PrivacyDashboard
 import PixelKit
 import AppKitExtensions
 import AIChat
+import UIComponents
 
 protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 
@@ -101,6 +102,8 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var leadingAIChatDivider: NSImageView!
     @IBOutlet weak var trailingAIChatDivider: NSImageView!
     @IBOutlet weak var trailingStackViewTrailingViewConstraint: NSLayoutConstraint!
+    
+    private var searchModeToggleControl: CustomToggleControl?
     @IBOutlet weak var notificationAnimationView: NavigationBarBadgeAnimationView!
     @IBOutlet weak var bookmarkButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var bookmarkButtonHeightConstraint: NSLayoutConstraint!
@@ -288,6 +291,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         setupAnimationViews()
         setupNotificationAnimationView()
+        setupSearchModeToggleControl()
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkList()
         subscribeToEffectiveAppearance()
@@ -961,9 +965,13 @@ final class AddressBarButtonsViewController: NSViewController {
     private var isAskAIChatButtonExpanded: Bool = false
 
     private func updateAskAIChatButtonVisibility(isSidebarOpen: Bool? = nil) {
+        let shouldShowToggle = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        
         if isTextFieldEditorFirstResponder {
-            aiChatButton.isHidden = true
-            askAIChatButton.isHidden = !shouldShowAskAIChatButton()
+            if !shouldShowToggle {
+                aiChatButton.isHidden = true
+            }
+            askAIChatButton.isHidden = shouldShowToggle || !shouldShowAskAIChatButton()
         } else {
             // aiChatButton visibility managed in updateAIChatButtonVisibility
             askAIChatButton.isHidden = true
@@ -1407,10 +1415,18 @@ final class AddressBarButtonsViewController: NSViewController {
 
         stopAnimationsAfterFocus()
 
-        if featureFlagger.isFeatureOn(.aiChatSidebar) {
-            cancelButton.isShown = isTextFieldEditorFirstResponder
+        let shouldShowToggle = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        searchModeToggleControl?.isHidden = !shouldShowToggle
+        
+        if shouldShowToggle {
+            aiChatButton.isHidden = true
+            cancelButton.isShown = false
         } else {
-            cancelButton.isShown = isTextFieldEditorFirstResponder && !textFieldValue.isEmpty
+            if featureFlagger.isFeatureOn(.aiChatSidebar) {
+                cancelButton.isShown = isTextFieldEditorFirstResponder
+            } else {
+                cancelButton.isShown = isTextFieldEditorFirstResponder && !textFieldValue.isEmpty
+            }
         }
 
         updateImageButton()
@@ -1418,7 +1434,9 @@ final class AddressBarButtonsViewController: NSViewController {
         updatePermissionButtons()
         updateBookmarkButtonVisibility()
         updateZoomButtonVisibility()
-        updateAIChatButtonVisibility()
+        if !shouldShowToggle {
+            updateAIChatButtonVisibility()
+        }
         updateAskAIChatButtonVisibility()
         updateButtonsPosition()
     }
@@ -1591,6 +1609,38 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func setupNotificationAnimationView() {
         notificationAnimationView.alphaValue = 0.0
+    }
+    
+    private func setupSearchModeToggleControl() {
+        let toggleControl = CustomToggleControl(frame: NSRect(x: 0, y: 0, width: 72, height: 28))
+        toggleControl.translatesAutoresizingMaskIntoConstraints = false
+        
+        if let searchImage = NSImage(systemSymbolName: "magnifyingglass", accessibilityDescription: nil) {
+            toggleControl.leftImage = searchImage
+        }
+        if let aiImage = NSImage(systemSymbolName: "wand.and.stars", accessibilityDescription: nil) {
+            toggleControl.rightImage = aiImage
+        }
+        
+        toggleControl.isRightSelected = false
+        
+        toggleControl.target = self
+        toggleControl.action = #selector(searchModeToggleDidChange(_:))
+        
+        trailingButtonsContainer.addArrangedSubview(toggleControl)
+        toggleControl.isHidden = true
+        
+        NSLayoutConstraint.activate([
+            toggleControl.widthAnchor.constraint(equalToConstant: 72),
+            toggleControl.heightAnchor.constraint(equalToConstant: 28)
+        ])
+        
+        self.searchModeToggleControl = toggleControl
+    }
+    
+    @objc private func searchModeToggleDidChange(_ sender: CustomToggleControl) {
+        let mode = sender.isRightSelected ? "Duck.ai" : "Search"
+        print("🔄 Search mode toggle changed to: \(mode)")
     }
 
     private func setupAnimationViews() {

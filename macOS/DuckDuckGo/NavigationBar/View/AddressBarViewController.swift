@@ -22,6 +22,7 @@ import Combine
 import Lottie
 import Common
 import AIChat
+import UIComponents
 
 protocol AddressBarViewControllerDelegate: AnyObject {
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController)
@@ -1029,7 +1030,7 @@ extension AddressBarViewController: AddressBarTextFieldFocusDelegate {
 fileprivate extension NSView {
 
     var shouldShowArrowCursor: Bool {
-        self is NSButton || self is LottieAnimationView
+        self is NSButton || self is LottieAnimationView || self is CustomToggleControl
     }
 
 }

@@ -20,9 +20,23 @@ import Foundation
 import Network
 
 protocol PathMonitoring: AnyObject {
-    var pathUpdateHandler: ((NWPath) -> Void)? { get set }
+    var statusUpdateHandler: ((NWPath.Status) -> Void)? { get set }
     func start(queue: DispatchQueue)
     func cancel()
 }
 
-extension NWPathMonitor: PathMonitoring {}
+final class NWPathStatusMonitor: PathMonitoring {
+    private let monitor = NWPathMonitor()
+    var statusUpdateHandler: ((NWPath.Status) -> Void)?
+
+    func start(queue: DispatchQueue) {
+        monitor.pathUpdateHandler = { [weak self] path in
+            self?.statusUpdateHandler?(path.status)
+        }
+        monitor.start(queue: queue)
+    }
+
+    func cancel() {
+        monitor.cancel()
+    }
+}

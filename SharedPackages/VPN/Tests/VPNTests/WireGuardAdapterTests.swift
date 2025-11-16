@@ -334,6 +334,109 @@ final class WireGuardAdapterTests: XCTestCase {
         XCTAssertFalse(packetTunnelProvider.reasserting)
     }
 
+    func testUpdateWithReassertFalseDoesNotToggleReasserting() {
+        startAdapterSuccessfully()
+
+        let expectation = expectation(description: "Update succeeds without reassert")
+        adapter.update(tunnelConfiguration: tunnelConfiguration, reassert: false) { error in
+            XCTAssertNil(error)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 10.0)
+
+        XCTAssertFalse(packetTunnelProvider.reasserting, "Reasserting should remain false when reassert is disabled")
+        XCTAssertEqual(wireGuardInterface.setConfigCallCount, 1)
+    }
+
+    func testUpdateFailsWhenSettingsGeneratorCannotBeCreated() {
+        startAdapterSuccessfully()
+        dnsResolver.results = [.failure(DNSResolutionError(errorCode: 2, address: "example.com"))]
+
+        let expectation = expectation(description: "Update fails with DNS error")
+        adapter.update(tunnelConfiguration: tunnelConfiguration, reassert: true) { error in
+            guard case .dnsResolution = error else {
+                XCTFail("Expected dnsResolution error, got \(String(describing: error))")
+                return
+            }
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 10.0)
+    }
+
+    #if os(iOS)
+    func testPathStatusTransitionsThroughTemporaryShutdownAndRestart() {
+        startAdapterSuccessfully()
+
+        adapter.handlePathStatusChange(.satisfied)
+        XCTAssertEqual(settingsGenerator.endpointUapiConfigurationCallCount, 1)
+        XCTAssertEqual(wireGuardInterface.setConfigCallCount, 1)
+        XCTAssertEqual(wireGuardInterface.disableRoamingCallCount, 2)
+        XCTAssertEqual(wireGuardInterface.bumpSocketsCallCount, 1)
+
+        adapter.handlePathStatusChange(.unsatisfied)
+        XCTAssertEqual(wireGuardInterface.turnOffCallCount, 1)
+
+        adapter.handlePathStatusChange(.satisfied)
+        XCTAssertEqual(wireGuardInterface.turnOnCallCount, 2)
+        XCTAssertEqual(packetTunnelProvider.setTunnelNetworkSettingsCallCount, 2)
+        XCTAssertTrue(eventHandler.handledEvents.isEmpty)
+    }
+
+    func testTemporaryShutdownRecoveryEvents() {
+        startAdapterSuccessfully()
+        adapter.handlePathStatusChange(.unsatisfied)
+
+        packetTunnelProvider.setTunnelNetworkSettingsError = TestError.someError
+        adapter.handlePathStatusChange(.satisfied)
+        XCTAssertEqual(eventHandler.handledEvents.count, 1)
+        if case .endTemporaryShutdownStateAttemptFailure(let error) = eventHandler.handledEvents[0] {
+            XCTAssertTrue(error is TestError)
+        } else {
+            XCTFail("Expected attempt failure event")
+        }
+
+        adapter.handlePathStatusChange(.satisfied)
+        XCTAssertEqual(eventHandler.handledEvents.count, 2)
+        if case .endTemporaryShutdownStateRecoveryFailure(let error) = eventHandler.handledEvents[1] {
+            XCTAssertTrue(error is TestError)
+        } else {
+            XCTFail("Expected recovery failure event")
+        }
+
+        packetTunnelProvider.setTunnelNetworkSettingsError = nil
+        adapter.handlePathStatusChange(.satisfied)
+        XCTAssertEqual(eventHandler.handledEvents.count, 3)
+        if case .endTemporaryShutdownStateRecoverySuccess = eventHandler.handledEvents[2] {
+            // success
+        } else {
+            XCTFail("Expected recovery success event")
+        }
+
+        XCTAssertEqual(wireGuardInterface.turnOnCallCount, 2)
+    }
+
+    func testUpdateWhileTemporaryShutdownDoesNotRestartBackend() {
+        startAdapterSuccessfully()
+        adapter.handlePathStatusChange(.unsatisfied)
+
+        let expectation = expectation(description: "Update completes while temporary shutdown")
+        adapter.update(tunnelConfiguration: tunnelConfiguration, reassert: true) { error in
+            XCTAssertNil(error)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 10.0)
+
+        XCTAssertEqual(wireGuardInterface.setConfigCallCount, 0, "Backend should not receive config while offline")
+        XCTAssertEqual(wireGuardInterface.turnOnCallCount, 1, "Backend should not restart during update")
+    }
+    #elseif os(macOS)
+    func testMacPathUpdateBumpsSockets() {
+        startAdapterSuccessfully()
+        adapter.handlePathStatusChange(.satisfied)
+        XCTAssertEqual(wireGuardInterface.bumpSocketsCallCount, 1)
+    }
+    #endif
+
     private static func makePublicKey() -> PublicKey {
         let hexKey = String(repeating: "ab", count: 32) // 32 bytes -> 64 hex characters
         return PublicKey(hexKey: hexKey)!
@@ -446,7 +549,7 @@ private final class MockEventHandler: WireGuardAdapterEventHandling {
 }
 
 private final class MockPathMonitor: PathMonitoring {
-    var pathUpdateHandler: ((Network.NWPath) -> Void)?
+    var statusUpdateHandler: ((Network.NWPath.Status) -> Void)?
     private(set) var startCallCount = 0
     private(set) var cancelCallCount = 0
 
@@ -466,6 +569,7 @@ private final class MockPacketTunnelSettingsGenerator: PacketTunnelSettingsGener
 
     private(set) var generateNetworkSettingsCallCount = 0
     private(set) var uapiConfigurationCallCount = 0
+    private(set) var endpointUapiConfigurationCallCount = 0
 
     func uapiConfiguration() -> (String, [EndpointResolutionResult?]) {
         uapiConfigurationCallCount += 1
@@ -473,7 +577,8 @@ private final class MockPacketTunnelSettingsGenerator: PacketTunnelSettingsGener
     }
 
     func endpointUapiConfiguration() -> (String, [EndpointResolutionResult?]) {
-        endpointUapiConfigurationReturnValue
+        endpointUapiConfigurationCallCount += 1
+        return endpointUapiConfigurationReturnValue
     }
 
     func generateNetworkSettings() -> NEPacketTunnelNetworkSettings {

@@ -46,12 +46,10 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
         setupUI()
         setupTextViewDelegate()
     }
-    
-    override func viewDidLayout() {
-        super.viewDidLayout()
-        #if DEBUG
-        print("AIChatOmnibarTextContainerViewController: view frame = \(view.frame), bounds = \(view.bounds)")
-        #endif
+
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        scrollView.documentView = textView
     }
 
     private func setupUI() {
@@ -69,7 +67,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder
-        scrollView.documentView = textView
         containerView.addSubview(scrollView)
 
         textView.isEditable = true
@@ -103,8 +100,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
     }
 
     private func setupTextViewDelegate() {
-        textView.delegate = self
-        
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(textDidChange(_:)),
@@ -134,8 +129,4 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
     func cleanup() {
         backgroundView.stopListening()
     }
-}
-
-// MARK: - NSTextViewDelegate
-extension AIChatOmnibarTextContainerViewController: NSTextViewDelegate {
 }

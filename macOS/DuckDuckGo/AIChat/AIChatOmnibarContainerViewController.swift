@@ -32,7 +32,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     var themeUpdateCancellable: AnyCancellable?
 
     required init?(coder: NSCoder) {
-        fatalError("SuggestionViewController: Bad initializer")
+        fatalError("AIChatOmnibarContainerViewController: Bad initializer")
     }
 
     required init(themeManager: ThemeManaging, omnibarController: AIChatOmnibarController) {
@@ -56,9 +56,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     override func viewDidLayout() {
         super.viewDidLayout()
         applyTopClipMask()
-#if DEBUG
-        print("AIChatOmnibarContainerViewController: view frame = \(view.frame), bounds = \(view.bounds)")
-#endif
     }
 
     private func applyTopClipMask() {

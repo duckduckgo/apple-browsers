@@ -53,9 +53,6 @@ final class MouseBlockingBackgroundView: NSView {
     func startListening() {
         guard localMonitor == nil else { return }
         setupEventBlocking()
-        #if DEBUG
-        print("MouseBlockingBackgroundView: Started listening to events")
-        #endif
     }
     
     /// Stops listening to mouse events. Call this when the view is no longer visible.
@@ -63,9 +60,6 @@ final class MouseBlockingBackgroundView: NSView {
         guard let monitor = localMonitor else { return }
         NSEvent.removeMonitor(monitor)
         localMonitor = nil
-        #if DEBUG
-        print("MouseBlockingBackgroundView: Stopped listening to events")
-        #endif
     }
     
     private func setupEventBlocking() {
@@ -86,19 +80,12 @@ final class MouseBlockingBackgroundView: NSView {
                 let locationInContentView = contentView.convert(locationInWindow, from: nil)
                 if let topHitView = contentView.hitTest(locationInContentView) {
                     if topHitView != self && !topHitView.isDescendant(of: self) {
-                        #if DEBUG
-                        print("MouseBlockingBackgroundView: View on top detected, passing event through")
-                        #endif
                         return event
                     }
                 }
             }
             
             if let hitView = self.hitTest(locationInView), hitView != self {
-                #if DEBUG
-                print("MouseBlockingBackgroundView: Forwarding event to \(hitView)")
-                #endif
-                
                 switch event.type {
                 case .leftMouseDown:
                     if hitView.acceptsFirstResponder {
@@ -129,10 +116,7 @@ final class MouseBlockingBackgroundView: NSView {
                     break
                 }
             }
-            
-            #if DEBUG
-            print("MouseBlockingBackgroundView: BLOCKING event \(event.type.rawValue) from reaching webview")
-            #endif
+
             return nil
         }
     }
@@ -142,69 +126,36 @@ final class MouseBlockingBackgroundView: NSView {
     }
     
     override func mouseDown(with event: NSEvent) {
-        #if DEBUG
-        print("MouseBlockingBackgroundView: mouseDown consumed")
-        #endif
     }
     
     override func mouseUp(with event: NSEvent) {
-        #if DEBUG
-        print("MouseBlockingBackgroundView: mouseUp consumed")
-        #endif
     }
     
     override func rightMouseDown(with event: NSEvent) {
-        #if DEBUG
-        print("MouseBlockingBackgroundView: rightMouseDown consumed")
-        #endif
     }
     
     override func rightMouseUp(with event: NSEvent) {
-        #if DEBUG
-        print("MouseBlockingBackgroundView: rightMouseUp consumed")
-        #endif
     }
     
     override func otherMouseDown(with event: NSEvent) {
-        #if DEBUG
-        print("MouseBlockingBackgroundView: otherMouseDown consumed")
-        #endif
     }
     
     override func otherMouseUp(with event: NSEvent) {
-        #if DEBUG
-        print("MouseBlockingBackgroundView: otherMouseUp consumed")
-        #endif
     }
     
     override func mouseMoved(with event: NSEvent) {
-        #if DEBUG
-        print("MouseBlockingBackgroundView: mouseMoved consumed")
-        #endif
     }
     
     override func mouseDragged(with event: NSEvent) {
-        #if DEBUG
-        print("MouseBlockingBackgroundView: mouseDragged consumed")
-        #endif
     }
     
     override func rightMouseDragged(with event: NSEvent) {
-        #if DEBUG
-        print("MouseBlockingBackgroundView: rightMouseDragged consumed")
-        #endif
     }
     
     override func otherMouseDragged(with event: NSEvent) {
-        #if DEBUG
-        print("MouseBlockingBackgroundView: otherMouseDragged consumed")
-        #endif
     }
     
     override func scrollWheel(with event: NSEvent) {
-        #if DEBUG
-        print("MouseBlockingBackgroundView: scrollWheel consumed")
-        #endif
     }
     
     override func hitTest(_ point: NSPoint) -> NSView? {

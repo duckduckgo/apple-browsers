@@ -24,58 +24,58 @@ import Cocoa
 /// Uses a local event monitor to intercept events and manually forwards them to subviews.
 /// This prevents events from ever reaching views behind this one (like a webview).
 final class MouseBlockingBackgroundView: NSView {
-    
+
     private var localMonitor: Any?
-    
+
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
     }
-    
+
     required init?(coder: NSCoder) {
         super.init(coder: coder)
     }
-    
+
     deinit {
         stopListening()
     }
-    
+
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        
+
         if window != nil {
             startListening()
         } else {
             stopListening()
         }
     }
-    
+
     /// Starts listening to mouse events. Call this when the view becomes visible.
     func startListening() {
         guard localMonitor == nil else { return }
         setupEventBlocking()
     }
-    
+
     /// Stops listening to mouse events. Call this when the view is no longer visible.
     func stopListening() {
         guard let monitor = localMonitor else { return }
         NSEvent.removeMonitor(monitor)
         localMonitor = nil
     }
-    
+
     private func setupEventBlocking() {
         // Use a LOCAL monitor to intercept ALL events and manually dispatch to our subviews
         // This prevents events from reaching the webview behind us
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseUp, .rightMouseDown, .rightMouseUp, .otherMouseDown, .otherMouseUp, .mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged, .scrollWheel]) { [weak self] event -> NSEvent? in
             guard let self = self else { return event }
-            
+
             guard !self.isHidden else { return event }
 
             guard let window = self.window, event.window === window, (window.isKeyWindow || window.isMainWindow) else { return event }
             let locationInWindow = event.locationInWindow
             let locationInView = self.convert(locationInWindow, from: nil)
-            
+
             guard self.bounds.contains(locationInView) else { return event }
-            
+
             if let contentView = window.contentView {
                 let locationInContentView = contentView.convert(locationInWindow, from: nil)
                 if let topHitView = contentView.hitTest(locationInContentView) {
@@ -84,7 +84,7 @@ final class MouseBlockingBackgroundView: NSView {
                     }
                 }
             }
-            
+
             if let hitView = self.hitTest(locationInView), hitView != self {
                 switch event.type {
                 case .leftMouseDown:
@@ -120,44 +120,44 @@ final class MouseBlockingBackgroundView: NSView {
             return nil
         }
     }
-    
+
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
         return true
     }
-    
+
     override func mouseDown(with event: NSEvent) {
     }
-    
+
     override func mouseUp(with event: NSEvent) {
     }
-    
+
     override func rightMouseDown(with event: NSEvent) {
     }
-    
+
     override func rightMouseUp(with event: NSEvent) {
     }
-    
+
     override func otherMouseDown(with event: NSEvent) {
     }
-    
+
     override func otherMouseUp(with event: NSEvent) {
     }
-    
+
     override func mouseMoved(with event: NSEvent) {
     }
-    
+
     override func mouseDragged(with event: NSEvent) {
     }
-    
+
     override func rightMouseDragged(with event: NSEvent) {
     }
-    
+
     override func otherMouseDragged(with event: NSEvent) {
     }
-    
+
     override func scrollWheel(with event: NSEvent) {
     }
-    
+
     override func hitTest(_ point: NSPoint) -> NSView? {
         for subview in subviews.reversed() {
             if !subview.isHidden {
@@ -167,11 +167,11 @@ final class MouseBlockingBackgroundView: NSView {
                 }
             }
         }
-        
+
         if bounds.contains(point) {
             return self
         }
-        
+
         return nil
     }
 }

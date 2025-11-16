@@ -24,6 +24,15 @@ import Cocoa
 
 public final class CustomToggleControl: NSControl {
 
+    // MARK: - Key Code Constants
+    
+    private enum KeyCode {
+        static let space: UInt16 = 49
+        static let `return`: UInt16 = 36
+        static let leftArrow: UInt16 = 123
+        static let rightArrow: UInt16 = 124
+    }
+
     // MARK: - Properties
 
     public var leftImage: NSImage? {
@@ -251,19 +260,20 @@ public final class CustomToggleControl: NSControl {
     public override var canBecomeKeyView: Bool { true }
 
     public override func keyDown(with event: NSEvent) {
-        if event.keyCode == 49 { // Space
+        switch event.keyCode {
+        case KeyCode.space:
             isRightSelected.toggle()
-        } else if event.keyCode == 36 { // Return
+        case KeyCode.return:
             isRightSelected.toggle()
             // Move to previous key view
             if let previousKeyView = self.previousKeyView {
                 window?.makeFirstResponder(previousKeyView)
             }
-        } else if event.keyCode == 123 { // Left arrow
+        case KeyCode.leftArrow:
             isRightSelected = false
-        } else if event.keyCode == 124 { // Right arrow
+        case KeyCode.rightArrow:
             isRightSelected = true
-        } else {
+        default:
             super.keyDown(with: event)
         }
     }
@@ -298,6 +308,10 @@ public final class CustomToggleControl: NSControl {
             userInfo: nil
         )
         addTrackingArea(trackingArea)
+    }
+
+    deinit {
+        animationTimer?.invalidate()
     }
 }
 

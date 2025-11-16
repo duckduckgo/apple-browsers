@@ -144,6 +144,10 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     
     private let featureFlagger: FeatureFlagger
     
+    private var isAIChatOmnibarEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+    }
+    
     init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
     }
@@ -180,8 +184,6 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     }
 
     func addressBarTopPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
-        let isAIChatOmnibarEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
-        
         switch type {
         case .default:
             if focused {
@@ -199,8 +201,6 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     }
 
     func addressBarBottomPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
-        let isAIChatOmnibarEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
-        
         switch type {
         case .default:
             if focused {

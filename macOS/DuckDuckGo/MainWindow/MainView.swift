@@ -148,7 +148,7 @@ final class MainView: NSView {
 
         aiChatOmnibarContainerWidthConstraint = aiChatOmnibarContainerView.widthAnchor.constraint(lessThanOrEqualToConstant: 832)
         NSLayoutConstraint.activate([
-			aiChatOmnibarContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor, constant: -15),
+            aiChatOmnibarContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor, constant: -15),
             aiChatOmnibarContainerView.centerXAnchor.constraint(equalTo: navigationBarContainerView.centerXAnchor),
             aiChatOmnibarContainerView.heightAnchor.constraint(equalToConstant: Constants.aiChatOmnibarContainerHeight),
             aiChatOmnibarContainerWidthConstraint,
@@ -227,10 +227,10 @@ final class MainView: NSView {
         }
 
         menu.insertItem(NSMenuItem(title: UserText.mainMenuFileSaveAs, action: #selector(MainViewController.saveAs), representedObject: hudView)
-                            .withAccessibilityIdentifier("PDFContextMenu.saveAs"),
+            .withAccessibilityIdentifier("PDFContextMenu.saveAs"),
                         at: insertionIdx)
         menu.insertItem(NSMenuItem(title: UserText.printMenuItem, action: #selector(MainViewController.printWebView), representedObject: hudView)
-                            .withAccessibilityIdentifier("PDFContextMenu.print"),
+            .withAccessibilityIdentifier("PDFContextMenu.print"),
                         at: insertionIdx)
     }
 
@@ -292,23 +292,23 @@ final class MainView: NSView {
 
     func setupAIChatOmnibarTextContainerConstraints(addressBarStack: NSView) {
         aiChatOmnibarTextContainerView.translatesAutoresizingMaskIntoConstraints = false
-        
+
         NSLayoutConstraint.activate([
-			aiChatOmnibarTextContainerView.topAnchor.constraint(equalTo: addressBarStack.topAnchor, constant: 5),
-			aiChatOmnibarTextContainerView.leadingAnchor.constraint(equalTo: addressBarStack.leadingAnchor, constant: 10),
-			aiChatOmnibarTextContainerView.trailingAnchor.constraint(equalTo: addressBarStack.trailingAnchor, constant: -150),
+            aiChatOmnibarTextContainerView.topAnchor.constraint(equalTo: addressBarStack.topAnchor, constant: 5),
+            aiChatOmnibarTextContainerView.leadingAnchor.constraint(equalTo: addressBarStack.leadingAnchor, constant: 10),
+            aiChatOmnibarTextContainerView.trailingAnchor.constraint(equalTo: addressBarStack.trailingAnchor, constant: -150),
         ])
-		
-		aiChatOmnibarTextContainerBottomConstraint.constant = -5
+
+        aiChatOmnibarTextContainerBottomConstraint.constant = -5
     }
-	
-	func setupAIChatOmnibarContainerConstraints(addressBarStack: NSView) {
-		aiChatOmnibarContainerWidthConstraint.isActive = false
-		NSLayoutConstraint.activate([
-			aiChatOmnibarContainerView.leadingAnchor.constraint(equalTo: addressBarStack.leadingAnchor),
-			aiChatOmnibarContainerView.trailingAnchor.constraint(equalTo: addressBarStack.trailingAnchor),
-		])
-	}
+
+    func setupAIChatOmnibarContainerConstraints(addressBarStack: NSView) {
+        aiChatOmnibarContainerWidthConstraint.isActive = false
+        NSLayoutConstraint.activate([
+            aiChatOmnibarContainerView.leadingAnchor.constraint(equalTo: addressBarStack.leadingAnchor),
+            aiChatOmnibarContainerView.trailingAnchor.constraint(equalTo: addressBarStack.trailingAnchor),
+        ])
+    }
 
     // MARK: - NSDraggingDestination
 

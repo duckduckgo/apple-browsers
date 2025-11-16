@@ -21,6 +21,7 @@ import Combine
 import AppKit
 import DesignResourcesKit
 import BrowserServicesKit
+import FeatureFlags
 
 protocol ThemeManaging {
     var theme: ThemeStyleProviding { get }
@@ -30,15 +31,17 @@ protocol ThemeManaging {
 final class ThemeManager: ObservableObject, ThemeManaging {
     private var cancellables = Set<AnyCancellable>()
     private var appearancePreferences: AppearancePreferences
+    private let featureFlagger: FeatureFlagger
     @Published private(set) var theme: ThemeStyleProviding
 
     var themePublisher: Published<any ThemeStyleProviding>.Publisher {
         $theme
     }
 
-    init(appearancePreferences: AppearancePreferences, internalUserDecider: InternalUserDecider) {
+    init(appearancePreferences: AppearancePreferences, internalUserDecider: InternalUserDecider, featureFlagger: FeatureFlagger) {
         self.appearancePreferences = appearancePreferences
-        self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName)
+        self.featureFlagger = featureFlagger
+        self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName, featureFlagger: featureFlagger)
 
         subscribeToThemeNameChanges(appearancePreferences: appearancePreferences)
         subscribeToInternalUserChanges(internalUserDecider: internalUserDecider)
@@ -71,7 +74,7 @@ private extension ThemeManager {
         DesignSystemPalette.current = themeName.designColorPalette
 
         /// Relay the change to all of our observers
-        theme = ThemeStyle.buildThemeStyle(themeName: themeName)
+        theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: featureFlagger)
     }
 
     func resetThemeNameIfNeeded(isInternalUser: Bool) {

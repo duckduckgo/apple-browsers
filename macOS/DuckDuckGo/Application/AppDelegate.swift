@@ -694,7 +694,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
         self.autoconsentDailyStats = AutoconsentDailyStats(keyValueStore: keyValueStore, featureFlagger: featureFlagger)
 
-        themeManager = ThemeManager(appearancePreferences: appearancePreferences, internalUserDecider: internalUserDecider)
+        themeManager = ThemeManager(appearancePreferences: appearancePreferences, internalUserDecider: internalUserDecider, featureFlagger: featureFlagger)
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {

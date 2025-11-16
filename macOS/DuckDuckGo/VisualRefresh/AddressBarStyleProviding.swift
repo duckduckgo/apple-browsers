@@ -18,10 +18,12 @@
 
 import AppKit
 import DesignResourcesKitIcons
+import FeatureFlags
 import Foundation
+import BrowserServicesKit
 
 protocol AddressBarStyleProviding {
-    func navigationBarHeight(for type: AddressBarSizeClass) -> CGFloat
+    func navigationBarHeight(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
     func addressBarTopPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
     func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat
@@ -85,7 +87,7 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
     let suggestionHighlightCornerRadius: CGFloat = 3.0
     let shouldLeaveBottomPaddingInSuggestions: Bool = true
 
-    func navigationBarHeight(for type: AddressBarSizeClass) -> CGFloat {
+    func navigationBarHeight(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
         switch type {
         case .default: return navigationBarHeightForDefault
         case .homePage: return navigationBarHeightForHomePage
@@ -130,11 +132,21 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     private let navigationBarHeightForHomePage: CGFloat = 52
     private let navigationBarHeightForPopUpWindow: CGFloat = 42
     private let addressBarTopPaddingForDefault: CGFloat = 7
+    private let addressBarTopPaddingForDefaultFocusedWithAIChat: CGFloat = 2
     private let addressBarTopPaddingForHomePage: CGFloat = 7
+    private let addressBarTopPaddingForHomePageFocusedWithAIChat: CGFloat = 2
     private let addressBarTopPaddingForPopUpWindow: CGFloat = 7
     private let addressBarBottomPaddingForDefault: CGFloat = 7
+    private let addressBarBottomPaddingForDefaultFocusedWithAIChat: CGFloat = 2
     private let addressBarBottomPaddingForHomePage: CGFloat = 7
+    private let addressBarBottomPaddingForHomePageFocusedWithAIChat: CGFloat = 2
     private let addressBarBottomPaddingForPopUpWindow: CGFloat = 7
+    
+    private let featureFlagger: FeatureFlagger
+    
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
+    }
 
     let defaultAddressBarFontSize: CGFloat = 13
     let newTabOrHomePageAddressBarFontSize: CGFloat = 13
@@ -159,7 +171,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     let suggestionHighlightCornerRadius: CGFloat = 6.0
     let shouldLeaveBottomPaddingInSuggestions: Bool = true
 
-    func navigationBarHeight(for type: AddressBarSizeClass) -> CGFloat {
+    func navigationBarHeight(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
         switch type {
         case .default: return navigationBarHeightForDefault
         case .homePage: return navigationBarHeightForHomePage
@@ -169,16 +181,32 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
 
     func addressBarTopPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
         switch type {
-        case .default: return focused ? addressBarTopPaddingForDefault - 1 : addressBarTopPaddingForDefault
-        case .homePage: return focused ? addressBarTopPaddingForHomePage - 1 : addressBarTopPaddingForHomePage
+        case .default:
+            if focused && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+                return addressBarTopPaddingForDefaultFocusedWithAIChat
+            }
+            return focused ? addressBarTopPaddingForDefault - 1 : addressBarTopPaddingForDefault
+        case .homePage:
+            if focused && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+                return addressBarTopPaddingForHomePageFocusedWithAIChat
+            }
+            return focused ? addressBarTopPaddingForHomePage - 1 : addressBarTopPaddingForHomePage
         case .popUpWindow: return addressBarTopPaddingForPopUpWindow
         }
     }
 
     func addressBarBottomPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
         switch type {
-        case .default: return focused ? addressBarBottomPaddingForDefault - 1 : addressBarBottomPaddingForDefault
-        case .homePage: return focused ? addressBarBottomPaddingForHomePage - 1 : addressBarBottomPaddingForHomePage
+        case .default:
+            if focused && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+                return addressBarBottomPaddingForDefaultFocusedWithAIChat
+            }
+            return focused ? addressBarBottomPaddingForDefault - 1 : addressBarBottomPaddingForDefault
+        case .homePage:
+            if focused && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+                return addressBarBottomPaddingForHomePageFocusedWithAIChat
+            }
+            return focused ? addressBarBottomPaddingForHomePage - 1 : addressBarBottomPaddingForHomePage
         case .popUpWindow: return addressBarBottomPaddingForPopUpWindow
         }
     }

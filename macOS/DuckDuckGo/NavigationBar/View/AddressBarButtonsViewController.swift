@@ -185,6 +185,10 @@ final class AddressBarButtonsViewController: NSViewController {
         didSet {
             updateButtons()
             stopHighlightingPrivacyShield()
+
+            if !isTextFieldEditorFirstResponder {
+                resetSearchModeToggle()
+            }
         }
     }
     var textFieldValue: AddressBarTextField.Value? {
@@ -1318,6 +1322,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @IBAction func cancelButtonAction(_ sender: Any) {
+        resetSearchModeToggle()
         delegate?.addressBarButtonsViewControllerCancelButtonClicked(self)
     }
 
@@ -1646,6 +1651,10 @@ final class AddressBarButtonsViewController: NSViewController {
     @objc private func searchModeToggleDidChange(_ sender: CustomToggleControl) {
         let isAIChatMode = sender.isRightSelected
         delegate?.addressBarButtonsViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
+    }
+    
+    func resetSearchModeToggle() {
+        searchModeToggleControl?.isRightSelected = false
     }
 
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {

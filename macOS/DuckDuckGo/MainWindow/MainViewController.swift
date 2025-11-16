@@ -457,6 +457,7 @@ final class MainViewController: NSViewController {
         } else {
             aiChatOmnibarContainerViewController.cleanup()
             aiChatOmnibarTextContainerViewController.cleanup()
+            navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.resetSearchModeToggle()
         }
     }
 
@@ -1031,6 +1032,7 @@ extension MainViewController: BrowserTabViewControllerDelegate {
 extension MainViewController: AIChatOmnibarControllerDelegate {
     func aiChatOmnibarControllerDidSubmit(_ controller: AIChatOmnibarController) {
         updateAIChatOmnibarContainerVisibility(visible: false)
+        navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.resetSearchModeToggle()
     }
 }
 

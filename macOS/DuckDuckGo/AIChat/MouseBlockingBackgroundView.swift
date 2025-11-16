@@ -16,15 +16,12 @@
 //  limitations under the License.
 //
 
-
-
 import Cocoa
 
 /// A view that aggressively blocks ALL mouse events from reaching views behind it.
 /// Uses a local event monitor to intercept events and manually forwards them to subviews.
 /// This prevents events from ever reaching views behind this one (like a webview).
 final class MouseBlockingBackgroundView: NSView {
-
     private var localMonitor: Any?
 
     override init(frame frameRect: NSRect) {
@@ -175,4 +172,3 @@ final class MouseBlockingBackgroundView: NSView {
         return nil
     }
 }
-

@@ -20,55 +20,55 @@ import Cocoa
 import Combine
 
 final class AIChatOmnibarTextContainerViewController: NSViewController {
-    
+
     private let backgroundView = MouseBlockingBackgroundView()
     private let containerView = NSView()
     private let scrollView = NSScrollView()
     private let textView = NSTextView()
     private let omnibarController: AIChatOmnibarController
     private var cancellables = Set<AnyCancellable>()
-    
+
     init(omnibarController: AIChatOmnibarController) {
         self.omnibarController = omnibarController
         super.init(nibName: nil, bundle: nil)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     override func loadView() {
         view = MouseOverView()
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupTextViewDelegate()
     }
-    
+
     override func viewWillAppear() {
         super.viewWillAppear()
         scrollView.documentView = textView
     }
-    
+
     private func setupUI() {
         backgroundView.translatesAutoresizingMaskIntoConstraints = false
         backgroundView.wantsLayer = true
         let colorsProvider = NSApp.delegateTyped.themeManager.theme.colorsProvider
         backgroundView.layer?.backgroundColor = colorsProvider.suggestionsBackgroundColor.cgColor
         view.addSubview(backgroundView)
-        
+
         containerView.translatesAutoresizingMaskIntoConstraints = false
         backgroundView.addSubview(containerView)
-        
+
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder
         containerView.addSubview(scrollView)
-        
+
         textView.isEditable = true
         textView.isSelectable = true
         textView.font = .systemFont(ofSize: 13)
@@ -80,25 +80,25 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
         textView.autoresizingMask = [.width]
         textView.textContainer?.containerSize = NSSize(width: scrollView.contentSize.width, height: .greatestFiniteMagnitude)
         textView.textContainer?.widthTracksTextView = true
-        
+
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            
+
             containerView.topAnchor.constraint(equalTo: backgroundView.topAnchor),
             containerView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
             containerView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
-            
+
             scrollView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 10),
             scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 10),
             scrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -10),
             scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -10),
         ])
     }
-    
+
     private func setupTextViewDelegate() {
         NotificationCenter.default.addObserver(
             self,
@@ -106,7 +106,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
             name: NSText.didChangeNotification,
             object: textView
         )
-        
+
         omnibarController.$currentText
             .receive(on: DispatchQueue.main)
             .sink { [weak self] newText in
@@ -117,15 +117,15 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
             }
             .store(in: &cancellables)
     }
-    
+
     @objc func textDidChange(_ notification: Notification) {
         omnibarController.updateText(textView.string)
     }
-    
+
     func startEventMonitoring() {
         backgroundView.startListening()
     }
-    
+
     func cleanup() {
         backgroundView.stopListening()
     }

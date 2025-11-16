@@ -28,10 +28,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
     private let omnibarController: AIChatOmnibarController
     private var cancellables = Set<AnyCancellable>()
 
-    static func create(omnibarController: AIChatOmnibarController) -> AIChatOmnibarTextContainerViewController {
-        return AIChatOmnibarTextContainerViewController(omnibarController: omnibarController)
-    }
-    
     init(omnibarController: AIChatOmnibarController) {
         self.omnibarController = omnibarController
         super.init(nibName: nil, bundle: nil)

@@ -36,6 +36,7 @@ protocol AddressBarButtonsViewControllerDelegate: AnyObject {
     func addressBarButtonsViewControllerHideAskAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
+    func addressBarButtonsViewControllerSearchModeToggleChanged(_ addressBarButtonsViewController: AddressBarButtonsViewController, isAIChatMode: Bool)
 }
 
 final class AddressBarButtonsViewController: NSViewController {
@@ -1641,8 +1642,8 @@ final class AddressBarButtonsViewController: NSViewController {
     }
     
     @objc private func searchModeToggleDidChange(_ sender: CustomToggleControl) {
-        let mode = sender.isRightSelected ? "Duck.ai" : "Search"
-        print("Search mode toggle changed to: \(mode)")
+        let isAIChatMode = sender.isRightSelected
+        delegate?.addressBarButtonsViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
     }
     
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {

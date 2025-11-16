@@ -44,6 +44,8 @@ final class MainViewController: NSViewController {
     let findInPageViewController: FindInPageViewController
     let fireViewController: FireViewController
     let bookmarksBarViewController: BookmarksBarViewController
+    let aiChatOmnibarContainerViewController: AIChatOmnibarContainerViewController
+    let aiChatOmnibarTextContainerViewController: AIChatOmnibarTextContainerViewController
     let featureFlagger: FeatureFlagger
     let fireCoordinator: FireCoordinator
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
@@ -256,6 +258,8 @@ final class MainViewController: NSViewController {
             bookmarkManager: bookmarkManager,
             dragDropManager: bookmarkDragDropManager
         )
+        aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(themeManager: themeManager)
+        aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController.create()
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
 
         super.init(nibName: nil, bundle: nil)
@@ -272,6 +276,8 @@ final class MainViewController: NSViewController {
         addAndLayoutChild(browserTabViewController, into: mainView.webContainerView)
         addAndLayoutChild(findInPageViewController, into: mainView.findInPageContainerView)
         addAndLayoutChild(fireViewController, into: mainView.fireContainerView)
+        addAndLayoutChild(aiChatOmnibarContainerViewController, into: mainView.aiChatOmnibarContainerView)
+        addAndLayoutChild(aiChatOmnibarTextContainerViewController, into: mainView.aiChatOmnibarTextContainerView)
     }
 
     override func viewDidLoad() {
@@ -286,6 +292,9 @@ final class MainViewController: NSViewController {
         mainView.findInPageContainerView.applyDropShadow()
 
         view.registerForDraggedTypes([.URL, .fileURL])
+        
+        mainView.setupAIChatOmnibarTextContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
+		mainView.setupAIChatOmnibarContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
     }
 
     override func viewWillAppear() {
@@ -403,6 +412,8 @@ final class MainViewController: NSViewController {
         findInPageViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         fireViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         bookmarksBarViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        aiChatOmnibarContainerViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        aiChatOmnibarTextContainerViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
 #endif
     }
 
@@ -424,6 +435,20 @@ final class MainViewController: NSViewController {
 
     func toggleBookmarksBarVisibility() {
         updateBookmarksBarViewVisibility(visible: !isInPopUpWindow && !mainView.isBookmarksBarShown)
+    }
+
+    func updateAIChatOmnibarContainerVisibility(visible: Bool) {
+        mainView.isAIChatOmnibarContainerShown = visible
+        
+        navigationBarViewController.addressBarViewController?.setAIChatOmnibarVisible(visible)
+        
+        if visible {
+            aiChatOmnibarContainerViewController.startEventMonitoring()
+            aiChatOmnibarTextContainerViewController.startEventMonitoring()
+        } else {
+            aiChatOmnibarContainerViewController.cleanup()
+            aiChatOmnibarTextContainerViewController.cleanup()
+        }
     }
 
     // Can be updated via keyboard shortcut so needs to be internal visibility

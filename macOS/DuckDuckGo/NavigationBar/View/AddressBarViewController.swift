@@ -26,6 +26,7 @@ import UIComponents
 
 protocol AddressBarViewControllerDelegate: AnyObject {
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController)
+    func addressBarViewControllerSearchModeToggleChanged(_ addressBarViewController: AddressBarViewController, isAIChatMode: Bool)
 }
 
 final class AddressBarViewController: NSViewController {
@@ -118,6 +119,14 @@ final class AddressBarViewController: NSViewController {
         didSet {
             updateView()
             suggestionContainerViewModel.isHomePage = isHomePage
+        }
+    }
+
+    private(set) var isAIChatOmnibarVisible = false {
+        didSet {
+            if isFirstResponder {
+                updateShadowView(addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
+            }
         }
     }
 
@@ -461,9 +470,10 @@ final class AddressBarViewController: NSViewController {
     private func subscribeForShadowViewUpdates() {
         addressBarTextField.isSuggestionWindowVisiblePublisher
             .sink { [weak self] isSuggestionsWindowVisible in
-                self?.updateShadowView(isSuggestionsWindowVisible)
-                if isSuggestionsWindowVisible {
-                    self?.layoutShadowView()
+                guard let self else { return }
+                self.updateShadowView(isSuggestionsWindowVisible || self.isAIChatOmnibarVisible)
+                if isSuggestionsWindowVisible || self.isAIChatOmnibarVisible {
+                    self.layoutShadowView()
                 }
             }
             .store(in: &cancellables)
@@ -637,7 +647,7 @@ final class AddressBarViewController: NSViewController {
             return
         }
         if shadowView.superview == nil {
-            updateShadowView(addressBarTextField.isSuggestionWindowVisible)
+            updateShadowView(addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
             view.window?.contentView?.addSubview(shadowView)
             layoutShadowView()
         }
@@ -892,6 +902,15 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         addressBarTextField.hideSuggestionWindow()
         addressBarTextField.escapeKeyDown()
+    }
+
+    func addressBarButtonsViewControllerSearchModeToggleChanged(_ addressBarButtonsViewController: AddressBarButtonsViewController, isAIChatMode: Bool) {
+        isAIChatOmnibarVisible = isAIChatMode
+        delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
+    }
+
+    func setAIChatOmnibarVisible(_ visible: Bool) {
+        isAIChatOmnibarVisible = visible
     }
 }
 

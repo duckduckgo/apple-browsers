@@ -35,6 +35,7 @@ final class WireGuardAdapterTests: XCTestCase {
     private var tunnelFileDescriptorProvider: MockTunnelFileDescriptorProvider!
     private var expectedNetworkSettings: NEPacketTunnelNetworkSettings!
     private var capturedResolvedEndpoints: [Endpoint?]?
+    private var settingsGeneratorProvider: WireGuardAdapter.PacketTunnelSettingsGeneratorProvider!
 
     override func setUp() {
         super.setUp()
@@ -58,6 +59,14 @@ final class WireGuardAdapterTests: XCTestCase {
         peer.endpoint = peerEndpoint
         tunnelConfiguration = TunnelConfiguration.make(named: "Test", peers: [peer])
 
+        settingsGeneratorProvider = { [weak self] _, resolvedEndpoints in
+            guard let self else {
+                return MockPacketTunnelSettingsGenerator()
+            }
+            self.capturedResolvedEndpoints = resolvedEndpoints
+            return self.settingsGenerator
+        }
+
         rebuildAdapter()
     }
 
@@ -74,6 +83,7 @@ final class WireGuardAdapterTests: XCTestCase {
         tunnelFileDescriptorProvider = nil
         expectedNetworkSettings = nil
         capturedResolvedEndpoints = nil
+        settingsGeneratorProvider = nil
         super.tearDown()
     }
 
@@ -85,10 +95,7 @@ final class WireGuardAdapterTests: XCTestCase {
             eventHandler: eventHandler,
             logHandler: { _, _ in },
             pathMonitorProvider: { self.pathMonitor },
-            packetTunnelSettingsGeneratorProvider: { _, resolvedEndpoints in
-                self.capturedResolvedEndpoints = resolvedEndpoints
-                return self.settingsGenerator
-            },
+            packetTunnelSettingsGeneratorProvider: settingsGeneratorProvider,
             dnsResolver: dnsResolver,
             tunnelFileDescriptorProvider: tunnelFileDescriptorProvider
         )
@@ -278,6 +285,55 @@ final class WireGuardAdapterTests: XCTestCase {
         XCTAssertEqual(pathMonitor.cancelCallCount, 1)
     }
 
+    func testUpdateFailsWhenAdapterStopped() {
+        let expectation = expectation(description: "Update when stopped returns invalid state")
+        adapter.update(tunnelConfiguration: tunnelConfiguration, reassert: true) { error in
+            guard case .invalidState(let reason) = error,
+                  reason == .updatedTunnelWhileStopped else {
+                XCTFail("Expected invalidState(updatedTunnelWhileStopped), got \(String(describing: error))")
+                return
+            }
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 10.0)
+    }
+
+    func testUpdateFromStartedReassertsAndConfiguresBackend() {
+        startAdapterSuccessfully()
+        wireGuardInterface.setConfigResult = 0
+
+        let updateExpectation = expectation(description: "Update succeeds")
+        adapter.update(tunnelConfiguration: tunnelConfiguration, reassert: true) { error in
+            XCTAssertNil(error)
+            updateExpectation.fulfill()
+        }
+        wait(for: [updateExpectation], timeout: 10.0)
+
+        XCTAssertFalse(packetTunnelProvider.reasserting, "Reasserting should be reset to false after update")
+        XCTAssertEqual(settingsGenerator.generateNetworkSettingsCallCount, 2, "Second call during update")
+        XCTAssertEqual(wireGuardInterface.setConfigCallCount, 1)
+        XCTAssertEqual(wireGuardInterface.lastSetConfigHandle, wireGuardInterface.lastTurnOnResult)
+        XCTAssertEqual(wireGuardInterface.lastSetConfig, "mock-config", "Reuses uapiConfiguration result")
+    }
+
+    func testUpdateFailsWhenSetConfigReturnsError() {
+        startAdapterSuccessfully()
+        wireGuardInterface.setConfigResult = -42
+
+        let expectation = expectation(description: "Update propagates setConfig failure")
+        adapter.update(tunnelConfiguration: tunnelConfiguration, reassert: true) { error in
+            guard case .setWireguardConfig = error else {
+                XCTFail("Expected setWireguardConfig error, got \(String(describing: error))")
+                return
+            }
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 10.0)
+
+        XCTAssertEqual(wireGuardInterface.setConfigCallCount, 1)
+        XCTAssertFalse(packetTunnelProvider.reasserting)
+    }
+
     private static func makePublicKey() -> PublicKey {
         let hexKey = String(repeating: "ab", count: 32) // 32 bytes -> 64 hex characters
         return PublicKey(hexKey: hexKey)!
@@ -316,6 +372,68 @@ private final class MockPacketTunnelProvider: PacketTunnelProviding {
                 completionHandler(self.setTunnelNetworkSettingsError)
             }
         }
+    }
+}
+
+private final class MockWireGuardInterface: WireGuardGoInterface {
+    var turnOnCallCount = 0
+    var lastTurnOnConfig: String?
+    var lastTurnOnHandle: Int32?
+    var lastTurnOnResult: Int32?
+    var turnOnReturnHandle: Int32 = 7
+
+    var turnOffCallCount = 0
+    var lastTurnOffHandle: Int32?
+
+    var setConfigCallCount = 0
+    var lastSetConfigHandle: Int32?
+    var lastSetConfig: String?
+    var setConfigResult: Int64 = 0
+
+    var bumpSocketsCallCount = 0
+    var disableRoamingCallCount = 0
+
+    var getConfigReturnValue: UnsafeMutablePointer<CChar>?
+
+    var loggerContext: UnsafeMutableRawPointer?
+    var loggerFunction: (@convention(c) (UnsafeMutableRawPointer?, Int32, UnsafePointer<CChar>?) -> Void)?
+
+    func turnOn(settings: UnsafePointer<CChar>, handle: Int32) -> Int32 {
+        turnOnCallCount += 1
+        lastTurnOnConfig = String(cString: settings)
+        lastTurnOnHandle = handle
+        let result = turnOnReturnHandle
+        lastTurnOnResult = result
+        return result
+    }
+
+    func turnOff(handle: Int32) {
+        turnOffCallCount += 1
+        lastTurnOffHandle = handle
+    }
+
+    func getConfig(handle: Int32) -> UnsafeMutablePointer<CChar>? {
+        getConfigReturnValue
+    }
+
+    func setConfig(handle: Int32, config: String) -> Int64 {
+        setConfigCallCount += 1
+        lastSetConfigHandle = handle
+        lastSetConfig = config
+        return setConfigResult
+    }
+
+    func bumpSockets(handle: Int32) {
+        bumpSocketsCallCount += 1
+    }
+
+    func disableSomeRoamingForBrokenMobileSemantics(handle: Int32) {
+        disableRoamingCallCount += 1
+    }
+
+    func setLogger(context: UnsafeMutableRawPointer?, logFunction: (@convention(c) (UnsafeMutableRawPointer?, Int32, UnsafePointer<CChar>?) -> Void)?) {
+        loggerContext = context
+        loggerFunction = logFunction
     }
 }
 

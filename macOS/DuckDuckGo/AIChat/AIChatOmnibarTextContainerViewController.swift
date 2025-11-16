@@ -22,7 +22,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
 
     private let backgroundView = MouseBlockingBackgroundView()
     private let containerView = NSView()
-    private let testButton = NSButton()
     private let scrollView = NSScrollView()
     private let textView = NSTextView()
 
@@ -76,14 +75,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
         textView.textContainer?.containerSize = NSSize(width: scrollView.contentSize.width, height: .greatestFiniteMagnitude)
         textView.textContainer?.widthTracksTextView = true
 
-        testButton.translatesAutoresizingMaskIntoConstraints = false
-        testButton.title = "Test"
-        testButton.bezelStyle = .rounded
-        testButton.contentTintColor = .blue
-        testButton.target = self
-        testButton.action = #selector(testButtonClicked)
-        containerView.addSubview(testButton)
-
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -98,12 +89,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
             scrollView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 10),
             scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 10),
             scrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -10),
-            scrollView.bottomAnchor.constraint(equalTo: testButton.topAnchor, constant: -10),
-
-            testButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
-            testButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -20),
-            testButton.widthAnchor.constraint(equalToConstant: 100),
-            testButton.heightAnchor.constraint(equalToConstant: 32)
+            scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -10),
         ])
     }
 
@@ -113,9 +99,5 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
     
     func cleanup() {
         backgroundView.stopListening()
-    }
-
-    @objc private func testButtonClicked() {
-        print("hello")
     }
 }

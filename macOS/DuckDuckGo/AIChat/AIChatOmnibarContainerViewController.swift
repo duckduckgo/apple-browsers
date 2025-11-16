@@ -27,7 +27,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let innerBorderView = ColorView(frame: .zero)
     private let containerView = NSView()
     private let submitButton = NSButton()
-    private let testButton = NSButton()
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
 
@@ -103,14 +102,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         submitButton.action = #selector(submitButtonClicked)
         containerView.addSubview(submitButton)
 
-        testButton.translatesAutoresizingMaskIntoConstraints = false
-        testButton.title = "Test"
-        testButton.bezelStyle = .rounded
-        testButton.contentTintColor = .blue
-        testButton.target = self
-        testButton.action = #selector(testButtonClicked)
-        containerView.addSubview(testButton)
-
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -136,11 +127,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             submitButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -20),
             submitButton.widthAnchor.constraint(equalToConstant: 100),
             submitButton.heightAnchor.constraint(equalToConstant: 32),
-
-            testButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
-            testButton.bottomAnchor.constraint(equalTo: submitButton.topAnchor, constant: -10),
-            testButton.widthAnchor.constraint(equalToConstant: 100),
-            testButton.heightAnchor.constraint(equalToConstant: 32)
         ])
 
         applyTheme(theme: themeManager.theme)
@@ -158,10 +144,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     @objc private func submitButtonClicked() {
         print("Submit button clicked in AIChatOmnibarContainer")
-    }
-
-    @objc private func testButtonClicked() {
-        print("hello")
     }
 
     private func applyTheme(theme: ThemeStyleProviding) {

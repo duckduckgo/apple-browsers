@@ -103,7 +103,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var leadingAIChatDivider: NSImageView!
     @IBOutlet weak var trailingAIChatDivider: NSImageView!
     @IBOutlet weak var trailingStackViewTrailingViewConstraint: NSLayoutConstraint!
-    
+
     private var searchModeToggleControl: CustomToggleControl?
     @IBOutlet weak var notificationAnimationView: NavigationBarBadgeAnimationView!
     @IBOutlet weak var bookmarkButtonWidthConstraint: NSLayoutConstraint!
@@ -969,7 +969,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func updateAskAIChatButtonVisibility(isSidebarOpen: Bool? = nil) {
         let shouldShowToggle = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
-        
+
         if isTextFieldEditorFirstResponder {
             if !shouldShowToggle {
                 aiChatButton.isHidden = true
@@ -1420,7 +1420,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         let shouldShowToggle = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
         searchModeToggleControl?.isHidden = !shouldShowToggle
-        
+
         if shouldShowToggle {
             aiChatButton.isHidden = true
             cancelButton.isShown = false
@@ -1613,52 +1613,52 @@ final class AddressBarButtonsViewController: NSViewController {
     private func setupNotificationAnimationView() {
         notificationAnimationView.alphaValue = 0.0
     }
-    
+
     private func setupSearchModeToggleControl() {
         let toggleControl = CustomToggleControl(frame: NSRect(x: 0, y: 0, width: 72, height: 28))
         toggleControl.translatesAutoresizingMaskIntoConstraints = false
-        
+
         if let searchImage = NSImage(systemSymbolName: "magnifyingglass", accessibilityDescription: nil) {
             toggleControl.leftImage = searchImage
         }
         if let aiImage = NSImage(systemSymbolName: "wand.and.stars", accessibilityDescription: nil) {
             toggleControl.rightImage = aiImage
         }
-        
+
         applyThemeToToggleControl(toggleControl)
-        
+
         toggleControl.isRightSelected = false
-        
+
         toggleControl.target = self
         toggleControl.action = #selector(searchModeToggleDidChange(_:))
-        
+
         trailingButtonsContainer.addArrangedSubview(toggleControl)
         toggleControl.isHidden = true
-        
+
         NSLayoutConstraint.activate([
             toggleControl.widthAnchor.constraint(equalToConstant: 72),
             toggleControl.heightAnchor.constraint(equalToConstant: 28)
         ])
-        
+
         self.searchModeToggleControl = toggleControl
     }
-    
+
     @objc private func searchModeToggleDidChange(_ sender: CustomToggleControl) {
         let isAIChatMode = sender.isRightSelected
         delegate?.addressBarButtonsViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
     }
-    
+
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
         let theme = themeManager.theme
         let colorsProvider = theme.colorsProvider
-        
+
         let backgroundColor: NSColor
         if NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
             backgroundColor = colorsProvider.activeAddressBarBackgroundColor.withAlphaComponent(0.5).blended(withFraction: 0.1, of: .white) ?? colorsProvider.activeAddressBarBackgroundColor
         } else {
             backgroundColor = colorsProvider.activeAddressBarBackgroundColor.withAlphaComponent(0.5).blended(withFraction: 0.05, of: .black) ?? colorsProvider.activeAddressBarBackgroundColor
         }
-        
+
         toggleControl.backgroundColor = backgroundColor
         toggleControl.selectedBackgroundColor = backgroundColor
         toggleControl.focusedBackgroundColor = backgroundColor
@@ -1904,7 +1904,7 @@ extension AddressBarButtonsViewController: ThemeUpdateListening {
         updateZoomButtonVisibility()
         refreshAskAIChatButtonStyle()
         refreshButtonsThemeStyle(theme: theme)
-        
+
         // Update toggle control theme
         if let toggleControl = searchModeToggleControl {
             applyThemeToToggleControl(toggleControl)

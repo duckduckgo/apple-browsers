@@ -1027,7 +1027,6 @@ extension MainViewController: BrowserTabViewControllerDelegate {
 
 }
 
-
 // MARK: - AIChatOmnibarControllerDelegate
 extension MainViewController: AIChatOmnibarControllerDelegate {
     func aiChatOmnibarControllerDidSubmit(_ controller: AIChatOmnibarController) {

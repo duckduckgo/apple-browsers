@@ -28,14 +28,16 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let containerView = NSView()
     private let submitButton = NSButton()
     let themeManager: ThemeManaging
+    let omnibarController: AIChatOmnibarController
     var themeUpdateCancellable: AnyCancellable?
 
     required init?(coder: NSCoder) {
         fatalError("SuggestionViewController: Bad initializer")
     }
 
-    required init(themeManager: ThemeManaging) {
+    required init(themeManager: ThemeManaging, omnibarController: AIChatOmnibarController) {
         self.themeManager = themeManager
+        self.omnibarController = omnibarController
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -143,7 +145,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     @objc private func submitButtonClicked() {
-        print("Submit button clicked in AIChatOmnibarContainer")
+        omnibarController.submit()
     }
 
     private func applyTheme(theme: ThemeStyleProviding) {

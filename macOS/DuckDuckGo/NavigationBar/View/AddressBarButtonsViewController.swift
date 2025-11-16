@@ -659,6 +659,8 @@ final class AddressBarButtonsViewController: NSViewController {
             }
         case .editing(.openTabSuggestion):
             imageButton.image = .openTabSuggestion
+        case .editing(.aiChat):
+            imageButton.image = .aiChat
         default:
             imageButton.image = nil
         }

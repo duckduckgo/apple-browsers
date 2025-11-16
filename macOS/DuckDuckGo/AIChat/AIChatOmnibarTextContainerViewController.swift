@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import Combine
 
 final class AIChatOmnibarTextContainerViewController: NSViewController {
 
@@ -24,9 +25,20 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
     private let containerView = NSView()
     private let scrollView = NSScrollView()
     private let textView = NSTextView()
+    private let omnibarController: AIChatOmnibarController
+    private var cancellables = Set<AnyCancellable>()
 
-    static func create() -> AIChatOmnibarTextContainerViewController {
-        return AIChatOmnibarTextContainerViewController()
+    static func create(omnibarController: AIChatOmnibarController) -> AIChatOmnibarTextContainerViewController {
+        return AIChatOmnibarTextContainerViewController(omnibarController: omnibarController)
+    }
+    
+    init(omnibarController: AIChatOmnibarController) {
+        self.omnibarController = omnibarController
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 
     override func loadView() {
@@ -36,6 +48,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupTextViewDelegate()
     }
     
     override func viewDidLayout() {
@@ -93,6 +106,31 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
         ])
     }
 
+    private func setupTextViewDelegate() {
+        textView.delegate = self
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(textDidChange(_:)),
+            name: NSText.didChangeNotification,
+            object: textView
+        )
+        
+        omnibarController.$currentText
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newText in
+                guard let self = self else { return }
+                if self.textView.string != newText {
+                    self.textView.string = newText
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    @objc func textDidChange(_ notification: Notification) {
+        omnibarController.updateText(textView.string)
+    }
+
     func startEventMonitoring() {
         backgroundView.startListening()
     }
@@ -100,4 +138,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
     func cleanup() {
         backgroundView.stopListening()
     }
+}
+
+// MARK: - NSTextViewDelegate
+extension AIChatOmnibarTextContainerViewController: NSTextViewDelegate {
 }

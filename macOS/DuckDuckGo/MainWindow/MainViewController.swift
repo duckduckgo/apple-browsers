@@ -258,11 +258,22 @@ final class MainViewController: NSViewController {
             bookmarkManager: bookmarkManager,
             dragDropManager: bookmarkDragDropManager
         )
-        aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(themeManager: themeManager)
-        aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController.create()
+        
+        // Create the shared AI Chat omnibar controller
+        let aiChatOmnibarController = AIChatOmnibarController(aiChatTabOpener: aiChatTabOpener)
+        
+        aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(
+            themeManager: themeManager,
+            omnibarController: aiChatOmnibarController
+        )
+        aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController.create(
+            omnibarController: aiChatOmnibarController
+        )
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
 
         super.init(nibName: nil, bundle: nil)
+        
+        aiChatOmnibarController.delegate = self
         browserTabViewController.delegate = self
         findInPageViewController.delegate = self
     }
@@ -1016,6 +1027,14 @@ extension MainViewController: BrowserTabViewControllerDelegate {
         return false
     }
 
+}
+
+
+// MARK: - AIChatOmnibarControllerDelegate
+extension MainViewController: AIChatOmnibarControllerDelegate {
+    func aiChatOmnibarControllerDidSubmit(_ controller: AIChatOmnibarController) {
+        updateAIChatOmnibarContainerVisibility(visible: false)
+    }
 }
 
 #if DEBUG

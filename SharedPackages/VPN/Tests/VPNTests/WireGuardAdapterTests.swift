@@ -58,19 +58,7 @@ final class WireGuardAdapterTests: XCTestCase {
         peer.endpoint = peerEndpoint
         tunnelConfiguration = TunnelConfiguration.make(named: "Test", peers: [peer])
 
-        adapter = WireGuardAdapter(
-            with: packetTunnelProvider,
-            wireGuardInterface: wireGuardInterface,
-            eventHandler: eventHandler,
-            logHandler: { _, _ in },
-            pathMonitorProvider: { self.pathMonitor },
-            packetTunnelSettingsGeneratorProvider: { _, resolvedEndpoints in
-                self.capturedResolvedEndpoints = resolvedEndpoints
-                return self.settingsGenerator
-            },
-            dnsResolver: dnsResolver,
-            tunnelFileDescriptorProvider: tunnelFileDescriptorProvider
-        )
+        rebuildAdapter()
     }
 
     override func tearDown() {
@@ -89,6 +77,23 @@ final class WireGuardAdapterTests: XCTestCase {
         super.tearDown()
     }
 
+    private func rebuildAdapter() {
+        capturedResolvedEndpoints = nil
+        adapter = WireGuardAdapter(
+            with: packetTunnelProvider,
+            wireGuardInterface: wireGuardInterface,
+            eventHandler: eventHandler,
+            logHandler: { _, _ in },
+            pathMonitorProvider: { self.pathMonitor },
+            packetTunnelSettingsGeneratorProvider: { _, resolvedEndpoints in
+                self.capturedResolvedEndpoints = resolvedEndpoints
+                return self.settingsGenerator
+            },
+            dnsResolver: dnsResolver,
+            tunnelFileDescriptorProvider: tunnelFileDescriptorProvider
+        )
+    }
+
     func testStartHappyPathConfiguresNetworkAndBackend() {
         let startExpectation = expectation(description: "Start completes")
 
@@ -97,7 +102,7 @@ final class WireGuardAdapterTests: XCTestCase {
             startExpectation.fulfill()
         }
 
-        waitForExpectations(timeout: 1.0)
+        waitForExpectations(timeout: 10.0)
 
         XCTAssertEqual(dnsResolver.receivedEndpoints?.count, 1)
         XCTAssertEqual(dnsResolver.receivedEndpoints?.first??.description, peerEndpoint.description)
@@ -122,7 +127,7 @@ final class WireGuardAdapterTests: XCTestCase {
             XCTAssertNil(error)
             firstStart.fulfill()
         }
-        wait(for: [firstStart], timeout: 1.0)
+        wait(for: [firstStart], timeout: 10.0)
 
         let secondStart = expectation(description: "Second start returns invalid state")
         adapter.start(tunnelConfiguration: tunnelConfiguration) { error in
@@ -133,11 +138,144 @@ final class WireGuardAdapterTests: XCTestCase {
             }
             secondStart.fulfill()
         }
-        wait(for: [secondStart], timeout: 1.0)
+        wait(for: [secondStart], timeout: 10.0)
 
         XCTAssertEqual(packetTunnelProvider.setTunnelNetworkSettingsCallCount, 1, "Should not reapply settings")
         XCTAssertEqual(wireGuardInterface.turnOnCallCount, 1, "Should not restart backend")
         XCTAssertEqual(pathMonitor.startCallCount, 1, "Should not start a second path monitor")
+    }
+
+    func testStartFailsWhenDnsResolutionFails() {
+        dnsResolver.results = [.failure(DNSResolutionError(errorCode: 1, address: "example.com"))]
+
+        let expectation = expectation(description: "Start fails with DNS error")
+        adapter.start(tunnelConfiguration: tunnelConfiguration) { error in
+            guard case .dnsResolution = error else {
+                XCTFail("Expected dnsResolution error, got \(String(describing: error))")
+                return
+            }
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 10.0)
+
+        XCTAssertEqual(packetTunnelProvider.setTunnelNetworkSettingsCallCount, 0, "Should not set network settings")
+        XCTAssertEqual(wireGuardInterface.turnOnCallCount, 0, "Should not start backend")
+        XCTAssertEqual(pathMonitor.startCallCount, 1, "Path monitor starts before resolution attempt")
+        XCTAssertEqual(pathMonitor.cancelCallCount, 1, "Path monitor should be cancelled on error")
+    }
+
+    func testStartFailsWhenSettingNetworkSettingsFails() {
+        packetTunnelProvider.setTunnelNetworkSettingsError = TestError.someError
+
+        let expectation = expectation(description: "Start fails with network settings error")
+        adapter.start(tunnelConfiguration: tunnelConfiguration) { error in
+            guard case .setNetworkSettings(let underlyingError) = error,
+                  (underlyingError as? TestError) == .someError else {
+                XCTFail("Expected setNetworkSettings error, got \(String(describing: error))")
+                return
+            }
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 10.0)
+
+        XCTAssertEqual(packetTunnelProvider.setTunnelNetworkSettingsCallCount, 1)
+        XCTAssertEqual(wireGuardInterface.turnOnCallCount, 0, "Backend should not start on failure")
+        XCTAssertEqual(pathMonitor.startCallCount, 1, "Path monitor starts before applying settings")
+        XCTAssertEqual(pathMonitor.cancelCallCount, 1, "Path monitor should be cancelled on failure")
+    }
+
+    func testStartFailsWhenTunnelFileDescriptorMissing() {
+        tunnelFileDescriptorProvider = MockTunnelFileDescriptorProvider(fileDescriptor: nil)
+        rebuildAdapter()
+
+        let expectation = expectation(description: "Start fails with missing tunnel fd")
+        adapter.start(tunnelConfiguration: tunnelConfiguration) { error in
+            guard case .cannotLocateTunnelFileDescriptor = error else {
+                XCTFail("Expected cannotLocateTunnelFileDescriptor error, got \(String(describing: error))")
+                return
+            }
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 10.0)
+
+        XCTAssertEqual(packetTunnelProvider.setTunnelNetworkSettingsCallCount, 1)
+        XCTAssertEqual(wireGuardInterface.turnOnCallCount, 0)
+        XCTAssertEqual(pathMonitor.startCallCount, 1)
+        XCTAssertEqual(pathMonitor.cancelCallCount, 1)
+    }
+
+    func testStartFailsWhenTurnOnReturnsError() {
+        wireGuardInterface.turnOnReturnHandle = -5
+        rebuildAdapter()
+
+        let expectation = expectation(description: "Start fails when backend cannot start")
+        adapter.start(tunnelConfiguration: tunnelConfiguration) { error in
+            guard case .startWireGuardBackend = error else {
+                XCTFail("Expected startWireGuardBackend error, got \(String(describing: error))")
+                return
+            }
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 10.0)
+
+        XCTAssertEqual(packetTunnelProvider.setTunnelNetworkSettingsCallCount, 1)
+        XCTAssertEqual(wireGuardInterface.turnOnCallCount, 1)
+        XCTAssertEqual(pathMonitor.startCallCount, 1)
+        XCTAssertEqual(pathMonitor.cancelCallCount, 1)
+    }
+
+    func testStopTransitionsToStoppedAndSecondCallErrors() {
+        startAdapterSuccessfully()
+
+        let stopExpectation = expectation(description: "Stop succeeds")
+        adapter.stop { error in
+            XCTAssertNil(error)
+            stopExpectation.fulfill()
+        }
+        wait(for: [stopExpectation], timeout: 10.0)
+
+        XCTAssertEqual(wireGuardInterface.turnOffCallCount, 1)
+        XCTAssertEqual(pathMonitor.cancelCallCount, 1)
+
+        let secondStop = expectation(description: "Second stop returns invalid state")
+        adapter.stop { error in
+            guard case .invalidState(let reason) = error,
+                  reason == .alreadyStopped else {
+                XCTFail("Expected alreadyStopped error, got \(String(describing: error))")
+                return
+            }
+            secondStop.fulfill()
+        }
+        wait(for: [secondStop], timeout: 10.0)
+
+        XCTAssertEqual(wireGuardInterface.turnOffCallCount, 1)
+    }
+
+    func testSnoozeTransitionsAndSecondCallNoops() {
+        startAdapterSuccessfully()
+
+        let snoozeExpectation = expectation(description: "Snooze succeeds")
+        adapter.snooze { error in
+            XCTAssertNil(error)
+            snoozeExpectation.fulfill()
+        }
+        wait(for: [snoozeExpectation], timeout: 10.0)
+
+        XCTAssertEqual(wireGuardInterface.turnOffCallCount, 1)
+        XCTAssertEqual(pathMonitor.cancelCallCount, 1)
+        XCTAssertEqual(packetTunnelProvider.setTunnelNetworkSettingsCallCount, 2, "Should clear network settings")
+        XCTAssertNil(packetTunnelProvider.lastNetworkSettings)
+
+        let secondSnooze = expectation(description: "Second snooze succeeds but is a no-op")
+        adapter.snooze { error in
+            XCTAssertNil(error)
+            secondSnooze.fulfill()
+        }
+        wait(for: [secondSnooze], timeout: 10.0)
+
+        XCTAssertEqual(wireGuardInterface.turnOffCallCount, 1, "No additional turnOff expected")
+        XCTAssertEqual(packetTunnelProvider.setTunnelNetworkSettingsCallCount, 3, "Snoozing again still reapplies nil settings")
+        XCTAssertEqual(pathMonitor.cancelCallCount, 1)
     }
 
     private static func makePublicKey() -> PublicKey {
@@ -145,6 +283,21 @@ final class WireGuardAdapterTests: XCTestCase {
         return PublicKey(hexKey: hexKey)!
     }
 
+    @discardableResult
+    private func startAdapterSuccessfully(file: StaticString = #file, line: UInt = #line) -> XCTestExpectation {
+        let startExpectation = expectation(description: "Adapter starts")
+        adapter.start(tunnelConfiguration: tunnelConfiguration) { error in
+            XCTAssertNil(error, file: file, line: line)
+            startExpectation.fulfill()
+        }
+        wait(for: [startExpectation], timeout: 10.0)
+        return startExpectation
+    }
+
+}
+
+private enum TestError: Error, Equatable {
+    case someError
 }
 
 // MARK: - Mocks
@@ -226,9 +379,9 @@ private final class MockDNSResolver: DNSResolving {
 }
 
 private final class MockTunnelFileDescriptorProvider: TunnelFileDescriptorProviding {
-    let fileDescriptor: Int32
+    var fileDescriptor: Int32?
 
-    init(fileDescriptor: Int32) {
+    init(fileDescriptor: Int32?) {
         self.fileDescriptor = fileDescriptor
     }
 

@@ -1622,6 +1622,8 @@ final class AddressBarButtonsViewController: NSViewController {
             toggleControl.rightImage = aiImage
         }
         
+        applyThemeToToggleControl(toggleControl)
+        
         toggleControl.isRightSelected = false
         
         toggleControl.target = self
@@ -1640,7 +1642,28 @@ final class AddressBarButtonsViewController: NSViewController {
     
     @objc private func searchModeToggleDidChange(_ sender: CustomToggleControl) {
         let mode = sender.isRightSelected ? "Duck.ai" : "Search"
-        print("🔄 Search mode toggle changed to: \(mode)")
+        print("Search mode toggle changed to: \(mode)")
+    }
+    
+    private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
+        let theme = themeManager.theme
+        let colorsProvider = theme.colorsProvider
+        
+        let backgroundColor: NSColor
+        if NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
+            backgroundColor = colorsProvider.activeAddressBarBackgroundColor.withAlphaComponent(0.5).blended(withFraction: 0.1, of: .white) ?? colorsProvider.activeAddressBarBackgroundColor
+        } else {
+            backgroundColor = colorsProvider.activeAddressBarBackgroundColor.withAlphaComponent(0.5).blended(withFraction: 0.05, of: .black) ?? colorsProvider.activeAddressBarBackgroundColor
+        }
+        
+        toggleControl.backgroundColor = backgroundColor
+        toggleControl.selectedBackgroundColor = backgroundColor
+        toggleControl.focusedBackgroundColor = backgroundColor
+        toggleControl.selectionColor = colorsProvider.accentPrimaryColor
+        toggleControl.focusBorderColor = colorsProvider.accentPrimaryColor
+        toggleControl.outerBorderColor = colorsProvider.addressBarOutlineShadow
+        toggleControl.outerBorderWidth = 2.0
+        toggleControl.selectionInnerBorderColor = backgroundColor
     }
 
     private func setupAnimationViews() {
@@ -1878,6 +1901,11 @@ extension AddressBarButtonsViewController: ThemeUpdateListening {
         updateZoomButtonVisibility()
         refreshAskAIChatButtonStyle()
         refreshButtonsThemeStyle(theme: theme)
+        
+        // Update toggle control theme
+        if let toggleControl = searchModeToggleControl {
+            applyThemeToToggleControl(toggleControl)
+        }
     }
 
     private func refreshButtonsThemeStyle(theme: ThemeStyleProviding) {

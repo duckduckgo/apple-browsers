@@ -177,7 +177,8 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                     aiChatMenuConfiguration: MockAIChatConfig(),
                     windowControllersManager: windowControllersManager,
                     featureFlagger: MockFeatureFlagger()
-                )
+                ),
+                aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager)
             )
             viewController.tabViewModel = tabViewModel
             _=viewController.view

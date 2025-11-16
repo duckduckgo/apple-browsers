@@ -61,18 +61,6 @@
         }
       }
     },
-    "NSAppDataUsageDescription" : {
-      "comment" : "Privacy - Other Application Data Usage Description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "DuckDuckGo will securely access your Bitwarden vault to autofill your passwords. To prevent this dialog in the future, go to Mac System Settings > Privacy & Security > Full Disk Access and toggle DuckDuckGo on, or switch back to the built-in password manager."
-          }
-        }
-      }
-    },
     "NSCameraUsageDescription" : {
       "comment" : "Privacy - Camera Usage Description",
       "extractionState" : "extracted_with_value",

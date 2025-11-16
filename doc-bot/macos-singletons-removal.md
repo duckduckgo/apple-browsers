@@ -58,6 +58,15 @@ Define a concrete pattern for removing `.shared` singletons in the macOS app by 
      - `AIChatPreferences(storage: MockAIChatPreferencesStorage(), aiChatMenuConfiguration: MockAIChatConfig(), windowControllersManager: WindowControllersManagerMock(), featureFlagger: MockFeatureFlagger())`
    - Pass these instances into the subject under test via its initializer (e.g. `PreferencesSidebarModel`, `BrowserTabViewController`, `PreferencesViewController`).
    - Remove ad-hoc singleton-like test doubles (e.g. `MockAIChatPreferences.shared`) once real instances are injected.
+   - **Update all test helper methods**: When a test file has helper methods that create instances (e.g., `PreferencesSidebarModel` factory methods), update all of them to include the new dependency parameter.
+   - **Reuse existing mocks**: When initializing the dependency in tests, reuse existing mock objects from the test setup:
+     - Use `mockFeatureFlagger.internalUserDecider` if `MockFeatureFlagger` is already available
+     - Use existing `windowControllersManager` instances (e.g., `WindowControllersManagerMock()`)
+     - Example: `AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager)`
+   - **Search comprehensively**: Use `grep` to find all test files that instantiate classes requiring the dependency, including:
+     - Direct instantiations in test methods
+     - Helper/factory methods that create instances
+     - Integration tests that create full object graphs
 
 7. **Remove the singleton API last**
    - After all production code and tests use the injected instance or the app-owned property, delete `static let shared` and any remaining references to it.
@@ -80,9 +89,40 @@ The `AboutPreferences.shared` singleton removal demonstrates the complete patter
 
 6. **PreferencesRootView**: Updated to use `model.aboutPreferences` instead of `NSApp.delegateTyped.aboutPreferences`
 
-7. **AboutPreferences**: Removed `static let shared` and changed `private init` to `init`
+7. **Test files**: Updated all test files that create instances in the dependency chain:
+   - `PreferencesSidebarModelTests.swift`: Updated 3 helper methods to include `aboutPreferences` parameter
+   - `BrowserTabViewControllerOnboardingTests.swift`: Added `aboutPreferences` to `BrowserTabViewController` initialization
+   - `RootViewV2Tests.swift`: Added `aboutPreferences` to `PreferencesSidebarModel` initialization
+   - All tests reuse existing mocks: `AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager)`
+
+8. **AboutPreferences**: Removed `static let shared` and changed `private init` to `init`
 
 This pattern ensures the dependency flows through the entire chain while maintaining testability and avoiding global state access in views.
+
+### Test Updates Checklist
+
+When removing a singleton, ensure all tests are updated:
+
+1. **Find all test files** that instantiate classes in the dependency chain:
+   ```bash
+   grep -r "ClassName(" macOS/UnitTests macOS/IntegrationTests
+   ```
+
+2. **Update helper methods**: If test files have helper/factory methods that create instances, update all of them:
+   - Look for `private func` methods that return the type
+   - Look for `create*` or `make*` helper methods
+   - Example: `PreferencesSidebarModelTests.swift` had 3 helper methods that all needed `aboutPreferences`
+
+3. **Reuse existing mocks**: When creating the dependency instance in tests:
+   - Check what mocks are already available in `setUp()` or test properties
+   - Use `mockFeatureFlagger.internalUserDecider` if available
+   - Reuse `WindowControllersManagerMock()` instances already created
+   - Avoid creating duplicate mock instances
+
+4. **Verify compilation**: After updates, ensure:
+   - No linting errors
+   - All test files compile successfully
+   - Run tests to verify they pass
 
 ### Enforcement
 

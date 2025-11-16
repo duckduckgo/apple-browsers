@@ -132,14 +132,14 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     private let navigationBarHeightForHomePage: CGFloat = 52
     private let navigationBarHeightForPopUpWindow: CGFloat = 42
     private let addressBarTopPaddingForDefault: CGFloat = 7
-    private let addressBarTopPaddingForDefaultFocusedWithAIChat: CGFloat = 2
+    private let addressBarTopPaddingForDefaultFocusedWithAIChat: CGFloat = 4
     private let addressBarTopPaddingForHomePage: CGFloat = 7
-    private let addressBarTopPaddingForHomePageFocusedWithAIChat: CGFloat = 2
+    private let addressBarTopPaddingForHomePageFocusedWithAIChat: CGFloat = 4
     private let addressBarTopPaddingForPopUpWindow: CGFloat = 7
     private let addressBarBottomPaddingForDefault: CGFloat = 7
-    private let addressBarBottomPaddingForDefaultFocusedWithAIChat: CGFloat = 2
+    private let addressBarBottomPaddingForDefaultFocusedWithAIChat: CGFloat = 4
     private let addressBarBottomPaddingForHomePage: CGFloat = 7
-    private let addressBarBottomPaddingForHomePageFocusedWithAIChat: CGFloat = 2
+    private let addressBarBottomPaddingForHomePageFocusedWithAIChat: CGFloat = 4
     private let addressBarBottomPaddingForPopUpWindow: CGFloat = 7
     
     private let featureFlagger: FeatureFlagger
@@ -180,34 +180,40 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     }
 
     func addressBarTopPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
+        let isAIChatOmnibarEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        
         switch type {
         case .default:
-            if focused && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-                return addressBarTopPaddingForDefaultFocusedWithAIChat
+            if focused {
+                return isAIChatOmnibarEnabled ? addressBarTopPaddingForDefaultFocusedWithAIChat : addressBarTopPaddingForDefault - 1
             }
-            return focused ? addressBarTopPaddingForDefault - 1 : addressBarTopPaddingForDefault
+            return addressBarTopPaddingForDefault
         case .homePage:
-            if focused && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-                return addressBarTopPaddingForHomePageFocusedWithAIChat
+            if focused {
+                return isAIChatOmnibarEnabled ? addressBarTopPaddingForHomePageFocusedWithAIChat : addressBarTopPaddingForHomePage - 1
             }
-            return focused ? addressBarTopPaddingForHomePage - 1 : addressBarTopPaddingForHomePage
-        case .popUpWindow: return addressBarTopPaddingForPopUpWindow
+            return addressBarTopPaddingForHomePage
+        case .popUpWindow:
+            return addressBarTopPaddingForPopUpWindow
         }
     }
 
     func addressBarBottomPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
+        let isAIChatOmnibarEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        
         switch type {
         case .default:
-            if focused && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-                return addressBarBottomPaddingForDefaultFocusedWithAIChat
+            if focused {
+                return isAIChatOmnibarEnabled ? addressBarBottomPaddingForDefaultFocusedWithAIChat : addressBarBottomPaddingForDefault - 1
             }
-            return focused ? addressBarBottomPaddingForDefault - 1 : addressBarBottomPaddingForDefault
+            return addressBarBottomPaddingForDefault
         case .homePage:
-            if focused && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
-                return addressBarBottomPaddingForHomePageFocusedWithAIChat
+            if focused {
+                return isAIChatOmnibarEnabled ? addressBarBottomPaddingForHomePageFocusedWithAIChat : addressBarBottomPaddingForHomePage - 1
             }
-            return focused ? addressBarBottomPaddingForHomePage - 1 : addressBarBottomPaddingForHomePage
-        case .popUpWindow: return addressBarBottomPaddingForPopUpWindow
+            return addressBarBottomPaddingForHomePage
+        case .popUpWindow:
+            return addressBarBottomPaddingForPopUpWindow
         }
     }
 

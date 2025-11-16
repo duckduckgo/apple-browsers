@@ -57,6 +57,7 @@ protocol OmniBarState: CustomStringConvertible {
     var onEnterPhoneState: OmniBarState { get }
     var onEnterPadState: OmniBarState { get }
     var onReloadState: OmniBarState { get }
+    var onEnterAIChatState: OmniBarState { get }
 
     var dependencies: OmnibarDependencyProvider { get }
     var isLoading: Bool { get }
@@ -89,6 +90,15 @@ extension OmniBarState {
         UniversalOmniBarState.EditingSuspendedState(baseState: onEditingStartedState,
                                                     dependencies: dependencies,
                                                     isLoading: isLoading)
+    }
+    
+    var onEnterAIChatState: OmniBarState {
+
+        let baseState: any OmniBarState = hasLargeWidth
+            ? LargeOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
+            : SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
+
+        return UniversalOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: isLoading)
     }
     
     // Default to false

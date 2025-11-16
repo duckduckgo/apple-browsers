@@ -740,15 +740,7 @@ extension OmniBarViewController {
 
     /// Enters AI Chat full mode, showing AI Chat-specific UI in the omnibar
     func enterAIChatMode() {
-        let dependencies = state.dependencies
-        let isLoading = state.isLoading
-
-        let baseState: any OmniBarState = state.hasLargeWidth
-            ? LargeOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-            : SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-
-        let aiChatState = UniversalOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: isLoading)
-        refreshState(aiChatState)
+        refreshState(state.onEnterAIChatState)
     }
 }
 

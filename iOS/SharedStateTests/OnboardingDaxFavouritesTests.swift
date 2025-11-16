@@ -104,7 +104,8 @@ import Combine
                                     maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                                     featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
                                     keyValueStore: try! MockKeyValueFileStore(),
-                                    daxDialogsManager: DummyDaxDialogsManager()
+                                    daxDialogsManager: DummyDaxDialogsManager(),
+                                    aiChatSettings: MockAIChatSettingsProvider()
         )
         sut = MainViewController(
             privacyConfigurationManager: mockConfigManager,

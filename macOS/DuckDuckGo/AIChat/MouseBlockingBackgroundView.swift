@@ -70,7 +70,7 @@ final class MouseBlockingBackgroundView: NSView {
 
             guard !self.isHidden else { return event }
 
-            guard let window = self.window, event.window === window, (window.isKeyWindow || window.isMainWindow) else { return event }
+            guard let window = self.window, event.window === window, window.isKeyWindow || window.isMainWindow else { return event }
             let locationInWindow = event.locationInWindow
             let locationInView = self.convert(locationInWindow, from: nil)
 

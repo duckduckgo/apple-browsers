@@ -156,12 +156,10 @@ final class MouseBlockingBackgroundView: NSView {
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
-        for subview in subviews.reversed() {
-            if !subview.isHidden {
-                let pointInSubview = subview.convert(point, from: self)
-                if let hitView = subview.hitTest(pointInSubview) {
-                    return hitView
-                }
+        for subview in subviews.reversed() where !subview.isHidden {
+            let pointInSubview = subview.convert(point, from: self)
+            if let hitView = subview.hitTest(pointInSubview) {
+                return hitView
             }
         }
 

@@ -1652,7 +1652,7 @@ final class AddressBarButtonsViewController: NSViewController {
         let isAIChatMode = sender.isRightSelected
         delegate?.addressBarButtonsViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
     }
-    
+
     func resetSearchModeToggle() {
         searchModeToggleControl?.isRightSelected = false
     }

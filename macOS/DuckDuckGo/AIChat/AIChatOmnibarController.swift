@@ -32,9 +32,9 @@ final class AIChatOmnibarController {
     weak var delegate: AIChatOmnibarControllerDelegate?
     private let aiChatTabOpener: AIChatTabOpening
     private let promptHandler: AIChatPromptHandler
-    
+
     // MARK: - Initialization
-    
+
     init(
         aiChatTabOpener: AIChatTabOpening,
         promptHandler: AIChatPromptHandler = .shared
@@ -42,36 +42,35 @@ final class AIChatOmnibarController {
         self.aiChatTabOpener = aiChatTabOpener
         self.promptHandler = promptHandler
     }
-    
+
     // MARK: - Public Methods
-    
+
     /// Updates the current text being typed by the user
     /// - Parameter text: The new text value
     func updateText(_ text: String) {
         currentText = text
     }
-    
+
     func submit() {
         guard !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return
         }
-        
+
         let trimmedText = currentText.trimmingCharacters(in: .whitespacesAndNewlines)
-        
+
         let nativePrompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true)
-        
+
         promptHandler.setData(nativePrompt)
-        
+
         Task { @MainActor in
             aiChatTabOpener.openAIChatTab(
                 with: .query(trimmedText, shouldAutoSubmit: true),
                 behavior: .currentTab
             )
         }
-        
+
         currentText = ""
-        
+
         delegate?.aiChatOmnibarControllerDidSubmit(self)
     }
 }
-

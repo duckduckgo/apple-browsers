@@ -907,19 +907,19 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
 
     func addressBarButtonsViewControllerSearchModeToggleChanged(_ addressBarButtonsViewController: AddressBarButtonsViewController, isAIChatMode: Bool) {
         isAIChatOmnibarVisible = isAIChatMode
-        
+
         if isAIChatMode {
             mode = .editing(.aiChat)
         } else {
             updateMode()
         }
-        
+
         delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
     }
 
     func setAIChatOmnibarVisible(_ visible: Bool) {
         isAIChatOmnibarVisible = visible
-        
+
         if visible {
             mode = .editing(.aiChat)
         } else {

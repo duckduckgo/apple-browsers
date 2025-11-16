@@ -399,7 +399,8 @@ class TabViewController: UIViewController {
                                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                                    featureDiscovery: FeatureDiscovery,
                                    keyValueStore: ThrowingKeyValueStoring,
-                                   daxDialogsManager: DaxDialogsManaging) -> TabViewController {
+                                   daxDialogsManager: DaxDialogsManaging,
+                                   aiChatSettings: AIChatSettingsProvider) -> TabViewController {
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
             TabViewController(coder: coder,
@@ -424,7 +425,8 @@ class TabViewController: UIViewController {
                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                               featureDiscovery: featureDiscovery,
                               keyValueStore: keyValueStore,
-                              daxDialogsManager: daxDialogsManager
+                              daxDialogsManager: daxDialogsManager,
+                              aiChatSettings: aiChatSettings
             )
         })
         return controller
@@ -499,7 +501,8 @@ class TabViewController: UIViewController {
                    featureDiscovery: FeatureDiscovery,
                    keyValueStore: ThrowingKeyValueStoring,
                    daxDialogsManager: DaxDialogsManaging,
-                   adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector()) {
+                   adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector(),
+                   aiChatSettings: AIChatSettingsProvider) {
 
         self.tabModel = tabModel
         self.privacyConfigurationManager = privacyConfigurationManager

@@ -167,7 +167,8 @@ extension TabViewController {
             specialErrorPageNavigationHandler: DummySpecialErrorPageNavigationHandler(),
             featureDiscovery: MockFeatureDiscovery(),
             keyValueStore: try! MockKeyValueFileStore(),
-            daxDialogsManager: DummyDaxDialogsManager()
+            daxDialogsManager: DummyDaxDialogsManager(),
+            aiChatSettings: MockAIChatSettingsProvider()
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
         return tab

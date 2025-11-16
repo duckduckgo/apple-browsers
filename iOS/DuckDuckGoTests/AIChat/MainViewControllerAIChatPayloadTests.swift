@@ -115,7 +115,8 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
                                     maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                                     featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
                                     keyValueStore: keyValueStore,
-                                    daxDialogsManager: DummyDaxDialogsManager()
+                                    daxDialogsManager: DummyDaxDialogsManager(),
+                                    aiChatSettings: MockAIChatSettingsProvider()
         )
         
         sut = TestableMainViewController(

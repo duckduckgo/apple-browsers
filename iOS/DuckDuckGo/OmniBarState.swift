@@ -94,6 +94,15 @@ extension OmniBarState {
                                                     isLoading: isLoading)
     }
     
+    var onEnterAIChatState: OmniBarState {
+
+        let baseState: any OmniBarState = hasLargeWidth
+            ? LargeOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
+            : SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
+
+        return UniversalOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: isLoading)
+    }
+    
     // Default to false
     var showAIChatFullModeBranding: Bool { false }
     

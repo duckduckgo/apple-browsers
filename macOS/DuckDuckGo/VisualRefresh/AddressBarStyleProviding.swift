@@ -141,13 +141,13 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     private let addressBarBottomPaddingForHomePage: CGFloat = 7
     private let addressBarBottomPaddingForHomePageFocusedWithAIChat: CGFloat = 4
     private let addressBarBottomPaddingForPopUpWindow: CGFloat = 7
-    
+
     private let featureFlagger: FeatureFlagger
-    
+
     private var isAIChatOmnibarEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
     }
-    
+
     init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
     }

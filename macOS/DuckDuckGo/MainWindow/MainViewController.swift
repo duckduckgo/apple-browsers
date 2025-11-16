@@ -258,10 +258,10 @@ final class MainViewController: NSViewController {
             bookmarkManager: bookmarkManager,
             dragDropManager: bookmarkDragDropManager
         )
-        
+
         // Create the shared AI Chat omnibar controller
         let aiChatOmnibarController = AIChatOmnibarController(aiChatTabOpener: aiChatTabOpener)
-        
+
         aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(
             themeManager: themeManager,
             omnibarController: aiChatOmnibarController
@@ -270,7 +270,7 @@ final class MainViewController: NSViewController {
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
 
         super.init(nibName: nil, bundle: nil)
-        
+
         aiChatOmnibarController.delegate = self
         browserTabViewController.delegate = self
         findInPageViewController.delegate = self
@@ -301,9 +301,9 @@ final class MainViewController: NSViewController {
         mainView.findInPageContainerView.applyDropShadow()
 
         view.registerForDraggedTypes([.URL, .fileURL])
-        
+
         mainView.setupAIChatOmnibarTextContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
-		mainView.setupAIChatOmnibarContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
+        mainView.setupAIChatOmnibarContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
     }
 
     override func viewWillAppear() {
@@ -347,7 +347,7 @@ final class MainViewController: NSViewController {
             object: nil,
             queue: .main) { [weak self] _ in
                 self?.showBookmarkPromptIfNeeded()
-        }
+            }
     }
 
     override func viewDidDisappear() {
@@ -448,9 +448,9 @@ final class MainViewController: NSViewController {
 
     func updateAIChatOmnibarContainerVisibility(visible: Bool) {
         mainView.isAIChatOmnibarContainerShown = visible
-        
+
         navigationBarViewController.addressBarViewController?.setAIChatOmnibarVisible(visible)
-        
+
         if visible {
             aiChatOmnibarContainerViewController.startEventMonitoring()
             aiChatOmnibarTextContainerViewController.startEventMonitoring()
@@ -871,10 +871,10 @@ extension MainViewController {
         if isWebViewFocused {
             switch (key, flags, flags.contains(.command)) {
             case ("n", [.command], _),
-                 ("t", [.command], _), ("t", [.command, .shift], _),
-                 ("w", _, true),
-                 ("q", [.command], _),
-                 ("r", [.command], _):
+                ("t", [.command], _), ("t", [.command, .shift], _),
+                ("w", _, true),
+                ("q", [.command], _),
+                ("r", [.command], _):
                 NSApp.menu?.performKeyEquivalent(with: event)
                 return true
             default:

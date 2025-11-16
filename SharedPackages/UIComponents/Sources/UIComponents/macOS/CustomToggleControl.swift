@@ -25,7 +25,7 @@ import Cocoa
 public final class CustomToggleControl: NSControl {
 
     // MARK: - Key Code Constants
-    
+
     private enum KeyCode {
         static let space: UInt16 = 49
         static let `return`: UInt16 = 36

@@ -388,7 +388,8 @@ class TabViewController: UIViewController {
                                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                                    featureDiscovery: FeatureDiscovery,
                                    keyValueStore: ThrowingKeyValueStoring,
-                                   daxDialogsManager: DaxDialogsManaging) -> TabViewController {
+                                   daxDialogsManager: DaxDialogsManaging,
+                                   aiChatSettings: AIChatSettingsProvider) -> TabViewController {
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
             TabViewController(coder: coder,
@@ -413,7 +414,8 @@ class TabViewController: UIViewController {
                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                               featureDiscovery: featureDiscovery,
                               keyValueStore: keyValueStore,
-                              daxDialogsManager: daxDialogsManager
+                              daxDialogsManager: daxDialogsManager,
+                              aiChatSettings: aiChatSettings
             )
         })
         return controller
@@ -459,6 +461,7 @@ class TabViewController: UIViewController {
     let featureDiscovery: FeatureDiscovery
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
+    let aiChatSettings: AIChatSettingsProvider
 
     required init?(coder aDecoder: NSCoder,
                    tabModel: Tab,
@@ -485,7 +488,8 @@ class TabViewController: UIViewController {
                    featureDiscovery: FeatureDiscovery,
                    keyValueStore: ThrowingKeyValueStoring,
                    daxDialogsManager: DaxDialogsManaging,
-                   adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector()) {
+                   adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector(),
+                   aiChatSettings: AIChatSettingsProvider) {
 
         self.tabModel = tabModel
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -517,14 +521,6 @@ class TabViewController: UIViewController {
         }
         
         self.aiChatSettings = aiChatSettings
-        self.aiChatViewControllerManager = AIChatViewControllerManager(
-            privacyConfigurationManager: privacyConfigurationManager,
-            contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
-            experimentalAIChatManager: .init(featureFlagger: featureFlagger),
-            featureFlagger: featureFlagger,
-            featureDiscovery: featureDiscovery,
-            aiChatSettings: aiChatSettings
-        )
 
         super.init(coder: aDecoder)
         

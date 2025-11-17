@@ -1,5 +1,5 @@
 //
-//  SamplemacOSView.swift
+//  CABasicAnimationExtension.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,15 +16,18 @@
 //  limitations under the License.
 //
 
-import SwiftUI
+import QuartzCore
 
-#if os(macOS)
-public struct SamplemacOSView: View {
+extension CABasicAnimation {
 
-    public init() {}
-
-    public var body: some View {
-        Text("Hello, macOS!")
+    static func buildRotationAnimation(duration: TimeInterval) -> CABasicAnimation {
+        let keyPath = "transform.rotation.z"
+        let animation = CABasicAnimation(keyPath: keyPath)
+        animation.fromValue = 0
+        animation.toValue = -2 * CGFloat.pi
+        animation.duration = duration
+        animation.repeatCount = .infinity
+        animation.isRemovedOnCompletion = false
+        return animation
     }
 }
-#endif

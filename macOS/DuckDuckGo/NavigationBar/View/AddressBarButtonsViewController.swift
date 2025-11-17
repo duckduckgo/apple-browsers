@@ -27,6 +27,7 @@ import PrivacyDashboard
 import PixelKit
 import AppKitExtensions
 import AIChat
+import UIComponents
 
 protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 
@@ -35,6 +36,7 @@ protocol AddressBarButtonsViewControllerDelegate: AnyObject {
     func addressBarButtonsViewControllerHideAskAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
+    func addressBarButtonsViewControllerSearchModeToggleChanged(_ addressBarButtonsViewController: AddressBarButtonsViewController, isAIChatMode: Bool)
 }
 
 final class AddressBarButtonsViewController: NSViewController {
@@ -101,6 +103,8 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var leadingAIChatDivider: NSImageView!
     @IBOutlet weak var trailingAIChatDivider: NSImageView!
     @IBOutlet weak var trailingStackViewTrailingViewConstraint: NSLayoutConstraint!
+
+    private var searchModeToggleControl: CustomToggleControl?
     @IBOutlet weak var notificationAnimationView: NavigationBarBadgeAnimationView!
     @IBOutlet weak var bookmarkButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var bookmarkButtonHeightConstraint: NSLayoutConstraint!
@@ -288,6 +292,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         setupAnimationViews()
         setupNotificationAnimationView()
+        setupSearchModeToggleControl()
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkList()
         subscribeToEffectiveAppearance()
@@ -654,6 +659,8 @@ final class AddressBarButtonsViewController: NSViewController {
             }
         case .editing(.openTabSuggestion):
             imageButton.image = .openTabSuggestion
+        case .editing(.aiChat):
+            imageButton.image = .aiChat
         default:
             imageButton.image = nil
         }
@@ -961,9 +968,13 @@ final class AddressBarButtonsViewController: NSViewController {
     private var isAskAIChatButtonExpanded: Bool = false
 
     private func updateAskAIChatButtonVisibility(isSidebarOpen: Bool? = nil) {
+        let shouldShowToggle = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+
         if isTextFieldEditorFirstResponder {
-            aiChatButton.isHidden = true
-            askAIChatButton.isHidden = !shouldShowAskAIChatButton()
+            if !shouldShowToggle {
+                aiChatButton.isHidden = true
+            }
+            askAIChatButton.isHidden = shouldShowToggle || !shouldShowAskAIChatButton()
         } else {
             // aiChatButton visibility managed in updateAIChatButtonVisibility
             askAIChatButton.isHidden = true
@@ -1407,10 +1418,18 @@ final class AddressBarButtonsViewController: NSViewController {
 
         stopAnimationsAfterFocus()
 
-        if featureFlagger.isFeatureOn(.aiChatSidebar) {
-            cancelButton.isShown = isTextFieldEditorFirstResponder
+        let shouldShowToggle = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        searchModeToggleControl?.isHidden = !shouldShowToggle
+
+        if shouldShowToggle {
+            aiChatButton.isHidden = true
+            cancelButton.isShown = false
         } else {
-            cancelButton.isShown = isTextFieldEditorFirstResponder && !textFieldValue.isEmpty
+            if featureFlagger.isFeatureOn(.aiChatSidebar) {
+                cancelButton.isShown = isTextFieldEditorFirstResponder
+            } else {
+                cancelButton.isShown = isTextFieldEditorFirstResponder && !textFieldValue.isEmpty
+            }
         }
 
         updateImageButton()
@@ -1418,7 +1437,9 @@ final class AddressBarButtonsViewController: NSViewController {
         updatePermissionButtons()
         updateBookmarkButtonVisibility()
         updateZoomButtonVisibility()
-        updateAIChatButtonVisibility()
+        if !shouldShowToggle {
+            updateAIChatButtonVisibility()
+        }
         updateAskAIChatButtonVisibility()
         updateButtonsPosition()
     }
@@ -1591,6 +1612,61 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func setupNotificationAnimationView() {
         notificationAnimationView.alphaValue = 0.0
+    }
+
+    private func setupSearchModeToggleControl() {
+        let toggleControl = CustomToggleControl(frame: NSRect(x: 0, y: 0, width: 72, height: 28))
+        toggleControl.translatesAutoresizingMaskIntoConstraints = false
+
+        if let searchImage = NSImage(systemSymbolName: "magnifyingglass", accessibilityDescription: nil) {
+            toggleControl.leftImage = searchImage
+        }
+        if let aiImage = NSImage(systemSymbolName: "wand.and.stars", accessibilityDescription: nil) {
+            toggleControl.rightImage = aiImage
+        }
+
+        applyThemeToToggleControl(toggleControl)
+
+        toggleControl.isRightSelected = false
+
+        toggleControl.target = self
+        toggleControl.action = #selector(searchModeToggleDidChange(_:))
+
+        trailingButtonsContainer.addArrangedSubview(toggleControl)
+        toggleControl.isHidden = true
+
+        NSLayoutConstraint.activate([
+            toggleControl.widthAnchor.constraint(equalToConstant: 72),
+            toggleControl.heightAnchor.constraint(equalToConstant: 28)
+        ])
+
+        self.searchModeToggleControl = toggleControl
+    }
+
+    @objc private func searchModeToggleDidChange(_ sender: CustomToggleControl) {
+        let isAIChatMode = sender.isRightSelected
+        delegate?.addressBarButtonsViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
+    }
+
+    private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
+        let theme = themeManager.theme
+        let colorsProvider = theme.colorsProvider
+
+        let backgroundColor: NSColor
+        if NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
+            backgroundColor = colorsProvider.activeAddressBarBackgroundColor.withAlphaComponent(0.5).blended(withFraction: 0.1, of: .white) ?? colorsProvider.activeAddressBarBackgroundColor
+        } else {
+            backgroundColor = colorsProvider.activeAddressBarBackgroundColor.withAlphaComponent(0.5).blended(withFraction: 0.05, of: .black) ?? colorsProvider.activeAddressBarBackgroundColor
+        }
+
+        toggleControl.backgroundColor = backgroundColor
+        toggleControl.selectedBackgroundColor = backgroundColor
+        toggleControl.focusedBackgroundColor = backgroundColor
+        toggleControl.selectionColor = colorsProvider.accentPrimaryColor
+        toggleControl.focusBorderColor = colorsProvider.accentPrimaryColor
+        toggleControl.outerBorderColor = colorsProvider.addressBarOutlineShadow
+        toggleControl.outerBorderWidth = 2.0
+        toggleControl.selectionInnerBorderColor = backgroundColor
     }
 
     private func setupAnimationViews() {
@@ -1828,6 +1904,11 @@ extension AddressBarButtonsViewController: ThemeUpdateListening {
         updateZoomButtonVisibility()
         refreshAskAIChatButtonStyle()
         refreshButtonsThemeStyle(theme: theme)
+
+        // Update toggle control theme
+        if let toggleControl = searchModeToggleControl {
+            applyThemeToToggleControl(toggleControl)
+        }
     }
 
     private func refreshButtonsThemeStyle(theme: ThemeStyleProviding) {

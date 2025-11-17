@@ -1,5 +1,5 @@
 //
-//  MockThemeManager.swift
+//  CATransitionExtension.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -15,17 +15,16 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-#if DEBUG
-import Bookmarks
-import Foundation
-import AppKit
 
-final class MockThemeManager: ThemeManaging {
+import QuartzCore
 
-    @Published var theme: ThemeStyleProviding = ThemeStyle.buildThemeStyle(themeName: .default, featureFlagger: NSApp.delegateTyped.featureFlagger)
+extension CATransition {
 
-    var themePublisher: Published<any ThemeStyleProviding>.Publisher {
-        $theme
+    static func buildFadeTransition(timingFunction: CAMediaTimingFunction, duration: TimeInterval) -> CATransition {
+        let transition = CATransition()
+        transition.duration = duration
+        transition.timingFunction = timingFunction
+        transition.type = .fade
+        return transition
     }
 }
-#endif

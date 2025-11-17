@@ -464,7 +464,7 @@ final class TabViewModel: NSObject {
         case .url, .none, .subscription, .identityTheftRestoration, .onboarding, .webExtensionUrl, .aiChat:
             if let tabTitle = tab.title?.trimmingWhitespace(), !tabTitle.isEmpty {
                 title = tabTitle
-            } else if let host = tab.url?.host?.droppingWwwPrefix() {
+            } else if let host = tab.url?.suggestedTitlePlaceholder {
                 title = host
             } else if let url = tab.url, url.isFileURL {
                 title = url.lastPathComponent

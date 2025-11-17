@@ -1311,9 +1311,6 @@ extension Pixel {
         // MARK: WebView Error Page Shown
         case webViewErrorPageShown
 
-        case webViewExternalSchemeNavigationXSafariHTTPSCancel
-        case webViewExternalSchemeNavigationXSafariHTTPSContinue
-
         // MARK: Browsing
         case stopPageLoad
 
@@ -2665,8 +2662,6 @@ extension Pixel.Event {
 
         // MARK: Browsing
         case .stopPageLoad: return "m_stop-page-load"
-        case .webViewExternalSchemeNavigationXSafariHTTPSCancel: return "m_webview_external-scheme-navigation_x-safari-https_cancel"
-        case .webViewExternalSchemeNavigationXSafariHTTPSContinue: return "m_webview_external-scheme-navigation_x-safari-https_continue"
 
         // MARK: Launch time
         case .appDidFinishLaunchingTime(let time): return "m_debug_app-did-finish-launching-time-\(time)"

@@ -38529,7 +38529,7 @@
     },
     "history.menu.clear.data.description" : {
       "comment" : "Description in the alert with the confirmation to clear browsing history",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38589,7 +38589,7 @@
     },
     "history.menu.clear.data.question" : {
       "comment" : "Alert with the confirmation to clear all data",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38649,7 +38649,7 @@
     },
     "history.menu.clear.data.today.description" : {
       "comment" : "Description in the alert with the confirmation to clear browsing history",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38709,7 +38709,7 @@
     },
     "history.menu.clear.data.today.question" : {
       "comment" : "Alert with the confirmation to clear all data",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38769,7 +38769,7 @@
     },
     "history.menu.clear.this.history" : {
       "comment" : "Menu item to clear parts of history and data",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38829,7 +38829,7 @@
     },
     "history.menu.delete.this.history" : {
       "comment" : "Menu item to delete parts of history and website data",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38889,7 +38889,7 @@
     },
     "history.menu.older" : {
       "comment" : "Menu item representing older history",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

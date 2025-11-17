@@ -165,9 +165,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475316806
     case hangReporting
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475931357
-    case shortHistoryMenu
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476547580
     case importChromeShortcuts
 
@@ -370,7 +367,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatPageContext,
                 .aiChatImprovements,
                 .aiChatKeepSession,
-                .shortHistoryMenu,
                 .importChromeShortcuts,
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
@@ -525,8 +521,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.willSoonDropBigSurSupport))
         case .hangReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.hangReporting))
-        case .shortHistoryMenu:
-            return .remoteReleasable(.feature(.shortHistoryMenu))
         case .importChromeShortcuts:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.importChromeShortcuts))
         case .updateSafariBookmarksImport:

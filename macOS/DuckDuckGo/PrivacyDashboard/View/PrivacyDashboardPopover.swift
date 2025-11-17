@@ -37,7 +37,12 @@ final class PrivacyDashboardPopover: NSPopover {
         (contentViewController as? PrivacyDashboardViewController)!
     }
 
-    init(entryPoint: PrivacyDashboardEntryPoint = .dashboard, contentBlocking: ContentBlockingProtocol, permissionManager: PermissionManagerProtocol) {
+    init(
+        entryPoint: PrivacyDashboardEntryPoint = .dashboard,
+        contentBlocking: ContentBlockingProtocol,
+        permissionManager: PermissionManagerProtocol,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+    ) {
         super.init()
 #if DEBUG
         self.behavior = .semitransient
@@ -46,7 +51,12 @@ final class PrivacyDashboardPopover: NSPopover {
 #endif
 
         self.backgroundColor = .privacyDashboardBackground
-        setupContentController(entryPoint: entryPoint, contentBlocking: contentBlocking, permissionManager: permissionManager)
+        setupContentController(
+            entryPoint: entryPoint,
+            contentBlocking: contentBlocking,
+            permissionManager: permissionManager,
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences
+        )
     }
 
     required init?(coder: NSCoder) {
@@ -63,9 +73,15 @@ final class PrivacyDashboardPopover: NSPopover {
     private func setupContentController(
         entryPoint: PrivacyDashboardEntryPoint,
         contentBlocking: ContentBlockingProtocol,
-        permissionManager: PermissionManagerProtocol
+        permissionManager: PermissionManagerProtocol,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     ) {
-        let controller = PrivacyDashboardViewController(entryPoint: entryPoint, contentBlocking: contentBlocking, permissionManager: permissionManager)
+        let controller = PrivacyDashboardViewController(
+            entryPoint: entryPoint,
+            contentBlocking: contentBlocking,
+            permissionManager: permissionManager,
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences
+        )
         controller.sizeDelegate = self
         contentViewController = controller
     }

@@ -21,6 +21,11 @@ import SwiftUIExtensions
 
 final class LetterView: NSView {
 
+    enum BackgroundShape {
+        case rectangle
+        case circle
+    }
+
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         setup()
@@ -68,7 +73,27 @@ final class LetterView: NSView {
         return imageView
     }()
 
+    var backgroundShape: BackgroundShape = .rectangle {
+        didSet {
+            refreshBackgroundCornerRadius()
+        }
+    }
+
+    var labelFont: NSFont? {
+        get {
+            label.font
+        }
+        set {
+            label.font = newValue
+        }
+    }
+
     override var intrinsicContentSize: NSSize { NSSize(width: 16, height: 16) }
+
+    override func layout() {
+        super.layout()
+        refreshBackgroundCornerRadius()
+    }
 
     private func setup() {
         wantsLayer = true
@@ -94,5 +119,14 @@ final class LetterView: NSView {
             placeholderView.topAnchor.constraint(equalTo: topAnchor),
             placeholderView.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
+    }
+
+    private func refreshBackgroundCornerRadius() {
+        let backgroundCornerRadius = backgroundShape == .circle ? bounds.width * 0.5 : 4
+        guard let backgroundLayer = backgroundView.layer, backgroundLayer.cornerRadius != backgroundCornerRadius else {
+            return
+        }
+
+        backgroundLayer.cornerRadius = backgroundCornerRadius
     }
 }

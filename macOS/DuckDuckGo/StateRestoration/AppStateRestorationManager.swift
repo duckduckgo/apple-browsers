@@ -37,6 +37,7 @@ final class AppStateRestorationManager: NSObject {
     private var stateChangedCancellable: AnyCancellable?
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
     private let startupPreferences: StartupPreferences
+    private let tabsPreferences: TabsPreferences
     private let keyValueStore: ThrowingKeyValueStoring
     private let sessionRestorePromptCoordinator: SessionRestorePromptCoordinating
     private let pixelFiring: PixelFiring?
@@ -70,6 +71,7 @@ final class AppStateRestorationManager: NSObject {
 
     convenience init(fileStore: FileStore,
                      startupPreferences: StartupPreferences,
+                     tabsPreferences: TabsPreferences,
                      keyValueStore: ThrowingKeyValueStoring,
                      sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
                      pixelFiring: PixelFiring?) {
@@ -77,6 +79,7 @@ final class AppStateRestorationManager: NSObject {
         self.init(fileStore: fileStore,
                   service: service,
                   startupPreferences: startupPreferences,
+                  tabsPreferences: tabsPreferences,
                   keyValueStore: keyValueStore,
                   sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
                   pixelFiring: pixelFiring)
@@ -86,6 +89,7 @@ final class AppStateRestorationManager: NSObject {
         fileStore: FileStore,
         service: StatePersistenceService,
         startupPreferences: StartupPreferences,
+        tabsPreferences: TabsPreferences,
         keyValueStore: ThrowingKeyValueStoring,
         sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
         pixelFiring: PixelFiring?
@@ -93,6 +97,7 @@ final class AppStateRestorationManager: NSObject {
         self.service = service
         self.tabSnapshotCleanupService = TabSnapshotCleanupService(fileStore: fileStore)
         self.startupPreferences = startupPreferences
+        self.tabsPreferences = tabsPreferences
         self.keyValueStore = keyValueStore
         self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
         self.pixelFiring = pixelFiring
@@ -208,7 +213,7 @@ final class AppStateRestorationManager: NSObject {
     }
 
     private func migratePinnedTabsSettingIfNecessary() {
-        TabsPreferences.shared.migratePinnedTabsSettingIfNecessary(nil)
+        tabsPreferences.migratePinnedTabsSettingIfNecessary(nil)
     }
 
     private func detectUnexpectedAppTermination() {

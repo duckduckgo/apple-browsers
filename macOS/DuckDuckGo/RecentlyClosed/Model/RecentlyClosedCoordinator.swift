@@ -25,16 +25,32 @@ protocol RecentlyClosedCoordinating: AnyObject {
 
     var cache: [RecentlyClosedCacheItem] { get }
 
+    /// Reopens `cacheItem`.
+    ///
+    /// If `nil` is provided, reopens the most recent item in `cache`.
+    /// If `cache` is empty, does nothing (this shouldn't happen in the wild).
+    ///
     func reopenItem(_ cacheItem: RecentlyClosedCacheItem?)
-    func burnCache(baseDomains: Set<String>?, tld: TLD)
 
+    func burnCache(baseDomains: Set<String>?, tld: TLD)
+}
+
+extension RecentlyClosedCoordinating {
+    /// Reopens the most recent item in `cache`.
+    ///
+    /// If `cache` is empty, does nothing (this shouldn't happen in the wild).
+    ///
+    func reopenItem() {
+        reopenItem(nil)
+    }
+
+    var canReopenRecentlyClosedTab: Bool {
+        return !cache.isEmpty
+    }
 }
 
 @MainActor
 final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
-
-    static let shared = RecentlyClosedCoordinator(windowControllersManager: Application.appDelegate.windowControllersManager,
-                                                  pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider)
 
     var windowControllersManager: WindowControllersManagerProtocol
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
@@ -46,10 +62,6 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
         guard AppVersion.runType.requiresEnvironment else { return }
         subscribeToWindowControllersManager()
         subscribeToPinnedTabsSettingChanged()
-    }
-
-    var canReopenRecentlyClosedTab: Bool {
-        return !cache.isEmpty
     }
 
     // MARK: - Subscriptions

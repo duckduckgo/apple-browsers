@@ -28,12 +28,6 @@
 /* Class = "UILabel"; text = "Favorite"; ObjectID = "mRK-XI-Rr8"; */
 "mRK-XI-Rr8.text" = "Preferință";
 
-/* Class = "UISegmentedControl"; NJH-oV-DbS.segmentTitles[0] = "All Bookmarks"; ObjectID = "NJH-oV-DbS"; */
-"NJH-oV-DbS.segmentTitles[0]" = "Toate marcajele";
-
-/* Class = "UISegmentedControl"; NJH-oV-DbS.segmentTitles[1] = "Favorites"; ObjectID = "NJH-oV-DbS"; */
-"NJH-oV-DbS.segmentTitles[1]" = "Preferințe";
-
 /* Class = "UINavigationItem"; title = "Bookmarks"; ObjectID = "oMv-60-GGW"; */
 "oMv-60-GGW.title" = "Semne de carte";
 
@@ -45,9 +39,6 @@
 
 /* Class = "UIBarButtonItem"; title = "Done"; ObjectID = "RuZ-zV-tu8"; */
 "RuZ-zV-tu8.title" = "Terminat";
-
-/* Class = "UILabel"; text = "No favorites added yet"; ObjectID = "y8y-oO-xBm"; */
-"y8y-oO-xBm.text" = "Nicio preferință adăugată încă";
 
 /* Class = "UITextField"; placeholder = "URL"; ObjectID = "YqY-sP-hhb"; */
 "YqY-sP-hhb.placeholder" = "URL";

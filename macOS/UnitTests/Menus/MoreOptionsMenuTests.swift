@@ -119,6 +119,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         moreOptionsMenu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
                                           bookmarkManager: MockBookmarkManager(),
                                           historyCoordinator: HistoryCoordinatingMock(),
+                                          recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
                                           fireproofDomains: fireproofDomains,
                                           passwordManagerCoordinator: passwordManagerCoordinator,
                                           vpnFeatureGatekeeper: networkProtectionVisibilityMock,

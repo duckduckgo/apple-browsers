@@ -51,24 +51,27 @@ final class HistoryMenu: NSMenu {
     private let clearAllHistorySeparator = NSMenuItem.separator()
 
     private let historyGroupingProvider: HistoryGroupingProvider
+    private let recentlyClosedCoordinator: RecentlyClosedCoordinating
     private let featureFlagger: FeatureFlagger
     @MainActor
     private let reopenMenuItemKeyEquivalentManager = ReopenMenuItemKeyEquivalentManager()
     private let location: Location
 
     @MainActor
-    convenience init(location: Location = .mainMenu, historyGroupingDataSource: HistoryGroupingDataSource, featureFlagger: FeatureFlagger) {
+    convenience init(location: Location = .mainMenu, historyGroupingDataSource: HistoryGroupingDataSource, recentlyClosedCoordinator: RecentlyClosedCoordinating, featureFlagger: FeatureFlagger) {
         self.init(
             location: location,
             historyGroupingProvider: .init(dataSource: historyGroupingDataSource, featureFlagger: featureFlagger),
+            recentlyClosedCoordinator: recentlyClosedCoordinator,
             featureFlagger: featureFlagger
         )
     }
 
     @MainActor
-    init(location: Location = .mainMenu, historyGroupingProvider: HistoryGroupingProvider, featureFlagger: FeatureFlagger) {
+    init(location: Location = .mainMenu, historyGroupingProvider: HistoryGroupingProvider, recentlyClosedCoordinator: RecentlyClosedCoordinating, featureFlagger: FeatureFlagger) {
         self.location = location
         self.historyGroupingProvider = historyGroupingProvider
+        self.recentlyClosedCoordinator = recentlyClosedCoordinator
         self.featureFlagger = featureFlagger
 
         super.init(title: UserText.mainMenuHistory)
@@ -137,7 +140,7 @@ final class HistoryMenu: NSMenu {
 
     @MainActor
     private func updateReopenLastClosedMenuItem() {
-        switch RecentlyClosedCoordinator.shared.cache.last {
+        switch recentlyClosedCoordinator.cache.last {
         case is RecentlyClosedWindow:
             reopenLastClosedMenuItem.title = UserText.reopenLastClosedWindow
             reopenLastClosedMenuItem.setAccessibilityIdentifier("HistoryMenu.reopenLastClosedWindow")
@@ -150,7 +153,7 @@ final class HistoryMenu: NSMenu {
 
     @MainActor
     private func updateRecentlyClosedMenu() {
-        let recentlyClosedMenu = RecentlyClosedMenu(recentlyClosedCoordinator: RecentlyClosedCoordinator.shared)
+        let recentlyClosedMenu = RecentlyClosedMenu(recentlyClosedCoordinator: recentlyClosedCoordinator)
         recentlyClosedMenuItem.submenu = recentlyClosedMenu
         recentlyClosedMenuItem.isEnabled = !recentlyClosedMenu.items.isEmpty
     }

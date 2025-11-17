@@ -980,6 +980,9 @@
 "Cohort: %@" = "Kohorta: %@";
 
 /* No comment provided by engineer. */
+"Configuration" = "Konfigurace";
+
+/* No comment provided by engineer. */
 "Confirm" = "Potvrdit";
 
 /* Button to continue the onboarding process */
@@ -2024,6 +2027,9 @@
 "keyCommandShowAllTabs" = "Zobrazit všechny karty";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Naposledy zpracováno: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Načítání zprostředkovatelů…";
 
 /* Summary text for the macOS browser waitlist */
@@ -2085,6 +2091,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Název hostitele zásad zpráv";
+
+/* No comment provided by engineer. */
+"Messages" = "Zprávy";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Tlačítko adresního řádku";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Adresní řádek";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Skrýt toto tlačítko";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Žádný";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Přizpůsobitelná tlačítka";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Zobrazit tlačítko Obnovit";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Tlačítko nástrojové lišty";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Nástrojová lišta";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Zpět";
@@ -2342,10 +2375,19 @@
 "new.address.bar.picker.title" = "Možnost adresního řádku";
 
 /* No comment provided by engineer. */
+"No Logs" = "Žádné záznamy";
+
+/* No comment provided by engineer. */
+"No messages" = "Žádné zprávy";
+
+/* No comment provided by engineer. */
 "No results found" = "Nebyly nalezeny žádné výsledky";
 
 /* No comment provided by engineer. */
 "OK" = "DOBŘE";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "O cookies je postaráno!";
@@ -2358,9 +2400,6 @@
 
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Vyber si prohlížeč";
-
-/* Message to highlight browser capability of private searches */
-"onboarding.browsers.features.privateSearch.title" = "Soukromé vyhledávání ve výchozím nastavení";
 
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo má také %1$@, které je dostupné s %2$@ a %3$@.";
@@ -2403,18 +2442,6 @@
 
 /* The title of the onboarding dialog popup to select the preferred App icon. */
 "onboarding.highlights.appIconSelection.title" = "Která barva mi sluší nejvíc?";
-
-/* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Blokování vyskakovacích oken ohledně cookies";
-
-/* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokování cílených reklam";
-
-/* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Vymaž údaje o prohlížení jedním tlačítkem";
-
-/* Message to highlight browser capability of blocking 3rd-party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokuj trackery třetích stran";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Ochrana je aktivní!";
@@ -2521,12 +2548,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Deaktivovat";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "E-mail (nepovinné)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "jmeno@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Pošli nám svou zpětnou vazbu...";
 
@@ -2560,8 +2581,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "VYBER KATEGORII";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Víš o problému, který není popsaný v našem [centru nápovědy](duck://)? Řekni nám o něm!\n\nZadej e-mail, pokud chceš, abychom tě ohledně tohoto problému kontaktovali (možná ale nezvládneme reagovat na všechny problémy):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Potřebuješ pomoc? [Kontaktuj podporu.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Víš o problému, který není popsaný v našem [centru nápovědy](duck://)? Chceme o něm vědět!\n\nPopiš nám, o co jde:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Kromě údajů zadaných nahoře posíláme s tvojí zpětnou vazbou i některé anonymizované informace:";
@@ -2711,6 +2735,9 @@
 "prompt.custom.url.scheme.title" = "Otevřít v jiné aplikaci?";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Nedávné protokoly zpracování";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Příbuzní: %@";
 
 /* No comment provided by engineer. */
@@ -2814,6 +2841,12 @@
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Nastavení vyhledávání s funkcí Assist";
+
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Skrýt obrázky vygenerované umělou inteligencí";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Odstraní obrázky vytvořené umělou inteligencí z výsledků vyhledávání obrázků";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vždycky zapnuté";
@@ -3187,6 +3220,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Prohlížeč DuckDuckGo poskytuje ochranu proti sledování, která je neustále zapnutá. [Více informací](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Zobrazuje protokoly z poslední minuty, aby se problémy mohly diagnostikovat hned po obnovení.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Vyber možnost, která nejlíp popisuje tvůj problém.";
 
@@ -3219,6 +3255,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Které webové stránky jsou poškozené?";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Stav: Neplatné";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Uložený název hostitele: %@";
@@ -3607,6 +3646,9 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* No comment provided by engineer. */
+"Version: %@" = "Verze: %@";
+
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Hledat";
 
@@ -3868,18 +3910,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Zpráva od %@:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "Zobrazit nabídku";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Teď ne";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Zůstaň v bezpečí díky naší VPN, soukromé AI a dalším funkcím. Obnov si předplatné ještě dnes a ušetři 25 %.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "Poslední šance ušetřit 25 %!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "UŠETŘI 25 %";
 
@@ -3914,7 +3944,10 @@
 "win-back.campaign.subscription.settings.menu.title" = "Obnov si předplatné a ušetři 25 %";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Obnov si předplatné a ušetři 25 %";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Obnovit předplatné";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Zůstaň v bezpečí díky naší VPN, soukromé AI a dalším funkcím.\nČasově omezená nabídka.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Hledáš verzi pro Mac?";

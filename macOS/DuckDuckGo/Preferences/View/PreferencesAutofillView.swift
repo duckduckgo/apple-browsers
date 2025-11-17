@@ -365,6 +365,9 @@ private struct BitwardenStatusView: View {
 }
 
 struct BitwardenDowngradeInfoView: View, PreferencesTabOpening {
+    var windowControllersManager: WindowControllersManagerProtocol {
+        Application.appDelegate.windowControllersManager
+    }
 
     var body: some View {
         VStack(alignment: .leading) {

@@ -343,7 +343,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     func testWhenInsertOrAppendCalledPreferencesAreRespected() {
         let persistor = MockTabsPreferencesPersistor()
         var tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
-                                                            tabsPreferences: TabsPreferences(persistor: persistor))
+                                                            tabsPreferences: TabsPreferences(persistor: persistor, windowControllersManager: WindowControllersManagerMock()))
 
         let index = tabCollectionViewModel.tabCollection.tabs.count
         tabCollectionViewModel.insertOrAppendNewTab()
@@ -351,7 +351,7 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         persistor.newTabPosition = .nextToCurrent
         tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
-                                                        tabsPreferences: TabsPreferences(persistor: persistor))
+                                                        tabsPreferences: TabsPreferences(persistor: persistor, windowControllersManager: WindowControllersManagerMock()))
 
         tabCollectionViewModel.appendNewTab()
         tabCollectionViewModel.select(at: .unpinned(0))

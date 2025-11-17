@@ -45,7 +45,20 @@ final public class UserContentController: WKUserContentController {
 
     public let privacyConfigurationManager: PrivacyConfigurationManaging
     @MainActor
-    public weak var delegate: UserContentControllerDelegate?
+    public weak var delegate: UserContentControllerDelegate? {
+        didSet {
+#if DEBUG
+            if delegate != nil {
+                self.delegateWasSet = true
+            }
+#endif
+        }
+    }
+
+#if DEBUG
+    /// DEBUG var validating `UserContentController.delegate` is always set shortly after init
+    private var delegateWasSet = false
+#endif
 
     public struct ContentBlockingAssets: CustomDebugStringConvertible {
         public let globalRuleLists: [String: WKContentRuleList]
@@ -144,7 +157,8 @@ final public class UserContentController: WKUserContentController {
 #if DEBUG
         // make sure delegate for UserScripts is set shortly after init
         DispatchQueue.main.async { [weak self] in
-            assert(self == nil || self?.delegate != nil || [.unitTests, .integrationTests].contains(AppVersion.runType), "UserContentController delegate not set")
+            assert(self?.delegateWasSet != false || [.unitTests, .integrationTests].contains(AppVersion.runType),
+                   "UserContentController delegate was not set: delegate must always be set shortly after init.")
         }
 #endif
     }

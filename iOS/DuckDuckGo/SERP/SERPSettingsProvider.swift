@@ -32,7 +32,7 @@ final class SERPSettingsProvider: SERPSettingsProviding {
 
     private let featureFlagger: FeatureFlagger
 
-    init(eventMapper: EventMapping<SERPSettingsError>? = nil,
+    init(eventMapper: EventMapping<SERPSettingsError>? = SERPSettingsEventHandler(),
          aiChatProvider: AIChatSettingsProvider,
          featureFlagger: FeatureFlagger) {
         self.eventMapper = eventMapper

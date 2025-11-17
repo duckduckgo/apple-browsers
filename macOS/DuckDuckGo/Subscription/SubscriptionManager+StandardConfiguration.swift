@@ -95,7 +95,8 @@ extension DefaultSubscriptionManager {
         // Auth V2 cleanup in case of rollback
         let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: pixelHandlingSource)
         let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { _, error in
+        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
+                                                              userDefaults: subscriptionUserDefaults) { _, error in
             Logger.subscription.error("Failed to remove AuthV2 token container : \(error.localizedDescription, privacy: .public)")
         }
         try? tokenStorage.saveTokenContainer(nil)
@@ -134,7 +135,8 @@ extension DefaultSubscriptionManagerV2 {
         let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
         let authService = DefaultOAuthService(baseURL: environment.authEnvironment.url,
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
+        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
+                                                              userDefaults: userDefaults) { accessType, error in
             PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
                                                                              accessError: error,
                                                                              source: KeychainErrorSource.shared,

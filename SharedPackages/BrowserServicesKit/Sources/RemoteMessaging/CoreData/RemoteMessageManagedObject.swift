@@ -34,6 +34,7 @@ public class RemoteMessageManagedObject: NSManagedObject {
     @NSManaged public var message: String?
     @NSManaged public var shown: Bool
     @NSManaged public var status: NSNumber?
+    @NSManaged public var surfaces: NSNumber?
 
     public convenience init(context moc: NSManagedObjectContext) {
         self.init(entity: RemoteMessageManagedObject.entity(in: moc), insertInto: moc)

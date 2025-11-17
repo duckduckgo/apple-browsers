@@ -57,6 +57,7 @@ protocol NewWindowPolicyDecisionMaker {
         var cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter?
         let duckPlayer: DuckPlayer
         var downloadManager: FileDownloadManagerProtocol
+        var downloadsPreferences: DownloadsPreferences
         var certificateTrustEvaluator: CertificateTrustEvaluating
         var tunnelController: NetworkProtectionIPCTunnelController?
         var maliciousSiteDetector: MaliciousSiteDetecting
@@ -67,6 +68,8 @@ protocol NewWindowPolicyDecisionMaker {
         var newTabPageShownPixelSender: NewTabPageShownPixelSender
         var aiChatSidebarProvider: AIChatSidebarProviding
         var tabCrashAggregator: TabCrashAggregator
+        var tabsPreferences: TabsPreferences
+        var webTrackingProtectionPreferences: WebTrackingProtectionPreferences
         var autoconsentStats: AutoconsentStatsCollecting
     }
 
@@ -116,7 +119,8 @@ protocol NewWindowPolicyDecisionMaker {
                      workspace: Workspace = NSWorkspace.shared,
                      privacyFeatures: AnyPrivacyFeatures? = nil,
                      duckPlayer: DuckPlayer? = nil,
-                     downloadManager: FileDownloadManagerProtocol = FileDownloadManager.shared,
+                     downloadManager: FileDownloadManagerProtocol? = nil,
+                     downloadsPreferences: DownloadsPreferences? = nil,
                      permissionManager: PermissionManagerProtocol? = nil,
                      geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
                      cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter? = ContentBlockingAssetsCompilationTimeReporter.shared,
@@ -139,7 +143,8 @@ protocol NewWindowPolicyDecisionMaker {
                      certificateTrustEvaluator: CertificateTrustEvaluating = CertificateTrustEvaluator(),
                      tunnelController: NetworkProtectionIPCTunnelController? = TunnelControllerProvider.shared.tunnelController,
                      maliciousSiteDetector: MaliciousSiteDetecting = MaliciousSiteProtectionManager.shared,
-                     tabsPreferences: TabsPreferences = TabsPreferences.shared,
+                     tabsPreferences: TabsPreferences? = nil,
+                     webTrackingProtectionPreferences: WebTrackingProtectionPreferences? = nil,
                      onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
                      pageRefreshMonitor: PageRefreshMonitoring = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern),
                      aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil,
@@ -176,7 +181,8 @@ protocol NewWindowPolicyDecisionMaker {
                   workspace: workspace,
                   privacyFeatures: privacyFeatures,
                   duckPlayer: duckPlayer,
-                  downloadManager: downloadManager,
+                  downloadManager: downloadManager ?? NSApp.delegateTyped.downloadManager,
+                  downloadsPreferences: downloadsPreferences ?? NSApp.delegateTyped.downloadsPreferences,
                   permissionManager: permissionManager ?? NSApp.delegateTyped.permissionManager,
                   geolocationService: geolocationService,
                   extensionsBuilder: extensionsBuilder,
@@ -200,7 +206,8 @@ protocol NewWindowPolicyDecisionMaker {
                   certificateTrustEvaluator: certificateTrustEvaluator,
                   tunnelController: tunnelController,
                   maliciousSiteDetector: maliciousSiteDetector,
-                  tabsPreferences: tabsPreferences,
+                  tabsPreferences: tabsPreferences ?? NSApp.delegateTyped.tabsPreferences,
+                  webTrackingProtectionPreferences: webTrackingProtectionPreferences ?? NSApp.delegateTyped.webTrackingProtectionPreferences,
                   onboardingPixelReporter: onboardingPixelReporter,
                   pageRefreshMonitor: pageRefreshMonitor,
                   aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
@@ -225,6 +232,7 @@ protocol NewWindowPolicyDecisionMaker {
          privacyFeatures: AnyPrivacyFeatures,
          duckPlayer: DuckPlayer,
          downloadManager: FileDownloadManagerProtocol,
+         downloadsPreferences: DownloadsPreferences,
          permissionManager: PermissionManagerProtocol,
          geolocationService: GeolocationServiceProtocol,
          extensionsBuilder: TabExtensionsBuilderProtocol,
@@ -249,6 +257,7 @@ protocol NewWindowPolicyDecisionMaker {
          tunnelController: NetworkProtectionIPCTunnelController?,
          maliciousSiteDetector: MaliciousSiteDetecting,
          tabsPreferences: TabsPreferences,
+         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          onboardingPixelReporter: OnboardingAddressBarReporting,
          pageRefreshMonitor: PageRefreshMonitoring,
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
@@ -335,6 +344,7 @@ protocol NewWindowPolicyDecisionMaker {
                                                        cbaTimeReporter: cbaTimeReporter,
                                                        duckPlayer: duckPlayer,
                                                        downloadManager: downloadManager,
+                                                       downloadsPreferences: downloadsPreferences,
                                                        certificateTrustEvaluator: certificateTrustEvaluator,
                                                        tunnelController: tunnelController,
                                                        maliciousSiteDetector: maliciousSiteDetector,
@@ -345,6 +355,8 @@ protocol NewWindowPolicyDecisionMaker {
                                                        newTabPageShownPixelSender: newTabPageShownPixelSender,
                                                        aiChatSidebarProvider: aiChatSidebarProvider,
                                                        tabCrashAggregator: tabCrashAggregator,
+                                                       tabsPreferences: tabsPreferences,
+                                                       webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                                                        autoconsentStats: autoconsentStats)
             )
         super.init()

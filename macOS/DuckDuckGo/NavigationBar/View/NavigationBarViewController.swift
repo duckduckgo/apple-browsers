@@ -108,6 +108,7 @@ final class NavigationBarViewController: NSViewController {
     private let bookmarkDragDropManager: BookmarkDragDropManager
     private let bookmarkManager: BookmarkManager
     private let historyCoordinator: HistoryCoordinator
+    private let recentlyClosedCoordinator: RecentlyClosedCoordinating
     private let fireproofDomains: FireproofDomains
     private let contentBlocking: ContentBlockingProtocol
     private let permissionManager: PermissionManagerProtocol
@@ -150,8 +151,12 @@ final class NavigationBarViewController: NSViewController {
 
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
     private let featureFlagger: FeatureFlagger
+    private let searchPreferences: SearchPreferences
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
+    private let defaultBrowserPreferences: DefaultBrowserPreferences
+    private let downloadsPreferences: DownloadsPreferences
+    private let tabsPreferences: TabsPreferences
     private let showTab: (Tab.TabContent) -> Void
 
     let themeManager: ThemeManaging
@@ -201,10 +206,11 @@ final class NavigationBarViewController: NSViewController {
     // MARK: View Lifecycle
 
     static func create(tabCollectionViewModel: TabCollectionViewModel,
-                       downloadListCoordinator: DownloadListCoordinator = .shared,
+                       downloadListCoordinator: DownloadListCoordinator,
                        bookmarkManager: BookmarkManager,
                        bookmarkDragDropManager: BookmarkDragDropManager,
                        historyCoordinator: HistoryCoordinator,
+                       recentlyClosedCoordinator: RecentlyClosedCoordinating,
                        contentBlocking: ContentBlockingProtocol,
                        fireproofDomains: FireproofDomains,
                        permissionManager: PermissionManagerProtocol,
@@ -213,12 +219,17 @@ final class NavigationBarViewController: NSViewController {
                        autofillPopoverPresenter: AutofillPopoverPresenter,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+                       searchPreferences: SearchPreferences,
+                       webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
                        themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
                        aiChatSidebarPresenter: AIChatSidebarPresenting,
                        vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = NSApp.delegateTyped.vpnUpsellVisibilityManager,
                        vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
                        sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
+                       defaultBrowserPreferences: DefaultBrowserPreferences,
+                       downloadsPreferences: DownloadsPreferences,
+                       tabsPreferences: TabsPreferences,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
                                Application.appDelegate.windowControllersManager.showTab(with: content)
@@ -233,6 +244,7 @@ final class NavigationBarViewController: NSViewController {
                 bookmarkManager: bookmarkManager,
                 bookmarkDragDropManager: bookmarkDragDropManager,
                 historyCoordinator: historyCoordinator,
+                recentlyClosedCoordinator: recentlyClosedCoordinator,
                 contentBlocking: contentBlocking,
                 fireproofDomains: fireproofDomains,
                 permissionManager: permissionManager,
@@ -241,12 +253,17 @@ final class NavigationBarViewController: NSViewController {
                 autofillPopoverPresenter: autofillPopoverPresenter,
                 brokenSitePromptLimiter: brokenSitePromptLimiter,
                 featureFlagger: featureFlagger,
+                searchPreferences: searchPreferences,
+                webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 themeManager: themeManager,
                 aiChatMenuConfig: aiChatMenuConfig,
                 aiChatSidebarPresenter: aiChatSidebarPresenter,
                 vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
                 vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
                 sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
+                defaultBrowserPreferences: defaultBrowserPreferences,
+                downloadsPreferences: downloadsPreferences,
+                tabsPreferences: tabsPreferences,
                 showTab: showTab
             )
         }!
@@ -259,6 +276,7 @@ final class NavigationBarViewController: NSViewController {
         bookmarkManager: BookmarkManager,
         bookmarkDragDropManager: BookmarkDragDropManager,
         historyCoordinator: HistoryCoordinator,
+        recentlyClosedCoordinator: RecentlyClosedCoordinating,
         contentBlocking: ContentBlockingProtocol,
         fireproofDomains: FireproofDomains,
         permissionManager: PermissionManagerProtocol,
@@ -267,12 +285,17 @@ final class NavigationBarViewController: NSViewController {
         autofillPopoverPresenter: AutofillPopoverPresenter,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
         featureFlagger: FeatureFlagger,
+        searchPreferences: SearchPreferences,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         themeManager: ThemeManaging,
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatSidebarPresenter: AIChatSidebarPresenting,
         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
         sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
+        defaultBrowserPreferences: DefaultBrowserPreferences,
+        downloadsPreferences: DownloadsPreferences,
+        tabsPreferences: TabsPreferences,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
@@ -281,6 +304,9 @@ final class NavigationBarViewController: NSViewController {
             bookmarkDragDropManager: bookmarkDragDropManager,
             contentBlocking: contentBlocking,
             fireproofDomains: fireproofDomains,
+            downloadsPreferences: downloadsPreferences,
+            downloadListCoordinator: downloadListCoordinator,
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences,
             permissionManager: permissionManager,
             networkProtectionPopoverManager: networkProtectionPopoverManager,
             autofillPopoverPresenter: autofillPopoverPresenter,
@@ -297,19 +323,34 @@ final class NavigationBarViewController: NSViewController {
         self.bookmarkManager = bookmarkManager
         self.bookmarkDragDropManager = bookmarkDragDropManager
         self.historyCoordinator = historyCoordinator
+        self.recentlyClosedCoordinator = recentlyClosedCoordinator
         self.contentBlocking = contentBlocking
         self.permissionManager = permissionManager
         self.fireproofDomains = fireproofDomains
         self.brokenSitePromptLimiter = brokenSitePromptLimiter
         self.featureFlagger = featureFlagger
+        self.searchPreferences = searchPreferences
         self.themeManager = themeManager
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
+        self.defaultBrowserPreferences = defaultBrowserPreferences
+        self.downloadsPreferences = downloadsPreferences
+        self.tabsPreferences = tabsPreferences
         self.showTab = showTab
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
         self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
-        goBackButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .back, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
-        goForwardButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .forward, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
+        goBackButtonMenuDelegate = NavigationButtonMenuDelegate(
+            buttonType: .back,
+            tabCollectionViewModel: tabCollectionViewModel,
+            historyCoordinator: historyCoordinator,
+            tabsPreferences: tabsPreferences
+        )
+        goForwardButtonMenuDelegate = NavigationButtonMenuDelegate(
+            buttonType: .forward,
+            tabCollectionViewModel: tabCollectionViewModel,
+            historyCoordinator: historyCoordinator,
+            tabsPreferences: tabsPreferences
+        )
         super.init(coder: coder)
     }
 
@@ -359,6 +400,8 @@ final class NavigationBarViewController: NSViewController {
                                                                       permissionManager: permissionManager,
                                                                       burnerMode: burnerMode,
                                                                       popovers: popovers,
+                                                                      searchPreferences: searchPreferences,
+                                                                      tabsPreferences: tabsPreferences,
                                                                       onboardingPixelReporter: onboardingPixelReporter,
                                                                       aiChatMenuConfig: aiChatMenuConfig,
                                                                       aiChatSidebarPresenter: aiChatSidebarPresenter) else {
@@ -1096,7 +1139,7 @@ final class NavigationBarViewController: NSViewController {
             .throttle(for: 0.5, scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] _ in
                 guard let self, !self.isDownloadsPopoverShown,
-                      DownloadsPreferences.shared.shouldOpenPopupOnCompletion,
+                      downloadsPreferences.shouldOpenPopupOnCompletion,
                       downloadsButton.window?.isKeyWindow == true else { return }
 
                 self.popovers.showDownloadsPopoverAndAutoHide(from: downloadsButton, popoverDelegate: self, downloadsDelegate: self)
@@ -1234,7 +1277,7 @@ final class NavigationBarViewController: NSViewController {
         // Create behavior using current event
         let behavior = LinkOpenBehavior(
             event: NSApp.currentEvent,
-            switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+            switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
             canOpenLinkInCurrentTab: true
         )
 
@@ -1274,7 +1317,7 @@ final class NavigationBarViewController: NSViewController {
 
         let behavior = LinkOpenBehavior(
             event: NSApp.currentEvent,
-            switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+            switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
             canOpenLinkInCurrentTab: true
         )
 
@@ -1316,6 +1359,7 @@ final class NavigationBarViewController: NSViewController {
         let menu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
                                    bookmarkManager: bookmarkManager,
                                    historyCoordinator: historyCoordinator,
+                                   recentlyClosedCoordinator: recentlyClosedCoordinator,
                                    fireproofDomains: fireproofDomains,
                                    passwordManagerCoordinator: PasswordManagerCoordinator.shared,
                                    vpnFeatureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager),
@@ -1323,6 +1367,7 @@ final class NavigationBarViewController: NSViewController {
                                    subscriptionManager: subscriptionManager,
                                    freemiumDBPFeature: freemiumDBPFeature,
                                    dockCustomizer: dockCustomization,
+                                   defaultBrowserPreferences: defaultBrowserPreferences,
                                    isUsingAuthV2: subscriptionManager is DefaultSubscriptionManagerV2)
 
         menu.actionDelegate = self
@@ -1371,7 +1416,7 @@ final class NavigationBarViewController: NSViewController {
         guard view.window?.isKeyWindow == true, (self.presentedViewControllers ?? []).isEmpty else { return }
 
         DispatchQueue.main.async {
-            let viewController = PopoverMessageViewController(message: "DuckDuckGo VPN was uninstalled")
+            let viewController = PopoverMessageViewController(message: UserText.vpnWasUninstalled)
             viewController.show(onParent: self, relativeTo: self.optionsButton)
         }
     }

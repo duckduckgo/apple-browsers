@@ -31,18 +31,18 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring.Type
     private let subscriptionDataReporter: SubscriptionDataReporting?
-    private let navigator: MessageNavigator
+    private let messageActionHandler: RemoteMessagingActionHandling
 
     init(homePageMessagesConfiguration: HomePageMessagesConfiguration,
          notificationCenter: NotificationCenter = .default,
          pixelFiring: PixelFiring.Type = Pixel.self,
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
-         navigator: MessageNavigator) {
+         messageActionHandler: RemoteMessagingActionHandling) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
         self.notificationCenter = notificationCenter
         self.pixelFiring = pixelFiring
         self.subscriptionDataReporter = subscriptionDataReporter
-        self.navigator = navigator
+        self.messageActionHandler = messageActionHandler
     }
 
     func load() {
@@ -83,7 +83,7 @@ final class NewTabPageMessagesModel: ObservableObject {
             return HomeMessageViewModel(messageId: "",
                                         sendPixels: false,
                                         modelType: .small(titleText: "", descriptionText: ""),
-                                        navigator: navigator) { [weak self] _ in
+                                        messageActionHandler: messageActionHandler) { [weak self] _ in
                 await self?.dismissHomeMessage(message)
             } onDidAppear: {
                 // no-op
@@ -98,7 +98,7 @@ final class NewTabPageMessagesModel: ObservableObject {
 
             return HomeMessageViewModelBuilder.build(for: remoteMessage,
                                                      with: subscriptionDataReporter,
-                                                     navigator: navigator) { @MainActor [weak self] action in
+                                                     messageActionHandler: messageActionHandler) { @MainActor [weak self] action in
                 guard let action,
                       let self else { return }
 

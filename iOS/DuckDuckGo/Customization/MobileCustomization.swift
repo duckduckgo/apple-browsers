@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Persistence
 import DesignResourcesKitIcons
 import UIKit
+import Core
 
 /// Handles logic and persistence of customization options.  iPad is not supported so this returns false for `isEnabled` on iPad.
 class MobileCustomization {
@@ -42,40 +43,7 @@ class MobileCustomization {
 
     }
 
-    enum Button: String, CustomStringConvertible {
-
-        var description: String {
-            switch self {
-            case .share:
-                "Share"
-            case .addEditBookmark:
-                "Add Bookmark"
-            case .addEditFavorite:
-                "Add Favorite"
-            case .zoom:
-                "Zoom"
-            case .none:
-                "None"
-            case .home:
-                "Home"
-            case .newTab:
-                "New Tab"
-            case .bookmarks:
-                "Bookmarks"
-            case .duckAi:
-                "Duck.ai"
-            case .fire:
-                "Clear Tabs and Data"
-            case .vpn:
-                "VPN"
-            case .passwords:
-                "Passwords"
-            case .voiceSearch:
-                "Voice Search"
-            case .downloads:
-                "Downloads"
-            }
-        }
+    enum Button: String, Hashable, CaseIterable {
 
         var altLargeIcon: UIImage? {
             switch self {
@@ -103,16 +71,12 @@ class MobileCustomization {
                 DesignSystemImages.Glyphs.Size24.add
             case .bookmarks:
                 DesignSystemImages.Glyphs.Size24.bookmarks
-            case .duckAi:
-                DesignSystemImages.Glyphs.Size24.aiChat
             case .fire:
                 DesignSystemImages.Glyphs.Size24.fireSolid
             case .vpn:
                 DesignSystemImages.Glyphs.Size24.vpn
             case .passwords:
                 DesignSystemImages.Glyphs.Size24.key
-            case .voiceSearch:
-                DesignSystemImages.Glyphs.Size24.microphone
             case .downloads:
                 DesignSystemImages.Glyphs.Size24.downloads
             }
@@ -136,16 +100,12 @@ class MobileCustomization {
                 DesignSystemImages.Glyphs.Size16.add
             case .bookmarks:
                 DesignSystemImages.Glyphs.Size16.bookmarks
-            case .duckAi:
-                DesignSystemImages.Glyphs.Size16.aiChat
             case .fire:
                 DesignSystemImages.Glyphs.Size16.fireSolid
             case .vpn:
                 DesignSystemImages.Glyphs.Size16.vpnOn
             case .passwords:
                 DesignSystemImages.Glyphs.Size16.keyLogin
-            case .voiceSearch:
-                DesignSystemImages.Glyphs.Size16.microphone
             case .downloads:
                 DesignSystemImages.Glyphs.Size16.downloads
             }
@@ -155,7 +115,6 @@ class MobileCustomization {
         case share
         case addEditBookmark
         case addEditFavorite
-        case voiceSearch
         case zoom
         case none
 
@@ -163,65 +122,60 @@ class MobileCustomization {
         case home
         case newTab
         case bookmarks
-        case duckAi
         case downloads
+        case passwords
 
         // Shared
         case fire
         case vpn
-        case passwords
     }
 
     static let addressBarDefault: Button = .share
     static let toolbarDefault: Button = .fire
 
-    static let addressBarButtons: [Button?] = {
-        let sortedButtons: [Button] = [
+    static let addressBarButtons: [Button] = [
+            .share,
             .addEditBookmark,
             .addEditFavorite,
             .fire,
             .vpn,
             .zoom,
-        ].sorted(by: descriptionComparison)
+            .none
+        ]
 
-        return [.share] // default
-            + sortedButtons
-            + [nil, Button.none] // none is at the end after the divider
-    } ()
-
-    static let toolbarButtons: [Button] = {
-        let sortedButtons: [Button] = [
+    static let toolbarButtons: [Button] = [
+            .fire,
             .bookmarks,
-            .duckAi,
             .home,
             .newTab,
             .passwords,
             .share,
             .vpn,
             .downloads,
-        ].sorted(by: descriptionComparison)
-
-        return [.fire] // default
-            + sortedButtons
-
-    }()
+        ]
 
     var state: State {
-        State(isEnabled: featureFlagger.isFeatureOn(.mobileCustomization) && !isPad,
-              currentToolbarButton: current(forKey: .toolbarButton, Self.toolbarDefault),
-              currentAddressBarButton: current(forKey: .addressBarButton, Self.addressBarDefault))
+        State(isEnabled: isEnabled,
+              currentToolbarButton: current(forKey: .toolbarButton, containedIn: Self.toolbarButtons, Self.toolbarDefault),
+              currentAddressBarButton: current(forKey: .addressBarButton, containedIn: Self.addressBarButtons.compactMap { $0 }, Self.addressBarDefault))
     }
 
-    private let featureFlagger: FeatureFlagger
+    var hasFireButton: Bool {
+        return state.currentToolbarButton == .fire || state.currentAddressBarButton == .fire
+    }
+
+    var isEnabled: Bool {
+        isFeatureEnabled && !isPad
+    }
+
+    var isFeatureEnabled: Bool
+    
     private let keyValueStore: ThrowingKeyValueStoring
     private let isPad: Bool
     private let postChangeNotification: (State) -> Void
+    private let pixelFiring: PixelFiring.Type
 
     public weak var delegate: Delegate?
-
-    static func descriptionComparison(lhs: CustomStringConvertible, rhs: CustomStringConvertible) -> Bool {
-        lhs.description.localizedCaseInsensitiveCompare(rhs.description) == .orderedAscending
-    }
 
     enum StorageKeys: String {
 
@@ -230,31 +184,62 @@ class MobileCustomization {
 
     }
 
-    init(featureFlagger: FeatureFlagger,
+    init(isFeatureEnabled: Bool,
          keyValueStore: ThrowingKeyValueStoring,
          isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
          postChangeNotification: @escaping ((State) -> Void) = {
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.customizationSettingsChanged, object: $0)
-        }
+         },
+         pixelFiring: PixelFiring.Type = Pixel.self
     ) {
-        self.featureFlagger = featureFlagger
+        self.isFeatureEnabled = isFeatureEnabled
         self.keyValueStore = keyValueStore
         self.isPad = isPad
         self.postChangeNotification = postChangeNotification
+        self.pixelFiring = pixelFiring
     }
 
-    private func current(forKey key: StorageKeys, _ defaultButton: Button) -> Button {
-        if let value = try? keyValueStore.object(forKey: key.rawValue) as? String {
-            Button(rawValue: value) ?? defaultButton
-        } else {
-            defaultButton
-        }
+    /// Get the current button for the given storage key.  If the button isn't in the alloweed list then the default is returned.  This prevents migration problems if the options change.
+    private func current(forKey key: StorageKeys, containedIn allowed: [Button], _ defaultButton: Button) -> Button {
+        guard let value = try? keyValueStore.object(forKey: key.rawValue) as? String,
+              let button = Button(rawValue: value),
+              allowed.contains(button) else {
+                  return defaultButton
+              }
+
+        return button
     }
 
     func persist(_ state: State) {
         setCurrentToolbarButton(state.currentToolbarButton)
         setCurrentAddressBarButton(state.currentAddressBarButton)
         postChangeNotification(state)
+    }
+
+    func fireAddressBarCustomizationStartedPixel() {
+        pixelFiring.fire(.customizationAddressBarStarted, withAdditionalParameters: [:])
+    }
+
+    func fireAddressBarCustomizationSelectedPixel(oldValue: Button) {
+        // Use all cases for this check as we don't want to return the default unless it was actually selected
+        if oldValue != current(forKey: .addressBarButton, containedIn: Button.allCases, Self.addressBarDefault) {
+            pixelFiring.fire(.customizationAddressBarSelected, withAdditionalParameters: [
+                "selected": state.currentAddressBarButton.rawValue
+            ])
+        }
+    }
+
+    func fireToolbarCustomizationStartedPixel() {
+        pixelFiring.fire(.customizationToolbarStarted, withAdditionalParameters: [:])
+    }
+
+    func fireToolbarCustomizationSelectedPixel(oldValue: Button) {
+        // Use all cases for this check as we don't want to return the default unless it was actually selected
+        if oldValue != current(forKey: .toolbarButton, containedIn: Button.allCases, Self.toolbarDefault) {
+            pixelFiring.fire(.customizationToolbarSelected, withAdditionalParameters: [
+                "selected": state.currentToolbarButton.rawValue
+            ])
+        }
     }
 
     private func setCurrentToolbarButton(_ button: Button) {

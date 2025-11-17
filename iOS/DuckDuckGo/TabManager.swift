@@ -43,7 +43,6 @@ class TabManager {
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private var previewsSource: TabPreviewsSource
     private let interactionStateSource: TabInteractionStateSource?
-    private var duckPlayer: DuckPlayerControlling
     private var subscriptionDataReporter: SubscriptionDataReporting
     private let contextualOnboardingPresenter: ContextualOnboardingPresenting
     private let contextualOnboardingLogic: ContextualOnboardingLogic
@@ -76,7 +75,6 @@ class TabManager {
          historyManager: HistoryManaging,
          syncService: DDGSyncing,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
-         duckPlayer: DuckPlayer = DuckPlayer(),
          subscriptionDataReporter: SubscriptionDataReporting,
          contextualOnboardingPresenter: ContextualOnboardingPresenting,
          contextualOnboardingLogic: ContextualOnboardingLogic,
@@ -103,7 +101,6 @@ class TabManager {
         self.historyManager = historyManager
         self.syncService = syncService
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
-        self.duckPlayer = duckPlayer
         self.subscriptionDataReporter = subscriptionDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
         self.contextualOnboardingLogic = contextualOnboardingLogic
@@ -148,7 +145,6 @@ class TabManager {
                                                               historyManager: historyManager,
                                                               syncService: syncService,
                                                               contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
-                                                              duckPlayer: duckPlayer,
                                                               subscriptionDataReporter: subscriptionDataReporter,
                                                               contextualOnboardingPresenter: contextualOnboardingPresenter,
                                                               contextualOnboardingLogic: contextualOnboardingLogic,
@@ -245,7 +241,6 @@ class TabManager {
                                                               historyManager: historyManager,
                                                               syncService: syncService,
                                                               contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
-                                                              duckPlayer: duckPlayer,
                                                               subscriptionDataReporter: subscriptionDataReporter,
                                                               contextualOnboardingPresenter: contextualOnboardingPresenter,
                                                               contextualOnboardingLogic: contextualOnboardingLogic,

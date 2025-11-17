@@ -109,7 +109,6 @@ extension TabViewController {
             historyManager: historyManager,
             syncService: syncService,
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
-            duckPlayer: duckPlayer,
             subscriptionDataReporter: subscriptionDataReporter,
             contextualOnboardingPresenter: contextualOnboardingPresenter,
             contextualOnboardingLogic: contextualOnboardingLogic,

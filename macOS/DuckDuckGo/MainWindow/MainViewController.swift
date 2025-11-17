@@ -687,7 +687,8 @@ final class MainViewController: NSViewController {
     @objc private func showSetAsDefaultAndAddToDockIfNeeded() {
         defaultBrowserAndDockPromptPresenting.tryToShowPrompt(
             popoverAnchorProvider: getSourceViewToShowSetAsDefaultAndAddToDockPopover,
-            bannerViewHandler: showMessageBanner
+            bannerViewHandler: showMessageBanner,
+            inactiveUserModalWindowProvider: getSourceWindowToShowInactiveUserModal
         )
     }
 
@@ -701,6 +702,13 @@ final class MainViewController: NSViewController {
         } else {
             return navigationBarViewController.addressBarViewController?.view
         }
+    }
+
+    private func getSourceWindowToShowInactiveUserModal() -> NSWindow? {
+        guard isViewLoaded && view.window?.isKeyWindow == true else {
+            return nil
+        }
+        return view.window
     }
 
     private func showMessageBanner(banner: BannerMessageViewController) {

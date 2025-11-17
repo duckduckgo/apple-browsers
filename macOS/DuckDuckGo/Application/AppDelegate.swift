@@ -198,9 +198,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     let themeManager: ThemeManager
 
-    private(set) lazy var displaysLoadingProgressIndicator: Bool = {
-        featureFlagger.isFeatureOn(.tabProgressIndicator)
-    }()
+    let displaysTabsProgressIndicator: Bool
 
     let wideEvent: WideEventManaging
     let isUsingAuthV2: Bool
@@ -484,6 +482,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+
+        displaysTabsProgressIndicator = featureFlagger.isFeatureOn(.tabProgressIndicator)
 
         aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
         aiChatMenuConfiguration = AIChatMenuConfiguration(

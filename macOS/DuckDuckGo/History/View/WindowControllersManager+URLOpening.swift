@@ -31,7 +31,7 @@ extension WindowControllersManager: URLOpening {
         }
 
         let tabCollectionViewModel = mainWindowController.mainViewController.tabCollectionViewModel
-        tabCollectionViewModel.append(tabs: tabs, andSelect: TabsPreferences.shared.switchToNewTabWhenOpened)
+        tabCollectionViewModel.append(tabs: tabs, andSelect: shouldSwitchToNewTabWhenOpened)
     }
 
     func openInNewWindow(_ urls: [URL], sourceWindow: NSWindow?) {

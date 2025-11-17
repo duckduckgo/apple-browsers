@@ -20,20 +20,40 @@
 import UIKit
 import Core
 
+// ┌─────────────────────────────────────────────────────────────────────────────────────┐
+// │ 🚨 TO DISABLE SCENES IN EMERGENCY:                                                  │
+// │ 1. Change `#if true` to `#if false` below to exclude these methods from compilation │
+// │ 2. Info.plist → Remove UIApplicationSceneManifest key                               │
+// └─────────────────────────────────────────────────────────────────────────────────────┘
+
 @UIApplicationMain class AppDelegate: UIResponder, UIApplicationDelegate {
 
-    private let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
-    private let initTime = CFAbsoluteTimeGetCurrent()
+    let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
 
+#if true
+    func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
+    }
+
+    func application(_ application: UIApplication, didDiscardSceneSessions sceneSessions: Set<UISceneSession>) {
+        // Called when the user discards a scene session.
+        // If any sessions were discarded while the application was not running, this will be called shortly after application:didFinishLaunchingWithOptions.
+        // Use this method to release any resources that were specific to the discarded scenes, as they will not return.
+    }
+#endif
+
+    @available(*, deprecated, message: "This var should not be used. window is going to be part of SceneDelegate")
     var window: UIWindow?
 
     /// See: `Launching.swift`
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        let timeDiff = CFAbsoluteTimeGetCurrent() - initTime
-        Pixel.fire(pixel: .debugAppDelegateInitToLaunchTime, withAdditionalParameters: ["time_diff": String(timeDiff)])
-
         let isTesting: Bool = ProcessInfo().arguments.contains("testing")
         appStateMachine.handle(.didFinishLaunching(isTesting: isTesting))
+        if !Bundle.main.supportsScenes {
+            let window = UIWindow(frame: UIScreen.main.bounds)
+            self.window = window
+            appStateMachine.handle(.willConnectToWindow(window: window))
+        }
         return true
     }
 
@@ -70,18 +90,6 @@ import Core
         return true
     }
 
-    func application(_ application: UIApplication, performFetchWithCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-        Logger.lifecycle.debug(#function)
-        AppConfigurationFetch().start(isBackgroundFetch: true) { result in
-            switch result {
-            case .noData:
-                completionHandler(.noData)
-            case .assetsUpdated:
-                completionHandler(.newData)
-            }
-        }
-    }
-
     func application(_ application: UIApplication, willContinueUserActivityWithType userActivityType: String) -> Bool {
         true
     }
@@ -100,6 +108,18 @@ import Core
         if case .foreground(let foregroundHandling) = appStateMachine.currentState {
             (foregroundHandling as? Foreground)?.services.remoteMessagingService.refreshRemoteMessages()
         }
+    }
+
+}
+
+extension Bundle {
+
+    var supportsScenes: Bool {
+        guard let infoDict = self.infoDictionary else { return false }
+        guard infoDict["UIApplicationSceneManifest"] is [String: Any] else {
+            return false
+        }
+        return true
     }
 
 }

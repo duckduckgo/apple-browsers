@@ -118,6 +118,7 @@ final class RemoteMessagingClientTests: XCTestCase {
         try FileManager.default.removeItem(at: bookmarksDatabaseLocation)
     }
 
+    @MainActor
     private func makeClient(
         configFetcher: MockRemoteMessagingConfigFetcher = MockRemoteMessagingConfigFetcher(),
     ) {
@@ -132,7 +133,7 @@ final class RemoteMessagingClientTests: XCTestCase {
             configMatcherProvider: RemoteMessagingConfigMatcherProvider(
                 bookmarksDatabase: bookmarksDatabase,
                 appearancePreferences: appearancePreferences,
-                startupPreferences: StartupPreferences(persistor: StartupPreferencesPersistorMock(), appearancePreferences: appearancePreferences),
+                startupPreferences: StartupPreferences(persistor: StartupPreferencesPersistorMock(), windowControllersManager: WindowControllersManagerMock(), appearancePreferences: appearancePreferences),
                 pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
                 internalUserDecider: MockInternalUserDecider(),
                 statisticsStore: MockStatisticsStore(),
@@ -149,18 +150,21 @@ final class RemoteMessagingClientTests: XCTestCase {
 
     // MARK: -
 
+    @MainActor
     func testWhenFeatureFlagIsDisabledThenStoreIsNotCreated() {
         availabilityProvider.isRemoteMessagingAvailable = false
         makeClient()
         XCTAssertNil(client.store)
     }
 
+    @MainActor
     func testWhenFeatureFlagIsEnabledThenStoreIsInitialized() {
         availabilityProvider.isRemoteMessagingAvailable = true
         makeClient()
         XCTAssertNotNil(client.store)
     }
 
+    @MainActor
     func testWhenFeatureFlagBecomesEnabledThenStoreIsCreated() {
         availabilityProvider.isRemoteMessagingAvailable = false
         makeClient()
@@ -170,6 +174,7 @@ final class RemoteMessagingClientTests: XCTestCase {
         XCTAssertNotNil(client.store)
     }
 
+    @MainActor
     func testWhenFetchAndProcessUsingStoreIsCalledThenUseInjectSurfacesProviderFunction() async throws {
         // GIVEN
         let subscription = DuckDuckGoSubscription(

@@ -50,6 +50,7 @@ final class MainViewController: NSViewController {
     private let defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting
     private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
     private let winBackOfferPromptPresenting: WinBackOfferPromptPresenting
+    private let tabsPreferences: TabsPreferences
 
     let tabCollectionViewModel: TabCollectionViewModel
     let bookmarkManager: BookmarkManager
@@ -107,11 +108,17 @@ final class MainViewController: NSViewController {
          aiChatTabOpener: AIChatTabOpening = NSApp.delegateTyped.aiChatTabOpener,
          brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         searchPreferences: SearchPreferences = NSApp.delegateTyped.searchPreferences,
          defaultBrowserPreferences: DefaultBrowserPreferences = NSApp.delegateTyped.defaultBrowserPreferences,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptService.presenter,
          downloadManager: FileDownloadManagerProtocol = NSApp.delegateTyped.downloadManager,
          downloadListCoordinator: DownloadListCoordinator = NSApp.delegateTyped.downloadListCoordinator,
          downloadsPreferences: DownloadsPreferences = NSApp.delegateTyped.downloadsPreferences,
+         tabsPreferences: TabsPreferences = NSApp.delegateTyped.tabsPreferences,
+         webTrackingProtectionPreferences: WebTrackingProtectionPreferences = NSApp.delegateTyped.webTrackingProtectionPreferences,
+         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences = NSApp.delegateTyped.cookiePopupProtectionPreferences,
+         aiChatPreferences: AIChatPreferences = NSApp.delegateTyped.aiChatPreferences,
+         aboutPreferences: AboutPreferences = NSApp.delegateTyped.aboutPreferences,
          themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
          pixelFiring: PixelFiring? = PixelKit.shared,
@@ -133,6 +140,7 @@ final class MainViewController: NSViewController {
         self.themeManager = themeManager
         self.fireCoordinator = fireCoordinator
         self.winBackOfferPromptPresenting = winBackOfferPromptPresenting
+        self.tabsPreferences = tabsPreferences
 
         tabBarViewController = TabBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
@@ -174,6 +182,7 @@ final class MainViewController: NSViewController {
             controllerErrorMessageObserver = controllerErrorMessageObserver ?? ControllerErrorMesssageObserverThroughDistributedNotifications()
 
             return DefaultNetworkProtectionStatusReporter(
+                vpnEnabledObserver: vpnXPCClient.ipcVPNEnabledObserver,
                 statusObserver: vpnXPCClient.ipcStatusObserver,
                 serverInfoObserver: vpnXPCClient.ipcServerInfoObserver,
                 connectionErrorObserver: vpnXPCClient.ipcConnectionErrorObserver,
@@ -188,7 +197,13 @@ final class MainViewController: NSViewController {
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
             defaultBrowserPreferences: defaultBrowserPreferences,
-            downloadsPreferences: downloadsPreferences
+            downloadsPreferences: downloadsPreferences,
+            searchPreferences: searchPreferences,
+            tabsPreferences: tabsPreferences,
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+            aiChatPreferences: aiChatPreferences,
+            aboutPreferences: aboutPreferences
         )
         aiChatSidebarPresenter = AIChatSidebarPresenter(
             sidebarHost: browserTabViewController,
@@ -226,12 +241,15 @@ final class MainViewController: NSViewController {
                                                                          networkProtectionStatusReporter: networkProtectionStatusReporter,
                                                                          autofillPopoverPresenter: autofillPopoverPresenter,
                                                                          brokenSitePromptLimiter: brokenSitePromptLimiter,
+                                                                         searchPreferences: searchPreferences,
+                                                                         webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                                                                          aiChatMenuConfig: aiChatMenuConfig,
                                                                          aiChatSidebarPresenter: aiChatSidebarPresenter,
                                                                          vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
                                                                          sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
                                                                          defaultBrowserPreferences: defaultBrowserPreferences,
-                                                                         downloadsPreferences: downloadsPreferences)
+                                                                         downloadsPreferences: downloadsPreferences,
+                                                                         tabsPreferences: tabsPreferences)
 
         findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
@@ -671,7 +689,8 @@ final class MainViewController: NSViewController {
     @objc private func showSetAsDefaultAndAddToDockIfNeeded() {
         defaultBrowserAndDockPromptPresenting.tryToShowPrompt(
             popoverAnchorProvider: getSourceViewToShowSetAsDefaultAndAddToDockPopover,
-            bannerViewHandler: showMessageBanner
+            bannerViewHandler: showMessageBanner,
+            inactiveUserModalWindowProvider: getSourceWindowToShowInactiveUserModal
         )
     }
 
@@ -685,6 +704,13 @@ final class MainViewController: NSViewController {
         } else {
             return navigationBarViewController.addressBarViewController?.view
         }
+    }
+
+    private func getSourceWindowToShowInactiveUserModal() -> NSWindow? {
+        guard isViewLoaded && view.window?.isKeyWindow == true else {
+            return nil
+        }
+        return view.window
     }
 
     private func showMessageBanner(banner: BannerMessageViewController) {
@@ -956,7 +982,7 @@ extension MainViewController: BrowserTabViewControllerDelegate {
         let noPinnedTabs = tabCollectionViewModel.isBurner || tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.isEmpty != false
 
         var isSharedPinnedTabsMode: Bool {
-            TabsPreferences.shared.pinnedTabsMode == .shared
+            tabsPreferences.pinnedTabsMode == .shared
         }
 
         lazy var areOtherWindowsWithPinnedTabsAvailable: Bool = {

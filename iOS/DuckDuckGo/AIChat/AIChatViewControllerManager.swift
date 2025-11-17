@@ -62,7 +62,7 @@ final class AIChatViewControllerManager {
 
     // MARK: - Initialization
 
-    init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+    init(privacyConfigurationManager: PrivacyConfigurationManaging,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler(),
          userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
@@ -322,7 +322,8 @@ final class AIChatViewControllerManager {
     @MainActor
     private func createWebViewConfiguration() -> WKWebViewConfiguration {
         let configuration = WKWebViewConfiguration.persistent()
-        let userContentController = UserContentController(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher)
+        let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
+                                                          privacyConfigurationManager: privacyConfigurationManager)
         userContentController.delegate = self
         configuration.userContentController = userContentController
         self.userContentController = userContentController

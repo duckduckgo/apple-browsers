@@ -219,5 +219,32 @@
                 "type": "number"
             }
         ]
+    },
+    "m_mac_autoconsent_usage-stats_daily": {
+        "description": "Fires once per day with autoconsent usage statistics.",
+        "owners": ["miasma13"],
+        "triggers": ["startup"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "averageClicksBlockingCookiePopUp",
+                "description": "Average number of clicks blocked by cookie pop-up management",
+                "type": "number"
+            },
+            {
+                "key": "totalCookiePopUpsBlockedBucket",
+                "description": "Total number of cookie pop-ups blocked as predefined bucket value",
+                "type": "string",
+                "enum": ["0", "1-10", "11-50", "51-100", "101-150", "151-200", "201-250", "251-300", "301-500", "500+", "unknown"]
+            },
+            {
+                "key": "totalTimeBlockingCookiePopUpsBucket",
+                "description": "Total time spent blocking cookie pop-ups as predefined bucket value",
+                "type": "string",
+                "enum": ["0s", "1-10s", "10-60s", "1-5min", "5-10min", "10-20min", "20-40min", "40-60min", "1-2hr", "2hr+", "unknown"]
+            }
+        ]
     }
 }

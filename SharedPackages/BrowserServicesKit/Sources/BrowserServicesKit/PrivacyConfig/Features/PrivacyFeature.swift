@@ -281,6 +281,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables native-side support for standalone migration flows in AI Chat
     case standaloneMigration
+
+    /// Allows to present Search Experience choice screen during onboarding
+    case onboardingSearchExperience
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -296,6 +299,9 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
+
+    /// Global switch to display autoconsent stats on New Tab Page
+    case autoconsentStats
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
@@ -373,9 +379,11 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case supportsAlternateStripePaymentFlow
     case subscriptionPurchaseWidePixelMeasurement
     case subscriptionRestoreWidePixelMeasurement
+    case vpnConnectionWidePixelMeasurement
     case authV2WideEventEnabled
     case winBackOffer
     case vpnMenuItem
+    case blackFridayCampaign
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

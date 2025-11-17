@@ -122,12 +122,12 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(statisticsStore: statisticsStore,
                                                                         vpnActivationDateStore: DefaultVPNActivationDateStore(),
-                                                                        subscription: subscription,
+                                                                        subscriptionDataProvider: subscription,
                                                                         autofillUsageStore: autofillUsageStore)
         } else {
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(statisticsStore: statisticsStore,
                                                                         vpnActivationDateStore: DefaultVPNActivationDateStore(),
-                                                                        subscription: nil,
+                                                                        subscriptionDataProvider: nil,
                                                                         autofillUsageStore: autofillUsageStore)
         }
 
@@ -170,5 +170,27 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds
         )
+    }
+}
+
+extension DuckDuckGoSubscription: @retroactive SubscriptionSurveyDataProviding {
+    public var subscriptionStatus: String? {
+        return status.remoteMessagingFrameworkValue
+    }
+
+    public var subscriptionPlatform: String? {
+        return platform.rawValue
+    }
+
+    public var subscriptionBilling: String? {
+        return billingPeriod.remoteMessagingFrameworkValue
+    }
+
+    public var subscriptionStartDate: Date? {
+        return startedAt
+    }
+
+    public var subscriptionExpiryDate: Date? {
+        return expiresOrRenewsAt
     }
 }

@@ -1,1 +1,4 @@
-• Bug fixes and other improvements.
+• Added the ability to delete Duck.ai chats using the Fire Button.
+• Fixed an issue that prevented menus from animating properly in iOS 26.
+• Added an option in Settings under AI Features to filter out AI‑generated images from image search results.
+• Additional bug fixes and improvements.

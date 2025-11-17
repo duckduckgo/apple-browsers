@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 import Core
+import Combine
 
 final class MockFeatureFlagger: FeatureFlagger {
 
@@ -32,6 +33,9 @@ final class MockFeatureFlagger: FeatureFlagger {
     var enabledFeatureFlags: [FeatureFlag] = []
 
     var cohortToReturn: (any FeatureFlagCohortDescribing)?
+    var updatesPublisher: AnyPublisher<Void, Never> {
+        PassthroughSubject().eraseToAnyPublisher()
+    }
 
     public init(internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring()),
                 enabledFeatureFlags: [FeatureFlag] = []) {

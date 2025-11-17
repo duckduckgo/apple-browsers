@@ -49,6 +49,12 @@ final class PreferencesViewController: NSViewController {
         featureFlagger: FeatureFlagger,
         defaultBrowserPreferences: DefaultBrowserPreferences,
         downloadsPreferences: DownloadsPreferences,
+        searchPreferences: SearchPreferences,
+        tabsPreferences: TabsPreferences,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+        cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
+        aiChatPreferences: AIChatPreferences,
+        aboutPreferences: AboutPreferences,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
@@ -65,7 +71,12 @@ final class PreferencesViewController: NSViewController {
                                         subscriptionManager: subscriptionManager,
                                         defaultBrowserPreferences: defaultBrowserPreferences,
                                         downloadsPreferences: downloadsPreferences,
-                                        aiFeaturesStatusProvider: AIChatPreferences.shared,
+                                        searchPreferences: searchPreferences,
+                                        tabsPreferences: tabsPreferences,
+                                        webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                        cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+                                        aiChatPreferences: aiChatPreferences,
+                                        aboutPreferences: aboutPreferences,
                                         winBackOfferVisibilityManager: winBackOfferVisibilityManager)
         super.init(nibName: nil, bundle: nil)
     }

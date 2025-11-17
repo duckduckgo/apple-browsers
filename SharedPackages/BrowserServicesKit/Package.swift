@@ -47,6 +47,7 @@ let package = Package(
         .library(name: "BrokenSitePrompt", targets: ["BrokenSitePrompt"]),
         .library(name: "PageRefreshMonitor", targets: ["PageRefreshMonitor"]),
         .library(name: "PrivacyStats", targets: ["PrivacyStats"]),
+        .library(name: "AutoconsentStats", targets: ["AutoconsentStats"]),
         .library(name: "SharedObjCTestsUtils", targets: ["SharedObjCTestsUtils"]),
         .library(name: "ContentScopeScripts", targets: ["ContentScopeScripts"]),
         .library(name: "WKAbstractions", targets: ["WKAbstractions"]),
@@ -78,7 +79,6 @@ let package = Package(
             name: "BrowserServicesKit",
             dependencies: [
                 .product(name: "Autofill", package: "duckduckgo-autofill"),
-                "Bookmarks",
                 "ContentScopeScripts",
                 "Persistence",
                 "TrackerRadarKit",
@@ -334,8 +334,7 @@ let package = Package(
                 "Configuration",
                 "BrowserServicesKit",
                 "Networking",
-                "Persistence",
-                "Subscription"
+                "Persistence"
             ],
             resources: [
                 .process("CoreData/RemoteMessaging.xcdatamodeld")
@@ -495,6 +494,17 @@ let package = Package(
             ],
             resources: [
                 .process("PrivacyStats.xcdatamodeld")
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .target(
+            name: "AutoconsentStats",
+            dependencies: [
+                "Common",
+                "Persistence",
+                "BrowserServicesKit"
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -798,6 +808,14 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "PrivacyStats",
+            ]
+        ),
+        .testTarget(
+            name: "AutoconsentStatsTests",
+            dependencies: [
+                "SharedObjCTestsUtils",
+                "AutoconsentStats",
+                "PersistenceTestingUtils",
             ]
         ),
     ],

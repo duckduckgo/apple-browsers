@@ -37,6 +37,9 @@ private final class MockUserAuthenticator: UserAuthenticating {
 }
 
 class MockSyncFeatureFlagger: FeatureFlagger {
+
+    var updatesPublisher: AnyPublisher<Void, Never> { PassthroughSubject().eraseToAnyPublisher() }
+
     var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
     var localOverrides: FeatureFlagLocalOverriding?
     var cohort: (any FeatureFlagCohortDescribing)?

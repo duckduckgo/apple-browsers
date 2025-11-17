@@ -110,6 +110,8 @@ class MainViewController: UIViewController {
     var autoClearInProgress = false
     var autoClearShouldRefreshUIAfterClear = true
 
+    let privacyConfigurationManager: PrivacyConfigurationManaging
+
     let bookmarksDatabase: CoreDataDatabase
     private weak var bookmarksDatabaseCleaner: BookmarkDatabaseCleaner?
     private var favoritesViewModel: FavoritesListInteracting
@@ -217,7 +219,8 @@ class MainViewController: UIViewController {
     }()
 
     private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
-        let manager = AIChatViewControllerManager(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
+        let manager = AIChatViewControllerManager(privacyConfigurationManager: privacyConfigurationManager,
+                                                  contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
                                                   experimentalAIChatManager: .init(featureFlagger: featureFlagger),
                                                   featureFlagger: featureFlagger,
                                                   featureDiscovery: featureDiscovery,
@@ -228,7 +231,7 @@ class MainViewController: UIViewController {
 
     private lazy var aiChatHistoryCleaner: HistoryCleaning = {
         return HistoryCleaner(featureFlagger: featureFlagger,
-                             privacyConfig: ContentBlocking.shared.privacyConfigurationManager)
+                             privacyConfig: privacyConfigurationManager)
     }()
     
     let isAuthV2Enabled: Bool
@@ -250,6 +253,7 @@ class MainViewController: UIViewController {
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
 
     init(
+        privacyConfigurationManager: PrivacyConfigurationManaging,
         bookmarksDatabase: CoreDataDatabase,
         bookmarksDatabaseCleaner: BookmarkDatabaseCleaner,
         historyManager: HistoryManaging,
@@ -288,9 +292,11 @@ class MainViewController: UIViewController {
         launchSourceManager: LaunchSourceManaging,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+        mobileCustomization: MobileCustomization,
         remoteMessagingActionHandler: RemoteMessagingActionHandling
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
         self.historyManager = historyManager
@@ -331,7 +337,7 @@ class MainViewController: UIViewController {
         self.dbpIOSPublicInterface = dbpIOSPublicInterface
         self.launchSourceManager = launchSourceManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
-        self.mobileCustomization = MobileCustomization(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
+        self.mobileCustomization = mobileCustomization
         self.aichatFullModeFeature = aichatFullModeFeature
         super.init(nibName: nil, bundle: nil)
         
@@ -467,17 +473,16 @@ class MainViewController: UIViewController {
 
     @MainActor
     func subscribeToCustomizationFeatureFlagChanges() {
-        guard let overridesHandler = AppDependencyProvider.shared.featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
-            return
-        }
-
-        overridesHandler.flagDidChangePublisher
-            .filter { $0.0 == .mobileCustomization }
-            .sink { [weak self] (_, _) in
+        featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
                 guard let self else { return }
-                self.applyCustomizationState()
-            }
-            .store(in: &settingsCancellables)
+                let isFeatureEnabledNow = self.featureFlagger.isFeatureOn(.mobileCustomization)
+                if mobileCustomization.isFeatureEnabled != isFeatureEnabledNow {
+                    mobileCustomization.isFeatureEnabled = isFeatureEnabledNow
+                    self.applyCustomizationState()
+                }
+            }.store(in: &settingsCancellables)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -1785,7 +1790,7 @@ class MainViewController: UIViewController {
     }
 
     private var brokenSitePromptViewHostingController: UIHostingController<BrokenSitePromptView>?
-    lazy private var brokenSitePromptLimiter = BrokenSitePromptLimiter(privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
+    lazy private var brokenSitePromptLimiter = BrokenSitePromptLimiter(privacyConfigManager: privacyConfigurationManager,
                                                                        store: BrokenSitePromptLimiterStore())
 
     @objc func attemptToShowBrokenSitePrompt(_ notification: Notification) {
@@ -3889,7 +3894,16 @@ extension MainViewController: MessageNavigationDelegate {
             assertionFailure("Not implemented yet.")
         }
     }
-    
+
+    func segueToSettingsAppearance(presentationStyle: PresentationContext.Style) {
+        switch presentationStyle {
+        case .dismissModalsAndPresentFromRoot:
+            segueToAppearanceSettings()
+        case .withinCurrentContext:
+            assertionFailure("Not implemented yet.")
+        }
+    }
+
     func segueToFeedback(presentationStyle: PresentationContext.Style) {
         switch presentationStyle {
         case .dismissModalsAndPresentFromRoot:
@@ -3996,6 +4010,15 @@ extension MainViewController {
 
     func applyCustomizationForAddressBar(_ state: MobileCustomization.State) {
         omniBar.refreshCustomizableButton()
+        if state.isEnabled {
+            omniBar.barView.customizableButton.menu = UIMenu(children: [
+                UIAction(title: "Customize", image: DesignSystemImages.Glyphs.Size16.options) { [weak self] _ in
+                    self?.segueToCustomizeAddressBarSettings()
+                }
+            ])
+        } else {
+            omniBar.barView.customizableButton.menu = nil
+        }
     }
 
     @objc private func performCustomizationActionForToolbar() {
@@ -4052,10 +4075,14 @@ extension MainViewController {
 
         if !isNewTabPageVisible && state.isEnabled {
             browserChrome.setImage(state.currentToolbarButton.largeIcon)
-            browserChrome.addBorder()
+            browserChrome.menu = UIMenu(children: [
+                UIAction(title: "Customize", image: DesignSystemImages.Glyphs.Size16.options) { [weak self] _ in
+                    self?.segueToCustomizeToolbarSettings()
+                }
+            ])
         } else {
-            browserChrome.removeBorder()
             browserChrome.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
+            browserChrome.menu = nil
         }
     }
 

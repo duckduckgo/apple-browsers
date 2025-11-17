@@ -32,6 +32,7 @@ import SpecialErrorPages
 import UserScript
 import WebKit
 import SERPSettings
+import AutoconsentStats
 
 protocol TabDelegate: ContentOverlayUserScriptDelegate {
     func tabWillStartNavigation(_ tab: Tab, isUserInitiated: Bool)
@@ -67,6 +68,9 @@ protocol NewWindowPolicyDecisionMaker {
         var newTabPageShownPixelSender: NewTabPageShownPixelSender
         var aiChatSidebarProvider: AIChatSidebarProviding
         var tabCrashAggregator: TabCrashAggregator
+        var tabsPreferences: TabsPreferences
+        var webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+        var autoconsentStats: AutoconsentStatsCollecting
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -139,13 +143,15 @@ protocol NewWindowPolicyDecisionMaker {
                      certificateTrustEvaluator: CertificateTrustEvaluating = CertificateTrustEvaluator(),
                      tunnelController: NetworkProtectionIPCTunnelController? = TunnelControllerProvider.shared.tunnelController,
                      maliciousSiteDetector: MaliciousSiteDetecting = MaliciousSiteProtectionManager.shared,
-                     tabsPreferences: TabsPreferences = TabsPreferences.shared,
+                     tabsPreferences: TabsPreferences? = nil,
+                     webTrackingProtectionPreferences: WebTrackingProtectionPreferences? = nil,
                      onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
                      pageRefreshMonitor: PageRefreshMonitoring = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern),
                      aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil,
                      aiChatSidebarProvider: AIChatSidebarProviding? = nil,
                      newTabPageShownPixelSender: NewTabPageShownPixelSender? = nil,
-                     tabCrashAggregator: TabCrashAggregator? = nil
+                     tabCrashAggregator: TabCrashAggregator? = nil,
+                     autoconsentStats: AutoconsentStatsCollecting? = nil
     ) {
 
         let duckPlayer = duckPlayer
@@ -200,13 +206,15 @@ protocol NewWindowPolicyDecisionMaker {
                   certificateTrustEvaluator: certificateTrustEvaluator,
                   tunnelController: tunnelController,
                   maliciousSiteDetector: maliciousSiteDetector,
-                  tabsPreferences: tabsPreferences,
+                  tabsPreferences: tabsPreferences ?? NSApp.delegateTyped.tabsPreferences,
+                  webTrackingProtectionPreferences: webTrackingProtectionPreferences ?? NSApp.delegateTyped.webTrackingProtectionPreferences,
                   onboardingPixelReporter: onboardingPixelReporter,
                   pageRefreshMonitor: pageRefreshMonitor,
                   aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
                   aiChatSidebarProvider: aiChatSidebarProvider ?? NSApp.delegateTyped.aiChatSidebarProvider,
                   newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender,
-                  tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator
+                  tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator,
+                  autoconsentStats: autoconsentStats ?? NSApp.delegateTyped.autoconsentStats
         )
     }
 
@@ -249,12 +257,14 @@ protocol NewWindowPolicyDecisionMaker {
          tunnelController: NetworkProtectionIPCTunnelController?,
          maliciousSiteDetector: MaliciousSiteDetecting,
          tabsPreferences: TabsPreferences,
+         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          onboardingPixelReporter: OnboardingAddressBarReporting,
          pageRefreshMonitor: PageRefreshMonitoring,
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
          aiChatSidebarProvider: AIChatSidebarProviding,
          newTabPageShownPixelSender: NewTabPageShownPixelSender,
-         tabCrashAggregator: TabCrashAggregator
+         tabCrashAggregator: TabCrashAggregator,
+         autoconsentStats: AutoconsentStatsCollecting
     ) {
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
@@ -344,7 +354,10 @@ protocol NewWindowPolicyDecisionMaker {
                                                        aiChatMenuConfiguration: aiChatMenuConfiguration,
                                                        newTabPageShownPixelSender: newTabPageShownPixelSender,
                                                        aiChatSidebarProvider: aiChatSidebarProvider,
-                                                       tabCrashAggregator: tabCrashAggregator)
+                                                       tabCrashAggregator: tabCrashAggregator,
+                                                       tabsPreferences: tabsPreferences,
+                                                       webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                                       autoconsentStats: autoconsentStats)
             )
         super.init()
         tabGetter = { [weak self] in self }

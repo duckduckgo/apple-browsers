@@ -1,5 +1,5 @@
 //
-//  UIWindowExtension.swift
+//  OnboardingSearchExperiencePicker.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -17,20 +17,15 @@
 //  limitations under the License.
 //
 
-import UIKit
+import SwiftUI
 
-extension UIWindow {
+struct OnboardingSearchExperiencePicker: View {
+    @StateObject private var viewModel = OnboardingSearchExperiencePickerViewModel()
 
-    static func makeBlank() -> UIWindow {
-        let window = UIWindow(frame: UIScreen.main.bounds)
-        window.backgroundColor = .white
-
-        let rootViewController = UIViewController()
-        rootViewController.view.backgroundColor = .white
-        window.rootViewController = rootViewController
-        window.makeKeyAndVisible()
-
-        return window
+    var body: some View {
+        SettingsAIExperimentalPickerView(
+            isDuckAISelected: viewModel.isSearchAndAIChatEnabled,
+            showNewBadgeForDuckAI: false,
+            duckAIOptionTitle: UserText.settingsAIPickerAddDuckAIShortcut)
     }
-
 }

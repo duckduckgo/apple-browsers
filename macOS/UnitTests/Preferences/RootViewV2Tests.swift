@@ -39,9 +39,12 @@ final class RootViewV2Tests: XCTestCase {
         let vpnGatekeeper = MockVPNFeatureGatekeeper(canStartVPN: false, isInstalled: false, isVPNVisible: false, onboardStatusPublisher: Just(.completed).eraseToAnyPublisher())
         mockWinBackOfferVisibilityManager = MockWinBackOfferVisibilityManager()
 
+        let windowControllersManager = WindowControllersManagerMock()
+        let featureFlagger = MockFeatureFlagger()
+
         sidebarModel = PreferencesSidebarModel(
             privacyConfigurationManager: MockPrivacyConfigurationManaging(),
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: featureFlagger,
             syncService: ddsSyncing,
             vpnGatekeeper: vpnGatekeeper,
             includeDuckPlayer: false,
@@ -49,7 +52,17 @@ final class RootViewV2Tests: XCTestCase {
             subscriptionManager: SubscriptionAuthV1toV2BridgeMock(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
-            aiFeaturesStatusProvider: MockAIChatPreferences(),
+            searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            aiChatPreferences: AIChatPreferences(
+                storage: MockAIChatPreferencesStorage(),
+                aiChatMenuConfiguration: MockAIChatConfig(),
+                windowControllersManager: WindowControllersManagerMock(),
+                featureFlagger: MockFeatureFlagger()
+            ),
+            aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
         subscriptionManager = SubscriptionManagerMockV2()

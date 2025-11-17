@@ -43,9 +43,7 @@ final class WireGuardAdapterTests: XCTestCase {
         packetTunnelProvider = MockPacketTunnelProvider()
         wireGuardInterface = MockWireGuardInterface()
         eventHandler = MockEventHandler()
-        dnsResolver = MockDNSResolver(
-            results: [.success(Endpoint(host: .ipv4(IPv4Address("203.0.113.1")!), port: 51820))]
-        )
+        dnsResolver = MockDNSResolver(results: [.success(Endpoint(host: .ipv4(IPv4Address("1.1.1.1")!), port: 12345))])
         settingsGenerator = MockPacketTunnelSettingsGenerator()
         expectedNetworkSettings = NEPacketTunnelNetworkSettings(tunnelRemoteAddress: "127.0.0.1")
         settingsGenerator.networkSettingsToReturn = expectedNetworkSettings
@@ -54,7 +52,7 @@ final class WireGuardAdapterTests: XCTestCase {
         pathMonitor = MockPathMonitor()
         tunnelFileDescriptorProvider = MockTunnelFileDescriptorProvider(fileDescriptor: 42)
 
-        peerEndpoint = Endpoint(host: NWEndpoint.Host("example.com"), port: 51820)
+        peerEndpoint = Endpoint(host: NWEndpoint.Host("example.com"), port: 12345)
         var peer = PeerConfiguration(publicKey: Self.makePublicKey())
         peer.endpoint = peerEndpoint
         tunnelConfiguration = TunnelConfiguration.make(named: "Test", peers: [peer])
@@ -113,7 +111,7 @@ final class WireGuardAdapterTests: XCTestCase {
 
         XCTAssertEqual(dnsResolver.receivedEndpoints?.count, 1)
         XCTAssertEqual(dnsResolver.receivedEndpoints?.first??.description, peerEndpoint.description)
-        XCTAssertEqual(capturedResolvedEndpoints?.first??.description, "203.0.113.1:51820")
+        XCTAssertEqual(capturedResolvedEndpoints?.first??.description, "1.1.1.1:12345")
 
         XCTAssertEqual(packetTunnelProvider.setTunnelNetworkSettingsCallCount, 1)
         XCTAssertTrue(packetTunnelProvider.lastNetworkSettings === expectedNetworkSettings)
@@ -192,8 +190,7 @@ final class WireGuardAdapterTests: XCTestCase {
     }
 
     func testStartFailsWhenTunnelFileDescriptorMissing() {
-        tunnelFileDescriptorProvider = MockTunnelFileDescriptorProvider(fileDescriptor: nil)
-        rebuildAdapter()
+        tunnelFileDescriptorProvider.fileDescriptor = nil
 
         let expectation = expectation(description: "Start fails with missing tunnel fd")
         adapter.start(tunnelConfiguration: tunnelConfiguration) { error in
@@ -213,7 +210,6 @@ final class WireGuardAdapterTests: XCTestCase {
 
     func testStartFailsWhenTurnOnReturnsError() {
         wireGuardInterface.turnOnReturnHandle = -5
-        rebuildAdapter()
 
         let expectation = expectation(description: "Start fails when backend cannot start")
         adapter.start(tunnelConfiguration: tunnelConfiguration) { error in
@@ -367,16 +363,16 @@ final class WireGuardAdapterTests: XCTestCase {
     func testPathStatusTransitionsThroughTemporaryShutdownAndRestart() {
         startAdapterSuccessfully()
 
-        adapter.handlePathStatusChange(.satisfied)
+        pathMonitor.emitStatus(.satisfied)
         XCTAssertEqual(settingsGenerator.endpointUapiConfigurationCallCount, 1)
         XCTAssertEqual(wireGuardInterface.setConfigCallCount, 1)
         XCTAssertEqual(wireGuardInterface.disableRoamingCallCount, 2)
         XCTAssertEqual(wireGuardInterface.bumpSocketsCallCount, 1)
 
-        adapter.handlePathStatusChange(.unsatisfied)
+        pathMonitor.emitStatus(.unsatisfied)
         XCTAssertEqual(wireGuardInterface.turnOffCallCount, 1)
 
-        adapter.handlePathStatusChange(.satisfied)
+        pathMonitor.emitStatus(.satisfied)
         XCTAssertEqual(wireGuardInterface.turnOnCallCount, 2)
         XCTAssertEqual(packetTunnelProvider.setTunnelNetworkSettingsCallCount, 2)
         XCTAssertTrue(eventHandler.handledEvents.isEmpty)
@@ -384,27 +380,37 @@ final class WireGuardAdapterTests: XCTestCase {
 
     func testTemporaryShutdownRecoveryEvents() {
         startAdapterSuccessfully()
-        adapter.handlePathStatusChange(.unsatisfied)
+        pathMonitor.emitStatus(.unsatisfied)
 
         packetTunnelProvider.setTunnelNetworkSettingsError = TestError.someError
-        adapter.handlePathStatusChange(.satisfied)
+        pathMonitor.emitStatus(.satisfied)
         XCTAssertEqual(eventHandler.handledEvents.count, 1)
         if case .endTemporaryShutdownStateAttemptFailure(let error) = eventHandler.handledEvents[0] {
-            XCTAssertTrue(error is TestError)
+            guard let adapterError = error as? WireGuardAdapterError,
+                  case .setNetworkSettings(let underlyingError) = adapterError else {
+                XCTFail("Expected WireGuardAdapterError.setNetworkSettings, got \(error)")
+                return
+            }
+            XCTAssertEqual(underlyingError as? TestError, .someError)
         } else {
             XCTFail("Expected attempt failure event")
         }
 
-        adapter.handlePathStatusChange(.satisfied)
+        pathMonitor.emitStatus(.satisfied)
         XCTAssertEqual(eventHandler.handledEvents.count, 2)
         if case .endTemporaryShutdownStateRecoveryFailure(let error) = eventHandler.handledEvents[1] {
-            XCTAssertTrue(error is TestError)
+            guard let adapterError = error as? WireGuardAdapterError,
+                  case .setNetworkSettings(let underlyingError) = adapterError else {
+                XCTFail("Expected WireGuardAdapterError.setNetworkSettings, got \(error)")
+                return
+            }
+            XCTAssertEqual(underlyingError as? TestError, .someError)
         } else {
             XCTFail("Expected recovery failure event")
         }
 
         packetTunnelProvider.setTunnelNetworkSettingsError = nil
-        adapter.handlePathStatusChange(.satisfied)
+        pathMonitor.emitStatus(.satisfied)
         XCTAssertEqual(eventHandler.handledEvents.count, 3)
         if case .endTemporaryShutdownStateRecoverySuccess = eventHandler.handledEvents[2] {
             // success
@@ -417,7 +423,7 @@ final class WireGuardAdapterTests: XCTestCase {
 
     func testUpdateWhileTemporaryShutdownDoesNotRestartBackend() {
         startAdapterSuccessfully()
-        adapter.handlePathStatusChange(.unsatisfied)
+        pathMonitor.emitStatus(.unsatisfied)
 
         let expectation = expectation(description: "Update completes while temporary shutdown")
         adapter.update(tunnelConfiguration: tunnelConfiguration, reassert: true) { error in
@@ -432,7 +438,7 @@ final class WireGuardAdapterTests: XCTestCase {
     #elseif os(macOS)
     func testMacPathUpdateBumpsSockets() {
         startAdapterSuccessfully()
-        adapter.handlePathStatusChange(.satisfied)
+        pathMonitor.emitStatus(.satisfied)
         XCTAssertEqual(wireGuardInterface.bumpSocketsCallCount, 1)
     }
     #endif
@@ -549,7 +555,8 @@ private final class MockEventHandler: WireGuardAdapterEventHandling {
 }
 
 private final class MockPathMonitor: PathMonitoring {
-    var statusUpdateHandler: ((Network.NWPath.Status) -> Void)?
+    var pathUpdateHandler: ((Network.NWPath.Status) -> Void)?
+
     private(set) var startCallCount = 0
     private(set) var cancelCallCount = 0
 
@@ -559,6 +566,10 @@ private final class MockPathMonitor: PathMonitoring {
 
     func cancel() {
         cancelCallCount += 1
+    }
+
+    func emitStatus(_ status: Network.NWPath.Status) {
+        pathUpdateHandler?(status)
     }
 }
 

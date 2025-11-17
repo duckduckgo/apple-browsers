@@ -25,6 +25,7 @@ import Foundation
 import NetworkExtension
 import UserNotifications
 import os.log
+import PixelKit
 
 open class PacketTunnelProvider: NEPacketTunnelProvider {
 
@@ -189,39 +190,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - WireGuard
 
-    private lazy var wireGuardAdapterEventMapper: EventMapping<WireGuardAdapterEvent> = .init(mapping: { [weak self] event, _, _, _ in
-        guard let self else { return }
-
-        switch event {
-        case .endTemporaryShutdownStateAttemptFailure(let error):
-            Logger.networkProtection.error("Adapter failed to exit temporary shutdown: \(error.localizedDescription)")
-            self.providerEvents.fire(.adapterEndTemporaryShutdownStateAttemptFailure(error))
-        case .endTemporaryShutdownStateRecoveryFailure(let error):
-            Logger.networkProtection.error("Adapter recovery from temporary shutdown failed: \(error.localizedDescription)")
-            self.providerEvents.fire(.adapterEndTemporaryShutdownStateRecoveryFailure(error))
-        case .endTemporaryShutdownStateRecoverySuccess:
-            Logger.networkProtection.log("Adapter recovery from temporary shutdown succeeded")
-            self.providerEvents.fire(.adapterEndTemporaryShutdownStateRecoverySuccess)
-        }
-
-        if settings.showDebugVPNEventNotifications {
-            let notificationText: String
-
-            switch event {
-            case .endTemporaryShutdownStateAttemptFailure(let error):
-                notificationText = "VPN failed to end temporary shutdown: \(error.localizedDescription)"
-            case .endTemporaryShutdownStateRecoveryFailure(let error):
-                notificationText = "VPN failed to recover from extended temporary shutdown: \(error.localizedDescription)"
-            case .endTemporaryShutdownStateRecoverySuccess:
-                notificationText = "VPN recovered after extended temporary shutdown"
-            }
-
-            notificationsPresenter.showDebugEventNotification(message: notificationText)
-        }
-    })
+    private let wireGuardAdapterEventHandler: WireGuardAdapterEventHandling
 
     private lazy var adapter: WireGuardAdapter = {
-        WireGuardAdapter(with: self, wireGuardInterface: self.wireGuardInterface, eventMapper: wireGuardAdapterEventMapper) { logLevel, message in
+        WireGuardAdapter(with: self, wireGuardInterface: self.wireGuardInterface, eventHandler: self.wireGuardAdapterEventHandler) { logLevel, message in
             if logLevel == .error {
                 Logger.networkProtectionWireGuard.error("🔴 Received error from adapter: \(message, privacy: .public)")
             } else {
@@ -471,7 +443,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private let controllerErrorStore: NetworkProtectionTunnelErrorStore
     private let knownFailureStore: NetworkProtectionKnownFailureStore
     private let snoozeTimingStore: NetworkProtectionSnoozeTimingStore
-    private let wireGuardInterface: WireGuardInterface
+    private let wireGuardInterface: WireGuardGoInterface
+
+    // MARK: - WideEvent
+
+    private var wideEvent: WideEventManaging
+    private var isConnectionWideEventMeasurementEnabled: Bool = false
+    private var connectionWideEventData: VPNConnectionWideEventData?
+    private let connectionTunnelTimeoutInterval: TimeInterval = .minutes(15)
 
     // MARK: - Cancellables
 
@@ -489,13 +468,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 controllerErrorStore: NetworkProtectionTunnelErrorStore,
                 knownFailureStore: NetworkProtectionKnownFailureStore = NetworkProtectionKnownFailureStore(),
                 snoozeTimingStore: NetworkProtectionSnoozeTimingStore,
-                wireGuardInterface: WireGuardInterface,
+                wireGuardInterface: WireGuardGoInterface,
                 keychainType: KeychainType,
                 tokenHandlerProvider: @escaping () -> any SubscriptionTokenHandling,
                 debugEvents: EventMapping<NetworkProtectionError>,
                 providerEvents: EventMapping<Event>,
                 settings: VPNSettings,
                 defaults: UserDefaults,
+                wideEvent: WideEventManaging = WideEvent(),
                 entitlementCheck: (() async -> Result<Bool, Error>)?) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
@@ -511,7 +491,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.wireGuardInterface = wireGuardInterface
         self.settings = settings
         self.defaults = defaults
+        self.wideEvent = wideEvent
         self.entitlementCheck = entitlementCheck
+
+        self.wireGuardAdapterEventHandler = WireGuardAdapterEventHandler(
+            providerEvents: providerEvents,
+            settings: settings,
+            notificationsPresenter: notificationsPresenter
+        )
 
         super.init()
 
@@ -658,6 +645,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         let startupOptions = StartupOptions(options: options ?? [:])
         Logger.networkProtection.log("Starting tunnel with options: \(startupOptions.description, privacy: .public)")
+        isConnectionWideEventMeasurementEnabled = startupOptions.isConnectionWideEventMeasurementEnabled
+        setupAndStartConnectionWideEvent(with: startupOptions.startupMethod)
 
         // Reset snooze if the VPN is restarting.
         self.snoozeTimingStore.reset()
@@ -690,6 +679,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
 
             Logger.networkProtection.error("🔴 Stopping VPN due to no auth token")
+            completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             throw error
         }
 
@@ -702,6 +692,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             try await startTunnel(onDemand: startupOptions.startupMethod == .automaticOnDemand)
 
             providerEvents.fire(.tunnelStartAttempt(.success))
+            completeAndCleanupConnectionWideEvent()
         } catch {
             Logger.networkProtection.error("🔴 Failed to start tunnel \(error.localizedDescription, privacy: .public)")
 
@@ -721,6 +712,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             self.knownFailureStore.lastKnownFailure = KnownFailure(error)
 
             providerEvents.fire(.tunnelStartAttempt(.failure(error)))
+            completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
             throw error
         }
     }
@@ -1869,5 +1861,61 @@ extension WireGuardAdapterError: LocalizedError, CustomDebugStringConvertible {
 
     public var debugDescription: String {
         errorDescription!
+    }
+}
+
+// MARK: - WideEvent
+
+extension PacketTunnelProvider {
+
+    func setupAndStartConnectionWideEvent(with startupMethod: StartupOptions.StartupMethod) {
+        guard isConnectionWideEventMeasurementEnabled else { return }
+        completeAllPendingVPNConnectionPixels()
+        // Already measured
+        guard startupMethod != .manualByMainApp else { return }
+        let data = VPNConnectionWideEventData(
+            extensionType: .unknown,
+            startupMethod: startupMethod == .automaticOnDemand ? .automaticOnDemand : .manualByTheSystem,
+            contextData: WideEventContextData(name: (startupMethod == .automaticOnDemand ? NetworkProtectionFunnelOrigin.others : NetworkProtectionFunnelOrigin.systemSettings).rawValue)
+        )
+        self.connectionWideEventData = data
+        self.connectionWideEventData?.overallDuration = WideEvent.MeasuredInterval.startingNow()
+        self.connectionWideEventData?.tunnelStartDuration = WideEvent.MeasuredInterval.startingNow()
+        wideEvent.startFlow(data)
+    }
+
+    func completeAndCleanupConnectionWideEvent(with error: Error? = nil, description: String? = nil) {
+        guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
+        data.tunnelStartDuration?.complete()
+        data.overallDuration?.complete()
+        if let error {
+            data.errorData = .init(error: error, description: description)
+            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+        } else {
+            wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
+        }
+        self.connectionWideEventData = nil
+    }
+
+    func completeAllPendingVPNConnectionPixels() {
+        let pending = wideEvent.getAllFlowData(VPNConnectionWideEventData.self)
+        for data in pending {
+            guard let start = data.overallDuration?.start, data.overallDuration?.end == nil else {
+                wideEvent.completeFlow(data, status: .unknown(reason: VPNConnectionWideEventData.StatusReason.partialData.rawValue), onComplete: { _, _ in })
+                continue
+            }
+
+            let timeoutDate = start.addingTimeInterval(connectionTunnelTimeoutInterval)
+            let reason: VPNConnectionWideEventData.StatusReason = Date() >= timeoutDate ? .timeout : .partialData
+            wideEvent.completeFlow(data, status: .unknown(reason: reason.rawValue), onComplete: { _, _ in })
+        }
+    }
+}
+
+// MARK: - Error Description Helper
+
+private extension Error {
+    func contextualizedDescription() -> String? {
+        return (self as? PacketTunnelProvider.TunnelError)?.errorDescription
     }
 }

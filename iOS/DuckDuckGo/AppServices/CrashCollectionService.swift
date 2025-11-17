@@ -64,7 +64,7 @@ final class CrashCollectionService {
 
             // Async dispatch because rootViewController may otherwise be nil here
             DispatchQueue.main.async {
-                guard let viewController = self?.application.window?.rootViewController else { return }
+                guard let viewController = self?.application.firstKeyWindow?.rootViewController else { return }
                 self?.crashReportUploaderOnboarding.presentOnboardingIfNeeded(for: payloads, from: viewController, sendReport: sendReport)
             }
         }

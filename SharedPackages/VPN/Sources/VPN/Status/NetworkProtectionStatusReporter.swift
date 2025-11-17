@@ -23,6 +23,7 @@ import Common
 /// Classes that implement this protocol are in charge of relaying status changes.
 ///
 public protocol NetworkProtectionStatusReporter {
+    var vpnEnabledObserver: VPNEnabledObserver { get }
     var statusObserver: ConnectionStatusObserver { get }
     var serverInfoObserver: ConnectionServerInfoObserver { get }
     var connectionErrorObserver: ConnectionErrorObserver { get }
@@ -63,6 +64,7 @@ public final class DefaultNetworkProtectionStatusReporter: NetworkProtectionStat
 
     // MARK: - Publishers
 
+    public let vpnEnabledObserver: VPNEnabledObserver
     public let statusObserver: ConnectionStatusObserver
     public let serverInfoObserver: ConnectionServerInfoObserver
     public let connectionErrorObserver: ConnectionErrorObserver
@@ -73,7 +75,8 @@ public final class DefaultNetworkProtectionStatusReporter: NetworkProtectionStat
 
     // MARK: - Init & deinit
 
-    public init(statusObserver: ConnectionStatusObserver,
+    public init(vpnEnabledObserver: VPNEnabledObserver,
+                statusObserver: ConnectionStatusObserver,
                 serverInfoObserver: ConnectionServerInfoObserver,
                 connectionErrorObserver: ConnectionErrorObserver,
                 connectivityIssuesObserver: ConnectivityIssueObserver,
@@ -82,6 +85,7 @@ public final class DefaultNetworkProtectionStatusReporter: NetworkProtectionStat
                 knownFailureObserver: KnownFailureObserver,
                 distributedNotificationCenter: DistributedNotificationCenter = .default()) {
 
+        self.vpnEnabledObserver = vpnEnabledObserver
         self.statusObserver = statusObserver
         self.serverInfoObserver = serverInfoObserver
         self.connectionErrorObserver = connectionErrorObserver

@@ -26,6 +26,7 @@ import UserScript
 import WebKit
 import DesignResourcesKit
 import SecureStorage
+import Combine
 
 class EmailSignupViewController: UIViewController {
 
@@ -49,6 +50,8 @@ class EmailSignupViewController: UIViewController {
     }
 
     let completion: ((Bool) -> Void)
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
 
     private var webView: WKWebView!
 
@@ -121,7 +124,11 @@ class EmailSignupViewController: UIViewController {
 
     // MARK: - Public interface
 
-    init(completion: @escaping ((Bool) -> Void)) {
+    init(privacyConfigurationManager: PrivacyConfigurationManaging,
+         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
+         completion: @escaping ((Bool) -> Void)) {
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.completion = completion
         super.init(nibName: nil, bundle: nil)
     }
@@ -157,7 +164,8 @@ class EmailSignupViewController: UIViewController {
 
     private func setupWebView() {
         let configuration =  WKWebViewConfiguration.persistent()
-        let userContentController = UserContentController()
+        let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
+                                                          privacyConfigurationManager: privacyConfigurationManager)
         configuration.userContentController = userContentController
         userContentController.delegate = self
 

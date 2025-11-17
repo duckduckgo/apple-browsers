@@ -541,28 +541,9 @@ if let textContainer = textContainer {
 ## Memory Management
 
 ### Reference Cycles
-**Prevent reference cycles with `weak` and `unowned` references**:
+**Prevent reference cycles with `weak` and `unowned` references.**
 
-```swift
-// ✅ CORRECT: Weak self pattern
-resource.request().onComplete { [weak self] response in
-    guard let self = self else { return }
-    let model = self.updateModel(response)
-    self.updateUI(model)
-}
-
-// ❌ INCORRECT: Potential crash with unowned
-resource.request().onComplete { [unowned self] response in
-    let model = self.updateModel(response)  // Might crash
-    self.updateUI(model)
-}
-
-// ❌ INCORRECT: Optional chaining can cause issues
-resource.request().onComplete { [weak self] response in
-    let model = self?.updateModel(response)  // Self might be nil here
-    self?.updateUI(model)                    // And here, causing inconsistency
-}
-```
+**Example:** See [memory-management.swift](code-style/memory-management.swift)
 
 ### Lazy Initialization
 **Use lazy initialization for fine-grained control**:
@@ -794,71 +775,20 @@ final class Box<T> {
 
 ### Design System Integration (MANDATORY)
 
-**ALWAYS use DesignResourcesKit** for colors, typography, and icons:
+**ALWAYS use DesignResourcesKit** for colors, typography, and icons.
 
-```swift
-// ✅ REQUIRED: Use DesignResourcesKit colors
-label.textColor = UIColor(designSystemColor: .textPrimary)
-view.backgroundColor = UIColor(designSystemColor: .background)
-
-// ✅ REQUIRED: Use DesignResourcesKit typography
-titleLabel.font = UIFont.daxTitle1()
-bodyLabel.font = UIFont.daxBody()
-
-// ✅ REQUIRED: Use DesignResourcesKit icons
-let image = DesignSystemImages.Color.Size24.bookmark
-
-// ❌ FORBIDDEN: Hardcoded colors/fonts/icons
-label.textColor = UIColor.black
-titleLabel.font = UIFont.systemFont(ofSize: 24)
-let image = UIImage(systemName: "bookmark")
-```
+**Example:** See [design-system-integration.swift](code-style/design-system-integration.swift)
 
 ### Dependency Injection Pattern
-**Use AppDependencyProvider for dependency injection**:
+**Use AppDependencyProvider for dependency injection.**
 
-```swift
-// ✅ CORRECT: Dependency injection pattern
-final class FeatureViewModel: ObservableObject {
-    private let service: FeatureServiceProtocol
-    
-    init(dependencies: DependencyProvider = AppDependencyProvider.shared) {
-        self.service = dependencies.featureService
-    }
-}
-```
+**Example:** See [dependency-injection.swift](code-style/dependency-injection.swift)
 
 ### Async/Await Patterns
-```swift
-// ✅ CORRECT: Modern async/await with proper error handling
-@MainActor
-class FeatureViewModel: ObservableObject {
-    @Published var state: FeatureState = .idle
-    
-    func loadData() async {
-        state = .loading
-        
-        do {
-            let data = try await service.fetchData()
-            state = .loaded(data)
-        } catch {
-            state = .error(error)
-        }
-    }
-}
-```
+**Example:** See [async-await-pattern.swift](code-style/async-await-pattern.swift)
 
 ### Property Wrappers
-```swift
-// ✅ CORRECT: Use custom property wrappers
-final class SettingsManager {
-    @UserDefaultsWrapper(key: .showBookmarksBar, defaultValue: true)
-    var showBookmarksBar: Bool
-    
-    @UserDefaultsWrapper(key: .homePageURL, defaultValue: "https://duckduckgo.com")
-    var homePageURL: String
-}
-```
+**Example:** See [property-wrappers.swift](code-style/property-wrappers.swift)
 
 ## Comments and Documentation
 
@@ -1000,26 +930,9 @@ func processItems(_ items: [Item]) {
 
 ## Logging
 
-**Use unified logging system** for all logging:
+**Use unified logging system** for all logging.
 
-```swift
-import os
-
-// ✅ CORRECT: Unified logging
-private let logger = Logger(subsystem: "com.duckduckgo.browser", category: "FeatureManager")
-
-func performAction() {
-    logger.debug("Starting action with parameter: \(parameter, privacy: .public)")
-    
-    // Perform action...
-    
-    if success {
-        logger.info("Action completed successfully")
-    } else {
-        logger.error("Action failed: \(error.localizedDescription, privacy: .public)")
-    }
-}
-```
+**Example:** See [logging-pattern.swift](code-style/logging-pattern.swift)
 
 **See [Logging Guidelines](logging-guidelines.md) for comprehensive logging patterns.**
 

@@ -33,11 +33,13 @@ final class NavigationButtonMenuDelegate: NSObject {
     private let buttonType: ButtonType
     private let tabCollectionViewModel: TabCollectionViewModel
     private let historyCoordinator: HistoryCoordinating
+    private let tabsPreferences: TabsPreferences
 
-    init(buttonType: ButtonType, tabCollectionViewModel: TabCollectionViewModel, historyCoordinator: HistoryCoordinating) {
+    init(buttonType: ButtonType, tabCollectionViewModel: TabCollectionViewModel, historyCoordinator: HistoryCoordinating, tabsPreferences: TabsPreferences) {
         self.buttonType = buttonType
         self.tabCollectionViewModel = tabCollectionViewModel
         self.historyCoordinator = historyCoordinator
+        self.tabsPreferences = tabsPreferences
     }
 
 }
@@ -83,7 +85,7 @@ extension NavigationButtonMenuDelegate: NSMenuDelegate {
         }
         let behavior = LinkOpenBehavior(
             event: NSApp.currentEvent,
-            switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+            switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
             canOpenLinkInCurrentTab: true
         )
 

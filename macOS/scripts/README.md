@@ -107,8 +107,8 @@ to reflect the metadata (ETag and SHA256 sum) of downloaded files.
 It may update the following files:
 * DuckDuckGo/Content Blocker/AppPrivacyConfigurationDataProvider.swift
 * DuckDuckGo/Content Blocker/AppTrackerDataSetProvider.swift
-* DuckDuckGo/Content Blocker/macos-config.json
-* DuckDuckGo/Content Blocker/trackerData.json
+* DuckDuckGo/Content Blocker/Resources/macos-config.json
+* DuckDuckGo/Content Blocker/Resources/trackerData.json
 
 ### Requirements
 

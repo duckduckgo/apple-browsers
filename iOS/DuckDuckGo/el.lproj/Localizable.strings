@@ -980,6 +980,9 @@
 "Cohort: %@" = "Ομάδα: %@";
 
 /* No comment provided by engineer. */
+"Configuration" = "Διαμόρφωση";
+
+/* No comment provided by engineer. */
 "Confirm" = "Επιβεβαίωση";
 
 /* Button to continue the onboarding process */
@@ -2024,6 +2027,9 @@
 "keyCommandShowAllTabs" = "Προβολή όλων των καρτελών";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Τελευταία επεξεργασία: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Φόρτωση διαμεσολαβητών...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2085,6 +2091,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Όνομα κεντρικού υπολογιστή πολιτικής μηνυμάτων";
+
+/* No comment provided by engineer. */
+"Messages" = "Μηνύματα";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Κουμπί της γραμμής διευθύνσεων";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Γραμμή διευθύνσεων";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Απόκρυψη αυτού του κουμπιού";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Κανένα";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Προσαρμόσιμα κουμπιά";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Εμφάνιση κουμπιού εκ νέου φόρτωσης";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Κουμπί γραμμής εργαλείων";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Γραμμή εργαλείων";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Πίσω";
@@ -2342,10 +2375,19 @@
 "new.address.bar.picker.title" = "Επιλογή γραμμής διευθύνσεων";
 
 /* No comment provided by engineer. */
+"No Logs" = "Δεν υπάρχουν αρχεία καταγραφής";
+
+/* No comment provided by engineer. */
+"No messages" = "Δεν υπάρχουν μηνύματα";
+
+/* No comment provided by engineer. */
 "No results found" = "Δεν βρέθηκαν αποτελέσματα";
 
 /* No comment provided by engineer. */
 "OK" = "Εντάξει";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Διαχειριζόμενα cookies";
@@ -2358,9 +2400,6 @@
 
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Επιλέξτε το πρόγραμμα περιήγησής σας";
-
-/* Message to highlight browser capability of private searches */
-"onboarding.browsers.features.privateSearch.title" = "Ιδιωτική αναζήτηση βάσει προεπιλογής";
 
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "Το DuckDuckGo διαθέτει επίσης μια %1$@, διαθέσιμη με %2$@ και %3$@.";
@@ -2403,18 +2442,6 @@
 
 /* The title of the onboarding dialog popup to select the preferred App icon. */
 "onboarding.highlights.appIconSelection.title" = "Ποιο χρώμα μου ταιριάζει καλύτερα;";
-
-/* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Αποκλεισμός αναδυόμενων παραθύρων cookie";
-
-/* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Αποκλεισμός στοχευμένων διαφημίσεων";
-
-/* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Διαγράψτε τα δεδομένα περιήγησης με ένα κουμπί";
-
-/* Message to highlight browser capability of blocking 3rd-party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Αποκλείστε εφαρμογές παρακολούθησης τρίτων";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Η προστασία ενεργοποιήθηκε!";
@@ -2521,12 +2548,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Απενεργοποίηση";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "Email (προαιρετικό)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "name@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Στείλτε μας τα σχόλιά σας...";
 
@@ -2560,8 +2581,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "ΕΠΙΛΕΞΤΕ ΚΑΤΗΓΟΡΙΑ";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Βρήκατε ένα πρόβλημα που δεν καλύπτεται στο [κέντρο βοήθειας](duck://); Θέλουμε σίγουρα να μάθουμε γι' αυτό.Παρέχετε ένα email αν θέλετε να επικοινωνήσουμε μαζί σας για το θέμα αυτό (ίσως δεν είμαστε σε θέση να απαντήσουμε σε όλα τα θέματα):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Χρειάζεστε βοήθεια; [Επικοινώνησε με την υποστήριξη.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Βρήκατε ένα πρόβλημα που δεν καλύπτεται στο [κέντρο βοήθειας](duck://); Θέλουμε σίγουρα να μάθουμε γι' αυτό.\n\nΠείτε μας τι συμβαίνει:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Εκτός από τις λεπτομέρειες που καταχωρήθηκαν παραπάνω, στέλνουμε κάποιες ανώνυμες πληροφορίες με τα σχόλιά σας:";
@@ -2711,6 +2735,9 @@
 "prompt.custom.url.scheme.title" = "Άνοιγμα σε άλλη εφαρμογή;";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Πρόσφατα αρχεία καταγραφής επεξεργασίας";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Συγγενείς: %@";
 
 /* No comment provided by engineer. */
@@ -2814,6 +2841,12 @@
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Ρυθμίσεις αναζήτησης Assist";
+
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Απόκρυψη εικόνων που δημιουργήθηκαν με τεχνητή νοημοσύνη";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Φιλτράρει τις εικόνες που δημιουργούνται με τεχνητή νοημοσύνη από τα αποτελέσματα αναζήτησης εικόνων";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Πάντα σε λειτουργία";
@@ -3187,6 +3220,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Το πρόγραμμα περιήγησης DuckDuckGo παρέχει προστασίες παρακολούθησης, οι οποίες είναι πάντα ενεργές. [Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Εμφανίζει αρχεία καταγραφής από το τελευταίο λεπτό, για να βοηθήσει στη διάγνωση προβλημάτων αμέσως μετά από μια ανανέωση.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Επιλέξτε αυτό που περιγράφει καλύτερα το πρόβλημα που αντιμετωπίσατε.";
 
@@ -3219,6 +3255,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Ποιος ιστότοπος είναι κατεστραμμένος;";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Κατάσταση: Καταστάθηκε μη έγκυρο";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Αποθηκευμένο όνομα κεντρικού υπολογιστή: %@";
@@ -3607,6 +3646,9 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* No comment provided by engineer. */
+"Version: %@" = "Έκδοση: %@";
+
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Αναζήτηση";
 
@@ -3868,18 +3910,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Μήνυμα από %@:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "Δείτε την προσφορά";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Όχι τώρα";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Μείνετε προστατευμένοι με το VPN, την ιδιωτική τεχνητή νοημοσύνη και πολλά άλλα. Εγγραφείτε ξανά σήμερα και εξοικονομήστε 25%.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "Τελευταία ημέρα για να εξοικονομήσετε 25%!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "ΕΞΟΙΚΟΝΟΜΗΣΤΕ 25%";
 
@@ -3914,7 +3944,10 @@
 "win-back.campaign.subscription.settings.menu.title" = "Εγγραφείτε ξανά και εξοικονομήστε 25%";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Εγγραφείτε ξανά και εξοικονομήστε 25%";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Επανεγγραφή";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Μείνετε προστατευμένοι με το VPN, την ιδιωτική τεχνητή νοημοσύνη και πολλά άλλα.\nΠροσφορά περιορισμένου χρόνου.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Αναζητάτε την έκδοση των Mac;";

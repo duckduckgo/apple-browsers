@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import PixelKit
 import Subscription
+import VPN
 
 final class WideEventService {
     private let wideEvent: WideEventManaging
@@ -28,6 +29,7 @@ final class WideEventService {
     private let subscriptionBridge: SubscriptionAuthV1toV2Bridge
     private let activationTimeoutInterval: TimeInterval = .hours(4)
     private let restoreTimeoutInterval: TimeInterval = .minutes(15)
+    private let vpnConnectionTimeoutInterval: TimeInterval = .minutes(15)
 
     private let sendQueue = DispatchQueue(label: "com.duckduckgo.wide-pixel.send-queue", qos: .utility)
 
@@ -46,8 +48,9 @@ final class WideEventService {
     func sendAbandonedPixels(completion: @escaping () -> Void) {
         let shouldSendSubscriptionPurchaseWidePixel = featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement)
         let shouldSendSubscriptionRestoreWidePixel = featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement)
+        let shouldSendVPNConnectionWidePixel = featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
 
-        if !shouldSendSubscriptionPurchaseWidePixel && !shouldSendSubscriptionRestoreWidePixel {
+        if !shouldSendSubscriptionPurchaseWidePixel && !shouldSendSubscriptionRestoreWidePixel && !shouldSendVPNConnectionWidePixel {
             completion()
             return
         }
@@ -62,6 +65,9 @@ final class WideEventService {
                 if shouldSendSubscriptionRestoreWidePixel {
                     await self.sendAbandonedSubscriptionRestorePixels()
                 }
+                if shouldSendVPNConnectionWidePixel {
+                    await self.sendAbandonedVPNConnectionPixels()
+                }
 
                 DispatchQueue.main.async {
                     completion()
@@ -74,8 +80,9 @@ final class WideEventService {
     func sendDelayedPixels(completion: @escaping () -> Void) {
         let shouldSendSubscriptionPurchaseWidePixel = featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement)
         let shouldSendSubscriptionRestoreWidePixel = featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement)
+        let shouldSendVPNConnectionWidePixel = featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
 
-        if !shouldSendSubscriptionPurchaseWidePixel && !shouldSendSubscriptionRestoreWidePixel {
+        if !shouldSendSubscriptionPurchaseWidePixel && !shouldSendSubscriptionRestoreWidePixel && !shouldSendVPNConnectionWidePixel {
             completion()
             return
         }
@@ -89,6 +96,9 @@ final class WideEventService {
                 }
                 if shouldSendSubscriptionRestoreWidePixel {
                     await self.sendDelayedSubscriptionRestorePixels()
+                }
+                if shouldSendVPNConnectionWidePixel {
+                    await self.sendDelayedVPNConnectionPixels()
                 }
 
                 DispatchQueue.main.async {
@@ -199,6 +209,44 @@ final class WideEventService {
             }
 
             _ = try? await wideEvent.completeFlow(data, status: .unknown(reason: SubscriptionRestoreWideEventData.StatusReason.timeout.rawValue))
+        }
+    }
+    
+    // MARK: - VPN Connection
+
+    // In the vpn connection flow, we consider the pixel abandoned if:
+    // - The flow is open and has not completed AND
+    // - The duration interval is closed (never started OR has closed)
+    private func sendAbandonedVPNConnectionPixels() async {
+        let pending: [VPNConnectionWideEventData] = wideEvent.getAllFlowData(VPNConnectionWideEventData.self)
+
+        for data in pending {
+            if data.overallDuration?.start != nil && data.overallDuration?.end == nil {
+                continue
+            }
+
+            _ = try? await wideEvent.completeFlow(data, status: .unknown(reason: VPNConnectionWideEventData.StatusReason.partialData.rawValue))
+        }
+    }
+
+    // In the vpn connection flow, we consider the pixel delayed if:
+    // - The flow is open and has not completed AND
+    // - The duration interval has started, but has not completed AND
+    // - The start time till now has exceed the maximum allowed time (if not, we consider it to be still in progress and allow it to continue)
+    private func sendDelayedVPNConnectionPixels() async {
+        let pending: [VPNConnectionWideEventData] = wideEvent.getAllFlowData(VPNConnectionWideEventData.self)
+
+        for data in pending {
+            guard let start = data.overallDuration?.start, data.overallDuration?.end == nil else {
+                continue
+            }
+
+            let deadline = start.addingTimeInterval(vpnConnectionTimeoutInterval)
+            if Date() < deadline {
+                continue
+            }
+
+            _ = try? await wideEvent.completeFlow(data, status: .unknown(reason: VPNConnectionWideEventData.StatusReason.timeout.rawValue))
         }
     }
 }

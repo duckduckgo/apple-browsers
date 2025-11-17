@@ -139,7 +139,7 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
     private var persistor: FireButtonPreferencesPersistor
     private let fireproofDomains: FireproofDomains
     private let faviconManager: FaviconManagement
-    private let windowControllersManager: WindowControllersManagerProtocol
+    let windowControllersManager: WindowControllersManagerProtocol
     private let pixelFiring: PixelFiring?
     private let featureFlagger: FeatureFlagger
     private let aiChatHistoryCleaner: AIChatHistoryCleaning

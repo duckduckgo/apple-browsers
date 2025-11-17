@@ -44,6 +44,7 @@ import Navigation
 import Subscription
 import WKAbstractions
 import AIChat
+import SERPSettings
 
 class TabViewController: UIViewController {
 
@@ -132,6 +133,8 @@ class TabViewController: UIViewController {
     
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
     let appSettings: AppSettings
+
+    let privacyConfigurationManager: PrivacyConfigurationManaging
 
     var featureFlagger: FeatureFlagger
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
@@ -237,6 +240,8 @@ class TabViewController: UIViewController {
     var storedSpecialErrorPageUserScript: SpecialErrorPageUserScript?
     let syncService: DDGSyncing
 
+    let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
+
     private let daxDialogsDebouncer = Debouncer(mode: .common)
     var pullToRefreshViewAdapter: PullToRefreshViewAdapter?
 
@@ -336,14 +341,14 @@ class TabViewController: UIViewController {
     }
     
     private lazy var linkProtection: LinkProtection = {
-        LinkProtection(privacyManager: ContentBlocking.shared.privacyConfigurationManager,
+        LinkProtection(privacyManager: privacyConfigurationManager,
                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
                        errorReporting: Self.debugEvents)
 
     }()
     
     private lazy var referrerTrimming: ReferrerTrimming = {
-        ReferrerTrimming(privacyManager: ContentBlocking.shared.privacyConfigurationManager,
+        ReferrerTrimming(privacyManager: privacyConfigurationManager,
                          contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
                          tld: AppDependencyProvider.shared.storageCache.tld)
     }()
@@ -369,10 +374,12 @@ class TabViewController: UIViewController {
     private var lastRenderedURL: URL?
 
     static func loadFromStoryboard(model: Tab,
+                                   privacyConfigurationManager: PrivacyConfigurationManaging,
                                    appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
                                    bookmarksDatabase: CoreDataDatabase,
                                    historyManager: HistoryManaging,
                                    syncService: DDGSyncing,
+                                   contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
                                    duckPlayer: DuckPlayerControlling?,
                                    subscriptionDataReporter: SubscriptionDataReporting,
                                    contextualOnboardingPresenter: ContextualOnboardingPresenting,
@@ -393,10 +400,12 @@ class TabViewController: UIViewController {
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
             TabViewController(coder: coder,
                               tabModel: model,
+                              privacyConfigurationManager: privacyConfigurationManager,
                               appSettings: appSettings,
                               bookmarksDatabase: bookmarksDatabase,
                               historyManager: historyManager,
                               syncService: syncService,
+                              contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
                               duckPlayer: duckPlayer,
                               subscriptionDataReporter: subscriptionDataReporter,
                               contextualOnboardingPresenter: contextualOnboardingPresenter,
@@ -461,10 +470,12 @@ class TabViewController: UIViewController {
 
     required init?(coder aDecoder: NSCoder,
                    tabModel: Tab,
+                   privacyConfigurationManager: PrivacyConfigurationManaging,
                    appSettings: AppSettings,
                    bookmarksDatabase: CoreDataDatabase,
                    historyManager: HistoryManaging,
                    syncService: DDGSyncing,
+                   contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
                    certificateTrustEvaluator: CertificateTrustEvaluating = CertificateTrustEvaluator(),
                    duckPlayer: DuckPlayerControlling?,
                    subscriptionDataReporter: SubscriptionDataReporting,
@@ -486,11 +497,13 @@ class TabViewController: UIViewController {
                    aiChatSettings: AIChatSettingsProvider) {
 
         self.tabModel = tabModel
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.appSettings = appSettings
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
         self.historyCapture = HistoryCapture(historyManager: historyManager)
         self.syncService = syncService
+        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.certificateTrustEvaluator = certificateTrustEvaluator
         self.duckPlayer = duckPlayer
         self.subscriptionDataReporter = subscriptionDataReporter
@@ -514,6 +527,8 @@ class TabViewController: UIViewController {
         
         self.aiChatSettings = aiChatSettings
         self.aiChatViewControllerManager = AIChatViewControllerManager(
+            privacyConfigurationManager: privacyConfigurationManager,
+            contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             experimentalAIChatManager: .init(featureFlagger: featureFlagger),
             featureFlagger: featureFlagger,
             featureDiscovery: featureDiscovery,
@@ -706,7 +721,8 @@ class TabViewController: UIViewController {
                        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil) {
         instrumentation.willPrepareWebView()
 
-        let userContentController = UserContentController()
+        let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
+                                                          privacyConfigurationManager: privacyConfigurationManager)
         configuration.userContentController = userContentController
         userContentController.delegate = self
 
@@ -998,29 +1014,22 @@ class TabViewController: UIViewController {
         guard url.isDuckDuckGoSearch else { return false }
         
         var shouldReissue = !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
-        
-        // SerpSettingsFollowUpQuestions takes precedence over duckAISearchParameter
-        // If it's enabled, don't evaluate shouldReissue
-        if !featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) {
-            // Only check DuckAI params if the feature flag is enabled
-            if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-                let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-                shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
-            }
+
+        // Only check DuckAI params if the feature flag is enabled
+        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+            shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
         }
         return shouldReissue
     }
     
     private func reissueSearchWithRequiredParams(for url: URL) {
         var mobileSearch = url.applyingStatsParams()
-        
-        // SerpSettingsFollowUpQuestions takes precedence over duckAISearchParameter
+
         // If it's enabled, don't evaluate shouldReissue
-        if !featureFlagger.isFeatureOn(.serpSettingsFollowUpQuestions) {
-            if featureFlagger.isFeatureOn(.duckAISearchParameter) {
-                let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
-                mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
-            }
+        if featureFlagger.isFeatureOn(.duckAISearchParameter) {
+            let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
+            mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
         }
         
         reissueNavigationWithSearchHeaderParams(for: mobileSearch)
@@ -1156,7 +1165,7 @@ class TabViewController: UIViewController {
         return PrivacyDashboardViewController(coder: coder,
                                        privacyInfo: privacyInfo,
                                        entryPoint: .dashboard,
-                                       privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+                                       privacyConfigurationManager: privacyConfigurationManager,
                                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
                                               breakageAdditionalInfo: makeBreakageAdditionalInfo())
     }
@@ -1260,7 +1269,7 @@ class TabViewController: UIViewController {
     }
     
     private func makeProtectionStatus(for host: String) -> ProtectionStatus {
-        let config = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
+        let config = privacyConfigurationManager.privacyConfig
         
         let isTempUnprotected = config.isTempUnprotected(domain: host)
         let isAllowlisted = config.isUserUnprotected(domain: host)
@@ -1972,7 +1981,7 @@ extension TabViewController: WKNavigationDelegate {
     }
     
     private func requestForDoNotSell(basedOn incomingRequest: URLRequest) -> URLRequest? {
-        let config = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
+        let config = privacyConfigurationManager.privacyConfig
         guard var request = GPCRequestFactory().requestForGPC(basedOn: incomingRequest,
                                                               config: config,
                                                               gpcEnabled: appSettings.sendDoNotSell) else {
@@ -2124,7 +2133,7 @@ extension TabViewController: WKNavigationDelegate {
     private func shouldWaitUntilContentBlockingIsLoaded(_ completion: @Sendable @escaping @MainActor () -> Void) -> Bool {
         // Ensure Content Blocking Assets (WKContentRuleList&UserScripts) are installed
         if userContentController.contentBlockingAssetsInstalled
-            || !ContentBlocking.shared.privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking) {
+            || !privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking) {
 
             rulesCompilationMonitor.reportNavigationDidNotWaitForRules()
             return false
@@ -2267,7 +2276,7 @@ extension TabViewController: WKNavigationDelegate {
             userAgentManager.update(webView: webView, isDesktop: tabModel.isDesktop, url: url)
         }
 
-        if !ContentBlocking.shared.privacyConfigurationManager.privacyConfig.isProtected(domain: url.host) {
+        if !privacyConfigurationManager.privacyConfig.isProtected(domain: url.host) {
             completion(allowPolicy)
             return
         }
@@ -2876,6 +2885,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.autoconsentUserScript.delegate = self
         userScripts.contentScopeUserScript.delegate = self
         userScripts.serpSettingsUserScript.delegate = self
+        userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
         
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages
@@ -3009,7 +3019,7 @@ extension TabViewController: AdClickAttributionLogicDelegate {
                           forVendor vendor: String?) {
         let attributedTempListName = AdClickAttributionRulesProvider.Constants.attributedTempRuleListName
 
-        guard ContentBlocking.shared.privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking)
+        guard privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking)
         else {
             userContentController.removeLocalContentRuleList(withIdentifier: attributedTempListName)
             contentBlockerUserScript?.currentAdClickAttributionVendor = nil
@@ -3517,7 +3527,7 @@ extension TabViewController: SecureVaultManagerDelegate {
 
         do {
             let runtimeConfiguration =
-            try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+            try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
                                                       properties: buildContentScopePropertiesForDomain(domain))
             .build()
             .buildRuntimeConfigResponse()
@@ -3722,16 +3732,6 @@ extension WKWebView {
 
 }
 
-extension UserContentController {
-
-    @MainActor
-    public convenience init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
-        self.init(assetsPublisher: ContentBlocking.shared.contentBlockingUpdating.userContentBlockingAssets,
-                  privacyConfigurationManager: privacyConfigurationManager)
-    }
-
-}
-
 // MARK: - SpecialErrorPageNavigationDelegate
 
 extension TabViewController: SpecialErrorPageNavigationDelegate {
@@ -3906,22 +3906,9 @@ extension TabViewController {
 }
 
 extension TabViewController: SERPSettingsUserScriptDelegate {
-    
 
-    func serpSettingsUserScriptDidRequestToCloseTabAndOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
-        guard let mainVC = parent as? MainViewController else { return }
-        mainVC.segueToSettingsPrivateSearch {
-            mainVC.closeTab(self.tabModel)
-            mainVC.showBars()
-        }
-    }
-    
-    func serpSettingsUserScriptDidRequestToCloseTabAndOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
-        guard let mainVC = parent as? MainViewController else { return }
-        mainVC.segueToSettingsAIChat(openedFromSERPSettingsButton: false) { // false because we're reopening previously closed settings
-            mainVC.closeTab(self.tabModel)
-            mainVC.showBars()
-        }
+    func serpSettingsUserScriptDidRequestToCloseTab(_ userScript: SERPSettingsUserScript) {
+        // macOS Only
     }
 
     func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {

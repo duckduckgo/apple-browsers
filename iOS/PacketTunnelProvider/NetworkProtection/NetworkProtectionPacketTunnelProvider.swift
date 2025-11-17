@@ -17,20 +17,20 @@
 //  limitations under the License.
 //
 
-import Foundation
+import BrowserServicesKit
+import Combine
 import Common
 import Configuration
-import Combine
 import Core
-import Networking
+import Foundation
 import NetworkExtension
-import VPN
+import Networking
 import os.log
+import PixelKit
 import Subscription
+import VPN
 import WidgetKit
 import WireGuard
-import BrowserServicesKit
-import PixelKit
 
 final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
@@ -464,7 +464,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let keychainType: KeychainType = .dataProtection(.named(subscriptionAppGroup))
             let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
-            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
+            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
+                                                                  userDefaults: UserDefaults.standard) { accessType, error in
                 let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
                                   PixelParameters.subscriptionKeychainError: error.localizedDescription,
                                   PixelParameters.source: KeychainErrorSource.vpn.rawValue,
@@ -642,7 +643,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     }
 }
 
-final class DefaultWireGuardInterface: WireGuardInterface {
+final class DefaultWireGuardInterface: WireGuardGoInterface {
     func turnOn(settings: UnsafePointer<CChar>, handle: Int32) -> Int32 {
         wgTurnOn(settings, handle)
     }

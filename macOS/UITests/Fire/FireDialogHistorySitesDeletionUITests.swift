@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import SharedTestUtilities
 import XCTest
 
 /// History View Sites Section Deletion Fire Dialog UI tests

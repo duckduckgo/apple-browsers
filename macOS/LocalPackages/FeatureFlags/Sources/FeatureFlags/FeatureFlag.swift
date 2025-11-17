@@ -105,9 +105,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614764239
     case tabCrashDebugging
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616709915
-    case tabCrashRecovery
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382544
     case delayedWebviewPresentation
 
@@ -352,7 +349,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .visualUpdates,
                 .visualUpdatesInternalOnly,
                 .tabCrashDebugging,
-                .tabCrashRecovery,
                 .maliciousSiteProtection,
                 .delayedWebviewPresentation,
                 .syncSetupBarcodeIsUrlBased,
@@ -486,8 +482,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .tabCrashDebugging:
             return .disabled
-        case .tabCrashRecovery:
-            return .remoteReleasable(.feature(.tabCrashRecovery))
         case .delayedWebviewPresentation:
             return .remoteReleasable(.feature(.delayedWebviewPresentation))
         case .dbpRemoteBrokerDelivery:

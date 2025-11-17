@@ -155,33 +155,20 @@ extension TabCrashRecoveryExtension: NavigationResponder {
     }
 
     private func attemptTabCrashRecovery(for error: WKError, in webView: WKWebView) {
-        let shouldAutoReload: Bool
+        let crashTimestamp = crashLoopDetector.currentDate()
+        let isCrashLoop = crashLoopDetector.isCrashLoop(for: crashTimestamp, lastCrashTimestamp: lastCrashedAt)
+        tabDidCrashSubject.send(isCrashLoop ? .crashLoop : .single)
+        lastCrashedAt = crashTimestamp
 
-        if featureFlagger.isFeatureOn(.tabCrashRecovery) {
-            let crashTimestamp = crashLoopDetector.currentDate()
-            let isCrashLoop = crashLoopDetector.isCrashLoop(for: crashTimestamp, lastCrashTimestamp: lastCrashedAt)
-            tabDidCrashSubject.send(isCrashLoop ? .crashLoop : .single)
-            lastCrashedAt = crashTimestamp
+        if isCrashLoop {
+            tabCrashAggregator.recordCrash()
 
-            if isCrashLoop {
-                tabCrashAggregator.recordCrash()
-
-                Task.detached(priority: .utility) {
-                    self.firePixel(GeneralPixel.webKitTerminationLoop, [:])
-                }
-            }
-
-            shouldAutoReload = !isCrashLoop
-        } else {
-            // disable auto-reload if tab crash debugging flag is enabled, to allow testing
-            shouldAutoReload = featureFlagger.internalUserDecider.isInternalUser && !featureFlagger.isFeatureOn(.tabCrashDebugging)
-
-            if !shouldAutoReload {
-                tabCrashAggregator.recordCrash()
+            Task.detached(priority: .utility) {
+                self.firePixel(GeneralPixel.webKitTerminationLoop, [:])
             }
         }
 
-        handleTabCrash(error, in: webView, shouldAutoReload: shouldAutoReload)
+        handleTabCrash(error, in: webView, shouldAutoReload: !isCrashLoop)
     }
 
     private func handleTabCrash(_ error: WKError, in webView: WKWebView, shouldAutoReload: Bool) {

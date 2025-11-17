@@ -87,10 +87,10 @@ private struct PromptMessageAndImage: View {
             .font(.title.weight(.bold))
             .multilineTextAlignment(.center)
             .padding(.top, Metrics.padding)
-            .padding(.horizontal, PromptLeftViewMetrics.horizontalPadding)
+            .padding(.horizontal, PromptMessageAndImageMetrics.horizontalPadding)
     }
 
-    enum PromptLeftViewMetrics {
+    enum PromptMessageAndImageMetrics {
         static let horizontalPadding: CGFloat = 30
     }
 }
@@ -103,7 +103,7 @@ private struct PromptChartAndButtons: View {
     let dismissButtonAction: () -> Void
 
     var body: some View {
-        VStack(spacing: PromptRightViewMetrics.verticalSpacing) {
+        VStack(spacing: PromptChartAndButtonsMetrics.verticalSpacing) {
             Spacer()
 
             browsersComparisonChart
@@ -120,7 +120,7 @@ private struct PromptChartAndButtons: View {
         .background(Color(designSystemColor: .surfaceCanvas))
     }
 
-    enum PromptRightViewMetrics {
+    enum PromptChartAndButtonsMetrics {
         static let verticalSpacing: CGFloat = 50
     }
 }

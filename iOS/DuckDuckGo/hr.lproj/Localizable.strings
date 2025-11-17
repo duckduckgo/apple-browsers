@@ -980,6 +980,9 @@
 "Cohort: %@" = "Kohorta: %@";
 
 /* No comment provided by engineer. */
+"Configuration" = "Konfiguracija";
+
+/* No comment provided by engineer. */
 "Confirm" = "Potvrdi";
 
 /* Button to continue the onboarding process */
@@ -2024,6 +2027,9 @@
 "keyCommandShowAllTabs" = "Prikaži sve kartice";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Posljednja obrada: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Učitavanje brokera...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2085,6 +2091,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Naziv glavnog računala za pravila poruka";
+
+/* No comment provided by engineer. */
+"Messages" = "Poruke";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Gumb adresne trake";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Adresna traka";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Sakrij ovaj gumb";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Nijedno";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Podesivi gumbi";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Prikaži gumb za ponovno učitavanje";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Gumb alatne trake";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Alatna traka";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Natrag";
@@ -2342,10 +2375,19 @@
 "new.address.bar.picker.title" = "Opcija adresne trake";
 
 /* No comment provided by engineer. */
+"No Logs" = "Nema zapisnika";
+
+/* No comment provided by engineer. */
+"No messages" = "Nema poruka";
+
+/* No comment provided by engineer. */
 "No results found" = "Nema rezultata";
 
 /* No comment provided by engineer. */
 "OK" = "U redu";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Upravlja se kolačićima";
@@ -2506,12 +2548,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Obustavi";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "Adresa e-pošte (neobavezno)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "ime@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Pruži nam svoje povratne informacije…";
 
@@ -2545,8 +2581,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "ODABERI KATEGORIJU";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Pronašao si problem koji nije pokriven u našem [centru za pomoć](duck://)? Definitivno želimo saznati više o tome.Navedi adresu e-pošte ako želiš da te kontaktiramo u vezi s ovim problemom (možda nećemo moći odgovoriti na sve probleme):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Trebaš pomoć? [Kontaktiraj podršku.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Pronađen je problem koji nije pokriven u našem [centru za pomoć](duck://)? Definitivno želimo saznati više o tome.Reci nam što se događa:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Osim gore unesenih pojedinosti, šaljemo neke anonimizirane podatke s tvojim povratnim informacijama:";
@@ -2694,6 +2733,9 @@
 
 /* Alert title */
 "prompt.custom.url.scheme.title" = "Otvori u drugoj aplikaciji?";
+
+/* No comment provided by engineer. */
+"Recent Processing Logs" = "Nedavni zapisnici obrade";
 
 /* No comment provided by engineer. */
 "Relatives: %@" = "Rodbina: %@";
@@ -3178,6 +3220,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Preglednik DuckDuckGo pruža zaštite od praćenja koje su uvijek aktivne. [Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Prikazuje zapisnike iz posljednje minute kako bi se problemi mogli dijagnosticirati odmah nakon osvježavanja.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Odaberi opciju koja najbolje opisuje nastali problem.";
 
@@ -3210,6 +3255,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Koje je web-mjesto neispravno?";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Status: poništeno";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Pohranjeno ime glavnog računala: %@";
@@ -3598,6 +3646,9 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* No comment provided by engineer. */
+"Version: %@" = "Verzija: %@";
+
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Traži";
 
@@ -3859,18 +3910,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Poruka od %@:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "Pogledaj ponudu";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Ne sada";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Ostani zaštićen uz naš VPN, privatnu umjetnu inteligenciju i još mnogo toga. Pretplati se ponovno već danas i uštedi 25 %.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "Posljednji dan za uštedu od 25 %!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "UŠTEDI 25 %";
 
@@ -3905,7 +3944,10 @@
 "win-back.campaign.subscription.settings.menu.title" = "Ponovno se pretplati i uštedi 25 %";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Ponovno se pretplati i uštedi 25 %";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Ponovno se pretplati";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Ostani zaštićen uz naš VPN, privatnu umjetnu inteligenciju i još mnogo toga.\nPonuda na ograničeno vrijeme.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Tražiš verziju za Mac?";

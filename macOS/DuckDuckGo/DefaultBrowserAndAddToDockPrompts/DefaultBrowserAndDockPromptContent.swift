@@ -28,6 +28,7 @@ enum DefaultBrowserAndDockPromptType {
 enum DefaultBrowserAndDockPromptContent {
     case popover(DefaultBrowserAndDockPromptType)
     case banner(DefaultBrowserAndDockPromptType)
+    case inactive(DefaultBrowserAndDockPromptType)
 
     var title: String? {
         switch self {
@@ -55,6 +56,8 @@ enum DefaultBrowserAndDockPromptContent {
             }
         case .banner:
             return .daxBannerView
+        case .inactive:
+            return .daxSearch
         }
     }
 
@@ -75,6 +78,12 @@ enum DefaultBrowserAndDockPromptContent {
             case .setAsDefaultPrompt: return UserText.setAsDefaultBannerMessage
             case .bothDefaultBrowserAndDockPrompt: return UserText.bothSetAsDefaultAndAddToDockBannerMessage
             }
+        case let .inactive(content):
+            switch content {
+            case .addToDockPrompt: return UserText.addToDockInactiveUserPromptMessage
+            case .setAsDefaultPrompt: return UserText.setAsDefaultInactiveUserPromptMessage
+            case .bothDefaultBrowserAndDockPrompt: return UserText.bothSetAsDefaultAndAddToDockInactiveUserPromptMessage
+            }
         }
     }
 
@@ -91,6 +100,12 @@ enum DefaultBrowserAndDockPromptContent {
             case .addToDockPrompt: return UserText.addDuckDuckGoToDock
             default: return UserText.setAsDefaultPrimaryAction
             }
+        case let .inactive(content):
+            switch content {
+            case .addToDockPrompt: return UserText.addToDockInactiveUserPrimaryAction
+            case .setAsDefaultPrompt: return UserText.setAsDefaultInactiveUserPrimaryAction
+            case .bothDefaultBrowserAndDockPrompt: return UserText.bothSetAsDefaultAndAddToDockInactiveUserPrimaryAction
+            }
         }
     }
 
@@ -100,6 +115,8 @@ enum DefaultBrowserAndDockPromptContent {
             return UserText.notNow
         case .banner:
             return UserText.setAsDefaultAndAddToDockPermanentlyDismissAction
+        case .inactive:
+            return UserText.setAsDefaultAndAddToDockInactiveUserDismissAction
         }
     }
 }

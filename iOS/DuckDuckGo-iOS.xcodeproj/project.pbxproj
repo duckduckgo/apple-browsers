@@ -632,6 +632,7 @@
 		8528AE7E212EF5FF00D0BD74 /* AppRatingPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8528AE7D212EF5FF00D0BD74 /* AppRatingPromptTests.swift */; };
 		8528AE81212F15D600D0BD74 /* AppRatingPrompt.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 8528AE7F212F15D600D0BD74 /* AppRatingPrompt.xcdatamodeld */; };
 		8528AE84212FF9A100D0BD74 /* AppRatingPromptStorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8528AE82212FF91A00D0BD74 /* AppRatingPromptStorageTests.swift */; };
+		852BCC4D2EC4AEAC0093C753 /* DataAuditDebugScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 852BCC4C2EC4AEA60093C753 /* DataAuditDebugScreen.swift */; };
 		852E766D2E4638AF00BA92F1 /* AIChatSettingsMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 852E766C2E4638AB00BA92F1 /* AIChatSettingsMigration.swift */; };
 		8531A08E1F9950E6000484F0 /* UnprotectedSitesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8531A08D1F9950E6000484F0 /* UnprotectedSitesViewController.swift */; };
 		853273AE24FEF49600E3C778 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 853273AC24FEF49600E3C778 /* Extensions.swift */; };
@@ -810,6 +811,8 @@
 		97770B7B2EC1ED7D00CACA68 /* OnboardingStepsHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97770B752EC1ED7D00CACA68 /* OnboardingStepsHelper.swift */; };
 		97770B7C2EC1ED7D00CACA68 /* MockOnboardingSearchExperienceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97770B742EC1ED7D00CACA68 /* MockOnboardingSearchExperienceProvider.swift */; };
 		97770B7D2EC1ED7D00CACA68 /* OnboardingStepsHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97770B752EC1ED7D00CACA68 /* OnboardingStepsHelper.swift */; };
+		9795B2132EC62BF2002A812F /* OnboardingSearchExperienceSelectionHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9795B2122EC62BF2002A812F /* OnboardingSearchExperienceSelectionHandlerTests.swift */; };
+		9795B2152EC6360B002A812F /* OnboardingSearchExperiencePickerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9795B2142EC6360B002A812F /* OnboardingSearchExperiencePickerViewModelTests.swift */; };
 		980891A222369ADB00313A70 /* FeedbackUserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 980891A122369ADB00313A70 /* FeedbackUserText.swift */; };
 		980891A32237146B00313A70 /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 982E562D222C39F8008D861B /* Feedback.swift */; };
 		980891A52237D4F500313A70 /* FeedbackNavigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 980891A42237D4F500313A70 /* FeedbackNavigator.swift */; };
@@ -2721,6 +2724,7 @@
 		8528AE7D212EF5FF00D0BD74 /* AppRatingPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRatingPromptTests.swift; sourceTree = "<group>"; };
 		8528AE80212F15D600D0BD74 /* AppRatingPrompt.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = AppRatingPrompt.xcdatamodel; sourceTree = "<group>"; };
 		8528AE82212FF91A00D0BD74 /* AppRatingPromptStorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRatingPromptStorageTests.swift; sourceTree = "<group>"; };
+		852BCC4C2EC4AEA60093C753 /* DataAuditDebugScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataAuditDebugScreen.swift; sourceTree = "<group>"; };
 		852E766C2E4638AB00BA92F1 /* AIChatSettingsMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSettingsMigration.swift; sourceTree = "<group>"; };
 		8531A08D1F9950E6000484F0 /* UnprotectedSitesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnprotectedSitesViewController.swift; sourceTree = "<group>"; };
 		853273AC24FEF49600E3C778 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
@@ -2895,6 +2899,8 @@
 		97770B6E2EC1ED2600CACA68 /* OnboardingSearchExperienceSelectionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSearchExperienceSelectionHandler.swift; sourceTree = "<group>"; };
 		97770B742EC1ED7D00CACA68 /* MockOnboardingSearchExperienceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockOnboardingSearchExperienceProvider.swift; sourceTree = "<group>"; };
 		97770B752EC1ED7D00CACA68 /* OnboardingStepsHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStepsHelper.swift; sourceTree = "<group>"; };
+		9795B2122EC62BF2002A812F /* OnboardingSearchExperienceSelectionHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSearchExperienceSelectionHandlerTests.swift; sourceTree = "<group>"; };
+		9795B2142EC6360B002A812F /* OnboardingSearchExperiencePickerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSearchExperiencePickerViewModelTests.swift; sourceTree = "<group>"; };
 		9801F08927E4B21100191874 /* EmbeddedTrackerDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedTrackerDataTests.swift; sourceTree = "<group>"; };
 		98056C77251EABC000298AF6 /* da */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = da; path = da.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		98056C79251EABC000298AF6 /* da */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = da; path = da.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -6442,6 +6448,7 @@
 		858566F1252E55AE007501B8 /* Debug */ = {
 			isa = PBXGroup;
 			children = (
+				852BCC4C2EC4AEA60093C753 /* DataAuditDebugScreen.swift */,
 				36A96A092E6606C0003D4529 /* LocalNotificationsPlaygroundView.swift */,
 				4B67012A2E3BE3660066176A /* LogViewer */,
 				31206F6F2D3804E800A95D76 /* AIChatDebugView.swift */,
@@ -6963,10 +6970,12 @@
 				9F23B8052C2BE22700950875 /* OnboardingIntroViewModelTests.swift */,
 				56D0602C2C383FD2003BAEB5 /* OnboardingSuggestedSearchesProviderTests.swift */,
 				9FE05CEF2C3642F900D9046B /* OnboardingPixelReporterTests.swift */,
+				9795B2142EC6360B002A812F /* OnboardingSearchExperiencePickerViewModelTests.swift */,
 				9F5E5AB12C3E606D00165F54 /* ContextualOnboardingPresenterTests.swift */,
 				9F4CC5162C48B8D4006A96EB /* TabViewControllerDaxDialogTests.swift */,
 				9F7CFF7C2C89B69A0012833E /* AppIconPickerViewModelTests.swift */,
 				9FDEC7B32C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift */,
+				9795B2122EC62BF2002A812F /* OnboardingSearchExperienceSelectionHandlerTests.swift */,
 				9F1798562CD2443F0073018B /* AddToDockPromoViewModelTests.swift */,
 				9F5179D92D545D4300E40B40 /* DaxDialogsOnboardingMigratorTests.swift */,
 				9FD1BDEB2D8C183C002F4EFE /* OnboardingManagerTests.swift */,
@@ -10956,6 +10965,7 @@
 				37CF91622BB474AA00BADCAE /* CrashCollectionOnboardingView.swift in Sources */,
 				1EEC460627A9499600E75FCB /* DownloadsList.swift in Sources */,
 				9F387DE22EA891E8006861F8 /* NewAddressBarPickerModalPromptProvider.swift in Sources */,
+				852BCC4D2EC4AEAC0093C753 /* DataAuditDebugScreen.swift in Sources */,
 				31A968192E4F692200F4305E /* SettingsAIExperimentalPickerView.swift in Sources */,
 				9F23B8032C2BCD0000950875 /* DaxDialogStyles.swift in Sources */,
 				C128BA252DF0847900ADDC5F /* SettingsCompleteSetupView.swift in Sources */,
@@ -11692,8 +11702,10 @@
 				98E563E62DE8B32D00E6E75F /* MockBundle.swift in Sources */,
 				3105BCF52DF2154800EB755E /* AIChatPixelMetricHandlerTests.swift in Sources */,
 				3105BCF62DF2154800EB755E /* MockAIChatPixelMetricHandler.swift in Sources */,
+				9795B2152EC6360B002A812F /* OnboardingSearchExperiencePickerViewModelTests.swift in Sources */,
 				98E563E72DE8B32D00E6E75F /* MockTabInteractionStateSource.swift in Sources */,
 				98E563E82DE8B32D00E6E75F /* MockUserAgent.swift in Sources */,
+				9795B2132EC62BF2002A812F /* OnboardingSearchExperienceSelectionHandlerTests.swift in Sources */,
 				98E563E92DE8B32D00E6E75F /* MockVoiceSearchHelper.swift in Sources */,
 				97770B7A2EC1ED7D00CACA68 /* MockOnboardingSearchExperienceProvider.swift in Sources */,
 				97770B7B2EC1ED7D00CACA68 /* OnboardingStepsHelper.swift in Sources */,

@@ -26,6 +26,7 @@ import History
 import os.log
 import PrivacyDashboard
 import PrivacyStats
+import AutoconsentStats
 import SecureStorage
 import WebKit
 
@@ -157,6 +158,7 @@ final class Fire: FireProtocol {
     let faviconManagement: FaviconManagement
     let fireproofDomains: FireproofDomains
     let autoconsentManagement: AutoconsentManagement?
+    let autoconsentStats: AutoconsentStatsCollecting?
     let stateRestorationManager: AppStateRestorationManager?
     let recentlyClosedCoordinator: RecentlyClosedCoordinating?
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
@@ -249,6 +251,7 @@ final class Fire: FireProtocol {
          faviconManagement: FaviconManagement? = nil,
          fireproofDomains: FireproofDomains? = nil,
          autoconsentManagement: AutoconsentManagement? = nil,
+         autoconsentStats: AutoconsentStatsCollecting? = nil,
          stateRestorationManager: AppStateRestorationManager? = nil,
          recentlyClosedCoordinator: RecentlyClosedCoordinating? = nil,
          pinnedTabsManagerProvider: PinnedTabsManagerProviding? = nil,
@@ -281,6 +284,7 @@ final class Fire: FireProtocol {
         self.getPrivacyStats = getPrivacyStats ?? { NSApp.delegateTyped.privacyStats }
         self.getVisitedLinkStore = getVisitedLinkStore ?? { WKWebViewConfiguration.sharedVisitedLinkStore }
         self.autoconsentManagement = autoconsentManagement ?? NSApp.delegateTyped.autoconsentManagement
+        self.autoconsentStats = autoconsentStats ?? NSApp.delegateTyped.autoconsentStats
         self.visualizeFireAnimationDecider = visualizeFireAnimationDecider ?? NSApp.delegateTyped.visualizeFireSettingsDecider
         self.isAppActiveProvider = isAppActiveProvider
         if let stateRestorationManager = stateRestorationManager {
@@ -345,6 +349,7 @@ final class Fire: FireProtocol {
                 }
 
                 self.burnAutoconsentCache()
+                await self.burnAutoconsentStats()
                 self.burnZoomLevels(of: domains)
             }
 
@@ -422,6 +427,7 @@ final class Fire: FireProtocol {
 
             self.burnRecentlyClosed()
             self.burnAutoconsentCache()
+            await self.burnAutoconsentStats()
             self.burnZoomLevels()
 
             group.notify(queue: .main) {
@@ -842,6 +848,10 @@ final class Fire: FireProtocol {
 
     private func burnAutoconsentCache() {
         self.autoconsentManagement?.clearCache()
+    }
+
+    private func burnAutoconsentStats() async {
+        await self.autoconsentStats?.clearAutoconsentStats()
     }
 
     // MARK: - Last Session State

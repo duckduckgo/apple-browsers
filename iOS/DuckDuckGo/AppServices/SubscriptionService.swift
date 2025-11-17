@@ -33,7 +33,7 @@ final class SubscriptionService {
     private var cancellables: Set<AnyCancellable> = []
 
     init(application: UIApplication = UIApplication.shared,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                  purchasePlatform: .appStore,

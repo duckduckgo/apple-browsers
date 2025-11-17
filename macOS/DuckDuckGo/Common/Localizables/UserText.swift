@@ -1883,20 +1883,27 @@ struct UserText {
     static let addToDockPopoverPromptMessage = NSLocalizedString("sad.att.add-to-dock.popover.message", value: "Get quick access to protected browsing when you add DuckDuckGo to your Dock.", comment: "Body of the popover that invites users to add DuckDuckGo to their Dock")
     static let addToDockBannerPromptMessage = NSLocalizedString("sat.att.add-to-dock.banner.message", value: "Get quick access to protected browsing", comment: "Body of the banner view that invites users to add DuckDuckGo to their Dock")
     static let addToDockPopoverPrimaryAction = NSLocalizedString("sad.att.add-to-dock.popover.primary", value: "Add To Dock", comment: "Button primary action title that appears on a popover inviting users to add DuckDuckGo to their Dock")
+    static let addToDockInactiveUserPromptMessage = NSLocalizedString("sad.att.add-to-dock.inactive-user.message", value: "Add DuckDuckGo to your dock for quick access to protections other browsers don't provide.", comment: "Body of a modal view inviting inactive users to add DuckDuckGo to their Dock")
+    static let addToDockInactiveUserPrimaryAction = NSLocalizedString("sad.att.add-to-dock.inactive-user.primary", value: "Add To Dock", comment: "Button primary action title that appears on a modal inviting inactive users to add DuckDuckGo to their Dock")
 
     /// Strings for SAD only
     static let setAsDefaultPopoverTitle = NSLocalizedString("sad.att.default.popover.title", value: "Make DuckDuckGo Your Default Browser", comment: "Title of the popover that invites users to set DuckDuckGo as their default browser")
     static let setAsDefaultPopoverPromptMessage = NSLocalizedString("sad.att.set-as-default.popover.message", value: "Open all site links in DuckDuckGo to protect more of what you do online.", comment: "Body of the popover that invites users to set DuckDuckGo as their default browser")
     static let setAsDefaultPrimaryAction = NSLocalizedString("sad.att.set-as-default.prompt.primaary", value: "Set As Default…", comment: "Button primary action title that appears on a prompt inviting users to set DuckDuckGo as their default browser")
     static let setAsDefaultBannerMessage = NSLocalizedString("sad.att.set-as-default.banner.message", value: "DuckDuckGo isn't your default browser. Get more protection", comment: "Body of the banner view that invites users to set DuckDuckGo as their default browser")
+    static let setAsDefaultInactiveUserPromptMessage = NSLocalizedString("sad.att.set-as-default.inactive-user.message", value: "Make DuckDuckGo your default browser to protect more of what you do online.", comment: "Body of a modal view inviting inactive users to set DuckDuckGo as their default browser")
+    static let setAsDefaultInactiveUserPrimaryAction = NSLocalizedString("sad.att.set-as-default.inactive-user.primary", value: "Set As Default", comment: "Button primary action title that appears on a modal inviting inactive users to set DuckDuckGo as their default browser")
 
     /// Strings for combined actions
     static let bothSetAsDefaultAndAddToDockPopoverTitle = NSLocalizedString("sad.att.both.popover.title", value: "Make DuckDuckGo Your Primary Browser", comment: "Title of the popover that invites users to set DuckDuckGo as their default browser and add to their Dock")
     static let bothSetAsDefaultAndAddToDockPopoverMessage = NSLocalizedString("sad.att.both.popover.message", value: "Add DuckDuckGo to your Dock and set as your default browser to protect more of what you do online.", comment: "Body of the popover that invites users to set DuckDuckGo as their default browser and add to their Dock")
     static let bothSetAsDefaultPopoverAndAddToDockPopoverPrimaryAction = NSLocalizedString("sad.att.both.popover.primary", value: "Set As Primary Browser", comment: "Button primary action title that appears on a popover inviting users to set DuckDuckGo as their default browser and add it to their Dock")
     static let bothSetAsDefaultAndAddToDockBannerMessage = NSLocalizedString("sad.att.add-to-dock.banner.message", value: "Make DuckDuckGo your default browser and add to Dock", comment: "Body of the banner view that invites users to set DuckDuckGo as their default browser and add to their Dock")
+    static let bothSetAsDefaultAndAddToDockInactiveUserPromptMessage = NSLocalizedString("sad.att.both.inactive-user.message", value: "Add DuckDuckGo to your Dock and set it as your default browser to protect more of what you do online.", comment: "Body of a modal view inviting inactive users to set DuckDuckGo as their default browser and add to their Dock")
+    static let bothSetAsDefaultAndAddToDockInactiveUserPrimaryAction = NSLocalizedString("sad.att.both.inactive-user.primary", value: "Add & Set As Default", comment: "Button primary action title that appears on a modal inviting inactive users to set DuckDuckGo as their default browser and add to their Dock")
 
     static let setAsDefaultAndAddToDockPermanentlyDismissAction = NSLocalizedString("sad.att.banner.button.permanently-dismiss", value: "Don’t Ask Again", comment: "Button action title that appears on a prompt that prevents the prompt from being shown again.")
+    static let setAsDefaultAndAddToDockInactiveUserDismissAction = NSLocalizedString("sad.att.inactive-user.dismiss", value: "No Thanks", comment: "Button action title that appears on a prompt that dismisses the prompt.")
 
     // MARK: - Privacy Pro
 

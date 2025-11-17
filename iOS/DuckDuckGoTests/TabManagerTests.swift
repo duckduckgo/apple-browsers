@@ -88,6 +88,7 @@ final class TabManagerTests: XCTestCase {
                           persistence: tabsPersistence,
                           previewsSource: previewsSource,
                           interactionStateSource: TabInteractionStateDiskSource(),
+                          privacyConfigurationManager: MockPrivacyConfigurationManager(),
                           bookmarksDatabase: MockBookmarksDatabase.make(prepareFolderStructure: false),
                           historyManager: MockHistoryManager(),
                           syncService: MockDDGSyncing(),

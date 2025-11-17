@@ -55,7 +55,8 @@ public class SyncDataProviders: DataProvidersSource {
             creditCardsAdapter?.setUpProviderIfNeeded(
                 secureVaultFactory: secureVaultFactory,
                 metadataStore: syncMetadata,
-                metricsEventsHandler: metricsEventsHandler
+                metricsEventsHandler: metricsEventsHandler,
+                privacyConfigurationManager: privacyConfigurationManager
             )
         }
         settingsAdapter.setUpProviderIfNeeded(
@@ -121,6 +122,7 @@ public class SyncDataProviders: DataProvidersSource {
     }
 
     public init(
+        privacyConfigurationManager: PrivacyConfigurationManaging,
         bookmarksDatabase: CoreDataDatabase,
         secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
         secureVaultErrorReporter: SecureVaultReporting,
@@ -131,6 +133,7 @@ public class SyncDataProviders: DataProvidersSource {
         tld: TLD,
         featureFlagger: FeatureFlagger
     ) {
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.bookmarksDatabase = bookmarksDatabase
         self.secureVaultFactory = secureVaultFactory
         self.secureVaultErrorReporter = secureVaultErrorReporter
@@ -183,6 +186,7 @@ public class SyncDataProviders: DataProvidersSource {
     private var syncAuthStateDidChangeCancellable: AnyCancellable?
     private let metricsEventsHandler = SyncMetricsEventsHandler()
 
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let syncMetadataDatabase: CoreDataDatabase = SyncMetadataDatabase.make()
     private let bookmarksDatabase: CoreDataDatabase
     private let secureVaultFactory: AutofillVaultFactory

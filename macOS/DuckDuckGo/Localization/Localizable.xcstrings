@@ -77460,6 +77460,126 @@
         }
       }
     },
+    "sad.att.add-to-dock.inactive-user.message" : {
+      "comment" : "Body of a modal view inviting inactive users to add DuckDuckGo to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge DuckDuckGo zu deinem Dock hinzu, um schnell auf Schutzfunktionen zuzugreifen, die andere Browser nicht bieten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add DuckDuckGo to your dock for quick access to protections other browsers don't provide."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade DuckDuckGo a tu Dock para acceder rápidamente a protecciones que otros navegadores no proporcionan."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez DuckDuckGo à votre Dock pour accéder rapidement aux protections que les autres navigateurs ne proposent pas."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi DuckDuckGo al tuo dock per accedere rapidamente alle protezioni che altri browser non offrono."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg DuckDuckGo toe aan je dock voor snelle toegang tot beveiligingen die andere browsers niet bieden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj DuckDuckGo do Docka, aby uzyskać szybki dostęp do zabezpieczeń, których nie oferują inne przeglądarki."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona o DuckDuckGo à tua dock para acesso rápido às proteções que outros navegadores não oferecem."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавьте DuckDuckGo на док-панель для быстрого доступа к функциям защиты, которых нет в других браузерах."
+          }
+        }
+      }
+    },
+    "sad.att.add-to-dock.inactive-user.primary" : {
+      "comment" : "Button primary action title that appears on a modal inviting inactive users to add DuckDuckGo to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Dock hinzufügen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add To Dock"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir al Dock"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter au Dock"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi al dock"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toevoegen aan Dock"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj do Docka"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar à Dock"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить на док-панель"
+          }
+        }
+      }
+    },
     "sad.att.add-to-dock.popover.message" : {
       "comment" : "Body of the popover that invites users to add DuckDuckGo to their Dock",
       "extractionState" : "extracted_with_value",
@@ -77696,6 +77816,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Больше не спрашивать"
+          }
+        }
+      }
+    },
+    "sad.att.both.inactive-user.message" : {
+      "comment" : "Body of a modal view inviting inactive users to set DuckDuckGo as their default browser and add to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge DuckDuckGo zu deinem Dock hinzu und wähle es als Standardbrowser, um mehr von dem zu schützen, was du online tust."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add DuckDuckGo to your Dock and set it as your default browser to protect more of what you do online."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade DuckDuckGo a tu Dock y configúralo como tu navegador predeterminado para mejorar la protección de tu actividad en Internet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez DuckDuckGo à votre Dock et faites-en votre navigateur par défaut pour mieux protéger vos activités en ligne."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi DuckDuckGo al dock e impostalo come browser predefinito per proteggere meglio quello che fai online."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg DuckDuckGo toe aan je dock en stel het in als je standaardbrowser om je online activiteiten beter te beschermen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj DuckDuckGo do Docka i ustaw jako domyślną przeglądarkę, aby w większym stopniu chronić swoją aktywność w Internecie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona o DuckDuckGo à tua Dock e define-o como navegador predefinido para protegeres mais o que fazes online."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы лучше защитить себя онлайн, добавьте DuckDuckGo на док-панель и назначьте его браузером по умолчанию."
+          }
+        }
+      }
+    },
+    "sad.att.both.inactive-user.primary" : {
+      "comment" : "Button primary action title that appears on a modal inviting inactive users to set DuckDuckGo as their default browser and add to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hinzufügen und als Standard festlegen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add & Set As Default"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir y configurar como predeterminado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter et définir par défaut"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi e imposta come predefinito"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toevoegen en als standaard instellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj i ustaw jako domyślną"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar e definir como predefinição"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить и установить по умолчанию"
           }
         }
       }
@@ -77940,6 +78180,66 @@
         }
       }
     },
+    "sad.att.inactive-user.dismiss" : {
+      "comment" : "Button action title that appears on a prompt that dismisses the prompt.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nein, danke"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No Thanks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No, gracias"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non merci"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No, grazie"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nee, bedankt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie, dziękuję"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não, obrigado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет, спасибо"
+          }
+        }
+      }
+    },
     "sad.att.set-as-default.banner.message" : {
       "comment" : "Body of the banner view that invites users to set DuckDuckGo as their default browser",
       "extractionState" : "extracted_with_value",
@@ -77996,6 +78296,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "DuckDuckGo не назначен вашим браузером по умолчанию. Почему бы не поднять уровень защиты?"
+          }
+        }
+      }
+    },
+    "sad.att.set-as-default.inactive-user.message" : {
+      "comment" : "Body of a modal view inviting inactive users to set DuckDuckGo as their default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mach DuckDuckGo zu deinem Standard-Browser, um mehr von dem zu schützen, was du online tust."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Make DuckDuckGo your default browser to protect more of what you do online."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haz que DuckDuckGo sea tu navegador predeterminado para mejorar la protección de tu actividad en Internet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faites de DuckDuckGo votre navigateur par défaut pour protéger davantage vos activités en ligne."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rendi DuckDuckGo il tuo browser predefinito per proteggere meglio quello che fai online."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maak DuckDuckGo je standaardbrowser om meer van wat je online doet te beschermen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustaw DuckDuckGo jako domyślną przeglądarkę, aby w większym stopniu chronić swoją aktywność w Internecie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define o DuckDuckGo como navegador predefinido para protegeres mais o que fazes online."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы лучше защитить себя онлайн, назначьте DuckDuckGo браузером по умолчанию."
+          }
+        }
+      }
+    },
+    "sad.att.set-as-default.inactive-user.primary" : {
+      "comment" : "Button primary action title that appears on a modal inviting inactive users to set DuckDuckGo as their default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als Standard festlegen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set As Default"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Establecer como predeterminado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Définir par défaut"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta come predefinito"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als standaard instellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustaw jako domyślną"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Definir como predefinição"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сделать браузером по умолчанию"
           }
         }
       }

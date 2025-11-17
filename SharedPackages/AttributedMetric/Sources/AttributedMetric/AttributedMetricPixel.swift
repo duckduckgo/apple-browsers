@@ -48,7 +48,7 @@ enum AttributedMetricPixel: PixelKitEvent {
     case userAverageSearchesPastWeek(origin: String?, installDate: String?, count: Int, bucketVersion: Int)
     case userAverageAdClicksPastWeek(origin: String?, installDate: String?, count: Int, bucketVersion: Int)
     case userAverageDuckAiUsagePastWeek(origin: String?, installDate: String?, count: Int, bucketVersion: Int)
-    case userSubscribed(origin: String?, installDate: String?, length: Int, bucketVersion: Int)
+    case userSubscribed(origin: String?, installDate: String?, month: Int, bucketVersion: Int)
     case userSyncedDevice(origin: String?, installDate: String?, devices: Int, bucketVersion: Int)
 
     // Errors
@@ -84,7 +84,7 @@ enum AttributedMetricPixel: PixelKitEvent {
         static let count = "count"
         static let days = "days"
         static let daysSinceInstalled = "daysSinceInstalled"
-        static let length = "length"
+        static let month = "month"
         static let numberOfDevices = "number_of_devices"
         static let origin = "origin"
         static let installDate = "install_date"
@@ -124,8 +124,8 @@ enum AttributedMetricPixel: PixelKitEvent {
                           ConstantKeys.bucketVersion: bucketVersion.payloadString]
             addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
             return result
-        case .userSubscribed(origin: let origin, installDate: let installDate, length: let length, bucketVersion: let bucketVersion):
-            var result = [ConstantKeys.length: length.payloadString,
+        case .userSubscribed(origin: let origin, installDate: let installDate, month: let month, bucketVersion: let bucketVersion):
+            var result = [ConstantKeys.month: month.payloadString,
                           ConstantKeys.bucketVersion: bucketVersion.payloadString]
             addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
             return result

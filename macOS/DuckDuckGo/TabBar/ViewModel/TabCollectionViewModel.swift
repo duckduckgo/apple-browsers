@@ -964,3 +964,23 @@ extension TabCollectionViewModel {
     }
 
 }
+
+// MARK: - New Windows Logic
+
+extension TabCollectionViewModel {
+
+    func canMoveSelectedTabToNewWindow() -> Bool {
+        guard let selectionIndex else {
+            return false
+        }
+
+        return canMoveTabToNewWindow(tabIndex: selectionIndex)
+    }
+
+    func canMoveTabToNewWindow(tabIndex: TabIndex) -> Bool {
+        let pinnedTabsCount = pinnedTabsCollection?.tabs.count ?? 0
+        let unpinnedTabsCount = tabCollection.tabs.count
+
+        return tabIndex.isUnpinnedTab && (unpinnedTabsCount > 1 || pinnedTabsCount > 0)
+    }
+}

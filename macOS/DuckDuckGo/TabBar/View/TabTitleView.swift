@@ -50,7 +50,7 @@ extension TabTitleView {
 
     /// Displays the specified Title **Unless** the following conditions are met
     ///     1. We're already displaying a Title for the same URL
-    ///     2. The new Title is the "Suggested Placeholder" (Domain minus the `www` prefix, and no schema)
+    ///     2. The new Title is the "Suggested Placeholder" (Host minus the `www` prefix, and no schema)
     ///
     /// This exit mechanism is meant to handle Page Reload scenarios, in which we're already rendering a Title, and we'd wanna
     /// avoid animating the Placeholder.

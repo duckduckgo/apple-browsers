@@ -102,13 +102,13 @@
             },
             // Per-step underlying error domains
             {
-                "keyPattern": "feature\\.data\\.ext\\.(browser_start|controller_start|oauth|tunnel_start)_error\\.underlying_domain[0-9]*",
+                "keyPattern": "feature\\.data\\.ext\\.(browser_start|controller_start|oauth|tunnel_start)_error\\.underlying_domain[0-9]?",
                 "type": "string",
                 "description": "Underlying error domain for VPN connection step failures"
             },
             // Per-step underlying error codes
             {
-                "keyPattern": "feature\\.data\\.ext\\.(browser_start|controller_start|oauth|tunnel_start)_error\\.underlying_code[0-9]*",
+                "keyPattern": "feature\\.data\\.ext\\.(browser_start|controller_start|oauth|tunnel_start)_error\\.underlying_code[0-9]?",
                 "type": "integer",
                 "description": "Underlying error code for VPN connection step failures"
             },

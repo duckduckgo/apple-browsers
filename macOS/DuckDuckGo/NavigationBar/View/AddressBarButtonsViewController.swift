@@ -878,6 +878,13 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func updateBookmarkButtonVisibility() {
         guard !isInPopUpWindow else { return }
+        
+        if case .editing(.aiChat) = controllerMode {
+            bookmarkButton.isShown = false
+            updateAIChatDividerVisibility()
+            return
+        }
+        
         let hasEmptyAddressBar = textFieldValue?.isEmpty ?? true
         var shouldShowBookmarkButton: Bool {
             guard let tabViewModel, tabViewModel.canBeBookmarked else { return false }

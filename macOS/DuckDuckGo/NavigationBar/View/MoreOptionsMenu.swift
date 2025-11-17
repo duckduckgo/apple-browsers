@@ -1189,14 +1189,17 @@ final class LoginsSubMenu: NSMenu {
         addItem(withTitle: autofillTitle, action: autofillSelector, keyEquivalent: "")
             .targetting(target)
             .withImage(moreOptionsMenuIconsProvider.passwordsSubMenuIcon)
+            .withAccessibilityIdentifier("LoginsSubMenu.passwords")
 
         addItem(withTitle: UserText.passwordManagementIdentities, action: #selector(MoreOptionsMenu.openAutofillWithIdentities), keyEquivalent: "")
             .targetting(target)
             .withImage(moreOptionsMenuIconsProvider.identitiesIcon)
+            .withAccessibilityIdentifier("LoginsSubMenu.identities")
 
         addItem(withTitle: UserText.passwordManagementCreditCards, action: #selector(MoreOptionsMenu.openAutofillWithCreditCards), keyEquivalent: "")
             .targetting(target)
             .withImage(moreOptionsMenuIconsProvider.creditCardsIcon)
+            .withAccessibilityIdentifier("LoginsSubMenu.creditCards")
     }
 
 }

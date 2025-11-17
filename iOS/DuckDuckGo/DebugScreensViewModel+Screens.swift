@@ -74,6 +74,9 @@ extension DebugScreensViewModel {
             .view(title: "AI Chat", { _ in
                 AIChatDebugView()
             }),
+            .view(title: "Data Audit", { _ in
+                DataAuditDebugScreen()
+            }),
             .view(title: "Feature Flags", { _ in
                 FeatureFlagsMenuView()
             }),

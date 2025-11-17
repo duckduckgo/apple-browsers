@@ -589,13 +589,13 @@ enum GeneralPixel: PixelKitEvent {
             return  "m_mac_\(isAddedToDock ? "added" : "not-added")-to-dock"
 
         case .dailyFireWindowConfigurationStartupFireWindowEnabled(startupFireWindow: let startupFireWindow):
-            return "m_mac_fire_window_configuration_startup_fire_window_is_\(startupFireWindow ? "enabled" : "disabled")"
+            return "m_mac_fire_window_configuration_startup-fire-window_\(startupFireWindow ? "enabled" : "disabled")"
 
         case .dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled(openFireWindowByDefault: let openFireWindowByDefault):
-            return "m_mac_fire_window_configuration_open_fire_window_by_default_is_\(openFireWindowByDefault ? "enabled" : "disabled")"
+            return "m_mac_fire_window_configuration_open-fire-window-by-default_\(openFireWindowByDefault ? "enabled" : "disabled")"
 
         case .dailyFireWindowConfigurationFireAnimationEnabled(fireAnimationEnabled: let fireAnimationEnabled):
-            return "m_mac_fire_window_configuration_fire_animation_is_\(fireAnimationEnabled ? "enabled" : "disabled")"
+            return "m_mac_fire_window_configuration_fire-animation_\(fireAnimationEnabled ? "enabled" : "disabled")"
 
         case .navigation:
             return "m_mac_navigation"

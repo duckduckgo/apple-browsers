@@ -20,8 +20,8 @@ import BrowserServicesKit
 import FeatureFlags
 import Foundation
 import NetworkProtectionUI
+import VPN
 import VPNAppState
-import VPNExtensionManagement
 
 final class VPNExtensionResolver {
 

@@ -31,7 +31,7 @@ final class DBPService: NSObject {
         return dbpIOSManager
     }
 
-    init(appDependencies: DependencyProvider) {
+    init(appDependencies: DependencyProvider, contentBlocking: ContentBlocking) {
         guard appDependencies.featureFlagger.isFeatureOn(.personalInformationRemoval) else {
             self.dbpIOSManager = nil
             super.init()
@@ -48,7 +48,7 @@ final class DBPService: NSObject {
         if let pixelKit = PixelKit.shared {
             self.dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(
                 authenticationManager: authManager,
-                privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+                privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
                 pixelKit: pixelKit,
                 wideEvent: appDependencies.wideEvent,

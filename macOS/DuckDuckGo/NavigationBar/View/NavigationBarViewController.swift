@@ -55,7 +55,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet private var navigationButtons: NSStackView!
     @IBOutlet private var addressBarContainer: NSView!
     @IBOutlet private var daxLogo: NSImageView!
-    @IBOutlet private var addressBarStack: NSStackView!
+    @IBOutlet var addressBarStack: NSStackView!
 
     @IBOutlet private(set) var menuButtons: NSStackView!
 
@@ -556,7 +556,7 @@ final class NavigationBarViewController: NSViewController {
             let isAddressBarFocused = view.window?.firstResponder == addressBarViewController?.addressBarTextField.currentEditor()
 
             let height: NSLayoutConstraint = animated ? navigationBarHeightConstraint.animator() : navigationBarHeightConstraint
-            height.constant = addressBarStyleProvider.navigationBarHeight(for: sizeClass)
+            height.constant = addressBarStyleProvider.navigationBarHeight(for: sizeClass, focused: isAddressBarFocused)
 
             let barTop: NSLayoutConstraint = animated ? addressBarTopConstraint.animator() : addressBarTopConstraint
             barTop.constant = addressBarStyleProvider.addressBarTopPadding(for: sizeClass, focused: isAddressBarFocused)
@@ -2125,6 +2125,12 @@ extension NavigationBarViewController: AddressBarViewControllerDelegate {
 
         if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
             resizeAddressBar(for: addressBarSizeClass, animated: false)
+        }
+    }
+
+    func addressBarViewControllerSearchModeToggleChanged(_ addressBarViewController: AddressBarViewController, isAIChatMode: Bool) {
+        if let mainViewController = parent as? MainViewController {
+            mainViewController.updateAIChatOmnibarContainerVisibility(visible: isAIChatMode)
         }
     }
 }

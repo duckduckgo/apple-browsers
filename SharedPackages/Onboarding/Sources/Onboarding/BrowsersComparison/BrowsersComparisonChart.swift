@@ -23,13 +23,20 @@ import SwiftUI
 extension BrowsersComparisonChart {
 
     public struct Configuration {
-        var fontSize: CGFloat
+        var font: Font
         var allowContentToScrollUnderHeader: Bool
+        var showFeatureIcons: Bool
+        var showBottomDivider: Bool
 
         public init(fontSize: CGFloat = 15.0,
-                    allowContentToScrollUnderHeader: Bool = false) {
-            self.fontSize = fontSize
+                    fontWeight: Font.Weight = .regular,
+                    allowContentToScrollUnderHeader: Bool = false,
+                    showFeatureIcons: Bool = false,
+                    showBottomDivider: Bool? = nil) {
+            self.font = Font.system(size: fontSize, weight: fontWeight)
             self.allowContentToScrollUnderHeader = allowContentToScrollUnderHeader
+            self.showFeatureIcons = showFeatureIcons
+            self.showBottomDivider = showBottomDivider ?? !allowContentToScrollUnderHeader
         }
     }
 
@@ -56,8 +63,8 @@ public struct BrowsersComparisonChart: View {
     @ViewBuilder
     private var content: some View {
         let content = ForEach(Array(privacyFeatures.enumerated()), id: \.element.type) { index, feature in
-            let shouldDisplayDivider = index < privacyFeatures.count - 1 || !configuration.allowContentToScrollUnderHeader
-            Row(feature: feature, shouldDisplayDivider: shouldDisplayDivider)
+            let shouldDisplayDivider = index < privacyFeatures.count - 1 || configuration.showBottomDivider
+            Row(configuration: configuration, feature: feature, shouldDisplayDivider: shouldDisplayDivider)
         }
 
         if configuration.allowContentToScrollUnderHeader {
@@ -109,13 +116,22 @@ extension BrowsersComparisonChart {
 extension BrowsersComparisonChart {
 
     struct Row: View {
+        let configuration: Configuration
         let feature: BrowsersComparisonModel.PrivacyFeature
         let shouldDisplayDivider: Bool
 
         var body: some View {
             HStack {
+                if configuration.showFeatureIcons {
+                    #if os(iOS)
+                    Image(uiImage: feature.type.icon)
+                    #elseif os(macOS)
+                    Image(nsImage: feature.type.icon)
+                    #endif
+                }
+
                 Text(verbatim: feature.type.title)
-                    .font(Metrics.font)
+                    .font(configuration.font)
                     .foregroundColor(.primary)
                     .lineLimit(nil)
                     .lineSpacing(1)
@@ -165,7 +181,6 @@ extension BrowsersComparisonChart {
         static let headerHeight: CGFloat = 60
         static let headerImageContainerSize = CGSize(width: 40, height: 80)
         static let imageContainerSize = CGSize(width: 40.0, height: 50.0)
-        static let font = Font.system(size: 15.0)
         static let scrollableVStackSpacing: CGFloat = 0
         static let scrollableBottomDividerPadding: CGFloat = 4
     }

@@ -141,8 +141,9 @@ final class TabBarItemCellView: NSView {
     let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
 
-    fileprivate let displaysTabsProgressIndicator: Bool = NSApp.delegateTyped.featureFlagger.isFeatureOn(.tabProgressIndicator)
+    fileprivate let displaysTabsProgressIndicator: Bool = NSApp.delegateTyped.displaysTabsProgressIndicator
     fileprivate lazy var faviconView = TabFaviconView()
+    fileprivate lazy var titleView = TabTitleView()
 
     /// Will be removed in favor of `faviconView`
     fileprivate lazy var faviconImageView = {
@@ -178,6 +179,7 @@ final class TabBarItemCellView: NSView {
         return audioButton
     }()
 
+    /// Will be removed in favor of `titleView`
     fileprivate let titleTextField = {
         let titleTextField = NSTextField()
         titleTextField.wantsLayer = true
@@ -309,7 +311,9 @@ final class TabBarItemCellView: NSView {
             mouseOverView.layer?.addSublayer(borderLayer)
         }
 
-        titleTextField.textColor = .labelColor
+        if !displaysTabsProgressIndicator {
+            titleTextField.textColor = .labelColor
+        }
 
         addSubview(mouseOverView)
         if theme.tabStyleProvider.isRoundedBackgroundPresentOnHover {
@@ -319,12 +323,12 @@ final class TabBarItemCellView: NSView {
 
         if displaysTabsProgressIndicator {
             faviconView.setAccessibilityIdentifier("TabBarViewItem.favicon")
+            titleView.setAccessibilityIdentifier("TabBarViewItem.title")
         } else {
             faviconImageView.setAccessibilityIdentifier("TabBarViewItem.favicon")
             faviconPlaceholderView.setAccessibilityIdentifier("TabBarViewItem.faviconPlaceholder")
+            titleTextField.setAccessibilityIdentifier("TabBarViewItem.title")
         }
-
-        titleTextField.setAccessibilityIdentifier("TabBarViewItem.title")
 
         closeButton.toolTip = UserText.closeTab
         closeButton.setAccessibilityLabel(UserText.closeTab)
@@ -354,7 +358,13 @@ final class TabBarItemCellView: NSView {
 
         addSubview(crashIndicatorButton)
         addSubview(audioButton)
-        addSubview(titleTextField)
+
+        if displaysTabsProgressIndicator {
+            addSubview(titleView)
+        } else {
+            addSubview(titleTextField)
+        }
+
         addSubview(permissionButton)
         addSubview(closeButton)
         addSubview(rightSeparatorView)
@@ -440,7 +450,12 @@ final class TabBarItemCellView: NSView {
 
         minX += theme.tabStyleProvider.tabSpacing
 
-        titleTextField.frame = NSRect(x: minX, y: bounds.midY - 8, width: bounds.maxX - minX - 8, height: 16)
+        if displaysTabsProgressIndicator {
+            titleView.frame = NSRect(x: minX, y: bounds.midY - 8, width: bounds.maxX - minX - 8, height: 16)
+        } else {
+            titleTextField.frame = NSRect(x: minX, y: bounds.midY - 8, width: bounds.maxX - minX - 8, height: 16)
+        }
+
         updateTitleTextFieldMask()
     }
 
@@ -454,12 +469,19 @@ final class TabBarItemCellView: NSView {
         case (false, false):
             gradientPadding = TextFieldMaskGradientSize.trailingSpaceWithPermissionAndButton
         }
-        titleTextField.gradient(width: TextFieldMaskGradientSize.width, trailingPadding: gradientPadding)
+
+        guard displaysTabsProgressIndicator else {
+            titleTextField.gradient(width: TextFieldMaskGradientSize.width, trailingPadding: gradientPadding)
+            return
+        }
+
+        titleView.gradient(width: TextFieldMaskGradientSize.width, trailingPadding: gradientPadding)
     }
 
     private func layoutForCompactMode() {
         let isFaviconShown = displaysTabsProgressIndicator ? faviconView.isShown : faviconImageView.isShown
-        let numberOfElements: CGFloat = (isFaviconShown ? 1 : 0) + (crashIndicatorButton.isShown || audioButton.isShown ? 1 : 0) + (permissionButton.isShown ? 1 : 0) + (closeButton.isShown ? 1 : 0) + (titleTextField.isShown ? 1 : 0)
+        let isTitleShown = displaysTabsProgressIndicator ? titleView.isShown : titleTextField.isShown
+        let numberOfElements: CGFloat = (isFaviconShown ? 1 : 0) + (crashIndicatorButton.isShown || audioButton.isShown ? 1 : 0) + (permissionButton.isShown ? 1 : 0) + (closeButton.isShown ? 1 : 0) + (isTitleShown ? 1 : 0)
         let elementWidth: CGFloat = 16
         var totalWidth = numberOfElements * elementWidth
         // tighten elements to fit all
@@ -476,11 +498,16 @@ final class TabBarItemCellView: NSView {
             assert(closeButton.isHidden)
             faviconImageView.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
             x = faviconImageView.frame.maxX + spacing
-        } else if titleTextField.isShown {
+        } else if displaysTabsProgressIndicator && titleView.isShown {
+            assert(closeButton.isHidden)
+            titleView.frame = NSRect(x: 4, y: bounds.midY - 8, width: bounds.maxX - 8, height: 16)
+            updateTitleTextFieldMask()
+        } else if !displaysTabsProgressIndicator && titleTextField.isShown {
             assert(closeButton.isHidden)
             titleTextField.frame = NSRect(x: 4, y: bounds.midY - 8, width: bounds.maxX - 8, height: 16)
             updateTitleTextFieldMask()
         }
+
         if crashIndicatorButton.isShown {
             crashIndicatorButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
             x = crashIndicatorButton.frame.maxX + spacing
@@ -503,7 +530,12 @@ final class TabBarItemCellView: NSView {
     private func layoutForPinnedMode() {
         assert(closeButton.isHidden)
         assert(permissionButton.isHidden)
-        assert(titleTextField.isHidden)
+
+        if displaysTabsProgressIndicator {
+            assert(titleView.isHidden)
+        } else {
+            assert(titleTextField.isHidden)
+        }
 
         let elementWidth: CGFloat = displaysTabsProgressIndicator ? 20 : 16
         let x = (bounds.width - elementWidth) / 2
@@ -538,13 +570,28 @@ final class TabBarItemCellView: NSView {
     }
 
     func clear() {
-        if displaysTabsProgressIndicator {
-            faviconView.reset()
-        } else {
+        guard displaysTabsProgressIndicator else {
             faviconImageView.image = nil
+            titleTextField.stringValue = ""
+            return
         }
 
-        titleTextField.stringValue = ""
+        faviconView.reset()
+        titleView.reset()
+    }
+
+    var displaysBurnerHomeTitle: Bool {
+        let title = displaysTabsProgressIndicator ? titleView.title : titleTextField.stringValue
+        return title == UserText.burnerTabHomeTitle
+    }
+
+    func displayTabTitleIfNeeded(title: String, url: URL?) {
+        guard displaysTabsProgressIndicator else {
+            titleTextField.stringValue = title
+            return
+        }
+
+        titleView.displayTitleIfNeeded(title: title, url: url)
     }
 }
 
@@ -904,7 +951,7 @@ final class TabBarViewItem: NSCollectionViewItem {
 
         representedObject = tabViewModel
         tabViewModel.titlePublisher.sink { [weak self] title in
-            self?.cell.titleTextField.stringValue = title
+            self?.displayTabTitle(title)
         }.store(in: &cancellables)
 
         tabViewModel.faviconPublisher.sink { [weak self] favicon in
@@ -952,11 +999,7 @@ final class TabBarViewItem: NSCollectionViewItem {
                 })
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] isLoading, error in
-                    guard let self else {
-                        return
-                    }
-
-                    self.cell.faviconView.displaySpinnerIfNeeded(url: self.tabViewModel?.url, isLoading: isLoading, error: error)
+                    self?.startSpinnerIfNeeded(isLoading: isLoading, error: error)
                 }
                 .store(in: &cancellables)
         }
@@ -1020,12 +1063,12 @@ final class TabBarViewItem: NSCollectionViewItem {
         if cell.displaysTabsProgressIndicator && isPinned {
             cell.closeButton.isShown = false
             cell.faviconView.isShown = true
-            cell.titleTextField.isShown = false
+            cell.titleView.isShown = false
         } else if cell.displaysTabsProgressIndicator {
             let showCloseButton = (isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected
             cell.closeButton.isShown = showCloseButton
             cell.faviconView.isShown = (widthStage != .withoutTitle || !showCloseButton)
-            cell.titleTextField.isShown = !widthStage.isTitleHidden || (cell.faviconView.displaysImage == false && !showCloseButton)
+            cell.titleView.isShown = !widthStage.isTitleHidden || (cell.faviconView.displaysImage == false && !showCloseButton)
         } else if isPinned {
             cell.closeButton.isShown = false
             cell.faviconImageView.isShown = cell.faviconImageView.image != nil
@@ -1042,7 +1085,7 @@ final class TabBarViewItem: NSCollectionViewItem {
         updateSeparatorView()
 
         // Adjust colors for burner window
-        let isBurnerTab = isBurner && cell.titleTextField.stringValue == UserText.burnerTabHomeTitle
+        let isBurnerTab = isBurner && cell.displaysBurnerHomeTitle
         let tintColor: NSColor? = isBurnerTab ? .textColor : nil
 
         if cell.displaysTabsProgressIndicator {
@@ -1135,7 +1178,17 @@ final class TabBarViewItem: NSCollectionViewItem {
             return .dot
         }
 
-        return .domainPrefix(tabViewModel?.tabContent.urlForWebView)
+        return .domainPrefix(tabViewModel?.url)
+    }
+
+    private func displayTabTitle(_ title: String) {
+        let url = tabViewModel?.url
+        cell.displayTabTitleIfNeeded(title: title, url: url)
+    }
+
+    private func startSpinnerIfNeeded(isLoading: Bool, error: WKError?) {
+        let url = tabViewModel?.url
+        cell.faviconView.startSpinnerIfNeeded(url: url, isLoading: isLoading, error: error)
     }
 
     private func updateAudioPlayState(_ audioState: WKWebView.AudioState) {

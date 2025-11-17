@@ -22,9 +22,11 @@ import Combine
 import Lottie
 import Common
 import AIChat
+import UIComponents
 
 protocol AddressBarViewControllerDelegate: AnyObject {
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController)
+    func addressBarViewControllerSearchModeToggleChanged(_ addressBarViewController: AddressBarViewController, isAIChatMode: Bool)
 }
 
 final class AddressBarViewController: NSViewController {
@@ -36,6 +38,7 @@ final class AddressBarViewController: NSViewController {
             case text
             case url
             case openTabSuggestion
+            case aiChat
         }
 
         case editing(EditingMode)
@@ -117,6 +120,14 @@ final class AddressBarViewController: NSViewController {
         didSet {
             updateView()
             suggestionContainerViewModel.isHomePage = isHomePage
+        }
+    }
+
+    private(set) var isAIChatOmnibarVisible = false {
+        didSet {
+            if isFirstResponder {
+                updateShadowView(addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
+            }
         }
     }
 
@@ -384,12 +395,10 @@ final class AddressBarViewController: NSViewController {
             .store(in: &tabViewModelCancellables)
     }
 
-    private var displaysLoadingProgressIndicator: Bool {
-        featureFlagger.isFeatureOn(.tabProgressIndicator) == false
-    }
+    private let displaysTabsProgressIndicator: Bool = NSApp.delegateTyped.displaysTabsProgressIndicator == false
 
     private func subscribeToProgressEventsIfNeeded() {
-        guard let tabViewModel, displaysLoadingProgressIndicator else {
+        guard let tabViewModel, displaysTabsProgressIndicator else {
             progressIndicator.hide(animated: false)
             return
         }
@@ -460,9 +469,10 @@ final class AddressBarViewController: NSViewController {
     private func subscribeForShadowViewUpdates() {
         addressBarTextField.isSuggestionWindowVisiblePublisher
             .sink { [weak self] isSuggestionsWindowVisible in
-                self?.updateShadowView(isSuggestionsWindowVisible)
-                if isSuggestionsWindowVisible {
-                    self?.layoutShadowView()
+                guard let self else { return }
+                self.updateShadowView(isSuggestionsWindowVisible || self.isAIChatOmnibarVisible)
+                if isSuggestionsWindowVisible || self.isAIChatOmnibarVisible {
+                    self.layoutShadowView()
                 }
             }
             .store(in: &cancellables)
@@ -636,7 +646,7 @@ final class AddressBarViewController: NSViewController {
             return
         }
         if shadowView.superview == nil {
-            updateShadowView(addressBarTextField.isSuggestionWindowVisible)
+            updateShadowView(addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
             view.window?.contentView?.addSubview(shadowView)
             layoutShadowView()
         }
@@ -892,6 +902,28 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         addressBarTextField.hideSuggestionWindow()
         addressBarTextField.escapeKeyDown()
     }
+
+    func addressBarButtonsViewControllerSearchModeToggleChanged(_ addressBarButtonsViewController: AddressBarButtonsViewController, isAIChatMode: Bool) {
+        isAIChatOmnibarVisible = isAIChatMode
+
+        if isAIChatMode {
+            mode = .editing(.aiChat)
+        } else {
+            updateMode()
+        }
+
+        delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
+    }
+
+    func setAIChatOmnibarVisible(_ visible: Bool) {
+        isAIChatOmnibarVisible = visible
+
+        if visible {
+            mode = .editing(.aiChat)
+        } else {
+            updateMode()
+        }
+    }
 }
 
 // MARK: - NSDraggingSource
@@ -1029,7 +1061,7 @@ extension AddressBarViewController: AddressBarTextFieldFocusDelegate {
 fileprivate extension NSView {
 
     var shouldShowArrowCursor: Bool {
-        self is NSButton || self is LottieAnimationView
+        self is NSButton || self is LottieAnimationView || self is CustomToggleControl
     }
 
 }

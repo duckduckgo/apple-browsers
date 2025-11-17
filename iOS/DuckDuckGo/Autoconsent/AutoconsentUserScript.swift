@@ -25,6 +25,7 @@ import UserScript
 import PrivacyDashboard
 import os.log
 import PixelKit
+import Combine
 
 protocol AutoconsentPreferences {
     var autoconsentEnabled: Bool { get set }
@@ -63,6 +64,12 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     private let config: PrivacyConfiguration
     private let ignoreNonHTTPURLs: Bool
     weak var delegate: AutoconsentUserScriptDelegate?
+    
+    // Publisher for cookie popup managed events
+    private let popupManagedSubject = PassthroughSubject<AutoconsentDoneMessage, Never>()
+    public var popupManagedPublisher: AnyPublisher<AutoconsentDoneMessage, Never> {
+        popupManagedSubject.eraseToAnyPublisher()
+    }
 
     init(config: PrivacyConfiguration, preferences: AutoconsentPreferences = AppUserDefaults(), ignoreNonHTTPURLs: Bool = true) {
         Logger.autoconsent.debug("Initialising autoconsent userscript")
@@ -374,6 +381,9 @@ extension AutoconsentUserScript {
 
         refreshDashboardState(consentManaged: true, cosmetic: messageData.isCosmetic, optoutFailed: false, selftestFailed: nil)
         firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
+
+        // Emit event through publisher
+        popupManagedSubject.send(messageData)
 
         // trigger popup once per domain
         if !management.sitesNotifiedCache.contains(host) {

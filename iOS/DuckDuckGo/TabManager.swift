@@ -40,6 +40,7 @@ class TabManager {
     private let bookmarksDatabase: CoreDataDatabase
     private let historyManager: HistoryManaging
     private let syncService: DDGSyncing
+    private let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private var previewsSource: TabPreviewsSource
     private let interactionStateSource: TabInteractionStateSource?
@@ -74,6 +75,7 @@ class TabManager {
          bookmarksDatabase: CoreDataDatabase,
          historyManager: HistoryManaging,
          syncService: DDGSyncing,
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          subscriptionDataReporter: SubscriptionDataReporting,
          contextualOnboardingPresenter: ContextualOnboardingPresenting,
@@ -100,6 +102,7 @@ class TabManager {
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
         self.syncService = syncService
+        self.userScriptsDependencies = userScriptsDependencies
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.subscriptionDataReporter = subscriptionDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
@@ -144,6 +147,7 @@ class TabManager {
                                                               bookmarksDatabase: bookmarksDatabase,
                                                               historyManager: historyManager,
                                                               syncService: syncService,
+                                                              userScriptsDependencies: userScriptsDependencies,
                                                               contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
                                                               subscriptionDataReporter: subscriptionDataReporter,
                                                               contextualOnboardingPresenter: contextualOnboardingPresenter,
@@ -240,6 +244,7 @@ class TabManager {
                                                               bookmarksDatabase: bookmarksDatabase,
                                                               historyManager: historyManager,
                                                               syncService: syncService,
+                                                              userScriptsDependencies: userScriptsDependencies,
                                                               contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
                                                               subscriptionDataReporter: subscriptionDataReporter,
                                                               contextualOnboardingPresenter: contextualOnboardingPresenter,

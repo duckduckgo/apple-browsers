@@ -108,6 +108,7 @@ extension TabViewController {
             bookmarksDatabase: bookmarksDatabase,
             historyManager: historyManager,
             syncService: syncService,
+            userScriptsDependencies: userScriptsDependencies,
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             subscriptionDataReporter: subscriptionDataReporter,
             contextualOnboardingPresenter: contextualOnboardingPresenter,

@@ -375,7 +375,8 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     init(settings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          nativeUIPresenter: DuckPlayerNativeUIPresenting,
-         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()
+        ) {
         self.settings = settings
         self.featureFlagger = featureFlagger
         self.youtubeNavigationRequest = PassthroughSubject<URL, Never>()
@@ -401,10 +402,11 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
 
     // Add a convenience initializer that creates a new presenter
     convenience init(settings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
-                     featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+                     featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+                     userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {
         self.init(settings: settings,
                   featureFlagger: featureFlagger,
-                  nativeUIPresenter: DuckPlayerNativeUIPresenter())
+                  nativeUIPresenter: DuckPlayerNativeUIPresenter(userScriptsDependencies: userScriptsDependencies))
     }
 
     deinit {

@@ -100,6 +100,7 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
                                     bookmarksDatabase: db,
                                     historyManager: historyManager,
                                     syncService: syncService,
+                                    userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
                                     contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
                                     subscriptionDataReporter: subscriptionDataReporter,
                                     contextualOnboardingPresenter: contextualOnboardingPresenter,

@@ -118,6 +118,7 @@ final class MainCoordinator {
                                 bookmarksDatabase: bookmarksDatabase,
                                 historyManager: historyManager,
                                 syncService: syncService.sync,
+                                userScriptsDependencies: userScriptsDependencies,
                                 contentBlockingAssetsPublisher: contentBlockingService.updating.userContentBlockingAssets,
                                 subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                 contextualOnboardingPresenter: contextualOnboardingPresenter,

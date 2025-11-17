@@ -595,9 +595,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .onboardingSearchExperience:
             return .internalOnly()
         case .storeSerpSettings:
-            return .remoteReleasable(.feature(.storeSerpSettings))
+            return .remoteReleasable(.subfeature(SERPSubfeature.storeSerpSettings))
         case .showHideAIGeneratedImagesSection:
-            return .remoteReleasable(.feature(.showHideAIGeneratedImagesSection))
+            return .remoteReleasable(.subfeature(AIChatSubfeature.showHideAiGeneratedImages))
         case .standaloneMigration:
             return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
         }

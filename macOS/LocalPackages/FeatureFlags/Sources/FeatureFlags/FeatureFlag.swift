@@ -587,7 +587,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .cpmCountPixel:
             return .internalOnly()
         case .storeSerpSettings:
-            return .remoteReleasable(.feature(.storeSerpSettings))
+            return .remoteReleasable(.subfeature(SERPSubfeature.storeSerpSettings))
         case .blurryAddressBarTahoeFix:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .dataImportNewExperience:
@@ -601,7 +601,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .vpnConnectionWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
         case .showHideAIGeneratedImagesSection:
-            return .remoteReleasable(.feature(.showHideAIGeneratedImagesSection))
+            return .remoteReleasable(.subfeature(AIChatSubfeature.showHideAiGeneratedImages))
         case .standaloneMigration:
             return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
         case .newTabPageAutoconsentStats:

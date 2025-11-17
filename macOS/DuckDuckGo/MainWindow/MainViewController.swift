@@ -268,7 +268,10 @@ final class MainViewController: NSViewController {
             themeManager: themeManager,
             omnibarController: aiChatOmnibarController
         )
-        aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(omnibarController: aiChatOmnibarController)
+        aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(
+            omnibarController: aiChatOmnibarController,
+            themeManager: themeManager
+        )
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
 
         super.init(nibName: nil, bundle: nil)

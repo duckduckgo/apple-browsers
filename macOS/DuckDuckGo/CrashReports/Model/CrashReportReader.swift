@@ -20,21 +20,38 @@ import Foundation
 
 final class CrashReportReader {
 
-    static let displayName = Bundle.main.displayName
     static let vpnExtensionDisplayName = "com.duckduckgo.macos.vpn.network-extension"
+
+    private let fileManager: FileManager
+    private let userDiagnosticReportsDirectory: URL
+    private let systemDiagnosticReportsDirectory: URL
+    private let currentAppDisplayName: String?
+    private let dateProvider: () -> Date
+
+    init(fileManager: FileManager = .default,
+         userDiagnosticReportsDirectory: URL = FileManager.userDiagnosticReports,
+         systemDiagnosticReportsDirectory: URL = FileManager.systemDiagnosticReports,
+         currentAppDisplayName: String? = Bundle.main.displayName,
+         dateProvider: @escaping () -> Date = Date.init) {
+        self.fileManager = fileManager
+        self.userDiagnosticReportsDirectory = userDiagnosticReportsDirectory
+        self.systemDiagnosticReportsDirectory = systemDiagnosticReportsDirectory
+        self.currentAppDisplayName = currentAppDisplayName
+        self.dateProvider = dateProvider
+    }
 
     func getCrashReports(since lastCheckDate: Date) -> [CrashReport] {
         var allPaths: [URL]
 
         do {
-            allPaths = try FileManager.default.contentsOfDirectory(at: FileManager.userDiagnosticReports, includingPropertiesForKeys: nil)
+            allPaths = try fileManager.contentsOfDirectory(at: userDiagnosticReportsDirectory, includingPropertiesForKeys: nil)
         } catch {
             assertionFailure("CrashReportReader: Can't read content of diagnostic reports \(error.localizedDescription)")
             return []
         }
 
         do {
-            let systemPaths = try FileManager.default.contentsOfDirectory(at: FileManager.systemDiagnosticReports, includingPropertiesForKeys: nil)
+            let systemPaths = try fileManager.contentsOfDirectory(at: systemDiagnosticReportsDirectory, includingPropertiesForKeys: nil)
             allPaths.append(contentsOf: systemPaths)
         } catch {
             assertionFailure("Failed to read system crash reports: \(error)")
@@ -53,19 +70,20 @@ final class CrashReportReader {
     }
 
     private func belongsToThisApp(_ path: URL) -> Bool {
-        let hasAppPrefix = path.lastPathComponent.hasPrefix(Self.displayName ?? "DuckDuckGo")
+        let hasAppPrefix = path.lastPathComponent.hasPrefix(currentAppDisplayName ?? "DuckDuckGo")
         let hasVPNPrefix = path.lastPathComponent.hasPrefix(Self.vpnExtensionDisplayName)
 
         return hasAppPrefix || hasVPNPrefix
     }
 
     private func isFile(at path: URL, newerThan lastCheckDate: Date) -> Bool {
-        guard let creationDate = FileManager.default.fileCreationDate(url: path) else {
+        guard let creationDate = fileManager.fileCreationDate(url: path) else {
             assertionFailure("CrashReportReader: Can't get the creation date of the report")
             return true
         }
 
-        return creationDate > lastCheckDate && creationDate < Date()
+        let currentDate = dateProvider()
+        return creationDate > lastCheckDate && creationDate < currentDate
     }
 
     private func crashReport(from url: URL) -> CrashReport? {

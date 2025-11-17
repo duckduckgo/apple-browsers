@@ -376,7 +376,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportNewExperience,
                 .pinnedTabsViewRewrite,
                 .tabProgressIndicator,
-                .attributedMetrics:
+                .attributedMetrics,
                 .vpnConnectionWidePixelMeasurement,
                 .showHideAIGeneratedImagesSection,
                 .standaloneMigration,

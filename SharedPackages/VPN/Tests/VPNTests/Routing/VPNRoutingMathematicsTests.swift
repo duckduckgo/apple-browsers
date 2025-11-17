@@ -133,7 +133,7 @@ final class VPNRoutingMathematicsTests: XCTestCase {
 
         let systemDescriptions = Set(systemIPv6.map { $0.description })
         XCTAssertTrue(systemDescriptions.contains("::1/128"), "Should always exclude loopback")
-        XCTAssertTrue(systemDescriptions.contains("fe00::/8"), "Should always exclude link-local and site-local")
+        XCTAssertTrue(systemDescriptions.contains("fe80::/10"), "Should always exclude link-local")
         XCTAssertTrue(systemDescriptions.contains("ff00::/8"), "Should always exclude multicast")
     }
 

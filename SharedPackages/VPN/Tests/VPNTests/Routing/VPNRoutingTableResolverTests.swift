@@ -108,7 +108,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         let excludedStrings = excludedRoutes.map { $0.description }
 
         XCTAssertTrue(excludedStrings.contains("::1/128"), "Should always exclude IPv6 loopback")
-        XCTAssertTrue(excludedStrings.contains("fe00::/8"), "Should always exclude IPv6 link-local and site-local")
+        XCTAssertTrue(excludedStrings.contains("fe80::/10"), "Should always exclude IPv6 link-local")
         XCTAssertTrue(excludedStrings.contains("ff00::/8"), "Should always exclude IPv6 multicast")
     }
 
@@ -123,7 +123,7 @@ final class VPNRoutingTableResolverTests: XCTestCase {
         let excludedStrings = excludedRoutes.map { $0.description }
 
         XCTAssertTrue(excludedStrings.contains("::1/128"), "Should always exclude IPv6 loopback")
-        XCTAssertTrue(excludedStrings.contains("fe00::/8"), "Should always exclude IPv6 link-local and site-local")
+        XCTAssertTrue(excludedStrings.contains("fe80::/10"), "Should always exclude IPv6 link-local")
         XCTAssertTrue(excludedStrings.contains("ff00::/8"), "Should always exclude IPv6 multicast")
     }
 
@@ -468,8 +468,8 @@ final class VPNRoutingTableResolverTests: XCTestCase {
                      "IPv6 should include ::/0 for all addresses")
         XCTAssertTrue(excludedRoutes.contains { $0.description == "::1/128" },
                      "IPv6 should exclude loopback")
-        XCTAssertTrue(excludedRoutes.contains { $0.description.contains("fe00::/8") },
-                     "IPv6 should exclude link-local and site-local")
+        XCTAssertTrue(excludedRoutes.contains { $0.description.contains("fe80::/10") },
+                     "IPv6 should exclude link-local")
     }
 
     /// Verifies that IPv6 uses ::/0 with proper exclusions when including local networks
@@ -486,8 +486,8 @@ final class VPNRoutingTableResolverTests: XCTestCase {
                      "IPv6 should include ::/0 for all addresses")
         XCTAssertTrue(excludedRoutes.contains { $0.description == "::1/128" },
                      "IPv6 should exclude loopback")
-        XCTAssertTrue(excludedRoutes.contains { $0.description.contains("fe00::/8") },
-                     "IPv6 should exclude link-local and site-local")
+        XCTAssertTrue(excludedRoutes.contains { $0.description.contains("fe80::/10") },
+                     "IPv6 should exclude link-local")
     }
 
 }

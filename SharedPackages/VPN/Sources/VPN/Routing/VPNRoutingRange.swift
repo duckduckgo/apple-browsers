@@ -29,7 +29,7 @@ public enum VPNRoutingRange {
 
     public static let alwaysExcludedIPv6Range: [VPN.IPAddressRange] = [
         "::1/128",    /* ::1                  Loopback */
-        "fe00::/8",   /* fe00:: - feff::      Link-local and site-local (includes fe80::/10, fec0::/10) */
+        "fe80::/10",  /* fe80:: - febf::      Link-local */
         "ff00::/8",   /* ff00:: - ffff::      Multicast */
     ]
 

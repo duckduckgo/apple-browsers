@@ -41,7 +41,7 @@ final class VPNRoutingRangeTests: XCTestCase {
 
         let expectedIPv6Ranges = [
             IPAddressRange(from: "::1/128")!,
-            IPAddressRange(from: "fe00::/8")!,
+            IPAddressRange(from: "fe80::/10")!,
             IPAddressRange(from: "ff00::/8")!
         ]
 

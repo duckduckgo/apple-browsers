@@ -220,7 +220,7 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
          wireGuardInterface: WireGuardGoInterface,
          eventHandler: WireGuardAdapterEventHandling,
          logHandler: @escaping LogHandler,
-         pathMonitorProvider: @escaping () -> PathMonitoring = { NWPathMonitor() },
+         pathMonitorProvider: @escaping () -> PathMonitoring = { PathMonitor() },
          packetTunnelSettingsGeneratorProvider: @escaping PacketTunnelSettingsGeneratorProvider = { configuration, resolvedEndpoints in
         PacketTunnelSettingsGenerator(tunnelConfiguration: configuration, resolvedEndpoints: resolvedEndpoints)
     },
@@ -348,8 +348,8 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
             }
 
             let networkMonitor = self.pathMonitorProvider()
-            networkMonitor.pathUpdateHandler = { [weak self] path in
-                self?.didReceivePathUpdate(path: path)
+            networkMonitor.pathUpdateHandler = { [weak self] status in
+                self?.didReceivePathUpdate(status: status)
             }
             networkMonitor.start(queue: self.workQueue)
 
@@ -635,9 +635,9 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
     }
 
     /// Helper method used by network path monitor.
-    /// - Parameter path: new network path
-    private func didReceivePathUpdate(path: Network.NWPath) {
-        self.logHandler(.verbose, "Network change detected with \(path.status) route and interface order \(path.availableInterfaces)")
+    /// - Parameter status: new network status
+    private func didReceivePathUpdate(status: Network.NWPath.Status) {
+        self.logHandler(.verbose, "Network change detected with \(status) route")
 
         #if os(macOS)
         if case .started(let handle, _) = self.state {
@@ -646,7 +646,7 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
         #elseif os(iOS)
         switch self.state {
         case .started(let handle, let settingsGenerator):
-            if path.status.isSatisfiable {
+            if status.isSatisfiable {
                 let (wgConfig, resolutionResults) = settingsGenerator.endpointUapiConfiguration()
                 self.logEndpointResolutionResults(resolutionResults)
 
@@ -662,7 +662,7 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
             }
 
         case .temporaryShutdown(let settingsGenerator):
-            guard path.status.isSatisfiable else { return }
+            guard status.isSatisfiable else { return }
 
             self.logHandler(.verbose, "Connectivity online, resuming backend.")
 

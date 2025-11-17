@@ -220,7 +220,7 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
          wireGuardInterface: WireGuardGoInterface,
          eventHandler: WireGuardAdapterEventHandling,
          logHandler: @escaping LogHandler,
-         pathMonitorProvider: @escaping () -> PathMonitoring = { NWPathStatusMonitor() },
+         pathMonitorProvider: @escaping () -> PathMonitoring = { PathMonitor() },
          packetTunnelSettingsGeneratorProvider: @escaping PacketTunnelSettingsGeneratorProvider = { configuration, resolvedEndpoints in
         PacketTunnelSettingsGenerator(tunnelConfiguration: configuration, resolvedEndpoints: resolvedEndpoints)
     },
@@ -348,8 +348,8 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
             }
 
             let networkMonitor = self.pathMonitorProvider()
-            networkMonitor.statusUpdateHandler = { [weak self] status in
-                self?.handlePathStatusChange(status)
+            networkMonitor.pathUpdateHandler = { [weak self] status in
+                self?.didReceivePathUpdate(status: status)
             }
             networkMonitor.start(queue: self.workQueue)
 
@@ -634,9 +634,11 @@ final class WireGuardAdapter: WireGuardAdapterProtocol {
         }
     }
 
-    /// Handles updates from the network path monitor.
-    func handlePathStatusChange(_ status: Network.NWPath.Status) {
-        self.logHandler(.verbose, "Network change detected with \(status)")
+    /// Helper method used by network path monitor.
+    /// - Parameter status: new network status
+    private func didReceivePathUpdate(status: Network.NWPath.Status) {
+        self.logHandler(.verbose, "Network change detected with \(status) route")
+
         #if os(macOS)
         if case .started(let handle, _) = self.state {
             wireGuardInterface.bumpSockets(handle: handle)

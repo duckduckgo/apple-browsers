@@ -228,9 +228,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720696560
     case unifiedURLPredictor
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614961757
-    case unifiedURLPredictorMetrics
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619862984?focus=true
     case subscriptionRestoreWidePixelMeasurement
 

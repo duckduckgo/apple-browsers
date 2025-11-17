@@ -25,6 +25,7 @@ import MaliciousSiteProtection
 import PrivacyDashboard
 import SpecialErrorPages
 import WebKit
+import AutoconsentStats
 
 /**
  Tab Extensions should conform to TabExtension protocol
@@ -86,6 +87,7 @@ protocol TabExtensionDependencies {
     var tabCrashAggregator: TabCrashAggregator { get }
     var tabsPreferences: TabsPreferences { get }
     var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
+    var autoconsentStats: AutoconsentStatsCollecting { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -310,6 +312,12 @@ extension TabExtensionsBuilder {
                 webViewPublisher: args.webViewFuture,
                 internalUserDecider: dependencies.featureFlagger.internalUserDecider
             )
+        }
+
+        add {
+            AutoconsentTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
+                                    autoconsentStats: dependencies.autoconsentStats,
+                                    featureFlagger: dependencies.featureFlagger)
         }
     }
 

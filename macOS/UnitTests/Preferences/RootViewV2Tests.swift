@@ -40,10 +40,11 @@ final class RootViewV2Tests: XCTestCase {
         mockWinBackOfferVisibilityManager = MockWinBackOfferVisibilityManager()
 
         let windowControllersManager = WindowControllersManagerMock()
+        let featureFlagger = MockFeatureFlagger()
 
         sidebarModel = PreferencesSidebarModel(
             privacyConfigurationManager: MockPrivacyConfigurationManaging(),
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: featureFlagger,
             syncService: ddsSyncing,
             vpnGatekeeper: vpnGatekeeper,
             includeDuckPlayer: false,
@@ -61,6 +62,7 @@ final class RootViewV2Tests: XCTestCase {
                 windowControllersManager: WindowControllersManagerMock(),
                 featureFlagger: MockFeatureFlagger()
             ),
+            aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
         subscriptionManager = SubscriptionManagerMockV2()

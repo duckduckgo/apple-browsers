@@ -64,8 +64,9 @@ final class DefaultBrowserAndDockPromptService {
             dateProvider: defaultBrowserAndDockPromptDateProvider
         )
         let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier()
+        let uiProvider = DefaultBrowserAndDockPromptUIProvider()
 
-        presenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier)
+        presenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier, uiProvider: uiProvider)
     }
 
     func applicationDidBecomeActive() {

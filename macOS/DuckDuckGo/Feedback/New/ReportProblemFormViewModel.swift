@@ -63,10 +63,19 @@ final class ReportProblemFormViewModel: ObservableObject {
 
     init(canReportBrokenSite: Bool,
          onReportBrokenSite: (() -> Void)?,
-         feedbackSender: FeedbackSenderImplementing = FeedbackSender()) {
+         feedbackSender: FeedbackSenderImplementing = FeedbackSender(),
+         preselectedCategory: ProblemCategory? = nil,
+         preselectedSubCategory: SubCategory? = nil) {
         self.canReportBrokenSite = canReportBrokenSite
         self.onReportBrokenSite = onReportBrokenSite
         self.feedbackSender = feedbackSender
+
+        if let preselectedCategory {
+            selectCategory(preselectedCategory)
+        }
+        if let preselectedSubCategory {
+            toggleOption(preselectedSubCategory.id)
+        }
     }
 
     // MARK: - Methods
@@ -121,6 +130,8 @@ struct SubCategory: Identifiable, Hashable {
     let id: String      // Backend identifier (e.g., "banner-ads-blocking-content")
     let text: String    // Localized display text
 
+    var isPromotionalMessagesSubcategory: Bool { id == Self.promotionalMessagesID }
+
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
@@ -128,6 +139,8 @@ struct SubCategory: Identifiable, Hashable {
     static func == (lhs: SubCategory, rhs: SubCategory) -> Bool {
         lhs.id == rhs.id
     }
+
+    static let promotionalMessagesID = "promotional-messages"
 }
 
 struct ProblemCategory: Identifiable, Hashable {
@@ -136,6 +149,7 @@ struct ProblemCategory: Identifiable, Hashable {
     let subcategories: [SubCategory]
 
     var isReportBrokenWebsiteCategory: Bool { id == Self.reportBrokenWebsiteID }
+    var isSomethingElseCategory: Bool { id == Self.somethingElseID }
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
@@ -146,6 +160,7 @@ struct ProblemCategory: Identifiable, Hashable {
     }
 
     private static let reportBrokenWebsiteID = "report-broken-website"
+    private static let somethingElseID = "something-else"
 
     static let allCategories: [ProblemCategory] = [
         ProblemCategory(
@@ -218,14 +233,15 @@ struct ProblemCategory: Identifiable, Hashable {
             ]
         ),
         ProblemCategory(
-            id: "something-else",
+            id: somethingElseID,
             text: UserText.problemCategorySomethingElse,
             subcategories: [
                 SubCategory(id: "cant-complete-a-purchase", text: UserText.problemSubcategoryCantCompleteAPurchase),
                 SubCategory(id: "cant-restart-failed-downloads", text: UserText.problemSubcategoryCantRestartFailedDownloads),
                 SubCategory(id: "confusing-or-missing-settings", text: UserText.problemSubcategoryConfusingOrMissingSettings),
                 SubCategory(id: "no-downloads-history", text: UserText.problemSubcategoryNoDownloadsHistory),
-                SubCategory(id: "video-audio-plays-automatically", text: UserText.problemSubcategoryVideoAudioPlaysAutomatically)
+                SubCategory(id: "video-audio-plays-automatically", text: UserText.problemSubcategoryVideoAudioPlaysAutomatically),
+                SubCategory(id: SubCategory.promotionalMessagesID, text: UserText.problemSubcategoryPromotionalMessages)
             ]
         )
     ]

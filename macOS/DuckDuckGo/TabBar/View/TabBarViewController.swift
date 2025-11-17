@@ -764,11 +764,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func moveToNewWindow(from index: Int, droppingPoint: NSPoint? = nil, burner: Bool) {
-        // only allow dragging Tab out when there‘s tabs (or pinned tabs) left
-        let pinnedTabsCount = tabCollectionViewModel.pinnedTabsCollection?.tabs.count ?? .zero
+        // Allow dragging Tab out only when there's more than one Unpinned Tab (or there's at least one Pinned Tab)
+        let pinnedTabsCount = tabCollectionViewModel.pinnedTabsCollection?.tabs.count ?? 0
         let unpinnedTabsCount = tabCollectionViewModel.tabCollection.tabs.count
 
-        guard unpinnedTabsCount > 1 || pinnedTabsCount > .zero else {
+        guard unpinnedTabsCount > 1 || pinnedTabsCount > 0 else {
             return
         }
 

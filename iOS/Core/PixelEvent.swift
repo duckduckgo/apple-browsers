@@ -794,6 +794,8 @@ extension Pixel {
         case adAttributionLogicWrongVendorOnSuccessfulCompilation
         case adAttributionLogicWrongVendorOnFailedCompilation
 
+        case debugTabSwitcherDidChangeInvalidState
+
         case debugBookmarksInitialStructureQueryFailed
         case debugBookmarksDatabaseFileMissing
         case debugBookmarksStructureLost
@@ -1309,9 +1311,6 @@ extension Pixel {
         // MARK: WebView Error Page Shown
         case webViewErrorPageShown
 
-        case webViewExternalSchemeNavigationXSafariHTTPSCancel
-        case webViewExternalSchemeNavigationXSafariHTTPSContinue
-
         // MARK: Browsing
         case stopPageLoad
 
@@ -1391,6 +1390,12 @@ extension Pixel {
         // MARK: AI Chat History Deletion
         case aiChatHistoryDeleteSuccessful
         case aiChatHistoryDeleteFailed
+
+        // MARK: Customization
+        case customizationAddressBarStarted
+        case customizationAddressBarSelected
+        case customizationToolbarStarted
+        case customizationToolbarSelected
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -2099,7 +2104,9 @@ extension Pixel.Event {
         case .dbRemoteMessagingUpdateMessageShownError: return "m_d_db_rm_update_message_shown"
         case .dbRemoteMessagingUpdateMessageStatusError: return "m_d_db_rm_update_message_status"
         case .dbLocalAuthenticationError: return "m_d_local_auth_error"
-            
+
+        case .debugTabSwitcherDidChangeInvalidState: return "m_debug_tabswitcher_didchange_invalidstate"
+
         case .debugBookmarksMigratedMoreThanOnce: return "m_debug_bookmarks_migrated-more-than-once"
             
         case .configurationFetchInfo: return "m_d_cfgfetch"
@@ -2655,8 +2662,6 @@ extension Pixel.Event {
 
         // MARK: Browsing
         case .stopPageLoad: return "m_stop-page-load"
-        case .webViewExternalSchemeNavigationXSafariHTTPSCancel: return "m_webview_external-scheme-navigation_x-safari-https_cancel"
-        case .webViewExternalSchemeNavigationXSafariHTTPSContinue: return "m_webview_external-scheme-navigation_x-safari-https_continue"
 
         // MARK: Launch time
         case .appDidFinishLaunchingTime(let time): return "m_debug_app-did-finish-launching-time-\(time)"
@@ -2862,6 +2867,13 @@ extension Pixel.Event {
         case .recreateTmpWebViewFallbackFailed: return "m_debug_recreate-tmp-webview-fallback-failed"
         case .contentBlockingCompilationFailedMissingTmpDir: return "m_debug_content-blocking-compilation-failed-missing-tmp-dir"
         case .tmpDirStillMissingAfterRecreation: return "m_debug_tmp-dir-still-missing-after-recreation"
+
+        // MARK: Customization
+        case .customizationAddressBarStarted: return "m_customization_addressbar_started"
+        case .customizationAddressBarSelected: return "m_customization_addressbar_selected"
+        case .customizationToolbarStarted: return "m_customization_toolbar_started"
+        case .customizationToolbarSelected: return "m_customization_toolbar_selected"
+
         }
     }
 }

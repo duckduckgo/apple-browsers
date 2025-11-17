@@ -134,6 +134,8 @@ class TabViewController: UIViewController {
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
     let appSettings: AppSettings
 
+    let privacyConfigurationManager: PrivacyConfigurationManaging
+
     var featureFlagger: FeatureFlagger
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     private lazy var internalUserDecider = AppDependencyProvider.shared.internalUserDecider
@@ -339,14 +341,14 @@ class TabViewController: UIViewController {
     }
     
     private lazy var linkProtection: LinkProtection = {
-        LinkProtection(privacyManager: ContentBlocking.shared.privacyConfigurationManager,
+        LinkProtection(privacyManager: privacyConfigurationManager,
                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
                        errorReporting: Self.debugEvents)
 
     }()
     
     private lazy var referrerTrimming: ReferrerTrimming = {
-        ReferrerTrimming(privacyManager: ContentBlocking.shared.privacyConfigurationManager,
+        ReferrerTrimming(privacyManager: privacyConfigurationManager,
                          contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
                          tld: AppDependencyProvider.shared.storageCache.tld)
     }()
@@ -372,6 +374,7 @@ class TabViewController: UIViewController {
     private var lastRenderedURL: URL?
 
     static func loadFromStoryboard(model: Tab,
+                                   privacyConfigurationManager: PrivacyConfigurationManaging,
                                    appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
                                    bookmarksDatabase: CoreDataDatabase,
                                    historyManager: HistoryManaging,
@@ -397,6 +400,7 @@ class TabViewController: UIViewController {
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
             TabViewController(coder: coder,
                               tabModel: model,
+                              privacyConfigurationManager: privacyConfigurationManager,
                               appSettings: appSettings,
                               bookmarksDatabase: bookmarksDatabase,
                               historyManager: historyManager,
@@ -466,6 +470,7 @@ class TabViewController: UIViewController {
 
     required init?(coder aDecoder: NSCoder,
                    tabModel: Tab,
+                   privacyConfigurationManager: PrivacyConfigurationManaging,
                    appSettings: AppSettings,
                    bookmarksDatabase: CoreDataDatabase,
                    historyManager: HistoryManaging,
@@ -492,6 +497,7 @@ class TabViewController: UIViewController {
                    aiChatSettings: AIChatSettingsProvider) {
 
         self.tabModel = tabModel
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.appSettings = appSettings
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
@@ -521,6 +527,7 @@ class TabViewController: UIViewController {
         
         self.aiChatSettings = aiChatSettings
         self.aiChatViewControllerManager = AIChatViewControllerManager(
+            privacyConfigurationManager: privacyConfigurationManager,
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             experimentalAIChatManager: .init(featureFlagger: featureFlagger),
             featureFlagger: featureFlagger,
@@ -714,7 +721,8 @@ class TabViewController: UIViewController {
                        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil) {
         instrumentation.willPrepareWebView()
 
-        let userContentController = UserContentController(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher)
+        let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
+                                                          privacyConfigurationManager: privacyConfigurationManager)
         configuration.userContentController = userContentController
         userContentController.delegate = self
 
@@ -1157,7 +1165,7 @@ class TabViewController: UIViewController {
         return PrivacyDashboardViewController(coder: coder,
                                        privacyInfo: privacyInfo,
                                        entryPoint: .dashboard,
-                                       privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+                                       privacyConfigurationManager: privacyConfigurationManager,
                                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
                                               breakageAdditionalInfo: makeBreakageAdditionalInfo())
     }
@@ -1261,7 +1269,7 @@ class TabViewController: UIViewController {
     }
     
     private func makeProtectionStatus(for host: String) -> ProtectionStatus {
-        let config = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
+        let config = privacyConfigurationManager.privacyConfig
         
         let isTempUnprotected = config.isTempUnprotected(domain: host)
         let isAllowlisted = config.isUserUnprotected(domain: host)
@@ -1312,7 +1320,6 @@ class TabViewController: UIViewController {
         
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: dontOpen, style: .cancel, handler: { _ in
-            self.reportExternalSchemePixelIfNeeded(url: url, openedExternally: false)
             if self.webView.url == nil {
                 self.delegate?.tabDidRequestClose(self)
             } else {
@@ -1320,7 +1327,6 @@ class TabViewController: UIViewController {
             }
         }))
         alert.addAction(UIAlertAction(title: open, style: .destructive, handler: { _ in
-            self.reportExternalSchemePixelIfNeeded(url: url, openedExternally: true)
             self.openExternally(url: url)
         }))
         delegate?.tab(self, didRequestPresentingAlert: alert)
@@ -1973,7 +1979,7 @@ extension TabViewController: WKNavigationDelegate {
     }
     
     private func requestForDoNotSell(basedOn incomingRequest: URLRequest) -> URLRequest? {
-        let config = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
+        let config = privacyConfigurationManager.privacyConfig
         guard var request = GPCRequestFactory().requestForGPC(basedOn: incomingRequest,
                                                               config: config,
                                                               gpcEnabled: appSettings.sendDoNotSell) else {
@@ -2125,7 +2131,7 @@ extension TabViewController: WKNavigationDelegate {
     private func shouldWaitUntilContentBlockingIsLoaded(_ completion: @Sendable @escaping @MainActor () -> Void) -> Bool {
         // Ensure Content Blocking Assets (WKContentRuleList&UserScripts) are installed
         if userContentController.contentBlockingAssetsInstalled
-            || !ContentBlocking.shared.privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking) {
+            || !privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking) {
 
             rulesCompilationMonitor.reportNavigationDidNotWaitForRules()
             return false
@@ -2268,7 +2274,7 @@ extension TabViewController: WKNavigationDelegate {
             userAgentManager.update(webView: webView, isDesktop: tabModel.isDesktop, url: url)
         }
 
-        if !ContentBlocking.shared.privacyConfigurationManager.privacyConfig.isProtected(domain: url.host) {
+        if !privacyConfigurationManager.privacyConfig.isProtected(domain: url.host) {
             completion(allowPolicy)
             return
         }
@@ -3011,7 +3017,7 @@ extension TabViewController: AdClickAttributionLogicDelegate {
                           forVendor vendor: String?) {
         let attributedTempListName = AdClickAttributionRulesProvider.Constants.attributedTempRuleListName
 
-        guard ContentBlocking.shared.privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking)
+        guard privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking)
         else {
             userContentController.removeLocalContentRuleList(withIdentifier: attributedTempListName)
             contentBlockerUserScript?.currentAdClickAttributionVendor = nil
@@ -3519,7 +3525,7 @@ extension TabViewController: SecureVaultManagerDelegate {
 
         do {
             let runtimeConfiguration =
-            try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+            try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
                                                       properties: buildContentScopePropertiesForDomain(domain))
             .build()
             .buildRuntimeConfigResponse()
@@ -3724,17 +3730,6 @@ extension WKWebView {
 
 }
 
-extension UserContentController {
-
-    @MainActor
-    convenience init(contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
-                     privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
-        self.init(assetsPublisher: contentBlockingAssetsPublisher,
-                  privacyConfigurationManager: privacyConfigurationManager)
-    }
-
-}
-
 // MARK: - SpecialErrorPageNavigationDelegate
 
 extension TabViewController: SpecialErrorPageNavigationDelegate {
@@ -3788,16 +3783,6 @@ private extension TabViewController {
         }
 
         return didRestoreWebViewState
-    }
-
-    private func reportExternalSchemePixelIfNeeded(url: URL, openedExternally: Bool) {
-        guard url.scheme == "x-safari-https" else { return }
-
-        if openedExternally {
-            DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationXSafariHTTPSContinue)
-        } else {
-            DailyPixel.fireDailyAndCount(pixel: .webViewExternalSchemeNavigationXSafariHTTPSCancel)
-        }
     }
 }
 

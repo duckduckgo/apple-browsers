@@ -281,7 +281,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .paidAIChat,
              .canInterceptSyncSetupUrls,
              .exchangeKeysToSyncWithAnotherDevice,
-             .widgetReporting,
              .canPromoteImportPasswordsInPasswordManagement,
              .canPromoteImportPasswordsInBrowser,
              .setAsDefaultBrowserPiPVideoTutorial,
@@ -357,7 +356,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                .failsafeExamplePlatformSpecificSubfeature,
                .experimentalAddressBar,
                .aiChatKeepSession,
-               .aiFeaturesSettingsUpdate:
+               .aiFeaturesSettingsUpdate,
+               .widgetReporting:
             return false
         }
     }

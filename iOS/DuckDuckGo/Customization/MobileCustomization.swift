@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Persistence
 import DesignResourcesKitIcons
 import UIKit
+import Core
 
 /// Handles logic and persistence of customization options.  iPad is not supported so this returns false for `isEnabled` on iPad.
 class MobileCustomization {
@@ -42,7 +43,7 @@ class MobileCustomization {
 
     }
 
-    enum Button: String, Hashable {
+    enum Button: String, Hashable, CaseIterable {
 
         var altLargeIcon: UIImage? {
             switch self {
@@ -76,8 +77,6 @@ class MobileCustomization {
                 DesignSystemImages.Glyphs.Size24.vpn
             case .passwords:
                 DesignSystemImages.Glyphs.Size24.key
-            case .voiceSearch:
-                DesignSystemImages.Glyphs.Size24.microphone
             case .downloads:
                 DesignSystemImages.Glyphs.Size24.downloads
             }
@@ -107,8 +106,6 @@ class MobileCustomization {
                 DesignSystemImages.Glyphs.Size16.vpnOn
             case .passwords:
                 DesignSystemImages.Glyphs.Size16.keyLogin
-            case .voiceSearch:
-                DesignSystemImages.Glyphs.Size16.microphone
             case .downloads:
                 DesignSystemImages.Glyphs.Size16.downloads
             }
@@ -118,7 +115,6 @@ class MobileCustomization {
         case share
         case addEditBookmark
         case addEditFavorite
-        case voiceSearch
         case zoom
         case none
 
@@ -127,11 +123,11 @@ class MobileCustomization {
         case newTab
         case bookmarks
         case downloads
+        case passwords
 
         // Shared
         case fire
         case vpn
-        case passwords
     }
 
     static let addressBarDefault: Button = .share
@@ -177,6 +173,7 @@ class MobileCustomization {
     private let keyValueStore: ThrowingKeyValueStoring
     private let isPad: Bool
     private let postChangeNotification: (State) -> Void
+    private let pixelFiring: PixelFiring.Type
 
     public weak var delegate: Delegate?
 
@@ -192,12 +189,14 @@ class MobileCustomization {
          isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
          postChangeNotification: @escaping ((State) -> Void) = {
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.customizationSettingsChanged, object: $0)
-        }
+         },
+         pixelFiring: PixelFiring.Type = Pixel.self
     ) {
         self.isFeatureEnabled = isFeatureEnabled
         self.keyValueStore = keyValueStore
         self.isPad = isPad
         self.postChangeNotification = postChangeNotification
+        self.pixelFiring = pixelFiring
     }
 
     /// Get the current button for the given storage key.  If the button isn't in the alloweed list then the default is returned.  This prevents migration problems if the options change.
@@ -215,6 +214,32 @@ class MobileCustomization {
         setCurrentToolbarButton(state.currentToolbarButton)
         setCurrentAddressBarButton(state.currentAddressBarButton)
         postChangeNotification(state)
+    }
+
+    func fireAddressBarCustomizationStartedPixel() {
+        pixelFiring.fire(.customizationAddressBarStarted, withAdditionalParameters: [:])
+    }
+
+    func fireAddressBarCustomizationSelectedPixel(oldValue: Button) {
+        // Use all cases for this check as we don't want to return the default unless it was actually selected
+        if oldValue != current(forKey: .addressBarButton, containedIn: Button.allCases, Self.addressBarDefault) {
+            pixelFiring.fire(.customizationAddressBarSelected, withAdditionalParameters: [
+                "selected": state.currentAddressBarButton.rawValue
+            ])
+        }
+    }
+
+    func fireToolbarCustomizationStartedPixel() {
+        pixelFiring.fire(.customizationToolbarStarted, withAdditionalParameters: [:])
+    }
+
+    func fireToolbarCustomizationSelectedPixel(oldValue: Button) {
+        // Use all cases for this check as we don't want to return the default unless it was actually selected
+        if oldValue != current(forKey: .toolbarButton, containedIn: Button.allCases, Self.toolbarDefault) {
+            pixelFiring.fire(.customizationToolbarSelected, withAdditionalParameters: [
+                "selected": state.currentToolbarButton.rawValue
+            ])
+        }
     }
 
     private func setCurrentToolbarButton(_ button: Button) {

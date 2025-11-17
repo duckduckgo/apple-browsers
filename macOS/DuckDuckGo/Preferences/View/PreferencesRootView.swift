@@ -166,7 +166,7 @@ enum Preferences {
                     // Opens a new tab
                     Spacer()
                 case .about:
-                    AboutView(model: AboutPreferences.shared)
+                    AboutView(model: model.aboutPreferences)
                 case .aiChat:
                     AIChatView(model: model.aiChatPreferences)
                 }
@@ -440,7 +440,7 @@ enum Preferences {
                     // Opens a new tab
                     Spacer()
                 case .about:
-                    AboutView(model: AboutPreferences.shared)
+                    AboutView(model: model.aboutPreferences)
                 case .aiChat:
                     AIChatView(model: model.aiChatPreferences)
                 }

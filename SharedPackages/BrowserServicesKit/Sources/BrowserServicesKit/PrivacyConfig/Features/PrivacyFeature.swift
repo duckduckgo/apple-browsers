@@ -299,6 +299,9 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
+
+    /// Global switch to display autoconsent stats on New Tab Page
+    case autoconsentStats
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {

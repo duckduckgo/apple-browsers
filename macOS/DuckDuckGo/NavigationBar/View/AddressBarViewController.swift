@@ -924,9 +924,21 @@ final class AddressBarViewController: NSViewController {
     }
 
     func mouseUp(with event: NSEvent) -> NSEvent? {
-        // click (same position down+up) outside of the field: resign first responder
-        guard let window = self.view.window, event.window === window,
-              window.firstResponder === addressBarTextField.currentEditor(),
+        guard let window = self.view.window, event.window === window else {
+            return event
+        }
+        
+        // Handle AI chat mode - click outside to dismiss
+        if selectionState == .activeWithAIChat,
+           let clickPoint,
+           clickPoint.distance(to: window.convertPoint(toScreen: event.locationInWindow)) <= Constants.maxClickReleaseDistanceToResignFirstResponder {
+            delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: false)
+            setAIChatOmnibarVisible(false)
+            return event
+        }
+        
+        // Handle normal mode - click (same position down+up) outside of the field: resign first responder
+        guard window.firstResponder === addressBarTextField.currentEditor(),
               let clickPoint,
               clickPoint.distance(to: window.convertPoint(toScreen: event.locationInWindow)) <= Constants.maxClickReleaseDistanceToResignFirstResponder else {
             return event

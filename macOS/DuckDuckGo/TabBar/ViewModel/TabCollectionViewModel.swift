@@ -128,6 +128,7 @@ final class TabCollectionViewModel: NSObject {
 
     private var tabsPreferences: TabsPreferences
     private var startupPreferences: StartupPreferences
+    private var accessibilityPreferences: AccessibilityPreferences
     private var homePage: Tab.TabContent {
         var homePage: Tab.TabContent = .newtab
         if startupPreferences.launchToCustomHomePage,
@@ -161,6 +162,7 @@ final class TabCollectionViewModel: NSObject {
         burnerMode: BurnerMode = .regular,
         startupPreferences: StartupPreferences = NSApp.delegateTyped.startupPreferences,
         tabsPreferences: TabsPreferences = NSApp.delegateTyped.tabsPreferences,
+        accessibilityPreferences: AccessibilityPreferences = NSApp.delegateTyped.accessibilityPreferences,
         windowControllersManager: WindowControllersManagerProtocol? = nil
     ) {
         assert(!tabCollection.isPopup || windowControllersManager != nil, "Cannot create TabCollectionViewModel with a popup tab collection without a window controllers manager")
@@ -169,6 +171,7 @@ final class TabCollectionViewModel: NSObject {
         self.burnerMode = burnerMode
         self.startupPreferences = startupPreferences
         self.tabsPreferences = tabsPreferences
+        self.accessibilityPreferences = accessibilityPreferences
         self.windowControllersManager = windowControllersManager
         super.init()
 

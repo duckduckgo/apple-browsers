@@ -159,7 +159,7 @@ enum Preferences {
                 case .autofill:
                     AutofillView(model: AutofillPreferencesModel())
                 case .accessibility:
-                    AccessibilityView(model: AccessibilityPreferences.shared)
+                    AccessibilityView(model: model.accessibilityPreferences)
                 case .duckPlayer:
                     DuckPlayerView(model: .shared)
                 case .otherPlatforms:
@@ -433,7 +433,7 @@ enum Preferences {
                 case .autofill:
                     AutofillView(model: AutofillPreferencesModel())
                 case .accessibility:
-                    AccessibilityView(model: AccessibilityPreferences.shared)
+                    AccessibilityView(model: model.accessibilityPreferences)
                 case .duckPlayer:
                     DuckPlayerView(model: .shared)
                 case .otherPlatforms:

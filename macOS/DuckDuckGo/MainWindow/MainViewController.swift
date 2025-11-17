@@ -119,6 +119,7 @@ final class MainViewController: NSViewController {
          cookiePopupProtectionPreferences: CookiePopupProtectionPreferences = NSApp.delegateTyped.cookiePopupProtectionPreferences,
          aiChatPreferences: AIChatPreferences = NSApp.delegateTyped.aiChatPreferences,
          aboutPreferences: AboutPreferences = NSApp.delegateTyped.aboutPreferences,
+         accessibilityPreferences: AccessibilityPreferences = NSApp.delegateTyped.accessibilityPreferences,
          themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
          pixelFiring: PixelFiring? = PixelKit.shared,
@@ -203,7 +204,8 @@ final class MainViewController: NSViewController {
             webTrackingProtectionPreferences: webTrackingProtectionPreferences,
             cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
             aiChatPreferences: aiChatPreferences,
-            aboutPreferences: aboutPreferences
+            aboutPreferences: aboutPreferences,
+            accessibilityPreferences: accessibilityPreferences
         )
         aiChatSidebarPresenter = AIChatSidebarPresenter(
             sidebarHost: browserTabViewController,
@@ -249,7 +251,8 @@ final class MainViewController: NSViewController {
                                                                          sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
                                                                          defaultBrowserPreferences: defaultBrowserPreferences,
                                                                          downloadsPreferences: downloadsPreferences,
-                                                                         tabsPreferences: tabsPreferences)
+                                                                         tabsPreferences: tabsPreferences,
+                                                                         accessibilityPreferences: accessibilityPreferences)
 
         findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)

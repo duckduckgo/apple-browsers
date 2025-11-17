@@ -1025,7 +1025,7 @@ class AddressBarTests: XCTestCase {
     func test_ZoomLevelDefault_ThenZoomButtonIsNotVisible() async throws {
         // GIVEN
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), maliciousSiteDetector: MockMaliciousSiteProtectionManager())
-        tab.webView.zoomLevel = AccessibilityPreferences.shared.defaultPageZoom
+        tab.webView.zoomLevel = NSApp.delegateTyped.accessibilityPreferences.defaultPageZoom
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         viewModel.selectedTabViewModel?.zoomWasSet(to: .percent100)
         let tabLoadedPromise = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()

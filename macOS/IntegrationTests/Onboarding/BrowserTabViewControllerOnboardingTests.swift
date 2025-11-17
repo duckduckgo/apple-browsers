@@ -178,7 +178,8 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                     windowControllersManager: windowControllersManager,
                     featureFlagger: MockFeatureFlagger()
                 ),
-                aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager)
+                aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager),
+                accessibilityPreferences: AccessibilityPreferences()
             )
             viewController.tabViewModel = tabViewModel
             _=viewController.view

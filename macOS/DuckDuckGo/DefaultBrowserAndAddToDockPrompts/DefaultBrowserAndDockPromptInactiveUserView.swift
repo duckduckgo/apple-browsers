@@ -75,6 +75,8 @@ private struct PromptMessageAndImage: View {
                 promptMessage
                 Spacer()
                 Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
             }
             .padding([.top, .horizontal], Metrics.padding)
         }
@@ -108,6 +110,7 @@ private struct PromptChartAndButtons: View {
 
             HStack {
                 OnboardingSecondaryCTAButton(title: dismissButtonLabel, action: dismissButtonAction)
+                    .frame(minWidth: 132) // Prevent button from being condensed to an unreadable width in non-English locales
                 OnboardingPrimaryCTAButton(title: primaryButtonLabel, action: primaryButtonAction)
                     .layoutPriority(1) // Resist compression to avoid multiline label if possible
             }

@@ -129,4 +129,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
     func cleanup() {
         backgroundView.stopListening()
     }
+    
+    func focusTextView() {
+        view.window?.makeFirstResponder(textView)
+    }
 }

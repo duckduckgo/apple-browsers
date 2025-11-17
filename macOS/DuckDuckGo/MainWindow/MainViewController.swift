@@ -456,6 +456,7 @@ final class MainViewController: NSViewController {
         if visible {
             aiChatOmnibarContainerViewController.startEventMonitoring()
             aiChatOmnibarTextContainerViewController.startEventMonitoring()
+            aiChatOmnibarTextContainerViewController.focusTextView()
         } else {
             aiChatOmnibarContainerViewController.cleanup()
             aiChatOmnibarTextContainerViewController.cleanup()

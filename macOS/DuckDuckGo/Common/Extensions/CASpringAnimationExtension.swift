@@ -20,15 +20,15 @@ import QuartzCore
 
 extension CASpringAnimation {
 
-    static func buildFadeInAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut) -> CABasicAnimation {
+    static func buildFadeInAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut) -> CASpringAnimation {
         buildFadeAnimation(duration: duration, timingFunctionName: timingFunctionName, fromValue: 0, toValue: 1)
     }
 
-    static func buildFadeOutAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut) -> CABasicAnimation {
+    static func buildFadeOutAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut) -> CASpringAnimation {
         buildFadeAnimation(duration: duration, timingFunctionName: timingFunctionName, fromValue: 1, toValue: 0)
     }
 
-    static func buildFadeAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName, fromValue: Float, toValue: Float) -> CABasicAnimation {
+    static func buildFadeAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName, fromValue: Float, toValue: Float) -> CASpringAnimation {
         let animation = CASpringAnimation(keyPath: #keyPath(CALayer.opacity))
         animation.duration = duration
         animation.fromValue = fromValue
@@ -37,7 +37,7 @@ extension CASpringAnimation {
         return animation
     }
 
-    static func buildTranslationXAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut, fromValue: CGFloat, toValue: CGFloat) -> CABasicAnimation {
+    static func buildTranslationXAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut, fromValue: CGFloat, toValue: CGFloat) -> CASpringAnimation {
         let keyPath = "transform.translation.x"
         let animation = CASpringAnimation(keyPath: keyPath)
         animation.fromValue = fromValue

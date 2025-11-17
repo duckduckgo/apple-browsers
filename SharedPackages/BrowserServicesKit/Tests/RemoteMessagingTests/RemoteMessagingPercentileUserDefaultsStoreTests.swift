@@ -31,7 +31,7 @@ class RemoteMessagingPercentileUserDefaultsStoreTests: XCTestCase {
 
     func testWhenFetchingPercentileForFirstTime_ThenPercentileIsCreatedAndStored() {
         let store = RemoteMessagingPercentileUserDefaultsStore(keyValueStore: keyValueStore)
-        let percentile = store.percentile(forMessageId: "message-1")
+        let percentile = store.percentile(forEntityId: "message-1")
 
         XCTAssert(percentile >= 0.0)
         XCTAssert(percentile <= 1.0)
@@ -39,9 +39,9 @@ class RemoteMessagingPercentileUserDefaultsStoreTests: XCTestCase {
 
     func testWhenFetchingPercentileMultipleTimes_ThenAllPercentileFetchesReturnSameValue() {
         let store = RemoteMessagingPercentileUserDefaultsStore(keyValueStore: keyValueStore)
-        let percentile1 = store.percentile(forMessageId: "message-1")
-        let percentile2 = store.percentile(forMessageId: "message-1")
-        let percentile3 = store.percentile(forMessageId: "message-1")
+        let percentile1 = store.percentile(forEntityId: "message-1")
+        let percentile2 = store.percentile(forEntityId: "message-1")
+        let percentile3 = store.percentile(forEntityId: "message-1")
 
         XCTAssertEqual(percentile1, percentile2)
         XCTAssertEqual(percentile2, percentile3)
@@ -49,9 +49,9 @@ class RemoteMessagingPercentileUserDefaultsStoreTests: XCTestCase {
 
     func testWhenFetchingPercentileForMultipleMessages_ThenEachMessageHasIndependentPercentile() {
         let store = RemoteMessagingPercentileUserDefaultsStore(keyValueStore: keyValueStore)
-        _ = store.percentile(forMessageId: "message-1")
-        _ = store.percentile(forMessageId: "message-2")
-        _ = store.percentile(forMessageId: "message-3")
+        _ = store.percentile(forEntityId: "message-1")
+        _ = store.percentile(forEntityId: "message-2")
+        _ = store.percentile(forEntityId: "message-3")
 
         let key = RemoteMessagingPercentileUserDefaultsStore.Constants.remoteMessagingPercentileMapping
 

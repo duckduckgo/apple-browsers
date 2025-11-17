@@ -342,7 +342,7 @@ final class WideEventTests: XCTestCase {
                 start: Date(timeIntervalSince1970: 1000),
                 end: Date(timeIntervalSince1970: 1002.5)
             ),
-            errorData: WideEventErrorData(error: testError),
+            errorData: WideEventErrorData(error: testError, description: "Test Error"),
             contextData: WideEventContextData(name: "test-funnel"),
             appData: WideEventAppData()
         )
@@ -356,7 +356,7 @@ final class WideEventTests: XCTestCase {
         parameters["global.sample_rate"] = "1.0"
         parameters["app.name"] = typed.appData.name
         parameters["app.version"] = typed.appData.version
-        if let formFactor = typed.appData.formFactor { parameters["global.form_factor"] = formFactor }
+        if let formFactor = typed.appData.formFactor { parameters["app.form_factor"] = formFactor }
         parameters["feature.name"] = MockWideEventData.pixelName
         if let name = typed.contextData.name { parameters["context.name"] = name }
 
@@ -371,6 +371,7 @@ final class WideEventTests: XCTestCase {
         // Error parameters
         XCTAssertEqual(parameters["feature.data.error.domain"], "TestErrorDomain")
         XCTAssertEqual(parameters["feature.data.error.code"], "12345")
+        XCTAssertEqual(parameters["feature.data.error.description"], "Test Error")
 
         // Context parameters
         XCTAssertEqual(parameters["context.name"], "test-funnel")
@@ -409,7 +410,7 @@ final class WideEventTests: XCTestCase {
     func testErrorDataCapturesUnderlyingErrors() {
         let deepError = NSError(domain: "DeepDomain", code: 3)
 
-        let deepErrorData = WideEventErrorData(error: deepError)
+        let deepErrorData = WideEventErrorData(error: deepError, description: "Test Deep Error")
 
         XCTAssertEqual(deepErrorData.domain, "DeepDomain")
         XCTAssertEqual(deepErrorData.code, 3)
@@ -418,10 +419,12 @@ final class WideEventTests: XCTestCase {
         let nestedError = NSError(domain: "NestedDomain", code: 2, userInfo: [NSUnderlyingErrorKey: deepError])
         let rootError = NSError(domain: "RootDomain", code: 1, userInfo: [NSUnderlyingErrorKey: nestedError])
 
+        // No Description
         let errorData = WideEventErrorData(error: rootError)
 
         XCTAssertEqual(errorData.domain, "RootDomain")
         XCTAssertEqual(errorData.code, 1)
+        XCTAssertNil(errorData.description)
 
         XCTAssertEqual(errorData.underlyingErrors.count, 2)
         XCTAssertEqual(errorData.underlyingErrors.first?.domain, "NestedDomain")

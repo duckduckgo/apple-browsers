@@ -1,6 +1,6 @@
 // See https://app.asana.com/0/72649045549333/1208001118995887/f.
 {
-    "autocompleteClickPhrase": {
+    "m_mac_autocomplete_click_phrase": {
         "description": "Fires when the user selects a phrase suggestion from the autocomplete results.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
@@ -16,7 +16,7 @@
             "pixelSource"
         ]
     },
-    "autocompleteClickWebsite": {
+    "m_mac_autocomplete_click_website": {
         "description": "Fires when the user selects a website suggestion from the autocomplete results.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
@@ -32,7 +32,7 @@
             "pixelSource"
         ]
     },
-    "autocompleteClickHistory": {
+    "m_mac_autocomplete_click_history": {
         "description": "Fires when the user selects a history entry from the autocomplete results.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
@@ -48,7 +48,7 @@
             "pixelSource"
         ]
     },
-    "autocompleteClickBookmark": {
+    "m_mac_autocomplete_click_bookmark": {
         "description": "Fires when the user selects a bookmark from the autocomplete results.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
@@ -64,7 +64,7 @@
             "pixelSource"
         ]
     },
-    "autocompleteClickFavorite": {
+    "m_mac_autocomplete_click_favorite": {
         "description": "Fires when the user selects a favorite from the autocomplete results.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
@@ -80,7 +80,7 @@
             "pixelSource"
         ]
     },
-    "autocompleteClickOpenTab": {
+    "m_mac_autocomplete_click_opentab": {
         "description": "Fires when the user selects an open tab from the autocomplete results.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],

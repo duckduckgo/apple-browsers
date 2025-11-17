@@ -55,8 +55,10 @@ final class MainCoordinator {
     private let featureFlagger: FeatureFlagger
     private let modalPromptCoordinationService: ModalPromptCoordinationService
     private let launchSourceManager: LaunchSourceManaging
+    private let onboardingSearchExperienceSelectionHandler: OnboardingSearchExperienceSelectionHandler
 
-    init(syncService: SyncService,
+    init(privacyConfigurationManager: PrivacyConfigurationManaging,
+         syncService: SyncService,
          contentBlockingService: ContentBlockingService,
          bookmarksDatabase: CoreDataDatabase,
          remoteMessagingService: RemoteMessagingService,
@@ -79,13 +81,14 @@ final class MainCoordinator {
          dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
          launchSourceManager: LaunchSourceManaging,
          winBackOfferService: WinBackOfferService,
-         modalPromptCoordinationService: ModalPromptCoordinationService
+         modalPromptCoordinationService: ModalPromptCoordinationService,
+         mobileCustomization: MobileCustomization
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
         self.modalPromptCoordinationService = modalPromptCoordinationService
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
-                                                          remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
+                                                          remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() })
         let previewsSource = DefaultTabPreviewsSource()
@@ -100,10 +103,17 @@ final class MainCoordinator {
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
         interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
         self.launchSourceManager = launchSourceManager
+        onboardingSearchExperienceSelectionHandler = OnboardingSearchExperienceSelectionHandler(
+            daxDialogs: daxDialogs,
+            aiChatSettings: aiChatSettings,
+            featureFlagger: featureFlagger,
+            onboardingSearchExperienceProvider: OnboardingSearchExperience()
+        )
         tabManager = TabManager(model: tabsModel,
                                 persistence: tabsPersistence,
                                 previewsSource: previewsSource,
                                 interactionStateSource: interactionStateSource,
+                                privacyConfigurationManager: privacyConfigurationManager,
                                 bookmarksDatabase: bookmarksDatabase,
                                 historyManager: historyManager,
                                 syncService: syncService.sync,
@@ -124,7 +134,8 @@ final class MainCoordinator {
                                 keyValueStore: keyValueStore,
                                 daxDialogsManager: daxDialogsManager,
                                 aiChatSettings: aiChatSettings)
-        controller = MainViewController(bookmarksDatabase: bookmarksDatabase,
+        controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
+                                        bookmarksDatabase: bookmarksDatabase,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         historyManager: historyManager,
                                         homePageConfiguration: homePageConfiguration,
@@ -155,7 +166,9 @@ final class MainCoordinator {
                                         daxDialogsManager: daxDialogsManager,
                                         dbpIOSPublicInterface: dbpIOSPublicInterface,
                                         launchSourceManager: launchSourceManager,
-                                        winBackOfferVisibilityManager: winBackOfferService.visibilityManager)
+                                        winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
+                                        mobileCustomization: mobileCustomization,
+                                        remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler)
     }
 
     func start() {

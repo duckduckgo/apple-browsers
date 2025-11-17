@@ -980,6 +980,9 @@
 "Cohort: %@" = "Kohorta: %@";
 
 /* No comment provided by engineer. */
+"Configuration" = "Konfigurácia";
+
+/* No comment provided by engineer. */
 "Confirm" = "Potvrdiť";
 
 /* Button to continue the onboarding process */
@@ -2024,6 +2027,9 @@
 "keyCommandShowAllTabs" = "Zobraziť všetky karty";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Naposledy spracované: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Načítavam sprostredkovateľov...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2085,6 +2091,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Názov hostiteľa politiky správ";
+
+/* No comment provided by engineer. */
+"Messages" = "Správy";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Tlačidlo riadku adresy";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Riadok adresy";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Skryť toto tlačidlo";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Žiadne";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Prispôsobiteľné tlačidlá";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Zobraziť tlačidlo Obnoviť";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Tlačidlo na paneli s nástrojmi";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Panel s nástrojmi";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Späť";
@@ -2342,10 +2375,19 @@
 "new.address.bar.picker.title" = "Možnosť panela s adresou";
 
 /* No comment provided by engineer. */
+"No Logs" = "Žiadne záznamy";
+
+/* No comment provided by engineer. */
+"No messages" = "Žiadne správy";
+
+/* No comment provided by engineer. */
 "No results found" = "Nenašli sa žiadne výsledky";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Spravované súbory cookie";
@@ -2506,12 +2548,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Reaktivovať";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "E-mail (nepovinné)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "meno@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Prosím, daj nám svoju spätnú väzbu...";
 
@@ -2545,8 +2581,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "VYBERTE KATEGÓRIU";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Našiel/našla si problém, ktorý nie je pokrytý v našom [centre pomoci](duck://)? Určite o tom chceme vedieť.\n\nUveď e-mail, ak chceš, aby sme ťa ohľadom tohto problému kontaktovali (nemusíme byť schopní odpovedať na všetky problémy):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Potrebuješ pomoc? [Kontaktuj podporu.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Našiel/našla si problém, ktorý nie je pokrytý v našom [centre pomoci](duck://)? Určite o tom chceme vedieť.\n\nPovedz nám, čo sa deje:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Okrem vyššie uvedených údajov posielame spolu s tvojou spätnou väzbou aj anonymizované informácie:";
@@ -2696,6 +2735,9 @@
 "prompt.custom.url.scheme.title" = "Otvoriť v inej aplikácii?";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Nedávne záznamy o spracovaní";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Príbuzní: %@";
 
 /* No comment provided by engineer. */
@@ -2799,6 +2841,12 @@
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Nastavenia Assist vyhľadávania";
+
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Skryť obrázky generované umelou inteligenciou";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Odstraňuje obrázky vytvorené umelou inteligenciou z výsledkov vyhľadávania obrázkov";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vždy zapnuté";
@@ -3172,6 +3220,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Prehliadač DuckDuckGo poskytuje ochrany proti sledovaniu, ktoré sú vždy aktívne. [Viac informácií](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Zobrazuje záznamy z poslednej minúty, ktoré pomôžu pri diagnostike problémov hneď po obnovení.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Vyberte možnosť, ktorá najlepšie opisuje problém, ktorý ste zaznamenali.";
 
@@ -3204,6 +3255,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Ktorá webová stránka je nefunkčná?";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Stav: zneplatnené";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Uložený názov hostiteľa: %@";
@@ -3592,6 +3646,9 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* No comment provided by engineer. */
+"Version: %@" = "Verzia: %@";
+
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Vyhľadávať";
 
@@ -3853,18 +3910,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Správa od %@:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "Pozrieť ponuku";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Teraz nie";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Zostaň chránený s našou VPN, súkromnou AI a ďalšími funkciami. Vyber si dnes predplatné opäť a ušetri 25 %.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "Posledný deň na zľavu 25 %!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "UŠETRI 25 %";
 
@@ -3899,7 +3944,10 @@
 "win-back.campaign.subscription.settings.menu.title" = "Vyber si predplatné opäť a ušetri 25 %";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Vyber si predplatné opäť a ušetri 25 %";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Opätovne predplatiť";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Zostaň chránený s našou VPN, súkromnou AI a ďalšími funkciami.\nČasovo obmedzená ponuka.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Hľadáte verziu pre Mac?";

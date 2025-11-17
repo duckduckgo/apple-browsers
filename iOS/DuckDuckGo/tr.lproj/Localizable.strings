@@ -980,6 +980,9 @@
 "Cohort: %@" = "Grup: %@";
 
 /* No comment provided by engineer. */
+"Configuration" = "Yapılandırma";
+
+/* No comment provided by engineer. */
 "Confirm" = "Onayla";
 
 /* Button to continue the onboarding process */
@@ -2024,6 +2027,9 @@
 "keyCommandShowAllTabs" = "Tüm Sekmeleri Göster";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Son İşlenme: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Brokerlar yükleniyor...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2085,6 +2091,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Mesaj politikası ana bilgisayar adı";
+
+/* No comment provided by engineer. */
+"Messages" = "Mesajlar";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Adres Çubuğu Düğmesi";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Adres Çubuğu";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Bu Düğmeyi Gizle";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Yok";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Özelleştirilebilir Düğmeler";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Yeniden Yükle Düğmesini Göster";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Araç Çubuğu Düğmesi";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Araç Çubuğu";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Geri";
@@ -2342,10 +2375,19 @@
 "new.address.bar.picker.title" = "Adres çubuğu seçeneği";
 
 /* No comment provided by engineer. */
+"No Logs" = "Günlük Yok";
+
+/* No comment provided by engineer. */
+"No messages" = "Mesaj yok";
+
+/* No comment provided by engineer. */
 "No results found" = "Sonuç bulunamadı";
 
 /* No comment provided by engineer. */
 "OK" = "Tamam";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Yönetilen Çerezler";
@@ -2506,12 +2548,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Devre dışı bırak";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "E-posta (isteğe bağlı)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "name@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Lütfen bize geri bildirimlerinizi iletin…";
 
@@ -2545,8 +2581,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "BİR KATEGORİ SEÇİN";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Yardım merkezimizde ([help center](duck://)) ele alınmayan bir sorun mu buldunuz? Ne olduğunu kesinlikle öğrenmek isteriz.\n\nBu sorunla ilgili olarak sizinle iletişime geçmemizi istiyorsanız bir e-posta adresi sağlayın (tüm sorunlara yanıt veremeyebiliriz):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Yardıma mı ihtiyacınız var? [Destek ekibiyle iletişime geçin.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "[Yardım merkezimizde](duck://)) ele alınmayan bir sorun mu buldunuz? Ne olduğunu kesinlikle öğrenmek isteriz.\n\nBize neler olduğunu anlatın:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Yukarıda girilen bilgilere ek olarak, geri bildiriminizle birlikte bazı anonimleştirilmiş bilgiler gönderiyoruz:";
@@ -2696,6 +2735,9 @@
 "prompt.custom.url.scheme.title" = "Başka Bir Uygulamada Açılsın mı?";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Son İşlem Günlükleri";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Akrabalar: %@";
 
 /* No comment provided by engineer. */
@@ -2799,6 +2841,12 @@
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Ayarları";
+
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Yapay Zeka Tarafından Oluşturulan Görselleri Gizle";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Görsel arama sonuçlarından yapay zeka tarafından üretilmiş görselleri filtreler";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Her Zaman Açık";
@@ -3172,6 +3220,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGo tarayıcısı, her zaman etkin olan izleme korumaları sunar. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Yenilemeden hemen sonra sorunları teşhis etmeye yardımcı olmak için son bir dakikanın günlüklerini gösterir.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Karşılaştığınız sorunu en iyi tanımlayan seçeneği seçin.";
 
@@ -3204,6 +3255,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Hangi web sitesi hatalı?";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Durum: Geçersiz kılındı";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Depolanan Ana Bilgisayar Adı: %@";
@@ -3592,6 +3646,9 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* No comment provided by engineer. */
+"Version: %@" = "Sürüm: %@";
+
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Ara";
 
@@ -3853,18 +3910,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "%@ size bir mesaj gönderdi:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "Teklifi Gör";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Şimdi Değil";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "VPN, özel yapay zeka ve daha fazlasıyla güvende kalın. Bugün yeniden abone olup %25 tasarruf edin.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "%25 tasarruf etmek için son gün!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "%25 TASARRUF EDİN";
 
@@ -3899,7 +3944,10 @@
 "win-back.campaign.subscription.settings.menu.title" = "Yeniden abone olup %25 tasarruf edin";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Yeniden abone olup %25 tasarruf edin";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Yeniden abone ol";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "VPN, özel yapay zekâ ve daha fazlasıyla güvende kalın.\nSınırlı bir süre için.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Mac Sürümünü mü arıyorsunuz?";

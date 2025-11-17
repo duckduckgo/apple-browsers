@@ -980,6 +980,9 @@
 "Cohort: %@" = "Кохорта: %@";
 
 /* No comment provided by engineer. */
+"Configuration" = "Конфигурация";
+
+/* No comment provided by engineer. */
 "Confirm" = "Потвърдете";
 
 /* Button to continue the onboarding process */
@@ -2024,6 +2027,9 @@
 "keyCommandShowAllTabs" = "Показване на всички раздели";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Последно обработено: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Зареждане на брокери...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2085,6 +2091,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Име на хоста на политиката за съобщения";
+
+/* No comment provided by engineer. */
+"Messages" = "Съобщения";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Бутон за адресната лента";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Адресна лента";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Скриване на този бутон";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Няма";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Бутони с възможност за персонализиране";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Показване на бутона за презареждане";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Бутон за лентата с инструменти";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Лента с инструменти";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Обратно";
@@ -2342,10 +2375,19 @@
 "new.address.bar.picker.title" = "Опция за адресната лента";
 
 /* No comment provided by engineer. */
+"No Logs" = "Без регистри";
+
+/* No comment provided by engineer. */
+"No messages" = "Няма съобщения";
+
+/* No comment provided by engineer. */
 "No results found" = "Няма намерени резултати";
 
 /* No comment provided by engineer. */
 "OK" = "ОК";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Бисквитките са настроени";
@@ -2506,12 +2548,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Деактивиране";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "Имейл (по избор)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "име@имейл.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Моля, споделете своето мнение…";
 
@@ -2545,8 +2581,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "ИЗБЕРЕТЕ КАТЕГОРИЯ";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Попаднахте на проблем, който не е разгледан в нашия [помощен център](duck://)? Определено искаме да знаем за това.\n\nПосочете имейл, ако искате да се свържем с Вас относно този проблем (може да не успеем да изпратим отговор за всички проблеми):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Имаш нужда от помощ? [Свържи се с екипа по поддръжката.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Попаднах на проблем, който не е разгледан в нашия [помощен център](duck://)? Определено искаме да знаем повече за това.\n\nКажи ни какъв е проблемът:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "В допълнение към данните, въведени по-горе, изпращаме анонимна информация с вашия отзив:";
@@ -2696,6 +2735,9 @@
 "prompt.custom.url.scheme.title" = "Отваряне в друго приложение?";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Последни регистри за обработка";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Роднини: %@";
 
 /* No comment provided by engineer. */
@@ -2799,6 +2841,12 @@
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Настройки за Assist при търсене";
+
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Скриване на изображения, генерирани от изкуствен интелект";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Филтрира в резултатите от търсенето изображенията, генерирани от изкуствен интелект";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Винаги включено";
@@ -3172,6 +3220,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Браузърът DuckDuckGo предоставя защити от проследяване, които винаги са активни. [Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Показва регистрите от последната минута, за да помогне за диагностициране на проблеми веднага след обновяване.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Изберете опцията, която най-добре описва възникналия проблем.";
 
@@ -3204,6 +3255,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Кой уебсайт е повреден?";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Статус: Невалидно";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Запазено име на хост: %@";
@@ -3592,6 +3646,9 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* No comment provided by engineer. */
+"Version: %@" = "Версия: %@";
+
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Търсене";
 
@@ -3853,18 +3910,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Съобщение от %@:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "Виж офертата";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Не сега";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Получаваш защита с нашата VPN, личен изкуствен интелект и още много. Абонирай се отново днес и спести 25%.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "Последен ден да спестиш 25%!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "Спести 25%!";
 
@@ -3899,7 +3944,10 @@
 "win-back.campaign.subscription.settings.menu.title" = "Абонирай се отново и спести 25%";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Абонирай се отново и спести 25%";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Повторно абониране";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Получаваш защита с нашата VPN, личен изкуствен интелект и още много.\nОферта за ограничено време.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Търсите версията за Mac?";

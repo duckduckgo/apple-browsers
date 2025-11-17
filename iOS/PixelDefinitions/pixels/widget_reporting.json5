@@ -11,7 +11,7 @@
                 "key": "enabled_widgets",
                 "description": "A comma separated list of enabled widgets in the format WidgetName-Family. The widget name is defined statically in code so will not contain user inforation.  The family is defined by iOS",
                 "type": "string",
-                "pattern": "([A-Za-z]+-(systemSmall|systemMedium|systemLarge))(,[A-Za-z]+-(systemSmall|systemMedium|systemLarge))*",
+                "pattern": "([A-Za-z]+-(systemSmall|systemMedium|systemLarge|accessoryCircular))(,[A-Za-z]+-(systemSmall|systemMedium|systemLarge|accessoryCircular))*",
                 "examples": [
                     "QuickActionWidget-systemSmall",
                     "QuickActionWidget-systemSmall,FavoritesWidget-systemLarge",

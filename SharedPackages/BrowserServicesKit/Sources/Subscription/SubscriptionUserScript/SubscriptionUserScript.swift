@@ -192,6 +192,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
 public final class SubscriptionUserScript: NSObject, Subfeature {
 
     private let defaultOriginDomain = "duckduckgo.com"
+    private let defaultAiOriginDomain = "duck.ai"
 
     public enum MessageName: String, CaseIterable, Codable {
         case handshake
@@ -206,7 +207,7 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
 
     public let featureName: String = "subscriptions"
     public var messageOriginPolicy: MessageOriginPolicy {
-        var rules: [HostnameMatchingRule] = [.exact(hostname: defaultOriginDomain)]
+        var rules: [HostnameMatchingRule] = [.exact(hostname: defaultOriginDomain), .exact(hostname: defaultAiOriginDomain)]
         if let debugHost {
             rules.append(.exact(hostname: debugHost))
         }

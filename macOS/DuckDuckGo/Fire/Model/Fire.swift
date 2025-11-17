@@ -244,7 +244,7 @@ final class Fire: FireProtocol {
          historyCoordinating: HistoryCoordinating? = nil,
          permissionManager: PermissionManagerProtocol? = nil,
          savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating = AccessibilityPreferences.shared,
-         downloadListCoordinator: DownloadListCoordinator = DownloadListCoordinator.shared,
+         downloadListCoordinator: DownloadListCoordinator? = nil,
          windowControllersManager: WindowControllersManagerProtocol? = nil,
          faviconManagement: FaviconManagement? = nil,
          fireproofDomains: FireproofDomains? = nil,
@@ -267,7 +267,7 @@ final class Fire: FireProtocol {
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
         self.permissionManager = permissionManager ?? NSApp.delegateTyped.permissionManager
         self.savedZoomLevelsCoordinating = savedZoomLevelsCoordinating
-        self.downloadListCoordinator = downloadListCoordinator
+        self.downloadListCoordinator = downloadListCoordinator ?? NSApp.delegateTyped.downloadListCoordinator
         self.windowControllersManager = windowControllersManager ?? Application.appDelegate.windowControllersManager
         self.faviconManagement = faviconManagement ?? NSApp.delegateTyped.faviconManager
         self.fireproofDomains = fireproofDomains ?? NSApp.delegateTyped.fireproofDomains

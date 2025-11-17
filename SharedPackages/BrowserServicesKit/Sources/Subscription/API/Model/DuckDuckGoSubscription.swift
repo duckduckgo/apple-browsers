@@ -40,6 +40,14 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         public init(from decoder: Decoder) throws {
             self = try Self(rawValue: decoder.singleValueContainer().decode(RawValue.self)) ?? .unknown
         }
+
+        public var remoteMessagingFrameworkValue: String {
+            switch self {
+            case .monthly: return "monthly"
+            case .yearly: return "yearly"
+            case .unknown: return "unknown"
+            }
+        }
     }
 
     public enum Platform: String, Codable {
@@ -61,6 +69,17 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
 
         public init(from decoder: Decoder) throws {
             self = try Self(rawValue: decoder.singleValueContainer().decode(RawValue.self)) ?? .unknown
+        }
+
+        public var remoteMessagingFrameworkValue: String {
+            switch self {
+            case .autoRenewable: return "auto_renewable"
+            case .notAutoRenewable: return "not_auto_renewable"
+            case .gracePeriod: return "grace_period"
+            case .inactive: return "inactive"
+            case .expired: return "expired"
+            case .unknown: return "unknown"
+            }
         }
     }
 

@@ -203,9 +203,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1211260578559159?focus=true
     case unifiedURLPredictor
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211396583578252?focus=true
-    case unifiedURLPredictorMetrics
-
     /// https://app.asana.com/1/137249556945/task/1211354430557015?focus=true
     case subscriptionRestoreWidePixelMeasurement
 
@@ -214,6 +211,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1210594645229050/task/1211494295271901?focus=true
     case winBackOffer
+
+    /// https://app.asana.com/1/137249556945/project/1210594645229050/task/1211612114679665?focus=true
+    case blackFridayCampaign
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210417832822045
     case fireDialog
@@ -250,6 +250,15 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1211708489642640?focus=true
     case tabProgressIndicator
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211388368219934?focus=true
+    case vpnConnectionWidePixelMeasurement
+
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211579914062173?focus=true
+    case showHideAIGeneratedImagesSection
+
+    /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
+    case standaloneMigration
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -274,7 +283,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .fireDialog,
                 .fireDialogIndividualSitesLink,
                 .blurryAddressBarTahoeFix,
-                .pinnedTabsViewRewrite:
+                .pinnedTabsViewRewrite,
+                .vpnConnectionWidePixelMeasurement,
+                .showHideAIGeneratedImagesSection:
             true
         default:
             false
@@ -349,7 +360,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .themes,
                 .appStoreUpdateFlow,
                 .unifiedURLPredictor,
-                .unifiedURLPredictorMetrics,
                 .authV2WideEventEnabled,
                 .webKitPerformanceReporting,
                 .fireDialog,
@@ -362,7 +372,11 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .blurryAddressBarTahoeFix,
                 .dataImportNewExperience,
                 .pinnedTabsViewRewrite,
-                .tabProgressIndicator:
+                .tabProgressIndicator,
+                .vpnConnectionWidePixelMeasurement,
+                .showHideAIGeneratedImagesSection,
+                .standaloneMigration,
+                .blackFridayCampaign:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -521,8 +535,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
-        case .unifiedURLPredictorMetrics:
-            return .disabled
         case .authV2WideEventEnabled:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
         case .webKitPerformanceReporting:
@@ -531,6 +543,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         case .winBackOffer:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
+        case .blackFridayCampaign:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.blackFridayCampaign))
         case .dataImportNewSafariFilePicker:
             return .remoteReleasable(.subfeature(DataImportSubfeature.newSafariFilePicker))
         case .aiChatDataClearing:
@@ -549,6 +563,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.pinnedTabsViewRewrite))
         case .tabProgressIndicator:
             return .disabled
+        case .vpnConnectionWidePixelMeasurement:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
+        case .showHideAIGeneratedImagesSection:
+            return .remoteReleasable(.feature(.showHideAIGeneratedImagesSection))
+        case .standaloneMigration:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
         }
     }
 }

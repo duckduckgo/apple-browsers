@@ -980,6 +980,9 @@
 "Cohort: %@" = "Kohort: %@";
 
 /* No comment provided by engineer. */
+"Configuration" = "Konfiguratsioon";
+
+/* No comment provided by engineer. */
 "Confirm" = "Kinnita";
 
 /* Button to continue the onboarding process */
@@ -2024,6 +2027,9 @@
 "keyCommandShowAllTabs" = "Kuva kõik vahekaardid";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Viimati töödeldud: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Laaditakse vahendajad...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2085,6 +2091,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Sõnumipoliitika hostinimi";
+
+/* No comment provided by engineer. */
+"Messages" = "Sõnumid";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Aadressiriba nupp";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Aadressiriba";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Peida see nupp";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Puudub";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Kohandatavad nupud";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Kuva uuesti laadimise nupp";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Tööriistariba nupp";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Tööriistariba";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Tagasi";
@@ -2342,10 +2375,19 @@
 "new.address.bar.picker.title" = "Aadressiriba valik";
 
 /* No comment provided by engineer. */
+"No Logs" = "Logisid pole";
+
+/* No comment provided by engineer. */
+"No messages" = "Sõnumeid pole";
+
+/* No comment provided by engineer. */
 "No results found" = "Ühtegi tulemust ei leitud";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Hallatavad küpsised";
@@ -2506,12 +2548,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Inaktiveeri";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "E-post (valikuline)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "name@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Palun anna meile tagasisidet...";
 
@@ -2545,8 +2581,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "VALI KATEGOORIA";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Kas leidsid probleemi, mida meie [abikeskuses](duck://) ei käsitleta? Me tahame sellest kindlasti teada saada.\n\nAnna oma e-posti aadress, kui soovid, et võtaksime sinuga selle probleemi osas ühendust (me ei pruugi kõigile probleemidele vastata):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Kas vajad abi? [Võta ühendust toega.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Kas leidsid probleemi, mida meie [abikeskuses](duck://) ei käsitleta? Tahame sellest kindlasti teada saada.\n\nAnna meile teade, mis toimub:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Lisaks eespool sisestatud andmetele saadame koos teie tagasisidega mõned anonüümsed andmed:";
@@ -2696,6 +2735,9 @@
 "prompt.custom.url.scheme.title" = "Avada teises rakenduses?";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Hiljutised töötlemislogid";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Sugulased: %@";
 
 /* No comment provided by engineer. */
@@ -2799,6 +2841,12 @@
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Otsingu Assist seaded";
+
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Peida AI loodud pildid";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Eemaldab tehisintellekti loodud pildid pildiotsingu tulemustest";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alati sisse lülitatud";
@@ -3172,6 +3220,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGo brauser pakub jälgimiskaitseid, mis on alati aktiivsed. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Näitab viimase minuti logisid, et aidata diagnoosida probleeme kohe pärast värskendamist.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Vali suvand, mis kirjeldab sinu probleemi kõige paremini.";
 
@@ -3204,6 +3255,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Milline veebisait on katki?";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Olek: kehtetu";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Salvestatud hostinimi: %@";
@@ -3592,6 +3646,9 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* No comment provided by engineer. */
+"Version: %@" = "Versioon: %@";
+
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Otsi";
 
@@ -3853,18 +3910,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Sõnum saatjalt %@:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "Vaata pakkumist";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Mitte praegu";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Olge kaitstud meie VPN-i, privaatse tehisintellekti ja muu abil. Tellige täna uuesti ja säästke 25%.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "Viimane päev säästa 25%!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "Säästke 25%";
 
@@ -3899,7 +3944,10 @@
 "win-back.campaign.subscription.settings.menu.title" = "Tellige uuesti ja säästke 25%";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Tellige uuesti ja säästke 25%";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Telli uuesti";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Olge kaitstud meie VPN-i, privaatse tehisintellekti ja muu abil.\nPiiratud ajaga pakkumine.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Kas otsid Maci versiooni?";

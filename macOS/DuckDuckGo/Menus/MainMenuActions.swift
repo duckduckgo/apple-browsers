@@ -285,7 +285,8 @@ extension AppDelegate {
             privacyInfo: nil,
             entryPoint: .report,
             contentBlocking: privacyFeatures.contentBlocking,
-            permissionManager: permissionManager
+            permissionManager: permissionManager,
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences
         )
         privacyDashboardViewController.sizeDelegate = self
 

@@ -89,9 +89,13 @@ final class DownloadListCoordinatorTests: XCTestCase {
     }
 
     func setUpCoordinator() {
-        coordinator = DownloadListCoordinator(store: store, downloadManager: downloadManager, clearItemsOlderThan: Date.daysAgo(2)) {
-            return self.webView
-        }
+        coordinator = DownloadListCoordinator(
+            store: store,
+            downloadManager: downloadManager,
+            windowControllersManager: Application.appDelegate.windowControllersManager,
+            clearItemsOlderThan: Date.daysAgo(2)) {
+                return self.webView
+            }
     }
 
     @MainActor

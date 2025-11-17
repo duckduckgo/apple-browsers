@@ -25,6 +25,8 @@ import Core
 import SwiftUI
 import Persistence
 import BrowserServicesKit
+import RemoteMessaging
+import RemoteMessagingTestsUtils
 @testable import Configuration
 
 private class MockURLBasedDebugCommands: URLBasedDebugCommands {
@@ -46,19 +48,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         dialogFactory = CapturingNewTabDaxDialogProvider()
         specProvider = MockNewTabDialogSpecProvider()
 
-        let remoteMessagingClient = RemoteMessagingClient(
-            bookmarksDatabase: db,
-            appSettings: AppSettingsMock(),
-            internalUserDecider: MockInternalUserDecider(),
-            configurationStore: MockConfigurationStoring(),
-            database: db,
-            errorEvents: nil,
-            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProviding(),
-            duckPlayerStorage: MockDuckPlayerStorage(),
-            configurationURLProvider: MockConfigurationURLProvider(),
-            syncService: MockDDGSyncing(),
-            winBackOfferService: .mocked)
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { true })
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { true })
         hvc = NewTabPageViewController(
             isFocussedState: false,
             dismissKeyboardOnScroll: false,
@@ -68,7 +58,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             newTabDialogFactory: dialogFactory,
             daxDialogsManager: specProvider,
             faviconLoader: EmptyFaviconLoading(),
-            messageNavigationDelegate: MockMessageNavigationDelegate(),
+            remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
             appSettings: AppSettingsMock(),
             internalUserCommands: MockURLBasedDebugCommands()
         )

@@ -30,7 +30,8 @@ import XCTest
 
 final class ContentBlockingUpdatingTests: XCTestCase {
 
-    var preferences: WebTrackingProtectionPreferences! = WebTrackingProtectionPreferences.shared
+    @MainActor
+    var preferences: WebTrackingProtectionPreferences! = WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock())
     var rulesManager: ContentBlockerRulesManagerMock! = ContentBlockerRulesManagerMock()
     var updating: UserContentUpdating!
 
@@ -43,20 +44,13 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger()
         )
-        let dataClearingPreferences = DataClearingPreferences(
-            persistor: MockFireButtonPreferencesPersistor(),
-            fireproofDomains: MockFireproofDomains(domains: []),
-            faviconManager: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock(),
-            featureFlagger: MockFeatureFlagger(),
-            aiChatHistoryCleaner: MockAIChatHistoryCleaner()
-        )
+        let windowControllersManager = WindowControllersManagerMock()
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
+            windowControllersManager: windowControllersManager,
             appearancePreferences: appearancePreferences
         )
 
-        let windowControllersManager = WindowControllersManagerMock()
         let fireCoordinator = FireCoordinator(tld: TLD(),
                                               featureFlagger: MockFeatureFlagger(),
                                               historyCoordinating: HistoryCoordinatingMock(),
@@ -75,6 +69,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                                               errorReporting: nil),
                                        configStorage: MockConfigurationStore(),
                                        webTrackingProtectionPreferences: preferences,
+                                       cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
                                        experimentManager: MockContentScopeExperimentManager(),
                                        tld: TLD(),
                                        featureFlagger: MockFeatureFlagger(),
@@ -87,11 +82,12 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        fireproofDomains: MockFireproofDomains(domains: []),
                                        fireCoordinator: fireCoordinator,
                                        autoconsentManagement: AutoconsentManagement(),
-                                       contentScopePreferences: ContentScopePreferences())
+                                       contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()))
         /// Set it to any value to trigger `didSet` that unblocks updates stream
         updating.userScriptDependenciesProvider = nil
     }
 
+    @MainActor
     override func tearDown() {
         preferences = nil
         rulesManager = nil
@@ -148,6 +144,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         }
     }
 
+    @MainActor
     func testWhenGPCEnabledChangesThenUserScriptsAreRebuild() {
         let e = expectation(description: "should rebuild user scripts")
         var ruleList: WKContentRuleList!

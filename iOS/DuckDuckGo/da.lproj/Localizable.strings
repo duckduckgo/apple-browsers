@@ -980,6 +980,9 @@
 "Cohort: %@" = "Kohorte: %@";
 
 /* No comment provided by engineer. */
+"Configuration" = "Konfiguration";
+
+/* No comment provided by engineer. */
 "Confirm" = "Bekræft";
 
 /* Button to continue the onboarding process */
@@ -2024,6 +2027,9 @@
 "keyCommandShowAllTabs" = "Vis alle faner";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Sidst behandlet: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Indlæser mæglere...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2085,6 +2091,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Værtsnavn for meddelelsespolitik";
+
+/* No comment provided by engineer. */
+"Messages" = "Beskeder";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Adresselinjeknap";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Adresselinje";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Skjul denne knap";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Ingen";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Knapper, der kan tilpasses";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Vis genindlæsningsknap";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Værktøjslinjeknap";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Værktøjslinje";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Tilbage";
@@ -2342,10 +2375,19 @@
 "new.address.bar.picker.title" = "Indstilling af adresselinje";
 
 /* No comment provided by engineer. */
+"No Logs" = "Ingen logfiler";
+
+/* No comment provided by engineer. */
+"No messages" = "Ingen beskeder";
+
+/* No comment provided by engineer. */
 "No results found" = "Ingen resultater fundet";
 
 /* No comment provided by engineer. */
 "OK" = "Okay";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Administrerede cookies";
@@ -2506,12 +2548,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Deaktiver";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "Emailadresse (valgfrit)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "navn@e-mail.web";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Giv os feedback...";
 
@@ -2545,8 +2581,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "VÆLG EN KATEGORI";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Har du fundet et problem, der ikke er dækket i vores [hjælpecenter](duck://)? Så vil vi helt sikkert gerne vide det.\n\nAngiv en e-mailadresse, hvis du gerne vil have, at vi kontakter dig angående dette problem (vi kan muligvis ikke svare på alle problemer):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Har du brug for hjælp? [Kontakt support.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Har du fundet et problem, der ikke er dækket i vores [hjælpecenter](duck://)? Så vil vi helt sikkert gerne vide det.\n\nFortæl os, hvad der sker:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Ud over de oplysninger, der er angivet ovenfor, sender vi nogle anonymiserede oplysninger med din feedback:";
@@ -2696,6 +2735,9 @@
 "prompt.custom.url.scheme.title" = "Åbn i en anden app?";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Seneste behandlingslogfiler";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Slægtninge: %@";
 
 /* No comment provided by engineer. */
@@ -2799,6 +2841,12 @@
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Indstillinger for Search Assist";
+
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Skjul AI-genererede billeder";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrerer AI-genererede billeder fra billedsøgeresultater";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Altid aktiv";
@@ -3172,6 +3220,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGo-browseren giver sporingbeskyttelse, som altid er aktiv. [Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Viser logfiler fra det seneste minut for at hjælpe med at diagnosticere problemer umiddelbart efter en opdatering.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Vælg den mulighed, der bedst beskriver det problem, du oplevede.";
 
@@ -3204,6 +3255,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Hvilket websted er ødelagt?";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Status: Ugyldiggjort";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Gemt værtsnavn: %@";
@@ -3592,6 +3646,9 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAdvarsler";
 
+/* No comment provided by engineer. */
+"Version: %@" = "Version: %@";
+
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Søg";
 
@@ -3853,18 +3910,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "En besked fra %@:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "Se tilbud";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Ikke nu";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Forbliv beskyttet med vores VPN, privat AI og meget mere. Tilmeld dig igen i dag og spar 25 %.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "Sidste dag til at spare 25 %!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "SPAR 25 %";
 
@@ -3899,7 +3944,10 @@
 "win-back.campaign.subscription.settings.menu.title" = "Tilmeld dig igen og spar 25 %";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Tilmeld dig igen og spar 25 %";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Tilmeld dig igen";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Forbliv beskyttet med vores VPN, privat AI og meget mere.\nTidsbegrænset tilbud.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Leder du efter Mac-versionen?";

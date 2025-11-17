@@ -70,7 +70,7 @@ class HistoryIntegrationTests: XCTestCase {
         autoreleasepool {
             window?.close()
             window = nil
-            WebTrackingProtectionPreferences.shared.isGPCEnabled = true
+            Application.appDelegate.webTrackingProtectionPreferences.isGPCEnabled = true
             schemeHandler = nil
             contentBlockingMock = nil
             privacyFeaturesMock = nil
@@ -207,7 +207,7 @@ class HistoryIntegrationTests: XCTestCase {
 
     @MainActor
     func testWhenScriptTrackerLoaded_trackerAddedToHistory() async throws {
-        WebTrackingProtectionPreferences.shared.isGPCEnabled = false
+        Application.appDelegate.webTrackingProtectionPreferences.isGPCEnabled = false
 
         let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration())
         window = WindowsManager.openNewWindow(with: tab)!
@@ -253,7 +253,7 @@ class HistoryIntegrationTests: XCTestCase {
 
     @MainActor
     func testWhenSurrogateTrackerLoaded_trackerAddedToHistory() async throws {
-        WebTrackingProtectionPreferences.shared.isGPCEnabled = false
+        Application.appDelegate.webTrackingProtectionPreferences.isGPCEnabled = false
 
         let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration())
         window = WindowsManager.openNewWindow(with: tab)!

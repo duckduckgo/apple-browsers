@@ -52,7 +52,7 @@ extension DebugScreensViewModel {
                 try? d.keyValueStore.set(nil, forKey: SettingsViewModel.Constants.shouldCheckIfDefaultBrowserKey)
             }),
             .action(title: "Generate Diagnostic Report", { d in
-                guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
+                guard let controller = UIApplication.shared.firstKeyWindow?.rootViewController?.presentedViewController else { return }
 
                 class Delegate: NSObject, DiagnosticReportDataSourceDelegate {
                     func dataGatheringStarted() {
@@ -73,6 +73,9 @@ extension DebugScreensViewModel {
             // MARK: SwiftUI Views
             .view(title: "AI Chat", { _ in
                 AIChatDebugView()
+            }),
+            .view(title: "Data Audit", { _ in
+                DataAuditDebugScreen()
             }),
             .view(title: "Feature Flags", { _ in
                 FeatureFlagsMenuView()
@@ -133,6 +136,9 @@ extension DebugScreensViewModel {
             }),
             .view(title: "Modal Prompt Coordination", { d in
                 ModalPromptCoordinationDebugView(keyValueStore: d.keyValueStore)
+            }),
+            .view(title: "What's New", { d in
+                WhatsNewDebugView(keyValueStore: d.keyValueStore)
             }),
 
             // MARK: Controllers
@@ -242,8 +248,8 @@ extension DebugScreensViewModel {
     }
     
     private func showNewAddressBarModal(_ dependencies: DebugScreen.Dependencies) {
-        guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
-        
+        guard let controller = UIApplication.shared.firstKeyWindow?.rootViewController?.presentedViewController else { return }
+
         let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: AIChatSettings())
         pickerViewController.modalPresentationStyle = .pageSheet
         pickerViewController.modalTransitionStyle = .coverVertical

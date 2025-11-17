@@ -28,7 +28,7 @@ final class WireGuardAdapterTests: XCTestCase {
     private var peerEndpoint: Endpoint!
     private var packetTunnelProvider: MockPacketTunnelProvider!
     private var wireGuardInterface: MockWireGuardInterface!
-    private var eventHandler: MockEventHandler!
+    private var eventHandler: MockWireGuardAdapterEventHandler!
     private var dnsResolver: MockDNSResolver!
     private var settingsGenerator: MockPacketTunnelSettingsGenerator!
     private var pathMonitor: MockPathMonitor!
@@ -42,7 +42,7 @@ final class WireGuardAdapterTests: XCTestCase {
 
         packetTunnelProvider = MockPacketTunnelProvider()
         wireGuardInterface = MockWireGuardInterface()
-        eventHandler = MockEventHandler()
+        eventHandler = MockWireGuardAdapterEventHandler()
         dnsResolver = MockDNSResolver(results: [.success(Endpoint(host: .ipv4(IPv4Address("1.1.1.1")!), port: 12345))])
         settingsGenerator = MockPacketTunnelSettingsGenerator()
         expectedNetworkSettings = NEPacketTunnelNetworkSettings(tunnelRemoteAddress: "127.0.0.1")
@@ -65,7 +65,17 @@ final class WireGuardAdapterTests: XCTestCase {
             return self.settingsGenerator
         }
 
-        rebuildAdapter()
+        capturedResolvedEndpoints = nil
+        adapter = WireGuardAdapter(
+            with: packetTunnelProvider,
+            wireGuardInterface: wireGuardInterface,
+            eventHandler: eventHandler,
+            logHandler: { _, _ in },
+            pathMonitorProvider: { self.pathMonitor },
+            packetTunnelSettingsGeneratorProvider: settingsGeneratorProvider,
+            dnsResolver: dnsResolver,
+            tunnelFileDescriptorProvider: tunnelFileDescriptorProvider
+        )
     }
 
     override func tearDown() {
@@ -85,21 +95,7 @@ final class WireGuardAdapterTests: XCTestCase {
         super.tearDown()
     }
 
-    private func rebuildAdapter() {
-        capturedResolvedEndpoints = nil
-        adapter = WireGuardAdapter(
-            with: packetTunnelProvider,
-            wireGuardInterface: wireGuardInterface,
-            eventHandler: eventHandler,
-            logHandler: { _, _ in },
-            pathMonitorProvider: { self.pathMonitor },
-            packetTunnelSettingsGeneratorProvider: settingsGeneratorProvider,
-            dnsResolver: dnsResolver,
-            tunnelFileDescriptorProvider: tunnelFileDescriptorProvider
-        )
-    }
-
-    func testStartHappyPathConfiguresNetworkAndBackend() {
+    func testAdapterStartConfiguresNetworkAndBackend() {
         let startExpectation = expectation(description: "Start completes")
 
         adapter.start(tunnelConfiguration: tunnelConfiguration) { error in
@@ -126,7 +122,7 @@ final class WireGuardAdapterTests: XCTestCase {
         XCTAssertEqual(pathMonitor.startCallCount, 1)
     }
 
-    func testStartFailsWhenAlreadyRunning() {
+    func testAdapterStartFailsWhenAlreadyRunning() {
         let firstStart = expectation(description: "Initial start succeeds")
         adapter.start(tunnelConfiguration: tunnelConfiguration) { error in
             XCTAssertNil(error)
@@ -150,7 +146,7 @@ final class WireGuardAdapterTests: XCTestCase {
         XCTAssertEqual(pathMonitor.startCallCount, 1, "Should not start a second path monitor")
     }
 
-    func testStartFailsWhenDnsResolutionFails() {
+    func testAdapterStartFailsWhenDnsResolutionFails() {
         dnsResolver.results = [.failure(DNSResolutionError(errorCode: 1, address: "example.com"))]
 
         let expectation = expectation(description: "Start fails with DNS error")
@@ -169,7 +165,7 @@ final class WireGuardAdapterTests: XCTestCase {
         XCTAssertEqual(pathMonitor.cancelCallCount, 1, "Path monitor should be cancelled on error")
     }
 
-    func testStartFailsWhenSettingNetworkSettingsFails() {
+    func testAdapterStartFailsWhenSettingNetworkSettingsFails() {
         packetTunnelProvider.setTunnelNetworkSettingsError = TestError.someError
 
         let expectation = expectation(description: "Start fails with network settings error")
@@ -189,7 +185,7 @@ final class WireGuardAdapterTests: XCTestCase {
         XCTAssertEqual(pathMonitor.cancelCallCount, 1, "Path monitor should be cancelled on failure")
     }
 
-    func testStartFailsWhenTunnelFileDescriptorMissing() {
+    func testAdapterStartFailsWhenTunnelFileDescriptorMissing() {
         tunnelFileDescriptorProvider.fileDescriptor = nil
 
         let expectation = expectation(description: "Start fails with missing tunnel fd")
@@ -208,7 +204,7 @@ final class WireGuardAdapterTests: XCTestCase {
         XCTAssertEqual(pathMonitor.cancelCallCount, 1)
     }
 
-    func testStartFailsWhenTurnOnReturnsError() {
+    func testAdapterStartFailsWhenTurnOnReturnsError() {
         wireGuardInterface.turnOnReturnHandle = -5
 
         let expectation = expectation(description: "Start fails when backend cannot start")
@@ -227,7 +223,7 @@ final class WireGuardAdapterTests: XCTestCase {
         XCTAssertEqual(pathMonitor.cancelCallCount, 1)
     }
 
-    func testStopTransitionsToStoppedAndSecondCallErrors() {
+    func testAdapterStopTransitionsToStoppedAndSecondCallErrors() {
         startAdapterSuccessfully()
 
         let stopExpectation = expectation(description: "Stop succeeds")
@@ -467,23 +463,6 @@ private enum TestError: Error, Equatable {
 
 // MARK: - Mocks
 
-private final class MockPacketTunnelProvider: PacketTunnelProviding {
-    var reasserting: Bool = false
-    private(set) var setTunnelNetworkSettingsCallCount = 0
-    private(set) var lastNetworkSettings: NETunnelNetworkSettings?
-    var setTunnelNetworkSettingsError: Error?
-
-    func setTunnelNetworkSettings(_ tunnelNetworkSettings: NETunnelNetworkSettings?, completionHandler: (@Sendable (Error?) -> Void)?) {
-        setTunnelNetworkSettingsCallCount += 1
-        lastNetworkSettings = tunnelNetworkSettings
-        if let completionHandler {
-            DispatchQueue.global().async {
-                completionHandler(self.setTunnelNetworkSettingsError)
-            }
-        }
-    }
-}
-
 private final class MockWireGuardInterface: WireGuardGoInterface {
     var turnOnCallCount = 0
     var lastTurnOnConfig: String?
@@ -543,58 +522,6 @@ private final class MockWireGuardInterface: WireGuardGoInterface {
     func setLogger(context: UnsafeMutableRawPointer?, logFunction: (@convention(c) (UnsafeMutableRawPointer?, Int32, UnsafePointer<CChar>?) -> Void)?) {
         loggerContext = context
         loggerFunction = logFunction
-    }
-}
-
-private final class MockEventHandler: WireGuardAdapterEventHandling {
-    private(set) var handledEvents: [WireGuardAdapterEvent] = []
-
-    func handle(_ event: WireGuardAdapterEvent) {
-        handledEvents.append(event)
-    }
-}
-
-private final class MockPathMonitor: PathMonitoring {
-    var pathUpdateHandler: ((Network.NWPath.Status) -> Void)?
-
-    private(set) var startCallCount = 0
-    private(set) var cancelCallCount = 0
-
-    func start(queue: DispatchQueue) {
-        startCallCount += 1
-    }
-
-    func cancel() {
-        cancelCallCount += 1
-    }
-
-    func emitStatus(_ status: Network.NWPath.Status) {
-        pathUpdateHandler?(status)
-    }
-}
-
-private final class MockPacketTunnelSettingsGenerator: PacketTunnelSettingsGenerating {
-    var networkSettingsToReturn = NEPacketTunnelNetworkSettings(tunnelRemoteAddress: "127.0.0.1")
-    var uapiConfigurationReturnValue: (String, [EndpointResolutionResult?]) = ("", [])
-    var endpointUapiConfigurationReturnValue: (String, [EndpointResolutionResult?]) = ("", [])
-
-    private(set) var generateNetworkSettingsCallCount = 0
-    private(set) var uapiConfigurationCallCount = 0
-    private(set) var endpointUapiConfigurationCallCount = 0
-
-    func uapiConfiguration() -> (String, [EndpointResolutionResult?]) {
-        uapiConfigurationCallCount += 1
-        return uapiConfigurationReturnValue
-    }
-
-    func endpointUapiConfiguration() -> (String, [EndpointResolutionResult?]) {
-        endpointUapiConfigurationCallCount += 1
-        return endpointUapiConfigurationReturnValue
-    }
-
-    func generateNetworkSettings() -> NEPacketTunnelNetworkSettings {
-        generateNetworkSettingsCallCount += 1
-        return networkSettingsToReturn
     }
 }
 

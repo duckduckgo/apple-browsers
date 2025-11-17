@@ -76,7 +76,7 @@ final class BrowserTabViewController: NSViewController {
     private var containerStackView: NSStackView
 
     weak var delegate: BrowserTabViewControllerDelegate?
-    var tabViewModel: TabViewModel?
+    private(set) var tabViewModel: TabViewModel?
 
     private let tabCollectionViewModel: TabCollectionViewModel
     private let bookmarkManager: BookmarkManager

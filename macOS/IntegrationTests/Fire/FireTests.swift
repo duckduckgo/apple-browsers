@@ -193,11 +193,8 @@ final class FireTests: XCTestCase {
         let permissionManager = PermissionManagerMock()
         let faviconManager = FaviconManagerMock()
 
-        let pinnedTabs: [Tab] = [
-            makeTab(url: "https://duck.com/".url!),
-            makeTab(url: "https://spreadprivacy.com/".url!),
-            makeTab(url: "https://wikipedia.org/".url!),
-        ]
+        let urls = ["https://duck.com/", "https://spreadprivacy.com/", "https://wikipedia.org/"].map { $0.url! }
+        let pinnedTabs: [Tab] = urls.map { Tab(content: .url($0, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration()) }
         pinnedTabsManagerProvider.newPinnedTabsManager = PinnedTabsManager(tabCollection: .init(tabs: pinnedTabs))
 
         let fire = Fire(cacheManager: manager,
@@ -225,7 +222,7 @@ final class FireTests: XCTestCase {
 
         // Verify: No new tab is inserted because pinned tabs exist (window stays open with pinned tabs only)
         XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 0, "No new regular tab should be inserted when pinned tabs exist")
-        XCTAssertEqual(pinnedTabsManagerProvider.newPinnedTabsManager.tabCollection.tabs.map(\.content.userEditableUrl), pinnedTabs.map(\.content.userEditableUrl), "Pinned tabs should be preserved")
+        XCTAssertEqual(tabCollectionViewModel.pinnedTabsCollection?.tabs.map(\.content.userEditableUrl), urls as [URL?], "Pinned tabs should be preserved")
     }
 
     @MainActor

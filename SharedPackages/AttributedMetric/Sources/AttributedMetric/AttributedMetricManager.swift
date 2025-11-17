@@ -434,14 +434,14 @@ public final class AttributedMetricManager {
     }
 
     func processSubscriptionCheck() {
-        guard let subscriptionDate = dataStorage.subscriptionDate,
-              subscriptionStateProvider.isActive
-         else {
-            Logger.attributedMetric.log("Not subscribed or subscription date is missing")
-            return
-        }
-        
         Task {
+            guard let subscriptionDate = dataStorage.subscriptionDate,
+                  subscriptionStateProvider.isActive
+             else {
+                Logger.attributedMetric.log("Not subscribed or subscription date is missing")
+                return
+            }
+
             let now = dateProvider.now()
             let freeTrialPixelSent = dataStorage.subscriptionFreeTrialFired
             let firstMonthPixelSent = dataStorage.subscriptionMonth1Fired
@@ -458,6 +458,7 @@ public final class AttributedMetricManager {
                                                                        month: bucket.value,
                                                                        bucketVersion: bucket.version),
                                   frequency: .legacyDailyNoSuffix)
+                    dataStorage.subscriptionMonth1Fired = true
                 } catch {
                     Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
                 }

@@ -27,11 +27,17 @@ struct ProductionSubscriptionPurchaseDebugView: View {
     var body: some View {
         List {
             warningSection
+            accountSection
             usaSubscriptionsSection
             rowSubscriptionsSection
             statusSection
         }
         .navigationTitle("Buy Production Subs")
+        .onAppear {
+            Task {
+                await viewModel.loadExistingExternalID()
+            }
+        }
         .alert("Purchase Result", isPresented: $viewModel.showAlert) {
             Button("OK", role: .cancel) { }
         } message: {
@@ -47,6 +53,36 @@ struct ProductionSubscriptionPurchaseDebugView: View {
             Text("This will attempt to purchase a REAL production subscription, bypassing all safety checks including existing subscription checks. Use with caution!")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
+        }
+    }
+    
+    private var accountSection: some View {
+        Section(header: Text("Account")) {
+            if viewModel.isLoadingExternalID {
+                HStack {
+                    Text("Checking for existing account...")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            } else if let externalID = viewModel.existingExternalID {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Will attach to EXISTING account")
+                        .font(.subheadline)
+                        .foregroundColor(.orange)
+                    Text("External ID: \(externalID)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Will create NEW account")
+                        .font(.subheadline)
+                        .foregroundColor(.blue)
+                    Text("No existing subscription found")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
         }
     }
     
@@ -94,7 +130,7 @@ struct ProductionSubscriptionPurchaseDebugView: View {
                 Spacer()
             }
         }
-        .disabled(viewModel.isLoading)
+        .disabled(viewModel.isLoading || viewModel.isLoadingExternalID)
     }
 }
 
@@ -106,6 +142,8 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     @Published var showAlert = false
     @Published var alertMessage = ""
     @Published var currentPurchaseId: String?
+    @Published var existingExternalID: String?
+    @Published var isLoadingExternalID = true
     
     // Production subscription identifiers from StoreSubscriptionConfiguration
     let usaSubscriptions = [
@@ -124,6 +162,21 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     
     private var subscriptionManager: SubscriptionManagerV2 {
         AppDependencyProvider.shared.subscriptionManagerV2!
+    }
+    
+    func loadExistingExternalID() async {
+        isLoadingExternalID = true
+        do {
+            // Try to get existing external ID from authenticated account
+            let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .local)
+            existingExternalID = tokenContainer.decodedAccessToken.externalID
+            Logger.subscription.info("[ProductionSubscriptionDebug] Found existing external ID: \(self.existingExternalID ?? "nil")")
+        } catch {
+            // No existing account, will create new
+            existingExternalID = nil
+            Logger.subscription.info("[ProductionSubscriptionDebug] No existing account found, will create new")
+        }
+        isLoadingExternalID = false
     }
     
     func displayName(for identifier: String) -> String {
@@ -147,8 +200,11 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
         isError = false
         statusMessage = "Starting purchase for \(displayName(for: identifier))..."
         
-        // Generate a new external ID (UUID)
-        let externalID = UUID().uuidString
+        // Use existing external ID if available, otherwise generate new
+        let externalID = existingExternalID ?? UUID().uuidString
+        let isNewAccount = existingExternalID == nil
+        
+        Logger.subscription.info("[ProductionSubscriptionDebug] Using external ID: \(externalID) (new: \(isNewAccount))")
         
         // Direct purchase bypassing AppStorePurchaseFlow
         let result = await subscriptionManager.storePurchaseManager().purchaseSubscription(with: identifier, externalID: externalID)
@@ -157,7 +213,8 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
         case .success(let transactionJWS):
             statusMessage = "✅ Purchase successful! Transaction: \(transactionJWS.prefix(50))..."
             isError = false
-            alertMessage = "Purchase successful!\n\nTransaction JWS received. You may need to complete the backend validation separately.\n\nExternal ID: \(externalID)"
+            let accountStatus = isNewAccount ? "NEW account created" : "Attached to EXISTING account"
+            alertMessage = "Purchase successful! \(accountStatus)\n\nTransaction JWS received. You may need to complete the backend validation separately.\n\nExternal ID: \(externalID)"
             showAlert = true
             
             Logger.subscription.info("[ProductionSubscriptionDebug] Purchase successful: \(identifier)")

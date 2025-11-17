@@ -1591,7 +1591,11 @@ extension MainViewController: NSMenuItemValidation {
 
         // Move Tab to New Window, Select Next/Prev Tab
         case #selector(MainViewController.moveTabToNewWindow(_:)):
-            return tabCollectionViewModel.tabCollection.tabs.count > 1 && tabCollectionViewModel.selectionIndex?.isUnpinnedTab == true
+            let isUnpinnedTab = tabCollectionViewModel.selectionIndex?.isUnpinnedTab == true
+            let pinnedTabsCount = tabCollectionViewModel.pinnedTabsCollection?.tabs.count ?? .zero
+            let unpinnedTabsCount = tabCollectionViewModel.tabCollection.tabs.count
+
+            return isUnpinnedTab && (unpinnedTabsCount > 1 || pinnedTabsCount > .zero)
 
         case #selector(MainViewController.showNextTab(_:)),
              #selector(MainViewController.showPreviousTab(_:)):

@@ -46,18 +46,6 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         let contentBlockingManager: ContentBlockerRulesManagerProtocol
         let fireproofing: Fireproofing
         let contentScopeExperimentsManager: ContentScopeExperimentsManaging
-
-        init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
-             privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-             contentBlockingManager: ContentBlockerRulesManagerProtocol = ContentBlocking.shared.contentBlockingManager,
-             fireproofing: Fireproofing,
-             contentScopeExperimentsManager: ContentScopeExperimentsManaging = AppDependencyProvider.shared.contentScopeExperimentsManager) {
-            self.appSettings = appSettings
-            self.privacyConfigurationManager = privacyConfigurationManager
-            self.contentBlockingManager = contentBlockingManager
-            self.fireproofing = fireproofing
-            self.contentScopeExperimentsManager = contentScopeExperimentsManager
-        }
     }
 
     var loginDetectionEnabled: Bool { fireproofing.loginDetectionEnabled }
@@ -77,22 +65,13 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     var currentCohorts: [ContentScopeExperimentData] = []
 
     init(dependencies: Dependencies) {
-        self.init(appSettings: dependencies.appSettings,
-                  fireproofing: dependencies.fireproofing)
-    }
 
-    init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         contentBlockingManager: ContentBlockerRulesManagerProtocol = ContentBlocking.shared.contentBlockingManager,
-         fireproofing: Fireproofing,
-         contentScopeExperimentsManager: ContentScopeExperimentsManaging = AppDependencyProvider.shared.contentScopeExperimentsManager) {
+        sendDoNotSell = dependencies.appSettings.sendDoNotSell
 
-        sendDoNotSell = appSettings.sendDoNotSell
-        
-        self.privacyConfigurationManager = privacyConfigurationManager
-        self.contentBlockingManager = contentBlockingManager
-        self.fireproofing = fireproofing
-        self.contentScopeExperimentsManager = contentScopeExperimentsManager
+        self.privacyConfigurationManager = dependencies.privacyConfigurationManager
+        self.contentBlockingManager = dependencies.contentBlockingManager
+        self.fireproofing = dependencies.fireproofing
+        self.contentScopeExperimentsManager = dependencies.contentScopeExperimentsManager
 
         contentBlockerRulesConfig = Self.buildContentBlockerRulesConfig(contentBlockingManager: contentBlockingManager,
                                                                         privacyConfigurationManager: privacyConfigurationManager)
@@ -102,7 +81,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         messageSecret = Self.generateSessionKey()
         currentCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager)
 
-        contentScopeProperties = ContentScopeProperties(gpcEnabled: appSettings.sendDoNotSell,
+        contentScopeProperties = ContentScopeProperties(gpcEnabled: dependencies.appSettings.sendDoNotSell,
                                                         sessionKey: sessionKey,
                                                         messageSecret: messageSecret,
                                                         debug: AppUserDefaults().contentScopeDebugStateEnabled,

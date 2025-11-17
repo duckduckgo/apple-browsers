@@ -74,7 +74,8 @@ struct Launching: LaunchingHandling {
         let autofillService = AutofillService()
 
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
-                                                            fireproofing: fireproofing)
+                                                            fireproofing: fireproofing,
+                                                            contentScopeExperimentsManager: contentScopeExperimentsManager)
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared, contentBlocking: contentBlockingService.common)
         let configurationService = RemoteConfigurationService()
@@ -88,8 +89,6 @@ struct Launching: LaunchingHandling {
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         reportingService.syncService = syncService
         autofillService.syncService = syncService
-
-        let userScriptsDependencies = DefaultScriptSourceProvider.Dependencies(fireproofing: fireproofing)
 
         let daxDialogs = configuration.onboardingConfiguration.daxDialogs
 
@@ -145,7 +144,7 @@ struct Launching: LaunchingHandling {
                 defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                 winBackOfferPresenter: winBackOfferService.presenter,
                 winBackOfferCoordinator: winBackOfferService.coordinator,
-                userScriptsDependencies: userScriptsDependencies
+                userScriptsDependencies: contentBlockingService.userScriptsDependencies
             )
         )
 
@@ -167,7 +166,6 @@ struct Launching: LaunchingHandling {
                                               subscriptionService: subscriptionService,
                                               voiceSearchHelper: voiceSearchHelper,
                                               featureFlagger: featureFlagger,
-                                              userScriptsDependencies: userScriptsDependencies,
                                               contentScopeExperimentManager: contentScopeExperimentsManager,
                                               aiChatSettings: aiChatSettings,
                                               fireproofing: fireproofing,

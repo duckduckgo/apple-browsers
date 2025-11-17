@@ -429,9 +429,9 @@ struct SettingsSubscriptionView: View {
             let hasITREntitlement = userEntitlements.contains(.identityTheftRestoration) || userEntitlements.contains(.identityTheftRestorationGlobal)
 
             let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-                                                     userScriptsDependencies: settingsViewModel.userScriptsDependencies,
-                                                     isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser,
-                                                     isAuthV2Enabled: AppDependencyProvider.shared.isUsingAuthV2)
+                                                 userScriptsDependencies: settingsViewModel.userScriptsDependencies,
+                                                 isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser,
+                                                 isAuthV2Enabled: AppDependencyProvider.shared.isUsingAuthV2)
             NavigationLink(destination: LazyView(SubscriptionITPView(viewModel: model)), isActive: $isShowingITP) {
                 SettingsCellView(
                     label: UserText.settingsPProITRTitle,

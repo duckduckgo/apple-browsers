@@ -50,7 +50,7 @@ struct SubscriptionEmailView: View {
                                                                     SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                                                              userScriptsDependencies: viewModel.userScriptsDependencies,
                                                                                              isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser,
-isAuthV2Enabled: AppDependencyProvider.shared.isUsingAuthV2)).navigationViewStyle(.stack)),
+                                                                                             isAuthV2Enabled: AppDependencyProvider.shared.isUsingAuthV2)).navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
         if viewModel.isPIREnabled,

@@ -375,8 +375,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     init(settings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          nativeUIPresenter: DuckPlayerNativeUIPresenting,
-         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()
-        ) {
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.settings = settings
         self.featureFlagger = featureFlagger
         self.youtubeNavigationRequest = PassthroughSubject<URL, Never>()

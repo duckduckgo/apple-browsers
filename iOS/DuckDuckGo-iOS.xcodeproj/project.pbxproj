@@ -1843,6 +1843,7 @@
 		D6E83C662B23936F006C8AFB /* SettingsDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E83C652B23936F006C8AFB /* SettingsDebugView.swift */; };
 		D6E83C682B23B6A3006C8AFB /* FontSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E83C672B23B6A3006C8AFB /* FontSettings.swift */; };
 		D6F93E3C2B4FFA97004C268D /* SubscriptionDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F93E3B2B4FFA97004C268D /* SubscriptionDebugViewController.swift */; };
+		AB98765432109876543210BA /* ProductionSubscriptionPurchaseDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB12345678901234567890AB /* ProductionSubscriptionPurchaseDebugView.swift */; };
 		D6F93E3E2B50A8A0004C268D /* SubscriptionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F93E3D2B50A8A0004C268D /* SubscriptionSettingsView.swift */; };
 		D6FEB8B12B7498A300C3615F /* HeadlessWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6FEB8B02B7498A300C3615F /* HeadlessWebView.swift */; };
 		D6FEB8B32B74990D00C3615F /* HeadlessWebViewNavCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6FEB8B22B74990D00C3615F /* HeadlessWebViewNavCoordinator.swift */; };
@@ -4181,6 +4182,7 @@
 		D6E83C672B23B6A3006C8AFB /* FontSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSettings.swift; sourceTree = "<group>"; };
 		D6F93E3B2B4FFA97004C268D /* SubscriptionDebugViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SubscriptionDebugViewController.swift; sourceTree = "<group>"; };
 		D6F93E3D2B50A8A0004C268D /* SubscriptionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionSettingsView.swift; sourceTree = "<group>"; };
+		AB12345678901234567890AB /* ProductionSubscriptionPurchaseDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionSubscriptionPurchaseDebugView.swift; sourceTree = "<group>"; };
 		D6FEB8B02B7498A300C3615F /* HeadlessWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadlessWebView.swift; sourceTree = "<group>"; };
 		D6FEB8B22B74990D00C3615F /* HeadlessWebViewNavCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadlessWebViewNavCoordinator.swift; sourceTree = "<group>"; };
 		D6FEB8B42B74994000C3615F /* HeadlessWebViewCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadlessWebViewCoordinator.swift; sourceTree = "<group>"; };
@@ -6484,6 +6486,7 @@
 				9F9A922F2C86AACB001D036D /* OnboardingDebugView */,
 				37C696762C4957940073E131 /* RemoteMessagingDebugViewController.swift */,
 				85F90B822E141FE500B50CB9 /* SettingsCellDemoDebugView.swift */,
+				AB12345678901234567890AB /* ProductionSubscriptionPurchaseDebugView.swift */,
 				D6F93E3B2B4FFA97004C268D /* SubscriptionDebugViewController.swift */,
 				983D71B02A286E810072E26D /* SyncDebugViewController.swift */,
 				6F72353C2D3EBCB000710C07 /* WebViewStateRestorationDebugView.swift */,
@@ -10868,6 +10871,7 @@
 				7B059F142D03881000371ED0 /* ControlCenterWidgetEducationView.swift in Sources */,
 				85C297042476C1FD0063A335 /* DaxDialogsSettings.swift in Sources */,
 				8505836F219F424500ED4EDB /* UIViewExtension.swift in Sources */,
+				AB98765432109876543210BA /* ProductionSubscriptionPurchaseDebugView.swift in Sources */,
 				D6F93E3C2B4FFA97004C268D /* SubscriptionDebugViewController.swift in Sources */,
 				566842D82DFC48C200C57B90 /* SubscriptionAIChatView.swift in Sources */,
 				8505836E219F424500ED4EDB /* RoundedRectangleView.swift in Sources */,

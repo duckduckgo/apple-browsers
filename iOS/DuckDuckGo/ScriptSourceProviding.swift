@@ -40,6 +40,26 @@ public protocol ScriptSourceProviding {
 
 struct DefaultScriptSourceProvider: ScriptSourceProviding {
 
+    struct Dependencies {
+        let appSettings: AppSettings
+        let privacyConfigurationManager: PrivacyConfigurationManaging
+        let contentBlockingManager: ContentBlockerRulesManagerProtocol
+        let fireproofing: Fireproofing
+        let contentScopeExperimentsManager: ContentScopeExperimentsManaging
+
+        init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
+             privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+             contentBlockingManager: ContentBlockerRulesManagerProtocol = ContentBlocking.shared.contentBlockingManager,
+             fireproofing: Fireproofing,
+             contentScopeExperimentsManager: ContentScopeExperimentsManaging = AppDependencyProvider.shared.contentScopeExperimentsManager) {
+            self.appSettings = appSettings
+            self.privacyConfigurationManager = privacyConfigurationManager
+            self.contentBlockingManager = contentBlockingManager
+            self.fireproofing = fireproofing
+            self.contentScopeExperimentsManager = contentScopeExperimentsManager
+        }
+    }
+
     var loginDetectionEnabled: Bool { fireproofing.loginDetectionEnabled }
     let sendDoNotSell: Bool
     
@@ -55,6 +75,11 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     let fireproofing: Fireproofing
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     var currentCohorts: [ContentScopeExperimentData] = []
+
+    init(dependencies: Dependencies) {
+        self.init(appSettings: dependencies.appSettings,
+                  fireproofing: dependencies.fireproofing)
+    }
 
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,

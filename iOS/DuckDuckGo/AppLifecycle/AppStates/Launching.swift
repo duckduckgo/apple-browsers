@@ -89,6 +89,8 @@ struct Launching: LaunchingHandling {
         reportingService.syncService = syncService
         autofillService.syncService = syncService
 
+        let userScriptsDependencies = DefaultScriptSourceProvider.Dependencies(fireproofing: fireproofing)
+
         let daxDialogs = configuration.onboardingConfiguration.daxDialogs
 
         let winBackOfferService = WinBackOfferFactory.makeService(keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore,
@@ -142,7 +144,8 @@ struct Launching: LaunchingHandling {
                 experimentalAIChatManager: ExperimentalAIChatManager(),
                 defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                 winBackOfferPresenter: winBackOfferService.presenter,
-                winBackOfferCoordinator: winBackOfferService.coordinator
+                winBackOfferCoordinator: winBackOfferService.coordinator,
+                userScriptsDependencies: userScriptsDependencies
             )
         )
 
@@ -164,6 +167,7 @@ struct Launching: LaunchingHandling {
                                               subscriptionService: subscriptionService,
                                               voiceSearchHelper: voiceSearchHelper,
                                               featureFlagger: featureFlagger,
+                                              userScriptsDependencies: userScriptsDependencies,
                                               contentScopeExperimentManager: contentScopeExperimentsManager,
                                               aiChatSettings: aiChatSettings,
                                               fireproofing: fireproofing,

@@ -107,6 +107,13 @@ import Combine
                                     daxDialogsManager: DummyDaxDialogsManager(),
                                     aiChatSettings: MockAIChatSettingsProvider()
         )
+
+        let mockScriptDependencies = DefaultScriptSourceProvider.Dependencies(appSettings: AppSettingsMock(),
+                                                                              privacyConfigurationManager: mockConfigManager,
+                                                                              contentBlockingManager: ContentBlockerRulesManagerMock(),
+                                                                              fireproofing: fireproofing,
+                                                                              contentScopeExperimentsManager: MockContentScopeExperimentManager())
+
         sut = MainViewController(
             privacyConfigurationManager: mockConfigManager,
             bookmarksDatabase: db,
@@ -115,6 +122,7 @@ import Combine
             homePageConfiguration: homePageConfiguration,
             syncService: syncService,
             syncDataProviders: dataProviders,
+            userScriptsDependencies: mockScriptDependencies,
             contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
             appSettings: AppSettingsMock(),
             previewsSource: MockTabPreviewsSource(),

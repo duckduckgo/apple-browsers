@@ -94,11 +94,18 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         backgroundView.addSubview(containerView)
 
         submitButton.translatesAutoresizingMaskIntoConstraints = false
-        submitButton.title = "Submit"
-        submitButton.bezelStyle = .rounded
-        submitButton.contentTintColor = .blue
+        submitButton.title = ""
+        submitButton.bezelStyle = .regularSquare
+        submitButton.isBordered = false
+        submitButton.wantsLayer = true
         submitButton.target = self
         submitButton.action = #selector(submitButtonClicked)
+        
+        if let arrowImage = NSImage(systemSymbolName: "arrow.right", accessibilityDescription: "Submit") {
+            submitButton.image = arrowImage
+            submitButton.imagePosition = .imageOnly
+        }
+        
         containerView.addSubview(submitButton)
 
         NSLayoutConstraint.activate([
@@ -122,10 +129,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             containerView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
 
-            submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
-            submitButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -20),
-            submitButton.widthAnchor.constraint(equalToConstant: 100),
-            submitButton.heightAnchor.constraint(equalToConstant: 32),
+            submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            submitButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -16),
+            submitButton.widthAnchor.constraint(equalToConstant: 28),
+            submitButton.heightAnchor.constraint(equalToConstant: 28),
         ])
 
         applyTheme(theme: themeManager.theme)
@@ -160,6 +167,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         shadowView.shadowRadius = barStyleProvider.suggestionShadowRadius
         shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
+        
+        submitButton.layer?.backgroundColor = colorsProvider.accentPrimaryColor.cgColor
+        submitButton.layer?.cornerRadius = 14
+        submitButton.contentTintColor = .white
     }
 }
 

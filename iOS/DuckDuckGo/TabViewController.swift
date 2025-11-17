@@ -3302,7 +3302,9 @@ extension TabViewController: SecureVaultManagerDelegate {
             addCreditCardInputAccessoryView(creditCards: creditCards) { [weak self] card in
                 completionHandler(card)
 
-                self?.fireCreditCardFramePixels(isMainFrame: isMainFrame)
+                if card != nil {
+                    self?.fireCreditCardFramePixels(isMainFrame: isMainFrame)
+                }
             }
         }
     }

@@ -384,12 +384,10 @@ final class AddressBarViewController: NSViewController {
             .store(in: &tabViewModelCancellables)
     }
 
-    private var displaysLoadingProgressIndicator: Bool {
-        featureFlagger.isFeatureOn(.tabProgressIndicator) == false
-    }
+    private let displaysTabsProgressIndicator: Bool = NSApp.delegateTyped.displaysTabsProgressIndicator == false
 
     private func subscribeToProgressEventsIfNeeded() {
-        guard let tabViewModel, displaysLoadingProgressIndicator else {
+        guard let tabViewModel, displaysTabsProgressIndicator else {
             progressIndicator.hide(animated: false)
             return
         }

@@ -448,10 +448,10 @@ final class MainViewController: NSViewController {
         updateBookmarksBarViewVisibility(visible: !isInPopUpWindow && !mainView.isBookmarksBarShown)
     }
 
-    func updateAIChatOmnibarContainerVisibility(visible: Bool) {
+    func updateAIChatOmnibarContainerVisibility(visible: Bool, shouldKeepSelection: Bool = false) {
         mainView.isAIChatOmnibarContainerShown = visible
 
-        navigationBarViewController.addressBarViewController?.setAIChatOmnibarVisible(visible)
+        navigationBarViewController.addressBarViewController?.setAIChatOmnibarVisible(visible, shouldKeepSelection: shouldKeepSelection)
 
         if visible {
             aiChatOmnibarContainerViewController.startEventMonitoring()
@@ -1041,7 +1041,7 @@ extension MainViewController: BrowserTabViewControllerDelegate {
 // MARK: - AIChatOmnibarControllerDelegate
 extension MainViewController: AIChatOmnibarControllerDelegate {
     func aiChatOmnibarControllerDidSubmit(_ controller: AIChatOmnibarController) {
-        updateAIChatOmnibarContainerVisibility(visible: false)
+        updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
     }
 }
 

@@ -2130,7 +2130,8 @@ extension NavigationBarViewController: AddressBarViewControllerDelegate {
 
     func addressBarViewControllerSearchModeToggleChanged(_ addressBarViewController: AddressBarViewController, isAIChatMode: Bool) {
         if let mainViewController = parent as? MainViewController {
-            mainViewController.updateAIChatOmnibarContainerVisibility(visible: isAIChatMode)
+            // When manually toggling to search mode (!isAIChatMode), keep the address bar selected
+            mainViewController.updateAIChatOmnibarContainerVisibility(visible: isAIChatMode, shouldKeepSelection: !isAIChatMode)
         }
     }
 }

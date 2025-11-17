@@ -814,7 +814,6 @@ final class AddressBarViewController: NSViewController {
         guard selectionState.isSelected else { return false }
 
         if selectionState == .activeWithAIChat {
-            // Exit AI chat mode
             delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: false)
             setAIChatOmnibarVisible(false)
             return true
@@ -981,7 +980,7 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
                 view.window?.makeFirstResponder(nil)
             }
         } else {
-            selectionState = isFirstResponder ? .active : .inactive
+            selectionState = .active
             updateMode()
             addressBarTextField.makeMeFirstResponder()
         }
@@ -989,7 +988,7 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
     }
 
-    func setAIChatOmnibarVisible(_ visible: Bool) {
+    func setAIChatOmnibarVisible(_ visible: Bool, shouldKeepSelection: Bool = false) {
         isAIChatOmnibarVisible = visible
 
         if visible {
@@ -999,9 +998,14 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
                 view.window?.makeFirstResponder(nil)
             }
         } else {
-            selectionState = isFirstResponder ? .active : .inactive
-            updateMode()
-            addressBarTextField.makeMeFirstResponder()
+            if shouldKeepSelection {
+                addressBarButtonsViewController?.resetSearchModeToggle()
+            } else {
+                selectionState = .inactive
+                updateMode()
+                view.window?.makeFirstResponder(nil)
+                addressBarButtonsViewController?.resetSearchModeToggle()
+            }
         }
     }
 }

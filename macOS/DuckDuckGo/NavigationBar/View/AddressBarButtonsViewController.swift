@@ -1648,6 +1648,10 @@ final class AddressBarButtonsViewController: NSViewController {
         delegate?.addressBarButtonsViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
     }
 
+    func resetSearchModeToggle() {
+        searchModeToggleControl?.isRightSelected = false
+    }
+
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
         let theme = themeManager.theme
         let colorsProvider = theme.colorsProvider

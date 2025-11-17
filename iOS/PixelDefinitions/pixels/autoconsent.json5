@@ -124,12 +124,12 @@
                 "type": "number"
             },
             {
-                "key": "error-multiple-popups",
+                "key": "error_multiple-popups",
                 "description": "Number of autoconsent error-multiple-popups pixels fired.",
                 "type": "number"
             },
             {
-                "key": "error-optout",
+                "key": "error_optout",
                 "description": "Number of autoconsent error-optout pixels fired.",
                 "type": "number"
             },
@@ -144,7 +144,7 @@
                 "type": "number"
             },
             {
-                "key": "done-cosmetic",
+                "key": "done_cosmetic",
                 "description": "Number of autoconsent done-cosmetic pixels fired.",
                 "type": "number"
             },
@@ -154,7 +154,7 @@
                 "type": "number"
             },
             {
-                "key": "animation-shown-cosmetic",
+                "key": "animation-shown_cosmetic",
                 "description": "Number of autoconsent animation-shown-cosmetic pixels fired.",
                 "type": "number"
             },

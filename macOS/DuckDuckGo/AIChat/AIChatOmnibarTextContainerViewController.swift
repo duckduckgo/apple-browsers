@@ -92,10 +92,10 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             containerView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
 
-            scrollView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 10),
-            scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 10),
-            scrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -10),
-            scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -10),
+            scrollView.topAnchor.constraint(equalTo: containerView.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
         ])
     }
 

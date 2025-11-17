@@ -33,7 +33,7 @@ final class MainView: NSView {
         static let findInPageContainerTopOffset: CGFloat = -4
         static let fireContainerHeight: CGFloat = 32
         static let bannerHeight: CGFloat = 48
-        static let aiChatOmnibarContainerHeight: CGFloat = 400
+        static let aiChatOmnibarContainerHeight: CGFloat = 100
     }
 
     let tabBarContainerView = NSView()

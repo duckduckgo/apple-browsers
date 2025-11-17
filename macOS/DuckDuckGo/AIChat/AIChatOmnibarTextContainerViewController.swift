@@ -29,6 +29,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private var cancellables = Set<AnyCancellable>()
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
+    private var appearanceCancellable: AnyCancellable?
 
     init(omnibarController: AIChatOmnibarController, themeManager: ThemeManaging) {
         self.omnibarController = omnibarController
@@ -55,6 +56,16 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     override func viewWillAppear() {
         super.viewWillAppear()
         scrollView.documentView = textView
+        subscribeToViewAppearanceChanges()
+    }
+    
+    private func subscribeToViewAppearanceChanges() {
+        appearanceCancellable = view.publisher(for: \.effectiveAppearance)
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.applyThemeStyle()
+            }
     }
 
     private func setupUI() {
@@ -103,7 +114,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         let colorsProvider = theme.colorsProvider
         let addressBarStyleProvider = theme.addressBarStyleProvider
         
-        backgroundView.layer?.backgroundColor = colorsProvider.activeAddressBarBackgroundColor.cgColor
+        NSAppearance.withAppAppearance {
+            backgroundView.layer?.backgroundColor = colorsProvider.activeAddressBarBackgroundColor.cgColor
+        }
         
         scrollView.backgroundColor = .clear
         scrollView.drawsBackground = false

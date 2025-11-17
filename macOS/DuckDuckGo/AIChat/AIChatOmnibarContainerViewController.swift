@@ -30,6 +30,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     let themeManager: ThemeManaging
     let omnibarController: AIChatOmnibarController
     var themeUpdateCancellable: AnyCancellable?
+    private var appearanceCancellable: AnyCancellable?
 
     required init?(coder: NSCoder) {
         fatalError("AIChatOmnibarContainerViewController: Bad initializer")
@@ -56,6 +57,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     override func viewDidLayout() {
         super.viewDidLayout()
         applyTopClipMask()
+    }
+    
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        subscribeToViewAppearanceChanges()
+    }
+    
+    private func subscribeToViewAppearanceChanges() {
+        appearanceCancellable = view.publisher(for: \.effectiveAppearance)
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.applyThemeStyle()
+            }
     }
 
     private func applyTopClipMask() {
@@ -156,9 +171,18 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let barStyleProvider = theme.addressBarStyleProvider
         let colorsProvider = theme.colorsProvider
 
-        backgroundView.layer?.backgroundColor = colorsProvider.activeAddressBarBackgroundColor.cgColor
-        backgroundView.layer?.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
-        backgroundView.layer?.borderColor = NSColor(named: "AddressBarBorderColor")?.cgColor
+        NSAppearance.withAppAppearance {
+            backgroundView.layer?.backgroundColor = colorsProvider.activeAddressBarBackgroundColor.cgColor
+            backgroundView.layer?.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
+            
+            if let borderColor = NSColor(named: "AddressBarBorderColor") {
+                backgroundView.layer?.borderColor = borderColor.cgColor
+            }
+            
+            submitButton.layer?.backgroundColor = colorsProvider.accentPrimaryColor.cgColor
+            submitButton.layer?.cornerRadius = 14
+            submitButton.contentTintColor = .white
+        }
 
         innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
         innerBorderView.borderColor = NSColor(named: "AddressBarInnerBorderColor")
@@ -167,10 +191,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         shadowView.shadowRadius = barStyleProvider.suggestionShadowRadius
         shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
-        
-        submitButton.layer?.backgroundColor = colorsProvider.accentPrimaryColor.cgColor
-        submitButton.layer?.cornerRadius = 14
-        submitButton.contentTintColor = .white
     }
 }
 

@@ -23,7 +23,7 @@ import RemoteMessaging
 import AIChat
 import OSLog
 import WebKit
-
+import Common
 // MARK: - Response Types
 
 /// Response structure for openKeyboard request
@@ -119,7 +119,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsNativeChatInput: defaults.supportsNativeChatInput,
             supportsURLChatIDRestoration: defaults.supportsURLChatIDRestoration,
             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
-            supportsPageContext: defaults.supportsPageContext
+            supportsPageContext: defaults.supportsPageContext,
+            appVersion: AppVersion.shared.versionAndBuildNumber
         )
     }
 

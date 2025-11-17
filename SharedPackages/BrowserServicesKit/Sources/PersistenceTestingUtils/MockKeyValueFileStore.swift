@@ -22,6 +22,7 @@ public class MockKeyValueFileStore: ThrowingKeyValueStoring {
 
     public var throwOnSet: Error?
     public var throwOnRead: Error?
+    public var throwOnRemove: Error?
     public var underlyingDict: [String: Any]
 
     public init(throwOnInit: Error? = nil,
@@ -50,6 +51,9 @@ public class MockKeyValueFileStore: ThrowingKeyValueStoring {
     }
 
     public func removeObject(forKey key: String) throws {
+        if let throwOnRemove {
+            throw throwOnRemove
+        }
         underlyingDict[key] = nil
     }
 }

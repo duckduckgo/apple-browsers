@@ -259,6 +259,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
     case standaloneMigration
+
+    /// https://app.asana.com/1/137249556945/project/1163321984198618/task/1203578778040829?focus=true
+    case newTabPageAutoconsentStats
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -282,6 +285,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportNewSafariFilePicker,
                 .fireDialog,
                 .fireDialogIndividualSitesLink,
+                .historyViewSitesSection,
                 .blurryAddressBarTahoeFix,
                 .pinnedTabsViewRewrite,
                 .vpnConnectionWidePixelMeasurement,
@@ -376,7 +380,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .vpnConnectionWidePixelMeasurement,
                 .showHideAIGeneratedImagesSection,
                 .standaloneMigration,
-                .blackFridayCampaign:
+                .blackFridayCampaign,
+                .newTabPageAutoconsentStats:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -569,6 +574,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.showHideAIGeneratedImagesSection))
         case .standaloneMigration:
             return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
+        case .newTabPageAutoconsentStats:
+            return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.autoconsentStats))
         }
     }
 }

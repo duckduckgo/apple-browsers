@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Combine
 
 public final class MockFeatureFlagger: FeatureFlagger {
 
@@ -42,6 +43,16 @@ public final class MockFeatureFlagger: FeatureFlagger {
 
     public var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
     public var localOverrides: FeatureFlagLocalOverriding?
+
+    private let updatesSubject = PassthroughSubject<Void, Never>()
+    public var updatesPublisher: AnyPublisher<Void, Never> {
+        updatesSubject.eraseToAnyPublisher()
+    }
+
+    /// Call this method in tests to trigger the updates publisher
+    public func triggerUpdate() {
+        updatesSubject.send()
+    }
 
     var mockActiveExperiments: [String: ExperimentData] = [:]
 

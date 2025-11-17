@@ -26,6 +26,8 @@ import Subscription
 import TrackerRadarKit
 import UserScript
 import WebKit
+import SERPSettings
+import Persistence
 
 final class UserScripts: UserScriptsProvider {
 
@@ -88,8 +90,7 @@ final class UserScripts: UserScriptsProvider {
         let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
-        serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProvider: SERPSettings(aiChatSettings: AIChatSettings()),
-                                                        featureFlagger: featureFlagger)
+        serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: AIChatSettings(), featureFlagger: featureFlagger))
 
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
         subscriptionUserScript = SubscriptionUserScript(

@@ -172,9 +172,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211394727337421?focus=true
     case newDeviceSyncPrompt
-    
-    /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1211245201777978?focus=true
-    case serpSettingsFollowUpQuestions
 
     /// https://app.asana.com/1/137249556945/task/1211354430557015?focus=true
     case subscriptionRestoreWidePixelMeasurement
@@ -187,6 +184,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1210594645229050/task/1211494295271901?focus=true
     case winBackOffer
+
+    /// https://app.asana.com/1/137249556945/project/1210594645229050/task/1211612114679665?focus=true
+    case blackFridayCampaign
 
     ///  https://app.asana.com/1/137249556945/project/72649045549333/task/1207055705580443?focus=true
     case syncCreditCards
@@ -211,6 +211,21 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
     case attributedMetrics
+    
+    /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709099?focus=true
+    case onboardingSearchExperience
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211388368219934?focus=true
+    case vpnConnectionWidePixelMeasurement
+
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211708648644692
+    case storeSerpSettings
+
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211579914062173?focus=true
+    case showHideAIGeneratedImagesSection
+
+    /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
+    case standaloneMigration
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -232,7 +247,9 @@ extension FeatureFlag: FeatureFlagDescribing {
              .embeddedSERPSettings,
              .syncCreditCards,
              .unifiedURLPredictor,
-             .forgetAllInSettings:
+             .forgetAllInSettings,
+             .vpnConnectionWidePixelMeasurement,
+             .showHideAIGeneratedImagesSection:
             true
         default:
             false
@@ -267,7 +284,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .paidAIChat,
              .canInterceptSyncSetupUrls,
              .exchangeKeysToSyncWithAnotherDevice,
-             .widgetReporting,
              .canPromoteImportPasswordsInPasswordManagement,
              .canPromoteImportPasswordsInBrowser,
              .setAsDefaultBrowserPiPVideoTutorial,
@@ -284,7 +300,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
              .newDeviceSyncPrompt,
-             .serpSettingsFollowUpQuestions,
              .subscriptionRestoreWidePixelMeasurement,
              .embeddedSERPSettings,
              .authV2WideEventEnabled,
@@ -294,9 +309,15 @@ extension FeatureFlag: FeatureFlagDescribing {
              .mobileCustomization,
              .vpnMenuItem,
              .forgetAllInSettings,
+             .onboardingSearchExperience,
              .duckAiDataClearing,
              .fullDuckAIMode,
-             .attributedMetrics:
+             .attributedMetrics,
+             .vpnConnectionWidePixelMeasurement,
+             .storeSerpSettings,
+             .showHideAIGeneratedImagesSection,
+             .standaloneMigration,
+             .blackFridayCampaign:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -339,7 +360,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                .failsafeExamplePlatformSpecificSubfeature,
                .experimentalAddressBar,
                .aiChatKeepSession,
-               .aiFeaturesSettingsUpdate:
+               .aiFeaturesSettingsUpdate,
+               .widgetReporting:
             return false
         }
     }
@@ -484,8 +506,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
         case .newDeviceSyncPrompt:
             return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
-        case .serpSettingsFollowUpQuestions:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.serpSettingsFollowUpQuestions))
         case .subscriptionRestoreWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         case .embeddedSERPSettings:
@@ -494,6 +514,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
         case .winBackOffer:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
+        case .blackFridayCampaign:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.blackFridayCampaign))
         case .syncCreditCards:
             return .remoteReleasable(.subfeature(SyncSubfeature.syncCreditCards))
         case .unifiedURLPredictor:
@@ -510,6 +532,16 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
+        case .vpnConnectionWidePixelMeasurement:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
+        case .onboardingSearchExperience:
+            return .internalOnly()
+        case .storeSerpSettings:
+            return .remoteReleasable(.feature(.storeSerpSettings))
+        case .showHideAIGeneratedImagesSection:
+            return .remoteReleasable(.feature(.showHideAIGeneratedImagesSection))
+        case .standaloneMigration:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
         }
     }
 }

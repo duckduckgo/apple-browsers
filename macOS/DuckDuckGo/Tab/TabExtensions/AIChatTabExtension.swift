@@ -175,11 +175,21 @@ final class AIChatTabExtension {
 extension AIChatTabExtension: NavigationResponder {
 
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
+        // Only handle sidebar, user-initiated, cross-document navigations; otherwise let them proceed normally
         guard isLoadedInSidebar,
               !navigationAction.navigationType.isSameDocumentNavigation,
-              navigationAction.isUserInitiated,
-              let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController
+              navigationAction.isUserInitiated
         else {
+            return .next
+        }
+
+        // Allow-list: also let certain hosts navigate inside the sidebar (e.g., duck.ai)
+        if navigationAction.url.isStandaloneDuckAIURL {
+            return .next
+        }
+
+        // For all other hosts, open in a new tab and cancel sidebar navigation
+        guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else {
             return .next
         }
 

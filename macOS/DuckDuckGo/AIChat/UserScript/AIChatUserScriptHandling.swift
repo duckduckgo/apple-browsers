@@ -54,9 +54,13 @@ protocol AIChatUserScriptHandling {
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
+    func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
+    func getMigrationDataByIndex(params: Any, message: UserScriptMessage) -> Encodable?
+    func getMigrationInfo(params: Any, message: UserScriptMessage) -> Encodable?
+    func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
 }
 
-struct AIChatUserScriptHandler: AIChatUserScriptHandling {
+final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let messageHandling: AIChatMessageHandling
     public let aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never>
     public let pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never>
@@ -72,6 +76,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring?
     private let statisticsLoader: StatisticsLoader?
+    private let migrationStore = AIChatMigrationStore()
 
     init(
         storage: AIChatPreferencesStorage,
@@ -243,6 +248,32 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
+    func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard let dict = params as? [String: Any] else {
+            return AIChatErrorResponse(reason: "invalid_params")
+        }
+        guard dict.keys.contains(AIChatMigrationParamKeys.serializedMigrationFile) else {
+            return AIChatErrorResponse(reason: "invalid_params")
+        }
+        let serialized = dict[AIChatMigrationParamKeys.serializedMigrationFile] as? String
+        return migrationStore.store(serialized)
+    }
+
+    func getMigrationDataByIndex(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard let dict = params as? [String: Any] else {
+            return migrationStore.item(at: nil)
+        }
+        let index = dict[AIChatMigrationParamKeys.index] as? Int
+        return migrationStore.item(at: index)
+    }
+
+    func getMigrationInfo(params: Any, message: UserScriptMessage) -> Encodable? {
+        return migrationStore.info()
+    }
+
+    func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
+        return migrationStore.clear()
+    }
 }
 
 extension NSNotification.Name {

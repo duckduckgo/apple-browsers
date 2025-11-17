@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Common
 import Foundation
 
 extension URL {

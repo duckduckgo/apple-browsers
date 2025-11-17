@@ -49,6 +49,7 @@ final class AIChatViewControllerManager {
     private let subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let downloadsDirectoryHandler: DownloadsDirectoryHandling
     private let userAgentManager: AIChatUserAgentProviding
     private let featureFlagger: FeatureFlagger
@@ -61,7 +62,8 @@ final class AIChatViewControllerManager {
 
     // MARK: - Initialization
 
-    init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+    init(privacyConfigurationManager: PrivacyConfigurationManaging,
+         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler(),
          userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
          experimentalAIChatManager: ExperimentalAIChatManager,
@@ -71,6 +73,7 @@ final class AIChatViewControllerManager {
          subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler()) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.downloadsDirectoryHandler = downloadsDirectoryHandler
         self.userAgentManager = AIChatUserAgentHandler(userAgentManager: userAgentManager)
         self.experimentalAIChatManager = experimentalAIChatManager
@@ -319,7 +322,8 @@ final class AIChatViewControllerManager {
     @MainActor
     private func createWebViewConfiguration() -> WKWebViewConfiguration {
         let configuration = WKWebViewConfiguration.persistent()
-        let userContentController = UserContentController()
+        let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
+                                                          privacyConfigurationManager: privacyConfigurationManager)
         userContentController.delegate = self
         configuration.userContentController = userContentController
         self.userContentController = userContentController

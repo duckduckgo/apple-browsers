@@ -41,6 +41,8 @@ final class ReportingService {
     let workQueue = DispatchQueue(label: "com.duckduckgo.ReportingService", qos: .background)
     
     private var cancellables = Set<AnyCancellable>()
+    let adAttributionPixelReporter: AdAttributionPixelReporter
+    let privacyConfigurationManager: PrivacyConfigurationManaging
 
     var syncService: SyncService? {
         didSet {
@@ -53,15 +55,17 @@ final class ReportingService {
          featureFlagging: FeatureFlagger,
          userDefaults: UserDefaults,
          pixelKit: PixelKit,
-         privacyConfig: PrivacyConfiguration,
-         appDependencies: DependencyProvider) {
+         appDependencies: DependencyProvider,
+         privacyConfigurationManager: PrivacyConfigurationManaging) {
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.featureFlagging = featureFlagging
         self.subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)
+        self.adAttributionPixelReporter = AdAttributionPixelReporter(privacyConfigurationManager: privacyConfigurationManager)
 
         // AttributedMetric initialisation
         let errorHandler = AttributedMetricErrorHandler(pixelKit: pixelKit)
         let attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: userDefaults, errorHandler: errorHandler)
-        let bucketsSettingsProvider = DefaultBucketsSettingsProvider(privacyConfig: privacyConfig)
+        let bucketsSettingsProvider = DefaultBucketsSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
         let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: appDependencies.subscriptionAuthV1toV2Bridge)
         let defaultBrowserProvider = AttributedMetricDefaultBrowserProvider()
         self.attributedMetricManager = AttributedMetricManager(pixelKit: pixelKit,
@@ -148,7 +152,6 @@ final class ReportingService {
 
     private func sendAppLaunchPostback(marketplaceAdPostbackManager: MarketplaceAdPostbackManaging) {
         // Attribution support
-        let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
         if privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .marketplaceAdPostback) {
             marketplaceAdPostbackManager.sendAppLaunchPostback()
         }
@@ -210,7 +213,7 @@ private extension ReportingService {
 
     func reportAdAttribution() {
         Task.detached(priority: .background) {
-            await AdAttributionPixelReporter.shared.reportAttributionIfNeeded()
+            await self.adAttributionPixelReporter.reportAttributionIfNeeded()
         }
     }
     

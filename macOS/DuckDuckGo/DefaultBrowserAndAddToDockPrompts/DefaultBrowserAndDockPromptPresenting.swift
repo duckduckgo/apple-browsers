@@ -44,8 +44,15 @@ protocol DefaultBrowserAndDockPromptPresenting {
 }
 
 enum DefaultBrowserAndDockPromptPresentationType: Equatable {
-    case banner
-    case popover
+    case active(ActiveUserPrompt)
+    case inactive
+}
+
+extension DefaultBrowserAndDockPromptPresentationType {
+    enum ActiveUserPrompt {
+        case banner
+        case popover
+    }
 }
 
 final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenting {
@@ -74,15 +81,25 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         guard let type = coordinator.getPromptType() else { return }
 
         switch type {
-        case .banner:
+        case .active(.banner):
             guard let banner = getBanner() else { return }
-            // Ensure that only one prompt is displayed at a time. Dismiss the popover if the banner is about to be shown to the user.
-            popover?.close()
+            // Ensure that only one prompt is displayed at a time by dismissing any visible prompt first.
+            dismissAllPrompts()
             bannerViewHandler(banner)
-        case .popover:
+        case .active(.popover):
             guard let view = popoverAnchorProvider() else { return }
-
+            // Ensure that only one prompt is displayed at a time by dismissing any visible prompt first.
+            dismissAllPrompts()
             showPopover(below: view)
+        case .inactive:
+            // https://app.asana.com/1/137249556945/project/1209825025475019/task/1210864105873351?focus=true
+            // Guard that the inactive user prompt is available to be shown.
+
+            // Ensure that only one prompt is displayed at a time by dismissing any visible prompt first.
+            dismissAllPrompts()
+
+            // https://app.asana.com/1/137249556945/project/1209825025475019/task/1210864105873351?focus=true
+            // Show new inactive user prompt.
         }
 
         // Keep track of what type of prompt is shown.
@@ -106,10 +123,8 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
                 if let currentShownPrompt {
                     self.coordinator.dismissAction(.statusUpdate(prompt: currentShownPrompt))
                 }
-                self.clearStatusUpdateData()
-                // Dismiss the prompt
-                popover?.close()
-                bannerDismissedSubject.send()
+                clearStatusUpdateData()
+                dismissAllPrompts()
             }
 
         statusUpdateNotifier.startNotifyingStatus(interval: 1.0)
@@ -139,19 +154,19 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             primaryAction: .init(
                 title: content.primaryButtonTitle,
                 action: {
-                    self.coordinator.confirmAction(for: .banner)
+                    self.coordinator.confirmAction(for: .active(.banner))
                     self.dismissBanner()
                 }
             ),
             secondaryAction: .init(
                 title: content.secondaryButtonTitle,
                 action: {
-                    self.coordinator.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: true))
+                    self.coordinator.dismissAction(.userInput(prompt: .active(.banner), shouldHidePermanently: true))
                     self.dismissBanner()
                 }
             ),
             closeAction: {
-                self.coordinator.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: false))
+                self.coordinator.dismissAction(.userInput(prompt: .active(.banner), shouldHidePermanently: false))
                 self.dismissBanner()
             })
     }
@@ -165,13 +180,13 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             buttonText: content.primaryButtonTitle,
             buttonAction: {
                 self.clearStatusUpdateData()
-                self.coordinator.confirmAction(for: .popover)
+                self.coordinator.confirmAction(for: .active(.popover))
                 self.popover?.close()
             },
             secondaryButtonText: content.secondaryButtonTitle,
             secondaryButtonAction: {
                 self.clearStatusUpdateData()
-                self.coordinator.dismissAction(.userInput(prompt: .popover, shouldHidePermanently: false))
+                self.coordinator.dismissAction(.userInput(prompt: .active(.popover), shouldHidePermanently: false))
                 self.popover?.close()
             })
 
@@ -183,6 +198,13 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
     private func dismissBanner() {
         self.clearStatusUpdateData()
         self.bannerDismissedSubject.send()
+    }
+
+    private func dismissAllPrompts() {
+        popover?.close()
+        bannerDismissedSubject.send()
+        // https://app.asana.com/1/137249556945/project/1209825025475019/task/1210864105873351?focus=true
+        // Dismiss new inactive user prompt.
     }
 
     private func clearStatusUpdateData() {

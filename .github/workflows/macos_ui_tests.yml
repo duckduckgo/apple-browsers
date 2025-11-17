@@ -37,6 +37,9 @@ on:
       - 'BrowserServicesKit/**'
       - 'macOS/**'
   pull_request:
+    # opened, synchronize, reopened are the default triggering events for a pull request
+    # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - '.github/**'
       - '.xcode-version'
@@ -50,8 +53,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  should-run-checks:
+    name: Determine if checks should run
+    uses: ./.github/workflows/should_run_pr_checks.yml
+
   create-notarized-app:
     name: Build Notarized Review app
+
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
+
     uses: ./.github/workflows/macos_build_notarized.yml
     with:
       release-type: review
@@ -64,6 +75,10 @@ jobs:
   setup-tests:
     name: Set up tests list
     runs-on: macos-15
+
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
+
     outputs:
       runner: ${{ steps.define-runners.outputs.runner }}
       include: ${{ steps.define-runners.outputs.include }}
@@ -114,10 +129,32 @@ jobs:
             echo "Running specified test class(es): $single_test_class"
             test=$(echo $single_test_class | jq -cR 'split(" ")')
           else
-            # Find all test files in the UITests directory
-            # This assumes that all test files are named *Tests.swift and are put directly in the UITests directory
-            test_names="$(find UITests -type f -name *Tests.swift | xargs basename | sed 's/\.swift//')"
-            test=$(echo $test_names | jq -cR 'split(" ")')
+            # Find all test classes that inherit from UITestCase
+            # Fail if any test classes inherit directly from XCTestCase
+
+            # Check for invalid XCTestCase usage (classes inheriting from XCTestCase but not UITestCase)
+            xctest_classes=$(grep -r "class.*:.*XCTestCase" UITests --include="*.swift" | grep -v "class UITestCase:" || true)
+            if [[ -n "$xctest_classes" ]]; then
+              echo "❌ Error: Found test classes inheriting directly from XCTestCase instead of UITestCase:"
+              echo "$xctest_classes"
+              echo ""
+              echo "All test classes should inherit from UITestCase, not XCTestCase."
+              exit 1
+            fi
+
+            # Extract test class names that inherit from UITestCase
+            test_names=$(grep -rh "class.*:.*UITestCase" UITests --include="*.swift" \
+              | sed -E 's/^[^c]*class[[:space:]]+([A-Za-z0-9_]+)[[:space:]]*:.*/\1/' \
+              | sort -u \
+              | tr '\n' ' ')
+
+            if [[ -z "$test_names" ]]; then
+              echo "❌ Error: No UITestCase-derived test classes found"
+              exit 1
+            fi
+
+            test=$(echo $test_names | jq -cR 'split(" ") | map(select(length > 0))')
+            echo "Found test classes: $test_names"
           fi
 
           echo "test=${test}" >> $GITHUB_OUTPUT
@@ -310,8 +347,8 @@ jobs:
 
   test-report:
     name: Report test results
-    if: always()
-    needs: [setup-tests, ui-tests]
+    if: always() && needs.should-run-checks.outputs.should_run == 'true'
+    needs: [should-run-checks, setup-tests, ui-tests]
     runs-on: ubuntu-latest
 
     steps:

@@ -120,11 +120,9 @@ public final class KeychainManager: KeychainManaging {
     /// Cancels notification subscriptions and warns about any unprocessed backlog items.
     deinit {
         cancellables.removeAll()
-        Logger.keychainManager.debug("Cancelled keychain availability notification subscriptions")
-
         if !writingBacklog.isEmpty {
             self.pixelHandler.handle(pixel: .deallocatedWithBacklog)
-            Logger.keychainManager.warning("Deallocating with \(self.writingBacklog.count) unprocessed backlog items")
+            Logger.keychainManager.error("Deallocating with \(self.writingBacklog.count, privacy: .public) unprocessed backlog items")
         }
     }
 
@@ -137,7 +135,7 @@ public final class KeychainManager: KeychainManaging {
                 // Trigger backlog processing for that contexts that can't rely on notifications for detecting keychain availability
                 self.processWritingBacklog()
             } else if let dataFromBacklog = self.writingBacklog[key] {
-                Logger.keychainManager.debug("Data for key \(key) retrieved from writing backlog")
+                Logger.keychainManager.log("Data for key \(key, privacy: .public) retrieved from writing backlog")
                 return dataFromBacklog
             }
 
@@ -165,7 +163,7 @@ public final class KeychainManager: KeychainManaging {
     }
 
     public func store(data: Data, forKey key: String) throws {
-        _ = try accessQueue.sync {
+        return try accessQueue.sync {
             try internalStore(data: data, forKey: key)
         }
     }
@@ -181,11 +179,11 @@ public final class KeychainManager: KeychainManaging {
 
             switch status {
             case errSecSuccess:
-                Logger.keychainManager.debug("Successfully deleted keychain item for \(key)")
+                Logger.keychainManager.log("Successfully deleted keychain item for \(key, privacy: .public)")
             case errSecItemNotFound:
-                Logger.keychainManager.debug("Keychain item not found for deletion: \(key)")
+                Logger.keychainManager.log("Keychain item not found for deletion: \(key, privacy: .public)")
             default:
-                Logger.keychainManager.error("Failed to delete keychain item: \(status.humanReadableDescription)")
+                Logger.keychainManager.error("Failed to delete keychain item: \(status.humanReadableDescription, privacy: .public)")
                 throw AccountKeychainAccessError.keychainDeleteFailure(status)
             }
         }
@@ -225,17 +223,17 @@ public final class KeychainManager: KeychainManaging {
         switch status {
         case errSecSuccess:
             removeFromWritingBacklog(forKey: key)
-            Logger.keychainManager.debug("Successfully added keychain item for \(key)")
+            Logger.keychainManager.log("Successfully added keychain item for \(key, privacy: .public)")
         case errSecDuplicateItem:
-            Logger.keychainManager.debug("Keychain item exists, updating for \(key)")
+            Logger.keychainManager.log("Keychain item exists, updating for \(key, privacy: .public)")
             try updateData(data, forKey: key)
         case errSecNotAvailable,
         errSecInteractionNotAllowed:
-            Logger.keychainManager.error("Failed to add keychain item: \(status.humanReadableDescription), adding data to writing queue")
+            Logger.keychainManager.error("Failed to add keychain item: \(status.humanReadableDescription, privacy: .public), adding data to writing queue")
             addToWritingBacklog(data, forKey: key)
         default:
             removeFromWritingBacklog(forKey: key)
-            Logger.keychainManager.error("Failed to add keychain item: \(status.humanReadableDescription)")
+            Logger.keychainManager.error("Failed to add keychain item: \(status.humanReadableDescription, privacy: .public)")
             throw AccountKeychainAccessError.keychainSaveFailure(status)
         }
         return status
@@ -261,73 +259,67 @@ public final class KeychainManager: KeychainManaging {
         switch status {
         case errSecSuccess:
             removeFromWritingBacklog(forKey: key)
-            Logger.keychainManager.debug("Successfully updated keychain item for \(key)")
+            Logger.keychainManager.log("Successfully updated keychain item for \(key, privacy: .public)")
         case errSecNotAvailable,
         errSecInteractionNotAllowed:
-            Logger.keychainManager.error("Failed to update keychain item: \(status.humanReadableDescription), adding data to writing queue")
+            Logger.keychainManager.error("Failed to update keychain item: \(status.humanReadableDescription, privacy: .public), adding data to writing queue")
             addToWritingBacklog(data, forKey: key)
         default:
             removeFromWritingBacklog(forKey: key)
-            Logger.keychainManager.error("SecItemUpdate failed with status: \(status.humanReadableDescription) for field: \(key)")
+            Logger.keychainManager.error("SecItemUpdate failed with status: \(status.humanReadableDescription, privacy: .public) for field: \(key)")
             throw AccountKeychainAccessError.keychainSaveFailure(status)
         }
     }
 
     // MARK: - Notification Handling
 
-    /// Sets up platform-specific notifications to detect when the keychain becomes available.
-    /// 
+    /// Sets up platform-specific notifications to detect when the keychain becomes available, when the app goes in background or is terminated.
     /// This enables automatic retry of operations that were queued when the keychain was unavailable.
     private func setupKeychainAvailabilityNotifications() {
-        #if canImport(UIKit)
-        // On iOS, listen for app becoming active and protected data becoming available
-        NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
-            .receive(on: accessQueue)
-            .sink { [weak self] _ in
-                self?.processWritingBacklog()
-            }
-            .store(in: &cancellables)
+        Logger.keychainManager.log("Set up keychain availability and recovery notifications")
 
-        NotificationCenter.default.publisher(for: UIApplication.protectedDataDidBecomeAvailableNotification)
-            .receive(on: accessQueue)
-            .sink { [weak self] _ in
-                self?.processWritingBacklog()
-            }
-            .store(in: &cancellables)
-
-        Logger.keychainManager.debug("Set up iOS keychain availability notifications")
-
-        #elseif canImport(AppKit)
-        // On macOS, listen for app becoming active and workspace session becoming active
-        NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
-            .receive(on: accessQueue)
-            .sink { [weak self] _ in
-                self?.processWritingBacklog()
-            }
-            .store(in: &cancellables)
-
-        NotificationCenter.default.publisher(for: NSWorkspace.sessionDidBecomeActiveNotification)
-            .receive(on: accessQueue)
-            .sink { [weak self] _ in
-                self?.processWritingBacklog()
-            }
-            .store(in: &cancellables)
-
-        Logger.keychainManager.debug("Set up macOS keychain availability notifications")
-
-        #else
-        Logger.keychainManager.info("Keychain notifications not supported on this platform")
-        #endif
+#if canImport(UIKit)
+        Publishers.MergeMany(
+            // Foreground notifications
+            NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification),
+            NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification),
+            NotificationCenter.default.publisher(for: UIApplication.protectedDataDidBecomeAvailableNotification),
+            // Background notification
+            NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification),
+            // Termination notification
+            NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)
+        )
+        .receive(on: accessQueue)
+        .sink { [weak self] _ in
+            self?.processWritingBacklog()
+        }
+        .store(in: &cancellables)
+#elseif canImport(AppKit)
+        Publishers.MergeMany(
+            // Foreground notifications
+            NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification),
+            NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.sessionDidBecomeActiveNotification),
+            // Background notification
+            NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification),
+            // Termination notification
+            NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)
+        )
+        .receive(on: accessQueue)
+        .sink { [weak self] _ in
+            self?.processWritingBacklog()
+        }
+        .store(in: &cancellables)
+#else
+        Logger.keychainManager.log("Keychain notifications not supported on this platform")
+#endif
     }
 
     /// Processes all items in the writing backlog by attempting to store them in the keychain.
-    /// 
-    /// This method is called when keychain availability notifications are received.
-    /// It provides detailed logging of success and failure counts.
+    /// This method is called when keychain availability notifications or, as best effort, when app foreground and background notifications are received.
     private func processWritingBacklog() {
         guard !writingBacklog.isEmpty else { return }
 
-        Logger.keychainManager.debug("Processing writing backlog with \(self.writingBacklog.count) items")
+        Logger.keychainManager.log("Processing writing backlog with \(self.writingBacklog.count, privacy: .public) items")
 
         let backlogCopy = writingBacklog
         var processedSuccessfully = 0
@@ -337,21 +329,20 @@ public final class KeychainManager: KeychainManaging {
             do {
                 try internalStore(data: data, forKey: key)
                 processedSuccessfully += 1
-                Logger.keychainManager.debug("Successfully processed backlog item for key: \(key)")
+                Logger.keychainManager.log("Successfully processed backlog item for key: \(key, privacy: .public)")
             } catch {
                 failed += 1
-                // Don't log individual failures at error level to avoid spam
-                Logger.keychainManager.debug("Failed to process backlog item for key \(key): \(error)")
+                Logger.keychainManager.error("Failed to process backlog item for key \(key, privacy: .public): \(error, privacy: .public)")
             }
         }
 
         if processedSuccessfully > 0 {
-            Logger.keychainManager.info("Successfully processed \(processedSuccessfully) backlog items")
+            Logger.keychainManager.log("Successfully processed \(processedSuccessfully, privacy: .public) backlog items")
             self.pixelHandler.handle(pixel: .dataWroteFromBacklog)
         }
 
         if failed > 0 {
-            Logger.keychainManager.error("Failed to process \(failed) backlog items")
+            Logger.keychainManager.error("Failed to process \(failed, privacy: .public) backlog items")
             self.pixelHandler.handle(pixel: .failedToWriteDataFromBacklog)
         }
     }

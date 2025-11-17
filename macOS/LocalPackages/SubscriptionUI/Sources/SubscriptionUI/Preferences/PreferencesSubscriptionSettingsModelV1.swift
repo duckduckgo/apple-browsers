@@ -35,9 +35,11 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     var expiredSubscriptionPurchaseButtonTitle: String {
         if winBackOfferVisibilityManager.isOfferAvailable {
-            return UserText.winBackCampaignLoggedInPreferencesCTA
+            UserText.winBackCampaignLoggedInPreferencesCTA
+        } else if blackFridayCampaignProvider.isCampaignEnabled {
+            UserText.blackFridayCampaignPreferencesCTA(discountPercent: blackFridayCampaignProvider.discountPercent)
         } else {
-            return UserText.viewPlansExpiredButtonTitle
+            UserText.viewPlansExpiredButtonTitle
         }
     }
 
@@ -51,6 +53,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
     private let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
+    private let blackFridayCampaignProvider: BlackFridayCampaignProviding
 
     private var subscriptionChangeObserver: Any?
 
@@ -61,10 +64,12 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
     public init(userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
                 subscriptionManager: SubscriptionManager,
                 winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
-                subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>) {
+                subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>,
+                blackFridayCampaignProvider: BlackFridayCampaignProviding) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+        self.blackFridayCampaignProvider = blackFridayCampaignProvider
 
         Task {
             await self.updateSubscription(cachePolicy: .returnCacheDataElseLoad)

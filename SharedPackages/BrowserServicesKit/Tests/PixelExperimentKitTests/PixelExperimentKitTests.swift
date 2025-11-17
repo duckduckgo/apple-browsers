@@ -606,6 +606,8 @@ class MockExperimentActionPixelStore: ExperimentActionPixelStore {
 }
 
 class MockFeatureFlagger: FeatureFlagger {
+    var updatesPublisher: AnyPublisher<Void, Never> { PassthroughSubject().eraseToAnyPublisher() }
+
     func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
         nil
     }

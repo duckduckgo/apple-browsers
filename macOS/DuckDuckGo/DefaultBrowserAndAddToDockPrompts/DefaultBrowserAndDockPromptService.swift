@@ -53,6 +53,7 @@ final class DefaultBrowserAndDockPromptService {
         let defaultBrowserAndDockPromptDecider = DefaultBrowserAndDockPromptTypeDecider(
             featureFlagger: self.featureFlagger,
             store: store,
+            userActivityProvider: userActivityManager,
             installDateProvider: { LocalStatisticsStore().installDate },
             dateProvider: defaultBrowserAndDockPromptDateProvider
         )

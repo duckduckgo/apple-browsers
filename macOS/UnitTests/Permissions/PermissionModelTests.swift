@@ -20,6 +20,8 @@ import AVFoundation
 import Combine
 import CommonObjCExtensions
 import Foundation
+import OSLog
+import SharedTestUtilities
 import WebKit
 import XCTest
 
@@ -31,6 +33,7 @@ final class PermissionModelTests: XCTestCase {
     var permissionManagerMock: PermissionManagerMock!
     var geolocationServiceMock: GeolocationServiceMock!
     var geolocationProviderMock: GeolocationProviderMock!
+    static var processPool: WKProcessPool!
     var webView: WebViewMock!
     var model: PermissionModel!
     var pixelKit: PixelKit! = PixelKit(dryRun: true,
@@ -48,13 +51,17 @@ final class PermissionModelTests: XCTestCase {
         return WKFrameInfoMock(webView: webView, securityOrigin: securityOrigin, request: request, isMainFrame: true)
     }
 
+    override class func setUp() {
+        Self.processPool = WKProcessPool()
+    }
+
     override func setUp() {
         PixelKit.setSharedForTesting(pixelKit: pixelKit)
 
         permissionManagerMock = PermissionManagerMock()
         geolocationServiceMock = GeolocationServiceMock()
 
-        let configuration = WKWebViewConfiguration(processPool: WKProcessPool())
+        let configuration = WKWebViewConfiguration(processPool: Self.processPool)
         webView = WebViewMock(frame: NSRect(x: 0, y: 0, width: 50, height: 50), configuration: configuration)
         webView.uiDelegate = self
 
@@ -75,6 +82,10 @@ final class PermissionModelTests: XCTestCase {
         pixelKit = nil
         geolocationProviderMock = nil
         model = nil
+    }
+
+    override class func tearDown() {
+        Self.processPool = nil
     }
 
     func testWhenCameraIsActivatedThenCameraPermissionChangesToActive() {

@@ -16,11 +16,14 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+import BrowserServicesKit
 import Combine
 import Common
 import Foundation
 import History
 import HistoryView
+import SharedTestUtilities
 import UniformTypeIdentifiers
 import XCTest
 
@@ -86,9 +89,13 @@ final class DownloadListCoordinatorTests: XCTestCase {
     }
 
     func setUpCoordinator() {
-        coordinator = DownloadListCoordinator(store: store, downloadManager: downloadManager, clearItemsOlderThan: Date.daysAgo(2)) {
-            return self.webView
-        }
+        coordinator = DownloadListCoordinator(
+            store: store,
+            downloadManager: downloadManager,
+            windowControllersManager: Application.appDelegate.windowControllersManager,
+            clearItemsOlderThan: Date.daysAgo(2)) {
+                return self.webView
+            }
     }
 
     @MainActor

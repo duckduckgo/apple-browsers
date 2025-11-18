@@ -878,6 +878,66 @@
             }
         ]
     },
+    "m_ios_dbp_service_generate-email_http-error": {
+        "description": "Fired when the backend email generation request returns a non-2xx status code",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "environment",
+                "description": "DBP backend environment",
+                "type": "string",
+                "enum": ["production", "staging"]
+            },
+            {
+                "key": "http_code",
+                "description": "HTTP status code from backend email generation",
+                "type": "string"
+            }
+        ]
+    },
+    "m_ios_dbp_service_empty-auth-token": {
+        "description": "Fired when a backend DBP service call is attempted without an auth token",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "environment",
+                "description": "DBP backend environment",
+                "type": "string",
+                "enum": ["production", "staging"]
+            },
+            {
+                "key": "backend_service_callsite",
+                "description": "Service call site that attempted to use the auth token",
+                "type": "string",
+                "enum": [
+                    "extractEmailLink",
+                    "getEmail",
+                    "submitCaptchaInformationRequest",
+                    "submitCaptchaToBeResolvedRequest",
+                    "fetchEmailData",
+                    "deleteEmailData"
+                ]
+            },
+            {
+                "key": "data_broker",
+                "description": "The URL of the data broker that this action was operating on (unknown when not available)",
+                "type": "string"
+            },
+            {
+                "key": "broker_version",
+                "description": "The version of the broker JSON file (unknown when not available)",
+                "type": "string"
+            }
+        ]
+    },
     "m_ios_dbp_service_email-confirmation-link_client-received": {
         "description": "Fired when the client persists a confirmation link provided by the backend",
         "owners": ["quanganhdo"],

@@ -20,9 +20,6 @@ import Foundation
 import BrowserServicesKit
 
 public enum FeatureFlag: String, CaseIterable {
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473003324
-    case debugMenu
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715760000
     case sslCertificatesBypass
 
@@ -413,8 +410,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .blackFridayCampaign,
                 .newTabPageAutoconsentStats:
             return true
-        case .debugMenu,
-                .sslCertificatesBypass,
+        case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
                 .freemiumDBP,
                 .contextualOnboarding,
@@ -430,8 +426,6 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var source: FeatureFlagSource {
         switch self {
-        case .debugMenu:
-            return .internalOnly()
         case .appendAtbToSerpQueries:
             return .internalOnly()
         case .sslCertificatesBypass:

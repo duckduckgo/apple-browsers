@@ -68,6 +68,13 @@ public class Tab: NSObject, NSCoding {
     var link: Link? {
         didSet {
             notifyObservers()
+            
+            guard let link else { return }
+            if link.url.isDuckAIURL {
+                type = .aiChat
+            } else {
+                type = .web
+            }
         }
     }
     
@@ -82,7 +89,7 @@ public class Tab: NSObject, NSCoding {
     
     /// Returns true if the tab is a `web` tab with a link
     var isWebTabWithLink: Bool {
-        guard let link else { return false }
+        guard link != nil else { return false }
         return isWebTab
     }
     

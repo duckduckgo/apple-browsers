@@ -98,6 +98,13 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
                 guard let window = inactiveUserModalWindowProvider() else { return }
                 showInactiveUserModal(over: window)
             }
+
+            // Keep track of what type of prompt is shown.
+            // If the user modify the SAD/ATT state outside of the banner we need to know the type of prompt it was shown to save its visualisation date.
+            currentShownPrompt = type
+            // Start subscribing to status updates for SAD/ATT.
+            // It's possible that the user may set SAD/ATT outside the prompt (e.g. from Settings). If that happens we want to dismiss the prompt.
+            subscribeToStatusUpdates()
         }
 
         // If we are switching prompt types, ensure the previous prompt is dismissed before showing the new one.
@@ -106,13 +113,6 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         } else {
             showPrompt()
         }
-
-        // Keep track of what type of prompt is shown.
-        // If the user modify the SAD/ATT state outside of the banner we need to know the type of prompt it was shown to save its visualisation date.
-        currentShownPrompt = type
-        // Start subscribing to status updates for SAD/ATT.
-        // It's possible that the user may set SAD/ATT outside the prompt (e.g. from Settings). If that happens we want to dismiss the prompt.
-        subscribeToStatusUpdates()
     }
 
     // MARK: - Private

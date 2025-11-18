@@ -25,6 +25,9 @@ protocol PathMonitoring: AnyObject {
     func cancel()
 }
 
+/// NWPathMonitor emits `NWPath` objects upon path changes, but we cannot instantiate `NWPath` ourselves directly due to no public initializer.
+/// Since the VPN only cares about the path status, the `PathMonitoring` protocol emits those directly and the `PathMonitor` class serves as
+/// a bridge between the two.
 final class PathMonitor: PathMonitoring {
 
     private let monitor: NWPathMonitor

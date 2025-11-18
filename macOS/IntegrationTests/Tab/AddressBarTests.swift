@@ -482,7 +482,7 @@ class AddressBarTests: XCTestCase {
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
 
-        try await tab.webViewDidFinishNavigationPublisher.timeout(110).first().promise().value
+        try await tab.webViewDidFinishNavigationPublisher.timeout(10).first().promise().value
         XCTAssertTrue(isAddressBarFirstResponder)
 
         let serpUrl = URL.makeSearchUrl(from: "cats")!
@@ -741,7 +741,7 @@ class AddressBarTests: XCTestCase {
 
         _=try await tab.webViewDidFinishNavigationPublisher.timeout(10).first().promise().value
 
-        let didFinishNavigation = tab.webViewDidFinishNavigationPublisher.timeout(510).first().promise()
+        let didFinishNavigation = tab.webViewDidFinishNavigationPublisher.timeout(10).first().promise()
         type(URL.duckDuckGo.absoluteString + "\r")
 
         try await Task.sleep(interval: 0.1)
@@ -884,7 +884,7 @@ class AddressBarTests: XCTestCase {
         // when activaing a Pinned Tab in another window its Web View should become the first responder
         viewModel2.select(at: .pinned(0))
 
-        await fulfillment(of: [firstResponderChangeExpectation], timeout: 15)
+        await fulfillment(of: [firstResponderChangeExpectation], timeout: 10)
         XCTAssertEqual(window2.firstResponder, tab.webView)
         XCTAssertEqual(window.firstResponder, window)
 
@@ -893,7 +893,7 @@ class AddressBarTests: XCTestCase {
 
         window.makeKeyAndOrderFront(nil)
 
-        await fulfillment(of: [firstResponderChangeExpectation2], timeout: 15)
+        await fulfillment(of: [firstResponderChangeExpectation2], timeout: 10)
         XCTAssertEqual(window.firstResponder, tab.webView)
         XCTAssertEqual(window2.firstResponder, window2)
     }
@@ -940,7 +940,7 @@ class AddressBarTests: XCTestCase {
             evaluatedWith: nil
         )
 
-        await fulfillment(of: [becomesOwnFirstResponder], timeout: 5.0)
+        await fulfillment(of: [becomesOwnFirstResponder], timeout: 5)
         XCTAssertTrue(isAddressBarFirstResponder)
     }
 

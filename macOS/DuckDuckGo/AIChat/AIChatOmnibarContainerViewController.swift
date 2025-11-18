@@ -173,7 +173,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         var frame = superview.convert(winFrame, from: nil)
         
         /// Do not overlap shadow of main address bar
-        frame.size.height -= 10
+        frame.size.height -= 11
 
         shadowView.frame = frame
     }

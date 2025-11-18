@@ -148,7 +148,7 @@ final class MainView: NSView {
 
         aiChatOmnibarContainerWidthConstraint = aiChatOmnibarContainerView.widthAnchor.constraint(lessThanOrEqualToConstant: 832)
         NSLayoutConstraint.activate([
-            aiChatOmnibarContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor, constant: -15),
+            aiChatOmnibarContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor, constant: -16),
             aiChatOmnibarContainerView.centerXAnchor.constraint(equalTo: navigationBarContainerView.centerXAnchor),
             aiChatOmnibarContainerView.heightAnchor.constraint(equalToConstant: Constants.aiChatOmnibarContainerHeight),
             aiChatOmnibarContainerWidthConstraint,

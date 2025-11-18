@@ -167,11 +167,11 @@ public final class CustomToggleControl: NSControl {
         context.restoreGState()
 
         if let leftImage = leftImage {
-            drawImage(leftImage, in: leftRect, alpha: isRightSelected ? 0.5 : 1.0)
+            drawImage(leftImage, in: leftRect, alpha: 1.0)
         }
 
         if let rightImage = rightImage {
-            drawImage(rightImage, in: rightRect, alpha: isRightSelected ? 1.0 : 0.5)
+            drawImage(rightImage, in: rightRect, alpha: 1.0)
         }
 
         if isFocused {

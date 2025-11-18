@@ -28,6 +28,7 @@ import PixelKit
 import AppKitExtensions
 import AIChat
 import UIComponents
+import DesignResourcesKitIcons
 
 protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 
@@ -1628,13 +1629,8 @@ final class AddressBarButtonsViewController: NSViewController {
     private func setupSearchModeToggleControl() {
         let toggleControl = CustomToggleControl(frame: NSRect(x: 0, y: 0, width: 72, height: 28))
         toggleControl.translatesAutoresizingMaskIntoConstraints = false
-
-        if let searchImage = NSImage(systemSymbolName: "magnifyingglass", accessibilityDescription: nil) {
-            toggleControl.leftImage = searchImage
-        }
-        if let aiImage = NSImage(systemSymbolName: "wand.and.stars", accessibilityDescription: nil) {
-            toggleControl.rightImage = aiImage
-        }
+        toggleControl.leftImage = DesignSystemImages.Glyphs.Size16.findSearch
+        toggleControl.rightImage = DesignSystemImages.Glyphs.Size16.aiChat
 
         applyThemeToToggleControl(toggleControl)
 
@@ -1668,11 +1664,11 @@ final class AddressBarButtonsViewController: NSViewController {
         toggleControl.backgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         toggleControl.selectedBackgroundColor = .systemRed
         toggleControl.focusedBackgroundColor = .systemRed
-        toggleControl.selectionColor = NSColor(designSystemColor: .surfaceTertiary)
+        toggleControl.selectionColor = NSColor(designSystemColor: .controlsRaisedFillPrimary)
         toggleControl.focusBorderColor = .systemBlue
         toggleControl.outerBorderColor = .systemGreen
         toggleControl.outerBorderWidth = 2.0
-        toggleControl.selectionInnerBorderColor = NSColor(designSystemColor: .containerBorderTertiary)
+        toggleControl.selectionInnerBorderColor = NSColor(designSystemColor: .shadowSecondary)
     }
 
     private func setupAnimationViews() {

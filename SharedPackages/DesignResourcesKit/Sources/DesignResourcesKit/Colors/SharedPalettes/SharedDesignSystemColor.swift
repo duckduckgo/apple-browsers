@@ -83,6 +83,7 @@ public enum SharedDesignSystemColor {
     case controlsFillSecondary
     case controlsFillTertiary
     case controlsRaisedBackdrop
+    case controlsRaisedFillPrimary
 
     // Destructive
     case destructiveContentPrimary

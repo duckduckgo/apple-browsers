@@ -57,6 +57,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     override func viewDidLayout() {
         super.viewDidLayout()
         applyTopClipMask()
+        layoutShadowView()
     }
     
     override func viewWillAppear() {
@@ -98,12 +99,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         innerBorderView.borderWidth = 1
         backgroundView.addSubview(innerBorderView)
 
-        shadowView.translatesAutoresizingMaskIntoConstraints = false
         shadowView.shadowColor = .suggestionsShadow
         shadowView.shadowOpacity = 1
-        shadowView.shadowOffset = CGSize(width: 0, height: -4)
-        shadowView.shadowSides = [.left, .top, .right]
-        view.addSubview(shadowView, positioned: .below, relativeTo: backgroundView)
+        shadowView.shadowOffset = CGSize(width: 0, height: 0)
+        shadowView.shadowRadius = 20
+        shadowView.shadowSides = [.left, .right, .bottom]
 
         containerView.translatesAutoresizingMaskIntoConstraints = false
         backgroundView.addSubview(containerView)
@@ -134,11 +134,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             innerBorderView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -1),
             innerBorderView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -1),
 
-            shadowView.topAnchor.constraint(equalTo: backgroundView.topAnchor),
-            shadowView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
-            shadowView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
-            shadowView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
-
             containerView.topAnchor.constraint(equalTo: backgroundView.topAnchor),
             containerView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
             containerView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
@@ -156,11 +151,31 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Starts event monitoring. Call this when the view controller becomes visible.
     func startEventMonitoring() {
         backgroundView.startListening()
+        addShadowToWindow()
     }
 
     /// Stops event monitoring. Call this when the view controller is about to be dismissed.
     func cleanup() {
         backgroundView.stopListening()
+        shadowView.removeFromSuperview()
+    }
+    
+    private func addShadowToWindow() {
+        guard shadowView.superview == nil else { return }
+        view.window?.contentView?.addSubview(shadowView)
+        layoutShadowView()
+    }
+    
+    private func layoutShadowView() {
+        guard let superview = shadowView.superview else { return }
+        
+        let winFrame = view.convert(view.bounds, to: nil)
+        var frame = superview.convert(winFrame, from: nil)
+        
+        /// Do not overlap shadow of main address bar
+        frame.size.height -= 10
+
+        shadowView.frame = frame
     }
 
     @objc private func submitButtonClicked() {

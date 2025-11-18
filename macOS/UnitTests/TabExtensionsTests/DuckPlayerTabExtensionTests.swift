@@ -74,15 +74,16 @@ final class DuckPlayerTabExtensionTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        // Setup DuckPlayer with enabled mode
-        duckPlayer = DuckPlayer.mock(withMode: .enabled)
-
         // Setup preferences
-        let preferencesPersistor = DuckPlayerPreferencesPersistorMock(
-            duckPlayerMode: .enabled,
-            duckPlayerOpenInNewTab: false
+        let preferences = DuckPlayerPreferences(
+            persistor: DuckPlayerPreferencesPersistorMock(
+                duckPlayerMode: .enabled,
+                duckPlayerOpenInNewTab: false
+            )
         )
-        preferences = DuckPlayerPreferences(persistor: preferencesPersistor)
+
+        // Setup DuckPlayer with enabled mode
+        duckPlayer = DuckPlayer.mock(withPreferences: preferences)
 
         // Setup webView
         webView = WKWebView()
@@ -97,7 +98,6 @@ final class DuckPlayerTabExtensionTests: XCTestCase {
             isBurner: false,
             scriptsPublisher: scriptsPublisher.eraseToAnyPublisher(),
             webViewPublisher: webViewPublisher.eraseToAnyPublisher(),
-            preferences: preferences,
             tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
             onboardingDecider: onboardingDecider
         )
@@ -118,7 +118,7 @@ final class DuckPlayerTabExtensionTests: XCTestCase {
 
     func testNavigatingWhenNavigatingFromDuckPlayerToSameVideo_DisablesDuckPlayerForNextVideo() async {
         // Setup
-        preferences.duckPlayerMode = .enabled
+        duckPlayer.preferences.duckPlayerMode = .enabled
 
         // Simulate navigating to DuckPlayer
         navigationAction = NavigationAction(

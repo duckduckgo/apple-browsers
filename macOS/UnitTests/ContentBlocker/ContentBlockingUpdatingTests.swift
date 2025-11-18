@@ -73,7 +73,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        configStorage: MockConfigurationStore(),
                                        webTrackingProtectionPreferences: preferences,
                                        cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
-                                       duckPlayerPreferences: DuckPlayerPreferences(persistor: DuckPlayerPreferencesPersistorMock(), privacyConfigurationManager: privacyConfigurationManager, internalUserDecider: featureFlagger.internalUserDecider),
+                                       duckPlayer: DuckPlayer(preferencesPersistor: DuckPlayerPreferencesPersistorMock(), privacyConfigurationManager: privacyConfigurationManager, internalUserDecider: featureFlagger.internalUserDecider),
                                        experimentManager: MockContentScopeExperimentManager(),
                                        tld: TLD(),
                                        featureFlagger: featureFlagger,

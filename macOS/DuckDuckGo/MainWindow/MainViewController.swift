@@ -53,7 +53,6 @@ final class MainViewController: NSViewController {
     private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
     private let winBackOfferPromptPresenting: WinBackOfferPromptPresenting
     private let tabsPreferences: TabsPreferences
-    private let duckPlayerPreferences: DuckPlayerPreferences
     private let duckPlayer: DuckPlayer
 
     let tabCollectionViewModel: TabCollectionViewModel
@@ -124,7 +123,6 @@ final class MainViewController: NSViewController {
          aiChatPreferences: AIChatPreferences = NSApp.delegateTyped.aiChatPreferences,
          aboutPreferences: AboutPreferences = NSApp.delegateTyped.aboutPreferences,
          accessibilityPreferences: AccessibilityPreferences = NSApp.delegateTyped.accessibilityPreferences,
-         duckPlayerPreferences: DuckPlayerPreferences = NSApp.delegateTyped.duckPlayerPreferences,
          duckPlayer: DuckPlayer = NSApp.delegateTyped.duckPlayer,
          themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
@@ -148,7 +146,6 @@ final class MainViewController: NSViewController {
         self.fireCoordinator = fireCoordinator
         self.winBackOfferPromptPresenting = winBackOfferPromptPresenting
         self.tabsPreferences = tabsPreferences
-        self.duckPlayerPreferences = duckPlayerPreferences
         self.duckPlayer = duckPlayer
 
         tabBarViewController = TabBarViewController.create(
@@ -214,7 +211,6 @@ final class MainViewController: NSViewController {
             aiChatPreferences: aiChatPreferences,
             aboutPreferences: aboutPreferences,
             accessibilityPreferences: accessibilityPreferences,
-            duckPlayerPreferences: duckPlayerPreferences,
             duckPlayer: duckPlayer
         )
         aiChatSidebarPresenter = AIChatSidebarPresenter(

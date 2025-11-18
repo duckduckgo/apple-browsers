@@ -176,9 +176,24 @@ final class DuckPlayer {
         isAvailable || preferences.shouldDisplayContingencyMessage
     }
 
+    convenience init(
+        preferencesPersistor: DuckPlayerPreferencesPersistor,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        internalUserDecider: InternalUserDecider
+    ) {
+        self.init(
+            preferences: DuckPlayerPreferences(
+                persistor: preferencesPersistor,
+                privacyConfigurationManager: privacyConfigurationManager,
+                internalUserDecider: internalUserDecider
+            ),
+            privacyConfigurationManager: privacyConfigurationManager
+        )
+    }
+
     init(
-        preferences: DuckPlayerPreferences = NSApp.delegateTyped.duckPlayerPreferences,
-        privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+        preferences: DuckPlayerPreferences,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
         onboardingDecider: DuckPlayerOnboardingDecider? = nil
     ) {
         self.preferences = preferences
@@ -487,6 +502,10 @@ extension DuckPlayer {
         return DuckPlayer(preferences: preferences, privacyConfigurationManager: privacyConfigurationManager)
     }
 
+    static func mock(withPreferences preferences: DuckPlayerPreferences) -> DuckPlayer {
+        let privacyConfigurationManager = MockPrivacyConfigurationManager()
+        return DuckPlayer(preferences: preferences, privacyConfigurationManager: privacyConfigurationManager)
+    }
 }
 
 #else

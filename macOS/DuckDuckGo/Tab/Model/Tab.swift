@@ -70,7 +70,6 @@ protocol NewWindowPolicyDecisionMaker {
         var tabCrashAggregator: TabCrashAggregator
         var tabsPreferences: TabsPreferences
         var webTrackingProtectionPreferences: WebTrackingProtectionPreferences
-        var duckPlayerPreferences: DuckPlayerPreferences
         var autoconsentStats: AutoconsentStatsCollecting
     }
 
@@ -210,7 +209,6 @@ protocol NewWindowPolicyDecisionMaker {
                   maliciousSiteDetector: maliciousSiteDetector,
                   tabsPreferences: tabsPreferences ?? NSApp.delegateTyped.tabsPreferences,
                   webTrackingProtectionPreferences: webTrackingProtectionPreferences ?? NSApp.delegateTyped.webTrackingProtectionPreferences,
-                  duckPlayerPreferences: duckPlayerPreferences ?? NSApp.delegateTyped.duckPlayerPreferences,
                   onboardingPixelReporter: onboardingPixelReporter,
                   pageRefreshMonitor: pageRefreshMonitor,
                   aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
@@ -261,7 +259,6 @@ protocol NewWindowPolicyDecisionMaker {
          maliciousSiteDetector: MaliciousSiteDetecting,
          tabsPreferences: TabsPreferences,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
-         duckPlayerPreferences: DuckPlayerPreferences,
          onboardingPixelReporter: OnboardingAddressBarReporting,
          pageRefreshMonitor: PageRefreshMonitoring,
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
@@ -361,7 +358,6 @@ protocol NewWindowPolicyDecisionMaker {
                                                        tabCrashAggregator: tabCrashAggregator,
                                                        tabsPreferences: tabsPreferences,
                                                        webTrackingProtectionPreferences: webTrackingProtectionPreferences,
-                                                       duckPlayerPreferences: duckPlayerPreferences,
                                                        autoconsentStats: autoconsentStats)
             )
         super.init()

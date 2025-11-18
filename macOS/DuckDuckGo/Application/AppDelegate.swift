@@ -133,7 +133,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let aboutPreferences: AboutPreferences
     let accessibilityPreferences: AccessibilityPreferences
-    let duckPlayerPreferences: DuckPlayerPreferences
     let duckPlayer: DuckPlayer
 
     let database: Database!
@@ -750,13 +749,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             windowControllersManager: windowControllersManager
         )
         accessibilityPreferences = AccessibilityPreferences()
-        duckPlayerPreferences = DuckPlayerPreferences(
+        duckPlayer = DuckPlayer(
+            preferencesPersistor: DuckPlayerPreferencesUserDefaultsPersistor(),
             privacyConfigurationManager: privacyConfigurationManager,
             internalUserDecider: internalUserDecider
-        )
-        duckPlayer = DuckPlayer(
-            preferences: duckPlayerPreferences,
-            privacyConfigurationManager: privacyConfigurationManager
         )
         newTabPageCustomizationModel = NewTabPageCustomizationModel(themeManager: themeManager, appearancePreferences: appearancePreferences)
 
@@ -784,7 +780,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 startupPreferences: startupPreferences,
                 webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
-                duckPlayerPreferences: duckPlayerPreferences,
                 duckPlayer: duckPlayer,
                 windowControllersManager: windowControllersManager,
                 bookmarkManager: bookmarkManager,
@@ -813,7 +808,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             startupPreferences: startupPreferences,
             webTrackingProtectionPreferences: webTrackingProtectionPreferences,
             cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
-            duckPlayerPreferences: duckPlayerPreferences,
             duckPlayer: duckPlayer,
             windowControllersManager: windowControllersManager,
             bookmarkManager: bookmarkManager,

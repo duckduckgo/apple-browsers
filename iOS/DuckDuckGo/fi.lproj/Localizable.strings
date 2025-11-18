@@ -2452,6 +2452,21 @@
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Hei!\n\nOletko valmis käyttämään nopeampaa selainta, joka pitää sinut suojattuna?";
 
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Seuraava";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Tekoälyominaisuudet ovat yksityisiä ja valinnaisia. Voit tehdä muutoksia kohdassa Asetukset > Tekoälyominaisuudet.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Tekoälyominaisuudet ovat yksityisiä ja valinnaisia. Voit tehdä muutoksia kohdassa %@:ssa";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Asetukset > Tekoälyominaisuudet.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Haluatko helpomman pääsyn\nyksityiseen tekoäly-chatiin?";
+
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Aloitetaan!";
 

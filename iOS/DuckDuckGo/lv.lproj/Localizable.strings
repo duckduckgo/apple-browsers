@@ -2452,6 +2452,21 @@
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Sveiki!\n\nVai esi gatavs ātrākai pārlūkprogrammai, kas tevi aizsargā?";
 
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Nākamais";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "MI funkcijas ir privātas un nav obligātas. Tu vari veikt izmaiņas sadaļā Iestatījumi > MI funkcijas.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "MI funkcijas ir privātas un nav obligātas. Tu vari veikt izmaiņas %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Iestatījumi > MI funkcijas.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Vēlies vieglāk piekļūt privātai MI tērzēšanai?";
+
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Aiziet!";
 

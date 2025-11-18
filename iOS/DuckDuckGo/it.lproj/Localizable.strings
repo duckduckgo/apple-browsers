@@ -2452,6 +2452,21 @@
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Ciao.\n\nVuoi un browser più veloce che ti garantisca protezione?";
 
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Successivo";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Le funzionalità AI sono private e opzionali. Puoi effettuare modifiche in Impostazioni > Funzionalità AI.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Le funzionalità AI sono private e opzionali. Puoi apportare modifiche in %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Impostazioni > Funzionalità AI.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Vuoi un accesso più semplice\nall'AI chat privata?";
+
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Continua";
 

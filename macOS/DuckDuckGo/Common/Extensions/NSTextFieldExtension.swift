@@ -52,6 +52,9 @@ extension NSTextField {
 
         return label(titled: title)
     }
+}
+
+extension NSView {
 
     func gradient(width: CGFloat, trailingPadding: CGFloat) {
         guard let layer = layer else {

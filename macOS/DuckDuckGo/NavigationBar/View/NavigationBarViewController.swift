@@ -55,7 +55,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet private var navigationButtons: NSStackView!
     @IBOutlet private var addressBarContainer: NSView!
     @IBOutlet private var daxLogo: NSImageView!
-    @IBOutlet private var addressBarStack: NSStackView!
+    @IBOutlet var addressBarStack: NSStackView!
 
     @IBOutlet private(set) var menuButtons: NSStackView!
 
@@ -157,6 +157,7 @@ final class NavigationBarViewController: NSViewController {
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let downloadsPreferences: DownloadsPreferences
     private let tabsPreferences: TabsPreferences
+    private let accessibilityPreferences: AccessibilityPreferences
     private let showTab: (Tab.TabContent) -> Void
 
     let themeManager: ThemeManaging
@@ -230,6 +231,7 @@ final class NavigationBarViewController: NSViewController {
                        defaultBrowserPreferences: DefaultBrowserPreferences,
                        downloadsPreferences: DownloadsPreferences,
                        tabsPreferences: TabsPreferences,
+                       accessibilityPreferences: AccessibilityPreferences,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
                                Application.appDelegate.windowControllersManager.showTab(with: content)
@@ -264,6 +266,7 @@ final class NavigationBarViewController: NSViewController {
                 defaultBrowserPreferences: defaultBrowserPreferences,
                 downloadsPreferences: downloadsPreferences,
                 tabsPreferences: tabsPreferences,
+                accessibilityPreferences: accessibilityPreferences,
                 showTab: showTab
             )
         }!
@@ -296,6 +299,7 @@ final class NavigationBarViewController: NSViewController {
         defaultBrowserPreferences: DefaultBrowserPreferences,
         downloadsPreferences: DownloadsPreferences,
         tabsPreferences: TabsPreferences,
+        accessibilityPreferences: AccessibilityPreferences,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
@@ -336,6 +340,7 @@ final class NavigationBarViewController: NSViewController {
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.downloadsPreferences = downloadsPreferences
         self.tabsPreferences = tabsPreferences
+        self.accessibilityPreferences = accessibilityPreferences
         self.showTab = showTab
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
         self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
@@ -402,6 +407,7 @@ final class NavigationBarViewController: NSViewController {
                                                                       popovers: popovers,
                                                                       searchPreferences: searchPreferences,
                                                                       tabsPreferences: tabsPreferences,
+                                                                      accessibilityPreferences: accessibilityPreferences,
                                                                       onboardingPixelReporter: onboardingPixelReporter,
                                                                       aiChatMenuConfig: aiChatMenuConfig,
                                                                       aiChatSidebarPresenter: aiChatSidebarPresenter) else {
@@ -556,7 +562,7 @@ final class NavigationBarViewController: NSViewController {
             let isAddressBarFocused = view.window?.firstResponder == addressBarViewController?.addressBarTextField.currentEditor()
 
             let height: NSLayoutConstraint = animated ? navigationBarHeightConstraint.animator() : navigationBarHeightConstraint
-            height.constant = addressBarStyleProvider.navigationBarHeight(for: sizeClass)
+            height.constant = addressBarStyleProvider.navigationBarHeight(for: sizeClass, focused: isAddressBarFocused)
 
             let barTop: NSLayoutConstraint = animated ? addressBarTopConstraint.animator() : addressBarTopConstraint
             barTop.constant = addressBarStyleProvider.addressBarTopPadding(for: sizeClass, focused: isAddressBarFocused)
@@ -2125,6 +2131,12 @@ extension NavigationBarViewController: AddressBarViewControllerDelegate {
 
         if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
             resizeAddressBar(for: addressBarSizeClass, animated: false)
+        }
+    }
+
+    func addressBarViewControllerSearchModeToggleChanged(_ addressBarViewController: AddressBarViewController, isAIChatMode: Bool) {
+        if let mainViewController = parent as? MainViewController {
+            mainViewController.updateAIChatOmnibarContainerVisibility(visible: isAIChatMode)
         }
     }
 }

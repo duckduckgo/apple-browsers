@@ -76,7 +76,7 @@ final class BrowserTabViewController: NSViewController {
     private var containerStackView: NSStackView
 
     weak var delegate: BrowserTabViewControllerDelegate?
-    var tabViewModel: TabViewModel?
+    private(set) var tabViewModel: TabViewModel?
 
     private let tabCollectionViewModel: TabCollectionViewModel
     private let bookmarkManager: BookmarkManager
@@ -95,6 +95,8 @@ final class BrowserTabViewController: NSViewController {
     private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     private let aiChatPreferences: AIChatPreferences
+    private let aboutPreferences: AboutPreferences
+    private let accessibilityPreferences: AccessibilityPreferences
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
@@ -150,6 +152,8 @@ final class BrowserTabViewController: NSViewController {
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
          aiChatPreferences: AIChatPreferences,
+         aboutPreferences: AboutPreferences,
+         accessibilityPreferences: AccessibilityPreferences,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          tld: TLD = NSApp.delegateTyped.tld
@@ -172,6 +176,8 @@ final class BrowserTabViewController: NSViewController {
         self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
         self.aiChatPreferences = aiChatPreferences
+        self.aboutPreferences = aboutPreferences
+        self.accessibilityPreferences = accessibilityPreferences
         self.subscriptionManager = subscriptionManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
 
@@ -1194,6 +1200,8 @@ final class BrowserTabViewController: NSViewController {
                 webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
                 aiChatPreferences: aiChatPreferences,
+                aboutPreferences: aboutPreferences,
+                accessibilityPreferences: accessibilityPreferences,
                 subscriptionManager: subscriptionManager,
                 winBackOfferVisibilityManager: winBackOfferVisibilityManager
             )
@@ -1744,7 +1752,9 @@ extension BrowserTabViewController {
         tabsPreferences: Application.appDelegate.tabsPreferences,
         webTrackingProtectionPreferences: Application.appDelegate.webTrackingProtectionPreferences,
         cookiePopupProtectionPreferences: Application.appDelegate.cookiePopupProtectionPreferences,
-        aiChatPreferences: Application.appDelegate.aiChatPreferences
+        aiChatPreferences: Application.appDelegate.aiChatPreferences,
+        aboutPreferences: Application.appDelegate.aboutPreferences,
+        accessibilityPreferences: Application.appDelegate.accessibilityPreferences
     )
 }
 

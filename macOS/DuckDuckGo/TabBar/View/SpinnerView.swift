@@ -77,20 +77,31 @@ extension SpinnerView {
             return
         }
 
-        let rotation = CABasicAnimation(keyPath: SpinnerConstants.animationKeyPath)
-        rotation.fromValue = 0
-        rotation.toValue = -2 * CGFloat.pi
-        rotation.duration = SpinnerConstants.animationDuration
-        rotation.repeatCount = .infinity
-        rotation.isRemovedOnCompletion = false
+        let fadeInAnimation =  CASpringAnimation.buildFadeInAnimation(duration: SpinnerConstants.animationShortDuration)
+        let rotationAnimation = CABasicAnimation.buildRotationAnimation(duration: SpinnerConstants.animationLongDuration)
 
         gradientLayer.isHidden = false
-        gradientLayer.add(rotation, forKey: SpinnerConstants.rotationAnimationKey)
+        gradientLayer.opacity = 1
+        gradientLayer.add(fadeInAnimation, forKey: SpinnerConstants.fadeAnimationKey)
+        gradientLayer.add(rotationAnimation, forKey: SpinnerConstants.rotationAnimationKey)
     }
 
-    func stopAnimating() {
-        gradientLayer.removeAnimation(forKey: SpinnerConstants.rotationAnimationKey)
-        gradientLayer.isHidden = hidesWhenStopped
+    func stopAnimating(animated: Bool = true) {
+        guard isAnimating, animated else {
+            removeRotationAnimationAndHide()
+            return
+        }
+
+        CATransaction.begin()
+        CATransaction.setCompletionBlock { [weak self] in
+            self?.removeRotationAnimationAndHide()
+        }
+
+        let fadeOutAnimation = CASpringAnimation.buildFadeOutAnimation(duration: SpinnerConstants.animationShortDuration)
+        gradientLayer.opacity = 0
+        gradientLayer.add(fadeOutAnimation, forKey: SpinnerConstants.fadeAnimationKey)
+
+        CATransaction.commit()
     }
 }
 
@@ -117,6 +128,11 @@ private extension SpinnerView {
 
     func refreshGradientColors() {
         gradientLayer.colors = buildGradientColors()
+    }
+
+    func removeRotationAnimationAndHide() {
+        gradientLayer.removeAnimation(forKey: SpinnerConstants.rotationAnimationKey)
+        gradientLayer.isHidden = hidesWhenStopped
     }
 }
 
@@ -162,9 +178,10 @@ private extension SpinnerView {
 }
 
 private enum SpinnerConstants {
-    static let animationDuration: TimeInterval = 0.5
-    static let animationKeyPath = "transform.rotation.z"
+    static let animationLongDuration: TimeInterval = 0.5
+    static let animationShortDuration: TimeInterval = 0.15
     static let defaultLineWidth: CGFloat = 1.5
     static let defaultLineLength: CGFloat = CGFloat.pi * 2 * 0.6
     static let rotationAnimationKey = "rotation"
+    static let fadeAnimationKey = "fade"
 }

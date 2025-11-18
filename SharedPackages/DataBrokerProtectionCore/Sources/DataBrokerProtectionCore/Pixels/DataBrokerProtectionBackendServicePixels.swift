@@ -60,8 +60,8 @@ public final class DefaultDataBrokerProtectionBackendServicePixels: DataBrokerPr
     }
 
     public func fireEmptyAccessToken(callSite: BackendServiceCallSite,
-                                     dataBrokerURL: String? = nil,
-                                     dataBrokerVersion: String? = nil) {
+                                     dataBrokerURL: String?,
+                                     dataBrokerVersion: String?) {
         let environment = settings.selectedEnvironment.rawValue
 
         pixelHandler.fire(.emptyAccessTokenDaily(environment: environment,

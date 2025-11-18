@@ -2452,6 +2452,33 @@
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Sveiki!\n\nVai esi gatavs ātrākai pārlūkprogrammai, kas tevi aizsargā?";
 
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Nākamais";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "MI funkcijas ir privātas un nav obligātas. Tu vari veikt izmaiņas sadaļā Iestatījumi > MI funkcijas.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "MI funkcijas ir privātas un nav obligātas. Tu vari veikt izmaiņas %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Iestatījumi > MI funkcijas.";
+
+/* The explanation of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.subtitle" = "Pievieno Duck.ai saīsnes jaunām cilnēm un adreses joslai. Vai tu to nevēlies? Atlasi tikai meklēšanu.";
+
+/* Bold text 'Duck.ai shortcut'. This will replace the first placeholder (%1$@) in the subtitle string. */
+"onboarding.highlights.searchExperience.subtitle.duckai-shortcut-bold" = "Duck.ai īsceļš";
+
+/* Full message with placeholders: %1$@ will be replaced with 'Duck.ai shortcut' (bold), %2$@ will be replaced with 'Search Only' (bold). */
+"onboarding.highlights.searchExperience.subtitle.formatted" = "Pievieno %1$@ jaunām cilnēm un adreses joslai. Vai tu to nevēlies? Atlasi %2$@.";
+
+/* Bold text 'Search Only'. This will replace the second placeholder (%2$@) in the subtitle string. */
+"onboarding.highlights.searchExperience.subtitle.search-only-bold" = "Meklēt tikai";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Vēlies vieglāk piekļūt privātai MI tērzēšanai?";
+
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Aiziet!";
 
@@ -2817,6 +2844,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Rādīt pilnu vietnes adresi";
+
+/* Title for the 'Add Duck.ai Shortcut' option in the AI experimental picker */
+"settings.ai.experimental.picker.duckai_shortcut" = "Pievienot Duck.ai īsceļu";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Meklēšana & Duck.ai";

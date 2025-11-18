@@ -2452,6 +2452,33 @@
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Pozdrav.\n\nJesi li spreman za brži preglednik koji te štiti?";
 
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Dalje";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Značajke umjetne inteligencije privatne su i neobavezne. Izmjene možeš napraviti u izborniku Postavke > AI značajke.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Značajke umjetne inteligencije privatne su i neobavezne. Izmjene možeš napraviti u %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Postavke > AI značajke.";
+
+/* The explanation of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.subtitle" = "Dodaj prečac Duck.ai novim karticama i adresnoj traci. Ne želiš ovo? Odaberi samo pretraživanje.";
+
+/* Bold text 'Duck.ai shortcut'. This will replace the first placeholder (%1$@) in the subtitle string. */
+"onboarding.highlights.searchExperience.subtitle.duckai-shortcut-bold" = "Duck.ai prečac";
+
+/* Full message with placeholders: %1$@ will be replaced with 'Duck.ai shortcut' (bold), %2$@ will be replaced with 'Search Only' (bold). */
+"onboarding.highlights.searchExperience.subtitle.formatted" = "Dodaj %1$@ novim karticama i adresnoj traci. Ne želiš ovo? Odaberi %2$@.";
+
+/* Bold text 'Search Only'. This will replace the second placeholder (%2$@) in the subtitle string. */
+"onboarding.highlights.searchExperience.subtitle.search-only-bold" = "Samo pretraživanje";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Želiš lakši pristup privatnom AI čavrljanju?";
+
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Učinimo to!";
 
@@ -2817,6 +2844,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Pokaži cijelu adresu web-mjesta";
+
+/* Title for the 'Add Duck.ai Shortcut' option in the AI experimental picker */
+"settings.ai.experimental.picker.duckai_shortcut" = "Dodaj Duck.ai prečac";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Pretraživanje i Duck.ai";

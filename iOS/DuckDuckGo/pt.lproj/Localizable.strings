@@ -2452,6 +2452,33 @@
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Olá.\n\nPronto para um navegador mais rápido que te mantém protegido?";
 
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Seguinte";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "As funcionalidades de IA são privadas e opcionais. Podes fazer alterações em Definições > Funcionalidades de IA.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "As funcionalidades de IA são privadas e opcionais. Podes fazer alterações em %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Definições > Funcionalidades de IA.";
+
+/* The explanation of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.subtitle" = "Adiciona um atalho Duck.ai a novos separadores e à barra de endereço. Não queres isto? Seleciona \"Pesquisar apenas\".";
+
+/* Bold text 'Duck.ai shortcut'. This will replace the first placeholder (%1$@) in the subtitle string. */
+"onboarding.highlights.searchExperience.subtitle.duckai-shortcut-bold" = "Atalho Duck.ai";
+
+/* Full message with placeholders: %1$@ will be replaced with 'Duck.ai shortcut' (bold), %2$@ will be replaced with 'Search Only' (bold). */
+"onboarding.highlights.searchExperience.subtitle.formatted" = "Adiciona %1$@ a novos separadores e à barra de endereços. Não queres isto? Seleciona %2$@.";
+
+/* Bold text 'Search Only'. This will replace the second placeholder (%2$@) in the subtitle string. */
+"onboarding.highlights.searchExperience.subtitle.search-only-bold" = "Pesquisar apenas";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Queres acesso mais fácil ao chat privado com IA?";
+
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Vamos lá!";
 
@@ -2817,6 +2844,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Mostrar endereço completo do site";
+
+/* Title for the 'Add Duck.ai Shortcut' option in the AI experimental picker */
+"settings.ai.experimental.picker.duckai_shortcut" = "Adicionar atalho Duck.ai";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Pesquisa e Duck.ai";

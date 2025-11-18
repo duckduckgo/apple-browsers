@@ -2452,6 +2452,33 @@
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Dobrý deň.\n\nSte pripravení na rýchlejší prehliadač, ktorý vás ochráni?";
 
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Ďalšie";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Funkcie AI sú súkromné a voliteľné. Môžeš vykonať zmeny v Nastaveniach > Funkcie AI.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Funkcie AI sú súkromné a voliteľné. Zmeny môžeš vykonať v %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Nastavenia > Funkcie AI.";
+
+/* The explanation of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.subtitle" = "Pridaj skratku Duck.ai na nové karty a panel s adresou. Nechceš to? Vyber možnosť Iba vyhľadávanie.";
+
+/* Bold text 'Duck.ai shortcut'. This will replace the first placeholder (%1$@) in the subtitle string. */
+"onboarding.highlights.searchExperience.subtitle.duckai-shortcut-bold" = "Skratka Duck.ai";
+
+/* Full message with placeholders: %1$@ will be replaced with 'Duck.ai shortcut' (bold), %2$@ will be replaced with 'Search Only' (bold). */
+"onboarding.highlights.searchExperience.subtitle.formatted" = "Pridaj %1$@ na nové karty a do panela s adresou. Nechceš to? Vyber %2$@.";
+
+/* Bold text 'Search Only'. This will replace the second placeholder (%2$@) in the subtitle string. */
+"onboarding.highlights.searchExperience.subtitle.search-only-bold" = "Len vyhľadávanie";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Chceš jednoduchší prístup k súkromnému AI chatu?";
+
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Poďme na to!";
 
@@ -2817,6 +2844,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Zobraziť úplnú adresu lokality";
+
+/* Title for the 'Add Duck.ai Shortcut' option in the AI experimental picker */
+"settings.ai.experimental.picker.duckai_shortcut" = "Pridať skratku Duck.ai";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Vyhľadávanie & Duck.ai";

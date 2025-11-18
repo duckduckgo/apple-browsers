@@ -2452,6 +2452,33 @@
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Привет!\n\nБыстрый и надежный браузер заказывали?";
 
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Далее";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Функции на базе ИИ работают конфиденциально и предоставляются дополнительно. Их можно изменить в разделе «Настройки > Функции ИИ».";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Функции на базе ИИ работают конфиденциально и предлагаются дополнительно. Их можно настроить в разделе %@.";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Настройки > Функции ИИ";
+
+/* The explanation of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.subtitle" = "Добавить ярлык Duck.ai в адресную строку и новые вкладки. Не нужен ИИ? Выберите «Только поиск».";
+
+/* Bold text 'Duck.ai shortcut'. This will replace the first placeholder (%1$@) in the subtitle string. */
+"onboarding.highlights.searchExperience.subtitle.duckai-shortcut-bold" = "ярлык Duck.ai";
+
+/* Full message with placeholders: %1$@ will be replaced with 'Duck.ai shortcut' (bold), %2$@ will be replaced with 'Search Only' (bold). */
+"onboarding.highlights.searchExperience.subtitle.formatted" = "Добавить %1$@ на адресную строку и в новые вкладки. Не нужен ИИ? Выберите %2$@.";
+
+/* Bold text 'Search Only'. This will replace the second placeholder (%2$@) in the subtitle string. */
+"onboarding.highlights.searchExperience.subtitle.search-only-bold" = "Только поиск";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Нужен удобный доступ к приватному чату с ИИ?";
+
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Поехали!";
 
@@ -2817,6 +2844,9 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Показывать полный адрес сайта";
+
+/* Title for the 'Add Duck.ai Shortcut' option in the AI experimental picker */
+"settings.ai.experimental.picker.duckai_shortcut" = "Добавить ярлык Duck.ai";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Поиск и Duck.ai";

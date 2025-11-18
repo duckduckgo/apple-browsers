@@ -763,19 +763,22 @@ final class AddressBarViewController: NSViewController {
 
     private func layoutTextFields(withMinX minX: CGFloat) {
         self.passiveTextFieldMinXConstraint.constant = minX
-        // adjust min-x to passive text field when “Search or enter” placeholder is displayed (to prevent placeholder overlapping buttons)
+        // adjust min-x to passive text field when "Search or enter" placeholder is displayed (to prevent placeholder overlapping buttons)
 
         let isAddressBarFocused = view.window?.firstResponder == addressBarTextField.currentEditor()
         let adjustedMinX: CGFloat = (!self.isSelected || self.mode.isEditing) ? minX : Constants.defaultActiveTextFieldMinX
 
+        let isToggleVisible = isAddressBarFocused && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        let textMargin: CGFloat = 20
+
         if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
             if isAddressBarFocused {
-                self.activeTextFieldMinXConstraint.constant = adjustedMinX - 5
+                self.activeTextFieldMinXConstraint.constant = isToggleVisible ? textMargin : adjustedMinX - 5
             } else {
                 self.activeTextFieldMinXConstraint.constant = adjustedMinX - 6
             }
         } else {
-            self.activeTextFieldMinXConstraint.constant = adjustedMinX
+            self.activeTextFieldMinXConstraint.constant = isToggleVisible ? textMargin : adjustedMinX
         }
     }
 

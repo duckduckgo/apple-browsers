@@ -690,11 +690,15 @@ final class AddressBarButtonsViewController: NSViewController {
         && !isTextFieldValueText
         && !isLocalUrl
 
+        // Hide the left icon when toggle is visible
+        let shouldShowToggle = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        
         imageButtonWrapper.isShown = imageButton.image != nil
         && !isInPopUpWindow
         && (isHypertextUrl || isTextFieldEditorFirstResponder || isEditingMode || isNewTabOrOnboarding)
         && privacyDashboardButton.isHidden
         && !isAnyTrackerAnimationPlaying
+        && !shouldShowToggle
     }
 
     private func updatePrivacyEntryPointIcon() {
@@ -1661,7 +1665,6 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
         let theme = themeManager.theme
-        let colorsProvider = theme.colorsProvider
         toggleControl.backgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         toggleControl.selectedBackgroundColor = .systemRed
         toggleControl.focusedBackgroundColor = .systemRed

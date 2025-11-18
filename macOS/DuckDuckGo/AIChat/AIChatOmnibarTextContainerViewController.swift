@@ -91,6 +91,12 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         textView.autoresizingMask = [.width]
         textView.textContainer?.containerSize = NSSize(width: scrollView.contentSize.width, height: .greatestFiniteMagnitude)
         textView.textContainer?.widthTracksTextView = true
+        
+        textView.isRichText = false
+        textView.importsGraphics = false
+        textView.allowsDocumentBackgroundColorChange = false
+        textView.usesRuler = false
+        textView.usesFontPanel = false
 
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),

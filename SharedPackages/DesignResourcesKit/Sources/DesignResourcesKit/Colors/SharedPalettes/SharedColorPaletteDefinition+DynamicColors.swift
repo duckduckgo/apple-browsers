@@ -116,6 +116,8 @@ extension SharedColorPaletteDefinition {
             return containerFillSecondary
         case .containerFillTertiary:
             return containerFillTertiary
+        case .containerBorderTertiary:
+            return containerBorderTertiary
 
         /// Controls Colors
         case .controlsFillPrimary:
@@ -190,6 +192,9 @@ extension SharedColorPaletteDefinition {
             return surfaceSecondary
         case .surfaceTertiary:
             return surfaceTertiary
+
+        case .controlsRaisedBackdrop:
+            return FigmaColorPalette.controlsRaisedBackdrop
 
         /// Surface Decoration
         case .surfaceDecorationPrimary:

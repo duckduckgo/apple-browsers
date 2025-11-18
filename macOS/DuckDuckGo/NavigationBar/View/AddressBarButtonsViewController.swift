@@ -1662,22 +1662,14 @@ final class AddressBarButtonsViewController: NSViewController {
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
         let theme = themeManager.theme
         let colorsProvider = theme.colorsProvider
-
-        let backgroundColor: NSColor
-        if NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
-            backgroundColor = colorsProvider.activeAddressBarBackgroundColor.withAlphaComponent(0.5).blended(withFraction: 0.1, of: .white) ?? colorsProvider.activeAddressBarBackgroundColor
-        } else {
-            backgroundColor = colorsProvider.activeAddressBarBackgroundColor.withAlphaComponent(0.5).blended(withFraction: 0.05, of: .black) ?? colorsProvider.activeAddressBarBackgroundColor
-        }
-
-        toggleControl.backgroundColor = backgroundColor
-        toggleControl.selectedBackgroundColor = backgroundColor
-        toggleControl.focusedBackgroundColor = backgroundColor
-        toggleControl.selectionColor = colorsProvider.accentPrimaryColor
-        toggleControl.focusBorderColor = colorsProvider.accentPrimaryColor
-        toggleControl.outerBorderColor = colorsProvider.addressBarOutlineShadow
+        toggleControl.backgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
+        toggleControl.selectedBackgroundColor = .systemRed
+        toggleControl.focusedBackgroundColor = .systemRed
+        toggleControl.selectionColor = NSColor(designSystemColor: .surfaceTertiary)
+        toggleControl.focusBorderColor = .systemBlue
+        toggleControl.outerBorderColor = .systemGreen
         toggleControl.outerBorderWidth = 2.0
-        toggleControl.selectionInnerBorderColor = backgroundColor
+        toggleControl.selectionInnerBorderColor = NSColor(designSystemColor: .containerBorderTertiary)
     }
 
     private func setupAnimationViews() {

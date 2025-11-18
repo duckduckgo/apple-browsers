@@ -116,7 +116,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
 
     func testNotificationForInterceptedAIChatPathWhenFeatureFlagIsOn() {
         mockAIChatFullModeFeature.isAvailable = false
-        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []), 
+        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
                                                   canPurchase: { true },
                                                   aichatFullModeFeature: mockAIChatFullModeFeature)
 
@@ -136,7 +136,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
 
     func testDoesNotAllowNavigationForAIChatPath() {
         mockAIChatFullModeFeature.isAvailable = false
-        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []), 
+        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
                                                   canPurchase: { true },
                                                   aichatFullModeFeature: mockAIChatFullModeFeature)
 
@@ -147,7 +147,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
     func testAllowsNavigationForAIChatPathWhenFullModeFeatureIsAvailable() {
         // Given
         mockAIChatFullModeFeature.isAvailable = true
-        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []), 
+        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
                                                   canPurchase: { true },
                                                   aichatFullModeFeature: mockAIChatFullModeFeature)
         
@@ -162,7 +162,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
     func testDoesNotPostNotificationForAIChatPathWhenFullModeFeatureIsAvailable() {
         // Given
         mockAIChatFullModeFeature.isAvailable = true
-        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []), 
+        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
                                                   canPurchase: { true },
                                                   aichatFullModeFeature: mockAIChatFullModeFeature)
         

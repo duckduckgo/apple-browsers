@@ -110,11 +110,11 @@ class TabViewController: UIViewController {
     
     weak var delegate: TabDelegate?
     var aiChatContentHandlingDelegate: AIChatContentHandlingDelegate? {
-        set {
-            aiChatContentHandler.delegate = newValue
-        }
         get {
             aiChatContentHandler.delegate
+        }
+        set {
+            aiChatContentHandler.delegate = newValue
         }
     }
     weak var chromeDelegate: BrowserChromeDelegate?

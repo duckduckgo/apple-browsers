@@ -160,11 +160,11 @@ final class DuckPlayer {
     static let duckPlayerHost: String = "player"
     static let commonName = UserText.duckPlayer
 
-    static let shared = DuckPlayer()
-
     var isAvailable: Bool {
         isFeatureEnabled
     }
+
+    let preferences: DuckPlayerPreferences
 
     @Published var mode: DuckPlayerMode
 
@@ -352,7 +352,6 @@ final class DuckPlayer {
     // MARK: - Private
 
     private static let websiteTitlePrefix = "\(commonName) - "
-    private let preferences: DuckPlayerPreferences
 
     private var isFeatureEnabled: Bool = false {
         didSet {

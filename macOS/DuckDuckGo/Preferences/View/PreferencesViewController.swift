@@ -42,7 +42,7 @@ final class PreferencesViewController: NSViewController {
 
     init(
         syncService: DDGSyncing,
-        duckPlayer: DuckPlayer = DuckPlayer.shared,
+        duckPlayer: DuckPlayer,
         tabCollectionViewModel: TabCollectionViewModel,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         aiChatRemoteSettings: AIChatRemoteSettingsProvider = AIChatRemoteSettings(),

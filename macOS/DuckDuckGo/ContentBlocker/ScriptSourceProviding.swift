@@ -46,6 +46,7 @@ protocol ScriptSourceProviding {
     var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
     var cookiePopupProtectionPreferences: CookiePopupProtectionPreferences { get }
     var duckPlayerPreferences: DuckPlayerPreferences { get }
+    var duckPlayer: DuckPlayer { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
 
 }
@@ -59,6 +60,7 @@ protocol ScriptSourceProviding {
         webTrackingProtectionPreferences: Application.appDelegate.webTrackingProtectionPreferences,
         cookiePopupProtectionPreferences: Application.appDelegate.cookiePopupProtectionPreferences,
         duckPlayerPreferences: Application.appDelegate.duckPlayerPreferences,
+        duckPlayer: Application.appDelegate.duckPlayer,
         contentBlockingManager: Application.appDelegate.privacyFeatures.contentBlocking.contentBlockingManager,
         trackerDataManager: Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager,
         experimentManager: Application.appDelegate.contentScopeExperimentsManager,
@@ -96,6 +98,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let duckPlayerPreferences: DuckPlayerPreferences
+    let duckPlayer: DuckPlayer
     let tld: TLD
     let experimentManager: ContentScopeExperimentsManaging
     let bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
@@ -109,6 +112,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
          duckPlayerPreferences: DuckPlayerPreferences,
+         duckPlayer: DuckPlayer,
          contentBlockingManager: ContentBlockerRulesManagerProtocol,
          trackerDataManager: TrackerDataManager,
          experimentManager: ContentScopeExperimentsManaging,
@@ -131,6 +135,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
         self.duckPlayerPreferences = duckPlayerPreferences
+        self.duckPlayer = duckPlayer
         self.contentBlockingManager = contentBlockingManager
         self.trackerDataManager = trackerDataManager
         self.experimentManager = experimentManager

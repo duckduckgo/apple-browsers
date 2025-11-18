@@ -26,33 +26,23 @@ struct ProductionSubscriptionPurchaseDebugView: View {
     
     var body: some View {
         List {
-            warningSection
-            accountSection
-            usaSubscriptionsSection
-            rowSubscriptionsSection
+            currentSubscriptionsSection
+            availableSubscriptionsSection
             statusSection
+            accountSection
         }
-        .navigationTitle("Buy Production Subs")
+        .navigationTitle("Buy Available Subscriptions")
         .onAppear {
             Task {
                 await viewModel.loadExistingExternalID()
+                await viewModel.loadPurchasedProductIDs()
+                await viewModel.loadAvailableProducts()
             }
         }
         .alert("Purchase Result", isPresented: $viewModel.showAlert) {
             Button("OK", role: .cancel) { }
         } message: {
             Text(viewModel.alertMessage)
-        }
-    }
-    
-    private var warningSection: some View {
-        Section {
-            Text("⚠️ WARNING ⚠️")
-                .font(.headline)
-                .foregroundColor(.red)
-            Text("This will attempt to purchase a REAL production subscription, bypassing all safety checks including existing subscription checks. Use with caution!")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
         }
     }
     
@@ -86,18 +76,42 @@ struct ProductionSubscriptionPurchaseDebugView: View {
         }
     }
     
-    private var usaSubscriptionsSection: some View {
-        Section(header: Text("Production Subscriptions - USA")) {
-            ForEach(viewModel.usaSubscriptions, id: \.self) { identifier in
-                subscriptionRow(identifier: identifier)
+    private var currentSubscriptionsSection: some View {
+        Section(header: Text("Current Subscriptions")) {
+            if let productIDs = viewModel.purchasedProductIDs, !productIDs.isEmpty {
+                ForEach(productIDs, id: \.self) { productID in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(viewModel.displayName(for: productID))
+                            .font(.subheadline)
+                        Text(productID)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            } else {
+                Text("No active subscriptions")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
             }
         }
     }
     
-    private var rowSubscriptionsSection: some View {
-        Section(header: Text("Production Subscriptions - Rest of World")) {
-            ForEach(viewModel.rowSubscriptions, id: \.self) { identifier in
-                subscriptionRow(identifier: identifier)
+    private var availableSubscriptionsSection: some View {
+        Section(header: Text("Available Products")) {
+            if viewModel.isLoadingProducts {
+                HStack {
+                    Text("Loading available products...")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            } else if viewModel.availableSubscriptions.isEmpty {
+                Text("No subscriptions available")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            } else {
+                ForEach(viewModel.availableSubscriptions, id: \.self) { identifier in
+                    subscriptionRow(identifier: identifier)
+                }
             }
         }
     }
@@ -130,7 +144,7 @@ struct ProductionSubscriptionPurchaseDebugView: View {
                 Spacer()
             }
         }
-        .disabled(viewModel.isLoading || viewModel.isLoadingExternalID)
+        .disabled(viewModel.isLoading || viewModel.isLoadingExternalID || viewModel.isLoadingProducts)
     }
 }
 
@@ -143,21 +157,9 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     @Published var alertMessage = ""
     @Published var existingExternalID: String?
     @Published var isLoadingExternalID = true
-    
-    // Production subscription identifiers from StoreSubscriptionConfiguration
-    let usaSubscriptions = [
-        "ddg.privacy.pro.monthly.renews.us",
-        "ddg.privacy.pro.yearly.renews.us",
-        "ddg.privacy.pro.monthly.renews.us.freetrial",
-        "ddg.privacy.pro.yearly.renews.us.freetrial"
-    ]
-    
-    let rowSubscriptions = [
-        "ddg.privacy.pro.monthly.renews.row",
-        "ddg.privacy.pro.yearly.renews.row",
-        "ddg.privacy.pro.monthly.renews.row.freetrial",
-        "ddg.privacy.pro.yearly.renews.row.freetrial"
-    ]
+    @Published var purchasedProductIDs: [String]?
+    @Published var availableSubscriptions: [String] = []
+    @Published var isLoadingProducts = true
 
     
     func loadExistingExternalID() async {
@@ -178,6 +180,45 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
             Logger.subscription.info("[ProductionSubscriptionDebug] No existing account found, will create new")
         }
         isLoadingExternalID = false
+    }
+    
+    func loadPurchasedProductIDs() async {
+        guard let manager = AppDependencyProvider.shared.subscriptionManagerV2 else {
+            Logger.subscription.error("[ProductionSubscriptionDebug] Subscription manager not available")
+            return
+        }
+        
+        let productIDs = manager.storePurchaseManager().purchasedProductIDs
+        purchasedProductIDs = productIDs
+        Logger.subscription.info("[ProductionSubscriptionDebug] Found \(productIDs.count) purchased product(s): \(productIDs)")
+    }
+    
+    func loadAvailableProducts() async {
+        isLoadingProducts = true
+        guard let manager = AppDependencyProvider.shared.subscriptionManagerV2 else {
+            Logger.subscription.error("[ProductionSubscriptionDebug] Subscription manager not available")
+            isLoadingProducts = false
+            return
+        }
+        
+        // Cast to DefaultStorePurchaseManagerV2 to access availableProducts
+        guard let defaultManager = manager.storePurchaseManager() as? DefaultStorePurchaseManagerV2 else {
+            Logger.subscription.error("[ProductionSubscriptionDebug] Could not cast to DefaultStorePurchaseManagerV2")
+            isLoadingProducts = false
+            return
+        }
+        
+        // Update available products from StoreKit first
+        await defaultManager.updateAvailableProducts()
+        
+        let products = defaultManager.availableProducts
+        let productIDs = products.map { $0.id }
+        
+        availableSubscriptions = productIDs.sorted()
+        
+        Logger.subscription.info("[ProductionSubscriptionDebug] Loaded \(productIDs.count) available products")
+        
+        isLoadingProducts = false
     }
     
     func displayName(for identifier: String) -> String {
@@ -215,11 +256,11 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
         let result = await manager.storePurchaseManager().purchaseSubscription(with: identifier, externalID: externalID)
 
         switch result {
-        case .success(let transactionJWS):
-            statusMessage = "✅ Purchase successful! Transaction: \(transactionJWS.prefix(50))..."
-            isError = false
+        case .success(_):
             let accountStatus = isNewAccount ? "NEW account created" : "Attached to EXISTING account"
-            alertMessage = "Purchase successful! \(accountStatus)\n\nTransaction JWS received. You may need to complete the backend validation separately.\n\nExternal ID: \(externalID)"
+            statusMessage = "✅ Purchase successful!"
+            isError = false
+            alertMessage = "Purchase successful! \(accountStatus)\n\nExternal ID: \(externalID)"
             showAlert = true
             
             // Store the external ID for future purchases if this was a new account
@@ -228,14 +269,14 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
                 Logger.subscription.info("[ProductionSubscriptionDebug] Stored new external ID for future purchases: \(externalID)")
             }
             
+            // Refresh purchased product IDs to show the new purchase
+            await loadPurchasedProductIDs()
+            
             Logger.subscription.info("[ProductionSubscriptionDebug] Purchase successful: \(identifier)")
             
         case .failure(let error):
             statusMessage = "❌ Purchase failed: \(error.localizedDescription)"
             isError = true
-            alertMessage = "Purchase failed:\n\n\(error.localizedDescription)\n\nProduct: \(identifier)\nExternal ID: \(externalID)"
-            showAlert = true
-            
             Logger.subscription.error("[ProductionSubscriptionDebug] Purchase failed: \(error.localizedDescription)")
         }
         

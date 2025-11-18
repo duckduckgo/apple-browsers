@@ -157,6 +157,7 @@ final class NavigationBarViewController: NSViewController {
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let downloadsPreferences: DownloadsPreferences
     private let tabsPreferences: TabsPreferences
+    private let accessibilityPreferences: AccessibilityPreferences
     private let showTab: (Tab.TabContent) -> Void
 
     let themeManager: ThemeManaging
@@ -230,6 +231,7 @@ final class NavigationBarViewController: NSViewController {
                        defaultBrowserPreferences: DefaultBrowserPreferences,
                        downloadsPreferences: DownloadsPreferences,
                        tabsPreferences: TabsPreferences,
+                       accessibilityPreferences: AccessibilityPreferences,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
                                Application.appDelegate.windowControllersManager.showTab(with: content)
@@ -264,6 +266,7 @@ final class NavigationBarViewController: NSViewController {
                 defaultBrowserPreferences: defaultBrowserPreferences,
                 downloadsPreferences: downloadsPreferences,
                 tabsPreferences: tabsPreferences,
+                accessibilityPreferences: accessibilityPreferences,
                 showTab: showTab
             )
         }!
@@ -296,6 +299,7 @@ final class NavigationBarViewController: NSViewController {
         defaultBrowserPreferences: DefaultBrowserPreferences,
         downloadsPreferences: DownloadsPreferences,
         tabsPreferences: TabsPreferences,
+        accessibilityPreferences: AccessibilityPreferences,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
@@ -336,6 +340,7 @@ final class NavigationBarViewController: NSViewController {
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.downloadsPreferences = downloadsPreferences
         self.tabsPreferences = tabsPreferences
+        self.accessibilityPreferences = accessibilityPreferences
         self.showTab = showTab
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
         self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
@@ -402,6 +407,7 @@ final class NavigationBarViewController: NSViewController {
                                                                       popovers: popovers,
                                                                       searchPreferences: searchPreferences,
                                                                       tabsPreferences: tabsPreferences,
+                                                                      accessibilityPreferences: accessibilityPreferences,
                                                                       onboardingPixelReporter: onboardingPixelReporter,
                                                                       aiChatMenuConfig: aiChatMenuConfig,
                                                                       aiChatSidebarPresenter: aiChatSidebarPresenter) else {

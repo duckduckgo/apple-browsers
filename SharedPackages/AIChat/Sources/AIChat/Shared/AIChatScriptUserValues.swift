@@ -89,7 +89,7 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsNativePrompt: false,
                                         supportsStandaloneMigration: false,
                                         supportsNativeChatInput: false,
-                                        supportsURLChatIDRestoration: true,
+                                        supportsURLChatIDRestoration: false,
                                         supportsFullChatRestoration: false,
                                         supportsPageContext: false,
                                         appVersion: "")

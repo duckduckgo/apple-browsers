@@ -103,6 +103,10 @@ extension OmniBarState {
     
     // Default to false
     var showAIChatFullModeBranding: Bool { false }
+    
+    var isAIChatState: Bool {
+        self is UniversalOmniBarState.AIChatModeState
+    }
 }
 
 protocol OmniBarLoadingBearerStateCreating {

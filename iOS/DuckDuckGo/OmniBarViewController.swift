@@ -484,6 +484,8 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     private func applyCustomization() {
+        guard !state.isAIChatState else { return }
+        
         let state = dependencies.mobileCustomization.state
         guard state.isEnabled else {
             barView.customizableButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple, for: .normal)

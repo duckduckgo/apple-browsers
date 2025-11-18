@@ -209,6 +209,7 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
         // Direct purchase bypassing AppStorePurchaseFlow
         guard let manager = AppDependencyProvider.shared.subscriptionManagerV2 else {
             Logger.subscription.error("[ProductionSubscriptionDebug] Subscription manager not available")
+            isLoading = false
             return
         }
         let result = await manager.storePurchaseManager().purchaseSubscription(with: identifier, externalID: externalID)

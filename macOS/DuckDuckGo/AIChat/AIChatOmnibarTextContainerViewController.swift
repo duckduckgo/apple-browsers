@@ -85,7 +85,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
         textView.isEditable = true
         textView.isSelectable = true
-        textView.textContainerInset = NSSize(width: 6, height: 10)
+        textView.textContainerInset = NSSize(width: 5, height: 9) /// Match address bar text positioning
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
         textView.autoresizingMask = [.width]

@@ -2464,18 +2464,6 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Impostazioni > Funzionalità AI.";
 
-/* The explanation of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.subtitle" = "Aggiungi una scorciatoia Duck.ai alle nuove schede e alla barra degli indirizzi. Non ti interessa? Seleziona Solo ricerca.";
-
-/* Bold text 'Duck.ai shortcut'. This will replace the first placeholder (%1$@) in the subtitle string. */
-"onboarding.highlights.searchExperience.subtitle.duckai-shortcut-bold" = "Scorciatoia Duck.ai";
-
-/* Full message with placeholders: %1$@ will be replaced with 'Duck.ai shortcut' (bold), %2$@ will be replaced with 'Search Only' (bold). */
-"onboarding.highlights.searchExperience.subtitle.formatted" = "Aggiungi una %1$@ alle nuove schede e alla barra degli indirizzi. Non ti interessa? Seleziona %2$@.";
-
-/* Bold text 'Search Only'. This will replace the second placeholder (%2$@) in the subtitle string. */
-"onboarding.highlights.searchExperience.subtitle.search-only-bold" = "Solo ricerca";
-
 /* The title of the onboarding dialog popup to select the preferred search experience. */
 "onboarding.highlights.searchExperience.title" = "Vuoi un accesso più semplice\nall'AI chat privata?";
 
@@ -2844,9 +2832,6 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Mostra l'indirizzo completo del sito";
-
-/* Title for the 'Add Duck.ai Shortcut' option in the AI experimental picker */
-"settings.ai.experimental.picker.duckai_shortcut" = "Aggiungi scorciatoia Duck.ai";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Ricerca e Duck.ai";

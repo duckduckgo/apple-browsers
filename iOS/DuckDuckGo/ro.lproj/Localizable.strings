@@ -2464,18 +2464,6 @@
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Setări > Funcții IA.";
 
-/* The explanation of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.subtitle" = "Adaugă o comandă rapidă Duck.ai la filele noi și la bara de adrese. Nu vrei să faci acest lucru? Selectează Doar căutare.";
-
-/* Bold text 'Duck.ai shortcut'. This will replace the first placeholder (%1$@) in the subtitle string. */
-"onboarding.highlights.searchExperience.subtitle.duckai-shortcut-bold" = "Comandă rapidă Duck.ai";
-
-/* Full message with placeholders: %1$@ will be replaced with 'Duck.ai shortcut' (bold), %2$@ will be replaced with 'Search Only' (bold). */
-"onboarding.highlights.searchExperience.subtitle.formatted" = "Adaugă %1$@ la filele noi și bara de adrese. Nu vrei să faci acest lucru? Selectează %2$@.";
-
-/* Bold text 'Search Only'. This will replace the second placeholder (%2$@) in the subtitle string. */
-"onboarding.highlights.searchExperience.subtitle.search-only-bold" = "Doar căutare";
-
 /* The title of the onboarding dialog popup to select the preferred search experience. */
 "onboarding.highlights.searchExperience.title" = "Dorești un acces mai ușor la chatul privat cu IA?";
 
@@ -2844,9 +2832,6 @@
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Afișați adresa completă a site-ului";
-
-/* Title for the 'Add Duck.ai Shortcut' option in the AI experimental picker */
-"settings.ai.experimental.picker.duckai_shortcut" = "Adaugă o comandă rapidă Duck.ai";
 
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Caută pe Duck.ai";

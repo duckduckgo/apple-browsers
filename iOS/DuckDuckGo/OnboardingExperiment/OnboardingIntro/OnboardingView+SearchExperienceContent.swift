@@ -27,7 +27,6 @@ extension OnboardingView {
         private var isSkipped: Binding<Bool>
         private let action: () -> Void
         
-        @State private var animateMessage = false
         @State private var showContent = false
 
         init(animateTitle: Binding<Bool> = .constant(true),
@@ -41,18 +40,10 @@ extension OnboardingView {
         var body: some View {
             VStack(spacing: 16.0) {
                 AnimatableTypingText(UserText.Onboarding.SearchExperience.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
-                    animateMessage = true
+                    showContent = true
                 }
                 .foregroundColor(.primary)
                 .font(Metrics.titleFont)
-
-                AnimatableTypingText(UserText.Onboarding.SearchExperience.subtitleAttributed(), startAnimating: $animateMessage, skipAnimation: isSkipped) {
-                    withAnimation {
-                        showContent = true
-                    }
-                }
-                .foregroundColor(.primary)
-                .font(Metrics.messageFont)
 
                 VStack(spacing: 24.0) {
                     OnboardingSearchExperiencePicker()

@@ -58,6 +58,8 @@ public enum NetworkProtectionError: LocalizedError, CustomNSError {
     case wireGuardSetNetworkSettings(Error)
     case startWireGuardBackend(Error)
     case setWireguardConfig(Error)
+    case wireGuardInterfaceNameBufferAllocationFailed
+    case wireGuardGetInterfaceNameFailed(Error)
 
     // Auth errors
     case noAuthTokenFound(Error)
@@ -104,6 +106,8 @@ public enum NetworkProtectionError: LocalizedError, CustomNSError {
         case .wireGuardSetNetworkSettings: return 303
         case .startWireGuardBackend: return 304
         case .setWireguardConfig: return 305
+        case .wireGuardInterfaceNameBufferAllocationFailed: return 306
+        case .wireGuardGetInterfaceNameFailed: return 307
             // 400+ Auth errors
         case .noAuthTokenFound: return 400
             // 500+ Subscription errors
@@ -131,7 +135,8 @@ public enum NetworkProtectionError: LocalizedError, CustomNSError {
                 .keychainDeleteError,
                 .wireGuardCannotLocateTunnelFileDescriptor,
                 .wireGuardInvalidState,
-                .wireGuardDnsResolution:
+                .wireGuardDnsResolution,
+                .wireGuardInterfaceNameBufferAllocationFailed:
             return [:]
         case .failedToFetchServerList(let error),
                 .failedToFetchRegisteredServers(let error):
@@ -149,6 +154,7 @@ public enum NetworkProtectionError: LocalizedError, CustomNSError {
                 .wireGuardSetNetworkSettings(let error),
                 .startWireGuardBackend(let error),
                 .setWireguardConfig(let error),
+                .wireGuardGetInterfaceNameFailed(let error),
                 .unhandledError(_, _, let error),
                 .failedToFetchServerStatus(let error),
                 .failedToParseServerStatusResponse(let error),

@@ -383,10 +383,13 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             case .setWireguardConfig(let error):
                 pixelEvent = .networkProtectionWireguardErrorCannotSetWireguardConfig
                 pixelError = error
-            case .noAuthTokenFound:
-                pixelEvent = .networkProtectionNoAccessTokenFoundError
-            case .vpnAccessRevoked:
+            case .wireGuardInterfaceNameBufferAllocationFailed:
                 return
+            case .wireGuardGetInterfaceNameFailed(let error):
+                return
+            case .noAuthTokenFound(let error):
+                pixelEvent = .networkProtectionNoAccessTokenFoundError
+                pixelError = error
             case .unhandledError(function: let function, line: let line, error: let error):
                 pixelEvent = .networkProtectionUnhandledError
                 params[PixelParameters.function] = function

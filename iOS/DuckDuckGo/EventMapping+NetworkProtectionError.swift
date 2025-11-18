@@ -56,8 +56,9 @@ extension EventMapping where Event == NetworkProtectionError {
         case .keychainDeleteError(status: let status):
             pixelEvent = .networkProtectionKeychainDeleteError
             params[PixelParameters.keychainErrorCode] = String(status)
-        case .noAuthTokenFound:
+        case .noAuthTokenFound(let error):
             pixelEvent = .networkProtectionNoAccessTokenFoundError
+            pixelError = error
         case .vpnAccessRevoked(let error):
             pixelEvent = .networkProtectionVPNAccessRevoked
             pixelError = error
@@ -79,6 +80,8 @@ extension EventMapping where Event == NetworkProtectionError {
                 .wireGuardInvalidState,
                 .wireGuardDnsResolution,
                 .wireGuardSetNetworkSettings,
+                .wireGuardInterfaceNameBufferAllocationFailed,
+                .wireGuardGetInterfaceNameFailed,
                 .failedToFetchServerStatus,
                 .failedToParseServerStatusResponse:
             pixelEvent = .networkProtectionUnhandledError

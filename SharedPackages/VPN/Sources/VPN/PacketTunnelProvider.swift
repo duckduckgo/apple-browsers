@@ -1410,7 +1410,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             connectionStatus = .connected(connectedDate: Date())
         }
 
-        Logger.networkProtection.log("⚪️ Tunnel interface is \(self.adapter.interfaceName ?? "unknown", privacy: .public)")
+        Logger.networkProtection.log("⚪️ Tunnel interface is \((try? self.adapter.interfaceName) ?? "unknown", privacy: .public)")
 
         // These cases only make sense in the context of a connection that had trouble
         // and is being fixed, so we want to test the connection immediately.
@@ -1634,7 +1634,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     // MARK: - Connection Tester
 
     private enum ConnectionTesterError: CustomNSError {
-        case couldNotRetrieveInterfaceNameFromAdapter
+        case couldNotRetrieveInterfaceNameFromAdapter(internalError: Error)
         case testerFailedToStart(internalError: Error)
 
         var errorCode: Int {
@@ -1646,9 +1646,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         var errorUserInfo: [String: Any] {
             switch self {
-            case .couldNotRetrieveInterfaceNameFromAdapter:
-                return [:]
-            case .testerFailedToStart(let internalError):
+            case .couldNotRetrieveInterfaceNameFromAdapter(let internalError),
+                    .testerFailedToStart(let internalError):
                 return [NSUnderlyingErrorKey: internalError as NSError]
             }
         }
@@ -1660,8 +1659,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             return
         }
 
-        guard let interfaceName = adapter.interfaceName else {
-            throw ConnectionTesterError.couldNotRetrieveInterfaceNameFromAdapter
+        let interfaceName: String
+        do {
+            interfaceName = try adapter.interfaceName
+        } catch {
+            throw ConnectionTesterError.couldNotRetrieveInterfaceNameFromAdapter(internalError: error)
         }
 
         do {
@@ -1669,7 +1671,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         } catch {
             switch error {
             case NetworkProtectionConnectionTester.TesterError.couldNotFindInterface:
-                Logger.networkProtectionConnectionTester.log("Printing current proposed utun: \(String(reflecting: self.adapter.interfaceName), privacy: .public)")
+                Logger.networkProtectionConnectionTester.log("Printing current proposed utun: \(String(reflecting: interfaceName), privacy: .public)")
             default:
                 break
             }
@@ -1856,6 +1858,12 @@ extension WireGuardAdapterError: LocalizedError, CustomDebugStringConvertible {
 
         case .invalidState:
             return "Starting tunnel failed with invalid error"
+
+        case .interfaceNameBufferAllocationFailed:
+            return "Failed to allocate buffer for interface name"
+
+        case .getInterfaceNameFailed(let error):
+            return "Failed to get interface name: \(error.localizedDescription)"
         }
     }
 

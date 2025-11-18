@@ -71,6 +71,8 @@ extension EventMapping where Event == NetworkProtectionError {
                 .wireGuardSetNetworkSettings,
                 .startWireGuardBackend,
                 .setWireguardConfig,
+                .wireGuardInterfaceNameBufferAllocationFailed,
+                .wireGuardGetInterfaceNameFailed,
                 .failedToFetchServerStatus,
                 .failedToParseServerStatusResponse:
             domainEvent = .networkProtectionUnhandledError(function: #function, line: #line, error: event)

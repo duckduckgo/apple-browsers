@@ -59,6 +59,12 @@ public enum WireGuardAdapterError: CustomNSError {
     /// Failure to set the configuration for the WireGuard adapter
     case setWireguardConfig(Error)
 
+    /// Failure to retrieve interface name - buffer allocation failed.
+    case interfaceNameBufferAllocationFailed
+
+    /// Failure to retrieve interface name via getsockopt system call.
+    case getInterfaceNameFailed(Error)
+
     static let wireguardAdapterDomain = "WireGuardAdapter"
 
     public var errorCode: Int {
@@ -69,13 +75,16 @@ public enum WireGuardAdapterError: CustomNSError {
         case .setNetworkSettings: return 103
         case .startWireGuardBackend: return 104
         case .setWireguardConfig: return 105
+        case .interfaceNameBufferAllocationFailed: return 106
+        case .getInterfaceNameFailed: return 107
         }
     }
 
     public var errorUserInfo: [String: Any] {
         switch self {
         case .cannotLocateTunnelFileDescriptor,
-                .invalidState:
+                .invalidState,
+                .interfaceNameBufferAllocationFailed:
             return [:]
         case .dnsResolution(let errors):
             guard let firstError = errors.first else {
@@ -88,6 +97,8 @@ public enum WireGuardAdapterError: CustomNSError {
         case .startWireGuardBackend(let error):
             return [NSUnderlyingErrorKey: error as NSError]
         case .setWireguardConfig(let error):
+            return [NSUnderlyingErrorKey: error as NSError]
+        case .getInterfaceNameFailed(let error):
             return [NSUnderlyingErrorKey: error as NSError]
         }
     }
@@ -211,28 +222,38 @@ public class WireGuardAdapter: WireGuardAdapterProtocol {
         return nil
     }
 
-    /// Returns the tunnel device interface name, or nil on error.
-    /// - Returns: String.
-    public var interfaceName: String? {
-        guard let tunnelFileDescriptor = self.tunnelFileDescriptor else { return nil }
+    /// Returns the tunnel device interface name.
+    /// - Returns: The interface name as a String.
+    /// - Throws: `WireGuardAdapterError.cannotLocateTunnelFileDescriptor` if the tunnel file descriptor is not available.
+    /// - Throws: `WireGuardAdapterError.interfaceNameBufferAllocationFailed` if buffer allocation fails.
+    /// - Throws: `WireGuardAdapterError.getInterfaceNameFailed` if the getsockopt system call fails, with the underlying POSIX error code.
+    public var interfaceName: String {
+        get throws {
+            guard let tunnelFileDescriptor = self.tunnelFileDescriptor else {
+                throw WireGuardAdapterError.cannotLocateTunnelFileDescriptor
+            }
 
-        var buffer = [UInt8](repeating: 0, count: Int(IFNAMSIZ))
+            var buffer = [UInt8](repeating: 0, count: Int(IFNAMSIZ))
 
-        return buffer.withUnsafeMutableBufferPointer { mutableBufferPointer in
-            guard let baseAddress = mutableBufferPointer.baseAddress else { return nil }
+            return try buffer.withUnsafeMutableBufferPointer { mutableBufferPointer in
+                guard let baseAddress = mutableBufferPointer.baseAddress else {
+                    throw WireGuardAdapterError.interfaceNameBufferAllocationFailed
+                }
 
-            var ifnameSize = socklen_t(IFNAMSIZ)
-            let result = getsockopt(
-                tunnelFileDescriptor,
-                2 /* SYSPROTO_CONTROL */,
-                2 /* UTUN_OPT_IFNAME */,
-                baseAddress,
-                &ifnameSize)
+                var ifnameSize = socklen_t(IFNAMSIZ)
+                let result = getsockopt(
+                    tunnelFileDescriptor,
+                    2 /* SYSPROTO_CONTROL */,
+                    2 /* UTUN_OPT_IFNAME */,
+                    baseAddress,
+                    &ifnameSize)
 
-            if result == 0 {
-                return String(cString: baseAddress)
-            } else {
-                return nil
+                if result == 0 {
+                    return String(cString: baseAddress)
+                } else {
+                    let posixError = NSError(domain: NSPOSIXErrorDomain, code: Int(errno), userInfo: nil)
+                    throw WireGuardAdapterError.getInterfaceNameFailed(posixError)
+                }
             }
         }
     }

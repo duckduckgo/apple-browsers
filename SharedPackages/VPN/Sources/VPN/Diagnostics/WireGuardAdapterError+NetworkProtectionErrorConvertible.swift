@@ -33,6 +33,10 @@ extension WireGuardAdapterError: NetworkProtectionErrorConvertible {
             return .startWireGuardBackend(error)
         case .setWireguardConfig(let error):
             return .setWireguardConfig(error)
+        case .interfaceNameBufferAllocationFailed:
+            return .wireGuardInterfaceNameBufferAllocationFailed
+        case .getInterfaceNameFailed(let error):
+            return .wireGuardGetInterfaceNameFailed(error)
         }
     }
 }

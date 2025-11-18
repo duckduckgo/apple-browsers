@@ -342,6 +342,7 @@ class MainViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
+        tabManager.aiChatContentDelegate = self
         bindSyncService()
     }
 
@@ -3829,6 +3830,27 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
         } else {
             segueToSettingsAIChat()
         }
+    }
+}
+
+// MARK: - AIChatContentHandlingDelegate
+extension MainViewController: AIChatContentHandlingDelegate {
+    
+    func aiChatContentHandlerDidReceiveOpenSettingsRequest(_ handler:
+                                                           AIChatContentHandling) {
+        if let controller = tabSwitcherController {
+            controller.dismiss(animated: true) {
+                self.segueToSettingsAIChat()
+            }
+        } else {
+            segueToSettingsAIChat()
+        }
+    }
+    
+    func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler:
+                                                        AIChatContentHandling) {
+        guard let tab = self.currentTab?.tabModel else { return }
+        self.closeTab(tab, andOpenEmptyOneAtSamePosition: false)
     }
 }
 

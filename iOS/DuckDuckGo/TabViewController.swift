@@ -44,6 +44,7 @@ import Navigation
 import Subscription
 import WKAbstractions
 import SERPSettings
+import AIChat
 
 class TabViewController: UIViewController {
 
@@ -108,6 +109,14 @@ class TabViewController: UIViewController {
     }
     
     weak var delegate: TabDelegate?
+    var aiChatContentHandlingDelegate: AIChatContentHandlingDelegate? {
+        set {
+            aiChatContentHandler.delegate = newValue
+        }
+        get {
+            aiChatContentHandler.delegate
+        }
+    }
     weak var chromeDelegate: BrowserChromeDelegate?
 
     var findInPage: FindInPage? {
@@ -462,6 +471,8 @@ class TabViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
     let aiChatSettings: AIChatSettingsProvider
+    
+    private(set) var aiChatContentHandler: AIChatContentHandling
 
     required init?(coder aDecoder: NSCoder,
                    tabModel: Tab,
@@ -521,6 +532,7 @@ class TabViewController: UIViewController {
         }
         
         self.aiChatSettings = aiChatSettings
+        self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings)
 
         super.init(coder: aDecoder)
         
@@ -2847,6 +2859,8 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.delegate = self
         userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
+        
+        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView)
         
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages
         if daxEasterEggHandler == nil, let url = webView.url, url.isDuckDuckGoSearch {

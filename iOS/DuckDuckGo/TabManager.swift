@@ -62,6 +62,7 @@ class TabManager {
     private let aiChatSettings: AIChatSettingsProvider
 
     weak var delegate: TabDelegate?
+    weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
 
     @UserDefaultsWrapper(key: .faviconTabsCacheNeedsCleanup, defaultValue: true)
     var tabsCacheNeedsCleanup: Bool
@@ -169,6 +170,7 @@ class TabManager {
                                  andLoadRequest: url == nil ? nil : URLRequest.userInitiated(url!),
                                  consumeCookies: !model.hasActiveTabs)
         controller.delegate = delegate
+        controller.aiChatContentHandlingDelegate = aiChatContentDelegate
         controller.loadViewIfNeeded()
         return controller
     }

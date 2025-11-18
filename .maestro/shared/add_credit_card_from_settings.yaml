@@ -12,11 +12,7 @@ appId: com.duckduckgo.mobile.ios
 - tapOn:
     id: Field_CardNumber
     index: 1
-- inputText: 4242424242424242
-
-- tapOn:
-    id: Field_ExpirationDate
-- tapOn: Done
+- inputText: 378282246310005
 
 - tapOn:
     id: Field_SecurityCode

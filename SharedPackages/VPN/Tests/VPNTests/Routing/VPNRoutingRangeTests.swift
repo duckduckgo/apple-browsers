@@ -99,12 +99,12 @@ final class VPNRoutingRangeTests: XCTestCase {
         let alwaysExcluded = VPNRoutingRange.alwaysExcludedIPv6Range
         let hasULA = alwaysExcluded.contains { $0.description.hasPrefix("fc00::/") }
         XCTAssertFalse(hasULA, "ULA should not be in always excluded ranges")
-        
+
         // Verify fc00::/7 IS in localIPv6NetworkRange
         let localIPv6 = VPNRoutingRange.localIPv6NetworkRange
         XCTAssertEqual(localIPv6.count, 1, "Should have exactly one IPv6 local range")
         XCTAssertTrue(localIPv6[0].description.contains("fc00::/7"), "Should include ULA range")
-        
+
         // Verify the approach: ::/0 is the full IPv6 routing range (contains ULA), but localIPv6NetworkRange
         // will be conditionally excluded, relying on Apple's documented behavior that
         // excluded routes take precedence over included routes
@@ -148,7 +148,7 @@ final class VPNRoutingRangeTests: XCTestCase {
             IPAddressRange(from: "64.0.0.0/3")!,
             IPAddressRange(from: "128.0.0.0/3")!,
         ]
-        
+
         let expectedIPv6Ranges = [
             IPAddressRange(from: "::/0")!,
         ]

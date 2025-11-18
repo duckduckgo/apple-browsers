@@ -242,7 +242,7 @@ final class VPNRoutingMathematicsTests: XCTestCase {
     func testIPv6RangesHaveNoInternalOverlaps() {
         let localIPv6 = VPNRoutingRange.localIPv6NetworkRange
         let systemIPv6 = VPNRoutingRange.alwaysExcludedIPv6Range
-        
+
         func checkNoOverlapsWithin(_ ranges: [IPAddressRange], category: String) {
             for i in 0..<ranges.count {
                 for j in (i+1)..<ranges.count {
@@ -251,31 +251,31 @@ final class VPNRoutingMathematicsTests: XCTestCase {
                 }
             }
         }
-        
+
         // Overlaps BETWEEN categories are OK (excluded routes take precedence per Apple's NEIPv6Settings docs)
         // but overlaps WITHIN a category indicate redundant/wasteful definitions
         // Note: fullIPv6RoutingRange is a single range, so no need to check for overlaps within it
         checkNoOverlapsWithin(localIPv6, category: "Local IPv6")
         checkNoOverlapsWithin(systemIPv6, category: "System IPv6")
     }
-    
+
     /// Verifies full IPv6 routing range covers the entire address space and exclusions are defined
     func testIPv6FullRoutingRangeCoversEntireAddressSpace() {
         let fullIPv6 = VPNRoutingRange.fullIPv6RoutingRange
         let localIPv6 = VPNRoutingRange.localIPv6NetworkRange
         let systemIPv6 = VPNRoutingRange.alwaysExcludedIPv6Range
-        
+
         func addressCount(prefixLength: Int) -> Decimal {
             let exponent = 128 - prefixLength
             return pow(Decimal(2), exponent)
         }
-        
+
         func extractPrefixLength(_ range: IPAddressRange) -> Int? {
             let parts = range.description.split(separator: "/")
             guard parts.count == 2, let length = Int(parts[1]) else { return nil }
             return length
         }
-        
+
         // Calculate total addresses in full IPv6 routing range
         let totalPublic: Decimal
         if let prefixLength = extractPrefixLength(fullIPv6) {
@@ -284,26 +284,26 @@ final class VPNRoutingMathematicsTests: XCTestCase {
             XCTFail("Could not extract prefix length from fullIPv6RoutingRange")
             return
         }
-        
+
         var totalLocal = Decimal(0)
         for range in localIPv6 {
             if let prefixLength = extractPrefixLength(range) {
                 totalLocal += addressCount(prefixLength: prefixLength)
             }
         }
-        
+
         var totalSystem = Decimal(0)
         for range in systemIPv6 {
             if let prefixLength = extractPrefixLength(range) {
                 totalSystem += addressCount(prefixLength: prefixLength)
             }
         }
-        
+
         let totalIPv6Space = pow(Decimal(2), 128)
-        
+
         // Full IPv6 routing range (::/0) should cover the entire address space
         XCTAssertEqual(totalPublic, totalIPv6Space, "Full IPv6 routing range (::/0) should cover entire 2^128 address space")
-        
+
         // Exclusions must be defined (non-zero) or VPN will route system/local traffic incorrectly
         XCTAssertGreaterThan(totalLocal, Decimal(0), "Local IPv6 ranges must be defined for conditional exclusion")
         XCTAssertGreaterThan(totalSystem, Decimal(0), "System IPv6 ranges must be defined for always-exclusion")

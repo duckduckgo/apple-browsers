@@ -381,7 +381,12 @@ final class AddressBarButtonsViewController: NSViewController {
 
         if let superview = aiChatButton.superview {
             aiChatButton.translatesAutoresizingMaskIntoConstraints = false
-            trailingStackViewTrailingViewConstraint.constant = isFocused ? 4 : 3
+            if featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+                /// When the toggle is enabled we need a fixed constant, otherwise the stackview feels wobbly
+                trailingStackViewTrailingViewConstraint.constant = 4
+            } else {
+                trailingStackViewTrailingViewConstraint.constant = isFocused ? 4 : 3
+            }
             NSLayoutConstraint.activate([
                 aiChatButton.topAnchor.constraint(equalTo: superview.topAnchor, constant: 2),
                 aiChatButton.bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -2)

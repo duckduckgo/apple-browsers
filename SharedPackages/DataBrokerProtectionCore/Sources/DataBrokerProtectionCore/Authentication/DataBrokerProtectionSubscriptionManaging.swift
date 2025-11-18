@@ -22,6 +22,7 @@ import Common
 import os.log
 
 public protocol DataBrokerProtectionSubscriptionManaging {
+    var isUserAuthenticated: Bool { get }
     func accessToken() async -> String?
     func hasValidEntitlement() async throws -> Bool
     /// Returns whether the user is eligible for a free trial
@@ -34,6 +35,10 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     let runTypeProvider: AppRunTypeProviding
     let isAuthV2Enabled: Bool
+
+    public var isUserAuthenticated: Bool {
+        subscriptionManager.isUserAuthenticated
+    }
 
     public func accessToken() async -> String? {
         // We use a staging token for DuckDuckGo subscription supplied through a github secret/action

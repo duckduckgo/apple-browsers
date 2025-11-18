@@ -25,7 +25,9 @@ final class CrashReportReaderTests: XCTestCase {
     private var userDirectory: URL!
     private var systemDirectory: URL!
     private let appDisplayName = "DuckDuckGo"
+    private let appBundleIdentifier = "com.duckduckgo.macos"
     private let vpnIdentifier = "com.duckduckgo.macos.vpn.network-extension"
+    private let vpnBundleIdentifier = "com.duckduckgo.macos.vpn.network-extension"
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -33,13 +35,12 @@ final class CrashReportReaderTests: XCTestCase {
         systemDirectory = try makeTemporaryDirectory()
     }
 
-    override func tearDown() {
+    override func tearDownWithError() throws {
         temporaryDirectories.forEach { url in
             try? FileManager.default.removeItem(at: url)
         }
-
         temporaryDirectories.removeAll()
-        super.tearDown()
+        try super.tearDownWithError()
     }
 
     func testWhenFilesHaveUnsupportedExtensionsTheyAreIgnored() throws {
@@ -98,6 +99,44 @@ final class CrashReportReaderTests: XCTestCase {
         XCTAssertEqual(returnedNames, ["DuckDuckGo-user.ips", "DuckDuckGo-system.crash"])
     }
 
+    func testWhenIPSBundleIDDoesNotMatchItIsFilteredOut() throws {
+        let now = Date()
+
+        try writeReport(named: "DuckDuckGo-valid.ips", contents: sampleIPSReport(), in: userDirectory, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "DuckDuckGo-other.ips", contents: sampleIPSReport(bundleID: "com.example.other"), in: userDirectory, creationDate: now.addingTimeInterval(-60))
+
+        let reader = makeReader(now: now)
+        let reports = reader.getCrashReports(since: now.addingTimeInterval(-120))
+
+        XCTAssertEqual(reports.count, 1)
+        XCTAssertEqual(reports.first?.url.lastPathComponent, "DuckDuckGo-valid.ips")
+    }
+
+    func testWhenIPSBundleIDMatchesVpnExtensionItIsIncluded() throws {
+        let now = Date()
+
+        try writeReport(named: "\(vpnIdentifier)-valid.ips", contents: sampleIPSReport(bundleID: vpnBundleIdentifier), in: userDirectory, creationDate: now.addingTimeInterval(-60))
+
+        let reader = makeReader(now: now)
+        let reports = reader.getCrashReports(since: now.addingTimeInterval(-120))
+
+        XCTAssertEqual(reports.count, 1)
+        XCTAssertEqual(reports.first?.bundleID, vpnBundleIdentifier)
+    }
+
+    func testWhenIPSBundleIDHasSuffixItIsFilteredOut() throws {
+        let now = Date()
+
+        try writeReport(named: "DuckDuckGo-valid.ips", contents: sampleIPSReport(), in: userDirectory, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "DuckDuckGo-suffixed.ips", contents: sampleIPSReport(bundleID: "\(appBundleIdentifier).debug"), in: userDirectory, creationDate: now.addingTimeInterval(-60))
+
+        let reader = makeReader(now: now)
+        let reports = reader.getCrashReports(since: now.addingTimeInterval(-120))
+
+        XCTAssertEqual(reports.count, 1)
+        XCTAssertEqual(reports.first?.url.lastPathComponent, "DuckDuckGo-valid.ips")
+    }
+
     // MARK: - Helpers
 
     private func makeTemporaryDirectory() throws -> URL {
@@ -112,17 +151,20 @@ final class CrashReportReaderTests: XCTestCase {
         try contents.write(to: url, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.creationDate: creationDate], ofItemAtPath: url.path)
     }
-    
+
     private func makeReader(now: Date) -> CrashReportReader {
         return CrashReportReader(fileManager: FileManager.default,
                                  userDiagnosticReportsDirectory: userDirectory,
                                  systemDiagnosticReportsDirectory: systemDirectory,
                                  currentAppDisplayName: appDisplayName,
+                                 currentAppBundleIdentifier: appBundleIdentifier,
+                                 vpnExtensionBundleIdentifier: vpnBundleIdentifier,
                                  dateProvider: { now })
     }
-    
-    private func sampleIPSReport() -> String {
-        return #"{"bundleID":"com.duckduckgo.macos","app_version":"1.0.0"}"#
+
+    private func sampleIPSReport(bundleID: String? = nil) -> String {
+        let bundleIDValue = bundleID ?? appBundleIdentifier
+        return #"{"bundleID":"\#(bundleIDValue)","app_version":"1.0.0"}"#
     }
 
     private func sampleLegacyReport() -> String {

@@ -26,17 +26,23 @@ final class CrashReportReader {
     private let userDiagnosticReportsDirectory: URL
     private let systemDiagnosticReportsDirectory: URL
     private let currentAppDisplayName: String?
+    private let currentAppBundleIdentifier: String?
+    private let vpnExtensionBundleIdentifier: String?
     private let dateProvider: () -> Date
 
     init(fileManager: FileManager = .default,
          userDiagnosticReportsDirectory: URL = FileManager.userDiagnosticReports,
          systemDiagnosticReportsDirectory: URL = FileManager.systemDiagnosticReports,
          currentAppDisplayName: String? = Bundle.main.displayName,
+         currentAppBundleIdentifier: String? = Bundle.main.bundleIdentifier,
+         vpnExtensionBundleIdentifier: String? = "com.duckduckgo.macos.vpn.network-extension",
          dateProvider: @escaping () -> Date = Date.init) {
         self.fileManager = fileManager
         self.userDiagnosticReportsDirectory = userDiagnosticReportsDirectory
         self.systemDiagnosticReportsDirectory = systemDiagnosticReportsDirectory
         self.currentAppDisplayName = currentAppDisplayName
+        self.currentAppBundleIdentifier = currentAppBundleIdentifier
+        self.vpnExtensionBundleIdentifier = vpnExtensionBundleIdentifier
         self.dateProvider = dateProvider
     }
 
@@ -58,10 +64,12 @@ final class CrashReportReader {
         }
 
         let filteredPaths = allPaths.filter({
-            isCrashReportPath($0) && belongsToThisApp($0) && isFile(at: $0, newerThan: lastCheckDate)
+            isCrashReportPath($0) && isFile(at: $0, newerThan: lastCheckDate)
         })
 
-        return filteredPaths.compactMap(crashReport(from:))
+        return filteredPaths
+            .compactMap(crashReport(from:))
+            .filter(belongsToThisApp)
     }
 
     private func isCrashReportPath(_ path: URL) -> Bool {
@@ -69,11 +77,23 @@ final class CrashReportReader {
         return validExtensions.contains(path.pathExtension)
     }
 
-    private func belongsToThisApp(_ path: URL) -> Bool {
-        let hasAppPrefix = path.lastPathComponent.hasPrefix(currentAppDisplayName ?? "DuckDuckGo")
-        let hasVPNPrefix = path.lastPathComponent.hasPrefix(Self.vpnExtensionDisplayName)
+    private func belongsToThisApp(_ crashReport: CrashReport) -> Bool {
+        let fileName = crashReport.url.lastPathComponent
+        let hasAppPrefix = fileName.hasPrefix(currentAppDisplayName ?? "DuckDuckGo")
+        let hasVPNPrefix = fileName.hasPrefix(Self.vpnExtensionDisplayName)
 
-        return hasAppPrefix || hasVPNPrefix
+        guard hasAppPrefix || hasVPNPrefix else {
+            return false
+        }
+
+        guard let bundleID = crashReport.bundleID else {
+            return true
+        }
+
+        let allowedBundleIdentifiers = [currentAppBundleIdentifier, vpnExtensionBundleIdentifier].compactMap { $0 }
+        guard !allowedBundleIdentifiers.isEmpty else { return true }
+
+        return allowedBundleIdentifiers.contains(bundleID)
     }
 
     private func isFile(at path: URL, newerThan lastCheckDate: Date) -> Bool {

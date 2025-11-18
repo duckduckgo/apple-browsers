@@ -174,6 +174,10 @@ class MainViewController: UIViewController {
     var currentTab: TabViewController? {
         return tabManager.current(createIfNeeded: false)
     }
+    
+    var currentAITab: AITabController? {
+        currentTab
+    }
 
     var searchBarRect: CGRect {
         let view = UIApplication.shared.firstKeyWindow?.rootViewController?.view
@@ -1328,6 +1332,21 @@ class MainViewController: UIViewController {
             }
         }
     }
+    
+    /// Loads content into the current AI Chat tab with optional query, auto-send, payload, and tools.
+    ///
+    /// - Parameters:
+    ///   - query: Optional query string to load in AI Chat
+    ///   - autoSend: Whether to automatically send the query. Defaults to `false`.
+    ///   - payload: Optional payload data for AI Chat. Defaults to `nil`.
+    ///   - tools: Optional RAG tools available in AI Chat. Defaults to `nil`.
+    func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
+        guard let currentAITab = currentAITab else { fatalError("no ai tab") }
+        
+        prepareTabForRequest {
+            currentAITab.load(query, autoSend: autoSend, payload: payload, tools: tools)
+        }
+    }
 
     func executeBookmarklet(_ url: URL) {
         if url.isBookmarklet() {
@@ -2320,7 +2339,7 @@ class MainViewController: UIViewController {
             }
         }
 
-        guard let currentTab = currentTab else { fatalError("no tab") }
+        load(query, autoSend: autoSend, payload: payload, tools: tools)
     }
 }
 

@@ -482,7 +482,13 @@ public final class CaptchaServiceMock: CaptchaServiceProtocol {
 
     public init() {}
 
-    public func submitCaptchaInformation(_ captchaInfo: GetCaptchaInfoResponse, retries: Int, pollingInterval: TimeInterval, attemptId: UUID, shouldRunNextStep: @escaping () -> Bool) async throws -> CaptchaTransactionId {
+    public func submitCaptchaInformation(_ captchaInfo: GetCaptchaInfoResponse,
+                                         dataBrokerURL: String,
+                                         dataBrokerVersion: String,
+                                         retries: Int,
+                                         pollingInterval: TimeInterval,
+                                         attemptId: UUID,
+                                         shouldRunNextStep: @escaping () -> Bool) async throws -> CaptchaTransactionId {
         if shouldThrow {
             throw CaptchaServiceError.errorWhenSubmittingCaptcha
         }
@@ -492,7 +498,13 @@ public final class CaptchaServiceMock: CaptchaServiceProtocol {
         return "transactionID"
     }
 
-    public func submitCaptchaToBeResolved(for transactionID: CaptchaTransactionId, retries: Int, pollingInterval: TimeInterval, attemptId: UUID, shouldRunNextStep: @escaping () -> Bool) async throws -> CaptchaResolveData {
+    public func submitCaptchaToBeResolved(for transactionID: CaptchaTransactionId,
+                                          dataBrokerURL: String,
+                                          dataBrokerVersion: String,
+                                          retries: Int,
+                                          pollingInterval: TimeInterval,
+                                          attemptId: UUID,
+                                          shouldRunNextStep: @escaping () -> Bool) async throws -> CaptchaResolveData {
         if shouldThrow {
             throw CaptchaServiceError.errorWhenFetchingCaptchaResult
         }
@@ -1539,7 +1551,9 @@ public final class MockDataBrokerProtectionBackendServicePixels: DataBrokerProte
         self.statusCode = statusCode
     }
 
-    public func fireEmptyAccessToken(callSite: BackendServiceCallSite) {
+    public func fireEmptyAccessToken(callSite: BackendServiceCallSite,
+                                     dataBrokerURL: String?,
+                                     dataBrokerVersion: String?) {
         fireEmptyAccessTokenWasCalled = true
     }
 

@@ -45,6 +45,7 @@ import Subscription
 import WKAbstractions
 import SERPSettings
 import AIChat
+import PixelKit
 
 class TabViewController: UIViewController {
 
@@ -3877,6 +3878,7 @@ extension TabViewController: SERPSettingsUserScriptDelegate {
     }
 
     func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
+        PixelKit.fire(SERPSettingsPixel.openDuckAIButtonClick, frequency: .standard)
         guard let mainVC = parent as? MainViewController else { return }
         mainVC.segueToSettingsAIChat(openedFromSERPSettingsButton: true)
     }

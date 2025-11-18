@@ -120,7 +120,6 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
 
         // Sites = unique domains count (items in synthetic 'sites' section)
         if isSitesSectionEnabled {
-            assert(AppVersion.runType != .normal, "Enable History View Sites Section Deletion UI Tests and remove the assertion")
             let sitesCount = groupingsByRange[.allSites]?.items.count ?? uniqueETLDPlus1Domains().count
             filteredRanges.append(.init(id: .allSites, count: sitesCount))
         }
@@ -487,7 +486,7 @@ extension HistoryEntry: SearchableHistoryEntry {
      * Search term matching checks title and URL (case insensitive).
      */
     func matches(_ searchTerm: String) -> Bool {
-        (title ?? "").localizedCaseInsensitiveContains(searchTerm) || url.absoluteString.localizedCaseInsensitiveContains(searchTerm)
+        (title ?? "").localizedCaseInsensitiveContains(searchTerm) || url.absoluteString.dropping(prefix: url.navigationalScheme?.separated() ?? "").localizedCaseInsensitiveContains(searchTerm)
     }
 
     /**
@@ -506,7 +505,7 @@ extension HistoryEntry: SearchableHistoryEntry {
 
 extension HistoryView.DataModel.HistoryItem: SearchableHistoryEntry {
     func matches(_ searchTerm: String) -> Bool {
-        title.localizedCaseInsensitiveContains(searchTerm) || url.localizedCaseInsensitiveContains(searchTerm)
+        title.localizedCaseInsensitiveContains(searchTerm) || (url.dropping(prefix: URL(string: url)?.navigationalScheme?.separated() ?? "")).localizedCaseInsensitiveContains(searchTerm)
     }
 
     func matchesDomains(_ domains: Set<String>) -> Bool {

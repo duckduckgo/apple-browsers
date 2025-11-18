@@ -22,8 +22,6 @@ import Core
 import BrowserServicesKit
 
 final actor AdAttributionPixelReporter {
-    
-    static var shared = AdAttributionPixelReporter()
 
     private var fetcherStorage: AdAttributionReporterStorage
     private let attributionFetcher: AdAttributionFetcher
@@ -42,7 +40,7 @@ final actor AdAttributionPixelReporter {
     init(fetcherStorage: AdAttributionReporterStorage = UserDefaultsAdAttributionReporterStorage(),
          attributionFetcher: AdAttributionFetcher = DefaultAdAttributionFetcher(),
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
          variantManager: VariantManager = AppDependencyProvider.shared.variantManager,
          pixelFiring: PixelFiringAsync.Type = Pixel.self) {
         self.fetcherStorage = fetcherStorage

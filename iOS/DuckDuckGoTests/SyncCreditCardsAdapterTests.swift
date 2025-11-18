@@ -52,7 +52,8 @@ final class SyncCreditCardsAdapterTests: XCTestCase {
     func testWhenSyncErrorPublished_ThenErrorHandlerHandleCreditCardErrorCalled() async {
         let expectation = XCTestExpectation(description: "Sync did fail")
         let expectedError = NSError(domain: "some error", code: 400)
-        adapter.setUpProviderIfNeeded(secureVaultFactory: AutofillSecureVaultFactory, metadataStore: metadataStore)
+        adapter.setUpProviderIfNeeded(secureVaultFactory: AutofillSecureVaultFactory,
+                                      metadataStore: metadataStore, privacyConfigurationManager: MockPrivacyConfigurationManager())
         adapter.provider!.syncErrorPublisher
             .sink { _ in
                 expectation.fulfill()
@@ -68,7 +69,9 @@ final class SyncCreditCardsAdapterTests: XCTestCase {
 
     func testWhenSyncErrorPublished_ThenErrorHandlerSyncCreditCardsSuccededCalled() async {
         let expectation = XCTestExpectation(description: "Sync Did Update")
-        adapter.setUpProviderIfNeeded(secureVaultFactory: AutofillSecureVaultFactory, metadataStore: metadataStore)
+        adapter.setUpProviderIfNeeded(secureVaultFactory: AutofillSecureVaultFactory,
+                                      metadataStore: metadataStore,
+                                      privacyConfigurationManager: MockPrivacyConfigurationManager())
 
         Task {
             adapter.provider?.syncDidUpdateData()

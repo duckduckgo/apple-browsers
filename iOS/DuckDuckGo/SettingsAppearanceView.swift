@@ -46,9 +46,7 @@ struct SettingsAppearanceView: View {
     func navigateToSubPageIfNeeded() {
         deepLinkTarget = viewModel.deepLinkTarget
 
-        // This just needs to be longer than the deep link logic in the View Model which uses a timer 🙄
-        //  otherwise this immediately gets popped.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
+        DispatchQueue.main.async {
             switch deepLinkTarget {
             case .customizeToolbarButton:
                 showToolbarSettings = true

@@ -397,6 +397,10 @@ extension URL {
         return filename
     }
 
+    var suggestedTitlePlaceholder: String? {
+        host?.droppingWwwPrefix()
+    }
+
     var emailAddresses: [String] {
         guard navigationalScheme == .mailto, let path = URLComponents(url: self, resolvingAgainstBaseURL: false)?.path else {
             return []

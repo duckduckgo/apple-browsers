@@ -1629,8 +1629,12 @@ final class AddressBarButtonsViewController: NSViewController {
     private func setupSearchModeToggleControl() {
         let toggleControl = CustomToggleControl(frame: NSRect(x: 0, y: 0, width: 72, height: 28))
         toggleControl.translatesAutoresizingMaskIntoConstraints = false
+
         toggleControl.leftImage = DesignSystemImages.Glyphs.Size16.findSearch
         toggleControl.rightImage = DesignSystemImages.Glyphs.Size16.aiChat
+
+        toggleControl.leftSelectedImage = DesignSystemImages.Color.Size16.searchFindToggle
+        toggleControl.rightSelectedImage = DesignSystemImages.Color.Size16.aiChatToggle
 
         applyThemeToToggleControl(toggleControl)
 

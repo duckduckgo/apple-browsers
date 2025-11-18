@@ -42,6 +42,14 @@ public final class CustomToggleControl: NSControl {
     public var rightImage: NSImage? {
         didSet { needsDisplay = true }
     }
+    
+    public var leftSelectedImage: NSImage? {
+        didSet { needsDisplay = true }
+    }
+    
+    public var rightSelectedImage: NSImage? {
+        didSet { needsDisplay = true }
+    }
 
     public var isRightSelected: Bool = false {
         didSet {
@@ -166,12 +174,13 @@ public final class CustomToggleControl: NSControl {
         innerBorderPath.stroke()
         context.restoreGState()
 
-        if let leftImage = leftImage {
-            drawImage(leftImage, in: leftRect, alpha: 1.0)
+        let isLeftSelected = !isRightSelected
+        if let leftImg = (isLeftSelected && leftSelectedImage != nil) ? leftSelectedImage : leftImage {
+            drawImage(leftImg, in: leftRect, alpha: 1.0)
         }
 
-        if let rightImage = rightImage {
-            drawImage(rightImage, in: rightRect, alpha: 1.0)
+        if let rightImg = (isRightSelected && rightSelectedImage != nil) ? rightSelectedImage : rightImage {
+            drawImage(rightImg, in: rightRect, alpha: 1.0)
         }
 
         if isFocused {

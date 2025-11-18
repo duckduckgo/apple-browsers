@@ -110,6 +110,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
             webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             aiChatPreferences: mockAIChatPreferences,
+            aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager),
+            accessibilityPreferences: AccessibilityPreferences(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
     }
@@ -133,6 +135,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
             webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             aiChatPreferences: mockAIChatPreferences,
+            aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager),
+            accessibilityPreferences: AccessibilityPreferences(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
     }
@@ -169,6 +173,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
             webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             aiChatPreferences: mockAIChatPreferences,
+            aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager),
+            accessibilityPreferences: AccessibilityPreferences(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
     }

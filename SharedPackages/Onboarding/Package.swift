@@ -37,7 +37,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../BrowserServicesKit"),
-        .package(path: "../DesignResourcesKit")
+        .package(path: "../DesignResourcesKit"),
+        .package(path: "../DesignResourcesKitIcons")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -48,6 +49,7 @@ let package = Package(
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Common", package: "BrowserServicesKit"),
                 "DesignResourcesKit",
+                "DesignResourcesKitIcons"
             ],
             resources: [
                 .process("Resources")

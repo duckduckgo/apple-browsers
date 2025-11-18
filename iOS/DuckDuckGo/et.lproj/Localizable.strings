@@ -2452,6 +2452,21 @@
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Tere!\n\nKas oled valmis kasutama kiiremat brauserit, mis hoiab sind kaitstud?";
 
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Järgmine";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Tehisintellekti funktsioonid on privaatsed ja valikulised. Saad muudatusi teha suvandis Seaded > Tehisintellekti funktsioonid.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Tehisintellekti funktsioonid on privaatsed ja valikulised. Saad muudatuse teha jaotises %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Seaded > Tehisintellekti funktsioonid.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Kas soovid lihtsamat juurdepääsu privaatsele AI-vestlusele?";
+
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Teeme ära!";
 

@@ -345,7 +345,7 @@ final class BookmarkTableCellView: NSTableCellView {
 #if DEBUG
 @available(macOS 14.0, *)
 #Preview {
-    BookmarkTableCellView.PreviewView(cell: BookmarkTableCellView(identifier: .init("id"), entity: Bookmark(id: "1", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false), theme: ThemeStyle.buildThemeStyle(themeName: .default)))
+    BookmarkTableCellView.PreviewView(cell: BookmarkTableCellView(identifier: .init("id"), entity: Bookmark(id: "1", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false), theme: ThemeStyle.buildThemeStyle(themeName: .default, featureFlagger: NSApp.delegateTyped.featureFlagger)))
 }
 
 extension BookmarkTableCellView {

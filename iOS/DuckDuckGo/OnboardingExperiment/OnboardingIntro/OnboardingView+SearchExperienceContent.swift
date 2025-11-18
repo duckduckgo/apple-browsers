@@ -28,6 +28,7 @@ extension OnboardingView {
         private let action: () -> Void
         
         @State private var showContent = false
+        @StateObject private var viewModel = OnboardingSearchExperiencePickerViewModel()
 
         init(animateTitle: Binding<Bool> = .constant(true),
              isSkipped: Binding<Bool>,
@@ -46,14 +47,17 @@ extension OnboardingView {
                 .font(Metrics.titleFont)
 
                 VStack(spacing: 24.0) {
-                    OnboardingSearchExperiencePicker()
+                    OnboardingSearchExperiencePicker(viewModel: viewModel)
                     
                     Text(AttributedString(UserText.Onboarding.SearchExperience.footerAttributed()))
                         .foregroundColor(.secondary)
                         .font(.footnote)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Button(action: action) {
+                    Button(action: {
+                        viewModel.confirmChoice()
+                        action()
+                    }) {
                         Text(UserText.Onboarding.SearchExperience.cta)
                     }
                     .buttonStyle(PrimaryButtonStyle())

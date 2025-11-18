@@ -164,11 +164,23 @@ final class CrashReportReaderTests: XCTestCase {
 
     private func sampleIPSReport(bundleID: String? = nil) -> String {
         let bundleIDValue = bundleID ?? appBundleIdentifier
-        return #"{"bundleID":"\#(bundleIDValue)","app_version":"1.0.0"}"#
+        let original = "\"bundleID\":\"com.duckduckgo.macos.browser\""
+        let replacement = "\"bundleID\":\"\(bundleIDValue)\""
+        return exampleCrashReportContents.replacingOccurrences(of: original, with: replacement, options: [], range: nil)
     }
 
     private func sampleLegacyReport() -> String {
         return "Process: \(appDisplayName) [123]"
     }
+
+    private lazy var exampleCrashReportContents: String = {
+        let bundle = Bundle(for: CrashReportReaderTests.self)
+        guard let url = bundle.url(forResource: "DuckDuckGo-ExampleCrash", withExtension: "ips"),
+              let contents = try? String(contentsOf: url) else {
+            XCTFail("Missing sample JSON crash file")
+            return ""
+        }
+        return contents
+    }()
 
 }

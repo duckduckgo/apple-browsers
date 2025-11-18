@@ -256,7 +256,7 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
         let result = await manager.storePurchaseManager().purchaseSubscription(with: identifier, externalID: externalID)
 
         switch result {
-        case .success(_):
+        case .success:
             let accountStatus = isNewAccount ? "NEW account created" : "Attached to EXISTING account"
             statusMessage = "✅ Purchase successful!"
             isError = false

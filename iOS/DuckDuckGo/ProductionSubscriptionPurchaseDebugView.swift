@@ -141,7 +141,6 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     @Published var isError = false
     @Published var showAlert = false
     @Published var alertMessage = ""
-    @Published var currentPurchaseId: String?
     @Published var existingExternalID: String?
     @Published var isLoadingExternalID = true
     
@@ -159,16 +158,18 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
         "ddg.privacy.pro.monthly.renews.row.freetrial",
         "ddg.privacy.pro.yearly.renews.row.freetrial"
     ]
-    
-    private var subscriptionManager: SubscriptionManagerV2 {
-        AppDependencyProvider.shared.subscriptionManagerV2!
-    }
+
     
     func loadExistingExternalID() async {
         isLoadingExternalID = true
+        guard let manager = AppDependencyProvider.shared.subscriptionManagerV2 else {
+            Logger.subscription.error("[ProductionSubscriptionDebug] Subscription manager not available")
+            isLoadingExternalID = false
+            return
+        }
         do {
             // Try to get existing external ID from authenticated account
-            let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .local)
+            let tokenContainer = try await manager.getTokenContainer(policy: .local)
             existingExternalID = tokenContainer.decodedAccessToken.externalID
             Logger.subscription.info("[ProductionSubscriptionDebug] Found existing external ID: \(self.existingExternalID ?? "nil")")
         } catch {
@@ -196,7 +197,6 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     
     func purchaseSubscription(identifier: String) async {
         isLoading = true
-        currentPurchaseId = identifier
         isError = false
         statusMessage = "Starting purchase for \(displayName(for: identifier))..."
         
@@ -207,8 +207,12 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
         Logger.subscription.info("[ProductionSubscriptionDebug] Using external ID: \(externalID) (new: \(isNewAccount))")
         
         // Direct purchase bypassing AppStorePurchaseFlow
-        let result = await subscriptionManager.storePurchaseManager().purchaseSubscription(with: identifier, externalID: externalID)
-        
+        guard let manager = AppDependencyProvider.shared.subscriptionManagerV2 else {
+            Logger.subscription.error("[ProductionSubscriptionDebug] Subscription manager not available")
+            return
+        }
+        let result = await manager.storePurchaseManager().purchaseSubscription(with: identifier, externalID: externalID)
+
         switch result {
         case .success(let transactionJWS):
             statusMessage = "✅ Purchase successful! Transaction: \(transactionJWS.prefix(50))..."
@@ -216,6 +220,12 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
             let accountStatus = isNewAccount ? "NEW account created" : "Attached to EXISTING account"
             alertMessage = "Purchase successful! \(accountStatus)\n\nTransaction JWS received. You may need to complete the backend validation separately.\n\nExternal ID: \(externalID)"
             showAlert = true
+            
+            // Store the external ID for future purchases if this was a new account
+            if isNewAccount {
+                existingExternalID = externalID
+                Logger.subscription.info("[ProductionSubscriptionDebug] Stored new external ID for future purchases: \(externalID)")
+            }
             
             Logger.subscription.info("[ProductionSubscriptionDebug] Purchase successful: \(identifier)")
             
@@ -229,6 +239,5 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
         }
         
         isLoading = false
-        currentPurchaseId = nil
     }
 }

@@ -22,7 +22,7 @@ import Common
 import os.log
 
 public protocol DataBrokerProtectionSubscriptionManaging {
-    var isUserAuthenticated: Bool { get }
+    func isUserAuthenticated() async -> Bool
     func accessToken() async -> String?
     func hasValidEntitlement() async throws -> Bool
     /// Returns whether the user is eligible for a free trial
@@ -36,8 +36,9 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
     let runTypeProvider: AppRunTypeProviding
     let isAuthV2Enabled: Bool
 
-    public var isUserAuthenticated: Bool {
-        subscriptionManager.isUserAuthenticated
+    public func isUserAuthenticated() async -> Bool {
+        //Can't use subscriptionManager.isUserAuthenticated, we need to support token injection for testing
+        return await accessToken() != nil
     }
 
     public func accessToken() async -> String? {

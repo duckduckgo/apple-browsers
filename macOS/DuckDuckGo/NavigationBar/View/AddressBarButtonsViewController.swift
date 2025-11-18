@@ -1630,9 +1630,6 @@ final class AddressBarButtonsViewController: NSViewController {
         let toggleControl = CustomToggleControl(frame: NSRect(x: 0, y: 0, width: 72, height: 28))
         toggleControl.translatesAutoresizingMaskIntoConstraints = false
 
-        toggleControl.leftImage = DesignSystemImages.Glyphs.Size16.findSearch
-        toggleControl.rightImage = DesignSystemImages.Glyphs.Size16.aiChat
-
         toggleControl.leftSelectedImage = DesignSystemImages.Color.Size16.searchFindToggle
         toggleControl.rightSelectedImage = DesignSystemImages.Color.Size16.aiChatToggle
 
@@ -1664,7 +1661,6 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
-        let theme = themeManager.theme
         toggleControl.backgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         toggleControl.selectedBackgroundColor = .systemRed
         toggleControl.focusedBackgroundColor = .systemRed
@@ -1673,6 +1669,9 @@ final class AddressBarButtonsViewController: NSViewController {
         toggleControl.outerBorderColor = .systemGreen
         toggleControl.outerBorderWidth = 2.0
         toggleControl.selectionInnerBorderColor = NSColor(designSystemColor: .shadowSecondary)
+
+        toggleControl.leftImage = DesignSystemImages.Glyphs.Size16.findSearch.tinted(with: themeManager.theme.colorsProvider.iconsColor)
+        toggleControl.rightImage = DesignSystemImages.Glyphs.Size16.aiChat.tinted(with: themeManager.theme.colorsProvider.iconsColor)
     }
 
     private func setupAnimationViews() {

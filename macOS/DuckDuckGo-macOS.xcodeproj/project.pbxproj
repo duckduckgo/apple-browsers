@@ -3838,6 +3838,8 @@
 		F124E0F12D6E123A0035C7BA /* SubscriptionTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = F124E0F02D6E123A0035C7BA /* SubscriptionTestingUtilities */; };
 		F1476FC02C1359FB00EAE46A /* SubscriptionUIHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1476FBF2C1359FB00EAE46A /* SubscriptionUIHandler.swift */; };
 		F1476FC12C1359FB00EAE46A /* SubscriptionUIHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1476FBF2C1359FB00EAE46A /* SubscriptionUIHandler.swift */; };
+		F14890852ECCCAA800B5239E /* AttributedMetricUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14890842ECCCAA800B5239E /* AttributedMetricUtils.swift */; };
+		F14890862ECCCAA800B5239E /* AttributedMetricUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14890842ECCCAA800B5239E /* AttributedMetricUtils.swift */; };
 		F158DE022E9E992C00628DD0 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = F158DE012E9E992C00628DD0 /* ContentBlocking */; };
 		F158DE042E9E995F00628DD0 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = F158DE032E9E995F00628DD0 /* ContentBlocking */; };
 		F158DE062E9E9DF100628DD0 /* ContentBlocking in Frameworks */ = {isa = PBXBuildFile; productRef = F158DE052E9E9DF100628DD0 /* ContentBlocking */; };
@@ -6083,6 +6085,7 @@
 		F118EA7C2BEA2B8700F77634 /* DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift"; sourceTree = "<group>"; };
 		F118EA842BEACC7000F77634 /* NonStandardPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NonStandardPixel.swift; sourceTree = "<group>"; };
 		F1476FBF2C1359FB00EAE46A /* SubscriptionUIHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionUIHandler.swift; sourceTree = "<group>"; };
+		F14890842ECCCAA800B5239E /* AttributedMetricUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributedMetricUtils.swift; sourceTree = "<group>"; };
 		F1664A672D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUseSubscriptionFeatureV2.swift; sourceTree = "<group>"; };
 		F17114812C7C98FB009836C1 /* Logger+Favicons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Favicons.swift"; sourceTree = "<group>"; };
 		F17114842C7C9D28009836C1 /* Logger+Fire.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Fire.swift"; sourceTree = "<group>"; };
@@ -9630,6 +9633,7 @@
 				31521ABE2CC0139C00248E6F /* AIChat */,
 				AA4D700525545EDE00C3411E /* Application */,
 				AA585D85248FD31400E9A3E2 /* Assets.xcassets */,
+				F14890832ECCCA9800B5239E /* AttributedMetric */,
 				B31055BB27A1BA0E001AC618 /* Autoconsent */,
 				7B1E819A27C8874900FF0E60 /* Autofill */,
 				AAC5E4C025D6A6A9007F5990 /* Bookmarks */,
@@ -11733,6 +11737,14 @@
 				5677BB6F2E0D641F001EB83B /* SubscriptionNavigationCoordinator.swift */,
 			);
 			path = Subscription;
+			sourceTree = "<group>";
+		};
+		F14890832ECCCA9800B5239E /* AttributedMetric */ = {
+			isa = PBXGroup;
+			children = (
+				F14890842ECCCAA800B5239E /* AttributedMetricUtils.swift */,
+			);
+			path = AttributedMetric;
 			sourceTree = "<group>";
 		};
 		F16F92812C2AC0080007C93E /* Mocks */ = {
@@ -13881,6 +13893,7 @@
 				3706FB84293F65D500E42796 /* NSWindowExtension.swift in Sources */,
 				C1D3C56A2E747BBE0086A2BD /* CreditCardsCleanupErrorHandling.swift in Sources */,
 				C1D3C56B2E747BBE0086A2BD /* SyncCreditCardsAdapter.swift in Sources */,
+				F14890862ECCCAA800B5239E /* AttributedMetricUtils.swift in Sources */,
 				F1664A692D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift in Sources */,
 				3706FB85293F65D500E42796 /* AddBookmarkPopover.swift in Sources */,
 				F18826922BC0105900D9AC4F /* PixelDataRecord.swift in Sources */,
@@ -15519,6 +15532,7 @@
 				4BB88B4525B7B55C006F6B06 /* DebugUserScript.swift in Sources */,
 				AAC6881928626BF800D54247 /* RecentlyClosedTab.swift in Sources */,
 				B688B4DF27420D290087BEAF /* PDFSearchTextMenuItemHandler.swift in Sources */,
+				F14890852ECCCAA800B5239E /* AttributedMetricUtils.swift in Sources */,
 				AA7E919728746BCC00AB6B62 /* HistoryMenu.swift in Sources */,
 				BB470EBB2C5A66D6002EE91D /* BookmarkManagementDetailViewModel.swift in Sources */,
 				F4A6198C283CFFBB007F2080 /* ContentScopeFeatureFlagging.swift in Sources */,

@@ -55,6 +55,7 @@ import Utilities
 import VPN
 import VPNAppState
 import WebKit
+import AttributedMetric
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -148,8 +149,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let recentlyClosedCoordinator: RecentlyClosedCoordinating
     let downloadManager: FileDownloadManagerProtocol
     let downloadListCoordinator: DownloadListCoordinator
-
     let autoconsentManagement = AutoconsentManagement()
+    let attributedMetricManager: AttributedMetricManager
 
     private var updateProgressCancellable: AnyCancellable?
 
@@ -958,6 +959,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
 
+        //MARK: AttributedMetric initialisation
+
+        if let pixelKit = PixelKit.shared {
+            let errorHandler = AttributedMetricErrorHandler(pixelKit: pixelKit)
+            let attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: .appConfiguration,
+                                                                          errorHandler: errorHandler)
+            let bucketsSettingsProvider = DefaultBucketsSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
+            let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: subscriptionAuthV1toV2Bridge)
+            let defaultBrowserProvider = AttributedMetricDefaultBrowserProvider()
+            self.attributedMetricManager = AttributedMetricManager(pixelKit: pixelKit,
+                                                                   dataStoring: attributedMetricDataStorage,
+                                                                   featureFlagger: featureFlagger,
+                                                                   originProvider: nil,
+                                                                   defaultBrowserProviding: defaultBrowserProvider,
+                                                                   subscriptionStateProvider: subscriptionStateProvider,
+                                                                   bucketsSettingsProvider: bucketsSettingsProvider)
+        }
         super.init()
 
         appContentBlocking?.userContentUpdating.userScriptDependenciesProvider = self

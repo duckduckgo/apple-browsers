@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import os.log
 
 /// A specialised rolling data structure that maintains exactly 8 values for tracking weekly data.
 public class RollingEightDays<T: Codable & Equatable>: RollingArray<T> {
@@ -106,9 +107,14 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
         let now = dateProvider.now()
 
         // First time initialization
-        if lastDay == nil {
+        guard let lastDay else {
             lastDay = now
             append(1)
+            return
+        }
+
+        guard now > lastDay else {
+            Logger.attributedMetricRolling8Days.error("The date is incorrect; the current date precedes the last recorded date.")
             return
         }
 
@@ -119,7 +125,12 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
             self[self.lastIndex] = currentValue + 1
         } else {
             // Calculate days between lastDay and now
-            let daysBetween = Calendar.eastern.dateComponents([.day], from: Calendar.eastern.startOfDay(for: lastDay!), to: Calendar.eastern.startOfDay(for: now)).day ?? 0
+            let daysBetween = Calendar.eastern.dateComponents([.day], from: Calendar.eastern.startOfDay(for: lastDay), to: Calendar.eastern.startOfDay(for: now)).day ?? 0
+
+            guard daysBetween > 0 else {
+                Logger.attributedMetricRolling8Days.error("Attempted to increment rolling value for a date that was the same as the last date, which is not possible.")
+                return
+            }
 
             // Append .unknown for each missing day (excluding today)
             for _ in 1..<daysBetween {
@@ -128,7 +139,7 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
             }
 
             // Update lastDay and append 1 for today
-            lastDay = now
+            self.lastDay = now
             append(1)
         }
     }

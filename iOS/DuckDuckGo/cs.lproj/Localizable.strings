@@ -2452,6 +2452,21 @@
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Dobrý den.\n\nJsi připravený na rychlejší prohlížeč, který tě ochrání?";
 
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Další";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Funkce AI jsou soukromé a volitelné. Změny můžeš provádět v Nastavení > Funkce AI.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Funkce AI jsou soukromé a volitelné. Změny můžeš provádět na panelu %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Nastavení > Funkce AI.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Chceš mít soukromý AI chat hned po ruce?";
+
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Pojďme na to!";
 

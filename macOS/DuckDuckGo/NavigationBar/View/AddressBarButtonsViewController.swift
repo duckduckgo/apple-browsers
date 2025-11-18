@@ -241,7 +241,7 @@ final class AddressBarButtonsViewController: NSViewController {
           bookmarkManager: BookmarkManager,
           privacyConfigurationManager: PrivacyConfigurationManaging,
           permissionManager: PermissionManagerProtocol,
-          accessibilityPreferences: AccessibilityPreferences = AccessibilityPreferences.shared,
+          accessibilityPreferences: AccessibilityPreferences,
           tabsPreferences: TabsPreferences,
           popovers: NavigationBarPopovers?,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),

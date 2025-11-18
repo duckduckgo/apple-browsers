@@ -245,7 +245,7 @@ final class Fire: FireProtocol {
     init(cacheManager: WebCacheManager? = nil,
          historyCoordinating: HistoryCoordinating? = nil,
          permissionManager: PermissionManagerProtocol? = nil,
-         savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating = AccessibilityPreferences.shared,
+         savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating? = nil,
          downloadListCoordinator: DownloadListCoordinator? = nil,
          windowControllersManager: WindowControllersManagerProtocol? = nil,
          faviconManagement: FaviconManagement? = nil,
@@ -269,7 +269,7 @@ final class Fire: FireProtocol {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
         self.permissionManager = permissionManager ?? NSApp.delegateTyped.permissionManager
-        self.savedZoomLevelsCoordinating = savedZoomLevelsCoordinating
+        self.savedZoomLevelsCoordinating = savedZoomLevelsCoordinating ?? NSApp.delegateTyped.accessibilityPreferences
         self.downloadListCoordinator = downloadListCoordinator ?? NSApp.delegateTyped.downloadListCoordinator
         self.windowControllersManager = windowControllersManager ?? Application.appDelegate.windowControllersManager
         self.faviconManagement = faviconManagement ?? NSApp.delegateTyped.faviconManager

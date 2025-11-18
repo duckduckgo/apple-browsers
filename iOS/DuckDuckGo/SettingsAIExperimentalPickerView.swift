@@ -25,12 +25,10 @@ import UIComponents
 struct SettingsAIExperimentalPickerView: View {
     @Binding var isDuckAISelected: Bool
     let showNewBadgeForDuckAI: Bool
-    let duckAIOptionTitle: String
 
-    init(isDuckAISelected: Binding<Bool>, showNewBadgeForDuckAI: Bool = true, duckAIOptionTitle: String = UserText.settingsAIPickerSearchAndDuckAI) {
+    init(isDuckAISelected: Binding<Bool>, showNewBadgeForDuckAI: Bool = true) {
         self._isDuckAISelected = isDuckAISelected
         self.showNewBadgeForDuckAI = showNewBadgeForDuckAI
-        self.duckAIOptionTitle = duckAIOptionTitle
     }
 
     var body: some View {
@@ -49,7 +47,7 @@ struct SettingsAIExperimentalPickerView: View {
                 isSelected: isDuckAISelected,
                 selectedImage: .aiExperimentalOn,
                 unselectedImage: .aiExperimentalOff,
-                title: duckAIOptionTitle,
+                title: UserText.settingsAIPickerSearchAndDuckAI,
                 showNewBadge: showNewBadgeForDuckAI
             ) {
                 isDuckAISelected = true

@@ -140,7 +140,7 @@ struct SettingsAIFeaturesView: View {
                         .listRowBackground(Color(designSystemColor: .surface))
 
                         if viewModel.shouldShowHideAIGeneratedImagesSection {
-                            NavigationLink(destination: 
+                            NavigationLink(destination:
                                 SERPSettingsView(page: .searchAssist)
                                     .environmentObject(viewModel)
                                     .onAppear {

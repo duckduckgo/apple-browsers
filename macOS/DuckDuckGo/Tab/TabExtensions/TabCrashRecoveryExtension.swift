@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Combine
+import Common
 import Foundation
 import Navigation
 import WebKit
@@ -168,7 +169,13 @@ extension TabCrashRecoveryExtension: NavigationResponder {
             }
         }
 
-        handleTabCrash(error, in: webView, shouldAutoReload: !isCrashLoop)
+#if DEBUG
+        let shouldAutoReload = !isCrashLoop && AppVersion.runType != .integrationTests
+#else
+        let shouldAutoReload = !isCrashLoop
+#endif
+
+        handleTabCrash(error, in: webView, shouldAutoReload: shouldAutoReload)
     }
 
     private func handleTabCrash(_ error: WKError, in webView: WKWebView, shouldAutoReload: Bool) {

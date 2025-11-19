@@ -1,5 +1,5 @@
 //
-//  SubscriptionStateProviderMock.swift
+//  AIChatNotification.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,18 +17,7 @@
 //
 
 import Foundation
-import AttributedMetric
 
-public final class SubscriptionStateProviderMock: SubscriptionStateProviding {
-    public var isFreeTrialValue: Bool = false
-    public var isActive: Bool = false
-
-    public init(isFreeTrial: Bool = false, isActive: Bool = false) {
-        self.isFreeTrialValue = isFreeTrial
-        self.isActive = isActive
-    }
-
-    public func isFreeTrial() async -> Bool {
-        return isFreeTrialValue
-    }
+public extension NSNotification.Name {
+    static let aiChatUserDidSubmitPrompt: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.userDidSubmitPrompt")
 }

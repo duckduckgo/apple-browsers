@@ -19,7 +19,7 @@
 
 import Core
 import UIKit
-
+import PixelKit
 import BrowserServicesKit
 import Subscription
 
@@ -70,7 +70,7 @@ struct Launching: LaunchingHandling {
         // These services are instantiated early in the app lifecycle for two main reasons:
         // 1. To begin their essential work immediately, without waiting for UI or other components
         // 2. To potentially complete their tasks before the app becomes visible to the user
-        // This approach aims to optimize performance and ensure critical functionalities are ready ASAP
+        // This approach aims to optimise performance and ensure critical functionalities are ready ASAP
         let autofillService = AutofillService()
 
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
@@ -82,6 +82,9 @@ struct Launching: LaunchingHandling {
         let statisticsService = StatisticsService()
         let reportingService = ReportingService(fireproofing: fireproofing,
                                                 featureFlagging: featureFlagger,
+                                                userDefaults: UserDefaults.app,
+                                                pixelKit: PixelKit.shared!,
+                                                appDependencies: AppDependencyProvider.shared,
                                                 privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                       privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
@@ -123,7 +126,7 @@ struct Launching: LaunchingHandling {
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager
         )
 
-        // Has to be intialised after configuration.start in case values need to be migrated
+        // Has to be initialised after configuration.start in case values need to be migrated
         aiChatSettings = AIChatSettings()
 
         // Initialise modal prompts coordination

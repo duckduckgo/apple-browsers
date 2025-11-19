@@ -561,7 +561,7 @@ final class NavigationBarViewController: NSViewController {
         let performResize = { [weak self] in
             guard let self else { return }
 
-            let isAddressBarFocused = view.window?.firstResponder == addressBarViewController?.addressBarTextField.currentEditor()
+            let isAddressBarFocused = addressBarViewController?.selectionState.isSelected ?? false
 
             let height: NSLayoutConstraint = animated ? navigationBarHeightConstraint.animator() : navigationBarHeightConstraint
             height.constant = addressBarStyleProvider.navigationBarHeight(for: sizeClass, focused: isAddressBarFocused)
@@ -1631,7 +1631,7 @@ final class NavigationBarViewController: NSViewController {
         // This allows the address bar to maintain its width when activating it at narrow widths.
         guard !isInPopUpWindow,
               let addressBarViewController,
-              !addressBarViewController.isFirstResponder || addressBarViewController.isHomePage else {
+              !addressBarViewController.isSelected || addressBarViewController.isHomePage else {
             return
         }
 
@@ -2138,7 +2138,8 @@ extension NavigationBarViewController: AddressBarViewControllerDelegate {
 
     func addressBarViewControllerSearchModeToggleChanged(_ addressBarViewController: AddressBarViewController, isAIChatMode: Bool) {
         if let mainViewController = parent as? MainViewController {
-            mainViewController.updateAIChatOmnibarContainerVisibility(visible: isAIChatMode)
+            // When manually toggling to search mode (!isAIChatMode), keep the address bar selected
+            mainViewController.updateAIChatOmnibarContainerVisibility(visible: isAIChatMode, shouldKeepSelection: !isAIChatMode)
         }
     }
 }

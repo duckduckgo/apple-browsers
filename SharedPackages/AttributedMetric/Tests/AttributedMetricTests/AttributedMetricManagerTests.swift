@@ -167,7 +167,7 @@ final class AttributedMetricManagerTests: XCTestCase {
             defaults: userDefaults
         ) { pixelName, _, parameters, _, _, _ in
             switch pixelName {
-            case "m_mac_user_retention_week":
+            case "m_mac_attributed_metric_retention_week":
                 guard let countString = parameters["count"],
                       let count = Int(countString) else {
                     XCTFail("Missing or invalid count parameter for pixel: \(pixelName)")
@@ -193,7 +193,7 @@ final class AttributedMetricManagerTests: XCTestCase {
                     XCTFail("Unexpected week count: \(count)")
                 }
 
-            case "m_mac_user_retention_month":
+            case "m_mac_attributed_metric_retention_month":
                 guard let countString = parameters["count"],
                       let count = Int(countString) else {
                     XCTFail("Missing or invalid count parameter for pixel: \(pixelName)")
@@ -329,7 +329,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
-            case "m_mac_user_active_past_week":
+            case "m_mac_attributed_metric_active_past_week":
                 capturedDays = self.extractIntParameter(parameters, key: "days")
                 capturedDaysSinceInstalled = self.extractIntParameter(parameters, key: "daysSinceInstalled")
                 if capturedDays == nil {
@@ -338,7 +338,7 @@ final class AttributedMetricManagerTests: XCTestCase {
                 }
                 pixelFireCount += 1
                 pixelExpectation.fulfill()
-            case "m_mac_user_average_searches_past_week_first_month", "m_mac_user_retention_week":
+            case "m_mac_attributed_metric_average_searches_past_week_first_month", "m_mac_attributed_metric_retention_week":
                 // These pixels fire during userDidSearch and appDidStart, ignore them in this test
                 break
             case "m_mac_attributed_metric_data_store_error":
@@ -391,7 +391,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         var capturedDaysSinceInstalled: Int?
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
-            if pixelName == "m_mac_user_active_past_week" {
+            if pixelName == "m_mac_attributed_metric_active_past_week" {
                 capturedDaysSinceInstalled = self.extractIntParameter(parameters, key: "daysSinceInstalled")
                 pixelExpectation.fulfill()
             }
@@ -440,7 +440,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
-            case "m_mac_user_average_searches_past_week_first_month":
+            case "m_mac_attributed_metric_average_searches_past_week_first_month":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
@@ -493,7 +493,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
-            case "m_mac_user_average_searches_past_week":
+            case "m_mac_attributed_metric_average_searches_past_week":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
@@ -549,7 +549,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
-            case "m_mac_user_average_ad_clicks_past_week":
+            case "m_mac_attributed_metric_average_ad_clicks_past_week":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
@@ -603,7 +603,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
-            case "m_mac_user_average_duck_ai_usage_past_week":
+            case "m_mac_attributed_metric_average_duck_ai_usage_past_week":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
@@ -659,8 +659,8 @@ final class AttributedMetricManagerTests: XCTestCase {
         let fixture = createTestFixture(
             pixelHandler: { pixelName, _, parameters, _, _, _ in
                 switch pixelName {
-                case "m_mac_user_subscribed":
-                    capturedLength = self.extractIntParameter(parameters, key: "length")
+                case "m_mac_attributed_metric_subscribed":
+                    capturedLength = self.extractIntParameter(parameters, key: "month")
                     if capturedLength == nil {
                         XCTFail("Missing or invalid length parameter")
                         return
@@ -683,7 +683,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.attributionManager.process(trigger: .userDidSubscribe)
 
         await fulfillment(of: [pixelExpectation], timeout: 2.0)
-        XCTAssertEqual(capturedLength, 0, "Should send bucketed length 0 for free trial")
+        XCTAssertEqual(capturedLength, 0, "Should send bucketed month 0 for free trial")
         XCTAssertTrue(fixture.dataStorage.subscriptionFreeTrialFired, "Should mark free trial as fired")
     }
 
@@ -706,15 +706,15 @@ final class AttributedMetricManagerTests: XCTestCase {
     /// - Async test due to await subscriptionStateProvider.isFreeTrial()
     func testProcessSubscriptionDayPaid() async {
         let pixelExpectation = XCTestExpectation(description: "Subscription pixel fired")
-        var capturedLength: Int?
+        var capturedMonth: Int?
 
         let fixture = createTestFixture(
             pixelHandler: { pixelName, _, parameters, _, _, _ in
                 switch pixelName {
-                case "m_mac_user_subscribed":
-                    capturedLength = self.extractIntParameter(parameters, key: "length")
-                    if capturedLength == nil {
-                        XCTFail("Missing or invalid length parameter")
+                case "m_mac_attributed_metric_subscribed":
+                    capturedMonth = self.extractIntParameter(parameters, key: "month")
+                    if capturedMonth == nil {
+                        XCTFail("Missing or invalid month parameter")
                         return
                     }
                     pixelExpectation.fulfill()
@@ -735,7 +735,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.attributionManager.process(trigger: .userDidSubscribe)
 
         await fulfillment(of: [pixelExpectation], timeout: 2.0)
-        XCTAssertEqual(capturedLength, 1, "Should send bucketed length 1 for paid subscription")
+        XCTAssertEqual(capturedMonth, 1, "Should send bucketed month 1 for paid subscription")
         XCTAssertTrue(fixture.dataStorage.subscriptionMonth1Fired, "Should mark month 1 as fired")
     }
 
@@ -758,14 +758,14 @@ final class AttributedMetricManagerTests: XCTestCase {
     /// - Async test due to await subscriptionStateProvider.isFreeTrial()
     func testProcessSubscriptionCheckMonth1() async {
         let pixelExpectation = XCTestExpectation(description: "Month 1 subscription pixel fired")
-        var capturedLength: Int?
+        var capturedMonth: Int?
 
         let fixture = createTestFixture(
             pixelHandler: { pixelName, _, parameters, _, _, _ in
                 switch pixelName {
-                case "m_mac_user_subscribed":
-                    capturedLength = self.extractIntParameter(parameters, key: "length")
-                    if capturedLength == nil {
+                case "m_mac_attributed_metric_subscribed":
+                    capturedMonth = self.extractIntParameter(parameters, key: "month")
+                    if capturedMonth == nil {
                         XCTFail("Missing or invalid length parameter")
                         return
                     }
@@ -793,7 +793,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.attributionManager.process(trigger: .appDidStart)
 
         await fulfillment(of: [pixelExpectation], timeout: 2.0)
-        XCTAssertEqual(capturedLength, 1, "Should send bucketed length 1 for month 1")
+        XCTAssertEqual(capturedMonth, 1, "Should send bucketed length 1 for month 1")
     }
 
     /// Tests that processSubscriptionCheck sends month 2+ pixel on app start after one month
@@ -815,14 +815,14 @@ final class AttributedMetricManagerTests: XCTestCase {
     /// - Async test due to await subscriptionStateProvider.isFreeTrial()
     func testProcessSubscriptionCheckMonth2Plus() async {
         let pixelExpectation = XCTestExpectation(description: "Month 2+ subscription pixel fired")
-        var capturedLength: Int?
+        var capturedMonth: Int?
 
         let fixture = createTestFixture(
             pixelHandler: { pixelName, _, parameters, _, _, _ in
                 switch pixelName {
-                case "m_mac_user_subscribed":
-                    capturedLength = self.extractIntParameter(parameters, key: "length")
-                    if capturedLength == nil {
+                case "m_mac_attributed_metric_subscribed":
+                    capturedMonth = self.extractIntParameter(parameters, key: "month")
+                    if capturedMonth == nil {
                         XCTFail("Missing or invalid length parameter")
                         return
                     }
@@ -853,7 +853,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.attributionManager.process(trigger: .appDidStart)
 
         await fulfillment(of: [pixelExpectation], timeout: 2.0)
-        XCTAssertEqual(capturedLength, 2, "Should send bucketed length 2 for month 2+")
+        XCTAssertEqual(capturedMonth, 2, "Should send bucketed length 2 for month 2+")
     }
 
     // MARK: - Sync Tests
@@ -882,7 +882,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
-            case "m_mac_user_synced_device":
+            case "m_mac_attributed_metric_synced_device":
                 capturedDevices = self.extractIntParameter(parameters, key: "number_of_devices")
                 if capturedDevices == nil {
                     XCTFail("Missing or invalid devices parameter")
@@ -924,7 +924,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         var pixelFired = false
 
         let fixture = createTestFixture { pixelName, _, _, _, _, _ in
-            if pixelName == "m_mac_user_synced_device" {
+            if pixelName == "m_mac_attributed_metric_synced_device" {
                 pixelFired = true
             }
         }

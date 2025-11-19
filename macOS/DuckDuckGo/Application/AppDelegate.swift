@@ -972,7 +972,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.attributedMetricManager = AttributedMetricManager(pixelKit: PixelKit.shared,
                                                                dataStoring: attributedMetricDataStorage,
                                                                featureFlagger: featureFlagger,
-                                                               originProvider: nil,
+                                                               originProvider: AttributedMetricOriginFileProvider(),
                                                                defaultBrowserProviding: defaultBrowserProvider,
                                                                subscriptionStateProvider: subscriptionStateProvider,
                                                                bucketsSettingsProvider: bucketsSettingsProvider)

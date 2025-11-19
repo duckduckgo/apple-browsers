@@ -93,12 +93,7 @@ final class AttributedMetricDebugMenu: NSMenu, NSMenuDelegate {
             return date.debugDescription
         }
     }
-
-//    private func formatOptionalInt(_ value: Int?) -> String {
-//        guard let value = value else { return "nil" }
-//        return String(value)
-//    }
-
+    
     // MARK: - Actions
 
     @objc private func resetAllData(_ sender: Any?) {

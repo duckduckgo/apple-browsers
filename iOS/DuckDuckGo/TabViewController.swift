@@ -3878,7 +3878,7 @@ extension TabViewController: SERPSettingsUserScriptDelegate {
     }
 
     func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
-        PixelKit.fire(SERPSettingsPixel.openDuckAIButtonClick, frequency: .standard)
+        PixelKit.fire(SERPSettingsPixel.openDuckAIButtonClick, frequency: .dailyAndStandard)
         guard let mainVC = parent as? MainViewController else { return }
         mainVC.segueToSettingsAIChat(openedFromSERPSettingsButton: true)
     }

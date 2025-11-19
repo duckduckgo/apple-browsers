@@ -144,7 +144,7 @@ struct SettingsAIFeaturesView: View {
                                 SERPSettingsView(page: .searchAssist)
                                     .environmentObject(viewModel)
                                     .onAppear {
-                                        PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .standard)
+                                        PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
                                     }
                             ) {
                                 SettingsCellView(label: UserText.settingsAiFeaturesHideAIGeneratedImages,

@@ -33624,7 +33624,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usuń 1$#@items@."
+            "value" : "Usuń %#@items@."
           },
           "substitutions" : {
             "items" : {

@@ -124,7 +124,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     /// - `DefaultBrowserAndDockPromptDebugStore` - stores the override
     @objc func simulateCurrentDate() {
         let result = showDatePickerAlert()
-        
+
         switch result {
         case .success(.some(let date)):
             // OK clicked - set new override date
@@ -260,7 +260,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
                 switch (installDateCriteriaMet, inactiveDaysCriteriaMet) {
                 case (true, true):
                     // Both criteria met → can show today
-                    inactiveWillShowDate = debugStore.simulatedTodayDate
+                    inactiveWillShowDate = debugStore.simulatedTodayDate ?? Date()
                 case (true, false):
                     // Install age met, but not inactive long enough → need more inactivity
                     inactiveWillShowDate = nextDateAfterInactivity

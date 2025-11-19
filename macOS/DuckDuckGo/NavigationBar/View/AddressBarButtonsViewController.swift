@@ -995,6 +995,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 aiChatButton.isHidden = true
                 askAIChatButton.isHidden = true
             } else {
+                aiChatButton.isHidden = true
                 askAIChatButton.isHidden = !shouldShowAskAIChatButton()
             }
         } else {

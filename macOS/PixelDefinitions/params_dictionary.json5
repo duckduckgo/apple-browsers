@@ -179,7 +179,7 @@
     },
     "dbpActionTries": {
         "key": "tries",
-        "type": "string",
+        "type": "integer",
         "description": "Number of tries it took for the broker action to complete"
     },
     "dbpAttemptDuration": {

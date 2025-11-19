@@ -1,0 +1,27 @@
+appId: com.duckduckgo.mobile.ios
+---
+
+- scrollUntilVisible:
+    element: Passwords & Autofill
+- tapOn: Passwords & Autofill
+- tapOn: Credit Cards
+- tapOn: Passcode field
+- inputText: "0000"
+- pressKey: Enter
+
+- scrollUntilVisible:
+    element: Credit card
+- assertVisible: Credit card
+- tapOn: Credit card
+- assertVisible: 5101 6737 0209 1308
+- tapOn: Credit Cards
+
+- scrollUntilVisible:
+    element: Debit card
+- assertVisible: Debit card
+- tapOn: Debit card
+- assertVisible: 4242 4242 4242 4242
+
+- tapOn: Credit Cards
+- tapOn: Passwords & Autofill
+- tapOn: Settings

@@ -37,7 +37,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         burner = CapturingHistoryBurner()
         dateFormatter = MockHistoryViewDateFormatter()
         featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.historyView, .historyViewSitesSection]
+        featureFlagger.enabledFeatureFlags = [.historyViewSitesSection]
         pixelHandler = CapturingHistoryViewDataProviderPixelHandler()
         provider = HistoryViewDataProvider(
             historyDataSource: dataSource,

@@ -1033,11 +1033,7 @@ final class BrowserTabViewController: NSViewController {
             }
 
         case .history:
-            if featureFlagger.isFeatureOn(.historyView) {
-                updateTabIfNeeded(tabViewModel: tabViewModel)
-            } else {
-                removeAllTabContent()
-            }
+            updateTabIfNeeded(tabViewModel: tabViewModel)
 
         case .dataBrokerProtection:
             removeAllTabContent()

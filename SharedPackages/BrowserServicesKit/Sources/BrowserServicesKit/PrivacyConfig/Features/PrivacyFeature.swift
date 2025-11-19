@@ -66,7 +66,6 @@ public enum PrivacyFeature: String {
     case adAttributionReporting
     case forceOldAppDelegate
     case htmlHistoryPage
-    case shortHistoryMenu
     case tabManager
     case webViewStateRestoration
     case experimentalTheming
@@ -77,7 +76,6 @@ public enum PrivacyFeature: String {
     case iOSBrowserConfig
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlyFeatureForTests
-    case tabCrashRecovery
     case delayedWebviewPresentation
     case disableFireAnimation
     case htmlNewTabPage
@@ -86,8 +84,7 @@ public enum PrivacyFeature: String {
     case attributedMetrics
     case dataImport
     case duckAiDataClearing
-    case storeSerpSettings
-    case showHideAIGeneratedImagesSection
+    case serp
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -284,6 +281,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Allows to present Search Experience choice screen during onboarding
     case onboardingSearchExperience
+
+    /// Enables the omnibar toggle for AI Chat
+    case omnibarToggle
+
+    /// Controls showing the Hide AI section in Settings -> AI Features
+    case showHideAiGeneratedImages
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -518,4 +521,13 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .dataImport }
 
     case newSafariFilePicker
+}
+
+public enum SERPSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .serp
+    }
+
+    /// Global switch to disable New Tab Page search box
+    case storeSerpSettings
 }

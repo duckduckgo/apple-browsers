@@ -2452,6 +2452,21 @@
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Hej!\n\nÄr du redo för en snabbare webbläsare som också skyddar dig?";
 
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Nästa";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "AI-funktioner är privata och valfria. Du kan göra ändringar i Inställningar > AI-funktioner.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "AI-funktioner är privata och valfria. Du kan göra ändringar i %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Inställningar > AI-funktioner.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Vill du ha enklare tillgång till privat AI-chatt?";
+
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Vi kör!";
 

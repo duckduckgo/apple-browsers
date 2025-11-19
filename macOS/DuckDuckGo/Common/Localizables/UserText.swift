@@ -1402,18 +1402,10 @@ struct UserText {
     static let autoconsentFromSetUpModalConfirmButton = NSLocalizedString("autoconsent.from.setup.modal.cta.confirm", value: "Handle Pop-ups For Me", comment: "Confirm button for modal asking the user to auto manage cookies")
     static let autoconsentModalDenyButton = NSLocalizedString("autoconsent.modal.cta.deny", value: "No Thanks", comment: "Deny button for modal asking the user to auto manage cookies")
 
-    static let clearThisHistoryMenuItem = NSLocalizedString("history.menu.clear.this.history", value: "Clear This History…", comment: "Menu item to clear parts of history and data")
-    static let deleteThisHistoryMenuItem = NSLocalizedString("history.menu.delete.this.history", value: "Delete This History…", comment: "Menu item to delete parts of history and website data")
     static let recentlyVisitedMenuSection = NSLocalizedString("history.menu.recently.visited", value: "Recently Visited", comment: "Section header of the history menu")
-    static let olderMenuItem = NSLocalizedString("history.menu.older", value: "Older…", comment: "Menu item representing older history")
 
     static let clearAllDataQuestion = NSLocalizedString("history.menu.clear.all.history.question", value: "Clear all history and \nclose all tabs?", comment: "Alert with the confirmation to clear all history and data")
     static let clearAllDataDescription = NSLocalizedString("history.menu.clear.all.history.description", value: "Cookies and site data for all sites will also be cleared, unless the site is Fireproof.", comment: "Description in the alert with the confirmation to clear all data")
-
-    static let clearDataHeader = NSLocalizedString("history.menu.clear.data.question", value: "Clear History for %@?", comment: "Alert with the confirmation to clear all data")
-    static let clearDataDescription = NSLocalizedString("history.menu.clear.data.description", value: "Cookies and other data for sites visited on this day will also be cleared unless the site is Fireproof. History from other days will not be cleared.", comment: "Description in the alert with the confirmation to clear browsing history")
-    static let clearDataTodayHeader = NSLocalizedString("history.menu.clear.data.today.question", value: "Clear history for today \nand close all tabs?", comment: "Alert with the confirmation to clear all data")
-    static let clearDataTodayDescription = NSLocalizedString("history.menu.clear.data.today.description", value: "Cookies and other data for sites visited today will also be cleared unless the site is Fireproof. History from other days will not be cleared.", comment: "Description in the alert with the confirmation to clear browsing history")
 
     static let showBookmarksBar = NSLocalizedString("bookmarks.bar.show", value: "Bookmarks Bar", comment: "Menu item for showing the bookmarks bar")
     static let showBookmarksBarPreference = NSLocalizedString("bookmarks.bar.preferences.show", value: "Show Bookmarks Bar", comment: "Preference item for showing the bookmarks bar")

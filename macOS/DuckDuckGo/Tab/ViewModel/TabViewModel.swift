@@ -129,7 +129,7 @@ final class TabViewModel: NSObject {
 
     init(tab: Tab,
          appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
-         accessibilityPreferences: AccessibilityPreferences = .shared,
+         accessibilityPreferences: AccessibilityPreferences = NSApp.delegateTyped.accessibilityPreferences,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.tab = tab
         self.appearancePreferences = appearancePreferences
@@ -464,7 +464,7 @@ final class TabViewModel: NSObject {
         case .url, .none, .subscription, .identityTheftRestoration, .onboarding, .webExtensionUrl, .aiChat:
             if let tabTitle = tab.title?.trimmingWhitespace(), !tabTitle.isEmpty {
                 title = tabTitle
-            } else if let host = tab.url?.host?.droppingWwwPrefix() {
+            } else if let host = tab.url?.suggestedTitlePlaceholder {
                 title = host
             } else if let url = tab.url, url.isFileURL {
                 title = url.lastPathComponent

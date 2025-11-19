@@ -2452,6 +2452,21 @@
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Здравейте.\n\nГотови ли сте за по-бърз браузър, който осигурява защита?";
 
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Следващ";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "AI функциите са поверителни и незадължителни. Можете да направите промени в Настройки > AI функции.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "AI функциите са поверителни и незадължителни. Можете да направите промени в %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Настройки > AI Функции.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Искаш ли по-лесен достъп до поверителен AI чат?";
+
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Да го направим!";
 

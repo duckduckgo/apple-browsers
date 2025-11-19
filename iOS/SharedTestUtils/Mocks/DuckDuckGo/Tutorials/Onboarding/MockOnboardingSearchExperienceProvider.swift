@@ -22,6 +22,7 @@ import Foundation
 
 final class MockOnboardingSearchExperienceProvider: OnboardingSearchExperienceProvider {
     var didEnableAIChatSearchInputDuringOnboarding = false
+    var didMakeChoiceDuringOnboarding = false
     var didApplyOnboardingChoiceSettings = false
 
     func storeAIChatSearchInputDuringOnboardingChoice(enable: Bool) {}

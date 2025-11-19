@@ -89,10 +89,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func setupUI() {
         backgroundView.translatesAutoresizingMaskIntoConstraints = false
-        backgroundView.wantsLayer = true
-        backgroundView.layer?.masksToBounds = false  // Don't clip subviews - important for hit testing
-        backgroundView.layer?.borderWidth = 1
-        backgroundView.layer?.borderColor = NSColor.black.withAlphaComponent(0.2).cgColor
+        backgroundView.borderWidth = 1
+        backgroundView.borderColor = NSColor.black.withAlphaComponent(0.2)
         view.addSubview(backgroundView)
 
         innerBorderView.translatesAutoresizingMaskIntoConstraints = false
@@ -186,18 +184,17 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let barStyleProvider = theme.addressBarStyleProvider
         let colorsProvider = theme.colorsProvider
 
-        NSAppearance.withAppAppearance {
-            backgroundView.layer?.backgroundColor = colorsProvider.activeAddressBarBackgroundColor.cgColor
-            backgroundView.layer?.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
-            
-            if let borderColor = NSColor(named: "AddressBarBorderColor") {
-                backgroundView.layer?.borderColor = borderColor.cgColor
-            }
-            
-            submitButton.layer?.backgroundColor = colorsProvider.accentPrimaryColor.cgColor
-            submitButton.layer?.cornerRadius = 14
-            submitButton.contentTintColor = .white
+        backgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor
+        backgroundView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
+        backgroundView.layer?.masksToBounds = false  // Don't clip subviews - important for hit testing
+        
+        if let borderColor = NSColor(named: "AddressBarBorderColor") {
+            backgroundView.borderColor = borderColor
         }
+        
+        submitButton.layer?.backgroundColor = colorsProvider.accentPrimaryColor.cgColor
+        submitButton.layer?.cornerRadius = 14
+        submitButton.contentTintColor = .white
 
         innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
         innerBorderView.borderColor = NSColor(named: "AddressBarInnerBorderColor")

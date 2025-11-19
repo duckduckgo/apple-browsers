@@ -120,9 +120,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         let colorsProvider = theme.colorsProvider
         let addressBarStyleProvider = theme.addressBarStyleProvider
         
-        NSAppearance.withAppAppearance {
-            backgroundView.layer?.backgroundColor = colorsProvider.activeAddressBarBackgroundColor.cgColor
-        }
+        backgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor
         
         scrollView.backgroundColor = .clear
         scrollView.drawsBackground = false

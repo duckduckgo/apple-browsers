@@ -394,6 +394,11 @@ final class AddressBarViewController: NSViewController {
 
                 // don't resign first responder on tab switching
                 clickPoint = nil
+
+                if selectionState == .activeWithAIChat {
+                    delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: false)
+                    setAIChatOmnibarVisible(false)
+                }
             }
             .store(in: &cancellables)
     }

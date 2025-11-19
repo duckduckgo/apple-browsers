@@ -41,6 +41,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     let omnibarController: AIChatOmnibarController
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
+    private var textChangeCancellable: AnyCancellable?
 
     required init?(coder: NSCoder) {
         fatalError("AIChatOmnibarContainerViewController: Bad initializer")
@@ -61,6 +62,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         super.viewDidLoad()
         setupUI()
         subscribeToThemeChanges()
+        subscribeToTextChanges()
         applyThemeStyle()
     }
 
@@ -82,6 +84,19 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             .sink { [weak self] _ in
                 self?.applyThemeStyle()
             }
+    }
+
+    private func subscribeToTextChanges() {
+        textChangeCancellable = omnibarController.$currentText
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] text in
+                self?.updateSubmitButtonVisibility(for: text)
+            }
+    }
+
+    private func updateSubmitButtonVisibility(for text: String) {
+        let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        submitButton.isHidden = !hasText
     }
 
     private func applyTopClipMask() {
@@ -126,6 +141,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         submitButton.image = DesignSystemImages.Glyphs.Size12.arrowRight
         submitButton.imagePosition = .imageOnly
+        submitButton.isHidden = true  // Initially hidden until text is entered
         containerView.addSubview(submitButton)
 
         NSLayoutConstraint.activate([

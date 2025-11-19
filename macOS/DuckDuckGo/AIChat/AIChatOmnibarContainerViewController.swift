@@ -19,6 +19,7 @@
 import Cocoa
 import QuartzCore
 import Combine
+import DesignResourcesKitIcons
 
 final class AIChatOmnibarContainerViewController: NSViewController {
 
@@ -114,11 +115,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         submitButton.target = self
         submitButton.action = #selector(submitButtonClicked)
 
-        if let arrowImage = NSImage(systemSymbolName: "arrow.right", accessibilityDescription: "Submit") {
-            submitButton.image = arrowImage
-            submitButton.imagePosition = .imageOnly
-        }
-
+        submitButton.image = DesignSystemImages.Glyphs.Size12.arrowRight
+        submitButton.imagePosition = .imageOnly
         containerView.addSubview(submitButton)
 
         NSLayoutConstraint.activate([
@@ -137,8 +135,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             containerView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
 
-            submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-            submitButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -16),
+            submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -13),
+            submitButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -13),
             submitButton.widthAnchor.constraint(equalToConstant: 28),
             submitButton.heightAnchor.constraint(equalToConstant: 28),
         ])
@@ -194,7 +192,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         submitButton.layer?.backgroundColor = colorsProvider.accentPrimaryColor.cgColor
         submitButton.layer?.cornerRadius = 14
-        submitButton.contentTintColor = .white
+        submitButton.contentTintColor = colorsProvider.textPrimaryColor
 
         innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
         innerBorderView.borderColor = NSColor(named: "AddressBarInnerBorderColor")

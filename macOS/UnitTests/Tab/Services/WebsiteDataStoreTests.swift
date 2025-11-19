@@ -160,7 +160,7 @@ final class WebCacheManagerTests: XCTestCase {
         XCTAssertEqual(dataStore.records.count, 1)
         XCTAssertEqual(dataStore.records.first?.displayName, "duck.ai")
     }
-    
+
     func testWhenClearedThenCookiesForLoginsAreRetained() {
         let logins = MockPreservedLogins(domains: [
             "example.com"

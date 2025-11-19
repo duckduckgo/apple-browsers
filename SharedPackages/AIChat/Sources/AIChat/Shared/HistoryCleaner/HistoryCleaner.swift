@@ -34,7 +34,6 @@ public final class HistoryCleaner: HistoryCleaning {
     private let privacyConfig: PrivacyConfigurationManaging
     private var contentScopeUserScript: ContentScopeUserScript?
     private var aiChatDataClearingUserScript: AIChatDataClearingUserScript?
-    private var remainingDomains: [URL] = []
 
     public init(featureFlagger: FeatureFlagger,
                 privacyConfig: PrivacyConfigurationManaging) {
@@ -49,7 +48,6 @@ public final class HistoryCleaner: HistoryCleaning {
 
         return await withCheckedContinuation { continuation in
             self.continuation = continuation
-            self.remainingDomains = URL.aiChatDomains
             Task { @MainActor in
                 await self.processAllDomains()
             }

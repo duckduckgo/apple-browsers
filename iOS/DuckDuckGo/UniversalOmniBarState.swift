@@ -61,6 +61,7 @@ enum UniversalOmniBarState {
         var onEnterPhoneState: any OmniBarState { baseState.onEnterPhoneState }
         var onEnterPadState: any OmniBarState { baseState.onEnterPadState }
         var onReloadState: any OmniBarState { baseState.onReloadState }
+        var onEnterAIChatState: OmniBarState { baseState.onEnterAIChatState }
 
         // MARK: init params
         let dependencies: OmnibarDependencyProvider

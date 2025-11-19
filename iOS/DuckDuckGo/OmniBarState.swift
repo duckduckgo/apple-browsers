@@ -94,11 +94,6 @@ extension OmniBarState {
                                                     isLoading: isLoading)
     }
     
-    var onEnterAIChatState: OmniBarState {
-        let baseState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-        return SmallOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: isLoading)
-    }
-    
     // Default to false
     var showAIChatFullModeBranding: Bool { false }
     

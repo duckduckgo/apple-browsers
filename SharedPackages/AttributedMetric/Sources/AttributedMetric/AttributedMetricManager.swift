@@ -408,11 +408,12 @@ public final class AttributedMetricManager {
     // https://app.asana.com/1/137249556945/project/1205842942115003/task/1211301604929613?focus=true
 
     func processSubscriptionDay() {
-        Task {
-            Logger.attributedMetric.log("Processing subscription purchase")
-            guard dataStorage.subscriptionDate == nil else { return }
-            dataStorage.subscriptionDate = dateProvider.now()
 
+        Logger.attributedMetric.log("Processing subscription purchase")
+        guard dataStorage.subscriptionDate == nil else { return }
+        dataStorage.subscriptionDate = dateProvider.now()
+
+        Task {
             let isFreeTrial = await subscriptionStateProvider.isFreeTrial()
             if isFreeTrial  {
                 dataStorage.subscriptionFreeTrialFired = true
@@ -420,9 +421,9 @@ public final class AttributedMetricManager {
                 dataStorage.subscriptionMonth1Fired = true
             }
 
-            let length = isFreeTrial ? 0 : 1
-            guard let bucket = try? bucketModifier.bucket(value: length, pixelName: .userSubscribed) else {
-                Logger.attributedMetric.error("Failed to bucket length value")
+            let month = isFreeTrial ? 0 : 1
+            guard let bucket = try? bucketModifier.bucket(value: month, pixelName: .userSubscribed) else {
+                Logger.attributedMetric.error("Failed to bucket month value")
                 return
             }
             pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,

@@ -21,14 +21,21 @@ import AttributedMetric
 import Common
 import Foundation
 
-final class AttributedMetricDebugMenu: NSMenu {
+final class AttributedMetricDebugMenu: NSMenu, NSMenuDelegate {
 
     private var attributedMetricDataStorage: any AttributedMetricDataStoring
 
     init() {
-        self.attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: .standard, errorHandler: nil)
+        self.attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: .appConfiguration, errorHandler: nil)
 
         super.init(title: "Attributed Metrics")
+
+        self.delegate = self
+        buildMenuItems()
+    }
+
+    private func buildMenuItems() {
+        removeAllItems()
 
         buildItems {
             NSMenuItem(title: "Reset Stored Data", action: #selector(AttributedMetricDebugMenu.resetAllData))
@@ -64,6 +71,12 @@ final class AttributedMetricDebugMenu: NSMenu {
 
             NSMenuItem(title: "Sync Devices Count: \(String(attributedMetricDataStorage.syncDevicesCount))")
         }
+    }
+
+    // MARK: - NSMenuDelegate
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        buildMenuItems()
     }
 
     required init(coder: NSCoder) {
@@ -102,42 +115,30 @@ final class AttributedMetricDebugMenu: NSMenu {
         Task { @MainActor in
             let alert = NSAlert()
             alert.messageText = "Set Current Time"
-            alert.informativeText = "Enter a date in ISO8601 format (e.g., 2025-01-19T10:30:00Z) or leave empty to use system time:"
+            alert.informativeText = "Select a date and time to override the current time for testing:"
             alert.addButton(withTitle: "Save")
             alert.addButton(withTitle: "Delete")
             alert.addButton(withTitle: "Cancel")
 
-            let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
-            if let currentDate = attributedMetricDataStorage.debugDate {
-                textField.stringValue = formatOptionalDate(currentDate)
-            }
-            alert.accessoryView = textField
+            let datePicker = NSDatePicker(frame: NSRect(x: 0, y: 0, width: 300, height: 28))
+            datePicker.datePickerStyle = .textFieldAndStepper
+            datePicker.datePickerElements = [.yearMonthDay, .hourMinuteSecond]
+            datePicker.dateValue = attributedMetricDataStorage.debugDate ?? Date()
+
+            alert.accessoryView = datePicker
 
             let response = await alert.runModal()
 
             switch response {
             case .alertFirstButtonReturn:
-                let dateString = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                let selectedDate = datePicker.dateValue
+                attributedMetricDataStorage.debugDate = selectedDate
 
-                if dateString.isEmpty {
-                    attributedMetricDataStorage.debugDate = Date()
-                } else {
-                    if let date = ISO8601DateFormatter().date(from: dateString) {
-                        attributedMetricDataStorage.debugDate = date
-
-                        let confirmAlert = NSAlert()
-                        confirmAlert.messageText = "Done"
-                        confirmAlert.informativeText = "Current time set to: \(formatOptionalDate(date))\n**RESTART THE APP TO APPLY**"
-                        confirmAlert.addButton(withTitle: "OK")
-                        await confirmAlert.runModal()
-                    } else {
-                        let errorAlert = NSAlert()
-                        errorAlert.messageText = "Invalid Date Format"
-                        errorAlert.informativeText = "Please enter a valid ISO8601 date format (e.g., 2025-01-19T10:30:00Z)"
-                        errorAlert.addButton(withTitle: "OK")
-                        await errorAlert.runModal()
-                    }
-                }
+                let confirmAlert = NSAlert()
+                confirmAlert.messageText = "Done"
+                confirmAlert.informativeText = "Current time set to: \(formatOptionalDate(selectedDate))\n**RESTART THE APP TO APPLY**"
+                confirmAlert.addButton(withTitle: "OK")
+                await confirmAlert.runModal()
 
             case .alertSecondButtonReturn:
                 attributedMetricDataStorage.debugDate = nil

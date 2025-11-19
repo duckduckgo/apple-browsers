@@ -75,7 +75,8 @@ public final class AttributedMetricManager {
     private var dateProvider: any DateProviding
     private let bucketsJsonProvider: any BucketsSettingsProviding
     private var bucketModifier: any BucketModifier = DefaultBucketModifier()
-    var cancellables = Set<AnyCancellable>()
+    public let workQueue = DispatchQueue(label: "com.duckduckgo.AttributedMetricManager", qos: .background)
+    public var cancellables = Set<AnyCancellable>()
 
     public init(pixelKit: PixelKit?,
                 dataStoring: any AttributedMetricDataStoring,
@@ -271,6 +272,7 @@ public final class AttributedMetricManager {
     // https://app.asana.com/1/137249556945/project/1113117197328546/task/1211301604929609?focus=true
 
     func recordActiveSearchDay() {
+        Logger.attributedMetric.log("Recording active search day")
         let search8Days = dataStorage.search8Days
         search8Days.increment(dateProvider: dateProvider)
         dataStorage.search8Days = search8Days
@@ -406,13 +408,11 @@ public final class AttributedMetricManager {
     // https://app.asana.com/1/137249556945/project/1205842942115003/task/1211301604929613?focus=true
 
     func processSubscriptionDay() {
-
-        guard dataStorage.subscriptionDate == nil else { return }
-
-        dataStorage.subscriptionDate = dateProvider.now()
-        Logger.attributedMetric.debug("Subscription purchased today")
-
         Task {
+            Logger.attributedMetric.log("Processing subscription purchase")
+            guard dataStorage.subscriptionDate == nil else { return }
+            dataStorage.subscriptionDate = dateProvider.now()
+
             let isFreeTrial = await subscriptionStateProvider.isFreeTrial()
             if isFreeTrial  {
                 dataStorage.subscriptionFreeTrialFired = true

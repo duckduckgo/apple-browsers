@@ -1407,6 +1407,10 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         }
 
         invalidateInteractionStateData()
+
+        if navigation.url.isDuckDuckGoSearch {
+            NotificationCenter.default.post(name: .userDidPerformDDGSearch, object: self)
+        }
     }
 
     @MainActor

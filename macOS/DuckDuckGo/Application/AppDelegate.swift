@@ -974,6 +974,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                defaultBrowserProviding: defaultBrowserProvider,
                                                                subscriptionStateProvider: subscriptionStateProvider,
                                                                bucketsSettingsProvider: bucketsSettingsProvider)
+        self.attributedMetricManager.addNotificationsObserver()
 
         super.init()
 

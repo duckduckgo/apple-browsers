@@ -20,6 +20,7 @@ import Foundation
 import AttributedMetric
 import BrowserServicesKit
 import Subscription
+import AppKit
 
 extension SystemDefaultBrowserProvider: AttributedMetricDefaultBrowserProviding {
 
@@ -48,4 +49,70 @@ struct DefaultSubscriptionStateProvider: SubscriptionStateProviding {
     var isActive: Bool {
         subscriptionManager.isUserAuthenticated
     }
+}
+
+extension AttributedMetricManager {
+
+    func addNotificationsObserver() {
+
+        // Register for standard notifications or specific ones coming from frameworks like Subscription and relaunch them to AttributedMetric
+
+        // App start
+        NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+            .receive(on: workQueue)
+            .sink { [weak self] _ in
+                self?.process(trigger: .appDidStart)
+            }
+            .store(in: &cancellables)
+
+        // Search
+
+        NotificationCenter.default.publisher(for: .userDidPerformDDGSearch)
+            .receive(on: workQueue)
+            .sink { [weak self] _ in
+                self?.process(trigger: .userDidSearch)
+            }
+            .store(in: &cancellables)
+
+        // AD click
+
+        NotificationCenter.default.publisher(for: .userDidSelectDDGAD)
+            .receive(on: workQueue)
+            .sink { [weak self] _ in
+                self?.process(trigger: .userDidSelectAD)
+            }
+            .store(in: &cancellables)
+
+        // New AI chat message sent
+
+        NotificationCenter.default.publisher(for: .aiChatUserDidSubmitPrompt)
+            .receive(on: workQueue)
+            .sink { [weak self] _ in
+                self?.process(trigger: .userDidDuckAIChat)
+            }
+            .store(in: &cancellables)
+
+        // User purchased subscription
+
+        NotificationCenter.default.publisher(for: .userDidPurchaseSubscription)
+            .receive(on: workQueue)
+            .sink { [weak self] _ in
+                self?.process(trigger: .userDidSubscribe)
+            }
+            .store(in: &cancellables)
+
+        // Device sync
+
+        NotificationCenter.default.publisher(for: .syncDevicesUpdate)
+            .receive(on: workQueue)
+            .sink { [weak self] notification in
+                guard let deviceCount = notification.userInfo?[AttributedMetricNotificationParameter.syncCount.rawValue] as? Int else {
+                    assertionFailure("Missing \(AttributedMetricNotificationParameter.syncCount.rawValue)")
+                    return
+                }
+                self?.process(trigger: .userDidSync(devicesCount: deviceCount))
+            }
+            .store(in: &cancellables)
+    }
+
 }

@@ -69,23 +69,22 @@ final class CrashReportReader {
 
         return filteredPaths
             .compactMap(crashReport(from:))
-            .filter(belongsToThisApp)
+            .filter(matchesBundleID)
     }
 
     private func isCrashReportPath(_ path: URL) -> Bool {
         let validExtensions = [LegacyCrashReport.fileExtension, JSONCrashReport.fileExtension]
-        return validExtensions.contains(path.pathExtension)
-    }
-
-    private func belongsToThisApp(_ crashReport: CrashReport) -> Bool {
-        let fileName = crashReport.url.lastPathComponent
-        let hasAppPrefix = fileName.hasPrefix(currentAppDisplayName ?? "DuckDuckGo")
-        let hasVPNPrefix = fileName.hasPrefix(Self.vpnExtensionDisplayName)
-
-        guard hasAppPrefix || hasVPNPrefix else {
+        guard validExtensions.contains(path.pathExtension) else {
             return false
         }
 
+        let fileName = path.lastPathComponent
+        let hasAppPrefix = fileName.hasPrefix(currentAppDisplayName ?? "DuckDuckGo")
+        let hasVPNPrefix = fileName.hasPrefix(Self.vpnExtensionDisplayName)
+        return hasAppPrefix || hasVPNPrefix
+    }
+
+    private func matchesBundleID(_ crashReport: CrashReport) -> Bool {
         guard let bundleID = crashReport.bundleID else {
             return true
         }

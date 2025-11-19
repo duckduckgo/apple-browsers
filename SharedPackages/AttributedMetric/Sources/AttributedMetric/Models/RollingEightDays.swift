@@ -108,12 +108,12 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
 
         // First time initialization
         guard let lastDay else {
-            lastDay = now
+            self.lastDay = now
             append(1)
             return
         }
 
-        guard now > lastDay else {
+        guard now >= lastDay else {
             Logger.attributedMetricRolling8Days.error("The date is incorrect; the current date precedes the last recorded date.")
             return
         }

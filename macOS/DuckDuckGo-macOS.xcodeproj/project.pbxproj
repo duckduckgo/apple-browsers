@@ -283,6 +283,8 @@
 		31031EB72CC94C6E00684340 /* AIChatRemoteSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31031EB62CC94C6C00684340 /* AIChatRemoteSettingsTests.swift */; };
 		31031EB82CC94C6E00684340 /* AIChatRemoteSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31031EB62CC94C6C00684340 /* AIChatRemoteSettingsTests.swift */; };
 		310E79BF294A19A8007C49E8 /* FireproofingReferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 310E79BE294A19A8007C49E8 /* FireproofingReferenceTests.swift */; };
+		311309752ECE71B600FCD220 /* AddressBarSharedTextState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 311309742ECE71B600FCD220 /* AddressBarSharedTextState.swift */; };
+		311309762ECE71B600FCD220 /* AddressBarSharedTextState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 311309742ECE71B600FCD220 /* AddressBarSharedTextState.swift */; };
 		311B262728E73E0A00FD181A /* TabShadowConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 311B262628E73E0A00FD181A /* TabShadowConfig.swift */; };
 		312613A82DB16F01009F9420 /* AIChatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312613A72DB16EFE009F9420 /* AIChatTests.swift */; };
 		31267C692B640C4200FEF811 /* DataBrokerProtectionFeatureGatekeeper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C5FFB82AF64D120008A79F /* DataBrokerProtectionFeatureGatekeeper.swift */; };
@@ -4330,6 +4332,7 @@
 		1EEB2D792C986A40000D908B /* SubscriptionPagesUseSubscriptionFeatureForStripeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUseSubscriptionFeatureForStripeTests.swift; sourceTree = "<group>"; };
 		31031EB62CC94C6C00684340 /* AIChatRemoteSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatRemoteSettingsTests.swift; sourceTree = "<group>"; };
 		310E79BE294A19A8007C49E8 /* FireproofingReferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireproofingReferenceTests.swift; sourceTree = "<group>"; };
+		311309742ECE71B600FCD220 /* AddressBarSharedTextState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarSharedTextState.swift; sourceTree = "<group>"; };
 		311B262628E73E0A00FD181A /* TabShadowConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabShadowConfig.swift; sourceTree = "<group>"; };
 		312613A72DB16EFE009F9420 /* AIChatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTests.swift; sourceTree = "<group>"; };
 		312E63962D9D821500806E2A /* AIChatURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatURL.swift; sourceTree = "<group>"; };
@@ -10064,6 +10067,7 @@
 				37EE55D72D5F197300D53C7C /* View */,
 				37EE562E2D5F197700D53C7C /* ViewModel */,
 				4B0DB5E428BD9D08007DD239 /* PinningManager.swift */,
+				311309742ECE71B600FCD220 /* AddressBarSharedTextState.swift */,
 			);
 			path = NavigationBar;
 			sourceTree = "<group>";
@@ -13620,6 +13624,7 @@
 				1DA6D0FE2A1FF9A100540406 /* HTTPCookie.swift in Sources */,
 				3706FAFC293F65D500E42796 /* DownloadListItem.swift in Sources */,
 				3706FAFD293F65D500E42796 /* DownloadsPopover.swift in Sources */,
+				311309762ECE71B600FCD220 /* AddressBarSharedTextState.swift in Sources */,
 				3706FAFE293F65D500E42796 /* SpacerNode.swift in Sources */,
 				3706FB00293F65D500E42796 /* PasswordManagementCreditCardModel.swift in Sources */,
 				B313C04F2E1FD91200C34AE6 /* AutoconsentPixels.swift in Sources */,
@@ -16261,6 +16266,7 @@
 				85AC7ADB27BD628400FFB69B /* HomePage.swift in Sources */,
 				1DF78E132CE61DB700AB898E /* WKWebExtensionWindow.swift in Sources */,
 				376705AF27EB488600DD8D76 /* RoundedSelectionRowView.swift in Sources */,
+				311309752ECE71B600FCD220 /* AddressBarSharedTextState.swift in Sources */,
 				379857ED2D721BD6008773F6 /* HistoryViewOnboardingViewModel.swift in Sources */,
 				B69B503F2726A12500758A2B /* LocalStatisticsStore.swift in Sources */,
 				B69B50572727D16900758A2B /* AtbAndVariantCleanup.swift in Sources */,

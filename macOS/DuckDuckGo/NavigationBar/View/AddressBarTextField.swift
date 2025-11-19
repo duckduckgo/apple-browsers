@@ -69,6 +69,7 @@ final class AddressBarTextField: NSTextField {
     weak var focusDelegate: AddressBarTextFieldFocusDelegate?
     weak var searchPreferences: SearchPreferences?
     weak var tabsPreferences: TabsPreferences?
+    weak var sharedTextState: AddressBarSharedTextState?
 
     private enum TextDidChangeEventType {
         case none
@@ -197,7 +198,7 @@ final class AddressBarTextField: NSTextField {
         value.suffix
     }
 
-    private var stringValueWithoutSuffix: String {
+    var stringValueWithoutSuffix: String {
         let stringValue = currentEditor()?.string ?? stringValue
         guard let suffix else { return stringValue }
         return stringValue.dropping(suffix: suffix.string)
@@ -306,6 +307,10 @@ final class AddressBarTextField: NSTextField {
         let isSearch = selectedTabViewModel.tab.content.userEditableUrl?.isDuckDuckGoSearch ?? false
         self.value = Value(stringValue: addressBarString, userTyped: false, isSearch: isSearch)
         clearUndoManager()
+        
+        /// Reset shared state when navigating to a website (not user-typed)
+        /// This prevents old typed text from appearing when toggling modes while on a website
+        sharedTextState?.reset()
     }
 
     func clearValue() {
@@ -1005,6 +1010,8 @@ extension AddressBarTextField: NSTextFieldDelegate {
             suggestionContainerViewModel?.clearSelection()
             self.value = Value(stringValue: stringValueWithoutSuffix, userTyped: true)
         }
+        
+        sharedTextState?.updateText(stringValueWithoutSuffix, markInteraction: true)
     }
 
     private func autocompleteSuggestionBeingTypedOverByUser(with newUserEnteredValue: String) -> SuggestionViewModel? {
@@ -1017,6 +1024,22 @@ extension AddressBarTextField: NSTextFieldDelegate {
             return suggestion
         }
         return nil
+    }
+    
+    // MARK: - Shared Text State
+    
+    /// Restores text from the shared text state
+    func restoreFromSharedState() {
+        guard let sharedTextState = sharedTextState else { return }
+        
+        let textToRestore = sharedTextState.text.replacingOccurrences(of: "\n", with: " ")
+        self.value = Value(stringValue: textToRestore, userTyped: true)
+        
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let editor = self.currentEditor() as? NSTextView else { return }
+            let textLength = editor.string.count
+            editor.selectedRange = NSRange(location: textLength, length: 0)
+        }
     }
 
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {

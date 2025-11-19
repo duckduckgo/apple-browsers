@@ -26,13 +26,15 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private let scrollView = NSScrollView()
     private let textView = NSTextView()
     private let omnibarController: AIChatOmnibarController
+    private let sharedTextState: AddressBarSharedTextState
     private var cancellables = Set<AnyCancellable>()
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
 
-    init(omnibarController: AIChatOmnibarController, themeManager: ThemeManaging) {
+    init(omnibarController: AIChatOmnibarController, sharedTextState: AddressBarSharedTextState, themeManager: ThemeManaging) {
         self.omnibarController = omnibarController
+        self.sharedTextState = sharedTextState
         self.themeManager = themeManager
         super.init(nibName: nil, bundle: nil)
     }
@@ -148,6 +150,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                 guard let self = self else { return }
                 if self.textView.string != newText {
                     self.textView.string = newText
+                    let textLength = newText.count
+                    self.textView.selectedRange = NSRange(location: textLength, length: 0)
                 }
             }
             .store(in: &cancellables)

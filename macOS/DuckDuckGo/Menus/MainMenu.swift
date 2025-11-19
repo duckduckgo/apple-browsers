@@ -754,7 +754,6 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Show Active Experiments", action: #selector(AppDelegate.showContentScopeExperiments))
             }
             NSMenuItem(title: "Reset Data") {
-                NSMenuItem(title: "Reset Default Browser Prompt", action: #selector(AppDelegate.resetDefaultBrowserPrompt))
                 NSMenuItem(title: "Reset Default Grammar Checks", action: #selector(AppDelegate.resetDefaultGrammarChecks))
                 NSMenuItem(title: "Reset Autofill Data", action: #selector(AppDelegate.resetSecureVaultData)).withAccessibilityIdentifier("MainMenu.resetSecureVaultData")
                 NSMenuItem(title: "Reset Bookmarks", action: #selector(AppDelegate.resetBookmarks)).withAccessibilityIdentifier("MainMenu.resetBookmarks")
@@ -894,7 +893,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu())
 #endif
             if AppVersion.runType.requiresEnvironment {
-                NSMenuItem(title: "SAD/ATT Prompts").submenu(DefaultBrowserAndDockPromptDebugMenu())
+                NSMenuItem(title: "SAD/ATT Prompts (Default Browser/Add to Dock)").submenu(DefaultBrowserAndDockPromptDebugMenu())
                 WinBackOfferDebugMenu(winbackOfferStore: Application.appDelegate.winbackOfferStore,
                                       keyValueStore: Application.appDelegate.keyValueStore)
             }

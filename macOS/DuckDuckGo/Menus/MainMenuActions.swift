@@ -604,10 +604,6 @@ extension AppDelegate {
         alert.runModal()
     }
 
-    @objc func resetDefaultBrowserPrompt(_ sender: Any?) {
-        UserDefaultsWrapper.clear(.defaultBrowserDismissed)
-    }
-
     @objc func resetDefaultGrammarChecks(_ sender: Any?) {
         UserDefaultsWrapper.clear(.spellingCheckEnabledOnce)
         UserDefaultsWrapper.clear(.grammarCheckEnabledOnce)

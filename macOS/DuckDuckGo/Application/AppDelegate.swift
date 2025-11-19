@@ -538,7 +538,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 #if DEBUG || REVIEW
         let defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
-        let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate }
+        let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate ?? Date() }
 #else
         let defaultBrowserAndDockPromptDateProvider: () -> Date = Date.init
 #endif

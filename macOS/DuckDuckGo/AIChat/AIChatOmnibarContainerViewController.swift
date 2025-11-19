@@ -36,7 +36,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private let shadowView = ShadowView()
     private let innerBorderView = ColorView(frame: .zero)
     private let containerView = NSView()
-    private let submitButton = NSButton()
+    private let submitButton = MouseOverButton()
     let themeManager: ThemeManaging
     let omnibarController: AIChatOmnibarController
     var themeUpdateCancellable: AnyCancellable?
@@ -118,7 +118,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         submitButton.translatesAutoresizingMaskIntoConstraints = false
         submitButton.title = ""
-        submitButton.bezelStyle = .regularSquare
+        submitButton.bezelStyle = .shadowlessSquare
         submitButton.isBordered = false
         submitButton.wantsLayer = true
         submitButton.target = self
@@ -201,7 +201,9 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
         submitButton.layer?.backgroundColor = colorsProvider.accentPrimaryColor.cgColor
         submitButton.layer?.cornerRadius = Constants.submitButtonCornerRadius
-        submitButton.contentTintColor = colorsProvider.textPrimaryColor
+
+        submitButton.normalTintColor = .white
+        submitButton.mouseOverTintColor = NSColor(designSystemColor: .buttonsPrimaryText).withAlphaComponent(0.8)
 
         innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
         innerBorderView.borderColor = NSColor(named: "AddressBarInnerBorderColor")

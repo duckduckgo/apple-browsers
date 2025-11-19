@@ -23,15 +23,15 @@ import Cocoa
 /// This prevents events from ever reaching views behind this one (like a webview).
 final class MouseBlockingBackgroundView: ColorView {
     private var localMonitor: Any?
-    
+
     init() {
         super.init(frame: .zero, backgroundColor: nil, cornerRadius: 0, borderColor: nil, borderWidth: 0, interceptClickEvents: false)
     }
-    
+
     required init?(coder: NSCoder) {
         super.init(coder: coder)
     }
-    
+
     deinit {
         stopListening()
     }

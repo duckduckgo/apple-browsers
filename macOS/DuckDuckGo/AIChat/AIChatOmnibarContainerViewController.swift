@@ -21,7 +21,7 @@ import QuartzCore
 import Combine
 
 final class AIChatOmnibarContainerViewController: NSViewController {
-
+    
     private let backgroundView = MouseBlockingBackgroundView()
     private let shadowView = ShadowView()
     private let innerBorderView = ColorView(frame: .zero)
@@ -31,29 +31,29 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     let omnibarController: AIChatOmnibarController
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
-
+    
     required init?(coder: NSCoder) {
         fatalError("AIChatOmnibarContainerViewController: Bad initializer")
     }
-
+    
     required init(themeManager: ThemeManaging, omnibarController: AIChatOmnibarController) {
         self.themeManager = themeManager
         self.omnibarController = omnibarController
-
+        
         super.init(nibName: nil, bundle: nil)
     }
-
+    
     override func loadView() {
         view = MouseOverView()
     }
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         subscribeToThemeChanges()
         applyThemeStyle()
     }
-
+    
     override func viewDidLayout() {
         super.viewDidLayout()
         applyTopClipMask()
@@ -73,7 +73,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
                 self?.applyThemeStyle()
             }
     }
-
+    
     private func applyTopClipMask() {
         view.wantsLayer = true
         guard view.bounds.height > 10 else {
@@ -86,26 +86,26 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         mask.path = CGPath(rect: visibleRect, transform: nil)
         view.layer?.mask = mask
     }
-
+    
     private func setupUI() {
         backgroundView.translatesAutoresizingMaskIntoConstraints = false
         backgroundView.borderWidth = 1
         backgroundView.borderColor = NSColor.black.withAlphaComponent(0.2)
         view.addSubview(backgroundView)
-
+        
         innerBorderView.translatesAutoresizingMaskIntoConstraints = false
         innerBorderView.borderWidth = 1
         backgroundView.addSubview(innerBorderView)
-
+        
         shadowView.shadowColor = .suggestionsShadow
         shadowView.shadowOpacity = 1
         shadowView.shadowOffset = CGSize(width: 0, height: 0)
         shadowView.shadowRadius = 20
         shadowView.shadowSides = [.left, .right, .bottom]
-
+        
         containerView.translatesAutoresizingMaskIntoConstraints = false
         backgroundView.addSubview(containerView)
-
+        
         submitButton.translatesAutoresizingMaskIntoConstraints = false
         submitButton.title = ""
         submitButton.bezelStyle = .regularSquare
@@ -120,38 +120,38 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
         
         containerView.addSubview(submitButton)
-
+        
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
+            
             innerBorderView.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: 1),
             innerBorderView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor, constant: 1),
             innerBorderView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -1),
             innerBorderView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -1),
-
+            
             containerView.topAnchor.constraint(equalTo: backgroundView.topAnchor),
             containerView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
             containerView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
-
+            
             submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
             submitButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -16),
             submitButton.widthAnchor.constraint(equalToConstant: 28),
             submitButton.heightAnchor.constraint(equalToConstant: 28),
         ])
-
+        
         applyTheme(theme: themeManager.theme)
     }
-
+    
     /// Starts event monitoring. Call this when the view controller becomes visible.
     func startEventMonitoring() {
         backgroundView.startListening()
         addShadowToWindow()
     }
-
+    
     /// Stops event monitoring. Call this when the view controller is about to be dismissed.
     func cleanup() {
         backgroundView.stopListening()
@@ -172,18 +172,18 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         
         /// Do not overlap shadow of main address bar
         frame.size.height -= 11
-
+        
         shadowView.frame = frame
     }
-
+    
     @objc private func submitButtonClicked() {
         omnibarController.submit()
     }
-
+    
     private func applyTheme(theme: ThemeStyleProviding) {
         let barStyleProvider = theme.addressBarStyleProvider
         let colorsProvider = theme.colorsProvider
-
+        
         backgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor
         backgroundView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
         backgroundView.layer?.masksToBounds = false  // Don't clip subviews - important for hit testing
@@ -195,19 +195,19 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         submitButton.layer?.backgroundColor = colorsProvider.accentPrimaryColor.cgColor
         submitButton.layer?.cornerRadius = 14
         submitButton.contentTintColor = .white
-
+        
         innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
         innerBorderView.borderColor = NSColor(named: "AddressBarInnerBorderColor")
         innerBorderView.backgroundColor = NSColor.clear
         innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
-
+        
         shadowView.shadowRadius = barStyleProvider.suggestionShadowRadius
         shadowView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
     }
 }
 
 extension AIChatOmnibarContainerViewController: ThemeUpdateListening {
-
+    
     func applyThemeStyle(theme: ThemeStyleProviding) {
         applyTheme(theme: theme)
     }

@@ -58,7 +58,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         scrollView.documentView = textView
         subscribeToViewAppearanceChanges()
     }
-    
+
     private func subscribeToViewAppearanceChanges() {
         appearanceCancellable = view.publisher(for: \.effectiveAppearance)
             .dropFirst()
@@ -91,7 +91,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         textView.autoresizingMask = [.width]
         textView.textContainer?.containerSize = NSSize(width: scrollView.contentSize.width, height: .greatestFiniteMagnitude)
         textView.textContainer?.widthTracksTextView = true
-        
+
         textView.isRichText = false
         textView.importsGraphics = false
         textView.allowsDocumentBackgroundColorChange = false
@@ -119,17 +119,17 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     func applyThemeStyle(theme: ThemeStyleProviding) {
         let colorsProvider = theme.colorsProvider
         let addressBarStyleProvider = theme.addressBarStyleProvider
-        
+
         backgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor
-        
+
         scrollView.backgroundColor = .clear
         scrollView.drawsBackground = false
-        
+
         textView.drawsBackground = false
         textView.backgroundColor = .clear
         textView.textColor = colorsProvider.addressBarTextFieldColor
         textView.font = .systemFont(ofSize: addressBarStyleProvider.defaultAddressBarFontSize, weight: .regular)
-        
+
         textView.insertionPointColor = colorsProvider.addressBarTextFieldColor
     }
 
@@ -163,7 +163,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     func cleanup() {
         backgroundView.stopListening()
     }
-    
+
     func focusTextView() {
         view.window?.makeFirstResponder(textView)
     }

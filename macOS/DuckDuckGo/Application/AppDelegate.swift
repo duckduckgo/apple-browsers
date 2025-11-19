@@ -133,6 +133,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let aboutPreferences: AboutPreferences
+    let accessibilityPreferences: AccessibilityPreferences
 
     let database: Database!
     let bookmarkDatabase: BookmarkDatabase
@@ -747,6 +748,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager
         )
+        accessibilityPreferences = AccessibilityPreferences()
         newTabPageCustomizationModel = NewTabPageCustomizationModel(themeManager: themeManager, appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld,

@@ -90,6 +90,7 @@ final class AddressBarViewController: NSViewController {
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
     private let searchPreferences: SearchPreferences
     private let tabsPreferences: TabsPreferences
+    private let accessibilityPreferences: AccessibilityPreferences
     private let featureFlagger: FeatureFlagger
 
     private var aiChatSettings: AIChatPreferencesStorage
@@ -167,6 +168,7 @@ final class AddressBarViewController: NSViewController {
           popovers: NavigationBarPopovers?,
           searchPreferences: SearchPreferences,
           tabsPreferences: TabsPreferences,
+          accessibilityPreferences: AccessibilityPreferences,
           themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
           aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
@@ -195,6 +197,7 @@ final class AddressBarViewController: NSViewController {
         self.aiChatSettings = aiChatSettings
         self.searchPreferences = searchPreferences
         self.tabsPreferences = tabsPreferences
+        self.accessibilityPreferences = accessibilityPreferences
         self.themeManager = themeManager
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
@@ -209,6 +212,7 @@ final class AddressBarViewController: NSViewController {
                                                          bookmarkManager: bookmarkManager,
                                                          privacyConfigurationManager: privacyConfigurationManager,
                                                          permissionManager: permissionManager,
+                                                         accessibilityPreferences: accessibilityPreferences,
                                                          tabsPreferences: tabsPreferences,
                                                          popovers: popovers,
                                                          aiChatTabOpener: NSApp.delegateTyped.aiChatTabOpener,

@@ -28,6 +28,12 @@ name: 04_sync_data_setup
 - runFlow:
     file: ../shared/add_login_from_settings.yaml
 
+# Add local credit card
+- tapOn: Browsing menu
+- tapOn: Settings
+- runFlow:
+    file: ../shared/add_credit_card_from_settings.yaml
+
 #  Copy Recovery Code
 - tapOn: Browsing menu
 - tapOn: Settings
@@ -61,9 +67,13 @@ name: 04_sync_data_setup
 - runFlow:
     file: ../shared/remove_local_bookmarks.yaml
 
-# Remove Login that were added locally
+# Remove Login that was added locally
 - runFlow:
     file: ../shared/remove_local_logins.yaml
+
+# Remove Credit Card that was added locally
+- runFlow:
+    file: ../shared/remove_local_credit_cards.yaml
 
 # Maestro seems to get stuck without an additional step here
 - assertVisible: 

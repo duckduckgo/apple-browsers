@@ -2452,6 +2452,21 @@
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Üdv!\n\nFelkészültél egy gyorsabb böngészőre, amely védelmet nyújt neked?";
 
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Következő";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Az AI-funkciók privátak és opcionálisak. A módosításokat az erre szolgáló Beállítások > AI-funkciók alatt végezheted el.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Az AI-funkciók privátak és opcionálisak. A módosításokat az erre szolgáló %@ alatt végezheted el.";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Beállítások > AI-funkciók";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Szeretnél könnyebben hozzáférni a privát AI-csevegéshez?";
+
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Rajta, csináljuk!";
 

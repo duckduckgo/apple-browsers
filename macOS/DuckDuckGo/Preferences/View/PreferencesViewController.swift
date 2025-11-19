@@ -55,6 +55,7 @@ final class PreferencesViewController: NSViewController {
         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
         aiChatPreferences: AIChatPreferences,
         aboutPreferences: AboutPreferences,
+        accessibilityPreferences: AccessibilityPreferences,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
@@ -77,6 +78,7 @@ final class PreferencesViewController: NSViewController {
                                         cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
                                         aiChatPreferences: aiChatPreferences,
                                         aboutPreferences: aboutPreferences,
+                                        accessibilityPreferences: accessibilityPreferences,
                                         winBackOfferVisibilityManager: winBackOfferVisibilityManager)
         super.init(nibName: nil, bundle: nil)
     }

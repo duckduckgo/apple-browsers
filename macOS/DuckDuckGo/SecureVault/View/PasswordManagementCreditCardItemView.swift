@@ -50,8 +50,8 @@ struct PasswordManagementCreditCardItemView: View {
                         .padding(.top, 16)
                         .padding(.bottom, model.isInEditMode ? 20 : 30)
 
-                    EditableCreditCardField(textFieldValue: $model.cardNumber, title: UserText.pmCardNumber)
-                    EditableCreditCardField(textFieldValue: $model.cardholderName, title: UserText.pmCardholderName)
+                    EditableCreditCardField(textFieldValue: $model.cardNumber, title: UserText.pmCardNumber, accessibilityIdentifier: "Card Number TextField")
+                    EditableCreditCardField(textFieldValue: $model.cardholderName, title: UserText.pmCardholderName, accessibilityIdentifier: "Cardholder Name TextField")
                     SecureEditableCreditCardField(textFieldValue: $model.cardSecurityCode,
                                                   title: UserText.pmCardVerificationValue,
                                                   hiddenTextLength: 3,
@@ -130,6 +130,7 @@ private struct HeaderView: View {
 
                 TextField("", text: $model.title)
                     .font(.title)
+                    .accessibility(identifier: "Title TextField")
 
             } else {
 
@@ -199,6 +200,7 @@ private struct EditableCreditCardField: View {
     @Binding var textFieldValue: String
 
     let title: String
+    let accessibilityIdentifier: String
 
     var body: some View {
 
@@ -215,6 +217,7 @@ private struct EditableCreditCardField: View {
                     TextField("", text: $textFieldValue)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .padding(.bottom, interItemSpacing)
+                        .accessibility(identifier: accessibilityIdentifier)
 
                 } else {
 
@@ -274,6 +277,7 @@ private struct SecureEditableCreditCardField: View {
                         TextField("", text: $textFieldValue)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .padding(.bottom, interItemSpacing)
+                            .accessibility(identifier: "Security Code TextField")
 
                     }
                     .padding(.bottom, interItemSpacing)

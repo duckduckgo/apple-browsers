@@ -1241,8 +1241,7 @@
             {
                 "key": "duration",
                 "description": "Total duration of the scan in milliseconds",
-                "type": "string",
-                "pattern": "^[0-9]+(\\.[0-9]+)?$"
+                "type": "number"
             },
             {
                 "key": "error_category",

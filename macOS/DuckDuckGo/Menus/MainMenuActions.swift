@@ -163,16 +163,6 @@ extension AppDelegate {
                 return
             }
 
-            guard featureFlagger.isFeatureOn(.historyView) else {
-                let alert = NSAlert.clearAllHistoryAndDataAlert()
-                alert.beginSheetModal(for: window, completionHandler: { response in
-                    guard case .alertFirstButtonReturn = response else {
-                        return
-                    }
-                    self.fireCoordinator.fireViewModel.fire.burnAll(includeChatHistory: false)
-                })
-                return
-            }
             let historyViewDataProvider = self.fireCoordinator.historyProvider
             await historyViewDataProvider.refreshData()
             let visits = await historyViewDataProvider.visits(matching: .rangeFilter(.all))
@@ -1543,7 +1533,7 @@ extension MainViewController: NSMenuItemValidation {
              #selector(MainViewController.showPageResources(_:)):
             let canReload = activeTabViewModel?.canReload == true
             let isHTMLNewTabPage = activeTabViewModel?.tab.content == .newtab && !isBurner
-            let isHistoryView = featureFlagger.isFeatureOn(.historyView) && activeTabViewModel?.tab.content.isHistory == true
+            let isHistoryView = activeTabViewModel?.tab.content.isHistory == true
             return canReload || isHTMLNewTabPage || isHistoryView
 
         case #selector(MainViewController.toggleDownloads(_:)):

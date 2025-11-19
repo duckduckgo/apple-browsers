@@ -14645,6 +14645,7 @@
     },
     "Clear All History…" : {
       "comment" : "Main Menu History item",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38409,7 +38410,7 @@
     },
     "history.menu.clear.all.history.description" : {
       "comment" : "Description in the alert with the confirmation to clear all data",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38469,7 +38470,7 @@
     },
     "history.menu.clear.all.history.question" : {
       "comment" : "Alert with the confirmation to clear all history and data",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

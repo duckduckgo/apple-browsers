@@ -79,7 +79,9 @@ final class DuckPlayerTabExtensionTests: XCTestCase {
             persistor: DuckPlayerPreferencesPersistorMock(
                 duckPlayerMode: .enabled,
                 duckPlayerOpenInNewTab: false
-            )
+            ),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            internalUserDecider: MockInternalUserDecider()
         )
 
         // Setup DuckPlayer with enabled mode

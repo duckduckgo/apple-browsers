@@ -126,6 +126,7 @@ final class MainViewController: NSViewController {
          duckPlayer: DuckPlayer = NSApp.delegateTyped.duckPlayer,
          themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
+         tabDragAndDropManager: TabDragAndDropManager = NSApp.delegateTyped.tabDragAndDropManager,
          pixelFiring: PixelFiring? = PixelKit.shared,
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider = NSApp.delegateTyped.visualizeFireSettingsDecider,
          vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter = NSApp.delegateTyped.vpnUpsellPopoverPresenter,
@@ -153,7 +154,8 @@ final class MainViewController: NSViewController {
             bookmarkManager: bookmarkManager,
             fireproofDomains: fireproofDomains,
             activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            tabDragAndDropManager: tabDragAndDropManager
         )
         bookmarksBarVisibilityManager = BookmarksBarVisibilityManager(selectedTabPublisher: tabCollectionViewModel.$selectedTabViewModel.eraseToAnyPublisher())
 

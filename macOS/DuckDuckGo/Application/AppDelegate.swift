@@ -95,6 +95,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let faviconManager: FaviconManager
     let pinnedTabsManager = PinnedTabsManager()
+    let tabDragAndDropManager: TabDragAndDropManager
     let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!
     private var grammarFeaturesManager = GrammarFeaturesManager()
@@ -963,6 +964,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             windowControllersManager: windowControllersManager
         )
 #endif
+
+        tabDragAndDropManager = TabDragAndDropManager()
 
         blackFridayCampaignProvider = DefaultBlackFridayCampaignProvider(
             privacyConfigurationManager: privacyConfigurationManager,

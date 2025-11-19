@@ -113,7 +113,7 @@
             },
             {
                 "key": "e",
-                "type": "string",
+                "type": "number",
                 "description": "Error code"
             },
             "appVersion",
@@ -189,7 +189,7 @@
             },
             {
                 "key": "e",
-                "type": "string",
+                "type": "number",
                 "description": "Error code"
             },
             "appVersion",

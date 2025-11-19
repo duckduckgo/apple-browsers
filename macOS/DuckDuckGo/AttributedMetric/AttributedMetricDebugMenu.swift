@@ -93,7 +93,7 @@ final class AttributedMetricDebugMenu: NSMenu, NSMenuDelegate {
             return date.debugDescription
         }
     }
-    
+
     // MARK: - Actions
 
     @objc private func resetAllData(_ sender: Any?) {

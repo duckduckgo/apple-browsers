@@ -1159,6 +1159,8 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
     }
 
     func handleDismissAction(for headerType: AutofillHeaderViewFactory.ViewType) {
+        clearTableHeaderView()
+
         defer {
             updateTableHeaderView()
         }

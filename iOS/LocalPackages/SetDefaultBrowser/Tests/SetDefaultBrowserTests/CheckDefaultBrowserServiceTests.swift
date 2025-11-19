@@ -115,7 +115,7 @@ struct CheckDefaultBrowserServiceTests {
     @Test(.enabled(if: CheckDefaultBrowserServiceTests.isLowerThanPermittedVersion))
     func legacyCheckDefaultBrowserReturnsNotSupportedFailure() throws {
         // GIVEN
-        let sut = SystemCheckDefaultBrowserService()
+        let sut = SystemCheckDefaultBrowserService(application: UIApplication.shared)
 
         // WHEN
         let result = sut.isDefaultWebBrowser()

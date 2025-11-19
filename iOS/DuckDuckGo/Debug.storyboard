@@ -583,7 +583,7 @@
         <!--Subscriptions Debug Menu-->
         <scene sceneID="mX6-Fm-Jh8">
             <objects>
-                <tableViewController storyboardIdentifier="SubscriptionDebugViewController" id="8L3-is-GEH" userLabel="Subscriptions Debug Menu" customClass="SubscriptionDebugViewController" customModule="DuckDuckGo" customModuleProvider="target" sceneMemberID="viewController">
+                <tableViewController storyboardIdentifier="SubscriptionDebugViewController" id="8L3-is-GEH" userLabel="Subscriptions Debug Menu" customClass="SubscriptionDebugViewController" customModule="DuckDuckGo" customModuleProvider="target" extendedLayoutIncludesOpaqueBars="NO" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="insetGrouped" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="18" estimatedSectionHeaderHeight="-1" sectionFooterHeight="18" estimatedSectionFooterHeight="-1" id="8JI-NA-RGa">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -785,6 +785,50 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="HQj-J3-dEn" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="5829" y="2565"/>
+        </scene>
+        <!--Attributed Metrics Debug View Controller-->
+        <scene sceneID="AM1-de-bug">
+            <objects>
+                <tableViewController storyboardIdentifier="AttributedMetricsDebugViewController" id="AM2-de-bug" userLabel="Attributed Metrics Debug Menu" customClass="AttributedMetricsDebugViewController" customModule="DuckDuckGo" customModuleProvider="target" extendedLayoutIncludesOpaqueBars="NO" sceneMemberID="viewController">
+                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="insetGrouped" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="18" estimatedSectionHeaderHeight="-1" sectionFooterHeight="18" estimatedSectionFooterHeight="-1" id="AM3-de-bug">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <prototypes>
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="Cell" textLabel="AM4-de-bug" detailTextLabel="AM5-de-bug" style="IBUITableViewCellStyleSubtitle" id="AM6-de-bug">
+                                <rect key="frame" x="20" y="55.5" width="374" height="43.5"/>
+                                <autoresizingMask key="autoresizingMask"/>
+                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="AM6-de-bug" id="AM7-de-bug">
+                                    <rect key="frame" x="0.0" y="0.0" width="374" height="43.5"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                    <subviews>
+                                        <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" insetsLayoutMarginsFromSafeArea="NO" text="Title" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="AM4-de-bug">
+                                            <rect key="frame" x="20" y="6" width="33" height="20.5"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                            <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
+                                            <nil key="textColor"/>
+                                            <nil key="highlightedColor"/>
+                                        </label>
+                                        <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" insetsLayoutMarginsFromSafeArea="NO" text="Detail" textAlignment="natural" lineBreakMode="wordWrap" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="AM5-de-bug">
+                                            <rect key="frame" x="20" y="28.5" width="30.5" height="13.5"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                            <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                            <color key="textColor" systemColor="secondaryLabelColor"/>
+                                            <nil key="highlightedColor"/>
+                                        </label>
+                                    </subviews>
+                                </tableViewCellContentView>
+                            </tableViewCell>
+                        </prototypes>
+                        <connections>
+                            <outlet property="dataSource" destination="AM2-de-bug" id="AM8-de-bug"/>
+                            <outlet property="delegate" destination="AM2-de-bug" id="AM9-de-bug"/>
+                        </connections>
+                    </tableView>
+                    <navigationItem key="navigationItem" id="AM0-de-bug"/>
+                </tableViewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="AMa-de-bug" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="6700" y="2565"/>
         </scene>
     </scenes>
     <resources>

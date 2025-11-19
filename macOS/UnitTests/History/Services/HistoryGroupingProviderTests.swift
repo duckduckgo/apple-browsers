@@ -48,11 +48,9 @@ final class HistoryGroupingProviderTests: XCTestCase {
         try await super.tearDown()
     }
 
-    // MARK: - getRecentVisits with deduplication
+    // MARK: - getRecentVisits
 
-    func testWhenHistoryViewIsEnabledThenRecentVisitsAreDeduplicatedLeavingMostRecentVisit() async throws {
-        featureFlagger.enabledFeatureFlags = [.historyView]
-
+    func testThatRecentVisitsAreDeduplicatedLeavingMostRecentVisit() async throws {
         let date = Date.noonToday
         dataSource.history = [
             .make(url: "https://example.com".url!, visits: [
@@ -68,9 +66,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
         XCTAssertEqual(firstRecentVisit.date, date.addingTimeInterval(-1))
     }
 
-    func testWhenHistoryViewIsEnabledThenRecentVisitsAreSortedByMostRecentVisit() async throws {
-        featureFlagger.enabledFeatureFlags = [.historyView]
-
+    func testThatRecentVisitsAreSortedByMostRecentVisit() async throws {
         let date = Date.noonToday
         dataSource.history = [
             .make(url: "https://example.com".url!, visits: [
@@ -92,9 +88,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
         XCTAssertEqual(secondRecentVisit.date, date.addingTimeInterval(-3))
     }
 
-    func testWhenHistoryViewIsEnabledThenRecentVisitsAreLimitedToMaxCount() async throws {
-        featureFlagger.enabledFeatureFlags = [.historyView]
-
+    func testThatRecentVisitsAreLimitedToMaxCount() async throws {
         let date = Date.noonToday
         dataSource.history = [
             .make(url: "https://example.com".url!, visits: [
@@ -123,9 +117,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
         ])
     }
 
-    func testWhenHistoryViewIsEnabledThenRecentVisitsAreLimitedToCurrentDay() async throws {
-        featureFlagger.enabledFeatureFlags = [.historyView]
-
+    func testThatRecentVisitsAreLimitedToCurrentDay() async throws {
         let date = Date.noonToday
         dataSource.history = [
             .make(url: "https://example.com".url!, visits: [
@@ -154,110 +146,9 @@ final class HistoryGroupingProviderTests: XCTestCase {
         ])
     }
 
-    // MARK: - getRecentVisits without deduplication
+    // MARK: - getVisitGroupings
 
-    func testWhenHistoryViewIsDisabledThenRecentVisitsAreNotDeduplicated() async throws {
-        let date = Date.noonToday
-        dataSource.history = [
-            .make(url: "https://example.com".url!, visits: [
-                Visit(date: date.addingTimeInterval(-1)),
-                Visit(date: date.addingTimeInterval(-2)),
-                Visit(date: date.addingTimeInterval(-3))
-            ])
-        ]
-
-        let recentVisits = await provider.getRecentVisits(maxCount: 100)
-        XCTAssertEqual(recentVisits.count, 3)
-        XCTAssertEqual(recentVisits.map(\.date), [
-            date.addingTimeInterval(-1),
-            date.addingTimeInterval(-2),
-            date.addingTimeInterval(-3)
-        ])
-    }
-
-    func testWhenHistoryViewIsDisabledThenRecentVisitsAreSortedByMostRecentVisit() async throws {
-        let date = Date.noonToday
-        dataSource.history = [
-            .make(url: "https://example.com".url!, visits: [
-                Visit(date: date.addingTimeInterval(-3)),
-                Visit(date: date.addingTimeInterval(-5)),
-                Visit(date: date.addingTimeInterval(-10))
-            ]),
-            .make(url: "https://example.com/index2.html".url!, visits: [
-                Visit(date: date.addingTimeInterval(-1)),
-                Visit(date: date.addingTimeInterval(-20))
-            ])
-        ]
-
-        let recentVisits = await provider.getRecentVisits(maxCount: 100)
-        XCTAssertEqual(recentVisits.count, 5)
-        XCTAssertEqual(recentVisits.map(\.historyEntry?.url), [
-            "https://example.com/index2.html".url!,
-            "https://example.com".url!,
-            "https://example.com".url!,
-            "https://example.com".url!,
-            "https://example.com/index2.html".url!
-        ])
-        XCTAssertEqual(recentVisits.map(\.date), [
-            date.addingTimeInterval(-1),
-            date.addingTimeInterval(-3),
-            date.addingTimeInterval(-5),
-            date.addingTimeInterval(-10),
-            date.addingTimeInterval(-20)
-        ])
-    }
-
-    func testWhenHistoryViewIsDisabledThenRecentVisitsAreLimitedToMaxCount() async throws {
-        let date = Date.noonToday
-        dataSource.history = [
-            .make(url: "https://example.com".url!, visits: [
-                Visit(date: date.addingTimeInterval(-3)),
-                Visit(date: date.addingTimeInterval(-5)),
-                Visit(date: date.addingTimeInterval(-10))
-            ]),
-            .make(url: "https://example.com/index2.html".url!, visits: [
-                Visit(date: date.addingTimeInterval(-1)),
-                Visit(date: date.addingTimeInterval(-20))
-            ])
-        ]
-
-        let recentVisits = await provider.getRecentVisits(maxCount: 3)
-        XCTAssertEqual(recentVisits.count, 3)
-        XCTAssertEqual(recentVisits.map(\.date), [
-            date.addingTimeInterval(-1),
-            date.addingTimeInterval(-3),
-            date.addingTimeInterval(-5)
-        ])
-    }
-
-    func testWhenHistoryViewIsDisabledThenRecentVisitsAreLimitedToCurrentDay() async throws {
-        let date = Date.noonToday
-        dataSource.history = [
-            .make(url: "https://example.com".url!, visits: [
-                Visit(date: date.addingTimeInterval(-3)),
-                Visit(date: date.addingTimeInterval(-5000)),
-                Visit(date: date.addingTimeInterval(-20*3600))
-            ]),
-            .make(url: "https://example.com/index2.html".url!, visits: [
-                Visit(date: date.addingTimeInterval(-3000)),
-                Visit(date: date.daysAgo(1))
-            ])
-        ]
-
-        let recentVisits = await provider.getRecentVisits(maxCount: 100)
-        XCTAssertEqual(recentVisits.count, 3)
-        XCTAssertEqual(recentVisits.map(\.date), [
-            date.addingTimeInterval(-3),
-            date.addingTimeInterval(-3000),
-            date.addingTimeInterval(-5000)
-        ])
-    }
-
-    // MARK: - getVisitGroupings with deduplication
-
-    func testWhenHistoryViewIsEnabledThenVisitGroupingsAreDeduplicated() async throws {
-        featureFlagger.enabledFeatureFlags = [.historyView]
-
+    func testThatVisitGroupingsAreDeduplicated() async throws {
         let date = Date.noonToday
         dataSource.history = [
             .make(url: "https://example.com".url!, visits: [
@@ -335,110 +226,6 @@ final class HistoryGroupingProviderTests: XCTestCase {
             [
                 "https://example.com/index2.html".url!,
                 "https://example.com".url!
-            ]
-        ])
-    }
-
-    // MARK: - getVisitGroupings without deduplication
-
-    func testWhenHistoryViewIsDisabledThenVisitGroupingsAreNotDeduplicated() async throws {
-        let date = Date.noonToday
-        dataSource.history = [
-            .make(url: "https://example.com".url!, visits: [
-                Visit(date: date.addingTimeInterval(-3)),
-                Visit(date: date.addingTimeInterval(-100)),
-                Visit(date: date.daysAgo(1)),
-                Visit(date: date.daysAgo(1).addingTimeInterval(-100)),
-                Visit(date: date.daysAgo(2).addingTimeInterval(-1)),
-                Visit(date: date.daysAgo(2).addingTimeInterval(-100)),
-                Visit(date: date.daysAgo(4)),
-                Visit(date: date.daysAgo(4).addingTimeInterval(-100)),
-                Visit(date: date.daysAgo(5).addingTimeInterval(-1)),
-                Visit(date: date.daysAgo(5).addingTimeInterval(-100))
-            ]),
-            .make(url: "https://example.com/index2.html".url!, visits: [
-                Visit(date: date.addingTimeInterval(-3000)),
-                Visit(date: date.addingTimeInterval(-5000)),
-                Visit(date: date.daysAgo(1).addingTimeInterval(-1)),
-                Visit(date: date.daysAgo(1).addingTimeInterval(-5000)),
-                Visit(date: date.daysAgo(2)),
-                Visit(date: date.daysAgo(2).addingTimeInterval(-5000)),
-                Visit(date: date.daysAgo(3)),
-                Visit(date: date.daysAgo(3).addingTimeInterval(-5000)),
-                Visit(date: date.daysAgo(5)),
-                Visit(date: date.daysAgo(5).addingTimeInterval(-5000))
-            ])
-        ]
-
-        let groupings = await provider.getVisitGroupings()
-
-        XCTAssertEqual(groupings.count, 6)
-        XCTAssertEqual(groupings.map { $0.visits.map(\.date) }, [
-            [
-                date.addingTimeInterval(-3),
-                date.addingTimeInterval(-100),
-                date.addingTimeInterval(-3000),
-                date.addingTimeInterval(-5000)
-            ],
-            [
-                date.daysAgo(1),
-                date.daysAgo(1).addingTimeInterval(-1),
-                date.daysAgo(1).addingTimeInterval(-100),
-                date.daysAgo(1).addingTimeInterval(-5000)
-            ],
-            [
-                date.daysAgo(2),
-                date.daysAgo(2).addingTimeInterval(-1),
-                date.daysAgo(2).addingTimeInterval(-100),
-                date.daysAgo(2).addingTimeInterval(-5000)
-            ],
-            [
-                date.daysAgo(3),
-                date.daysAgo(3).addingTimeInterval(-5000)
-            ],
-            [
-                date.daysAgo(4),
-                date.daysAgo(4).addingTimeInterval(-100)
-            ],
-            [
-                date.daysAgo(5),
-                date.daysAgo(5).addingTimeInterval(-1),
-                date.daysAgo(5).addingTimeInterval(-100),
-                date.daysAgo(5).addingTimeInterval(-5000)
-            ]
-        ])
-        XCTAssertEqual(groupings.map { $0.visits.map(\.historyEntry?.url) }, [
-            [
-                "https://example.com".url!,
-                "https://example.com".url!,
-                "https://example.com/index2.html".url!,
-                "https://example.com/index2.html".url!
-            ],
-            [
-                "https://example.com".url!,
-                "https://example.com/index2.html".url!,
-                "https://example.com".url!,
-                "https://example.com/index2.html".url!
-            ],
-            [
-                "https://example.com/index2.html".url!,
-                "https://example.com".url!,
-                "https://example.com".url!,
-                "https://example.com/index2.html".url!
-            ],
-            [
-                "https://example.com/index2.html".url!,
-                "https://example.com/index2.html".url!
-            ],
-            [
-                "https://example.com".url!,
-                "https://example.com".url!
-            ],
-            [
-                "https://example.com/index2.html".url!,
-                "https://example.com".url!,
-                "https://example.com".url!,
-                "https://example.com/index2.html".url!
             ]
         ])
     }

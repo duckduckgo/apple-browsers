@@ -33,7 +33,7 @@ final class MainView: NSView {
         static let findInPageContainerTopOffset: CGFloat = -4
         static let fireContainerHeight: CGFloat = 32
         static let bannerHeight: CGFloat = 48
-        static let aiChatOmnibarContainerHeight: CGFloat = 400
+        static let aiChatOmnibarContainerHeight: CGFloat = 100
     }
 
     let tabBarContainerView = NSView()
@@ -148,7 +148,7 @@ final class MainView: NSView {
 
         aiChatOmnibarContainerWidthConstraint = aiChatOmnibarContainerView.widthAnchor.constraint(lessThanOrEqualToConstant: 832)
         NSLayoutConstraint.activate([
-            aiChatOmnibarContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor, constant: -15),
+            aiChatOmnibarContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor, constant: -16),
             aiChatOmnibarContainerView.centerXAnchor.constraint(equalTo: navigationBarContainerView.centerXAnchor),
             aiChatOmnibarContainerView.heightAnchor.constraint(equalToConstant: Constants.aiChatOmnibarContainerHeight),
             aiChatOmnibarContainerWidthConstraint,
@@ -296,7 +296,7 @@ final class MainView: NSView {
         NSLayoutConstraint.activate([
             aiChatOmnibarTextContainerView.topAnchor.constraint(equalTo: addressBarStack.topAnchor, constant: 5),
             aiChatOmnibarTextContainerView.leadingAnchor.constraint(equalTo: addressBarStack.leadingAnchor, constant: 10),
-            aiChatOmnibarTextContainerView.trailingAnchor.constraint(equalTo: addressBarStack.trailingAnchor, constant: -150),
+            aiChatOmnibarTextContainerView.trailingAnchor.constraint(equalTo: addressBarStack.trailingAnchor, constant: -78),
         ])
 
         aiChatOmnibarTextContainerBottomConstraint.constant = -5

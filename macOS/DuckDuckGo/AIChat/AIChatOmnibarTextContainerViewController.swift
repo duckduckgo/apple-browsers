@@ -169,13 +169,11 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             
             let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
             
-            /// Option + Enter: insert newline
             if modifiers.contains(.option) || modifiers.contains(.shift) {
                 textView.insertNewlineIgnoringFieldEditor(nil)
                 return true
             }
             
-            /// Plain Enter: submit
             omnibarController.submit()
             return true
         }

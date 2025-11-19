@@ -547,10 +547,9 @@ class SmallOmniBarStateTests: XCTestCase {
     func testWhenInAIChatModeStateThenCorrectPropertiesAreSet() {
         // Given
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
-        let baseState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
 
         // When
-        let sut = SmallOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: false)
+        let sut = SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
 
         // Then
         XCTAssertTrue(sut.showAIChatFullModeBranding)
@@ -573,10 +572,9 @@ class SmallOmniBarStateTests: XCTestCase {
     func testWhenInAIChatModeThenTextIsNotCleared() {
         // Given
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
-        let baseState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
 
         // When
-        let sut = SmallOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: false)
+        let sut = SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
 
         // Then
         XCTAssertFalse(sut.clearTextOnStart)
@@ -585,8 +583,7 @@ class SmallOmniBarStateTests: XCTestCase {
     func testWhenEditingStartsFromAIChatModeThenTransitionsToHomeEmptyEditingState() {
         // Given
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
-        let baseState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-        let sut = SmallOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: false)
+        let sut = SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
 
         // When
         let targetState = sut.onEditingStartedState
@@ -598,8 +595,7 @@ class SmallOmniBarStateTests: XCTestCase {
     func testWhenTextIsEnteredFromAIChatModeThenTransitionsToHomeTextEditingState() {
         // Given
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
-        let baseState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-        let sut = SmallOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: false)
+        let sut = SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
 
         // When
         let targetState = sut.onTextEnteredState
@@ -611,8 +607,7 @@ class SmallOmniBarStateTests: XCTestCase {
     func testWhenTextIsClearedFromAIChatModeThenTransitionsToHomeEmptyEditingState() {
         // Given
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
-        let baseState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-        let sut = SmallOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: false)
+        let sut = SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
 
         // When
         let targetState = sut.onTextClearedState
@@ -624,8 +619,7 @@ class SmallOmniBarStateTests: XCTestCase {
     func testWhenBrowsingStartsFromAIChatModeThenTransitionsToBrowsingNonEditingState() {
         // Given
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
-        let baseState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-        let sut = SmallOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: false)
+        let sut = SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
 
         // When
         let targetState = sut.onBrowsingStartedState
@@ -637,8 +631,7 @@ class SmallOmniBarStateTests: XCTestCase {
     func testWhenEditingStopsFromAIChatModeThenMaintainsAIChatMode() {
         // Given
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
-        let baseState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-        let sut = SmallOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: false)
+        let sut = SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
 
         // When
         let targetState = sut.onEditingStoppedState
@@ -650,8 +643,7 @@ class SmallOmniBarStateTests: XCTestCase {
     func testWhenBrowsingStopsFromAIChatModeThenTransitionsToSmallHomeNonEditingState() {
         // Given
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
-        let baseState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-        let sut = SmallOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: false)
+        let sut = SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
 
         // When
         let targetState = sut.onBrowsingStoppedState
@@ -663,8 +655,7 @@ class SmallOmniBarStateTests: XCTestCase {
     func testWhenEnteringPadStateFromAIChatModeThenMaintainsAIChatMode() {
         // Given
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
-        let baseState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-        let sut = SmallOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: false)
+        let sut = SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
 
         // When
         let targetState = sut.onEnterPadState
@@ -676,8 +667,7 @@ class SmallOmniBarStateTests: XCTestCase {
     func testWhenEnteringPhoneStateFromAIChatModeThenMaintainsAIChatMode() {
         // Given
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
-        let baseState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-        let sut = SmallOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: false)
+        let sut = SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
 
         // When
         let targetState = sut.onEnterPhoneState
@@ -689,8 +679,7 @@ class SmallOmniBarStateTests: XCTestCase {
     func testWhenReloadingFromAIChatModeThenMaintainsAIChatMode() {
         // Given
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
-        let baseState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-        let sut = SmallOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: false)
+        let sut = SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
 
         // When
         let targetState = sut.onReloadState
@@ -699,25 +688,12 @@ class SmallOmniBarStateTests: XCTestCase {
         XCTAssertTrue(targetState is SmallOmniBarState.AIChatModeState)
     }
 
-    func testWhenAIChatModeStateHasLargeWidthBaseThenHasLargeWidthIsTrue() {
-        // Given
-        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
-        let baseState = LargeOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-
-        // When
-        let sut = SmallOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: false)
-
-        // Then
-        XCTAssertTrue(sut.hasLargeWidth)
-    }
-
     func testWhenAIChatModeStateHasSmallWidthBaseThenHasLargeWidthIsFalse() {
         // Given
         let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
-        let baseState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
 
         // When
-        let sut = SmallOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: false)
+        let sut = SmallOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
 
         // Then
         XCTAssertFalse(sut.hasLargeWidth)

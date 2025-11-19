@@ -247,7 +247,8 @@ final class AddressBarViewController: NSViewController {
                                                          popovers: popovers,
                                                          aiChatTabOpener: NSApp.delegateTyped.aiChatTabOpener,
                                                          aiChatMenuConfig: aiChatMenuConfig,
-                                                         aiChatSidebarPresenter: aiChatSidebarPresenter)
+                                                         aiChatSidebarPresenter: aiChatSidebarPresenter,
+                                                         aiChatSettings: aiChatSettings)
 
         self.addressBarButtonsViewController = controller
         controller?.delegate = self

@@ -16,12 +16,10 @@
 //  limitations under the License.
 //
 
-import AppKit
 import Combine
 import Common
 import History
 import HistoryView
-import ObjectiveC.runtime
 import SharedTestUtilities
 import XCTest
 

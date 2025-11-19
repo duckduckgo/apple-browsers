@@ -520,7 +520,7 @@ final class NavigationBarViewController: NSViewController {
      *
      * > `force` parameter is only used by `HistoryDebugMenu`.
      */
-    @objc func presentHistoryViewOnboardingIfNeeded(force: Bool = false) {
+    func presentHistoryViewOnboardingIfNeeded(force: Bool = false) {
         guard !isInPopUpWindow else { return }
 
         let onboardingDecider = HistoryViewOnboardingDecider()

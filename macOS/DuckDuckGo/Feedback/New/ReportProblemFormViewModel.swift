@@ -72,9 +72,9 @@ final class ReportProblemFormViewModel: ObservableObject {
 
         if let preselectedCategory {
             selectCategory(preselectedCategory)
-        }
-        if let preselectedSubCategory {
-            toggleOption(preselectedSubCategory.id)
+            if let preselectedSubCategory, preselectedCategory.subcategories.contains(preselectedSubCategory) {
+                toggleOption(preselectedSubCategory.id)
+            }
         }
     }
 

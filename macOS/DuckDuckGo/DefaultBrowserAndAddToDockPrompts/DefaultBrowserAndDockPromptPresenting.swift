@@ -86,9 +86,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
                          inactiveUserModalWindowProvider: @escaping () -> NSWindow?) {
         guard let type = coordinator.getPromptType() else { return }
 
-        // Ensure that only one prompt is displayed at a time by dismissing any visible prompt first.
-        dismissAllPrompts { [weak self] in
-            guard let self else { return }
+        func showPrompt() {
             switch type {
             case .active(.banner):
                 guard let banner = getBanner() else { return }
@@ -107,6 +105,13 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             // Start subscribing to status updates for SAD/ATT.
             // It's possible that the user may set SAD/ATT outside the prompt (e.g. from Settings). If that happens we want to dismiss the prompt.
             subscribeToStatusUpdates()
+        }
+
+        // If we are switching prompt types, ensure the previous prompt is dismissed before showing the new one.
+        if type != currentShownPrompt {
+            dismissAllPrompts(onCompletion: showPrompt)
+        } else {
+            showPrompt()
         }
     }
 

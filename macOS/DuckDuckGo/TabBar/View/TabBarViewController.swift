@@ -763,16 +763,19 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         TabDragAndDropManager.shared.setSource(tabCollectionViewModel: tabCollectionViewModel, index: newIndex)
     }
 
-    private func moveToNewWindow(from index: Int, droppingPoint: NSPoint? = nil, burner: Bool) {
-        // only allow dragging Tab out when there‘s tabs (or pinned tabs) left
-        guard tabCollectionViewModel.tabCollection.tabs.count > 1 || pinnedTabsViewModel?.items.isEmpty == false else { return }
-        guard let tabViewModel = tabCollectionViewModel.tabViewModel(at: index) else {
+    private func moveToNewWindow(unpinnedIndex: Int, droppingPoint: NSPoint? = nil, burner: Bool) {
+        let sourceTab: TabIndex = .unpinned(unpinnedIndex)
+        guard tabCollectionViewModel.canMoveTabToNewWindow(tabIndex: sourceTab) else {
+            return
+        }
+
+        guard let tabViewModel = tabCollectionViewModel.tabViewModel(at: unpinnedIndex) else {
             assertionFailure("TabBarViewController: Failed to get tab view model")
             return
         }
 
         let tab = tabViewModel.tab
-        tabCollectionViewModel.remove(at: .unpinned(index), published: false)
+        tabCollectionViewModel.remove(at: sourceTab, published: false)
         WindowsManager.openNewWindow(with: tab, droppingPoint: droppingPoint)
     }
 
@@ -1630,7 +1633,7 @@ extension TabBarViewController: NSCollectionViewDelegate {
         // Create new window if dropped above tab bar or too far away
         // But not for pinned tabs
         if collectionView != pinnedTabsCollectionView && (isDroppedAboveTabBar || !screenPoint.isNearRect(frameRelativeToScreen, allowedDistance: Self.dropToOpenDistance)) {
-            moveToNewWindow(from: sourceIndex.item,
+            moveToNewWindow(unpinnedIndex: sourceIndex.item,
                            droppingPoint: screenPoint,
                            burner: tabCollectionViewModel.isBurner)
         }
@@ -1947,7 +1950,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
             return
         }
 
-        moveToNewWindow(from: indexPath.item, burner: false)
+        moveToNewWindow(unpinnedIndex: indexPath.item, burner: false)
     }
 
     func tabBarViewItemMoveToNewBurnerWindowAction(_ tabBarViewItem: TabBarViewItem) {
@@ -1956,7 +1959,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
             return
         }
 
-        moveToNewWindow(from: indexPath.item, burner: true)
+        moveToNewWindow(unpinnedIndex: indexPath.item, burner: true)
     }
 
     func tabBarViewItemFireproofSite(_ tabBarViewItem: TabBarViewItem) {

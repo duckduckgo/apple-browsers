@@ -20,22 +20,6 @@ import QuartzCore
 
 extension CABasicAnimation {
 
-    static func buildFadeInAnimation(duration: TimeInterval) -> CABasicAnimation {
-        buildFadeAnimation(fromValue: 0, toValue: 1, duration: duration)
-    }
-
-    static func buildFadeOutAnimation(duration: TimeInterval) -> CABasicAnimation {
-        buildFadeAnimation(fromValue: 1, toValue: 0, duration: duration)
-    }
-
-    static func buildFadeAnimation(fromValue: Float, toValue: Float, duration: TimeInterval) -> CABasicAnimation {
-        let animation = CABasicAnimation(keyPath: #keyPath(CALayer.opacity))
-        animation.duration = duration
-        animation.fromValue = fromValue
-        animation.toValue = toValue
-        return animation
-    }
-
     static func buildRotationAnimation(duration: TimeInterval) -> CABasicAnimation {
         let keyPath = "transform.rotation.z"
         let animation = CABasicAnimation(keyPath: keyPath)

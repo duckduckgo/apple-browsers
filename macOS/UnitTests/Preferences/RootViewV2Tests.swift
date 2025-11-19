@@ -63,6 +63,7 @@ final class RootViewV2Tests: XCTestCase {
                 featureFlagger: MockFeatureFlagger()
             ),
             aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager),
+            accessibilityPreferences: AccessibilityPreferences(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
         subscriptionManager = SubscriptionManagerMockV2()

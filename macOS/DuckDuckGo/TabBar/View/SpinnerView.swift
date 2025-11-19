@@ -77,7 +77,7 @@ extension SpinnerView {
             return
         }
 
-        let fadeInAnimation =  CABasicAnimation.buildFadeInAnimation(duration: SpinnerConstants.animationShortDuration)
+        let fadeInAnimation =  CASpringAnimation.buildFadeInAnimation(duration: SpinnerConstants.animationShortDuration)
         let rotationAnimation = CABasicAnimation.buildRotationAnimation(duration: SpinnerConstants.animationLongDuration)
 
         gradientLayer.isHidden = false
@@ -97,7 +97,7 @@ extension SpinnerView {
             self?.removeRotationAnimationAndHide()
         }
 
-        let fadeOutAnimation = CABasicAnimation.buildFadeOutAnimation(duration: SpinnerConstants.animationShortDuration)
+        let fadeOutAnimation = CASpringAnimation.buildFadeOutAnimation(duration: SpinnerConstants.animationShortDuration)
         gradientLayer.opacity = 0
         gradientLayer.add(fadeOutAnimation, forKey: SpinnerConstants.fadeAnimationKey)
 

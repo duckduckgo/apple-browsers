@@ -641,6 +641,53 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssertEqual(destinationTabCollectionViewModel.tabs[1].content, sourceTabContent1)
     }
 
+    // MARK: - New Window Logic
+
+    @MainActor
+    func testSingleUnpinnedTabCannotBeMovedToNewWindow() throws {
+        let sourceTabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+
+        // WHEN
+        XCTAssertEqual(sourceTabCollectionViewModel.allTabsCount, 1)
+
+        // VERIFY
+        XCTAssertFalse(sourceTabCollectionViewModel.canMoveTabToNewWindow(tabIndex: .unpinned(0)))
+    }
+
+    @MainActor
+    func testSingleUnpinnedTabCanBeMovedToNewWindowWhenThereIsAtLeastOnePinnedTab() throws {
+        let sourceTabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let sourceTabContent0: TabContent = .url(.duckDuckGo, source: .link)
+
+        // GIVEN
+        sourceTabCollectionViewModel.appendNewTab(with: sourceTabContent0)
+        sourceTabCollectionViewModel.pinTab(at: 1)
+
+        // WHEN
+        XCTAssertEqual(sourceTabCollectionViewModel.tabs.count, 1)
+        XCTAssertEqual(sourceTabCollectionViewModel.pinnedTabs.count, 1)
+
+        // VERIFY
+        XCTAssertTrue(sourceTabCollectionViewModel.canMoveTabToNewWindow(tabIndex: .unpinned(0)))
+    }
+
+    @MainActor
+    func testPinnedTabCannotBeMovedIntoNewWindow() throws {
+        let sourceTabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let sourceTabContent0: TabContent = .url(.duckDuckGo, source: .link)
+
+        // GIVEN
+        sourceTabCollectionViewModel.appendNewTab(with: sourceTabContent0)
+        sourceTabCollectionViewModel.pinTab(at: 1)
+
+        // WHEN
+        XCTAssertEqual(sourceTabCollectionViewModel.tabs.count, 1)
+        XCTAssertEqual(sourceTabCollectionViewModel.pinnedTabs.count, 1)
+
+        // VERIFY
+        XCTAssertFalse(sourceTabCollectionViewModel.canMoveTabToNewWindow(tabIndex: .pinned(0)))
+    }
+
     // MARK: - Publishers
 
     @MainActor

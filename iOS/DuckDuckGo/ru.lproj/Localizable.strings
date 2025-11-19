@@ -2452,6 +2452,21 @@
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Привет!\n\nБыстрый и надежный браузер заказывали?";
 
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Далее";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Функции на базе ИИ работают конфиденциально и предоставляются дополнительно. Их можно изменить в разделе «Настройки > Функции ИИ».";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Функции на базе ИИ работают конфиденциально и предлагаются дополнительно. Их можно настроить в разделе %@.";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Настройки > Функции ИИ";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Нужен удобный доступ к приватному чату с ИИ?";
+
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Поехали!";
 

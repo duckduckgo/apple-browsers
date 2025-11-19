@@ -23,6 +23,15 @@ import DesignResourcesKitIcons
 
 final class AIChatOmnibarContainerViewController: NSViewController {
 
+    private enum Constants {
+        static let clipMaskBottomOffset: CGFloat = 14
+        static let shadowOverlapHeight: CGFloat = 11
+        static let submitButtonSize: CGFloat = 28
+        static let submitButtonCornerRadius: CGFloat = 14
+        static let submitButtonTrailingInset: CGFloat = 13
+        static let submitButtonBottomInset: CGFloat = 13
+    }
+
     private let backgroundView = MouseBlockingBackgroundView()
     private let shadowView = ShadowView()
     private let innerBorderView = ColorView(frame: .zero)
@@ -83,7 +92,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
         let mask = CAShapeLayer()
         mask.frame = view.bounds
-        let visibleRect = CGRect(x: 0, y: 0, width: view.bounds.width, height: view.bounds.height - 14)
+        let visibleRect = CGRect(x: 0, y: 0, width: view.bounds.width, height: view.bounds.height - Constants.clipMaskBottomOffset)
         mask.path = CGPath(rect: visibleRect, transform: nil)
         view.layer?.mask = mask
     }
@@ -135,10 +144,10 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             containerView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
 
-            submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -13),
-            submitButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -13),
-            submitButton.widthAnchor.constraint(equalToConstant: 28),
-            submitButton.heightAnchor.constraint(equalToConstant: 28),
+            submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Constants.submitButtonTrailingInset),
+            submitButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -Constants.submitButtonBottomInset),
+            submitButton.widthAnchor.constraint(equalToConstant: Constants.submitButtonSize),
+            submitButton.heightAnchor.constraint(equalToConstant: Constants.submitButtonSize),
         ])
 
         applyTheme(theme: themeManager.theme)
@@ -169,7 +178,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         var frame = superview.convert(winFrame, from: nil)
 
         /// Do not overlap shadow of main address bar
-        frame.size.height -= 11
+        frame.size.height -= Constants.shadowOverlapHeight
 
         shadowView.frame = frame
     }
@@ -191,7 +200,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
 
         submitButton.layer?.backgroundColor = colorsProvider.accentPrimaryColor.cgColor
-        submitButton.layer?.cornerRadius = 14
+        submitButton.layer?.cornerRadius = Constants.submitButtonCornerRadius
         submitButton.contentTintColor = colorsProvider.textPrimaryColor
 
         innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius

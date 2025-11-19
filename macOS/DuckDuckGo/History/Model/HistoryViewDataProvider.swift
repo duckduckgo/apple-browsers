@@ -301,7 +301,8 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         }
         let domains = historyDictionary.grouped(by: { $0.value.etldPlusOne ?? $0.key.host ?? "" })
         return domains.compactMap { domain, entries in
-            guard let preferredEntry = bestMatchingEntry(from: entries.lazy.map(\.value), forDomain: domain) else { return nil }
+            guard !domain.isEmpty,
+                  let preferredEntry = bestMatchingEntry(from: entries.lazy.map(\.value), forDomain: domain) else { return nil }
             let url = preferredURL(for: preferredEntry)
             let title = bestTitle(for: preferredEntry)
             return DataModel.HistoryItem(siteDomain: domain, url: url, title: title)

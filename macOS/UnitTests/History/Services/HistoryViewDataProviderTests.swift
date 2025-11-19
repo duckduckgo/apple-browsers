@@ -1152,7 +1152,6 @@ final class HistoryViewDataProviderTests: XCTestCase {
         XCTAssertEqual(preferred, try XCTUnwrap("https://example.com".url))
     }
 
-
     // MARK: - chat history
 
     func testWhenDeleteVisitsIsCalledWithDeleteChatsThenBurnChatsIsCalled() async throws {

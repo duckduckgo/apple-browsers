@@ -55,6 +55,7 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
     private let embeddedResources: EmbeddedBloomFilterResources
     private let errorEvents: EventMapping<ErrorEvents>?
     private let context: NSManagedObjectContext
+    private let storeQueue = DispatchQueue(label: "com.duckduckgo.apphttpsupgradestore.store")
 
     public static var bundle: Bundle { .module }
     private let logger: Logger
@@ -71,13 +72,19 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
         self.logger = logger
     }
 
-    var storedBloomFilterDataHash: String? {
+    private var storedBloomFilterDataHash: String? {
         return try? Data(contentsOf: bloomFilterDataURL).sha256
     }
 
     public func loadBloomFilter() -> BloomFilter? {
+        return onStoreAccessQueue {
+            loadBloomFilterInternal()
+        }
+    }
+
+    private func loadBloomFilterInternal() -> BloomFilter? {
         let specification: HTTPSBloomFilterSpecification
-        if let storedBloomFilterSpecification = self.loadStoredBloomFilterSpecification(),
+        if let storedBloomFilterSpecification = self.loadStoredBloomFilterSpecificationInternal(),
            storedBloomFilterSpecification.sha256 == storedBloomFilterDataHash {
             specification = storedBloomFilterSpecification
         } else {
@@ -91,7 +98,7 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
             }
         }
 
-        assert(specification == loadStoredBloomFilterSpecification())
+        assert(specification == loadStoredBloomFilterSpecificationInternal())
         assert(specification.sha256 == storedBloomFilterDataHash)
 
         logger.log("Loading data from \(bloomFilterDataURL.path) SHA: \(specification.sha256)")
@@ -102,6 +109,12 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
     }
 
     func loadStoredBloomFilterSpecification() -> HTTPSBloomFilterSpecification? {
+        return onStoreAccessQueue {
+            loadStoredBloomFilterSpecificationInternal()
+        }
+    }
+
+    private func loadStoredBloomFilterSpecificationInternal() -> HTTPSBloomFilterSpecification? {
         var specification: HTTPSBloomFilterSpecification?
         context.performAndWait {
             let request: NSFetchRequest<HTTPSStoredBloomFilterSpecification> = HTTPSStoredBloomFilterSpecification.fetchRequest()
@@ -127,20 +140,26 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
         let excludedDomainsData = try Data(contentsOf: embeddedResources.excludedDomains)
         let excludedDomains = try JSONDecoder().decode(HTTPSExcludedDomains.self, from: excludedDomainsData)
 
-        try persistBloomFilter(specification: specification, data: bloomData)
-        try persistExcludedDomains(excludedDomains.data)
+        try persistBloomFilterInternal(specification: specification, data: bloomData)
+        try persistExcludedDomainsInternal(excludedDomains.data)
 
         return EmbeddedBloomData(specification: specification, excludedDomains: excludedDomains.data)
     }
 
     public func persistBloomFilter(specification: HTTPSBloomFilterSpecification, data: Data) throws {
-        guard data.sha256 == specification.sha256 else { throw Error.specMismatch }
-        logger.log("Persisting data SHA: \(specification.sha256)")
-        try persistBloomFilter(data: data)
-        try persistBloomFilterSpecification(specification)
+        try onStoreAccessQueue {
+            try persistBloomFilterInternal(specification: specification, data: data)
+        }
     }
 
-    private func persistBloomFilter(data: Data) throws {
+    private func persistBloomFilterInternal(specification: HTTPSBloomFilterSpecification, data: Data) throws {
+        guard data.sha256 == specification.sha256 else { throw Error.specMismatch }
+        logger.log("Persisting data SHA: \(specification.sha256)")
+        try persistBloomFilterData(data: data)
+        try persistBloomFilterSpecificationInternal(specification)
+    }
+
+    private func persistBloomFilterData(data: Data) throws {
         try data.write(to: bloomFilterDataURL, options: .atomic)
     }
 
@@ -149,6 +168,12 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
     }
 
     func persistBloomFilterSpecification(_ specification: HTTPSBloomFilterSpecification) throws {
+        try onStoreAccessQueue {
+            try persistBloomFilterSpecificationInternal(specification)
+        }
+    }
+
+    private func persistBloomFilterSpecificationInternal(_ specification: HTTPSBloomFilterSpecification) throws {
         var saveError: Swift.Error?
         context.performAndWait {
             deleteBloomFilterSpecification()
@@ -178,6 +203,12 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
     }
 
     public func hasExcludedDomain(_ domain: String) -> Bool {
+        return onStoreAccessQueue {
+            hasExcludedDomainInternal(domain)
+        }
+    }
+
+    private func hasExcludedDomainInternal(_ domain: String) -> Bool {
         var result = false
         context.performAndWait {
             let request: NSFetchRequest<HTTPSExcludedDomain> = HTTPSExcludedDomain.fetchRequest()
@@ -189,6 +220,12 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
     }
 
     public func persistExcludedDomains(_ domains: [String]) throws {
+        try onStoreAccessQueue {
+            try persistExcludedDomainsInternal(domains)
+        }
+    }
+
+    private func persistExcludedDomainsInternal(_ domains: [String]) throws {
         logger.debug("Persisting excluded \(domains.count) domains")
 
         var saveError: Swift.Error?
@@ -219,11 +256,17 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
     }
 
     func reset() {
-        logger.log("Resetting")
+        onStoreAccessQueue {
+            logger.log("Resetting")
 
-        deleteBloomFilterSpecification()
-        deleteBloomFilter()
-        deleteExcludedDomains()
+            deleteBloomFilterSpecification()
+            deleteBloomFilter()
+            deleteExcludedDomains()
+        }
+    }
+
+    private func onStoreAccessQueue<T>(_ work: () throws -> T) rethrows -> T {
+        try storeQueue.sync(execute: work)
     }
 
 }

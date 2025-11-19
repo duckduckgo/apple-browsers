@@ -42,9 +42,12 @@ enum DefaultBrowserAndDockPromptNotificationIdentifier: String {
 final class DefaultBrowserAndDockPromptNotificationPresenter: NSObject, DefaultBrowserAndDockPromptNotificationPresenting {
 
     private let userNotificationCenter: UNUserNotificationCenter
+    private let reportABrowserProblemPresenter: (Any?, ProblemCategory?, SubCategory?) -> Void
 
-    init(userNotificationCenter: UNUserNotificationCenter = .current()) {
+    init(userNotificationCenter: UNUserNotificationCenter = .current(),
+         reportABrowserProblemPresenter: @escaping (Any?, ProblemCategory?, SubCategory?) -> Void) {
         self.userNotificationCenter = userNotificationCenter
+        self.reportABrowserProblemPresenter = reportABrowserProblemPresenter
         super.init()
 
         requestAuthorization()
@@ -89,7 +92,7 @@ final class DefaultBrowserAndDockPromptNotificationPresenter: NSObject, DefaultB
     @MainActor private func openPromotionalMessagesFeedbackForm() {
         let category = ProblemCategory.allCategories.first(where: { $0.isSomethingElseCategory })
         let subcategory = category?.subcategories.first(where: { $0.isPromotionalMessagesSubcategory })
-        NSApp.delegateTyped.openReportABrowserProblem(nil, category: category, subcategory: subcategory)
+        reportABrowserProblemPresenter(nil, category, subcategory)
     }
 
     // MARK: Presentation helper

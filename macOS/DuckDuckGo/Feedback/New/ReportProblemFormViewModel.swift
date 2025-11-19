@@ -130,7 +130,7 @@ struct SubCategory: Identifiable, Hashable {
     let id: String      // Backend identifier (e.g., "banner-ads-blocking-content")
     let text: String    // Localized display text
 
-    var isPromotionalMessagesSubcategory: Bool { id == Self.promotionalMessagesID }
+    var isPromotionalMessagesSubcategory: Bool { id == ProblemCategory.promotionalMessagesID }
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
@@ -139,8 +139,6 @@ struct SubCategory: Identifiable, Hashable {
     static func == (lhs: SubCategory, rhs: SubCategory) -> Bool {
         lhs.id == rhs.id
     }
-
-    static let promotionalMessagesID = "promotional-messages"
 }
 
 struct ProblemCategory: Identifiable, Hashable {
@@ -161,6 +159,7 @@ struct ProblemCategory: Identifiable, Hashable {
 
     private static let reportBrokenWebsiteID = "report-broken-website"
     private static let somethingElseID = "something-else"
+    static let promotionalMessagesID = "promotional-messages"
 
     static let allCategories: [ProblemCategory] = [
         ProblemCategory(
@@ -241,7 +240,7 @@ struct ProblemCategory: Identifiable, Hashable {
                 SubCategory(id: "confusing-or-missing-settings", text: UserText.problemSubcategoryConfusingOrMissingSettings),
                 SubCategory(id: "no-downloads-history", text: UserText.problemSubcategoryNoDownloadsHistory),
                 SubCategory(id: "video-audio-plays-automatically", text: UserText.problemSubcategoryVideoAudioPlaysAutomatically),
-                SubCategory(id: SubCategory.promotionalMessagesID, text: UserText.problemSubcategoryPromotionalMessages)
+                SubCategory(id: promotionalMessagesID, text: UserText.problemSubcategoryPromotionalMessages)
             ]
         )
     ]

@@ -833,7 +833,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         let onboardingManager = onboardingContextualDialogsManager
-        let notificationPresenter = DefaultBrowserAndDockPromptNotificationPresenter()
+        let notificationPresenter = DefaultBrowserAndDockPromptNotificationPresenter(reportABrowserProblemPresenter: Self.openReportABrowserProblem)
         defaultBrowserAndDockPromptService = DefaultBrowserAndDockPromptService(featureFlagger: featureFlagger,
                                                                                 privacyConfigManager: privacyConfigurationManager,
                                                                                 keyValueStore: keyValueStore,

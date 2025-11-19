@@ -46,6 +46,8 @@ protocol OmniBarState: CustomStringConvertible {
     var showAbort: Bool { get }
     var showDismiss: Bool { get } // < button inside the address bar
     var showAIChatFullModeBranding: Bool { get } // Unique omnibar view displayed with in full duck.ai mode
+    
+    var allowCustomization: Bool  { get } // If the state allows customization
 
     var onEditingStoppedState: OmniBarState { get }
     var onEditingSuspendedState: OmniBarState { get }
@@ -93,20 +95,14 @@ extension OmniBarState {
     }
     
     var onEnterAIChatState: OmniBarState {
-
-        let baseState: any OmniBarState = hasLargeWidth
-            ? LargeOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-            : SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-
-        return UniversalOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: isLoading)
+        let baseState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
+        return SmallOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: isLoading)
     }
     
     // Default to false
     var showAIChatFullModeBranding: Bool { false }
     
-    var isAIChatState: Bool {
-        self is UniversalOmniBarState.AIChatModeState
-    }
+    var allowCustomization: Bool  { true }
 }
 
 protocol OmniBarLoadingBearerStateCreating {

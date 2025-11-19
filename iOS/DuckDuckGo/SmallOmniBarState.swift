@@ -287,6 +287,58 @@ struct SmallOmniBarState {
         let dependencies: OmnibarDependencyProvider
         let isLoading: Bool
     }
+    
+    /// OmniBarState used when a displaying AI Chat in 'full mode' (i.e in a tab)
+    struct AIChatModeState: OmniBarState {
+        let baseState: OmniBarState
+
+        var hasLargeWidth: Bool { baseState.hasLargeWidth }
+        let showBackButton = false
+        let showForwardButton = false
+        let showBookmarksButton = false
+        let showAIChatButton = false
+        let clearTextOnStart = false
+        let allowsTrackersAnimation = false
+        let showSearchLoupe = false
+        let showPrivacyIcon = false
+        let showBackground = false
+        let showClear = false
+        let showAbort = false
+        let showRefresh = false
+        let showCustomizableButton = false
+        let showMenu = false
+        let showSettings = false
+        let showCancel = false
+        let showDismiss = false
+        let showVoiceSearch = false
+        let isBrowsing = false
+        let showAIChatFullModeBranding = true
+        
+        var allowCustomization = false
+
+        var name: String { Type.name(self) }
+
+        var onEditingStartedState: any OmniBarState { HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onEditingStoppedState: any OmniBarState { self }
+        var onTextClearedState: any OmniBarState { HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onTextEnteredState: any OmniBarState { HomeTextEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onBrowsingStartedState: any OmniBarState { BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onBrowsingStoppedState: any OmniBarState { HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onEnterPadState: any OmniBarState { self }
+        var onEnterPhoneState: any OmniBarState { self }
+        var onReloadState: any OmniBarState { self }
+
+        let dependencies: OmnibarDependencyProvider
+        let isLoading: Bool
+
+        func withLoading() -> AIChatModeState {
+            Self.init(baseState: baseState, dependencies: dependencies, isLoading: true)
+        }
+
+        func withoutLoading() -> AIChatModeState {
+            Self.init(baseState: baseState, dependencies: dependencies, isLoading: false)
+        }
+    }
 }
 
 extension OmnibarDependencyProvider {

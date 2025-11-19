@@ -484,7 +484,8 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     private func applyCustomization() {
-        guard !state.isAIChatState else { return }
+        // Some states (e.g. `AIChatModeState`) do not support customization, i.e we should not show the customizable button
+        guard state.allowCustomization else { return }
         
         let state = dependencies.mobileCustomization.state
         guard state.isEnabled else {

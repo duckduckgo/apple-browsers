@@ -123,12 +123,21 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     /// - `advanceBy14Days()` - quick jump by default delay interval
     /// - `DefaultBrowserAndDockPromptDebugStore` - stores the override
     @objc func simulateCurrentDate() {
-        showDatePickerAlert { [weak self] date in
-            guard let self else { return }
+        let result = showDatePickerAlert()
+        
+        switch result {
+        case .success(.some(let date)):
+            // OK clicked - set new override date
             debugStore.simulatedTodayDate = date
-            if date != nil {
-                userActivityManager.recordActivity()
-            }
+            userActivityManager.recordActivity()
+            updateMenuItemsState()
+        case .success(.none):
+            // Reset clicked - clear the override
+            debugStore.simulatedTodayDate = nil
+            updateMenuItemsState()
+        case .failure:
+            // Cancel clicked - do nothing
+            break
         }
     }
 
@@ -290,7 +299,12 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     /// Displays a custom date picker alert for simulating "today's date".
     /// Features a calendar picker, localized text input, and "Today" quick button.
     /// The selected date overrides `Date()` throughout the prompt system for testing.
-    func showDatePickerAlert(onValueChange: (Date?) -> Void) {
+    ///
+    /// - Returns: `Result<Date?, CancellationError>`
+    ///   - `.success(date)` - OK clicked with selected date
+    ///   - `.success(nil)` - Reset clicked (clear override)
+    ///   - `.failure(CancellationError())` - Cancel clicked (no change)
+    func showDatePickerAlert() -> Result<Date?, CancellationError> {
         let alert = NSAlert()
         alert.messageText = "Simulate Today's Date"
 
@@ -357,22 +371,19 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
         let response = alert.runModal()
 
         if response == .alertSecondButtonReturn {
-            // Reset button clicked → clear the override (back to real date)
-            debugStore.simulatedTodayDate = nil
-            onValueChange(nil)
-            return
+            // Reset button clicked → return success with nil to clear the override
+            return .success(nil)
         }
 
         guard response == .alertFirstButtonReturn else {
-            // Cancel button clicked → no changes
-            onValueChange(nil)
-            return
+            // Cancel button clicked → return failure
+            return .failure(CancellationError())
         }
 
-        // OK button clicked → save the selected date (add 1 hour to avoid midnight edge cases)
+        // OK button clicked → return success with the selected date (add 1 hour to avoid midnight edge cases)
         let selectedDate = calendarPicker.dateValue
         let selectedDatePlusOneHour = selectedDate.addingTimeInterval(.hours(1))
-        onValueChange(selectedDatePlusOneHour)
+        return .success(selectedDatePlusOneHour)
     }
 
     /// **QUICK TIME JUMP**

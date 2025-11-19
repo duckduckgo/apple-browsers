@@ -192,6 +192,16 @@
                 "type": "number",
                 "description": "Error code"
             },
+            {
+                "key": "ud",
+                "type": "string",
+                "description": "Underlying error domain"
+            },
+            {
+                "key": "ue",
+                "type": "number",
+                "description": "Underlying error code"
+            },
             "appVersion",
             "pixelSource"
         ]

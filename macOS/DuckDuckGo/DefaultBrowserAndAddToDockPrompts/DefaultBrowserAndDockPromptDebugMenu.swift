@@ -429,6 +429,6 @@ final class DefaultBrowserAndDockPromptDebugStore {
     var simulatedTodayDate: Date?
 
     func reset() {
-        simulatedTodayDate = Date()
+        simulatedTodayDate = nil
     }
 }

@@ -1353,6 +1353,10 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         }
         guard navigationAction.url.scheme != nil else { return .allow }
 
+        if navigationAction.url.isDuckDuckGoSearch {
+            NotificationCenter.default.post(name: .userDidPerformDDGSearch, object: self)
+        }
+
         return .next
     }
 
@@ -1407,10 +1411,6 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         }
 
         invalidateInteractionStateData()
-
-        if navigation.url.isDuckDuckGoSearch {
-            NotificationCenter.default.post(name: .userDidPerformDDGSearch, object: self)
-        }
     }
 
     @MainActor

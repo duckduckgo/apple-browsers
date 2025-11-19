@@ -699,15 +699,15 @@ final class AddressBarButtonsViewController: NSViewController {
         && !isTextFieldValueText
         && !isLocalUrl
 
-        // Hide the left icon when toggle is visible
-        let shouldShowToggle = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.showSearchAndDuckAIToggle
+        // Hide the left icon when toggle feature is enabled (regardless of user setting)
+        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
 
         imageButtonWrapper.isShown = imageButton.image != nil
         && !isInPopUpWindow
         && (isHypertextUrl || isTextFieldEditorFirstResponder || isEditingMode || isNewTabOrOnboarding)
         && privacyDashboardButton.isHidden
         && !isAnyTrackerAnimationPlaying
-        && !shouldShowToggle
+        && !isToggleFeatureEnabled
     }
 
     private func updatePrivacyEntryPointIcon() {
@@ -988,13 +988,15 @@ final class AddressBarButtonsViewController: NSViewController {
     private var isAskAIChatButtonExpanded: Bool = false
 
     private func updateAskAIChatButtonVisibility(isSidebarOpen: Bool? = nil) {
-        let shouldShowToggle = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.showSearchAndDuckAIToggle
+        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
 
         if isTextFieldEditorFirstResponder {
-            if !shouldShowToggle {
+            if isToggleFeatureEnabled {
                 aiChatButton.isHidden = true
+                askAIChatButton.isHidden = true
+            } else {
+                askAIChatButton.isHidden = !shouldShowAskAIChatButton()
             }
-            askAIChatButton.isHidden = shouldShowToggle || !shouldShowAskAIChatButton()
         } else {
             // aiChatButton visibility managed in updateAIChatButtonVisibility
             askAIChatButton.isHidden = true
@@ -1438,10 +1440,11 @@ final class AddressBarButtonsViewController: NSViewController {
 
         stopAnimationsAfterFocus()
 
-        let shouldShowToggle = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.showSearchAndDuckAIToggle
+        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        let shouldShowToggle = isToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
         searchModeToggleControl?.isHidden = !shouldShowToggle
 
-        if shouldShowToggle {
+        if isToggleFeatureEnabled {
             aiChatButton.isHidden = true
             cancelButton.isShown = false
         } else {
@@ -1457,7 +1460,7 @@ final class AddressBarButtonsViewController: NSViewController {
         updatePermissionButtons()
         updateBookmarkButtonVisibility()
         updateZoomButtonVisibility()
-        if !shouldShowToggle {
+        if !isToggleFeatureEnabled {
             updateAIChatButtonVisibility()
         }
         updateAskAIChatButtonVisibility()

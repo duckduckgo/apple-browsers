@@ -31,19 +31,26 @@ Define a concrete pattern for removing `.shared` singletons in the macOS app by 
    - For view controllers and models that need the former singleton, add initializer parameters and store them as non-optional properties. Example:
      - `init(..., aiChatPreferences: AIChatPreferences = NSApp.delegateTyped.aiChatPreferences, ...)`
    - Use default arguments sourced from `NSApp.delegateTyped` so most call sites stay simple, and tests can override with their own instances.
+   - **Important: Main actor isolation**: If an initializer is marked `@MainActor` and you need to default a parameter from `NSApp.delegateTyped`, use an optional parameter with `nil` default instead of accessing `NSApp.delegateTyped` in the default value. Then assign the value inside the initializer body:
+     - ❌ `init(savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating = NSApp.delegateTyped.accessibilityPreferences)` (causes main actor isolation warning)
+     - ✅ `init(savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating? = nil)` with `self.savedZoomLevelsCoordinating = savedZoomLevelsCoordinating ?? NSApp.delegateTyped.accessibilityPreferences` in the body
    - When creating child objects from a parent that already has the dependency, pass the property down rather than re-reading from `NSApp.delegateTyped`.
    - **For preferences models that need to reach SwiftUI views**, thread through the entire chain:
      - `MainViewController` (with default parameter) → `BrowserTabViewController` → `PreferencesViewController` → `PreferencesSidebarModel` → `PreferencesRootView`
      - Follow the existing pattern used by other preferences (e.g., `searchPreferences`, `tabsPreferences`, `aiChatPreferences`)
      - When adding to `PreferencesSidebarModel`, add the property alongside existing preferences and update both the main `init` and convenience `init`
    - It is explicitly allowed to use `NSApp.delegateTyped`:
-     - In the `Tab` initializer (following the existing pattern for other dependencies), and
-     - In default parameter values for the `MainViewController` initializer (this is the entry point for the dependency chain).
+     - In the `Tab` initializer (following the existing pattern for other dependencies)
+     - In default parameter values for the `MainViewController` initializer (this is the entry point for the dependency chain)
+     - In default parameter values for the `TabCollectionViewModel` initializer (following the existing pattern for other dependencies)
+     - In default parameter values for the `TabViewModel` initializer (temporary exception, will be refactored later)
+     - **Exception**: For `@MainActor` initializers, use optional parameters with `nil` defaults and assign from `NSApp.delegateTyped` in the initializer body.
 
 4. **Update utility code and extensions carefully**
    - For helpers like `URL` extensions where dependency injection is impractical, read the instance from the composition root instead of a singleton:
      - `NSApp.delegateTyped.aiChatPreferences` instead of `AIChatPreferences.shared`.
    - Keep these usages minimal; prefer passing dependencies into call sites where it's feasible.
+   - **For protocol-typed dependencies**: If a class conforms to a protocol (e.g., `AccessibilityPreferences` conforms to `SavedZoomLevelsCoordinating`), you can use the protocol type in initializers. The dependency can be passed as the protocol type while still being owned as the concrete type in `AppDelegate`.
    - **In SwiftUI views**, once a dependency is available on a model (e.g., `PreferencesSidebarModel`), use the model's property rather than accessing via `NSApp.delegateTyped`:
      - ✅ `AboutView(model: model.aboutPreferences)`
      - ❌ `AboutView(model: NSApp.delegateTyped.aboutPreferences)`
@@ -63,10 +70,15 @@ Define a concrete pattern for removing `.shared` singletons in the macOS app by 
      - Use `mockFeatureFlagger.internalUserDecider` if `MockFeatureFlagger` is already available
      - Use existing `windowControllersManager` instances (e.g., `WindowControllersManagerMock()`)
      - Example: `AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager)`
+   - **Create shared test instances**: For test classes that have many tests using the dependency, create a shared instance as a property:
+     - `let accessibilityPreferences = AccessibilityPreferences()` at the class level
+     - Reuse this instance across multiple test methods to avoid creating duplicate instances
+   - **Update helper methods in test extensions**: Don't forget to update helper methods in extensions (e.g., `TabViewModel.aTabViewModel` static property) that create instances
    - **Search comprehensively**: Use `grep` to find all test files that instantiate classes requiring the dependency, including:
      - Direct instantiations in test methods
      - Helper/factory methods that create instances
      - Integration tests that create full object graphs
+     - Static helper properties/methods in test extensions
 
 7. **Remove the singleton API last**
    - After all production code and tests use the injected instance or the app-owned property, delete `static let shared` and any remaining references to it.
@@ -98,6 +110,36 @@ The `AboutPreferences.shared` singleton removal demonstrates the complete patter
 8. **AboutPreferences**: Removed `static let shared` and changed `private init` to `init`
 
 This pattern ensures the dependency flows through the entire chain while maintaining testability and avoiding global state access in views.
+
+### Example: AccessibilityPreferences Refactoring
+
+The `AccessibilityPreferences.shared` singleton removal demonstrates additional patterns:
+
+1. **AppDelegate**: Added `let accessibilityPreferences: AccessibilityPreferences` and initialized it with default dependencies
+
+2. **Dependency chain**: Threaded through `MainViewController` → `BrowserTabViewController` → `PreferencesViewController` → `PreferencesSidebarModel` → `PreferencesRootView`
+
+3. **TabViewModel**: Updated existing `accessibilityPreferences` parameter default from `.shared` to `NSApp.delegateTyped.accessibilityPreferences`
+
+4. **Fire initializer (Main actor isolation)**: Used optional parameter pattern to avoid main actor isolation warning:
+   ```swift
+   @MainActor
+   init(savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating? = nil, ...) {
+       self.savedZoomLevelsCoordinating = savedZoomLevelsCoordinating ?? NSApp.delegateTyped.accessibilityPreferences
+   }
+   ```
+
+5. **Protocol conformance**: `AccessibilityPreferences` conforms to `SavedZoomLevelsCoordinating`, allowing it to be passed as a protocol type where needed
+
+6. **Test patterns**: Created shared `accessibilityPreferences` instance in test classes:
+   ```swift
+   final class TabViewModelTests: XCTestCase {
+       let accessibilityPreferences = AccessibilityPreferences()
+       // ... tests reuse this instance
+   }
+   ```
+
+7. **Test helper methods**: Updated all helper methods including static properties in extensions (e.g., `TabViewModel.aTabViewModel`)
 
 ### Test Updates Checklist
 

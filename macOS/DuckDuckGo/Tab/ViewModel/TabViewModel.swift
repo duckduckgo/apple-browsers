@@ -129,7 +129,7 @@ final class TabViewModel: NSObject {
 
     init(tab: Tab,
          appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
-         accessibilityPreferences: AccessibilityPreferences = .shared,
+         accessibilityPreferences: AccessibilityPreferences = NSApp.delegateTyped.accessibilityPreferences,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.tab = tab
         self.appearancePreferences = appearancePreferences

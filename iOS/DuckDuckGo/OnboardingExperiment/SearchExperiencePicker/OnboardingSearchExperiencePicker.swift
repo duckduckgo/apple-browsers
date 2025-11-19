@@ -20,12 +20,11 @@
 import SwiftUI
 
 struct OnboardingSearchExperiencePicker: View {
-    @StateObject private var viewModel = OnboardingSearchExperiencePickerViewModel()
+    @ObservedObject var viewModel: OnboardingSearchExperiencePickerViewModel
 
     var body: some View {
         SettingsAIExperimentalPickerView(
             isDuckAISelected: viewModel.isSearchAndAIChatEnabled,
-            showNewBadgeForDuckAI: false,
-            duckAIOptionTitle: UserText.settingsAIPickerAddDuckAIShortcut)
+            showNewBadgeForDuckAI: false)
     }
 }

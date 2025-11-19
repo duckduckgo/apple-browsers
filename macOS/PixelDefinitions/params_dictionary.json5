@@ -29,20 +29,18 @@
     },
     "errorCode": {
         "key": "e",
-        "type": "string",
+        "type": "integer",
         "description": "NSError code",
-        "pattern": "^-?\\d+$",
-        "examples": ["-1009", "42"]
+        "examples": [-1009, 42]
     },
     "underlyingErrorCode": {
-        "keyPattern": "^ue[0-9]$",
-        "type": "string",
+        "keyPattern": "^ue[0-9]?$",
+        "type": "integer",
         "description": "Underlying NSError code",
-        "pattern": "^-?\\d+$",
-        "examples": ["-1009", "42"]
+        "examples": [-1009, 42]
     },
     "underlyingErrorDomain": {
-        "keyPattern": "^ud[0-9]$",
+        "keyPattern": "^ud[0-9]?$",
         "type": "string",
         "description": "Underlying NSError code domain",
         "examples": ["NSURLErrorDomain"]
@@ -87,9 +85,8 @@
     },
     "wideEventErrorCode": {
         "key": "feature.data.error.code",
-        "type": "string",
-        "description": "Error code for the failure, when applicable",
-        "pattern": "^-?\\d+$"
+        "type": "integer",
+        "description": "Error code for the failure, when applicable"
     },
     "wideEventErrorDescription": {
         "key": "feature.data.error.description",
@@ -98,22 +95,20 @@
         "examples": ["saveToPreferencesFailed", "startVPNFailed"]
     },
     "wideEventUnderlyingErrorDomain": {
-        "keyPattern": "feature\\.data\\.error\\.underlying_domain[0-9]*",
+        "keyPattern": "feature\\.data\\.error\\.underlying_domain[0-9]?",
         "type": "string",
         "description": "Underlying error domain (supports optional numeric index for nested errors)"
     },
     "wideEventUnderlyingErrorCode": {
-        "keyPattern": "feature\\.data\\.error\\.underlying_code[0-9]*",
-        "type": "string",
-        "description": "Underlying error code (supports optional numeric index for nested errors)",
-        "pattern": "^-?\\d+$"
+        "keyPattern": "feature\\.data\\.error\\.underlying_code[0-9]?",
+        "type": "integer",
+        "description": "Underlying error code (supports optional numeric index for nested errors)"
     },
     "duration": {
         "key": "duration",
-        "type": "string",
+        "type": "integer",
         "description": "Duration in milliseconds",
-        "pattern": "^\\d+$",
-        "examples": ["1500", "3200"]
+        "examples": [1500, 3200]
     },
     "navigation_type": {
         "key": "navigation_type",

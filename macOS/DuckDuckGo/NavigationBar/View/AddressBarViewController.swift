@@ -49,11 +49,19 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
+    /// Represents the selection state of the address bar
+    ///
+    /// This enum tracks the different active states of the address bar, which determines
+    /// UI appearance, keyboard focus behavior, and which input mode is currently active.
+    ///
+    /// - Note: This is different from `isFirstResponder`, which only tracks whether the
+    ///         address bar text field has first responder status. `SelectionState` provides
+    ///         a higher-level view of the address bar's interactive state.
     enum SelectionState {
         case inactive
         case active
         case activeWithAIChat
-        
+
         var isSelected: Bool {
             self != .inactive
         }
@@ -734,7 +742,7 @@ final class AddressBarViewController: NSViewController {
         NSAppearance.withAppAppearance {
             // Keep selected appearance when AI chat is active, even if window loses key status
             let shouldShowActiveState = window.isKeyWindow || selectionState == .activeWithAIChat
-            
+
             if shouldShowActiveState {
                 activeBackgroundView.borderWidth = 2.0
                 activeBackgroundView.borderColor = accentColor.withAlphaComponent(0.6)
@@ -871,24 +879,24 @@ final class AddressBarViewController: NSViewController {
 
         if let point = self.view.mouseLocationInsideBounds(event.locationInWindow) {
             let hitView = self.view.hitTest(point)
-            
+
             if hitView?.shouldShowArrowCursor == true {
                 return event
             }
-            
+
             // In AI chat mode, only block clicks specifically on the address bar text fields
             // Allow clicks elsewhere (like on the AI chat text view)
             if selectionState == .activeWithAIChat {
-                let isClickOnAddressBarTextField = hitView === addressBarTextField || 
-                                                     hitView?.isDescendant(of: addressBarTextField) == true ||
-                                                     hitView === passiveTextField ||
-                                                     hitView?.isDescendant(of: passiveTextField) == true
+                let isClickOnAddressBarTextField = hitView === addressBarTextField ||
+                hitView?.isDescendant(of: addressBarTextField) == true ||
+                hitView === passiveTextField ||
+                hitView?.isDescendant(of: passiveTextField) == true
                 if isClickOnAddressBarTextField {
                     return nil
                 }
                 return event
             }
-            
+
             guard self.view.window?.firstResponder !== addressBarTextField.currentEditor()
             else { return event }
 
@@ -934,7 +942,7 @@ final class AddressBarViewController: NSViewController {
         guard let window = self.view.window, event.window === window else {
             return event
         }
-        
+
         // Handle AI chat mode - click outside to dismiss
         if selectionState == .activeWithAIChat,
            let clickPoint,
@@ -943,7 +951,7 @@ final class AddressBarViewController: NSViewController {
             setAIChatOmnibarVisible(false)
             return event
         }
-        
+
         // Handle normal mode - click (same position down+up) outside of the field: resign first responder
         guard window.firstResponder === addressBarTextField.currentEditor(),
               let clickPoint,

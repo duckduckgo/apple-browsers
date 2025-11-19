@@ -42,15 +42,15 @@ public final class CustomToggleControl: NSControl {
     public var rightImage: NSImage? {
         didSet { needsDisplay = true }
     }
-    
+
     public var leftSelectedImage: NSImage? {
         didSet { needsDisplay = true }
     }
-    
+
     public var rightSelectedImage: NSImage? {
         didSet { needsDisplay = true }
     }
-    
+
     public var iconTintColor: NSColor = .labelColor {
         didSet { needsDisplay = true }
     }
@@ -227,18 +227,18 @@ public final class CustomToggleControl: NSControl {
         )
 
         NSGraphicsContext.current?.imageInterpolation = .high
-        
+
         // For template images, we need to manually tint them for proper color rendering
         if image.isTemplate {
             let tintedImage = NSImage(size: image.size, flipped: false) { bounds in
                 self.iconTintColor.set()
                 bounds.fill()
-                
+
                 // Draw the image as a mask using destinationIn to cut out transparent areas
                 image.draw(in: bounds, from: .zero, operation: .destinationIn, fraction: 1.0)
                 return true
             }
-            
+
             tintedImage.draw(in: imageRect, from: .zero, operation: .sourceOver, fraction: alpha)
         } else {
             image.draw(in: imageRect, from: .zero, operation: .sourceOver, fraction: alpha)

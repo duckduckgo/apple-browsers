@@ -19,7 +19,7 @@
 import Cocoa
 import Combine
 
-final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpdateListening {
+final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpdateListening, NSTextViewDelegate {
 
     private let backgroundView = MouseBlockingBackgroundView()
     private let containerView = NSView()
@@ -97,6 +97,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         textView.allowsDocumentBackgroundColorChange = false
         textView.usesRuler = false
         textView.usesFontPanel = false
+        textView.delegate = self
 
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -154,6 +155,28 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     @objc func textDidChange(_ notification: Notification) {
         omnibarController.updateText(textView.string)
+    }
+
+    // MARK: - NSTextViewDelegate
+
+    func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        if commandSelector == #selector(insertNewline(_:)) || commandSelector == #selector(insertNewlineIgnoringFieldEditor(_:)) {
+            guard let event = NSApp.currentEvent else { return false }
+            
+            let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            
+            /// Option + Enter: insert newline
+            if modifiers.contains(.option) {
+                textView.insertNewlineIgnoringFieldEditor(nil)
+                return true
+            }
+            
+            /// Plain Enter: submit
+            omnibarController.submit()
+            return true
+        }
+        
+        return false
     }
 
     func startEventMonitoring() {

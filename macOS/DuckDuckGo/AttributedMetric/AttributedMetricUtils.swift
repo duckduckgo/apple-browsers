@@ -19,31 +19,17 @@
 import Foundation
 import AttributedMetric
 import BrowserServicesKit
+import Subscription
 
-struct AttributedMetricDefaultBrowserProvider: AttributedMetricDefaultBrowserProviding {
-
-    let defaultBrowserManager = DefaultBrowserManager(defaultBrowserInfoStore: DefaultBrowserInfoStore(),
-                                                      defaultBrowserEventMapper: DefaultBrowserPromptManagerDebugPixelHandler(), defaultBrowserChecker: SystemCheckDefaultBrowserService(application: UIApplication.shared))
+extension SystemDefaultBrowserProvider: AttributedMetricDefaultBrowserProviding {
 
     var isDefaultBrowser: Bool {
-        let result = defaultBrowserManager.defaultBrowserInfo()
-        switch result {
-        case .failure(let error):
-            switch error {
-            case .notSupportedOnCurrentOSVersion:
-                return false
-            case .unknownError:
-                return false
-            case .rateLimitReached(let updatedStoredInfo):
-                return updatedStoredInfo?.isDefaultBrowser ?? false
-            }
-        case .success(newInfo: let newInfo):
-            return newInfo.isDefaultBrowser
-        }
+        self.isDefault
     }
 }
 
 struct DefaultBucketsSettingsProvider: BucketsSettingsProviding {
+
     let privacyConfig: PrivacyConfiguration
 
     var bucketsSettings: [String: Any] {

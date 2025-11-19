@@ -735,24 +735,77 @@ final class MainMenu: NSMenu {
         let debugMenu = NSMenu(title: Self.debugMenuTitle) {
             NSMenuItem(title: "Feature Flag Overrides")
                 .submenu(FeatureFlagOverridesMenu(featureFlagOverrides: featureFlagger))
-            NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
-            NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
+
+            NSMenuItem.separator()
+
+            NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
+
+            NSMenuItem(title: "AppStore Updates")
+                .submenu(AppStoreUpdatesDebugMenu())
+
+            NSMenuItem(title: "Attributed Metrics")
+                .submenu(AttributedMetricDebugMenu())
+
+            if #available(macOS 13.5, *) {
+                NSMenuItem(title: "Autofill") {
+                    NSMenuItem(title: "View all Credentials", action: #selector(MainViewController.showAllCredentials)).withAccessibilityIdentifier("MainMenu.showAllCredentials")
+                }
+            }
+
+            NSMenuItem(title: "Content Scopes Experiment") {
+                NSMenuItem(title: "Show Active Experiments", action: #selector(AppDelegate.showContentScopeExperiments))
+            }
+
+            FreemiumDebugMenu()
+
+            NSMenuItem(title: "Hang Debugging") {
+                toggleWatchdogMenuItem
+                toggleWatchdogCrashMenuItem
+                NSMenuItem(title: "Simulate hang") {
+                    NSMenuItem(title: "0.5 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 0.5)
+                    NSMenuItem(title: "2 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 2.0)
+                    NSMenuItem(title: "3.5 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 3.5)
+                    NSMenuItem(title: "5 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 5.0)
+                    NSMenuItem(title: "10 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 10.0)
+                    NSMenuItem(title: "15 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 15.0)
+                }
+            }
+
+            NSMenuItem(title: "History")
+                .submenu(HistoryDebugMenu(historyCoordinator: historyCoordinator, featureFlagger: featureFlagger))
+
+            NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
+
             NSMenuItem(title: "New Tab Page") {
                 NSMenuItem(title: "Reset Continue Setup", action: #selector(AppDelegate.debugResetContinueSetup))
                 NSMenuItem(title: "Shift New Tab daily impression", action: #selector(MainViewController.debugShiftNewTabOpeningDate))
                 NSMenuItem(title: "Shift \(AppearancePreferences.Constants.dismissNextStepsCardsAfterDays) days", action: #selector(MainViewController.debugShiftNewTabOpeningDateNtimes))
             }
-            NSMenuItem(title: "History")
-                .submenu(HistoryDebugMenu(historyCoordinator: historyCoordinator, featureFlagger: featureFlagger))
+
+            NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
+
             NSMenuItem(title: "Performance Tests") {
                 NSMenuItem(title: "Test Network Quality", action: #selector(MainViewController.testNetworkQuality))
                     .withAccessibilityIdentifier("MainMenu.testNetworkQuality")
                 NSMenuItem(title: "Test Site Performance (DDG vs Safari)", action: #selector(MainViewController.testCurrentSitePerformance))
                     .withAccessibilityIdentifier("MainMenu.testCurrentSitePerformance")
             }
-            NSMenuItem(title: "Content Scopes Experiment") {
-                NSMenuItem(title: "Show Active Experiments", action: #selector(AppDelegate.showContentScopeExperiments))
+
+            NSMenuItem(title: "Personal Information Removal")
+                .submenu(DataBrokerProtectionDebugMenu())
+
+            NSMenuItem(title: "Remote Configuration") {
+                customConfigurationUrlMenuItem
+                configurationDateAndTimeMenuItem
+                NSMenuItem.separator()
+                NSMenuItem(title: "Reload Configuration Now", action: #selector(AppDelegate.reloadConfigurationNow), keyEquivalent: [.command, .shift, .option, "r"])
+                NSMenuItem(title: "Set custom configuration URL…", action: #selector(AppDelegate.setCustomPrivacyConfigurationURL))
+                NSMenuItem(title: "Reset configuration to default", action: #selector(AppDelegate.resetPrivacyConfigurationToDefault))
             }
+
+            NSMenuItem(title: "Remote Messaging Framework")
+                .submenu(RemoteMessagingDebugMenu(configurationURLProvider: configurationURLProvider))
+
             NSMenuItem(title: "Reset Data") {
                 NSMenuItem(title: "Reset Default Browser Prompt", action: #selector(AppDelegate.resetDefaultBrowserPrompt))
                 NSMenuItem(title: "Reset Default Grammar Checks", action: #selector(AppDelegate.resetDefaultGrammarChecks))
@@ -783,51 +836,9 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Set Launch Date A Week In the Past", action: #selector(AppDelegate.setLaunchDayAWeekInThePast))
 
             }.withAccessibilityIdentifier("MainMenu.resetData")
-            NSMenuItem(title: "UI Triggers") {
-                NSMenuItem(title: "Append Tabs") {
-                    NSMenuItem(title: "10 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 10)
-                    NSMenuItem(title: "50 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 50)
-                    NSMenuItem(title: "100 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 100)
-                    NSMenuItem(title: "150 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 150)
-                }
-                NSMenuItem(title: "Show Save Credentials Popover", action: #selector(MainViewController.showSaveCredentialsPopover))
-                NSMenuItem(title: "Show Credentials Saved Popover", action: #selector(MainViewController.showCredentialsSavedPopover))
-                NSMenuItem(title: "Show Pop Up Window", action: #selector(MainViewController.showPopUpWindow))
-            }
-            NSMenuItem(title: "Remote Configuration") {
-                customConfigurationUrlMenuItem
-                configurationDateAndTimeMenuItem
-                NSMenuItem.separator()
-                NSMenuItem(title: "Reload Configuration Now", action: #selector(AppDelegate.reloadConfigurationNow), keyEquivalent: [.command, .shift, .option, "r"])
-                NSMenuItem(title: "Set custom configuration URL…", action: #selector(AppDelegate.setCustomPrivacyConfigurationURL))
-                NSMenuItem(title: "Reset configuration to default", action: #selector(AppDelegate.resetPrivacyConfigurationToDefault))
-            }
-            NSMenuItem(title: "Remote Messaging Framework")
-                .submenu(RemoteMessagingDebugMenu(configurationURLProvider: configurationURLProvider))
-            NSMenuItem(title: "User Scripts") {
-                NSMenuItem(title: "Remove user scripts from selected tab", action: #selector(MainViewController.removeUserScripts))
-            }
-            NSMenuItem(title: "Sync & Backup")
-                .submenu(SyncDebugMenu())
-                .withAccessibilityIdentifier("MainMenu.syncAndBackup")
 
-            NSMenuItem(title: "Personal Information Removal")
-                .submenu(DataBrokerProtectionDebugMenu())
-
-            FreemiumDebugMenu()
-
-            if case .normal = AppVersion.runType {
-                NSMenuItem(title: "VPN")
-                    .submenu(NetworkProtectionDebugMenu())
-            }
-
-            NSMenuItem(title: "AppStore Updates")
-                .submenu(AppStoreUpdatesDebugMenu())
-
-            if #available(macOS 13.5, *) {
-                NSMenuItem(title: "Autofill") {
-                    NSMenuItem(title: "View all Credentials", action: #selector(MainViewController.showAllCredentials)).withAccessibilityIdentifier("MainMenu.showAllCredentials")
-                }
+            if AppVersion.runType.requiresEnvironment {
+                NSMenuItem(title: "SAD/ATT Prompts").submenu(DefaultBrowserAndDockPromptDebugMenu())
             }
 
             NSMenuItem(title: "Simulate crash") {
@@ -839,18 +850,7 @@ final class MainMenu: NSMenu {
                 }
             }
 
-            NSMenuItem(title: "Hang Debugging") {
-                toggleWatchdogMenuItem
-                toggleWatchdogCrashMenuItem
-                NSMenuItem(title: "Simulate hang") {
-                    NSMenuItem(title: "0.5 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 0.5)
-                    NSMenuItem(title: "2 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 2.0)
-                    NSMenuItem(title: "3.5 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 3.5)
-                    NSMenuItem(title: "5 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 5.0)
-                    NSMenuItem(title: "10 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 10.0)
-                    NSMenuItem(title: "15 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 15.0)
-                }
-            }
+            NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
 
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
@@ -883,18 +883,41 @@ final class MainMenu: NSMenu {
                                   isAuthV2Enabled: Application.appDelegate.isUsingAuthV2,
                                   wideEvent: Application.appDelegate.wideEvent)
 
+            NSMenuItem(title: "Sync & Backup")
+                .submenu(SyncDebugMenu())
+                .withAccessibilityIdentifier("MainMenu.syncAndBackup")
+
             NSMenuItem(title: "TipKit") {
                 NSMenuItem(title: "Reset", action: #selector(AppDelegate.resetTipKit))
                 NSMenuItem(title: "⚠️ App restart required.", action: nil, target: nil)
             }
 
-            NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
-            NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
+            NSMenuItem(title: "UI Triggers") {
+                NSMenuItem(title: "Append Tabs") {
+                    NSMenuItem(title: "10 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 10)
+                    NSMenuItem(title: "50 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 50)
+                    NSMenuItem(title: "100 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 100)
+                    NSMenuItem(title: "150 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 150)
+                }
+                NSMenuItem(title: "Show Save Credentials Popover", action: #selector(MainViewController.showSaveCredentialsPopover))
+                NSMenuItem(title: "Show Credentials Saved Popover", action: #selector(MainViewController.showCredentialsSavedPopover))
+                NSMenuItem(title: "Show Pop Up Window", action: #selector(MainViewController.showPopUpWindow))
+            }
+
 #if SPARKLE
             NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu())
 #endif
+
+            NSMenuItem(title: "User Scripts") {
+                NSMenuItem(title: "Remove user scripts from selected tab", action: #selector(MainViewController.removeUserScripts))
+            }
+
+            if case .normal = AppVersion.runType {
+                NSMenuItem(title: "VPN")
+                    .submenu(NetworkProtectionDebugMenu())
+            }
+
             if AppVersion.runType.requiresEnvironment {
-                NSMenuItem(title: "SAD/ATT Prompts").submenu(DefaultBrowserAndDockPromptDebugMenu())
                 WinBackOfferDebugMenu(winbackOfferStore: Application.appDelegate.winbackOfferStore,
                                       keyValueStore: Application.appDelegate.keyValueStore)
             }

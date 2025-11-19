@@ -54,7 +54,7 @@ final class ReportingService {
     init(fireproofing: Fireproofing,
          featureFlagging: FeatureFlagger,
          userDefaults: UserDefaults,
-         pixelKit: PixelKit,
+         pixelKit: PixelKit?,
          appDependencies: DependencyProvider,
          privacyConfigurationManager: PrivacyConfigurationManaging) {
         self.privacyConfigurationManager = privacyConfigurationManager

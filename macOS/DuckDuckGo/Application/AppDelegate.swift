@@ -959,23 +959,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
 
-        //MARK: AttributedMetric initialisation
+        // AttributedMetric initialisation
 
-        if let pixelKit = PixelKit.shared {
-            let errorHandler = AttributedMetricErrorHandler(pixelKit: pixelKit)
-            let attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: .appConfiguration,
-                                                                          errorHandler: errorHandler)
-            let bucketsSettingsProvider = DefaultBucketsSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
-            let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: subscriptionAuthV1toV2Bridge)
-            let defaultBrowserProvider = AttributedMetricDefaultBrowserProvider()
-            self.attributedMetricManager = AttributedMetricManager(pixelKit: pixelKit,
-                                                                   dataStoring: attributedMetricDataStorage,
-                                                                   featureFlagger: featureFlagger,
-                                                                   originProvider: nil,
-                                                                   defaultBrowserProviding: defaultBrowserProvider,
-                                                                   subscriptionStateProvider: subscriptionStateProvider,
-                                                                   bucketsSettingsProvider: bucketsSettingsProvider)
-        }
+        let errorHandler = AttributedMetricErrorHandler(pixelKit: PixelKit.shared)
+        let attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: .appConfiguration,
+                                                                      errorHandler: errorHandler)
+        let bucketsSettingsProvider = DefaultBucketsSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
+        let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: subscriptionAuthV1toV2Bridge)
+        let defaultBrowserProvider = SystemDefaultBrowserProvider()
+        self.attributedMetricManager = AttributedMetricManager(pixelKit: PixelKit.shared,
+                                                               dataStoring: attributedMetricDataStorage,
+                                                               featureFlagger: featureFlagger,
+                                                               originProvider: nil,
+                                                               defaultBrowserProviding: defaultBrowserProvider,
+                                                               subscriptionStateProvider: subscriptionStateProvider,
+                                                               bucketsSettingsProvider: bucketsSettingsProvider)
+
         super.init()
 
         appContentBlocking?.userContentUpdating.userScriptDependenciesProvider = self

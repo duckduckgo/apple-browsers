@@ -22,15 +22,6 @@ import UserNotifications
 
 final class DefaultBrowserAndDockPromptNotificationPresenterTests: XCTestCase {
 
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-    }
-
-    override func tearDownWithError() throws {
-
-        try super.tearDownWithError()
-    }
-
     func testHandleNotificationResponse_ForInactiveUserFeedbackRequest_OpensFeedbackFormWithExpectedCategoryAndSubCategory() async throws {
         // GIVEN
         var actualCategory: ProblemCategory?

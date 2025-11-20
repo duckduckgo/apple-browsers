@@ -1017,7 +1017,7 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
                     sharedTextState.updateText(text, markInteraction: false)
                 }
             }
-            
+
             selectionState = .activeWithAIChat
             mode = .editing(.aiChat)
             if isFirstResponder {
@@ -1028,7 +1028,7 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
             if sharedTextState.hasUserInteractedWithText {
                 addressBarTextField.restoreFromSharedState()
             }
-            
+
             updateMode()
             addressBarTextField.makeMeFirstResponder()
         }

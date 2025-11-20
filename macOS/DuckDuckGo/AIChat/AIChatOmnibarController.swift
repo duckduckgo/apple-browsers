@@ -46,7 +46,7 @@ final class AIChatOmnibarController {
         self.aiChatTabOpener = aiChatTabOpener
         self.sharedTextState = sharedTextState
         self.promptHandler = promptHandler
-        
+
         subscribeToSharedTextState()
     }
 
@@ -60,9 +60,9 @@ final class AIChatOmnibarController {
             sharedTextState.updateText(text, markInteraction: true)
         }
     }
-    
+
     // MARK: - Private Methods
-    
+
     private func subscribeToSharedTextState() {
         sharedTextState.$text
             .sink { [weak self] newText in

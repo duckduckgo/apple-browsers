@@ -74,4 +74,3 @@ final class AddressBarSharedTextState: ObservableObject {
         selectionRange = validatedRange
     }
 }
-

@@ -323,6 +323,12 @@ final class AddressBarViewController: NSViewController {
         subscribeToButtonsWidth()
         subscribeForShadowViewUpdates()
         subscribeToThemeChanges()
+        
+        // Wire the custom toggle control reference to the address bar text field
+        // This enables TAB key navigation from text field to toggle
+        if let searchModeToggleControl = addressBarButtonsViewController?.searchModeToggleControl {
+            addressBarTextField.customToggleControl = searchModeToggleControl
+        }
     }
 
     override func viewWillDisappear() {
@@ -805,7 +811,16 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func firstResponderDidChange(_ notification: Notification) {
-        if view.window?.firstResponder === addressBarTextField.currentEditor() {
+        let firstResponder = view.window?.firstResponder
+        let isToggleFocused = firstResponder === addressBarButtonsViewController?.searchModeToggleControl
+        
+        if firstResponder === addressBarTextField.currentEditor() {
+            if !isFirstResponder {
+                isFirstResponder = true
+            }
+            activeTextFieldMinXConstraint.isActive = true
+        } else if isToggleFocused {
+            // Keep address bar active state when toggle has focus
             if !isFirstResponder {
                 isFirstResponder = true
             }
@@ -821,13 +836,16 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func handleFirstResponderChange() {
+        let isToggleFocused = view.window?.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
+        
         switch selectionState {
         case .inactive:
             if isFirstResponder {
                 selectionState = .active
             }
         case .active, .activeWithAIChat:
-            if !isFirstResponder {
+            // Keep active state if toggle is focused
+            if !isFirstResponder && !isToggleFocused {
                 selectionState = .inactive
             }
         }

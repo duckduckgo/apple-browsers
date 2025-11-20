@@ -21,16 +21,26 @@ import UIKit
 import SwiftUI
 
 @available(iOS 18.0, *)
+protocol AutofillExtensionSettingsViewControllerDelegate: AnyObject {
+    func autofillExtensionSettingsViewController(_ controller: AutofillExtensionSettingsViewController, shouldDisableAuth: Bool)
+}
+
+@available(iOS 18.0, *)
 class AutofillExtensionSettingsViewController: UIViewController {
 
-    enum Source {
-        case autofillSettings
+    enum Source: String {
+        case autofillSettings = "settings"
+        case passwordsPromotion = "passwords_promo"
+        case inlinePromotion = "inline_promo"
     }
 
     private let source: Source
+    private let viewModel: AutofillExtensionSettingsViewModel
+    weak var delegate: (any AutofillExtensionSettingsViewControllerDelegate)?
 
     init(source: Source) {
         self.source = source
+        self.viewModel = AutofillExtensionSettingsViewModel(source: source)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -46,10 +56,27 @@ class AutofillExtensionSettingsViewController: UIViewController {
         title = UserText.autofillExtensionScreenTitle
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        if isMovingFromParent {
+            self.delegate?.autofillExtensionSettingsViewController(self, shouldDisableAuth: false)
+        }
+    }
+
     private func setupView() {
-        let controller = UIHostingController(rootView: AutofillExtensionSettingsView(viewModel: AutofillExtensionSettingsViewModel()))
+        viewModel.delegate = self
+        let controller = UIHostingController(rootView: AutofillExtensionSettingsView(viewModel: viewModel))
         controller.view.backgroundColor = .clear
         installChildViewController(controller)
     }
 
+}
+
+@available(iOS 18.0, *)
+extension AutofillExtensionSettingsViewController: AutofillExtensionSettingsViewModelDelegate {
+
+    func autofillExtensionSettingsViewModel(_ viewModel: AutofillExtensionSettingsViewModel, shouldDisableAuth: Bool) {
+        delegate?.autofillExtensionSettingsViewController(self, shouldDisableAuth: shouldDisableAuth)
+    }
 }

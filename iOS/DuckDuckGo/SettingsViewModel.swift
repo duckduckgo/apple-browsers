@@ -940,10 +940,11 @@ extension SettingsViewModel {
         updateCompleteSetupSectionVisiblity()
     }
 
-    @MainActor func shouldPresentAutofillViewWith(accountDetails: SecureVaultModels.WebsiteAccount?, card: SecureVaultModels.CreditCard?, showCreditCardManagement: Bool, source: AutofillSettingsSource? = nil) {
+    @MainActor func shouldPresentAutofillViewWith(accountDetails: SecureVaultModels.WebsiteAccount?, card: SecureVaultModels.CreditCard?, showCreditCardManagement: Bool, showSettingsScreen: AutofillSettingsDestination? = nil, source: AutofillSettingsSource? = nil) {
         state.activeWebsiteAccount = accountDetails
         state.activeWebsiteCreditCard = card
         state.showCreditCardManagement = showCreditCardManagement
+        state.showSettingsScreen = showSettingsScreen
         state.autofillSource = source
         
         presentLegacyView(.autofill)
@@ -1052,6 +1053,7 @@ extension SettingsViewModel {
                                                                 selectedCard: state.activeWebsiteCreditCard,
                                                                 showPasswordManagement: false,
                                                                 showCreditCardManagement: state.showCreditCardManagement,
+                                                                showSettingsScreen: state.showSettingsScreen,
                                                                 source: state.autofillSource))
 
         case .gpc:
@@ -1096,6 +1098,7 @@ extension SettingsViewModel: DataImportViewControllerDelegate {
                                                             selectedCard: nil,
                                                             showPasswordManagement: true,
                                                             showCreditCardManagement: false,
+                                                            showSettingsScreen: nil,
                                                             source: state.autofillSource))
     }
 }

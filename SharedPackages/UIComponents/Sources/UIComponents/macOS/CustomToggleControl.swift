@@ -27,6 +27,7 @@ public final class CustomToggleControl: NSControl {
     // MARK: - Key Code Constants
 
     private enum KeyCode {
+        static let tab: UInt16 = 48
         static let space: UInt16 = 49
         static let `return`: UInt16 = 36
         static let leftArrow: UInt16 = 123
@@ -289,6 +290,12 @@ public final class CustomToggleControl: NSControl {
 
     public override func keyDown(with event: NSEvent) {
         switch event.keyCode {
+        case KeyCode.tab:
+            if event.modifierFlags.contains(.shift) {
+                window?.selectPreviousKeyView(self)
+            } else {
+                window?.selectNextKeyView(self)
+            }
         case KeyCode.space, KeyCode.return:
             // Both space and return toggle the selection
             // The selection change will trigger the action, which handles mode switching

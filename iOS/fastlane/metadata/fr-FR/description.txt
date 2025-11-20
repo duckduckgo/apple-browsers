@@ -5,7 +5,7 @@ DuckDuckGo Search est intégré, ce qui vous permet d’effectuer facilement des
 Notre protection contre les traqueurs tiers Tracker Loading Protection bloque la plupart des traqueurs avant qu'ils ne se chargent, dépassant largement ce que la plupart des navigateurs populaires offrent par défaut.  
 Duck.ai vous permet d'avoir des conversations privées avec des modèles d'IA tiers, anonymisés par nos soins et jamais utilisés pour entraîner l'IA.
 Utilisez Email Protection pour bloquer la plupart des traqueurs d’e-mails et masquer votre adresse e-mail existante grâce aux adresses @duck.com.   
-Duck Player vous protège des publicités ciblées et des cookies sur YouTube grâce à une interface sans distractions qui intègre les paramètres de confidentialité les plus stricts de YouTubepour les vidéos intégrées. 
+Duck Player vous protège des publicités ciblées et des cookies sur YouTube grâce à une interface sans distractions qui intègre les paramètres de confidentialité les plus stricts de YouTube pour les vidéos intégrées. 
 Empêchez les entreprises de combiner les informations relatives à votre navigateur et à votre appareil. 
 Synchronisez les signets et les mots de passe cryptés sur tous vos appareils. 
 Effacer vos onglets et vos données de navigation en un clin d'œil avec le Fire Button. 

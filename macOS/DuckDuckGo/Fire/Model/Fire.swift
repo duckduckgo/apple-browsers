@@ -352,7 +352,8 @@ final class Fire: FireProtocol {
                 await self.burnAutoconsentStats()
                 self.burnZoomLevels(of: domains)
 
-                // if not removing history then we need to clear cookiePopupBlocked flag
+                // when removing cookies for the domain we also need to clear cookiePopupBlocked flag
+                // this is only necessary when not removing history for the domain - flag is part of HistoryEntry
                 if !includingHistory {
                     await self.resetCookiePopupBlockedFlag(for: domains)
                 }

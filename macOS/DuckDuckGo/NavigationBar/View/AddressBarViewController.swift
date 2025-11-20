@@ -617,9 +617,13 @@ final class AddressBarViewController: NSViewController {
         activeBackgroundView.alphaValue = selectionState.isSelected ? 1 : 0
 
         let isKey = self.view.window?.isKeyWindow == true
+        let isToggleFocused = view.window?.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
 
-        activeOuterBorderView.alphaValue = isKey && selectionState.isSelected && theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
+        activeOuterBorderView.alphaValue = isKey && selectionState.isSelected && !isToggleFocused && theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
         activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
+        
+        // Hide inner border when toggle is focused
+        activeBackgroundView.borderWidth = isToggleFocused ? 0 : 2.0
         activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.8) : theme.colorsProvider.accentPrimaryColor
 
         setupAddressBarPlaceHolder()
@@ -713,7 +717,8 @@ final class AddressBarViewController: NSViewController {
         shadowView.shadowRadius = isSuggestionsWindowVisible ? theme.addressBarStyleProvider.suggestionShadowRadius : 0.0
         shadowView.cornerRadius = theme.addressBarStyleProvider.addressBarActiveBackgroundViewRadius
 
-        activeOuterBorderView.isHidden = isSuggestionsWindowVisible || view.window?.isKeyWindow != true
+        let isToggleFocused = view.window?.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
+        activeOuterBorderView.isHidden = isSuggestionsWindowVisible || view.window?.isKeyWindow != true || isToggleFocused
         activeBackgroundView.isHidden = isSuggestionsWindowVisible
         activeBackgroundViewWithSuggestions.isHidden = !isSuggestionsWindowVisible
         inactiveAddressBarShadowView.isHidden = isSuggestionsWindowVisible
@@ -758,15 +763,17 @@ final class AddressBarViewController: NSViewController {
         NSAppearance.withAppAppearance {
             // Keep selected appearance when AI chat is active, even if window loses key status
             let shouldShowActiveState = window.isKeyWindow || selectionState == .activeWithAIChat
+            let isToggleFocused = window.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
 
             if shouldShowActiveState {
-                activeBackgroundView.borderWidth = 2.0
+                // Hide inner border when toggle is focused
+                activeBackgroundView.borderWidth = isToggleFocused ? 0 : 2.0
                 activeBackgroundView.borderColor = accentColor.withAlphaComponent(0.6)
                 activeBackgroundView.backgroundColor = theme.colorsProvider.activeAddressBarBackgroundColor
                 addressBarButtonsViewController?.trailingButtonsBackground.backgroundColor = theme.colorsProvider.activeAddressBarBackgroundColor
                 switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .addressBarBackground)
 
-                activeOuterBorderView.isHidden = !theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage)
+                activeOuterBorderView.isHidden = isToggleFocused || !theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage)
                 activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
                 activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.8) : theme.colorsProvider.accentPrimaryColor
             } else {
@@ -819,12 +826,18 @@ final class AddressBarViewController: NSViewController {
                 isFirstResponder = true
             }
             activeTextFieldMinXConstraint.isActive = true
+            // Update view to show border when returning to text field from toggle
+            updateView()
+            refreshAddressBarAppearance(nil)
         } else if isToggleFocused {
             // Keep address bar active state when toggle has focus
             if !isFirstResponder {
                 isFirstResponder = true
             }
             activeTextFieldMinXConstraint.isActive = true
+            // Update view to hide border when toggle gets focus
+            updateView()
+            refreshAddressBarAppearance(nil)
         } else if isFirstResponder {
             isFirstResponder = false
 
@@ -832,6 +845,14 @@ final class AddressBarViewController: NSViewController {
             if #available(macOS 26.0, *), featureFlagger.isFeatureOn(.blurryAddressBarTahoeFix) {
                 restoreInternalTextFieldLabels(in: addressBarTextField)
             }
+            
+            // Update view when toggle loses focus to something else
+            updateView()
+            refreshAddressBarAppearance(nil)
+            
+            // Trigger resize when losing focus from toggle (similar to addressBarDidLoseFocus)
+            delegate?.resizeAddressBarForHomePage(self)
+            addressBarButtonsViewController?.setupButtonPaddings(isFocused: false)
         }
     }
 

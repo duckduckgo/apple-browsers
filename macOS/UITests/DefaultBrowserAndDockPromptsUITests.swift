@@ -36,10 +36,41 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
     }
 
     func testExample() throws {
-        // UI tests must launch the application that they test.
-        let app = XCUIApplication()
-        app.launch()
+        app.simulateFreshAppInstall()
+    }
+}
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+// MARK: - Helper Identifiers
+
+private extension XCUIApplication {
+    enum AccessibilityIdentifiers {
+        static let simulateFreshAppInstallMenuItem = "DefaultBrowserAndDockPromptDebugMenu.simulateFreshInstall"
+        static let overrideCurrentDateMenuItem = "DefaultBrowserAndDockPromptDebugMenu.simulateCurrentDate"
+    }
+
+    var simulateFreshAppInstallMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.simulateFreshAppInstallMenuItem]
+    }
+
+    var overrideCurrentDateMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.overrideCurrentDateMenuItem]
+    }
+}
+
+// MARK: - Helper Methods
+
+private extension XCUIApplication {
+
+    /// Open Debug menu -> Default Browser and Dock Prompt submenu -> Simulate Fresh App Install
+    func simulateFreshAppInstall() {
+        let debugMenu = menuBars.menuBarItems["Debug"]
+        debugMenu.click()
+
+        let defaultBrowserAndDockPromptSubmenu = menuItems["SAD/ATT Prompts"]
+        XCTAssertTrue(defaultBrowserAndDockPromptSubmenu.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Default Browser and Dock Prompt submenu should exist")
+        defaultBrowserAndDockPromptSubmenu.hover()
+
+        XCTAssertTrue(simulateFreshAppInstallMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Simulate Fresh App Install menu item should exist")
+        simulateFreshAppInstallMenuItem.click()
     }
 }

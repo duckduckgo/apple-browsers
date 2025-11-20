@@ -51,8 +51,10 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
 
         buildItems {
             NSMenuItem(title: "Override Today's Date", action: #selector(simulateCurrentDate))
+                .withAccessibilityIdentifier("DefaultBrowserAndDockPromptDebugMenu.simulateCurrentDate")
                 .targetting(self)
             NSMenuItem(title: "Simulate Fresh App Install", action: #selector(simulateFreshAppInstall))
+                .withAccessibilityIdentifier("DefaultBrowserAndDockPromptDebugMenu.simulateFreshInstall")
                 .targetting(self)
             NSMenuItem(title: "Reset Prompts And Today/Install Dates", action: #selector(resetPrompts))
                 .targetting(self)

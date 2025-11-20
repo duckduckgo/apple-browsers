@@ -135,6 +135,9 @@ struct AutofillSettingsView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
             viewModel.refreshData()
         }
+        .sheet(isPresented: $viewModel.isShowingActivationView) {
+            AutofillExtensionSettingsActivationView()
+        }
     }
 
     private struct CountRowView: View {

@@ -192,13 +192,14 @@ final class AutofillLoginListViewController: UIViewController {
          source: AutofillSettingsSource,
          bookmarksDatabase: CoreDataDatabase,
          favoritesDisplayMode: FavoritesDisplayMode,
-         keyValueStore: ThrowingKeyValueStoring
+         keyValueStore: ThrowingKeyValueStoring,
+         extensionPromotionManager: AutofillExtensionPromotionManaging? = nil
     ) {
         let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
         if secureVault == nil {
             Logger.autofill.fault("Failed to make vault")
         }
-        self.viewModel = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: secureVault, currentTabUrl: currentTabUrl, currentTabUid: currentTabUid, syncService: syncService, keyValueStore: keyValueStore)
+        self.viewModel = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: secureVault, currentTabUrl: currentTabUrl, currentTabUid: currentTabUid, syncService: syncService, keyValueStore: keyValueStore, extensionPromotionManager: extensionPromotionManager)
         self.syncService = syncService
         self.selectedAccount = selectedAccount
         self.openSearch = openSearch
@@ -700,6 +701,7 @@ final class AutofillLoginListViewController: UIViewController {
         accountsCountLabel.sizeToFit()
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     private func updateTableHeaderView() {
         guard tableView.frame != .zero else {
             return

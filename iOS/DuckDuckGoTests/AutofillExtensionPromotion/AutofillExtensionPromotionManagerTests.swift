@@ -30,6 +30,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockKeyValueStore: ThrowingKeyValueStoring!
     private var mockCredentialStore: MockASCredentialIdentityStore!
+    private var mockPrivacyConfigurationManager: MockPrivacyConfigurationManager!
     private var manager: AutofillExtensionPromotionManager!
 
     override func setUpWithError() throws {
@@ -38,12 +39,14 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger()
         mockKeyValueStore = try MockKeyValueFileStore(throwOnInit: nil)
         mockCredentialStore = MockASCredentialIdentityStore()
+        mockPrivacyConfigurationManager = MockPrivacyConfigurationManager()
     }
 
     override func tearDownWithError() throws {
         mockFeatureFlagger = nil
         mockKeyValueStore = nil
         mockCredentialStore = nil
+        mockPrivacyConfigurationManager = nil
         manager = nil
 
         try super.tearDownWithError()
@@ -428,6 +431,7 @@ final class AutofillExtensionPromotionManagerTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             credentialStore: mockCredentialStore,
             keyValueStore: mockKeyValueStore,
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
             installDateProvider: { installDate },
             currentDateProvider: { Date() }
         )

@@ -37,7 +37,7 @@ protocol AutofillSettingsViewModelDelegate: AnyObject {
 }
 
 final class AutofillSettingsViewModel: ObservableObject {
-    
+
     weak var delegate: AutofillSettingsViewModelDelegate?
 
     var secureVault: (any AutofillSecureVault)?
@@ -47,7 +47,11 @@ final class AutofillSettingsViewModel: ObservableObject {
     private let source: AutofillSettingsSource
     private let featureFlagger: FeatureFlagger
     private var syncCancellables = Set<AnyCancellable>()
-    private let credentialStore: ASCredentialIdentityStoring
+    private var extensionEnableCoordinator: Any?
+
+    private enum Constants {
+        static let enableRetryThrottleDuration: TimeInterval = 10
+    }
 
     enum AutofillType {
         case passwords
@@ -89,6 +93,7 @@ final class AutofillSettingsViewModel: ObservableObject {
     @Published var showingResetConfirmation = false
     @Published var showCreditCards = false
     @Published var creditCardsCount: Int?
+    @Published var isShowingActivationView: Bool = false
     var saveCreditCardsEnabled: Binding<Bool> {
         Binding(
             get: { self.showCreditCards ? self.appSettings.autofillCreditCardsEnabled : false },
@@ -109,6 +114,7 @@ final class AutofillSettingsViewModel: ObservableObject {
     }
     @Published var showExtensionSettings = false
     @Published var isExtensionEnabled: Bool = false
+    @Published var isEnableRequestThrottled: Bool = false
 
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          keyValueStore: KeyValueStoringDictionaryRepresentable = UserDefaults.standard,
@@ -117,15 +123,13 @@ final class AutofillSettingsViewModel: ObservableObject {
          source: AutofillSettingsSource,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          syncService: DDGSyncing,
-         syncDataProviders: SyncDataProviders,
-         credentialStore: ASCredentialIdentityStoring = ASCredentialIdentityStore.shared) {
+         syncDataProviders: SyncDataProviders) {
         self.autofillNeverPromptWebsitesManager = autofillNeverPromptWebsitesManager
         self.appSettings = appSettings
         self.keyValueStore = keyValueStore
         self.secureVault = secureVault
         self.source = source
         self.featureFlagger = featureFlagger
-        self.credentialStore = credentialStore
 
         savePasswordsEnabled = appSettings.autofillCredentialsEnabled
         updatePasswordsCount()
@@ -148,7 +152,8 @@ final class AutofillSettingsViewModel: ObservableObject {
         }
         if #available(iOS 18, *) {
             showExtensionSettings = featureFlagger.isFeatureOn(.autofillExtensionSettings)
-            Task {
+            Task { @MainActor in
+                extensionEnableCoordinator = AutofillExtensionEnableCoordinator(source: "settings")
                 await updateExtensionStatus()
             }
         }
@@ -212,9 +217,8 @@ final class AutofillSettingsViewModel: ObservableObject {
             return
         }
 
-        let state = await credentialStore.state()
-        await MainActor.run {
-            isExtensionEnabled = state.isEnabled
+        if #available(iOS 18, *), let coordinator = extensionEnableCoordinator as? AutofillExtensionEnableCoordinator {
+            isExtensionEnabled = await coordinator.updateExtensionStatus()
         }
     }
 
@@ -254,7 +258,28 @@ final class AutofillSettingsViewModel: ObservableObject {
     }
 
     func navigateToExtensionManagement() {
-        delegate?.navigateToExtensionManagement(viewModel: self)
+        Task { @MainActor in
+            if #available(iOS 18.0, *), let coordinator = extensionEnableCoordinator as? AutofillExtensionEnableCoordinator {
+                let currentlyEnabled = await coordinator.updateExtensionStatus()
+
+                if !currentlyEnabled {
+                    let result = await coordinator.enableExtension()
+
+                    switch result {
+                    case .success:
+                        isExtensionEnabled = true
+                        isShowingActivationView = true
+                    case .throttled:
+                        isEnableRequestThrottled = coordinator.isEnableRequestThrottled
+                        isShowingActivationView = false
+                    case .cancelled, .failed:
+                        isShowingActivationView = false
+                    }
+                } else {
+                    delegate?.navigateToExtensionManagement(viewModel: self)
+                }
+            }
+        }
     }
 
     // MARK: - Reset Excluded Sites
@@ -274,4 +299,5 @@ final class AutofillSettingsViewModel: ObservableObject {
         showingResetConfirmation = false
         Pixel.fire(pixel: .autofillLoginsSettingsResetExcludedDismissed)
     }
+
 }

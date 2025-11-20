@@ -48,144 +48,53 @@ struct DefaultAutofillExtensionSettingsHelper: AutofillExtensionSettingsHelping 
 @MainActor
 final class AutofillExtensionSettingsViewModel: ObservableObject {
 
-    private enum Constants {
-        static let enableRetryThrottleDuration: TimeInterval = 10
-    }
-
-    private let credentialStore: ASCredentialIdentityStoring
-    private let settingsHelper: any AutofillExtensionSettingsHelping
-    private let enableRetryThrottleDuration: TimeInterval
-    private var throttleExpiresAt: Date?
-    private var enableRetryTimer: Timer?
-    private let pixelSource: String
+    private let coordinator: AutofillExtensionEnableCoordinator
     weak var delegate: (any AutofillExtensionSettingsViewModelDelegate)?
 
     @Published var isExtensionEnabled: Bool = false
     @Published var isShowingActivationView: Bool = false
-    @Published private(set) var isEnableRequestThrottled: Bool = false
 
-    init(source: AutofillExtensionSettingsViewController.Source? = nil,
-         credentialStore: ASCredentialIdentityStoring = ASCredentialIdentityStore.shared,
-         settingsHelper: any AutofillExtensionSettingsHelping = DefaultAutofillExtensionSettingsHelper(),
-         enableRetryThrottleDuration: TimeInterval = Constants.enableRetryThrottleDuration) {
-        self.pixelSource = source?.rawValue ?? ""
-        self.credentialStore = credentialStore
-        self.settingsHelper = settingsHelper
-        self.enableRetryThrottleDuration = enableRetryThrottleDuration
+    var isEnableRequestThrottled: Bool {
+        coordinator.isEnableRequestThrottled
+    }
+
+    init(source: AutofillExtensionSettingsViewController.Source? = nil) {
+        let pixelSource = source?.rawValue ?? "settings"
+        self.coordinator = AutofillExtensionEnableCoordinator(source: pixelSource)
+        self.coordinator.delegate = self
         Task { await updateExtensionStatus() }
     }
 
     func updateExtensionStatus() async {
-        let state = await credentialStore.state()
-        isExtensionEnabled = state.isEnabled
+        isExtensionEnabled = await coordinator.updateExtensionStatus()
     }
 
     func enableExtension() async {
-        Pixel.fire(pixel: .autofillExtensionSettingsTurnOnTapped,
-                   withAdditionalParameters: [PixelParameters.source: pixelSource])
+        let result = await coordinator.enableExtension()
 
-        if isEnableRequestThrottled {
-            if let remaining = remainingEnableRequestThrottleInterval, remaining > 0 {
-                // Still throttled - redirect to settings instead
-                await openSettings()
-                Pixel.fire(pixel: .autofillExtensionSettingsTurnOnThrottled,
-                           withAdditionalParameters: [PixelParameters.source: pixelSource])
-                return
-            }
-            // Throttle expired
-            clearEnableRequestThrottle()
-        }
-
-        // System prompts trigger authentication on passwords screen, so disabling observers temporarily
-        delegate?.autofillExtensionSettingsViewModel(self, shouldDisableAuth: true)
-        defer {
-            delegate?.autofillExtensionSettingsViewModel(self, shouldDisableAuth: false)
-        }
-
-        let userChoseToEnable = await settingsHelper.requestToTurnOnCredentialProviderExtension()
-        Logger.autofill.debug("User chose to enable: \(userChoseToEnable)")
-
-        guard userChoseToEnable else {
-            // User chose "Not Now" - throttle future requests
-            startEnableRequestThrottle()
-            Pixel.fire(pixel: .autofillExtensionSettingsTurnOnCancelled,
-                       withAdditionalParameters: [PixelParameters.source: pixelSource])
-            return
-        }
-
-        // User chose to enable - verify the result
-        await handleEnableAttempt()
-    }
-
-    private func handleEnableAttempt() async {
-        await updateExtensionStatus()
-
-        if isExtensionEnabled {
-            // Success - show activation confirmation
+        switch result {
+        case .success:
+            isExtensionEnabled = true
             isShowingActivationView = true
-
-            Pixel.fire(pixel: .autofillExtensionSettingsTurnOnSuccess,
-                       withAdditionalParameters: [PixelParameters.source: pixelSource])
-        } else {
-            // User chose to enable but extension not enabled - guide user to settings
-            await openSettings()
-            startEnableRequestThrottle()
+        case .throttled, .cancelled, .failed:
             isShowingActivationView = false
-
-            Pixel.fire(pixel: .autofillExtensionSettingsTurnOnFailed,
-                       withAdditionalParameters: [PixelParameters.source: pixelSource])
         }
     }
 
     func disableExtension() async {
-        await openSettings()
-
-        Pixel.fire(pixel: .autofillExtensionSettingsTurnOffTapped,
-                   withAdditionalParameters: [PixelParameters.source: pixelSource])
-    }
-
-    private func openSettings() async {
         do {
             delegate?.autofillExtensionSettingsViewModel(self, shouldDisableAuth: true)
-            try await settingsHelper.openCredentialProviderAppSettings()
+            try await ASSettingsHelper.openCredentialProviderAppSettings()
         } catch {
             delegate?.autofillExtensionSettingsViewModel(self, shouldDisableAuth: false)
             Logger.autofill.error("Failed to open credential provider settings: \(error.localizedDescription, privacy: .public)")
         }
     }
+}
 
-    var remainingEnableRequestThrottleInterval: TimeInterval? {
-        guard let throttleExpiresAt else {
-            return nil
-        }
-        let remaining = throttleExpiresAt.timeIntervalSinceNow
-        if remaining <= 0 {
-            clearEnableRequestThrottle()
-            return nil
-        }
-        return remaining
-    }
-
-    private func startEnableRequestThrottle() {
-        invalidateEnableRetryTimer()
-        isEnableRequestThrottled = true
-        throttleExpiresAt = Date().addingTimeInterval(enableRetryThrottleDuration)
-
-        enableRetryTimer = Timer.scheduledTimer(withTimeInterval: enableRetryThrottleDuration, repeats: false) { _ in
-            Task { @MainActor [weak self] in
-                self?.clearEnableRequestThrottle()
-            }
-        }
-    }
-
-    private func clearEnableRequestThrottle() {
-        isEnableRequestThrottled = false
-        throttleExpiresAt = nil
-        invalidateEnableRetryTimer()
-    }
-
-    private func invalidateEnableRetryTimer() {
-        enableRetryTimer?.invalidate()
-        enableRetryTimer = nil
+@available(iOS 18.0, *)
+extension AutofillExtensionSettingsViewModel: AutofillExtensionEnableCoordinatorDelegate {
+    func autofillExtensionEnableCoordinator(_ coordinator: AutofillExtensionEnableCoordinator, shouldDisableAuth: Bool) {
+        delegate?.autofillExtensionSettingsViewModel(self, shouldDisableAuth: shouldDisableAuth)
     }
 }

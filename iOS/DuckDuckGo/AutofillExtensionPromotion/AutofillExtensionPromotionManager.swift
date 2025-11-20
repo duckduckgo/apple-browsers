@@ -39,9 +39,11 @@ protocol AutofillExtensionPromotionManaging {
 final class AutofillExtensionPromotionManager: AutofillExtensionPromotionManaging {
 
     private enum Constants {
-        static let minimumCredentialCount = 4
-        static let minimumInstallAge: TimeInterval = 60 * 60 * 24 * 7 // 7 days
+        static let defaultMinimumCredentialCount = 4
+        static let defaultMinimumInstallAgeDays = 7
         static let maximumBrowserPresentationCount = 5
+        static let daysSinceInstalledKey = "daysSinceInstalled"
+        static let minNumberPasswordsKey = "minNumberPasswords"
     }
 
     private enum Key {
@@ -64,17 +66,20 @@ final class AutofillExtensionPromotionManager: AutofillExtensionPromotionManagin
     private let installDateProvider: () -> Date?
     private let currentDateProvider: () -> Date
     private let keyValueStore: ThrowingKeyValueStoring
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
 
     var domainExtensionPromptLastShownOn: String?
 
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          credentialStore: ASCredentialIdentityStoring = ASCredentialIdentityStore.shared,
          keyValueStore: ThrowingKeyValueStoring,
+         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          installDateProvider: @escaping () -> Date? = { StatisticsUserDefaults().installDate },
          currentDateProvider: @escaping () -> Date = { Date() }) {
         self.featureFlagger = featureFlagger
         self.credentialStore = credentialStore
         self.keyValueStore = keyValueStore
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.installDateProvider = installDateProvider
         self.currentDateProvider = currentDateProvider
     }
@@ -127,7 +132,7 @@ final class AutofillExtensionPromotionManager: AutofillExtensionPromotionManagin
             return false
         }
 
-        guard hasSatisfiedInstallAge else {
+        guard hasSatisfiedInstallAge(for: placement) else {
             return false
         }
 
@@ -135,7 +140,7 @@ final class AutofillExtensionPromotionManager: AutofillExtensionPromotionManagin
             return false
         }
 
-        guard await meetsMinimumCredentialRequirement(totalCredentialsCount: totalCredentialsCount) else {
+        guard await meetsMinimumCredentialRequirement(for: placement, totalCredentialsCount: totalCredentialsCount) else {
             return false
         }
 
@@ -167,12 +172,14 @@ final class AutofillExtensionPromotionManager: AutofillExtensionPromotionManagin
         }
     }
 
-    private var hasSatisfiedInstallAge: Bool {
+    private func hasSatisfiedInstallAge(for placement: ExtensionPromotionPlacement) -> Bool {
         guard let installDate = installDateProvider() else {
             return false
         }
 
-        return currentDateProvider().timeIntervalSince(installDate) >= Constants.minimumInstallAge
+        let minimumDays = daysSinceInstalled(for: placement)
+        let minimumAge = TimeInterval(minimumDays * 24 * 60 * 60)
+        return currentDateProvider().timeIntervalSince(installDate) >= minimumAge
     }
 
     @available(iOS 18.0, *)
@@ -191,16 +198,18 @@ final class AutofillExtensionPromotionManager: AutofillExtensionPromotionManagin
         try? keyValueStore.set(dismissed, forKey: Key.dismissedKey(for: placement))
     }
 
-    private func meetsMinimumCredentialRequirement(totalCredentialsCount: Int?) async -> Bool {
+    private func meetsMinimumCredentialRequirement(for placement: ExtensionPromotionPlacement, totalCredentialsCount: Int?) async -> Bool {
+        let minimumCount = minNumberPasswords(for: placement)
+
         if let totalCredentialsCount {
-            return totalCredentialsCount >= Constants.minimumCredentialCount
+            return totalCredentialsCount >= minimumCount
         }
 
         guard let fetchedCount = await fetchCredentialsCount() else {
             return false
         }
 
-        return fetchedCount >= Constants.minimumCredentialCount
+        return fetchedCount >= minimumCount
     }
 
     private func fetchCredentialsCount() async -> Int? {
@@ -247,5 +256,54 @@ final class AutofillExtensionPromotionManager: AutofillExtensionPromotionManagin
         }
 
         try? keyValueStore.set(0, forKey: Key.browserPromotionPresentationCount)
+    }
+
+    // MARK: - Privacy Config Helpers
+
+    private func subfeature(for placement: ExtensionPromotionPlacement) -> any PrivacySubfeature {
+        switch placement {
+        case .passwords:
+            return AutofillSubfeature.canPromoteAutofillExtensionInPasswordManagement
+        case .browser:
+            return AutofillSubfeature.canPromoteAutofillExtensionInBrowser
+        }
+    }
+
+    private func daysSinceInstalled(for placement: ExtensionPromotionPlacement) -> Int {
+        guard let settings = privacyConfigurationManager.privacyConfig.settings(for: subfeature(for: placement)),
+              let jsonData = settings.data(using: .utf8) else {
+            return Constants.defaultMinimumInstallAgeDays
+        }
+
+        do {
+            if let settingsDict = try JSONSerialization.jsonObject(with: jsonData) as? [String: String],
+               let daysStr = settingsDict[Constants.daysSinceInstalledKey],
+               let days = Int(daysStr), days >= 1 {
+                return days
+            }
+        } catch {
+            Logger.general.error("Failed to parse daysSinceInstalled from privacy config: \(error.localizedDescription, privacy: .public)")
+        }
+
+        return Constants.defaultMinimumInstallAgeDays
+    }
+
+    private func minNumberPasswords(for placement: ExtensionPromotionPlacement) -> Int {
+        guard let settings = privacyConfigurationManager.privacyConfig.settings(for: subfeature(for: placement)),
+              let jsonData = settings.data(using: .utf8) else {
+            return Constants.defaultMinimumCredentialCount
+        }
+
+        do {
+            if let settingsDict = try JSONSerialization.jsonObject(with: jsonData) as? [String: String],
+               let countStr = settingsDict[Constants.minNumberPasswordsKey],
+               let count = Int(countStr), count >= 1 {
+                return count
+            }
+        } catch {
+            Logger.general.error("Failed to parse minNumberPasswords from privacy config: \(error.localizedDescription, privacy: .public)")
+        }
+
+        return Constants.defaultMinimumCredentialCount
     }
 }

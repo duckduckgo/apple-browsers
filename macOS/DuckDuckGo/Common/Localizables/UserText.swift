@@ -636,6 +636,7 @@ struct UserText {
     static let aiChatShowInAddressBarLabel = NSLocalizedString("duckai.show-in-address-bar.label", value: "Show in address bar", comment: "Label for showing Duck.ai in address bar")
     static let aiChatShowShortcutInAddressBarLabel = NSLocalizedString("duckai.show-shortcut-in-address-bar.label", value: "Show Duck.ai shortcut in the address bar", comment: "Label for showing Duck.ai shortcut in address bar")
     static let aiChatShowInAddressBarWhenTypingLabel = NSLocalizedString("duckai.show-in-address-bar-when-typing.label", value: "Show \"Ask Duck.ai\" option when typing in the address bar", comment: "Label for showing 'Ask Duck.ai' option when typing in address bar")
+    static let aiChatShowSearchAndDuckAIToggleLabel = NSLocalizedString("duckai.show-search-and-duckai-toggle.label", value: "Show Search and Duck.ai toggle when the address bar is focused", comment: "Label for showing Search/Duck.ai toggle when address bar is focused")
     static let aiChatOpenNewChatsSectionTitle = NSLocalizedString("duckai.open-new-chats.section.title", value: "Open New Chats", comment: "Section title for Duck.ai new chat location settings")
     static let aiChatOpenInSidebarOption = NSLocalizedString("duckai.open-in-sidebar.option", value: "Sidebar", comment: "Option to open Duck.ai chats in sidebar")
     static let aiChatOpenInFullPageOption = NSLocalizedString("duckai.open-in-full-page.option", value: "Full page", comment: "Option to open Duck.ai chats in full page")
@@ -851,6 +852,7 @@ struct UserText {
     // Problem subcategories - Something Else
     static let problemSubcategoryCantCompleteAPurchase = NSLocalizedString("feedback.problem-subcategory.cant-complete-a-purchase", value: "Can't complete a purchase", comment: "Problem subcategory for e-commerce transaction issues")
     static let problemSubcategoryNoDownloadsHistory = NSLocalizedString("feedback.problem-subcategory.no-downloads-history", value: "No downloads history", comment: "Problem subcategory for missing downloads history")
+    static let problemSubcategoryPromotionalMessages = NSLocalizedString("feedback.problem-subcategory.promotional-messages", value: "Promotional messages", comment: "Problem subcategory for feedback related to promotional messages")
 
     // MARK: - Request New Feature Form
     static let requestNewFeatureFormTitle = NSLocalizedString("feedback.request-feature.title", value: "Request a New Feature", comment: "Title for the request new feature feedback form")
@@ -1892,6 +1894,15 @@ struct UserText {
 
     static let setAsDefaultAndAddToDockPermanentlyDismissAction = NSLocalizedString("sad.att.banner.button.permanently-dismiss", value: "Don’t Ask Again", comment: "Button action title that appears on a prompt that prevents the prompt from being shown again.")
     static let setAsDefaultAndAddToDockInactiveUserDismissAction = NSLocalizedString("sad.att.inactive-user.dismiss", value: "No Thanks", comment: "Button action title that appears on a prompt that dismisses the prompt.")
+
+    /// Strings for system notification after inactive user declines the prompt
+    static let setAsDefaultAndAddToDockInactiveUserNotificationTitle = NSLocalizedString("sad.att.inactive-user.notification.title", value: "Got time for quick feedback?", comment: "Title of system notification asking the user for quick feedback after declining a prompt by clicking 'No Thanks'.")
+    static let setAsDefaultAndAddToDockInactiveUserNotificationBody: String = {
+        let localized = NSLocalizedString("sad.att.inactive-user.notification.body",
+                                          value: "We’re always looking to improve. Can you tell us why you chose \"%1$@\"?",
+                                          comment: "Subtitle of system notification asking the user why they dismissed a prompt with the 'No Thanks' button. The parameter %1$@ is the localized 'No Thanks' string.")
+        return String(format: localized, setAsDefaultAndAddToDockInactiveUserDismissAction)
+    }()
 
     // MARK: - Privacy Pro
 

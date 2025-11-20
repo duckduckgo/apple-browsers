@@ -155,7 +155,7 @@ protocol NewWindowPolicyDecisionMaker {
     ) {
 
         let duckPlayer = duckPlayer
-            ?? (AppVersion.runType.requiresEnvironment ? DuckPlayer.shared : DuckPlayer.mock(withMode: .enabled))
+            ?? (AppVersion.runType.requiresEnvironment ? NSApp.delegateTyped.duckPlayer : DuckPlayer.mock(withMode: .enabled))
         let statisticsLoader = statisticsLoader
             ?? (AppVersion.runType.requiresEnvironment ? StatisticsLoader.shared : nil)
         let privacyFeatures = privacyFeatures ?? NSApp.delegateTyped.privacyFeatures

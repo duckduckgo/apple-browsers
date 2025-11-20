@@ -97,6 +97,7 @@ final class BrowserTabViewController: NSViewController {
     private let aiChatPreferences: AIChatPreferences
     private let aboutPreferences: AboutPreferences
     private let accessibilityPreferences: AccessibilityPreferences
+    private let duckPlayer: DuckPlayer
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
@@ -154,6 +155,7 @@ final class BrowserTabViewController: NSViewController {
          aiChatPreferences: AIChatPreferences,
          aboutPreferences: AboutPreferences,
          accessibilityPreferences: AccessibilityPreferences,
+         duckPlayer: DuckPlayer,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          tld: TLD = NSApp.delegateTyped.tld
@@ -178,6 +180,7 @@ final class BrowserTabViewController: NSViewController {
         self.aiChatPreferences = aiChatPreferences
         self.aboutPreferences = aboutPreferences
         self.accessibilityPreferences = accessibilityPreferences
+        self.duckPlayer = duckPlayer
         self.subscriptionManager = subscriptionManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
 
@@ -1186,6 +1189,7 @@ final class BrowserTabViewController: NSViewController {
             }
             let preferencesViewController = PreferencesViewController(
                 syncService: syncService,
+                duckPlayer: duckPlayer,
                 tabCollectionViewModel: tabCollectionViewModel,
                 privacyConfigurationManager: privacyConfigurationManager,
                 featureFlagger: featureFlagger,
@@ -1198,6 +1202,7 @@ final class BrowserTabViewController: NSViewController {
                 aiChatPreferences: aiChatPreferences,
                 aboutPreferences: aboutPreferences,
                 accessibilityPreferences: accessibilityPreferences,
+                duckPlayerPreferences: duckPlayer.preferences,
                 subscriptionManager: subscriptionManager,
                 winBackOfferVisibilityManager: winBackOfferVisibilityManager
             )
@@ -1750,7 +1755,8 @@ extension BrowserTabViewController {
         cookiePopupProtectionPreferences: Application.appDelegate.cookiePopupProtectionPreferences,
         aiChatPreferences: Application.appDelegate.aiChatPreferences,
         aboutPreferences: Application.appDelegate.aboutPreferences,
-        accessibilityPreferences: Application.appDelegate.accessibilityPreferences
+        accessibilityPreferences: Application.appDelegate.accessibilityPreferences,
+        duckPlayer: Application.appDelegate.duckPlayer
     )
 }
 

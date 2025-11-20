@@ -112,6 +112,7 @@ final class AddressBarViewController: NSViewController {
     private let featureFlagger: FeatureFlagger
 
     private var aiChatSettings: AIChatPreferencesStorage
+    let sharedTextState: AddressBarSharedTextState
     @IBOutlet weak var activeOuterBorderTrailingConstraint: NSLayoutConstraint!
     @IBOutlet weak var activeOuterBorderLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var activeOuterBorderBottomConstraint: NSLayoutConstraint!
@@ -204,6 +205,7 @@ final class AddressBarViewController: NSViewController {
           aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
           aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
           aiChatSidebarPresenter: AIChatSidebarPresenting,
+          sharedTextState: AddressBarSharedTextState,
           featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -231,6 +233,7 @@ final class AddressBarViewController: NSViewController {
         self.themeManager = themeManager
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
+        self.sharedTextState = sharedTextState
         self.featureFlagger = featureFlagger
 
         super.init(coder: coder)
@@ -247,7 +250,8 @@ final class AddressBarViewController: NSViewController {
                                                          popovers: popovers,
                                                          aiChatTabOpener: NSApp.delegateTyped.aiChatTabOpener,
                                                          aiChatMenuConfig: aiChatMenuConfig,
-                                                         aiChatSidebarPresenter: aiChatSidebarPresenter)
+                                                         aiChatSidebarPresenter: aiChatSidebarPresenter,
+                                                         aiChatSettings: aiChatSettings)
 
         self.addressBarButtonsViewController = controller
         controller?.delegate = self
@@ -280,6 +284,7 @@ final class AddressBarViewController: NSViewController {
         addressBarTextField.focusDelegate = self
         addressBarTextField.searchPreferences = searchPreferences
         addressBarTextField.tabsPreferences = tabsPreferences
+        addressBarTextField.sharedTextState = sharedTextState
 
         setupInactiveShadowView()
         setupActiveOuterBorderSize()
@@ -394,6 +399,11 @@ final class AddressBarViewController: NSViewController {
 
                 // don't resign first responder on tab switching
                 clickPoint = nil
+
+                if selectionState == .activeWithAIChat {
+                    delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: false)
+                    setAIChatOmnibarVisible(false)
+                }
             }
             .store(in: &cancellables)
     }
@@ -1001,6 +1011,13 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         isAIChatOmnibarVisible = isAIChatMode
 
         if isAIChatMode {
+            if mode.isEditing {
+                let text = addressBarTextField.stringValueWithoutSuffix
+                if !text.isEmpty {
+                    sharedTextState.updateText(text, markInteraction: false)
+                }
+            }
+
             selectionState = .activeWithAIChat
             mode = .editing(.aiChat)
             if isFirstResponder {
@@ -1008,6 +1025,10 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
             }
         } else {
             selectionState = .active
+            if sharedTextState.hasUserInteractedWithText {
+                addressBarTextField.restoreFromSharedState()
+            }
+
             updateMode()
             addressBarTextField.makeMeFirstResponder()
         }

@@ -2657,6 +2657,9 @@ extension MainViewController: OmniBarDelegate {
         if newTabPageViewController != nil {
             menuEntries = tab.buildShortcutsMenu()
             headerEntries = []
+        } else if aichatFullModeFeature.isAvailable && tab.tabModel.isAITab {
+            menuEntries = tab.buildAITabMenu()
+            headerEntries = tab.buildAITabMenuHeaderContent()
         } else {
             menuEntries = tab.buildBrowsingMenu(with: menuBookmarksViewModel,
                                                 mobileCustomization: mobileCustomization,
@@ -2905,10 +2908,12 @@ extension MainViewController: OmniBarDelegate {
 
     /// Delegate method called when the AI Chat left button is tapped
     func onAIChatLeftButtonPressed() {
+        currentTab?.submitOpenHistoryAction()
     }
 
     /// Delegate method called when the AI Chat right button is tapped
     func onAIChatRightButtonPressed() {
+        currentTab?.submitStartChatAction()
     }
 
     /// Delegate method called when the omnibar branding area is tapped while in AI Chat mode.

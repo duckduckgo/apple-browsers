@@ -137,6 +137,12 @@ extension Preferences {
                             }
                         }
 
+                        if model.shouldShowSearchAndDuckAIToggleOption {
+                            ToggleMenuItem(UserText.aiChatShowSearchAndDuckAIToggleLabel,
+                                           isOn: $model.showSearchAndDuckAIToggle)
+                            .accessibilityIdentifier("Preferences.AIChat.showSearchAndDuckAIToggleToggle")
+                        }
+
                     } else {
                         ToggleMenuItem(UserText.aiChatShowInSearchBoxOnNewTabPageBarToggle,
                                        isOn: $model.showShortcutOnNewTabPage)

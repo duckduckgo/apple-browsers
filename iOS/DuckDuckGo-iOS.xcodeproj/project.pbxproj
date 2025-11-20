@@ -562,7 +562,7 @@
 		7BFD5FD72C9DB9D7000FF959 /* VPNGeoswitchingTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BFD5FD62C9DB9D7000FF959 /* VPNGeoswitchingTip.swift */; };
 		7BFD5FD92C9DBC24000FF959 /* VPNSnoozeTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BFD5FD82C9DBC24000FF959 /* VPNSnoozeTip.swift */; };
 		83004E802193BB8200DA013C /* WKNavigationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83004E7F2193BB8200DA013C /* WKNavigationExtension.swift */; };
-		83004E862193E5ED00DA013C /* TabViewControllerBrowsingMenuExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83004E852193E5ED00DA013C /* TabViewControllerBrowsingMenuExtension.swift */; };
+		83004E862193E5ED00DA013C /* TabViewControllerMenuBuilderExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83004E852193E5ED00DA013C /* TabViewControllerMenuBuilderExtension.swift */; };
 		83004E882193E8C700DA013C /* TabViewControllerLongPressMenuExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83004E872193E8C700DA013C /* TabViewControllerLongPressMenuExtension.swift */; };
 		830381C01F850AAF00863075 /* WKWebViewConfigurationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 830381BF1F850AAF00863075 /* WKWebViewConfigurationExtension.swift */; };
 		83134D7D20E2D725006CE65D /* FeedbackSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83134D7C20E2D725006CE65D /* FeedbackSender.swift */; };
@@ -2654,7 +2654,7 @@
 		7BFD5FD82C9DBC24000FF959 /* VPNSnoozeTip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNSnoozeTip.swift; sourceTree = "<group>"; };
 		83004E7F2193BB8200DA013C /* WKNavigationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKNavigationExtension.swift; sourceTree = "<group>"; };
 		83004E832193E14C00DA013C /* UIAlertControllerExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UIAlertControllerExtension.swift; path = ../Core/UIAlertControllerExtension.swift; sourceTree = "<group>"; };
-		83004E852193E5ED00DA013C /* TabViewControllerBrowsingMenuExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewControllerBrowsingMenuExtension.swift; sourceTree = "<group>"; };
+		83004E852193E5ED00DA013C /* TabViewControllerMenuBuilderExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewControllerMenuBuilderExtension.swift; sourceTree = "<group>"; };
 		83004E872193E8C700DA013C /* TabViewControllerLongPressMenuExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewControllerLongPressMenuExtension.swift; sourceTree = "<group>"; };
 		830381BF1F850AAF00863075 /* WKWebViewConfigurationExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WKWebViewConfigurationExtension.swift; sourceTree = "<group>"; };
 		83134D7C20E2D725006CE65D /* FeedbackSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackSender.swift; sourceTree = "<group>"; };
@@ -8990,7 +8990,7 @@
 				CB2A7EEE283D185100885F67 /* RulesCompilationMonitor.swift */,
 				9820EAF422613CD30089094D /* WebProgressWorker.swift */,
 				C14135B42EC4BE880006F8C1 /* TabViewControllerAIChatExtension.swift */,
-				83004E852193E5ED00DA013C /* TabViewControllerBrowsingMenuExtension.swift */,
+				83004E852193E5ED00DA013C /* TabViewControllerMenuBuilderExtension.swift */,
 				83004E872193E8C700DA013C /* TabViewControllerLongPressMenuExtension.swift */,
 				8C47244F2217A14B004C9B2D /* TabViewControllerSaveBookmarkExtension.swift */,
 				98999D5822FDA41500CBBE1B /* BasicAuthenticationAlert.swift */,
@@ -11446,7 +11446,7 @@
 				C1EA86602C74CB6C00E8604D /* SyncPromoView.swift in Sources */,
 				1E4FAA6627D8DFC800ADC5B3 /* CompleteDownloadRowViewModel.swift in Sources */,
 				3712091E2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift in Sources */,
-				83004E862193E5ED00DA013C /* TabViewControllerBrowsingMenuExtension.swift in Sources */,
+				83004E862193E5ED00DA013C /* TabViewControllerMenuBuilderExtension.swift in Sources */,
 				CBF5D4252EB3B5F5000530AF /* Connected.swift in Sources */,
 				6FACA67F2D8AFF7800019C87 /* OmniBar.swift in Sources */,
 				6FD3F8132C3EFDA200DA5797 /* FavoritesPreviewDataSource.swift in Sources */,

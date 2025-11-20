@@ -24,6 +24,15 @@ import Foundation
 protocol AITabController {
     /// Loads AIChat with optional query, auto-submit, payload, and RAG tools.
     func load(_ query: String?, autoSend: Bool, payload: Any?, tools: [AIChatRAGTool]?)
+    
+    /// Submits a start chat action to initiate a new AI Chat conversation.
+    func submitStartChatAction()
+    
+    /// Submits an open settings action to open the AI Chat settings.
+    func submitOpenSettingsAction()
+    
+    /// Submits an open history action to open the AI Chat history.
+    func submitOpenHistoryAction()
 }
 
 // MARK: - AITabController
@@ -36,5 +45,20 @@ extension TabViewController: AITabController {
 
         let queryURL = aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, tools: tools)
         load(url: queryURL)
+    }
+    
+    /// Submits a start chat action to initiate a new AI Chat conversation.
+    func submitStartChatAction() {
+        aiChatContentHandler.submitStartChatAction()
+    }
+
+    /// Submits an open settings action to open the AI Chat settings.
+    func submitOpenSettingsAction() {
+        aiChatContentHandler.submitOpenSettingsAction()
+    }
+
+    /// Submits an open history action to open the AI Chat history.
+    func submitOpenHistoryAction() {
+        aiChatContentHandler.submitOpenHistoryAction()
     }
 }

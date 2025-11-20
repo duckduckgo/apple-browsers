@@ -148,9 +148,9 @@ final class UserScripts: UserScriptsProvider {
 
         specialPages = SpecialPagesUserScript()
 
-        if DuckPlayer.shared.isAvailable {
-            youtubeOverlayScript = YoutubeOverlayUserScript()
-            youtubePlayerUserScript = YoutubePlayerUserScript()
+        if sourceProvider.duckPlayer.isAvailable {
+            youtubeOverlayScript = YoutubeOverlayUserScript(duckPlayer: sourceProvider.duckPlayer)
+            youtubePlayerUserScript = YoutubePlayerUserScript(duckPlayer: sourceProvider.duckPlayer)
         } else {
             youtubeOverlayScript = nil
             youtubePlayerUserScript = nil

@@ -729,11 +729,17 @@ final class AutofillLoginListViewController: UIViewController {
             return
         }
 
+        // Extension promo is lowest priority - only check if no other promos shown this session
+        if importPromoPresented || surveyPromptPresented || syncPromoPresented {
+            clearTableHeaderView()
+            return
+        }
+
         viewModel.shouldShowExtensionPromo { [weak self] shouldShowExtensionPromo in
             guard let self else { return }
 
             if shouldShowExtensionPromo {
-                if !self.importPromoPresented, !self.surveyPromptPresented, !self.syncPromoPresented, self.shouldUpdateHeaderView(for: .extensionPromo) {
+                if self.shouldUpdateHeaderView(for: .extensionPromo) {
                     self.configureTableHeaderView(for: .extensionPromo)
                     self.extensionPromoPresented = true
                 }
@@ -1159,8 +1165,6 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
     }
 
     func handleDismissAction(for headerType: AutofillHeaderViewFactory.ViewType) {
-        clearTableHeaderView()
-
         defer {
             updateTableHeaderView()
         }

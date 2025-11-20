@@ -344,6 +344,7 @@ class AutofillLoginListViewModel: ObservableObject {
             let currentTabDomain = tld.eTLDplus1(forStringURL: currentTabUrl.absoluteString) ??
             autofillDomainNameUrlMatcher.normalizeUrlForWeb(currentTabUrl.absoluteString)
             guard extensionPromotionManager.domainExtensionPromptLastShownOn != currentTabDomain else {
+                completion(false)
                 return
             }
         }

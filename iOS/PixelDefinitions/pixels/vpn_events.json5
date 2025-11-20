@@ -50,7 +50,7 @@
                 "key": "feature.status_reason",
                 "type": "string",
                 "description": "Reason string for the current status",
-                "enum": ["partial_data", "timeout"]
+                "enum": ["partial_data", "timeout", "retried"]
             },
             {
                 "key": "feature.data.ext.extension_type",

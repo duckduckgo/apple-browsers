@@ -53,9 +53,9 @@ public class DefaultDateProvider: DateProviding {
     public var debugDate: Date?
 }
 
-public protocol BucketsSettingsProviding {
-
+public protocol AttributedMetricSettingsProviding {
     var bucketsSettings: [String: Any] { get }
+    var originSendList: [String] { get }
 }
 
 /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053?focus=true
@@ -73,7 +73,7 @@ public final class AttributedMetricManager {
     private let defaultBrowserProvider: any AttributedMetricDefaultBrowserProviding
     private let subscriptionStateProvider: any SubscriptionStateProviding
     private var dateProvider: any DateProviding
-    private let bucketsJsonProvider: any BucketsSettingsProviding
+    private let featureSettings: any AttributedMetricSettingsProviding
     private var bucketModifier: any BucketModifier = DefaultBucketModifier()
     public let workQueue = DispatchQueue(label: "com.duckduckgo.AttributedMetricManager", qos: .background)
     public var cancellables = Set<AnyCancellable>()
@@ -85,7 +85,7 @@ public final class AttributedMetricManager {
                 defaultBrowserProviding: any AttributedMetricDefaultBrowserProviding,
                 subscriptionStateProvider: any SubscriptionStateProviding,
                 dateProvider: any DateProviding = DefaultDateProvider(),
-                bucketsSettingsProvider: any BucketsSettingsProviding) {
+                settingsProvider: any AttributedMetricSettingsProviding) {
         self.pixelKit = pixelKit
         self.dataStorage = dataStoring
         self.originProvider = originProvider
@@ -95,7 +95,7 @@ public final class AttributedMetricManager {
         self.dateProvider = dateProvider
 
         // Buckets
-        self.bucketsJsonProvider = bucketsSettingsProvider
+        self.featureSettings = settingsProvider
         updateBucketSettings()
 
         if dataStorage.installDate == nil {
@@ -130,9 +130,8 @@ public final class AttributedMetricManager {
     }
 
     var originOrInstall: (origin: String?, installDate: String?) {
-        if let debugOrigin = dataStorage.debugOrigin {
-            return (debugOrigin, nil)
-        } else if let origin = originProvider?.origin {
+        if let origin = dataStorage.debugOrigin ?? originProvider?.origin,
+           origin.contains(any: self.featureSettings.originSendList) {
             return (origin, nil)
         } else {
             let installDate = dataStorage.installDate
@@ -160,7 +159,7 @@ public final class AttributedMetricManager {
 
     public func updateBucketSettings() {
         do {
-            try bucketModifier.parseConfigurations(from: self.bucketsJsonProvider.bucketsSettings)
+            try bucketModifier.parseConfigurations(from: self.featureSettings.bucketsSettings)
         } catch {
             Logger.attributedMetric.fault("Failed to parse buckets settings: \(error, privacy: .public)")
             assertionFailure("Failed to parse buckets settings: \(error)")

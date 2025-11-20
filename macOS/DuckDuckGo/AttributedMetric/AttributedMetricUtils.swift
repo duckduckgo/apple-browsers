@@ -29,12 +29,21 @@ extension SystemDefaultBrowserProvider: AttributedMetricDefaultBrowserProviding 
     }
 }
 
-struct DefaultBucketsSettingsProvider: BucketsSettingsProviding {
-
+struct DefaultAttributedMetricSettingsProvider: AttributedMetricSettingsProviding {
+    
     let privacyConfig: PrivacyConfiguration
 
     var bucketsSettings: [String: Any] {
         privacyConfig.settings(for: .attributedMetrics)
+    }
+
+    var originSendList: [String] {
+        guard let originSettingString = privacyConfig.settings(for: AttributedMetricsSubfeature.sendOriginParam),
+              let settingsData = originSettingString.data(using: .utf8),
+              let settings = try? JSONDecoder().decode(OriginSettings.self, from: settingsData) else {
+            return []
+        }
+        return settings.originCampaignSubstrings
     }
 }
 

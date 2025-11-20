@@ -1,5 +1,5 @@
 //
-//  BucketsSettingsProviderMock.swift
+//  AttributedMetricSettingsProviderMock.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,9 +19,11 @@
 import Foundation
 import AttributedMetric
 
-public class BucketsSettingsProviderMock: BucketsSettingsProviding {
+public class AttributedMetricSettingsProviderMock: AttributedMetricSettingsProviding {
 
     public init() {}
+
+    public var originSendList: [String] = ["paid"]
 
     public var bucketsSettings: [String: Any] {
         [

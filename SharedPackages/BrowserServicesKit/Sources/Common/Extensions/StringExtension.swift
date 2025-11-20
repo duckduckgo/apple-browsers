@@ -515,6 +515,13 @@ public extension StringProtocol {
         return trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    func contains(any strings: [String]) -> Bool {
+        guard !strings.isEmpty else {
+            return false
+        }
+        return strings.contains { self.lowercased().contains($0.lowercased()) }
+    }
+
 }
 
 public extension Optional where Wrapped == String {

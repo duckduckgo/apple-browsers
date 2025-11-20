@@ -39,4 +39,11 @@ class StringExtensionTests: XCTestCase {
         XCTAssertEqual(URLError(URLError.Code.cannotConnectToHost, userInfo: [NSLocalizedDescriptionKey: "Could not connect to the server."]).localizedDescription.escapedUnicodeHtmlString(), "Could not connect to the server.")
     }
 
+    func testStringContains() {
+        XCTAssertTrue("a".contains(any: ["a", "b"]))
+        XCTAssertTrue("AAA".contains(any: ["a", "b"]))
+        XCTAssertTrue("bAb".contains(any: ["a", "b"]))
+        XCTAssertTrue("bAbBb".contains(any: ["a", "bbb"]))
+    }
+
 }

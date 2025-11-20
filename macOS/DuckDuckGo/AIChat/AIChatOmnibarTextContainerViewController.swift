@@ -88,7 +88,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
         textView.isEditable = true
         textView.isSelectable = true
-        textView.textContainerInset = NSSize(width: 9, height: 9) /// Match address bar text positioning
+        textView.textContainerInset = NSSize(width: 5, height: 9) /// Match address bar text positioning
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
         textView.autoresizingMask = [.width]
@@ -131,7 +131,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
         textView.drawsBackground = false
         textView.backgroundColor = .clear
-        textView.textColor = colorsProvider.addressBarTextFieldColor
+        textView.textColor = NSColor.textColor
         textView.font = .systemFont(ofSize: addressBarStyleProvider.defaultAddressBarFontSize, weight: .regular)
 
         textView.insertionPointColor = colorsProvider.addressBarTextFieldColor

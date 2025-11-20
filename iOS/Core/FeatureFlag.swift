@@ -245,8 +245,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .syncCreditCards,
              .unifiedURLPredictor,
              .forgetAllInSettings,
-             .vpnConnectionWidePixelMeasurement,
-             .showHideAIGeneratedImagesSection:
+             .vpnConnectionWidePixelMeasurement:
             true
         default:
             false

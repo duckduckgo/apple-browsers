@@ -314,8 +314,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .historyViewSitesSection,
                 .blurryAddressBarTahoeFix,
                 .pinnedTabsViewRewrite,
-                .vpnConnectionWidePixelMeasurement,
-                .showHideAIGeneratedImagesSection:
+                .vpnConnectionWidePixelMeasurement:
             true
         default:
             false

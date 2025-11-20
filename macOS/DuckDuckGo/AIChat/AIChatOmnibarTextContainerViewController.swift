@@ -167,14 +167,14 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
         if commandSelector == #selector(insertNewline(_:)) || commandSelector == #selector(insertNewlineIgnoringFieldEditor(_:)) {
             guard let event = NSApp.currentEvent else { return false }
-            
+
             let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-            
+
             if modifiers.contains(.option) || modifiers.contains(.shift) {
                 textView.insertNewlineIgnoringFieldEditor(nil)
                 return true
             }
-            
+
             omnibarController.submit()
             return true
         } else if commandSelector == #selector(NSResponder.insertTab(_:)) {
@@ -187,7 +187,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             }
             return false
         }
-        
+
         return false
     }
 

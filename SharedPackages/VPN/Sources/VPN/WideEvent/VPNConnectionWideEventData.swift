@@ -35,7 +35,7 @@ public class VPNConnectionWideEventData: WideEventData {
     public var extensionType: ExtensionType
     public var startupMethod: StartupMethod
     public var isSetup: SetupState
-    public var onboardingStatus: OnboardingStatus?
+    public var onboardingStatus: MacOSOnboardingStatus?
 
     // Overall duration
     public var overallDuration: WideEvent.MeasuredInterval?
@@ -57,7 +57,7 @@ public class VPNConnectionWideEventData: WideEventData {
     public init(extensionType: ExtensionType,
                 startupMethod: StartupMethod,
                 isSetup: SetupState = .unknown,
-                onboardingStatus: OnboardingStatus? = nil,
+                onboardingStatus: MacOSOnboardingStatus? = nil,
                 overallDuration: WideEvent.MeasuredInterval? = nil,
                 browserStartDuration: WideEvent.MeasuredInterval? = nil,
                 controllerStartDuration: WideEvent.MeasuredInterval? = nil,
@@ -114,7 +114,7 @@ extension VPNConnectionWideEventData {
         case manualByTheSystem = "manual_by_the_system"
     }
 
-    public enum OnboardingStatus: String, Codable, CaseIterable {
+    public enum MacOSOnboardingStatus: String, Codable, CaseIterable {
         case needsToAllowExtension = "needs_to_allow_extension"
         case needsToAllowVPNConfiguration = "needs_to_allow_vpn_configuration"
         case completed

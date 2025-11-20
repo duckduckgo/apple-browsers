@@ -363,7 +363,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             internalManager = tunnelManager
             return tunnelManager
         }
-
+        
+        connectionWideEventData?.isSetup = .no
         try await setupAndSave(tunnelManager)
         return tunnelManager
     }

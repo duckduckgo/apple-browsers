@@ -1071,20 +1071,25 @@ private extension NetworkProtectionTunnelController {
     }
 
     func syncWideEventOnboardingStatus() {
-        connectionWideEventData?.onboardingStatus = toWideEventOnboardingStatus(from: onboardingStatusRawValue)
+        connectionWideEventData?.onboardingStatus = .init(from: onboardingStatusRawValue)
     }
+}
 
-    func toWideEventOnboardingStatus(from raw: OnboardingStatus.RawValue) -> VPNConnectionWideEventData.OnboardingStatus {
-        if raw == OnboardingStatus.completed.rawValue {
-            return .completed
+fileprivate extension VPNConnectionWideEventData.MacOSOnboardingStatus {
+    init(from rawValue: OnboardingStatus.RawValue) {
+        if rawValue == OnboardingStatus.completed.rawValue {
+            self = .completed
+            return
         }
-        if raw == OnboardingStatus.isOnboarding(step: .userNeedsToAllowExtension).rawValue {
-            return .needsToAllowExtension
+        if rawValue == OnboardingStatus.isOnboarding(step: .userNeedsToAllowExtension).rawValue {
+            self = .needsToAllowExtension
+            return
         }
-        if raw == OnboardingStatus.isOnboarding(step: .userNeedsToAllowVPNConfiguration).rawValue {
-            return .needsToAllowVPNConfiguration
+        if rawValue == OnboardingStatus.isOnboarding(step: .userNeedsToAllowVPNConfiguration).rawValue {
+            self = .needsToAllowVPNConfiguration
+            return
         }
-        return .unknown
+        self = .unknown
     }
 }
 

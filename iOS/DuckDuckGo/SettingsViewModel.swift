@@ -190,6 +190,10 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
+    var isMenuSheetPresentationFeatureEnabled: Bool {
+        featureFlagger.isFeatureOn(.browsingMenuSheetPresentation)
+    }
+
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false
 
@@ -288,6 +292,22 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: $0 == .addressBar ? .settingsRefreshButtonPositionAddressBar : .settingsRefreshButtonPositionMenu)
                 self.appSettings.currentRefreshButtonPosition = $0
                 self.state.refreshButtonPosition = $0
+            }
+        )
+    }
+
+    var showMenuInSheetBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                self.state.showMenuInSheet
+            },
+            set: {
+                if let overrides = self.featureFlagger.localOverrides,
+                    overrides.override(for: FeatureFlag.browsingMenuSheetPresentation) != $0 {
+
+                    overrides.toggleOverride(for: FeatureFlag.browsingMenuSheetPresentation)
+                    self.state.showMenuInSheet = $0
+                }
             }
         )
     }
@@ -714,6 +734,7 @@ extension SettingsViewModel {
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
+            showMenuInSheet: featureFlagger.isFeatureOn(.browsingMenuSheetPresentation),
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,

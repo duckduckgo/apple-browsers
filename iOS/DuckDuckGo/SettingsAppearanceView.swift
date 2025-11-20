@@ -43,6 +43,17 @@ struct SettingsAppearanceView: View {
         )
     }
 
+    var showSheetMenu: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                viewModel.showMenuInSheetBinding.wrappedValue
+            },
+            set: {
+                viewModel.showMenuInSheetBinding.wrappedValue = $0
+            }
+        )
+    }
+
     func navigateToSubPageIfNeeded() {
         deepLinkTarget = viewModel.deepLinkTarget
 
@@ -83,6 +94,15 @@ struct SettingsAppearanceView: View {
                     }
             } else {
                 legacySettings()
+            }
+
+            if viewModel.isInternalUser {
+                Section {
+                    SettingsCellView(label: "Sheet menu presentation",
+                                     accessory: .toggle(isOn: showSheetMenu))
+                } footer: {
+                    Text(verbatim: "This setting is experimental and available only for internal users")
+                }
             }
 
         }

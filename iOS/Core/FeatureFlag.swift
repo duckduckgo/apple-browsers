@@ -596,7 +596,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .standaloneMigration:
             return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
         case .browsingMenuSheetPresentation:
-            return .internalOnly()
+            return .disabled
         }
     }
 }

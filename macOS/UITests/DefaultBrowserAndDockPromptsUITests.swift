@@ -46,6 +46,9 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
         app.openNewWindow()
 
         XCTAssertTrue(app.inactiveUserPrompt.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be shown when window regains focus after inactive period and installation period have passed")
+
+        app.confirmButton.click()
+        XCTAssertTrue(app.inactiveUserPrompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be dismissed after confirming")
     }
 }
 
@@ -56,6 +59,8 @@ private extension XCUIApplication {
         static let simulateFreshAppInstallMenuItem = "DefaultBrowserAndDockPromptDebugMenu.simulateFreshInstall"
         static let overrideCurrentDateMenuItem = "DefaultBrowserAndDockPromptDebugMenu.simulateCurrentDate"
         static let inactiveUserPrompt = "DefaultBrowserAndDockPrompts.inactiveUser"
+        static let confirmButton = "DefaultBrowserAndDockPrompts.inactiveUser.confirmButton"
+        static let dismissButton = "DefaultBrowserAndDockPrompts.inactiveUser.dismissButton"
     }
 
     var simulateFreshAppInstallMenuItem: XCUIElement {
@@ -68,6 +73,14 @@ private extension XCUIApplication {
 
     var inactiveUserPrompt: XCUIElement {
         sheets[AccessibilityIdentifiers.inactiveUserPrompt]
+    }
+
+    var confirmButton: XCUIElement {
+        inactiveUserPrompt.buttons[AccessibilityIdentifiers.confirmButton]
+    }
+
+    var dismissButton: XCUIElement {
+        inactiveUserPrompt.buttons[AccessibilityIdentifiers.dismissButton]
     }
 }
 

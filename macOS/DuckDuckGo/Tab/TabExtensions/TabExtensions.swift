@@ -106,7 +106,14 @@ typealias TabExtensionsBuilderArguments = (
     inheritedAttribution: AdClickAttributionLogic.State?,
     userContentControllerFuture: Future<UserContentController, Never>,
     permissionModel: PermissionModel,
-    webViewFuture: Future<WKWebView, Never>
+    webViewFuture: Future<WKWebView, Never>,
+    interactionEventsPublisher: AnyPublisher<WebViewInteractionEvent, Never>,
+    tabsPreferences: TabsPreferences,
+    burnerMode: BurnerMode,
+    urlProvider: () -> URL?,
+    createChildTab: (WKWebViewConfiguration, WKNavigationAction, NewWindowPolicy) -> Tab?,
+    presentTab: (Tab, NewWindowPolicy) -> Void,
+    newWindowPolicyDecisionMakers: () -> [NewWindowPolicyDecisionMaker]?
 )
 
 extension TabExtensionsBuilder {
@@ -198,6 +205,17 @@ extension TabExtensionsBuilder {
                                tld: dependencies.privacyFeatures.contentBlocking.tld)
         }
         add {
+            PopupHandlingTabExtension(tabsPreferences: args.tabsPreferences,
+                                     burnerMode: args.burnerMode,
+                                     permissionModel: args.permissionModel,
+                                     createChildTab: args.createChildTab,
+                                     presentTab: args.presentTab,
+                                     newWindowPolicyDecisionMakers: args.newWindowPolicyDecisionMakers,
+                                     featureFlagger: dependencies.featureFlagger,
+                                     popupBlockingConfig: DefaultPopupBlockingConfiguration(privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager),
+                                     interactionEventsPublisher: args.interactionEventsPublisher)
+        }
+        add {
             HoveredLinkTabExtension(hoverUserScriptPublisher: userScripts.map(\.?.hoverUserScript))
         }
         add {
@@ -211,6 +229,7 @@ extension TabExtensionsBuilder {
         add {
             TabSnapshotExtension(webViewPublisher: args.webViewFuture,
                                  contentPublisher: args.contentPublisher,
+                                 interactionEventsPublisher: args.interactionEventsPublisher,
                                  isBurner: args.isTabBurner)
         }
         add {

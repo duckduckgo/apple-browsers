@@ -292,6 +292,18 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1163321984198618/task/1203578778040829?focus=true
     case newTabPageAutoconsentStats
+
+    /// New popup blocking heuristics based on user interaction timing (internal only)
+    case popupBlocking
+
+    /// Use extended user-initiated popup timeout (extends from 1s to 6s)
+    case extendedUserInitiatedPopupTimeout
+
+    /// Suppress empty or about: URL popups after permission approval
+    case suppressEmptyPopUpsOnApproval
+
+    /// Allow all popups for current page after permission approval (until next navigation)
+    case allowPopupsForCurrentPage
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -319,7 +331,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .blurryAddressBarTahoeFix,
                 .pinnedTabsViewRewrite,
                 .vpnConnectionWidePixelMeasurement,
-                .showHideAIGeneratedImagesSection:
+                .showHideAIGeneratedImagesSection,
+                .allowPopupsForCurrentPage:
             true
         default:
             false
@@ -411,7 +424,11 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .showHideAIGeneratedImagesSection,
                 .standaloneMigration,
                 .blackFridayCampaign,
-                .newTabPageAutoconsentStats:
+                .newTabPageAutoconsentStats,
+                .popupBlocking,
+                .extendedUserInitiatedPopupTimeout,
+                .suppressEmptyPopUpsOnApproval,
+                .allowPopupsForCurrentPage:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -606,6 +623,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
         case .newTabPageAutoconsentStats:
             return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.autoconsentStats))
+        case .popupBlocking:
+            return .remoteReleasable(.feature(.popupBlocking))
+        case .extendedUserInitiatedPopupTimeout:
+            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.extendedUserInitiatedPopupTimeout))
+        case .suppressEmptyPopUpsOnApproval:
+            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.suppressEmptyPopUpsOnApproval))
+        case .allowPopupsForCurrentPage:
+            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.allowPopupsForCurrentPage))
         }
     }
 }

@@ -583,9 +583,15 @@ final class AddressBarButtonsViewController: NSViewController {
         cameraButton.buttonState = camera
         microphoneButton.buttonState = microphone
 
-        popupsButton.buttonState = tabViewModel.usedPermissions.popups?.isRequested == true // show only when there're popups blocked
-        ? tabViewModel.usedPermissions.popups
-        : nil
+        // Show pop-up button when there's a blocked pop-up (permission is requested)
+        if tabViewModel.usedPermissions.popups?.isRequested == true {
+            popupsButton.buttonState = tabViewModel.usedPermissions.popups
+        } else if featureFlagger.isFeatureOn(.allowPopupsForCurrentPage) {
+            // Keep button visible (as .inactive) when a pop-up was allowed, so user can still access the menu
+            popupsButton.buttonState = tabViewModel.usedPermissions.popups
+        } else {
+            popupsButton.buttonState = nil
+        }
         externalSchemeButton.buttonState = tabViewModel.usedPermissions.externalScheme
         let title = String(format: UserText.permissionExternalSchemeOpenFormat, tabViewModel.usedPermissions.first(where: { $0.key.isExternalScheme })?.key.localizedDescription ?? "")
         externalSchemeButton.setAccessibilityTitle(title)
@@ -1472,7 +1478,7 @@ final class AddressBarButtonsViewController: NSViewController {
         let url = tabViewModel.tab.content.urlForWebView ?? .empty
         let domain = url.isFileURL ? .localhost : (url.host ?? "")
 
-        PermissionContextMenu(permissionManager: permissionManager, permissions: permissions.map { ($0, $1) }, domain: domain, delegate: self)
+        PermissionContextMenu(permissionManager: permissionManager, permissions: permissions.map { ($0, $1) }, domain: domain, delegate: self, featureFlagger: featureFlagger)
             .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
     }
 
@@ -1491,7 +1497,7 @@ final class AddressBarButtonsViewController: NSViewController {
         let url = tabViewModel.tab.content.urlForWebView ?? .empty
         let domain = url.isFileURL ? .localhost : (url.host ?? "")
 
-        PermissionContextMenu(permissionManager: permissionManager, permissions: [(.microphone, state)], domain: domain, delegate: self)
+        PermissionContextMenu(permissionManager: permissionManager, permissions: [(.microphone, state)], domain: domain, delegate: self, featureFlagger: featureFlagger)
             .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
     }
 
@@ -1510,7 +1516,7 @@ final class AddressBarButtonsViewController: NSViewController {
         let url = tabViewModel.tab.content.urlForWebView ?? .empty
         let domain = url.isFileURL ? .localhost : (url.host ?? "")
 
-        PermissionContextMenu(permissionManager: permissionManager, permissions: [(.geolocation, state)], domain: domain, delegate: self)
+        PermissionContextMenu(permissionManager: permissionManager, permissions: [(.geolocation, state)], domain: domain, delegate: self, featureFlagger: featureFlagger)
             .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
     }
 
@@ -1518,7 +1524,7 @@ final class AddressBarButtonsViewController: NSViewController {
         guard let tabViewModel,
               let state = tabViewModel.usedPermissions.popups
         else {
-            Logger.general.error("Selected tab view model is nil or no popups state")
+            Logger.general.error("Selected tab view model is nil or has no pop-up state")
             return
         }
 
@@ -1535,7 +1541,12 @@ final class AddressBarButtonsViewController: NSViewController {
             domain = url.isFileURL ? .localhost : (url.host ?? "")
             permissions = [(.popups, state)]
         }
-        PermissionContextMenu(permissionManager: permissionManager, permissions: permissions, domain: domain, delegate: self)
+        PermissionContextMenu(permissionManager: permissionManager,
+                              permissions: permissions,
+                              domain: domain,
+                              delegate: self,
+                              featureFlagger: featureFlagger,
+                              hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false)
             .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
     }
 
@@ -1558,7 +1569,7 @@ final class AddressBarButtonsViewController: NSViewController {
         let url = tabViewModel.tab.content.urlForWebView ?? .empty
         let domain = url.isFileURL ? .localhost : (url.host ?? "")
 
-        PermissionContextMenu(permissionManager: permissionManager, permissions: permissions, domain: domain, delegate: self)
+        PermissionContextMenu(permissionManager: permissionManager, permissions: permissions, domain: domain, delegate: self, featureFlagger: featureFlagger)
             .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
     }
 
@@ -1971,6 +1982,12 @@ extension AddressBarButtonsViewController: PermissionContextMenuDelegate {
     }
     func permissionContextMenu(_ menu: PermissionContextMenu, resetStoredPermission permission: PermissionType) {
         permissionManager.setPermission(.ask, forDomain: menu.domain, permissionType: permission)
+    }
+    func permissionContextMenu(_ menu: PermissionContextMenu, resetTemporaryPopupAllowance: Void) {
+        tabViewModel?.tab.popupHandling?.clearPopupAllowanceForCurrentPage()
+    }
+    func permissionContextMenu(_ menu: PermissionContextMenu, setTemporaryPopupAllowance: Void) {
+        tabViewModel?.tab.popupHandling?.setPopupAllowanceForCurrentPage()
     }
     func permissionContextMenuReloadPage(_ menu: PermissionContextMenu) {
         tabViewModel?.reload()

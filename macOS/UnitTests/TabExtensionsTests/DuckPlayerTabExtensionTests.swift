@@ -36,31 +36,6 @@ extension WKFrameInfo {
     }
 }
 
-final class MockWKNavigationAction: WKNavigationAction {
-    private let mockRequest: URLRequest
-    private let mockTargetFrame: WKFrameInfo?
-    private let mockSourceFrame: WKFrameInfo
-
-    init(request: URLRequest, targetFrame: WKFrameInfo?, sourceFrame: WKFrameInfo) {
-        self.mockRequest = request
-        self.mockTargetFrame = targetFrame
-        self.mockSourceFrame = sourceFrame
-        super.init()
-    }
-
-    override var request: URLRequest {
-        return mockRequest
-    }
-
-    override var targetFrame: WKFrameInfo? {
-        return mockTargetFrame
-    }
-
-    override var sourceFrame: WKFrameInfo {
-        return mockSourceFrame
-    }
-}
-
 @MainActor
 final class DuckPlayerTabExtensionTests: XCTestCase {
 

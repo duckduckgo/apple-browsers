@@ -608,7 +608,7 @@ extension TabBarItemCellView: ThemeUpdateListening {
         rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
     }
 }
-
+// MARK: NSAccessibilityRadioButton
 extension TabBarViewItem/*: NSAccessibilityRadioButton*/ {
 
     @objc func isAccessibilityElement() -> Bool {

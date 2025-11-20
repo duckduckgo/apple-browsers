@@ -322,6 +322,9 @@ final class MainViewController: NSViewController {
 
         mainView.setupAIChatOmnibarTextContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
         mainView.setupAIChatOmnibarContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
+        
+        // Wire the custom toggle control reference to the AI Chat text container for TAB key navigation
+        wireToggleReferenceToAIChatTextContainer()
     }
 
     override func viewWillAppear() {
@@ -476,6 +479,14 @@ final class MainViewController: NSViewController {
         } else {
             aiChatOmnibarContainerViewController.cleanup()
             aiChatOmnibarTextContainerViewController.cleanup()
+        }
+    }
+    
+    private func wireToggleReferenceToAIChatTextContainer() {
+        // Wire the custom toggle control from the address bar to the AI Chat text container
+        // This enables TAB key navigation from AI Chat mode to the toggle
+        if let searchModeToggleControl = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.searchModeToggleControl {
+            aiChatOmnibarTextContainerViewController.customToggleControl = searchModeToggleControl
         }
     }
 

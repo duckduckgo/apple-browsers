@@ -31,6 +31,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
+    weak var customToggleControl: NSControl?
 
     init(omnibarController: AIChatOmnibarController, sharedTextState: AddressBarSharedTextState, themeManager: ThemeManaging) {
         self.omnibarController = omnibarController
@@ -176,6 +177,15 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             
             omnibarController.submit()
             return true
+        } else if commandSelector == #selector(NSResponder.insertTab(_:)) {
+            /// Check if AI Chat toggle should receive focus instead of default behavior
+            if let customToggleControl = customToggleControl,
+               !customToggleControl.isHidden,
+               customToggleControl.isEnabled {
+                view.window?.makeFirstResponder(customToggleControl)
+                return true
+            }
+            return false
         }
         
         return false

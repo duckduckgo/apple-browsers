@@ -160,7 +160,9 @@ class AutofillDebugViewController: UITableViewController {
                     return
                 }
                 let extensionPromotionManager = AutofillExtensionPromotionManager(keyValueStore: keyValueStore)
-                extensionPromotionManager.resetPromotionDismissal()
+                ExtensionPromotionPlacement.allCases.forEach { placement in
+                    extensionPromotionManager.resetPromotionDismissal(for: placement)
+                }
                 ActionMessageView.present(message: "Extension Promos reset")
             }
         }

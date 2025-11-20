@@ -340,14 +340,14 @@ class AutofillLoginListViewModel: ObservableObject {
             return
         }
 
-        extensionPromotionManager.shouldShowPromotion(totalCredentialsCount: accountsCount) { shouldShow in
+        extensionPromotionManager.shouldShowPromotion(for: .passwords, totalCredentialsCount: accountsCount) { shouldShow in
             completion(shouldShow)
         }
     }
 
     @MainActor
     func dismissExtensionPromo() {
-        extensionPromotionManager.markPromotionDismissed()
+        extensionPromotionManager.markPromotionDismissed(for: .passwords)
     }
 
     // MARK: Private Methods

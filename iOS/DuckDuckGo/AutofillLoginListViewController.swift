@@ -1161,6 +1161,7 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
             segueToFileImport(source: DataImportViewModel.ImportScreen.promo)
         case .extensionPromo:
             segueToExtensionManagement()
+            Pixel.fire(pixel: .autofillExtensionPasswordsPromoConfirmed)
         }
     }
 
@@ -1178,6 +1179,7 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
             viewModel.dismissImportPromo()
         case .extensionPromo:
             viewModel.dismissExtensionPromo()
+            Pixel.fire(pixel: .autofillExtensionPasswordsPromoDismissed)
         }
     }
 }

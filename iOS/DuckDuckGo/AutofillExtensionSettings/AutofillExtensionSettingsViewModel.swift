@@ -20,6 +20,7 @@
 import Foundation
 import AuthenticationServices
 import BrowserServicesKit
+import Core
 
 @available(iOS 18.0, *)
 protocol AutofillExtensionSettingsViewModelDelegate: AnyObject {
@@ -56,16 +57,18 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
     private let enableRetryThrottleDuration: TimeInterval
     private var throttleExpiresAt: Date?
     private var enableRetryTimer: Timer?
+    private let pixelSource: String
     weak var delegate: (any AutofillExtensionSettingsViewModelDelegate)?
 
     @Published var isExtensionEnabled: Bool = false
     @Published var isShowingActivationView: Bool = false
     @Published private(set) var isEnableRequestThrottled: Bool = false
 
-
-    init(credentialStore: ASCredentialIdentityStoring = ASCredentialIdentityStore.shared,
+    init(source: AutofillExtensionSettingsViewController.Source? = nil,
+         credentialStore: ASCredentialIdentityStoring = ASCredentialIdentityStore.shared,
          settingsHelper: any AutofillExtensionSettingsHelping = DefaultAutofillExtensionSettingsHelper(),
          enableRetryThrottleDuration: TimeInterval = Constants.enableRetryThrottleDuration) {
+        self.pixelSource = source?.rawValue ?? ""
         self.credentialStore = credentialStore
         self.settingsHelper = settingsHelper
         self.enableRetryThrottleDuration = enableRetryThrottleDuration
@@ -78,10 +81,15 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
     }
 
     func enableExtension() async {
+        Pixel.fire(pixel: .autofillExtensionSettingsTurnOnTapped,
+                   withAdditionalParameters: [PixelParameters.source: pixelSource])
+
         if isEnableRequestThrottled {
             if let remaining = remainingEnableRequestThrottleInterval, remaining > 0 {
                 // Still throttled - redirect to settings instead
-                await disableExtension()
+                await openSettings()
+                Pixel.fire(pixel: .autofillExtensionSettingsTurnOnThrottled,
+                           withAdditionalParameters: [PixelParameters.source: pixelSource])
                 return
             }
             // Throttle expired
@@ -100,6 +108,8 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
         guard userChoseToEnable else {
             // User chose "Not Now" - throttle future requests
             startEnableRequestThrottle()
+            Pixel.fire(pixel: .autofillExtensionSettingsTurnOnCancelled,
+                       withAdditionalParameters: [PixelParameters.source: pixelSource])
             return
         }
 
@@ -113,15 +123,28 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
         if isExtensionEnabled {
             // Success - show activation confirmation
             isShowingActivationView = true
+
+            Pixel.fire(pixel: .autofillExtensionSettingsTurnOnSuccess,
+                       withAdditionalParameters: [PixelParameters.source: pixelSource])
         } else {
             // User chose to enable but extension not enabled - guide user to settings
-            await disableExtension()
+            await openSettings()
             startEnableRequestThrottle()
             isShowingActivationView = false
+
+            Pixel.fire(pixel: .autofillExtensionSettingsTurnOnFailed,
+                       withAdditionalParameters: [PixelParameters.source: pixelSource])
         }
     }
 
     func disableExtension() async {
+        await openSettings()
+
+        Pixel.fire(pixel: .autofillExtensionSettingsTurnOffTapped,
+                   withAdditionalParameters: [PixelParameters.source: pixelSource])
+    }
+
+    private func openSettings() async {
         do {
             delegate?.autofillExtensionSettingsViewModel(self, shouldDisableAuth: true)
             try await settingsHelper.openCredentialProviderAppSettings()

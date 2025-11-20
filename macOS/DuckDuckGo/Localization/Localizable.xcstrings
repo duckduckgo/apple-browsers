@@ -30060,8 +30060,7 @@
             "value" : "Promotional messages"
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "feedback.problem-subcategory.site-asks-to-turn-off-ad-blocker" : {
       "comment" : "Problem subcategory for ad blocker detection messages",
@@ -78264,8 +78263,7 @@
             "value" : "We’re always looking to improve. Can you tell us why you chose \"%1$@\"?"
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "sad.att.inactive-user.notification.title" : {
       "comment" : "Title of system notification asking the user for quick feedback after declining a prompt by clicking 'No Thanks'.",
@@ -78277,8 +78275,7 @@
             "value" : "Got time for quick feedback?"
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "sad.att.set-as-default.banner.message" : {
       "comment" : "Body of the banner view that invites users to set DuckDuckGo as their default browser",

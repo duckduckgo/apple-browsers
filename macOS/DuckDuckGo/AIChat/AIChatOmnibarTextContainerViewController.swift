@@ -19,12 +19,31 @@
 import Cocoa
 import Combine
 
+/// Custom NSTextView that ensures it can always accept focus when clicked
+private final class FocusableTextView: NSTextView {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        return true
+    }
+    
+    override var acceptsFirstResponder: Bool {
+        return true
+    }
+    
+    override func mouseDown(with event: NSEvent) {
+        // Ensure we become first responder before handling the mouse event
+        if window?.firstResponder != self {
+            window?.makeFirstResponder(self)
+        }
+        super.mouseDown(with: event)
+    }
+}
+
 final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpdateListening, NSTextViewDelegate {
 
     private let backgroundView = MouseBlockingBackgroundView()
     private let containerView = NSView()
     private let scrollView = NSScrollView()
-    private let textView = NSTextView()
+    private let textView = FocusableTextView()
     private let omnibarController: AIChatOmnibarController
     private let sharedTextState: AddressBarSharedTextState
     private var cancellables = Set<AnyCancellable>()
@@ -151,8 +170,12 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                 guard let self = self else { return }
                 if self.textView.string != newText {
                     self.textView.string = newText
-                    let textLength = newText.count
-                    self.textView.selectedRange = NSRange(location: textLength, length: 0)
+                    // Only update selection if the text view is the first responder
+                    // This prevents NSInputAnalytics errors when not focused
+                    if self.view.window?.firstResponder == self.textView {
+                        let textLength = newText.count
+                        self.textView.selectedRange = NSRange(location: textLength, length: 0)
+                    }
                 }
             }
             .store(in: &cancellables)

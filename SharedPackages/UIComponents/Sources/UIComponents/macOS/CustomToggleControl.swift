@@ -291,8 +291,6 @@ public final class CustomToggleControl: NSControl {
     public override func keyDown(with event: NSEvent) {
         switch event.keyCode {
         case KeyCode.space, KeyCode.return:
-            // Both space and return toggle the selection
-            // The selection change will trigger the action, which handles mode switching
             isRightSelected.toggle()
         case KeyCode.leftArrow:
             isRightSelected = false

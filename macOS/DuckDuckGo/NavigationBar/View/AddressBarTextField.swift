@@ -1050,7 +1050,6 @@ extension AddressBarTextField: NSTextFieldDelegate {
             self.addressBarEnterPressed()
             return true
         } else if commandSelector == #selector(NSResponder.insertTab(_:)) {
-            /// Check if AI Chat toggle should receive focus instead of default nextKeyView
             if let customToggleControl = customToggleControl,
                !customToggleControl.isHidden,
                customToggleControl.isEnabled {

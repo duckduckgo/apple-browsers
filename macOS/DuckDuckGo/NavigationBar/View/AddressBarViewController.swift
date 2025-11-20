@@ -626,7 +626,6 @@ final class AddressBarViewController: NSViewController {
         activeOuterBorderView.alphaValue = isKey && selectionState.isSelected && !isToggleFocused && theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
         activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
         
-        // Hide inner border when toggle is focused
         activeBackgroundView.borderWidth = isToggleFocused ? 0 : 2.0
         activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.8) : theme.colorsProvider.accentPrimaryColor
 
@@ -770,7 +769,6 @@ final class AddressBarViewController: NSViewController {
             let isToggleFocused = window.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
 
             if shouldShowActiveState {
-                // Hide inner border when toggle is focused
                 activeBackgroundView.borderWidth = isToggleFocused ? 0 : 2.0
                 activeBackgroundView.borderColor = accentColor.withAlphaComponent(0.6)
                 activeBackgroundView.backgroundColor = theme.colorsProvider.activeAddressBarBackgroundColor
@@ -830,16 +828,14 @@ final class AddressBarViewController: NSViewController {
                 isFirstResponder = true
             }
             activeTextFieldMinXConstraint.isActive = true
-            // Update view to show border when returning to text field from toggle
             updateView()
             refreshAddressBarAppearance(nil)
         } else if isToggleFocused {
-            // Keep address bar active state when toggle has focus
+            /// Keep address bar active state when toggle has focus
             if !isFirstResponder {
                 isFirstResponder = true
             }
             activeTextFieldMinXConstraint.isActive = true
-            // Update view to hide border when toggle gets focus
             updateView()
             refreshAddressBarAppearance(nil)
         } else if isFirstResponder {
@@ -850,11 +846,9 @@ final class AddressBarViewController: NSViewController {
                 restoreInternalTextFieldLabels(in: addressBarTextField)
             }
             
-            // Update view when toggle loses focus to something else
             updateView()
             refreshAddressBarAppearance(nil)
             
-            // Trigger resize when losing focus from toggle (similar to addressBarDidLoseFocus)
             delegate?.resizeAddressBarForHomePage(self)
             addressBarButtonsViewController?.setupButtonPaddings(isFocused: false)
         }
@@ -869,7 +863,6 @@ final class AddressBarViewController: NSViewController {
                 selectionState = .active
             }
         case .active:
-            // Keep active state if toggle is focused
             if !isFirstResponder && !isToggleFocused {
                 selectionState = .inactive
             }
@@ -1000,7 +993,7 @@ final class AddressBarViewController: NSViewController {
             return event
         }
 
-        // Handle AI chat mode - click outside to dismiss
+        /// Handle AI chat mode - click outside to dismiss
         if selectionState == .activeWithAIChat,
            let clickPoint,
            clickPoint.distance(to: window.convertPoint(toScreen: event.locationInWindow)) <= Constants.maxClickReleaseDistanceToResignFirstResponder {
@@ -1009,7 +1002,7 @@ final class AddressBarViewController: NSViewController {
             return event
         }
 
-        // Handle toggle focused - click outside to deselect
+        /// Handle toggle focused - click outside to deselect
         if window.firstResponder === addressBarButtonsViewController?.searchModeToggleControl,
            let clickPoint,
            clickPoint.distance(to: window.convertPoint(toScreen: event.locationInWindow)) <= Constants.maxClickReleaseDistanceToResignFirstResponder {
@@ -1017,7 +1010,7 @@ final class AddressBarViewController: NSViewController {
             return event
         }
 
-        // Handle normal mode - click (same position down+up) outside of the field: resign first responder
+        /// Handle normal mode - click (same position down+up) outside of the field: resign first responder
         guard window.firstResponder === addressBarTextField.currentEditor(),
               let clickPoint,
               clickPoint.distance(to: window.convertPoint(toScreen: event.locationInWindow)) <= Constants.maxClickReleaseDistanceToResignFirstResponder else {

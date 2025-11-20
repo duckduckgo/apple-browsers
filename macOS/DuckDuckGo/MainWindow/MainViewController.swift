@@ -489,8 +489,7 @@ final class MainViewController: NSViewController {
     }
     
     private func wireToggleReferenceToAIChatTextContainer() {
-        // Wire the custom toggle control from the address bar to the AI Chat text container
-        // This enables TAB key navigation from AI Chat mode to the toggle
+        /// This enables TAB key navigation from AI Chat mode to the toggle
         if let searchModeToggleControl = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.searchModeToggleControl {
             aiChatOmnibarTextContainerViewController.customToggleControl = searchModeToggleControl
         }

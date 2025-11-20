@@ -1684,15 +1684,11 @@ final class AddressBarButtonsViewController: NSViewController {
         }
         
         if shouldShowToggle {
-            // When toggle is visible, insert it into the key view chain
-            // Address bar → Toggle → (original next view)
             if addressBarTextField.nextKeyView != toggleControl {
                 toggleControl.nextKeyView = addressBarTextField.nextKeyView
                 addressBarTextField.nextKeyView = toggleControl
             }
         } else {
-            // When toggle is hidden, remove it from the chain
-            // Address bar → (original next view)
             if addressBarTextField.nextKeyView == toggleControl {
                 addressBarTextField.nextKeyView = toggleControl.nextKeyView
             }

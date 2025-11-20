@@ -182,7 +182,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             omnibarController.submit()
             return true
         } else if commandSelector == #selector(NSResponder.insertTab(_:)) {
-            /// Check if AI Chat toggle should receive focus instead of default behavior
             if let customToggleControl = customToggleControl,
                !customToggleControl.isHidden,
                customToggleControl.isEnabled {

@@ -988,6 +988,8 @@ final class AddressBarViewController: NSViewController {
         // If the farthest view of the point location is a NSButton or LottieAnimationView don't show contextual menu
         guard viewWithinAddressBar.shouldShowArrowCursor == false else { return nil }
 
+        guard selectionState != .activeWithAIChat else { return event }
+
         // The event location is not a button so we can forward the event to the textfield
         addressBarTextField.rightMouseDown(with: event)
         return nil

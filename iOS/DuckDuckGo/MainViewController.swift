@@ -2908,12 +2908,12 @@ extension MainViewController: OmniBarDelegate {
 
     /// Delegate method called when the AI Chat left button is tapped
     func onAIChatLeftButtonPressed() {
-        currentAITab?.submitOpenHistoryAction()
+        currentTab?.submitOpenHistoryAction()
     }
 
     /// Delegate method called when the AI Chat right button is tapped
     func onAIChatRightButtonPressed() {
-        currentAITab?.submitStartChatAction()
+        currentTab?.submitStartChatAction()
     }
 
     /// Delegate method called when the omnibar branding area is tapped while in AI Chat mode.

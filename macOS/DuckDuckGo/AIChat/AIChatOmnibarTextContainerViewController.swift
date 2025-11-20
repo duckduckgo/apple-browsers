@@ -151,8 +151,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                 guard let self = self else { return }
                 if self.textView.string != newText {
                     self.textView.string = newText
-                    // Only update selection if the text view is the first responder
-                    // This prevents NSInputAnalytics errors when not focused
                     if self.view.window?.firstResponder == self.textView {
                         let textLength = newText.count
                         self.textView.selectedRange = NSRange(location: textLength, length: 0)

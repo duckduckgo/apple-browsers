@@ -999,7 +999,7 @@ private extension NetworkProtectionTunnelController {
             extensionType: .unknown,
             startupMethod: .manualByMainApp,
             isSetup: onboardingStatusRawValue == OnboardingStatus.completed.rawValue ? .no : .yes,
-            onboardingStatus: toWideEventOnboardingStatus(from: onboardingStatusRawValue),
+            onboardingStatus: .init(from: onboardingStatusRawValue),
             contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.agent.rawValue)
         )
         self.connectionWideEventData = data

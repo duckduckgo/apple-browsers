@@ -243,7 +243,7 @@ extension TabExtensionsBuilder {
             NavigationHotkeyHandler(isTabPinned: args.isTabPinned, isBurner: args.isTabBurner, tabsPreferences: dependencies.tabsPreferences)
         }
 
-        let duckPlayerOnboardingDecider = DefaultDuckPlayerOnboardingDecider()
+        let duckPlayerOnboardingDecider = DefaultDuckPlayerOnboardingDecider(preferences: dependencies.duckPlayer.preferences)
         add {
             DuckPlayerTabExtension(duckPlayer: dependencies.duckPlayer,
                                    isBurner: args.isTabBurner,

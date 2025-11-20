@@ -366,22 +366,10 @@ final class TabViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testDisplayedFaviconForHistoryWithFeatureEnabled() {
-        let mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enabledFeatureFlags = [.historyView]
-
-        let tabViewModel = TabViewModel.forTabWithURL(URL.history, featureFlagger: mockFeatureFlagger)
+    func testDisplayedFaviconForHistory() {
+        let tabViewModel = TabViewModel.forTabWithURL(URL.history)
 
         XCTAssertImagesEqual(tabViewModel.favicon, .historyFavicon)
-    }
-
-    @MainActor
-    func testDisplayedFaviconForHistoryWithFeatureDisabled() {
-        let mockFeatureFlagger = MockFeatureFlagger() // .historyView defaults to nil/false
-
-        let tabViewModel = TabViewModel.forTabWithURL(URL.history, featureFlagger: mockFeatureFlagger)
-
-        XCTAssertNil(tabViewModel.favicon)
     }
 
     @MainActor
@@ -431,25 +419,6 @@ final class TabViewModelTests: XCTestCase {
         let tabViewModel = TabViewModel.forTabWithURL(duckPlayerURL)
 
         XCTAssertImagesEqual(tabViewModel.favicon, .duckPlayerSettings)
-    }
-
-    @MainActor
-    func testDisplayedFaviconForHistoryURLWithFeatureEnabled() {
-        let mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enabledFeatureFlags = [.historyView]
-
-        let tabViewModel = TabViewModel.forTabWithURL(URL.history, featureFlagger: mockFeatureFlagger)
-
-        XCTAssertImagesEqual(tabViewModel.favicon, .historyFavicon)
-    }
-
-    @MainActor
-    func testDisplayedFaviconForHistoryURLWithFeatureDisabled() {
-        let mockFeatureFlagger = MockFeatureFlagger() // .historyView defaults to nil/false
-
-        let tabViewModel = TabViewModel.forTabWithURL(URL.history, featureFlagger: mockFeatureFlagger)
-
-        XCTAssertNil(tabViewModel.favicon)
     }
 
     @MainActor

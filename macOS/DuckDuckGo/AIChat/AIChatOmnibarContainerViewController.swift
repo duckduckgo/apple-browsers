@@ -19,17 +19,29 @@
 import Cocoa
 import QuartzCore
 import Combine
+import DesignResourcesKitIcons
 
 final class AIChatOmnibarContainerViewController: NSViewController {
+
+    private enum Constants {
+        static let clipMaskBottomOffset: CGFloat = 14
+        static let shadowOverlapHeight: CGFloat = 11
+        static let submitButtonSize: CGFloat = 28
+        static let submitButtonCornerRadius: CGFloat = 14
+        static let submitButtonTrailingInset: CGFloat = 13
+        static let submitButtonBottomInset: CGFloat = 13
+    }
 
     private let backgroundView = MouseBlockingBackgroundView()
     private let shadowView = ShadowView()
     private let innerBorderView = ColorView(frame: .zero)
     private let containerView = NSView()
-    private let submitButton = NSButton()
+    private let submitButton = MouseOverButton()
     let themeManager: ThemeManaging
     let omnibarController: AIChatOmnibarController
     var themeUpdateCancellable: AnyCancellable?
+    private var appearanceCancellable: AnyCancellable?
+    private var textChangeCancellable: AnyCancellable?
 
     required init?(coder: NSCoder) {
         fatalError("AIChatOmnibarContainerViewController: Bad initializer")
@@ -50,12 +62,41 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         super.viewDidLoad()
         setupUI()
         subscribeToThemeChanges()
+        subscribeToTextChanges()
         applyThemeStyle()
     }
 
     override func viewDidLayout() {
         super.viewDidLayout()
         applyTopClipMask()
+        layoutShadowView()
+    }
+
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        subscribeToViewAppearanceChanges()
+    }
+
+    private func subscribeToViewAppearanceChanges() {
+        appearanceCancellable = view.publisher(for: \.effectiveAppearance)
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.applyThemeStyle()
+            }
+    }
+
+    private func subscribeToTextChanges() {
+        textChangeCancellable = omnibarController.$currentText
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] text in
+                self?.updateSubmitButtonVisibility(for: text)
+            }
+    }
+
+    private func updateSubmitButtonVisibility(for text: String) {
+        let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        submitButton.isHidden = !hasText
     }
 
     private func applyTopClipMask() {
@@ -66,39 +107,41 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
         let mask = CAShapeLayer()
         mask.frame = view.bounds
-        let visibleRect = CGRect(x: 0, y: 0, width: view.bounds.width, height: view.bounds.height - 14)
+        let visibleRect = CGRect(x: 0, y: 0, width: view.bounds.width, height: view.bounds.height - Constants.clipMaskBottomOffset)
         mask.path = CGPath(rect: visibleRect, transform: nil)
         view.layer?.mask = mask
     }
 
     private func setupUI() {
         backgroundView.translatesAutoresizingMaskIntoConstraints = false
-        backgroundView.wantsLayer = true
-        backgroundView.layer?.masksToBounds = false  // Don't clip subviews - important for hit testing
-        backgroundView.layer?.borderWidth = 1
-        backgroundView.layer?.borderColor = NSColor.black.withAlphaComponent(0.2).cgColor
+        backgroundView.borderWidth = 1
+        backgroundView.borderColor = NSColor.black.withAlphaComponent(0.2)
         view.addSubview(backgroundView)
 
         innerBorderView.translatesAutoresizingMaskIntoConstraints = false
         innerBorderView.borderWidth = 1
         backgroundView.addSubview(innerBorderView)
 
-        shadowView.translatesAutoresizingMaskIntoConstraints = false
         shadowView.shadowColor = .suggestionsShadow
         shadowView.shadowOpacity = 1
-        shadowView.shadowOffset = CGSize(width: 0, height: -4)
-        shadowView.shadowSides = [.left, .top, .right]
-        view.addSubview(shadowView, positioned: .below, relativeTo: backgroundView)
+        shadowView.shadowOffset = CGSize(width: 0, height: 0)
+        shadowView.shadowRadius = 20
+        shadowView.shadowSides = [.left, .right, .bottom]
 
         containerView.translatesAutoresizingMaskIntoConstraints = false
         backgroundView.addSubview(containerView)
 
         submitButton.translatesAutoresizingMaskIntoConstraints = false
-        submitButton.title = "Submit"
-        submitButton.bezelStyle = .rounded
-        submitButton.contentTintColor = .blue
+        submitButton.title = ""
+        submitButton.bezelStyle = .shadowlessSquare
+        submitButton.isBordered = false
+        submitButton.wantsLayer = true
         submitButton.target = self
         submitButton.action = #selector(submitButtonClicked)
+
+        submitButton.image = DesignSystemImages.Glyphs.Size12.arrowRight
+        submitButton.imagePosition = .imageOnly
+        submitButton.isHidden = true  // Initially hidden until text is entered
         containerView.addSubview(submitButton)
 
         NSLayoutConstraint.activate([
@@ -112,20 +155,15 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             innerBorderView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -1),
             innerBorderView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -1),
 
-            shadowView.topAnchor.constraint(equalTo: backgroundView.topAnchor),
-            shadowView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
-            shadowView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
-            shadowView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
-
             containerView.topAnchor.constraint(equalTo: backgroundView.topAnchor),
             containerView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
             containerView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
 
-            submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
-            submitButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -20),
-            submitButton.widthAnchor.constraint(equalToConstant: 100),
-            submitButton.heightAnchor.constraint(equalToConstant: 32),
+            submitButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Constants.submitButtonTrailingInset),
+            submitButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -Constants.submitButtonBottomInset),
+            submitButton.widthAnchor.constraint(equalToConstant: Constants.submitButtonSize),
+            submitButton.heightAnchor.constraint(equalToConstant: Constants.submitButtonSize),
         ])
 
         applyTheme(theme: themeManager.theme)
@@ -134,11 +172,31 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     /// Starts event monitoring. Call this when the view controller becomes visible.
     func startEventMonitoring() {
         backgroundView.startListening()
+        addShadowToWindow()
     }
 
     /// Stops event monitoring. Call this when the view controller is about to be dismissed.
     func cleanup() {
         backgroundView.stopListening()
+        shadowView.removeFromSuperview()
+    }
+
+    private func addShadowToWindow() {
+        guard shadowView.superview == nil else { return }
+        view.window?.contentView?.addSubview(shadowView)
+        layoutShadowView()
+    }
+
+    private func layoutShadowView() {
+        guard let superview = shadowView.superview else { return }
+
+        let winFrame = view.convert(view.bounds, to: nil)
+        var frame = superview.convert(winFrame, from: nil)
+
+        /// Do not overlap shadow of main address bar
+        frame.size.height -= Constants.shadowOverlapHeight
+
+        shadowView.frame = frame
     }
 
     @objc private func submitButtonClicked() {
@@ -149,9 +207,19 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         let barStyleProvider = theme.addressBarStyleProvider
         let colorsProvider = theme.colorsProvider
 
-        backgroundView.layer?.backgroundColor = colorsProvider.activeAddressBarBackgroundColor.cgColor
-        backgroundView.layer?.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
-        backgroundView.layer?.borderColor = NSColor(named: "AddressBarBorderColor")?.cgColor
+        backgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor
+        backgroundView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
+        backgroundView.layer?.masksToBounds = false  // Don't clip subviews - important for hit testing
+
+        if let borderColor = NSColor(named: "AddressBarBorderColor") {
+            backgroundView.borderColor = borderColor
+        }
+
+        submitButton.layer?.backgroundColor = colorsProvider.accentPrimaryColor.cgColor
+        submitButton.layer?.cornerRadius = Constants.submitButtonCornerRadius
+
+        submitButton.normalTintColor = .white
+        submitButton.mouseOverTintColor = NSColor(designSystemColor: .buttonsPrimaryText).withAlphaComponent(0.8)
 
         innerBorderView.cornerRadius = barStyleProvider.addressBarActiveBackgroundViewRadius
         innerBorderView.borderColor = NSColor(named: "AddressBarInnerBorderColor")

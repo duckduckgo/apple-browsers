@@ -290,6 +290,12 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         }
     }
 
+    var showSearchAndDuckAIToggle: Bool = true {
+        didSet {
+            showSearchAndDuckAIToggleSubject.send(showSearchAndDuckAIToggle)
+        }
+    }
+
     private var isAIFeaturesEnabledSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutOnNewTabPageSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutInApplicationMenuSubject = PassthroughSubject<Bool, Never>()
@@ -297,6 +303,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     private var showShortcutInAddressBarWhenTypingSubject = PassthroughSubject<Bool, Never>()
     private var openAIChatInSidebarSubject = PassthroughSubject<Bool, Never>()
     private var shouldAutomaticallySendPageContextSubject = PassthroughSubject<Bool, Never>()
+    private var showSearchAndDuckAIToggleSubject = PassthroughSubject<Bool, Never>()
 
     var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> {
         isAIFeaturesEnabledSubject.eraseToAnyPublisher()
@@ -326,6 +333,10 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         shouldAutomaticallySendPageContextSubject.eraseToAnyPublisher()
     }
 
+    var showSearchAndDuckAITogglePublisher: AnyPublisher<Bool, Never> {
+        showSearchAndDuckAIToggleSubject.eraseToAnyPublisher()
+    }
+
     func reset() {
         isAIFeaturesEnabled = true
         showShortcutOnNewTabPage = false
@@ -335,6 +346,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         didDisplayAIChatAddressBarOnboarding = false
         openAIChatInSidebar = false
         shouldAutomaticallySendPageContext = false
+        showSearchAndDuckAIToggle = true
     }
 
     func updateNewTabPageShortcutDisplay(to value: Bool) {

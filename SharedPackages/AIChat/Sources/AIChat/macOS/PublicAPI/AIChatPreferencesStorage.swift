@@ -42,6 +42,9 @@ public protocol AIChatPreferencesStorage {
     var shouldAutomaticallySendPageContext: Bool { get set }
     var shouldAutomaticallySendPageContextPublisher: AnyPublisher<Bool, Never> { get }
 
+    var showSearchAndDuckAIToggle: Bool { get set }
+    var showSearchAndDuckAITogglePublisher: AnyPublisher<Bool, Never> { get }
+
     func reset()
 }
 
@@ -75,6 +78,10 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
 
     public var shouldAutomaticallySendPageContextPublisher: AnyPublisher<Bool, Never> {
         userDefaults.shouldAutomaticallySendPageContextPublisher
+    }
+
+    public var showSearchAndDuckAITogglePublisher: AnyPublisher<Bool, Never> {
+        userDefaults.showSearchAndDuckAITogglePublisher
     }
 
     public init(userDefaults: UserDefaults = .standard,
@@ -118,6 +125,11 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         set { userDefaults.shouldAutomaticallySendPageContext = newValue }
     }
 
+    public var showSearchAndDuckAIToggle: Bool {
+        get { userDefaults.showSearchAndDuckAIToggle }
+        set { userDefaults.showSearchAndDuckAIToggle = newValue }
+    }
+
     public func reset() {
         userDefaults.isAIFeaturesEnabled = UserDefaults.isAIFeaturesEnabledDefaultValue
         userDefaults.showAIChatShortcutOnNewTabPage = UserDefaults.showAIChatShortcutOnNewTabPageDefaultValue
@@ -126,6 +138,7 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         userDefaults.showAIChatShortcutInAddressBarWhenTyping = UserDefaults.showAIChatShortcutInAddressBarWhenTypingDefaultValue
         userDefaults.openAIChatInSidebar = UserDefaults.openAIChatInSidebarDefaultValue
         userDefaults.shouldAutomaticallySendPageContext = UserDefaults.shouldAutomaticallySendPageContextDefaultValue
+        userDefaults.showSearchAndDuckAIToggle = UserDefaults.showSearchAndDuckAIToggleDefaultValue
     }
 }
 
@@ -138,6 +151,7 @@ private extension UserDefaults {
         static let showAIChatShortcutInAddressBarWhenTyping = "aichat.showAIChatShortcutInAddressBarWhenTyping"
         static let openAIChatInSidebar = "aichat.openAIChatInSidebar"
         static let shouldAutomaticallySendPageContext = "aichat.sendPageContextAutomatically"
+        static let showSearchAndDuckAIToggle = "aichat.showSearchAndDuckAIToggle"
     }
 
     static let isAIFeaturesEnabledDefaultValue = true
@@ -147,6 +161,7 @@ private extension UserDefaults {
     static let showAIChatShortcutInAddressBarWhenTypingDefaultValue = true
     static let openAIChatInSidebarDefaultValue = true
     static let shouldAutomaticallySendPageContextDefaultValue = true
+    static let showSearchAndDuckAIToggleDefaultValue = true
 
     @objc dynamic var isAIFeaturesEnabled: Bool {
         get {
@@ -251,6 +266,21 @@ private extension UserDefaults {
 
     var shouldAutomaticallySendPageContextPublisher: AnyPublisher<Bool, Never> {
         publisher(for: \.shouldAutomaticallySendPageContext).eraseToAnyPublisher()
+    }
+
+    @objc dynamic var showSearchAndDuckAIToggle: Bool {
+        get {
+            value(forKey: Keys.showSearchAndDuckAIToggle) as? Bool ?? Self.showSearchAndDuckAIToggleDefaultValue
+        }
+
+        set {
+            guard newValue != showSearchAndDuckAIToggle else { return }
+            set(newValue, forKey: Keys.showSearchAndDuckAIToggle)
+        }
+    }
+
+    var showSearchAndDuckAITogglePublisher: AnyPublisher<Bool, Never> {
+        publisher(for: \.showSearchAndDuckAIToggle).eraseToAnyPublisher()
     }
 }
 #endif

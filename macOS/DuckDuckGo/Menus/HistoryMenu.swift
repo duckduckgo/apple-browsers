@@ -44,7 +44,7 @@ final class HistoryMenu: NSMenu {
         representedObject: location
     )
     private let showHistorySeparator = NSMenuItem.separator()
-    private let clearAllHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryClearAllHistory,
+    private let clearAllHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryDeleteAllHistory,
                                                      action: #selector(AppDelegate.clearAllHistory),
                                                      keyEquivalent: [.command, .shift, .backspace])
         .withAccessibilityIdentifier("HistoryMenu.clearAllHistory")
@@ -113,15 +113,12 @@ final class HistoryMenu: NSMenu {
     override func update() {
         super.update()
 
-        showHistoryMenuItem.isHidden = !featureFlagger.isFeatureOn(.historyView)
-
         updateRecentlyClosedMenu()
         updateReopenLastClosedMenuItem()
 
         clearOldVariableMenuItems()
         addRecentlyVisited()
         addClearAllAndShowHistoryOnTheBottom()
-        clearAllHistoryMenuItem.title = featureFlagger.isFeatureOn(.historyView) ? UserText.mainMenuHistoryDeleteAllHistory : UserText.mainMenuHistoryClearAllHistory
     }
 
     private func clearOldVariableMenuItems() {
@@ -184,7 +181,7 @@ final class HistoryMenu: NSMenu {
     // MARK: - Clear All History
 
     private func addClearAllAndShowHistoryOnTheBottom() {
-        if featureFlagger.isFeatureOn(.historyView) && location == .mainMenu {
+        if location == .mainMenu {
             if showHistorySeparator.menu != nil {
                 removeItem(showHistorySeparator)
             }

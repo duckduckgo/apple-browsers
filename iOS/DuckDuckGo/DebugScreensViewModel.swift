@@ -61,6 +61,10 @@ class DebugScreensViewModel: ObservableObject {
 
     var cancellables = Set<AnyCancellable>()
 
+    lazy var debugStoryboard = {
+        UIStoryboard(name: "Debug", bundle: nil)
+    }()
+
     init(dependencies: DebugScreen.Dependencies) {
         self.dependencies = dependencies
         refreshFilter()

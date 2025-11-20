@@ -57,7 +57,7 @@ final class UserScripts: UserScriptsProvider {
     let aiChatUserScript: AIChatUserScript?
     let pageContextUserScript: PageContextUserScript?
     let subscriptionUserScript: SubscriptionUserScript?
-    let historyViewUserScript: HistoryViewUserScript?
+    let historyViewUserScript: HistoryViewUserScript
     let newTabPageUserScript: NewTabPageUserScript?
     let serpSettingsUserScript: SERPSettingsUserScript?
     let faviconScript = FaviconUserScript()
@@ -124,13 +124,9 @@ final class UserScripts: UserScriptsProvider {
 
         onboardingUserScript = OnboardingUserScript(onboardingActionsManager: sourceProvider.onboardingActionsManager!)
 
-        if sourceProvider.featureFlagger.isFeatureOn(.historyView) {
-            let historyViewUserScript = HistoryViewUserScript()
-            sourceProvider.historyViewActionsManager?.registerUserScript(historyViewUserScript)
-            self.historyViewUserScript = historyViewUserScript
-        } else {
-            historyViewUserScript = nil
-        }
+        let historyViewUserScript = HistoryViewUserScript()
+        sourceProvider.historyViewActionsManager?.registerUserScript(historyViewUserScript)
+        self.historyViewUserScript = historyViewUserScript
 
         if sourceProvider.featureFlagger.isFeatureOn(.newTabPagePerTab) {
             assert(
@@ -152,9 +148,9 @@ final class UserScripts: UserScriptsProvider {
 
         specialPages = SpecialPagesUserScript()
 
-        if DuckPlayer.shared.isAvailable {
-            youtubeOverlayScript = YoutubeOverlayUserScript()
-            youtubePlayerUserScript = YoutubePlayerUserScript()
+        if sourceProvider.duckPlayer.isAvailable {
+            youtubeOverlayScript = YoutubeOverlayUserScript(duckPlayer: sourceProvider.duckPlayer)
+            youtubePlayerUserScript = YoutubePlayerUserScript(duckPlayer: sourceProvider.duckPlayer)
         } else {
             youtubeOverlayScript = nil
             youtubePlayerUserScript = nil
@@ -206,9 +202,7 @@ final class UserScripts: UserScriptsProvider {
                 specialPages.registerSubfeature(delegate: onboardingUserScript)
             }
 
-            if let historyViewUserScript {
-                specialPages.registerSubfeature(delegate: historyViewUserScript)
-            }
+            specialPages.registerSubfeature(delegate: historyViewUserScript)
 
             if let newTabPageUserScript {
                 specialPages.registerSubfeature(delegate: newTabPageUserScript)

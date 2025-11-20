@@ -69,14 +69,6 @@ final class HistoryDebugMenu: NSMenu {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func update() {
-        super.update()
-
-        let isHistoryViewEnabled = featureFlagger.isFeatureOn(.historyView)
-        resetMenuItem.isHidden = !isHistoryViewEnabled
-        showMenuItem.isHidden = !isHistoryViewEnabled
-    }
-
     @objc func populateFakeHistory(_ sender: NSMenuItem) {
         guard let (maxVisitsPerDay, pool) = sender.representedObject as? (Int, FakeURLsPool) else {
             return

@@ -23,6 +23,7 @@ public extension DesignSystemImages {
             public static var addToDock: DesignSystemImage { .init(resource: .addToDockColor16) }
             public static var adsBlocked: DesignSystemImage { .init(resource: .adsBlockedColor16) }
             public static var aiChat: DesignSystemImage { .init(resource: .aiChatColor16) }
+            public static var aiChatToggle: DesignSystemImage { .init(resource: .aiChatToggleColor16) }
             public static var aiChatGradient: DesignSystemImage { .init(resource: .aiChatColorGradient16) }
             public static var aiGeneral: DesignSystemImage { .init(resource: .aiGeneralColor16) }
             public static var appearance: DesignSystemImage { .init(resource: .appearanceColor16) }
@@ -69,6 +70,7 @@ public extension DesignSystemImages {
             public static var globe: DesignSystemImage { .init(resource: .globeColor16) }
             public static var heart: DesignSystemImage { .init(resource: .heartColor16) }
             public static var heartGrey: DesignSystemImage { .init(resource: .heartGreyColor16) }
+            public static var hideAIGeneratedImages: DesignSystemImage { .init(resource: .imageAIBlocked16) }
             public static var history: DesignSystemImage { .init(resource: .historyColor16) }
             public static var home: DesignSystemImage { .init(resource: .homeColor16) }
             public static var hourglass: DesignSystemImage { .init(resource: .hourglassColor16) }
@@ -104,6 +106,7 @@ public extension DesignSystemImages {
             public static var videoPlayer: DesignSystemImage { .init(resource: .videoPlayerColor16) }
             public static var vpn: DesignSystemImage { .init(resource: .vpnColor16) }
             public static var vpnGray: DesignSystemImage { .init(resource: .vpnGrayColor16) }
+            public static var searchFindToggle: DesignSystemImage { .init(resource: .searchFindToggleColor16) }
         }
 
         public enum Size24 {

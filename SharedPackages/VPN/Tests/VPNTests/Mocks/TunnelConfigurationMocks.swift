@@ -42,7 +42,7 @@ extension InterfaceConfiguration {
 }
 
 extension PeerConfiguration {
-    static func make(publicKey: PublicKey = .init(hexKey: "00000000")!) -> Self {
+    static func make(publicKey: PublicKey) -> Self {
         PeerConfiguration(publicKey: publicKey)
     }
 }

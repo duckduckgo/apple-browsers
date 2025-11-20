@@ -151,7 +151,7 @@ final class AppHTTPSUpgradeStoreTests: XCTestCase {
         let bloomData = try Data(contentsOf: Resource.bloomFilter)
 
         let iterations = 100
-        let queue = DispatchQueue(label: "com.duckduckgo.AppHTTPSUpgradeStoreTests.concurrent", attributes: .concurrent)
+        let queue = DispatchQueue(label: "test.concurrent.writes", attributes: .concurrent)
         let group = DispatchGroup()
 
         for _ in 0..<iterations {

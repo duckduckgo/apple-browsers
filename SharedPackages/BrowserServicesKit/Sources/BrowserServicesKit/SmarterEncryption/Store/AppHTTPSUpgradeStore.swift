@@ -55,7 +55,7 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
     private let embeddedResources: EmbeddedBloomFilterResources
     private let errorEvents: EventMapping<ErrorEvents>?
     private let context: NSManagedObjectContext
-    private let storeQueue = DispatchQueue(label: "com.duckduckgo.apphttpsupgradestore.store")
+    private let storeQueue = DispatchQueue(label: "AppHTTPSUpgradeStore queue")
 
     public static var bundle: Bundle { .module }
     private let logger: Logger

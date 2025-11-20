@@ -24,6 +24,7 @@ import Core
 
 @available(iOS 18.0, *)
 protocol AutofillExtensionSettingsViewModelDelegate: AnyObject {
+    @MainActor
     func autofillExtensionSettingsViewModel(_ viewModel: AutofillExtensionSettingsViewModel, shouldDisableAuth: Bool)
 }
 
@@ -49,6 +50,7 @@ struct DefaultAutofillExtensionSettingsHelper: AutofillExtensionSettingsHelping 
 final class AutofillExtensionSettingsViewModel: ObservableObject {
 
     private let coordinator: AutofillExtensionEnableCoordinator
+    private let source: String
     weak var delegate: (any AutofillExtensionSettingsViewModelDelegate)?
 
     @Published var isExtensionEnabled: Bool = false
@@ -58,9 +60,9 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
         coordinator.isEnableRequestThrottled
     }
 
-    init(source: AutofillExtensionSettingsViewController.Source? = nil) {
-        let pixelSource = source?.rawValue ?? "settings"
-        self.coordinator = AutofillExtensionEnableCoordinator(source: pixelSource)
+    init(source: String) {
+        self.coordinator = AutofillExtensionEnableCoordinator(source: source)
+        self.source = source
         self.coordinator.delegate = self
         Task { await updateExtensionStatus() }
     }
@@ -85,6 +87,7 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
         do {
             delegate?.autofillExtensionSettingsViewModel(self, shouldDisableAuth: true)
             try await ASSettingsHelper.openCredentialProviderAppSettings()
+            Pixel.fire(pixel: .autofillExtensionSettingsTurnOffTapped, withAdditionalParameters: [PixelParameters.source: source])
         } catch {
             delegate?.autofillExtensionSettingsViewModel(self, shouldDisableAuth: false)
             Logger.autofill.error("Failed to open credential provider settings: \(error.localizedDescription, privacy: .public)")

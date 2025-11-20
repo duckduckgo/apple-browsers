@@ -24,6 +24,7 @@ import BrowserServicesKit
 
 @available(iOS 18.0, *)
 protocol AutofillExtensionEnableCoordinatorDelegate: AnyObject {
+    @MainActor
     func autofillExtensionEnableCoordinator(_ coordinator: AutofillExtensionEnableCoordinator, shouldDisableAuth: Bool)
 }
 

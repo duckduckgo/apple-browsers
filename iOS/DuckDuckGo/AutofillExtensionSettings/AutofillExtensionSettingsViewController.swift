@@ -34,13 +34,11 @@ class AutofillExtensionSettingsViewController: UIViewController {
         case inlinePromotion = "inline_promo"
     }
 
-    private let source: Source
     private let viewModel: AutofillExtensionSettingsViewModel
     weak var delegate: (any AutofillExtensionSettingsViewControllerDelegate)?
 
     init(source: Source) {
-        self.source = source
-        self.viewModel = AutofillExtensionSettingsViewModel(source: source)
+        self.viewModel = AutofillExtensionSettingsViewModel(source: source.rawValue)
         super.init(nibName: nil, bundle: nil)
     }
 

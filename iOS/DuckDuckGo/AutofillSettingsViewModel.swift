@@ -212,6 +212,7 @@ final class AutofillSettingsViewModel: ObservableObject {
         }
     }
 
+    @MainActor
     func updateExtensionStatus() async {
         guard showExtensionSettings else {
             return

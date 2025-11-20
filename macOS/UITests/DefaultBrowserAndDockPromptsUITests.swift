@@ -39,6 +39,13 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
         app.simulateFreshAppInstall()
         let promptDate = Date().advanced(by: .days(28))
         app.overrideCurrentDate(with: promptDate)
+
+        XCTAssertTrue(app.inactiveUserPrompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should not be shown until window regains focus")
+
+        app.closeWindow()
+        app.openNewWindow()
+
+        XCTAssertTrue(app.inactiveUserPrompt.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be shown when window regains focus after inactive period and installation period have passed")
     }
 }
 
@@ -48,6 +55,7 @@ private extension XCUIApplication {
     enum AccessibilityIdentifiers {
         static let simulateFreshAppInstallMenuItem = "DefaultBrowserAndDockPromptDebugMenu.simulateFreshInstall"
         static let overrideCurrentDateMenuItem = "DefaultBrowserAndDockPromptDebugMenu.simulateCurrentDate"
+        static let inactiveUserPrompt = "DefaultBrowserAndDockPrompts.inactiveUser"
     }
 
     var simulateFreshAppInstallMenuItem: XCUIElement {
@@ -56,6 +64,10 @@ private extension XCUIApplication {
 
     var overrideCurrentDateMenuItem: XCUIElement {
         menuItems[AccessibilityIdentifiers.overrideCurrentDateMenuItem]
+    }
+
+    var inactiveUserPrompt: XCUIElement {
+        sheets[AccessibilityIdentifiers.inactiveUserPrompt]
     }
 }
 

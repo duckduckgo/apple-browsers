@@ -44,12 +44,17 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     init() {
         super.init(title: "")
 
+        debugStore.actualInstallDate = localStatisticsStore.installDate
+        debugStore.simulatedInstallDate = debugStore.actualInstallDate
+
         guard defaultBrowserAndDockPromptFeatureFlagger.isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled || defaultBrowserAndDockPromptFeatureFlagger.isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled else { return }
 
         buildItems {
             NSMenuItem(title: "Override Today's Date", action: #selector(simulateCurrentDate))
                 .targetting(self)
-            NSMenuItem(title: "Reset Prompts And Today's Date", action: #selector(resetPrompts))
+            NSMenuItem(title: "Simulate Fresh App Install", action: #selector(simulateFreshAppInstall))
+                .targetting(self)
+            NSMenuItem(title: "Reset Prompts And Today/Install Dates", action: #selector(resetPrompts))
                 .targetting(self)
             simulatedTodayDateMenuItem
             popoverWillShowDateMenuItem
@@ -79,6 +84,13 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
         }
     }
 
+    @objc func simulateFreshAppInstall() {
+        resetPrompts()
+        debugStore.simulatedInstallDate = Date().startOfDay
+        debugStore.simulatedTodayDate = Date()
+        userActivityStore.save(.empty)
+    }
+
     @objc func resetPrompts() {
         debugStore.reset()
         store.popoverShownDate = nil
@@ -96,7 +108,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
                 let popoverShownDate = Date(timeIntervalSince1970: popoverShownDate)
                 popoverWillShowDateMenuItem.title = "Popover prompt has shown: \(Self.dateFormatter.string(from: popoverShownDate))"
             } else {
-                let popoverWillShowDate = localStatisticsStore.installDate
+                let popoverWillShowDate = debugStore.simulatedInstallDate
                     .flatMap { $0.addingTimeInterval(.days(defaultBrowserAndDockPromptFeatureFlagger.firstPopoverDelayDays)) }
 
                 let formattedWillShowDate = popoverWillShowDate.flatMap { Self.dateFormatter.string(from: $0) } ?? "N/A"
@@ -143,7 +155,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
                 inactiveWillShowDateMenuItem.title = "Inactive User prompt has shown: \(Self.dateFormatter.string(from: inactiveShownDate))"
             } else if store.isBannerPermanentlyDismissed {
                 inactiveWillShowDateMenuItem.title = "Inactive User prompt will not be shown."
-            } else if let installDate = localStatisticsStore.installDate {
+            } else if let installDate = debugStore.simulatedInstallDate {
                 let firstDateAfterInstall = installDate.advanced(by: .days(defaultBrowserAndDockPromptFeatureFlagger.inactiveModalNumberOfDaysSinceInstall))
                 let nextDateAfterInactivity = debugStore.simulatedTodayDate.advanced(by: .days(defaultBrowserAndDockPromptFeatureFlagger.inactiveModalNumberOfInactiveDays + 1))
 
@@ -211,7 +223,13 @@ final class DefaultBrowserAndDockPromptDebugStore {
     @UserDefaultsWrapper(key: .debugSetDefaultAndAddToDockPromptCurrentDateKey, defaultValue: Date())
     var simulatedTodayDate: Date
 
+    @UserDefaultsWrapper(key: .debugSetDefaultAndAddToDockPromptInstallDateKey)
+    var simulatedInstallDate: Date?
+
+    var actualInstallDate: Date?
+
     func reset() {
         simulatedTodayDate = Date()
+        simulatedInstallDate = actualInstallDate
     }
 }

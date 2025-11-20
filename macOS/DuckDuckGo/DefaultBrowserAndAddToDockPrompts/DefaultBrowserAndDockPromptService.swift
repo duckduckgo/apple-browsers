@@ -38,8 +38,10 @@ final class DefaultBrowserAndDockPromptService {
 #if DEBUG || REVIEW
         let defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
         let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate }
+        let defaultBrowserAndDockInstallDateProvider: () -> Date? = { defaultBrowserAndDockPromptDebugStore.simulatedInstallDate }
 #else
         let defaultBrowserAndDockPromptDateProvider: () -> Date = Date.init
+        let defaultBrowserAndDockInstallDateProvider: () -> Date? = { LocalStatisticsStore().installDate }
 #endif
 
         self.featureFlagger = DefaultBrowserAndDockPromptFeatureFlag(privacyConfigManager: privacyConfigManager, featureFlagger: featureFlagger)
@@ -57,7 +59,7 @@ final class DefaultBrowserAndDockPromptService {
             featureFlagger: self.featureFlagger,
             store: store,
             userActivityProvider: userActivityManager,
-            installDateProvider: { LocalStatisticsStore().installDate },
+            installDateProvider: defaultBrowserAndDockInstallDateProvider,
             dateProvider: defaultBrowserAndDockPromptDateProvider
         )
         let coordinator = DefaultBrowserAndDockPromptCoordinator(

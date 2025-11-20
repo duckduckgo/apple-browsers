@@ -536,13 +536,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         bookmarkDragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
-#if DEBUG || REVIEW
-        let defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
-        let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate }
-#else
-        let defaultBrowserAndDockPromptDateProvider: () -> Date = Date.init
-#endif
-
         // MARK: - Subscription configuration
 
         subscriptionUIHandler = SubscriptionUIHandler(windowControllersManagerProvider: {

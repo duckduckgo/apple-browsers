@@ -35,20 +35,49 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
         super.tearDown()
     }
 
-    func testInactiveUserPromptIsTriggered() throws {
+    func testInactiveUserPrompt_ConfirmButtonDismissesPrompt() throws {
+        // Simulate conditions for user eligibility for the prompt:
+        // 28 days after app install and 7 days of user inactivity
         app.simulateFreshAppInstall()
-        let promptDate = Date().advanced(by: .days(28))
-        app.overrideCurrentDate(with: promptDate)
+        let promptEligibilityDate = Date().advanced(by: .days(28))
+        app.overrideCurrentDate(with: promptEligibilityDate)
 
-        XCTAssertTrue(app.inactiveUserPrompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should not be shown until window regains focus")
+        // Trigger the prompt
+        triggerPrompt(app.inactiveUserPrompt)
+
+        // Confirm the prompt
+        app.confirmButton.click()
+        XCTAssertTrue(app.inactiveUserPrompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be dismissed after confirming")
+    }
+
+    func testInactiveUserPrompt_CancelButtonDismissesPrompt() throws {
+        // Simulate conditions for user eligibility for the prompt:
+        // 28 days after app install and 7 days of user inactivity
+        app.simulateFreshAppInstall()
+        let promptEligibilityDate = Date().advanced(by: .days(28))
+        app.overrideCurrentDate(with: promptEligibilityDate)
+
+        // Trigger the prompt
+        triggerPrompt(app.inactiveUserPrompt)
+
+        // Dismiss the prompt
+        app.dismissButton.click()
+        XCTAssertTrue(app.inactiveUserPrompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be dismissed after confirming")
+    }
+}
+
+// MARK: - Test helpers
+
+private extension DefaultBrowserAndDockPromptsUITests {
+
+    /// Trigger the provided prompt by simulating window focus changes, and check its existence before and after.
+    func triggerPrompt(_ prompt: XCUIElement) {
+        XCTAssertTrue(prompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should not be shown until window regains focus")
 
         app.closeWindow()
         app.openNewWindow()
 
-        XCTAssertTrue(app.inactiveUserPrompt.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be shown when window regains focus after inactive period and installation period have passed")
-
-        app.confirmButton.click()
-        XCTAssertTrue(app.inactiveUserPrompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be dismissed after confirming")
+        XCTAssertTrue(prompt.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be shown when window regains focus after inactive period and installation period have passed")
     }
 }
 

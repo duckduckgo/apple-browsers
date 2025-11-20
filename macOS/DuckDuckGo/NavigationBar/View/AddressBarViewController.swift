@@ -128,6 +128,9 @@ final class AddressBarViewController: NSViewController {
     var themeUpdateCancellable: AnyCancellable?
 
     private(set) var selectionState: SelectionState = .inactive {
+        willSet {
+            guard newValue != selectionState else { return }
+        }
         didSet {
             updateView()
             updateSwitchToTabBoxAppearance()
@@ -601,6 +604,7 @@ final class AddressBarViewController: NSViewController {
             let isPassiveTextFieldHidden = selectionState.isSelected || mode.isEditing
             addressBarTextField.isHidden = isPassiveTextFieldHidden ? false : true
             passiveTextField.isHidden = isPassiveTextFieldHidden ? true : false
+            delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: false)
         }
         passiveTextField.textColor = theme.colorsProvider.textPrimaryColor
 
@@ -864,11 +868,13 @@ final class AddressBarViewController: NSViewController {
             if isFirstResponder {
                 selectionState = .active
             }
-        case .active, .activeWithAIChat:
+        case .active:
             // Keep active state if toggle is focused
             if !isFirstResponder && !isToggleFocused {
                 selectionState = .inactive
             }
+        case .activeWithAIChat:
+            break
         }
     }
 

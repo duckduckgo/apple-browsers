@@ -290,12 +290,6 @@ public final class CustomToggleControl: NSControl {
 
     public override func keyDown(with event: NSEvent) {
         switch event.keyCode {
-        case KeyCode.tab:
-            if event.modifierFlags.contains(.shift) {
-                window?.selectPreviousKeyView(self)
-            } else {
-                window?.selectNextKeyView(self)
-            }
         case KeyCode.space, KeyCode.return:
             // Both space and return toggle the selection
             // The selection change will trigger the action, which handles mode switching

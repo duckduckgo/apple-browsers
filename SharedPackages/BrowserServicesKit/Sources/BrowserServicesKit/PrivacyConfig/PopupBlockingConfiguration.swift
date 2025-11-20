@@ -39,6 +39,15 @@ public final class DefaultPopupBlockingConfiguration: PopupBlockingConfiguration
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
 
+#if DEBUG
+    var assertionHandler: (Bool, String) -> Void = { condition, message in
+        assert(condition, message)
+    }
+#else
+    @inlinable
+    var assertionHandler: (Bool, String) -> Void { { _, _ in } }
+#endif
+
     public init(privacyConfigurationManager: PrivacyConfigurationManaging) {
         self.privacyConfigurationManager = privacyConfigurationManager
     }
@@ -57,12 +66,13 @@ public final class DefaultPopupBlockingConfiguration: PopupBlockingConfiguration
                   let doubleValue = Double(stringValue) {
             threshold = doubleValue
         } else {
-            assert(settings[PopupBlockingConfigurationKeys.userInitiatedPopupThreshold] == nil)
+            assertionHandler(settings[PopupBlockingConfigurationKeys.userInitiatedPopupThreshold] == nil,
+                           "userInitiatedPopupThreshold has unexpected type")
         }
 
-        // Validate threshold is positive
+        // Validate threshold is positive, return default if not
         if let threshold = threshold {
-            assert(threshold > 0, "userInitiatedPopupThreshold must be positive, got \(threshold)")
+            assertionHandler(threshold > 0, "userInitiatedPopupThreshold must be positive, got \(threshold)")
             guard threshold > 0 else {
                 return Defaults.userInitiatedPopupThreshold
             }

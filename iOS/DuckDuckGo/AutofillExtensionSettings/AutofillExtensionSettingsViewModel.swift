@@ -79,6 +79,7 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
             isExtensionEnabled = true
             isShowingActivationView = true
         case .throttled, .cancelled, .failed:
+            isExtensionEnabled = false
             isShowingActivationView = false
         }
     }

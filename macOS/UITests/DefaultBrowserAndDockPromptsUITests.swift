@@ -35,6 +35,9 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
         super.tearDown()
     }
 
+    // Note that this test only covers the behavior in the app under test, not the system behavior.
+    // System-level verification (e.g. checking if the system alert is shown for setting the default browser,
+    // if the app is added to the dock, or if the app is set as default browser) is out of scope for UI tests.
     func testInactiveUserPrompt_ConfirmButtonDismissesPrompt() throws {
         // Simulate conditions for user eligibility for the prompt:
         // 28 days after app install and 7 days of user inactivity
@@ -50,6 +53,8 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
         XCTAssertTrue(app.inactiveUserPrompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be dismissed after confirming")
     }
 
+    // Note that this test only covers the behavior in the app under test, not the system behavior.
+    // System-level verification (e.g. checking or interacting with the feedback notification) is out of scope for UI tests.
     func testInactiveUserPrompt_CancelButtonDismissesPrompt() throws {
         // Simulate conditions for user eligibility for the prompt:
         // 28 days after app install and 7 days of user inactivity

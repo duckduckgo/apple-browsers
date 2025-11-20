@@ -201,7 +201,7 @@ final class AutofillSettingsViewModel: ObservableObject {
         initSecureVaultIfRequired()
 
         guard let vault = secureVault else {
-            passwordsCount = nil
+            creditCardsCount = nil
             return
         }
 

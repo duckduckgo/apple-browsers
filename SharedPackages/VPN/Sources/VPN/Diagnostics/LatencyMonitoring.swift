@@ -24,7 +24,7 @@ import Network
 /// This protocol defines the interface for monitoring VPN connection latency
 /// by periodically measuring ping times to the VPN server.
 ///
-protocol LatencyMonitoring: Actor {
+public protocol LatencyMonitoring: Actor {
 
     /// Indicates whether the monitor is currently running.
     var isStarted: Bool { get }

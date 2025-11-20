@@ -62,6 +62,7 @@ class TabManager {
     private let aiChatSettings: AIChatSettingsProvider
 
     weak var delegate: TabDelegate?
+    weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
 
     @UserDefaultsWrapper(key: .faviconTabsCacheNeedsCleanup, defaultValue: true)
     var tabsCacheNeedsCleanup: Bool
@@ -162,14 +163,14 @@ class TabManager {
                                                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                                                               featureDiscovery: featureDiscovery,
                                                               keyValueStore: keyValueStore,
-                                                              daxDialogsManager: daxDialogsManager,
-                                                              aiChatSettings: aiChatSettings)
+                                                              daxDialogsManager: daxDialogsManager, aiChatSettings: aiChatSettings)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
                                  andLoadRequest: url == nil ? nil : URLRequest.userInitiated(url!),
                                  consumeCookies: !model.hasActiveTabs)
         controller.delegate = delegate
+        controller.aiChatContentHandlingDelegate = aiChatContentDelegate
         controller.loadViewIfNeeded()
         return controller
     }

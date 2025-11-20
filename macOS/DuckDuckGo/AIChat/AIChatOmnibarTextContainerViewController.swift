@@ -186,6 +186,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                 return true
             }
             return false
+
         }
 
         return false

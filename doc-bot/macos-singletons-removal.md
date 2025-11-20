@@ -30,7 +30,14 @@ Define a concrete pattern for removing `.shared` singletons in the macOS app by 
 3. **Thread the dependency through initializers**
    - For view controllers and models that need the former singleton, add initializer parameters and store them as non-optional properties. Example:
      - `init(..., aiChatPreferences: AIChatPreferences = NSApp.delegateTyped.aiChatPreferences, ...)`
-   - Use default arguments sourced from `NSApp.delegateTyped` so most call sites stay simple, and tests can override with their own instances.
+   - Avoid using `NSApp.delegateTyped` or `Application.appDelegate` and prefer to pass the dependency down from a parent object.
+     - If a parent object doesn't contain the dependency, it should be updated to have it passed down from its own parent object, observing the exceptions mentioned below.
+   - It is explicitly allowed to use `NSApp.delegateTyped`:
+     - In the `Tab` initializer (following the existing pattern for other dependencies)
+     - In default parameter values for the `MainViewController` initializer (this is the entry point for the dependency chain)
+     - In default parameter values for the `TabCollectionViewModel` initializer (following the existing pattern for other dependencies)
+     - In default parameter values for the `TabViewModel` initializer (temporary exception, will be refactored later)
+     - **Exception**: For `@MainActor` initializers, use optional parameters with `nil` defaults and assign from `NSApp.delegateTyped` in the initializer body.
    - **Important: Main actor isolation**: If an initializer is marked `@MainActor` and you need to default a parameter from `NSApp.delegateTyped`, use an optional parameter with `nil` default instead of accessing `NSApp.delegateTyped` in the default value. Then assign the value inside the initializer body:
      - ❌ `init(savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating = NSApp.delegateTyped.accessibilityPreferences)` (causes main actor isolation warning)
      - ✅ `init(savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating? = nil)` with `self.savedZoomLevelsCoordinating = savedZoomLevelsCoordinating ?? NSApp.delegateTyped.accessibilityPreferences` in the body
@@ -39,17 +46,23 @@ Define a concrete pattern for removing `.shared` singletons in the macOS app by 
      - `MainViewController` (with default parameter) → `BrowserTabViewController` → `PreferencesViewController` → `PreferencesSidebarModel` → `PreferencesRootView`
      - Follow the existing pattern used by other preferences (e.g., `searchPreferences`, `tabsPreferences`, `aiChatPreferences`)
      - When adding to `PreferencesSidebarModel`, add the property alongside existing preferences and update both the main `init` and convenience `init`
-   - It is explicitly allowed to use `NSApp.delegateTyped`:
-     - In the `Tab` initializer (following the existing pattern for other dependencies)
-     - In default parameter values for the `MainViewController` initializer (this is the entry point for the dependency chain)
-     - In default parameter values for the `TabCollectionViewModel` initializer (following the existing pattern for other dependencies)
-     - In default parameter values for the `TabViewModel` initializer (temporary exception, will be refactored later)
-     - **Exception**: For `@MainActor` initializers, use optional parameters with `nil` defaults and assign from `NSApp.delegateTyped` in the initializer body.
+   - **For dependencies that need to reach UserScripts initialization** (e.g., `DuckPlayerPreferences`), thread through the content blocking infrastructure:
+     - `AppDelegate` → `AppContentBlocking` → `UserContentUpdating` → `ScriptSourceProvider` (via `ScriptSourceProviding` protocol) → `UserScripts`
+     - Add the dependency to `ScriptSourceProviding` protocol as a property
+     - Add it to `ScriptSourceProvider` struct (property and initializer parameter)
+     - Add it to `UserContentUpdating` initializer and pass to `ScriptSourceProvider` in `makeValue` closure
+     - Add it to `AppContentBlocking` initializers (both convenience and main) and pass to `UserContentUpdating`
+     - Pass it from `AppDelegate` to `AppContentBlocking` initialization
+     - In `UserScripts`, access via `sourceProvider.duckPlayerPreferences` instead of using a default parameter
+     - This follows the same pattern as `WebTrackingProtectionPreferences` and `CookiePopupProtectionPreferences`
 
 4. **Update utility code and extensions carefully**
    - For helpers like `URL` extensions where dependency injection is impractical, read the instance from the composition root instead of a singleton:
      - `NSApp.delegateTyped.aiChatPreferences` instead of `AIChatPreferences.shared`.
    - Keep these usages minimal; prefer passing dependencies into call sites where it's feasible.
+   - **In AppDelegate extensions**: When the code is in an extension of `AppDelegate` (e.g., `extension AppDelegate`), access properties directly via `self.propertyName` rather than `NSApp.delegateTyped.propertyName`:
+     - ✅ `duckPlayerPreferences.reset()` (in `extension AppDelegate`)
+     - ❌ `NSApp.delegateTyped.duckPlayerPreferences.reset()` (unnecessary indirection)
    - **For protocol-typed dependencies**: If a class conforms to a protocol (e.g., `AccessibilityPreferences` conforms to `SavedZoomLevelsCoordinating`), you can use the protocol type in initializers. The dependency can be passed as the protocol type while still being owned as the concrete type in `AppDelegate`.
    - **In SwiftUI views**, once a dependency is available on a model (e.g., `PreferencesSidebarModel`), use the model's property rather than accessing via `NSApp.delegateTyped`:
      - ✅ `AboutView(model: model.aboutPreferences)`
@@ -140,6 +153,34 @@ The `AccessibilityPreferences.shared` singleton removal demonstrates additional 
    ```
 
 7. **Test helper methods**: Updated all helper methods including static properties in extensions (e.g., `TabViewModel.aTabViewModel`)
+
+### Example: DuckPlayerPreferences Refactoring
+
+The `DuckPlayerPreferences.shared` singleton removal demonstrates the pattern for dependencies that need to reach `UserScripts` initialization:
+
+1. **AppDelegate**: Added `let duckPlayerPreferences: DuckPlayerPreferences` and initialized it with dependencies (`privacyConfigurationManager`, `internalUserDecider`)
+
+2. **Dependency chain for UserScripts**: Threaded through:
+   - `AppDelegate` → `AppContentBlocking` → `UserContentUpdating` → `ScriptSourceProvider` (via `ScriptSourceProviding` protocol) → `UserScripts`
+   - This follows the same pattern as `WebTrackingProtectionPreferences` and `CookiePopupProtectionPreferences`
+
+3. **ScriptSourceProviding protocol**: Added `var duckPlayerPreferences: DuckPlayerPreferences { get }` property
+
+4. **ScriptSourceProvider**: Added `duckPlayerPreferences` property and parameter to initializer
+
+5. **UserContentUpdating**: Added `duckPlayerPreferences` parameter and passed it to `ScriptSourceProvider` in the `makeValue` closure
+
+6. **AppContentBlocking**: Added `duckPlayerPreferences` to both convenience and main initializers, passed it to `UserContentUpdating`
+
+7. **AppDelegate**: Passed `duckPlayerPreferences` to `AppContentBlocking` initialization (both DEBUG and release paths)
+
+8. **UserScripts**: Removed default parameter `duckPlayerPreferences: DuckPlayerPreferences = NSApp.delegateTyped.duckPlayerPreferences` and accessed it via `sourceProvider.duckPlayerPreferences` instead
+
+9. **Preferences view chain**: Also threaded through `MainViewController` → `BrowserTabViewController` → `PreferencesViewController` → `PreferencesSidebarModel` → `PreferencesRootView` for SwiftUI views
+
+10. **MainMenuActions**: Updated to use `duckPlayerPreferences` directly (since it's in `extension AppDelegate`)
+
+This pattern ensures dependencies that need to reach `UserScripts` initialization are properly injected through the content blocking infrastructure, avoiding default parameters that access `NSApp.delegateTyped` during initialization.
 
 ### Test Updates Checklist
 

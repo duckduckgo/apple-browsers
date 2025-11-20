@@ -290,6 +290,11 @@ extension AppDelegate {
             return
         }
 
+        Self.openReportABrowserProblem(sender, category: nil, subcategory: nil)
+    }
+
+    @MainActor
+    static func openReportABrowserProblem(_ sender: Any?, category: ProblemCategory? = nil, subcategory: SubCategory? = nil) {
         var window: NSWindow?
 
         // Check if we can report broken site (same logic as openReportBrokenSite)
@@ -304,6 +309,8 @@ extension AppDelegate {
                     NSApp.delegateTyped.openReportBrokenSite(sender)
                 }
             },
+            preselectedCategory: category,
+            preselectedSubCategory: subcategory,
             onClose: {
                 window?.close()
             },
@@ -668,8 +675,8 @@ extension AppDelegate {
     }
 
     @objc func resetDuckPlayerOverlayInteractions(_ sender: Any?) {
-        DuckPlayerPreferences.shared.youtubeOverlayAnyButtonPressed = false
-        DuckPlayerPreferences.shared.youtubeOverlayInteracted = false
+        duckPlayer.preferences.youtubeOverlayAnyButtonPressed = false
+        duckPlayer.preferences.youtubeOverlayInteracted = false
     }
 
     @objc func resetMakeDuckDuckGoYoursUserSettings(_ sender: Any?) {
@@ -693,7 +700,7 @@ extension AppDelegate {
     }
 
     @objc func resetDuckPlayerPreferences(_ sender: Any?) {
-        DuckPlayerPreferences.shared.reset()
+        duckPlayer.preferences.reset()
     }
 
     @MainActor

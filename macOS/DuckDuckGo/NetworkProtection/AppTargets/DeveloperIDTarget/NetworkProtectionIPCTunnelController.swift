@@ -135,6 +135,10 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
         }
 
         do {
+            if let wideEventData = self.connectionWideEventData {
+                wideEventData.browserStartDuration = WideEvent.MeasuredInterval.startingNow()
+                wideEvent.updateFlow(wideEventData)
+            }
             self.connectionWideEventData?.browserStartDuration = WideEvent.MeasuredInterval.startingNow()
             guard try await featureGatekeeper.canStartVPN() else {
                 let noAuthError = RequestError.notAuthorizedToEnableLoginItem
@@ -314,7 +318,8 @@ private extension NetworkProtectionIPCTunnelController {
         )
         self.connectionWideEventData = data
         wideEvent.startFlow(data)
-        self.connectionWideEventData?.overallDuration = WideEvent.MeasuredInterval.startingNow()
+        data.overallDuration = WideEvent.MeasuredInterval.startingNow()
+        wideEvent.updateFlow(data)
     }
 
     func completeAndCleanupConnectionWideEvent(with error: Error, description: String? = nil) {

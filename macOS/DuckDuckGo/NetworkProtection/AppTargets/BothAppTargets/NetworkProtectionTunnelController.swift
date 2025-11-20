@@ -1059,6 +1059,27 @@ private extension NetworkProtectionTunnelController {
     func completeAllPendingVPNConnectionPixels() {
         let pending = wideEvent.getAllFlowData(VPNConnectionWideEventData.self)
         for data in pending {
+
+            #if DEBUG
+            // In non-sandboxed macOS builds, both the browser process and the
+            // VPN process can access the same UserDefaults(suiteName:"com.duckduckgo.wide-pixel.storage") plist. In the App Store
+            // sandbox, this suite is isolated per process unless an App Group is used (which is not for wide event as of Nov 20, 2025).
+            //
+            // This means that in debug we may see values written by the browser process
+            // (e.g. browserStartDuration), even though this cannot happen
+            // in the sandboxed App Store build.
+            //
+            // This call happens before data prefill, so if we detect browser-written fields
+            // here, they come from cross-process leakage in non-sandbox mode.
+            // We discard them to simulate the real sandboxed behaviour.
+            if type(of: data).pixelName == "vpn_connection_debug" && data.browserStartDuration?.start != nil {
+                vpnConnectionWideEventBrowserStartTime = data.browserStartDuration?.start
+                vpnConnectionWideEventOverallStartTime = data.overallDuration?.start
+                wideEvent.discardFlow(data)
+                continue
+            }
+            #endif
+
             guard let start = data.overallDuration?.start, data.overallDuration?.end == nil else {
                 wideEvent.completeFlow(data, status: .unknown(reason: VPNConnectionWideEventData.StatusReason.partialData.rawValue), onComplete: { _, _ in })
                 continue

@@ -22,19 +22,13 @@ import AttributedMetric
 public final class SubscriptionStateProviderMock: SubscriptionStateProviding {
     public var isFreeTrialValue: Bool = false
     public var isActive: Bool = false
-    public var subscriptionDateValue: Date?
 
-    public init(isFreeTrial: Bool = false, isActive: Bool = false, subscriptionDate: Date? = nil) {
+    public init(isFreeTrial: Bool = false, isActive: Bool = false) {
         self.isFreeTrialValue = isFreeTrial
         self.isActive = isActive
-        self.subscriptionDateValue = subscriptionDate
     }
 
     public func isFreeTrial() async -> Bool {
         return isFreeTrialValue
-    }
-
-    public func subscriptionDate() async -> Date? {
-        return subscriptionDateValue
     }
 }

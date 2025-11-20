@@ -43,8 +43,9 @@ import os.log
 import Navigation
 import Subscription
 import WKAbstractions
-import AIChat
 import SERPSettings
+import AIChat
+import PixelKit
 
 class TabViewController: UIViewController {
 
@@ -65,11 +66,6 @@ class TabViewController: UIViewController {
     @IBOutlet weak var webViewContainer: UIView!
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     var daxContextualOnboardingController: UIViewController?
-    
-    // AI Chat
-    private var aiChatViewContainer: UIView?
-    private(set) var aiChatSettings: AIChatSettingsProvider
-    private var aiChatViewControllerManager: AIChatViewControllerManager?
     
     /// Stores the visual state of the web view
     /// Used by DuckPlayer to save and restore view appearance when switching between normal browsing and fullscreen (portrail/landscape) video modes.
@@ -114,6 +110,14 @@ class TabViewController: UIViewController {
     }
     
     weak var delegate: TabDelegate?
+    var aiChatContentHandlingDelegate: AIChatContentHandlingDelegate? {
+        get {
+            aiChatContentHandler.delegate
+        }
+        set {
+            aiChatContentHandler.delegate = newValue
+        }
+    }
     weak var chromeDelegate: BrowserChromeDelegate?
 
     var findInPage: FindInPage? {
@@ -199,6 +203,7 @@ class TabViewController: UIViewController {
     // Required to allow grace period between authentication prompts when autofilling credit cards
     // where forms are split into multiple iframes, requiring multiple prompts
     private var domainFillCreditCardPromptLastShownOn: String?
+    private var domainFillCreditCardPixelLastFiredFor: String?
     // Required to prevent fireproof prompt presenting before autofill save login prompt
     private var saveLoginPromptLastDismissed: Date?
     private var saveLoginPromptIsPresenting: Bool = false
@@ -467,6 +472,9 @@ class TabViewController: UIViewController {
     let featureDiscovery: FeatureDiscovery
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
+    let aiChatSettings: AIChatSettingsProvider
+    
+    private(set) var aiChatContentHandler: AIChatContentHandling
 
     required init?(coder aDecoder: NSCoder,
                    tabModel: Tab,
@@ -526,14 +534,7 @@ class TabViewController: UIViewController {
         }
         
         self.aiChatSettings = aiChatSettings
-        self.aiChatViewControllerManager = AIChatViewControllerManager(
-            privacyConfigurationManager: privacyConfigurationManager,
-            contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
-            experimentalAIChatManager: .init(featureFlagger: featureFlagger),
-            featureFlagger: featureFlagger,
-            featureDiscovery: featureDiscovery,
-            aiChatSettings: aiChatSettings
-        )
+        self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings)
 
         super.init(coder: aDecoder)
         
@@ -564,8 +565,6 @@ class TabViewController: UIViewController {
         initAttributionLogic()
         decorate()
         addTextZoomObserver()
-        setupAIChatViewContainer()
-        updateContainerVisibility()
 
         subscribeToEmailProtectionSignOutNotification()
         registerForDownloadsNotifications()
@@ -580,11 +579,6 @@ class TabViewController: UIViewController {
         
         // Link DuckPlayer to current Tab
         duckPlayerNavigationHandler.setHostViewController(self)
-        
-        // Restore AI Chat view controller if this tab is an AI Chat tab
-        if tabModel.isAITab {
-            loadAIChat()
-        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -1694,24 +1688,6 @@ extension TabViewController: WKNavigationDelegate {
         }
     }
 
-    
-    /// Prepares a tab preview for ai chat tabs
-    /// 
-    /// - Parameter completion: Handles the rendered preview image
-    func prepareAIChatPreview(completion: @escaping (UIImage?) -> Void) {
-        DispatchQueue.main.async { [weak self] in
-            guard let container = self?.aiChatViewContainer,
-                  container.bounds.height > 0 && container.bounds.width > 0 else { completion(nil); return }
-
-            let renderer = UIGraphicsImageRenderer(size: container.bounds.size)
-            let image = renderer.image { _ in
-                container.drawHierarchy(in: container.bounds, afterScreenUpdates: true)
-            }
-
-            completion(image)
-        }
-    }
-
     private func updatePreview() {
         preparePreview { image in
             if let image = image {
@@ -2106,6 +2082,7 @@ extension TabViewController: WKNavigationDelegate {
                decision != .cancel,
                navigationAction.isTargetingMainFrame() {
                 if url.isDuckDuckGoSearch {
+                    NotificationCenter.default.post(name: .userDidPerformDDGSearch, object: self)
                     let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
                                                                         application: UIApplication.shared)
                     StatisticsLoader.shared.refreshSearchRetentionAtb {
@@ -2886,6 +2863,8 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
         
+        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView)
+        
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages
         if daxEasterEggHandler == nil, let url = webView.url, url.isDuckDuckGoSearch {
             daxEasterEggHandler = DaxEasterEggHandler(webView: webView, logoCache: logoCache)
@@ -3237,6 +3216,7 @@ extension TabViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager,
                             promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
                             withTrigger trigger: AutofillUserScript.GetTriggerType,
+                            isMainFrame: Bool,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         guard isCreditCardAutofillEnabled() else {
             completionHandler(nil)
@@ -3249,7 +3229,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
-        promptToFill(withCreditCards: creditCards) { card in
+        promptToFill(withCreditCards: creditCards, isMainFrame: isMainFrame) { card in
             completionHandler(card)
         }
     }
@@ -3257,6 +3237,7 @@ extension TabViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager,
                             didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
                             withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                            isMainFrame: Bool,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         guard isCreditCardAutofillEnabled(), mainType == .creditCards else {
             completionHandler(nil)
@@ -3264,12 +3245,12 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
-        promptToFill(withCreditCards: creditCards) { card in
+        promptToFill(withCreditCards: creditCards, isMainFrame: isMainFrame) { card in
             completionHandler(card)
         }
     }
 
-    private func promptToFill(withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+    private func promptToFill(withCreditCards creditCards: [SecureVaultModels.CreditCard], isMainFrame: Bool, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         if domainFillCreditCardPromptLastShownOn != url?.host {
             AppDependencyProvider.shared.autofillLoginSession.endSession()
             self.domainFillCreditCardPromptLastShownOn = self.url?.host
@@ -3290,14 +3271,33 @@ extension TabViewController: SecureVaultManagerDelegate {
 
                 if creditCard != nil {
                     NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
+                    self?.fireCreditCardFramePixels(isMainFrame: isMainFrame)
                 }
             }
             shouldShowCreditCardPrompt = false
             autofillCreditCardAccessoryView?.updateCreditCards(creditCards)
         } else {
-            addCreditCardInputAccessoryView(creditCards: creditCards) { card in
+            addCreditCardInputAccessoryView(creditCards: creditCards) { [weak self] card in
                 completionHandler(card)
+
+                if card != nil {
+                    self?.fireCreditCardFramePixels(isMainFrame: isMainFrame)
+                }
             }
+        }
+    }
+
+    private func fireCreditCardFramePixels(isMainFrame: Bool) {
+        guard domainFillCreditCardPixelLastFiredFor != url?.host else {
+            return
+        }
+
+        domainFillCreditCardPixelLastFiredFor = url?.host
+
+        if isMainFrame {
+            Pixel.fire(pixel: .autofillCardsAutofilledInMainframe)
+        } else {
+            Pixel.fire(pixel: .autofillCardsAutofilledInIframe)
         }
     }
 
@@ -3900,82 +3900,8 @@ extension TabViewController: SERPSettingsUserScriptDelegate {
     }
 
     func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
+        PixelKit.fire(SERPSettingsPixel.openDuckAIButtonClick, frequency: .dailyAndStandard)
         guard let mainVC = parent as? MainViewController else { return }
         mainVC.segueToSettingsAIChat(openedFromSERPSettingsButton: true)
-    }
-}
-
-// AI Chat
-extension TabViewController {
-    
-    // MARK: Public API
-
-    /// Loads AI Chat into this tab's container.
-    ///
-    /// - Parameters:
-    ///   - query: Optional initial query to send to AI Chat
-    ///   - payload: Optional payload data for AI Chat
-    ///   - autoSend: Whether to automatically send the query
-    ///   - tools: Optional RAG tools available in AI Chat
-    ///   - completion: Optional callback when setup completes
-    func loadAIChat(query: String? = nil,
-                    payload: Any? = nil,
-                    autoSend: Bool = false,
-                    tools: [AIChatRAGTool]? = nil,
-                    completion: (() -> Void)? = nil) {
-
-        guard let container = aiChatViewContainer else { return }
-
-        tabModel.type = .aiChat
-
-        aiChatViewControllerManager?.openAIChatInContainer(
-            query,
-            payload: payload,
-            autoSend: autoSend,
-            tools: tools,
-            in: container,
-            parentViewController: self
-        ) {
-            completion?()
-        }
-
-        updateContainerVisibility()
-    }
-    
-    /// Exits AI Chat mode and switches back to web browsing.
-    func prepareUIForWebModeIfModeIsAI() {
-        guard tabModel.isAITab else { return }
-        tabModel.type = .web
-        updateContainerVisibility()
-        view.layoutIfNeeded()
-    }
-
-    // MARK: Private API
-
-    /// Creates the AI Chat container. The container is inserted as a subview below the web view container
-    private func setupAIChatViewContainer() {
-        let container = UIView()
-        container.backgroundColor = .black
-        container.isHidden = true
-        container.translatesAutoresizingMaskIntoConstraints = false
-
-        guard let parent = webViewContainer.superview else { return }
-        parent.insertSubview(container, belowSubview: webViewContainer)
-
-        NSLayoutConstraint.activate([
-            container.topAnchor.constraint(equalTo: parent.topAnchor),
-            container.leadingAnchor.constraint(equalTo: parent.leadingAnchor),
-            container.trailingAnchor.constraint(equalTo: parent.trailingAnchor),
-            container.bottomAnchor.constraint(equalTo: parent.bottomAnchor)
-        ])
-
-        self.aiChatViewContainer = container
-    }
-
-    /// Toggles visibility between web view and AI Chat container based on tab type.
-    private func updateContainerVisibility() {
-        let isAIChat = tabModel.type == .aiChat
-        webViewContainer.isHidden = isAIChat
-        aiChatViewContainer?.isHidden = !isAIChat
     }
 }

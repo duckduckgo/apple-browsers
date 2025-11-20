@@ -23,11 +23,17 @@ final class NetworkProtectionKeyStoreMock: NetworkProtectionKeyStore {
 
     var keyPair: KeyPair?
     var validityInterval: TimeInterval?
+    private var internalCurrentExpirationDate: Date?
 
     // MARK: - NetworkProtectionKeyStore
 
     var currentExpirationDate: Date? {
-        Date()
+        get {
+            internalCurrentExpirationDate ?? Date()
+        }
+        set {
+            internalCurrentExpirationDate = newValue
+        }
     }
 
     func currentKeyPair() -> VPN.KeyPair? {

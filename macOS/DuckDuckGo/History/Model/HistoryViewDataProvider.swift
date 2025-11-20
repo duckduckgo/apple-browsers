@@ -120,7 +120,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
 
         // Sites = unique domains count (items in synthetic 'sites' section)
         if isSitesSectionEnabled {
-            let sitesCount = groupingsByRange[.allSites]?.items.count ?? uniqueETLDPlus1Domains().count
+            let sitesCount = groupingsByRange[.allSites]?.items.count ?? historyDataSource.historyDictionary?.keys.convertedToETLDPlus1(tld: tld).count ?? 0
             filteredRanges.append(.init(id: .allSites, count: sitesCount))
         }
         return filteredRanges
@@ -175,83 +175,81 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         }
     }
 
+    /// Returns the best title for a given site domain, preferring index page records at root path on bare domain or www subdomain.
     @MainActor
     func bestTitle(forSiteDomain domain: String) -> String {
-        guard let historyDictionary = historyDataSource.historyDictionary else {
-            return domain
-        }
+        guard let historyDictionary = historyDataSource.historyDictionary else { return domain }
 
         // Collect all entries that belong to this eTLD+1 domain
         let entries: [HistoryEntry] = historyDictionary.values.filter { entry in
             let entryDomain = entry.etldPlusOne ?? entry.url.host
             return entryDomain == domain
         }
+        return bestTitle(for: entries, domain: domain)
+    }
+    private func bestTitle(for entries: some Sequence<HistoryEntry>, domain: String) -> String {
+        guard let bestMatchingEntry = bestMatchingEntry(from: entries, forDomain: domain) else { return domain }
 
-        guard !entries.isEmpty else {
-            return domain
+        return bestTitle(for: bestMatchingEntry)
+    }
+    private func bestTitle(for entry: HistoryEntry) -> String {
+        if let title = entry.title, !title.isEmpty {
+            return title
         }
-
-        // Helper to get last visit date for an entry
-        func lastVisitDate(of entry: HistoryEntry) -> Date? {
-            entry.visits.map(\.date).max()
-        }
-
-        // Prefer index page records at root path on bare domain or www subdomain
-        let rootHosts: Set<String> = [domain, "www." + domain]
-        let rootCandidates: [HistoryEntry] = entries.filter { entry in
-            let hostMatches = (entry.url.host.map { rootHosts.contains($0) } ?? false)
-            let path = entry.url.path
-            let isRootPath = path.isEmpty || path == "/"
-            return hostMatches && isRootPath
-        }
-
-        if let bestRoot = rootCandidates
-            .sorted(by: { a, b in
-                // Prefer HTTPS, then by most recent visit
-                if a.url.scheme == "https", b.url.scheme != "https" { return true }
-                if a.url.scheme != "https", b.url.scheme == "https" { return false }
-                return (lastVisitDate(of: a) ?? .distantPast) > (lastVisitDate(of: b) ?? .distantPast)
-            })
-                .first {
-            if let title = bestRoot.title, !title.isEmpty {
-                return title
-            }
-            // Fallback to URL string if title missing
-            return bestRoot.url.absoluteString
-        }
-
-        // Otherwise pick the most recent visit title within this domain
-        if let mostRecent = entries.max(by: { (lastVisitDate(of: $0) ?? .distantPast) < (lastVisitDate(of: $1) ?? .distantPast) }) {
-            if let title = mostRecent.title, !title.isEmpty {
-                return title
-            }
-            return mostRecent.url.absoluteString
-        }
-
-        return domain
+        return entry.url.absoluteString
     }
 
+    /// Returns the preferred display URL for a given site domain, preferring HTTPS and most recent visit.
     @MainActor
     func preferredURL(forSiteDomain domain: String) -> URL? {
         guard let historyDictionary = historyDataSource.historyDictionary else { return nil }
 
+        // Collect all entries that belong to this eTLD+1 domain
         let entries: [HistoryEntry] = historyDictionary.values.filter { entry in
             let entryDomain = entry.etldPlusOne ?? entry.url.host
             return entryDomain == domain
         }
-        guard !entries.isEmpty else { return URL(string: "https://\(domain)") }
+        return preferredURL(for: entries, domain: domain)
+    }
+    private func preferredURL(for entries: [HistoryEntry], domain: String) -> URL? {
+        guard let bestMatchingEntry = bestMatchingEntry(from: entries, forDomain: domain) else { return URL(string: "https://\(domain)") }
 
-        func lastVisitDate(of entry: HistoryEntry) -> Date? { entry.visits.map(\.date).max() }
-
-        let sorted = entries.sorted { a, b in
-            if a.url.scheme == "https", b.url.scheme != "https" { return true }
-            if a.url.scheme != "https", b.url.scheme == "https" { return false }
-            return (lastVisitDate(of: a) ?? .distantPast) > (lastVisitDate(of: b) ?? .distantPast)
-        }
-        return sorted.first?.url
+        return preferredURL(for: bestMatchingEntry)
+    }
+    private func preferredURL(for entry: HistoryEntry) -> URL {
+        return entry.url
     }
 
-    // MARK: - Private
+    private func bestMatchingEntry(from entries: some Sequence<HistoryEntry>, forDomain domain: String) -> HistoryEntry? {
+        return entries.max { a, b in
+            // Prefer entries with non-empty title
+            switch (a.title?.isEmpty ?? true, b.title?.isEmpty ?? true) {
+            case (true, false): return true // a empty, b has title - prefer b
+            case (false, true): return false // a has title, b empty - prefer a
+            default: break // Both have titles, continue to next check
+            }
+            // Prefer HTTPS
+            switch (a.url.navigationalScheme, b.url.navigationalScheme) {
+            case (.https, .http): return false // ordered before
+            case (.http, .https): return true
+            default: break
+            }
+            // Prefer root path
+            switch (a.url.isRoot, b.url.isRoot) {
+            case (true, false): return false
+            case (false, true): return true
+            default: break
+            }
+            // Prefer bare domain or www subdomain
+            switch (a.url.host?.droppingWwwPrefix() == domain, b.url.host?.droppingWwwPrefix() == domain) {
+            case (true, false): return false
+            case (false, true): return true
+            default: break
+            }
+            // By most recent visit
+            return a.lastVisit < b.lastVisit
+        }
+    }
 
     @MainActor
     private func populateVisits() async {
@@ -288,15 +286,26 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
 
         // Populate synthetic 'sites' section with one item per unique eTLD+1 domain
         if isSitesSectionEnabled {
-            let domains = uniqueETLDPlus1Domains()
-            let siteItems: [DataModel.HistoryItem] = domains.compactMap { domain in
-                guard let url = preferredURL(forSiteDomain: domain) else { return nil }
-                let title = bestTitle(forSiteDomain: domain)
-                return DataModel.HistoryItem(siteDomain: domain, url: url, title: title)
-            }
+            let siteItems = sitesSectionItems()
             groupingsByRange[.allSites] = .init(range: .allSites, visits: siteItems)
         } else {
             groupingsByRange[.allSites] = nil
+        }
+    }
+
+    /// Returns a list of history items for the Sites section, one item per unique eTLD+1 domain.
+    @MainActor
+    func sitesSectionItems() -> [DataModel.HistoryItem] {
+        guard let historyDictionary = historyDataSource.historyDictionary else {
+            return []
+        }
+        let domains = historyDictionary.grouped(by: { $0.value.etldPlusOne ?? $0.key.host ?? "" })
+        return domains.compactMap { domain, entries in
+            guard !domain.isEmpty,
+                  let preferredEntry = bestMatchingEntry(from: entries.lazy.map(\.value), forDomain: domain) else { return nil }
+            let url = preferredURL(for: preferredEntry)
+            let title = bestTitle(for: preferredEntry)
+            return DataModel.HistoryItem(siteDomain: domain, url: url, title: title)
         }
     }
 
@@ -454,13 +463,6 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
 
     private var isSitesSectionEnabled: Bool {
         featureFlagger.isFeatureOn(.historyViewSitesSection)
-    }
-
-    @MainActor
-    private func uniqueETLDPlus1Domains() -> [String] {
-        guard let history = historyDataSource.historyDictionary else { return [] }
-        let etldPlus1Domains = history.keys.convertedToETLDPlus1(tld: tld)
-        return etldPlus1Domains.sorted()
     }
 
     private struct QueryInfo {

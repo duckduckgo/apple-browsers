@@ -55,8 +55,6 @@ struct DuckPlayerPreferencesUserDefaultsPersistor: DuckPlayerPreferencesPersisto
 final class DuckPlayerPreferences: ObservableObject {
     private let internalUserDecider: InternalUserDecider
     private let duckPlayerContingencyHandler: DuckPlayerContingencyHandler
-
-    static let shared = DuckPlayerPreferences()
     private let privacyConfigurationManager: PrivacyConfigurationManaging
 
     @Published

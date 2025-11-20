@@ -1,5 +1,5 @@
 //
-//  TabViewControllerBrowsingMenuExtension.swift
+//  TabViewControllerMenuBuilderExtension.swift
 //  DuckDuckGo
 //
 //  Copyright © 2018 DuckDuckGo. All rights reserved.
@@ -45,13 +45,8 @@ extension TabViewController {
     func buildBrowsingMenuHeaderContent() -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
 
-        let newTabEntry = BrowsingMenuEntry.regular(name: UserText.actionNewTab,
-                                                    accessibilityLabel: UserText.keyCommandNewTab,
-                                                    image: DesignSystemImages.Glyphs.Size24.add,
-                                                    action: { [weak self] in
-            self?.onNewTabAction()
-        })
-
+        let newTabEntry = buildNewTabEntry()
+        
         let shareEntry = BrowsingMenuEntry.regular(name: UserText.actionShare,
                                                    image: DesignSystemImages.Glyphs.Size24.shareApple,
                                                    action: { [weak self] in
@@ -132,6 +127,42 @@ extension TabViewController {
 
         return entries
     }
+    
+    func buildAITabMenuHeaderContent() -> [BrowsingMenuEntry] {
+        var entries = [BrowsingMenuEntry]()
+
+        entries.append(buildNewTabEntry())
+
+        entries.append(buildNewAIChatEntry())
+
+        return entries
+    }
+    
+    func buildAITabMenu() -> [BrowsingMenuEntry] {
+        var entries = [BrowsingMenuEntry]()
+        
+        entries.append(contentsOf: buildAITabLinkEntries())
+        
+        entries.append(.separator)
+        
+        entries.append(buildOpenBookmarksEntry())
+        
+        if featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) {
+            entries.append(buildAutoFillEntry())
+        }
+        
+        entries.append(buildDownloadsEntry())
+        
+        entries.append(buildAIChatHistoryEntry())
+        
+        entries.append(.separator)
+        
+        entries.append(buildAIChatSettingsEntry())
+        
+        entries.append(buildSettingsEntry())
+        
+        return entries
+    }
 
     private func buildPrintEntry(withSmallIcon smallIcon: Bool) -> BrowsingMenuEntry {
         .regular(name: UserText.actionPrintSite,
@@ -142,12 +173,46 @@ extension TabViewController {
             self?.print()
         })
     }
+    
+    private func buildNewTabEntry() -> BrowsingMenuEntry {
+        .regular(name: UserText.actionNewTab,
+                 accessibilityLabel: UserText.keyCommandNewTab,
+                 image: DesignSystemImages.Glyphs.Size24.add,
+                 action: { [weak self] in
+            self?.onNewTabAction()
+        })
+    }
+    
+    private func buildDownloadsEntry() -> BrowsingMenuEntry {
+        .regular(name: UserText.actionDownloads,
+                                                 image: DesignSystemImages.Glyphs.Size16.downloads,
+                                                 showNotificationDot: AppDependencyProvider.shared.downloadManager.unseenDownloadsAvailable,
+                                                 action: { [weak self] in
+            self?.onOpenDownloadsAction()
+        })
+    }
+    
+    private func buildAutoFillEntry() -> BrowsingMenuEntry {
+        .regular(name: UserText.actionAutofillLogins,
+                                                 image: DesignSystemImages.Glyphs.Size16.keyLogin,
+                                                 action: { [weak self] in
+            self?.onOpenAutofillLoginsAction()
+        })
+    }
 
     private func buildChatEntry(withSmallIcon smallIcon: Bool) -> BrowsingMenuEntry {
         .regular(name: UserText.actionOpenAIChat,
                  image: smallIcon ? DesignSystemImages.Glyphs.Size16.aiChat : DesignSystemImages.Glyphs.Size24.aiChat,
                  action: { [weak self] in
             self?.openAIChat()
+        })
+    }
+    
+    private func buildSettingsEntry() -> BrowsingMenuEntry {
+        .regular(name: UserText.actionSettings,
+                 image: DesignSystemImages.Glyphs.Size16.settings,
+                 action: { [weak self] in
+            self?.onBrowsingSettingsAction()
         })
     }
 
@@ -172,29 +237,16 @@ extension TabViewController {
         entries.append(buildOpenBookmarksEntry())
 
         if featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) {
-            entries.append(BrowsingMenuEntry.regular(name: UserText.actionAutofillLogins,
-                                                     image: DesignSystemImages.Glyphs.Size16.keyLogin,
-                                                     action: { [weak self] in
-                self?.onOpenAutofillLoginsAction()
-            }))
+            entries.append(buildAutoFillEntry())
         }
 
-        entries.append(BrowsingMenuEntry.regular(name: UserText.actionDownloads,
-                                                 image: DesignSystemImages.Glyphs.Size16.downloads,
-                                                 showNotificationDot: AppDependencyProvider.shared.downloadManager.unseenDownloadsAvailable,
-                                                 action: { [weak self] in
-            self?.onOpenDownloadsAction()
-        }))
+        entries.append(buildDownloadsEntry())
 
         if state == .newTab, featureFlagger.isFeatureOn(.vpnMenuItem), AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase {
             entries.append(buildVPNEntry())
         }
 
-        entries.append(BrowsingMenuEntry.regular(name: UserText.actionSettings,
-                                                 image: DesignSystemImages.Glyphs.Size16.settings,
-                                                 action: { [weak self] in
-            self?.onBrowsingSettingsAction()
-        }))
+        entries.append(buildSettingsEntry())
 
         return entries
     }
@@ -241,6 +293,22 @@ extension TabViewController {
         }))
 
         entries.append(self.buildFindInPageEntry(forLink: link))
+                
+        return entries
+    }
+    
+    private func buildAITabLinkEntries() -> [BrowsingMenuEntry] {
+        guard let link = link, !isError else { return [] }
+
+        var entries = [BrowsingMenuEntry]()
+
+        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView) {
+            entries.append(entry)
+        }
+
+        entries.append(self.buildFindInPageEntry(forLink: link))
+        
+        entries.append(buildPrintEntry(withSmallIcon: true))
                 
         return entries
     }
@@ -332,6 +400,33 @@ extension TabViewController {
                                   image: DesignSystemImages.Glyphs.Size16.bookmarks,
                                                  action: { [weak self] in
             self?.onOpenBookmarksAction()
+        })
+    }
+    
+    private func buildNewAIChatEntry() -> BrowsingMenuEntry {
+        .regular(name: UserText.actionNewAIChat,
+                 accessibilityLabel: UserText.actionNewAIChat,
+                 image: DesignSystemImages.Glyphs.Size24.aiChatAdd,
+                 action: { [weak self] in
+            self?.submitStartChatAction()
+        })
+    }
+    
+    private func buildAIChatHistoryEntry() -> BrowsingMenuEntry {
+        .regular(name: UserText.actionAIChatHistory,
+                 accessibilityLabel: UserText.actionAIChatHistory,
+                 image: DesignSystemImages.Glyphs.Size16.aiChatHistory,
+                 action: { [weak self] in
+            self?.submitOpenHistoryAction()
+        })
+    }
+    
+    private func buildAIChatSettingsEntry() -> BrowsingMenuEntry {
+        .regular(name: UserText.actionAIChatSettings,
+                 accessibilityLabel: UserText.actionAIChatSettings,
+                 image: DesignSystemImages.Glyphs.Size16.aiChatSettings,
+                 action: { [weak self] in
+            self?.submitOpenSettingsAction()
         })
     }
 

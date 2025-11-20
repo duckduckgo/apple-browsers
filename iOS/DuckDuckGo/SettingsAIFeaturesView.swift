@@ -24,6 +24,7 @@ import DesignResourcesKitIcons
 import BrowserServicesKit
 import Common
 import Networking
+import PixelKit
 
 struct SettingsAIFeaturesView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
@@ -139,7 +140,13 @@ struct SettingsAIFeaturesView: View {
                         .listRowBackground(Color(designSystemColor: .surface))
 
                         if viewModel.shouldShowHideAIGeneratedImagesSection {
-                            NavigationLink(destination: SERPSettingsView(page: .searchAssist).environmentObject(viewModel)) {
+                            NavigationLink(destination:
+                                SERPSettingsView(page: .searchAssist)
+                                    .environmentObject(viewModel)
+                                    .onAppear {
+                                        PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
+                                    }
+                            ) {
                                 SettingsCellView(label: UserText.settingsAiFeaturesHideAIGeneratedImages,
                                                  subtitle: UserText.settingsAiFeaturesHideAIGeneratedImagesSubtitle,
                                                  image: Image(uiImage: DesignSystemImages.Glyphs.Size24.imageAIHide))

@@ -31,7 +31,15 @@ public enum BackendServiceCallSite: String {
 
 public protocol DataBrokerProtectionBackendServicePixels {
     func fireGenerateEmailHTTPError(statusCode: Int)
-    func fireEmptyAccessToken(callSite: BackendServiceCallSite)
+    func fireEmptyAccessToken(callSite: BackendServiceCallSite,
+                              dataBrokerURL: String?,
+                              dataBrokerVersion: String?)
+}
+
+public extension DataBrokerProtectionBackendServicePixels {
+    func fireEmptyAccessToken(callSite: BackendServiceCallSite) {
+        fireEmptyAccessToken(callSite: callSite, dataBrokerURL: nil, dataBrokerVersion: nil)
+    }
 }
 
 public final class DefaultDataBrokerProtectionBackendServicePixels: DataBrokerProtectionBackendServicePixels {
@@ -48,15 +56,17 @@ public final class DefaultDataBrokerProtectionBackendServicePixels: DataBrokerPr
         let environment = settings.selectedEnvironment.rawValue
 
         pixelHandler.fire(.generateEmailHTTPErrorDaily(statusCode: statusCode,
-                                                       environment: environment,
-                                                       wasOnWaitlist: false))
+                                                       environment: environment))
     }
 
-    public func fireEmptyAccessToken(callSite: BackendServiceCallSite) {
+    public func fireEmptyAccessToken(callSite: BackendServiceCallSite,
+                                     dataBrokerURL: String?,
+                                     dataBrokerVersion: String?) {
         let environment = settings.selectedEnvironment.rawValue
 
         pixelHandler.fire(.emptyAccessTokenDaily(environment: environment,
-                                                 wasOnWaitlist: false,
-                                                 callSite: callSite))
+                                                 callSite: callSite,
+                                                 dataBroker: dataBrokerURL,
+                                                 brokerVersion: dataBrokerVersion))
     }
 }

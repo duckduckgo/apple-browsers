@@ -57,4 +57,11 @@ class UserDefaultsFireproofingTests: XCTestCase {
         XCTAssertFalse(fireproofing.isAllowed(cookieDomain: "test.duckduckgo.com"))
     }
 
+    func testDuckAiIsFireproofed() {
+        let fireproofing = UserDefaultsFireproofing()
+        XCTAssertTrue(fireproofing.isAllowed(fireproofDomain: "duck.ai"))
+        XCTAssertTrue(fireproofing.isAllowed(cookieDomain: "duck.ai"))
+        XCTAssertFalse(fireproofing.isAllowed(cookieDomain: "test.duck.ai"))
+    }
+
 }

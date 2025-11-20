@@ -183,14 +183,15 @@ final class PageContextTabExtension {
     /// This is the main place where page context handling happens.
     /// We always cache the latest context, and if sidebar is open,
     /// we're passing the context to it.
+    @MainActor
     private func handle(_ pageContext: AIChatPageContextData?) async {
         guard featureFlagger.isFeatureOn(.aiChatPageContext) else {
             return
         }
         shouldForceContextCollection = false
-        cachedPageContext = await replaceFaviconURLWithEncodedData(pageContext)
+        cachedPageContext = replaceFaviconURLWithEncodedData(pageContext)
         if let sidebarViewController = aiChatSidebarProvider.getSidebarViewController(for: tabID) {
-            await sidebarViewController.setPageContext(cachedPageContext)
+            sidebarViewController.setPageContext(cachedPageContext)
         }
     }
 

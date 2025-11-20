@@ -51,9 +51,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473771128
     case networkProtectionAppStoreSysexMessage
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866612800704
-    case historyView
-
     /// Subfeature: display the Sites section inside History View
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866716610324
     case historyViewSitesSection
@@ -85,13 +82,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474590440
     case privacyProAuthV2
-
-    // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866472271359
-    case failsafeExampleCrossPlatformFeature
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717037699
-    case failsafeExamplePlatformSpecificSubfeature
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717504694
     case visualUpdates
@@ -294,9 +284,7 @@ public enum FeatureFlag: String, CaseIterable {
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature,
-                .failsafeExamplePlatformSpecificSubfeature,
-                .removeWWWInCanonicalizationInThreatProtection,
+        case .removeWWWInCanonicalizationInThreatProtection,
                 .visualUpdatesInternalOnly,
                 .importChromeShortcuts,
                 .updateSafariBookmarksImport,
@@ -337,15 +325,12 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
                 .syncSeamlessAccountSwitching,
-                .historyView,
                 .historyViewSitesSection,
                 .webExtensions,
                 .autoUpdateInDEBUG,
                 .updatesWontAutomaticallyRestartApp,
                 .privacyProAuthV2,
                 .scamSiteProtection,
-                .failsafeExampleCrossPlatformFeature,
-                .failsafeExamplePlatformSpecificSubfeature,
                 .visualUpdates,
                 .visualUpdatesInternalOnly,
                 .tabCrashDebugging,
@@ -444,8 +429,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
         case .networkProtectionAppStoreSysexMessage:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage))
-        case .historyView:
-            return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
         case .historyViewSitesSection:
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.sitesSection))
         case .autoUpdateInDEBUG:
@@ -470,10 +453,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPrompts))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
-        case .failsafeExampleCrossPlatformFeature:
-            return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
-        case .failsafeExamplePlatformSpecificSubfeature:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         case .visualUpdates:
             return .remoteReleasable(.subfeature(ExperimentalThemingSubfeature.visualUpdates))
         case .visualUpdatesInternalOnly:

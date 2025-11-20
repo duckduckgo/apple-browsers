@@ -64,6 +64,11 @@ final class RootViewV2Tests: XCTestCase {
             ),
             aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager),
             accessibilityPreferences: AccessibilityPreferences(),
+            duckPlayerPreferences: DuckPlayerPreferences(
+                persistor: DuckPlayerPreferencesPersistorMock(),
+                privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                internalUserDecider: featureFlagger.internalUserDecider
+            ),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
         subscriptionManager = SubscriptionManagerMockV2()

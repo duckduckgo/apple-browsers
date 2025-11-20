@@ -161,7 +161,7 @@ enum Preferences {
                 case .accessibility:
                     AccessibilityView(model: model.accessibilityPreferences)
                 case .duckPlayer:
-                    DuckPlayerView(model: .shared)
+                    DuckPlayerView(model: model.duckPlayerPreferences)
                 case .otherPlatforms:
                     // Opens a new tab
                     Spacer()
@@ -435,7 +435,7 @@ enum Preferences {
                 case .accessibility:
                     AccessibilityView(model: model.accessibilityPreferences)
                 case .duckPlayer:
-                    DuckPlayerView(model: .shared)
+                    DuckPlayerView(model: model.duckPlayerPreferences)
                 case .otherPlatforms:
                     // Opens a new tab
                     Spacer()

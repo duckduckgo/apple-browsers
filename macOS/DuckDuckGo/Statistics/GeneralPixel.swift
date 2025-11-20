@@ -272,6 +272,8 @@ enum GeneralPixel: PixelKitEvent {
     case serpSettingsSerializationFailed
     case serpSettingsKeyValueStoreReadError
     case serpSettingsKeyValueStoreWriteError
+    case hideAIGeneratedImagesButtonClicked
+    case openDuckAIButtonClick
 
     case protectionToggledOffBreakageReport
     case debugBreakageExperiment
@@ -954,6 +956,8 @@ enum GeneralPixel: PixelKitEvent {
         case .serpSettingsSerializationFailed: return "m_mac_serp_settings_serialization_failed"
         case .serpSettingsKeyValueStoreReadError: return "m_mac_serp_settings_keyvalue_store_read_error"
         case .serpSettingsKeyValueStoreWriteError: return "m_mac_serp_settings_keyvalue_store_write_error"
+        case .hideAIGeneratedImagesButtonClicked: return "m_mac_aichat_hide_ai_generated_images_button_clicked"
+        case .openDuckAIButtonClick: return "m_mac_serp_settings_open_duck_ai_button_click"
 
         case .protectionToggledOffBreakageReport: return "m_mac_protection-toggled-off-breakage-report"
         case .debugBreakageExperiment: return "m_mac_debug_breakage_experiment_u"

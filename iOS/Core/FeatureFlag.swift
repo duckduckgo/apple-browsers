@@ -126,9 +126,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866469242236
     case privacyProFreeTrialJan25
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866469329722
-    case webViewStateRestoration
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866706505415
     case syncSeamlessAccountSwitching
 
@@ -409,7 +406,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                .adAttributionReporting,
                .crashReportOptInStatusResetting,
                .privacyProFreeTrialJan25,
-               .webViewStateRestoration,
                .syncSeamlessAccountSwitching,
                .experimentalAddressBar,
                .aiChatKeepSession,
@@ -493,8 +489,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .privacyProFreeTrialJan25:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrialJan25))
-        case .webViewStateRestoration:
-            return .remoteReleasable(.feature(.webViewStateRestoration))
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .maliciousSiteProtection:

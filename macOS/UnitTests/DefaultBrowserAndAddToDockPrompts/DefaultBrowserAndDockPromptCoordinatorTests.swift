@@ -28,6 +28,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
     private var dockCustomizerMock: DockCustomizerMock!
     private var applicationBuildTypeMock: ApplicationBuildTypeMock!
     private var storeMock: MockDefaultBrowserAndDockPromptStore!
+    private var notificationPresenterMock: MockDefaultBrowserAndDockPromptNotificationPresenter!
     private var pixelKitMock: PixelKitMock!
     private var timeTraveller: TimeTraveller!
     private var isOnboardingCompleted = true
@@ -41,6 +42,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         dockCustomizerMock = DockCustomizerMock()
         applicationBuildTypeMock = ApplicationBuildTypeMock()
         storeMock = MockDefaultBrowserAndDockPromptStore()
+        notificationPresenterMock = MockDefaultBrowserAndDockPromptNotificationPresenter()
         timeTraveller = TimeTraveller(date: Self.now)
     }
 
@@ -50,6 +52,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         dockCustomizerMock = nil
         applicationBuildTypeMock = nil
         storeMock = nil
+        notificationPresenterMock = nil
         timeTraveller = nil
         pixelKitMock = nil
 
@@ -64,6 +67,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         return DefaultBrowserAndDockPromptCoordinator(
             promptTypeDecider: promptTypeDeciderMock,
             store: storeMock,
+            notificationPresenter: notificationPresenterMock,
             isOnboardingCompleted: { self.isOnboardingCompleted },
             dockCustomization: dockCustomizerMock,
             defaultBrowserProvider: defaultBrowserProviderMock,
@@ -442,6 +446,56 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         // THEN
         XCTAssertNil(storeMock.popoverShownDate)
         XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
+    }
+
+    func testDismissActionUserInputForInactivePromptTriggersNotification() {
+        // GIVEN
+        let sut = makeSUT()
+        XCTAssertFalse(notificationPresenterMock.inactiveUserPromptNotificationShown)
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .inactive, shouldHidePermanently: false))
+
+        // THEN
+        XCTAssertTrue(notificationPresenterMock.inactiveUserPromptNotificationShown)
+    }
+
+    func testDismissActionStatusUpdateForInactivePromptDoesNotTriggerNotification() {
+        // GIVEN
+        let sut = makeSUT()
+        XCTAssertFalse(notificationPresenterMock.inactiveUserPromptNotificationShown)
+
+        // WHEN
+        sut.dismissAction(.statusUpdate(prompt: .inactive))
+
+        // THEN
+        XCTAssertFalse(notificationPresenterMock.inactiveUserPromptNotificationShown)
+    }
+
+    func testDismissActionsForBannerPromptDoNotTriggerNotification() {
+        // GIVEN
+        let sut = makeSUT()
+        XCTAssertFalse(notificationPresenterMock.inactiveUserPromptNotificationShown)
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .active(.banner), shouldHidePermanently: false))
+        sut.dismissAction(.statusUpdate(prompt: .active(.banner)))
+
+        // THEN
+        XCTAssertFalse(notificationPresenterMock.inactiveUserPromptNotificationShown)
+    }
+
+    func testDismissActionsForPopoverPromptDoNotTriggerNotification() {
+        // GIVEN
+        let sut = makeSUT()
+        XCTAssertFalse(notificationPresenterMock.inactiveUserPromptNotificationShown)
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .active(.popover), shouldHidePermanently: false))
+        sut.dismissAction(.statusUpdate(prompt: .active(.popover)))
+
+        // THEN
+        XCTAssertFalse(notificationPresenterMock.inactiveUserPromptNotificationShown)
     }
 
     // MARK: - Popover Pixels

@@ -20,6 +20,7 @@
 import Foundation
 import Testing
 @testable import DuckDuckGo
+@testable import Core
 import PersistenceTestingUtils
 
 @Suite("Mobile Customization Tests", .serialized)
@@ -27,6 +28,39 @@ final class MobileCustomizationTests {
 
     var canEditFavoriteFlag = false
     var canEditBookmarkFlag = false
+
+    @Test("Validate expected pixels with parameters are sent")
+    func pixels() {
+        let keyValueStore = MockThrowingKeyValueStore()
+        let customization = MobileCustomization(isFeatureEnabled: true,
+                                                keyValueStore: keyValueStore,
+                                                isPad: false,
+                                                postChangeNotification: { _ in },
+                                                pixelFiring: PixelFiringMock.self)
+
+        customization.fireToolbarCustomizationStartedPixel()
+        #expect(PixelFiringMock.lastPixelInfo?.pixelName == Pixel.Event.customizationToolbarStarted.name)
+
+        customization.fireAddressBarCustomizationStartedPixel()
+        #expect(PixelFiringMock.lastPixelInfo?.pixelName == Pixel.Event.customizationAddressBarStarted.name)
+
+        // So far two pixels fired
+        #expect(PixelFiringMock.allPixelsFired.count == 2)
+
+        // Check no pixel fired if the state is the same
+        customization.fireToolbarCustomizationSelectedPixel(oldValue: MobileCustomization.toolbarDefault)
+        #expect(PixelFiringMock.allPixelsFired.count == 2)
+
+        customization.fireToolbarCustomizationSelectedPixel(oldValue: MobileCustomization.Button.home)
+        #expect(PixelFiringMock.lastPixelInfo?.pixelName == Pixel.Event.customizationToolbarSelected.name)
+        #expect(PixelFiringMock.lastPixelInfo?.params?["selected"] == MobileCustomization.toolbarDefault.rawValue)
+
+        customization.fireAddressBarCustomizationSelectedPixel(oldValue: MobileCustomization.Button.home)
+        #expect(PixelFiringMock.lastPixelInfo?.pixelName == Pixel.Event.customizationAddressBarSelected.name)
+        #expect(PixelFiringMock.lastPixelInfo?.params?["selected"] == MobileCustomization.addressBarDefault.rawValue)
+        #expect(PixelFiringMock.allPixelsFired.count == 4)
+
+    }
 
     @Test("Validate initial state on phone when feature is enabled")
     func initialStateOnPhoneWhenFeatureIsEnabled() {
@@ -187,6 +221,10 @@ final class MobileCustomizationTests {
         #expect(loadedState.currentAddressBarButton == .share)
 
 
+    }
+
+    deinit {
+        PixelFiringMock.tearDown()
     }
 
 }

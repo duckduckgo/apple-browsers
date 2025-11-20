@@ -47,6 +47,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
         let db = CoreDataDatabase.bookmarksMock
         let bookmarkDatabaseCleaner = BookmarkDatabaseCleaner(bookmarkDatabase: db, errorEvents: nil)
         let dataProviders = SyncDataProviders(
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
             bookmarksDatabase: db,
             secureVaultFactory: AutofillSecureVaultFactory,
             secureVaultErrorReporter: SecureVaultReporter(),

@@ -88,6 +88,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     var showShortcutInAddressBarWhenTyping: Bool = true
     var openAIChatInSidebar: Bool = true
     var shouldAutomaticallySendPageContext: Bool = true
+    var showSearchAndDuckAIToggle: Bool = true
 
     let isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
     let showShortcutOnNewTabPagePublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
@@ -96,6 +97,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     let showShortcutInAddressBarWhenTypingPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
     let openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
     let shouldAutomaticallySendPageContextPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let showSearchAndDuckAITogglePublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
 
     func reset() {
         isAIFeaturesEnabled = true
@@ -106,6 +108,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         didDisplayAIChatAddressBarOnboarding = true
         openAIChatInSidebar = true
         shouldAutomaticallySendPageContext = true
+        showSearchAndDuckAIToggle = true
     }
 }
 
@@ -141,7 +144,6 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     @MainActor override func setUp() {
         autoreleasepool {
-            let tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
             featureFlagger = MockFeatureFlagger()
             featureFlagger.featuresStub = [
                 FeatureFlag.contextualOnboarding.rawValue: true,
@@ -158,7 +160,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
             NSError.disableSwizzledDescription = true
 
             tab = Tab(content: .url(URL.duckDuckGo, credential: nil, source: .appOpenUrl), webViewConfiguration: schemeHandler.webViewConfiguration())
-            let tabViewModel = TabViewModel(tab: tab)
+            let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab], isPopup: false))
             let windowControllersManager = WindowControllersManagerMock()
             viewController = BrowserTabViewController(
                 tabCollectionViewModel: tabCollectionViewModel,
@@ -177,9 +179,15 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                     aiChatMenuConfiguration: MockAIChatConfig(),
                     windowControllersManager: windowControllersManager,
                     featureFlagger: MockFeatureFlagger()
+                ),
+                aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager),
+                accessibilityPreferences: AccessibilityPreferences(),
+                duckPlayer: DuckPlayer(
+                    preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                    internalUserDecider: featureFlagger.internalUserDecider
                 )
             )
-            viewController.tabViewModel = tabViewModel
             _=viewController.view
             window = MockWindow()
             window.contentViewController = viewController
@@ -414,7 +422,6 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     func testWhenGotItButtonPressedThenAskDelegateToRemoveViewHighlights() throws {
-        throw XCTSkip("Flaky Test")
         // GIVEN
         let expectation = self.expectation(description: "Wait for webViewDidFinishNavigationPublisher to emit")
         let delegate = BrowserTabViewControllerDelegateSpy()

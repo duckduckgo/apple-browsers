@@ -23,6 +23,7 @@ import UserScript
 import PrivacyDashboard
 import PixelKit
 import os.log
+import Combine
 
 protocol AutoconsentUserScriptDelegate: AnyObject {
     func autoconsentUserScript(consentStatus: CookieConsentInfo)
@@ -55,6 +56,12 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     private let config: PrivacyConfiguration
     private let statsManager: AutoconsentDailyStatsManaging
     weak var delegate: AutoconsentUserScriptDelegate?
+
+    // Publisher for cookie popup managed events
+    private let popupManagedSubject = PassthroughSubject<AutoconsentDoneMessage, Never>()
+    public var popupManagedPublisher: AnyPublisher<AutoconsentDoneMessage, Never> {
+        popupManagedSubject.eraseToAnyPublisher()
+    }
 
     init(config: PrivacyConfiguration,
          statsManager: AutoconsentDailyStatsManaging,
@@ -163,6 +170,8 @@ extension AutoconsentUserScript {
         let cmp: String // name of the Autoconsent rule that matched
         let url: String
         let isCosmetic: Bool
+        let duration: Double // time in milliseconds
+        let totalClicks: Int
     }
 
     struct AutoconsentReportState: Codable {
@@ -433,6 +442,8 @@ extension AutoconsentUserScript {
 
         // Increment the popup managed counter for any popup handling
         statsManager.incrementPopupCount()
+
+        popupManagedSubject.send(messageData)
 
         // Show animation only for first time on a domain
         if !management.sitesNotifiedCache.contains(host) {

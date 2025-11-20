@@ -27,6 +27,7 @@ public enum AccountKeychainAccessError: Error, LocalizedError {
     case keychainSaveFailure(OSStatus)
     case keychainDeleteFailure(OSStatus)
     case keychainLookupFailure(OSStatus)
+    case expectedTokenNotFound
 
     public var errorDescription: String? {
         switch self {
@@ -37,6 +38,7 @@ public enum AccountKeychainAccessError: Error, LocalizedError {
         case .keychainSaveFailure(let status): return "keychainSaveFailure(\(status) - \(status.humanReadableDescription))"
         case .keychainDeleteFailure(let status): return "keychainDeleteFailure(\(status) - \(status.humanReadableDescription))"
         case .keychainLookupFailure(let status): return "keychainLookupFailure(\(status) - \(status.humanReadableDescription))"
+        case .expectedTokenNotFound: return "expectedTokenNotFound"
         }
     }
 

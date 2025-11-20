@@ -48,6 +48,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
         let db = CoreDataDatabase.bookmarksMock
 
         dataProviders = SyncDataProviders(
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
             bookmarksDatabase: db,
             secureVaultFactory: AutofillSecureVaultFactory,
             secureVaultErrorReporter: SecureVaultReporter(),

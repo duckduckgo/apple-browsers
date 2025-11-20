@@ -980,6 +980,9 @@
 "Cohort: %@" = "Cohorte: %@";
 
 /* No comment provided by engineer. */
+"Configuration" = "Configuración";
+
+/* No comment provided by engineer. */
 "Confirm" = "Confirmar";
 
 /* Button to continue the onboarding process */
@@ -1586,7 +1589,7 @@
 "Enrolled: %@" = "Inscritos: %@";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Píldora de entrada";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Iniciar sesión";
@@ -2024,6 +2027,9 @@
 "keyCommandShowAllTabs" = "Mostrar todas las pestañas";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Procesado por última vez: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Cargando intermediarios...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2085,6 +2091,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Nombre de host de la política de mensajes";
+
+/* No comment provided by engineer. */
+"Messages" = "Mensajes";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Botón de la barra de direcciones";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Barra de direcciones";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Ocultar este botón";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Ninguno";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Botones personalizables";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Mostrar botón de recarga";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Botón de la barra de herramientas";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Barra de herramientas";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Volver";
@@ -2342,10 +2375,19 @@
 "new.address.bar.picker.title" = "Opción de la barra de direcciones";
 
 /* No comment provided by engineer. */
+"No Logs" = "Sin registros";
+
+/* No comment provided by engineer. */
+"No messages" = "Sin mensajes";
+
+/* No comment provided by engineer. */
 "No results found" = "No se han encontrado resultados";
 
 /* No comment provided by engineer. */
 "OK" = "De acuerdo";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies gestionadas";
@@ -2409,6 +2451,21 @@
 
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Hola.\n\n¿Todo listo para un navegador más rápido que mantiene tu protección?";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Siguiente";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Las funciones de IA son privadas y opcionales. Puedes realizar cambios en Ajustes > Funciones de IA.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Las funciones de IA son privadas y opcionales. Puedes hacer cambios en %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Ajustes > Funciones de IA.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "¿Quieres un acceso más fácil al chat privado de IA?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "¡Adelante!";
@@ -2506,12 +2563,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Desactivar";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "Correo electrónico (opcional)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "nombre@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Danos tu opinión…";
 
@@ -2545,8 +2596,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "SELECCIONA UNA CATEGORÍA";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "¿Has encontrado una incidencia que no aparece en nuestro [centro de ayuda] (duck://)? Nos interesa mucho saberlo.\n\nIndica una dirección de correo electrónico si quieres que nos pongamos en contacto contigo en relación con esta incidencia (es posible que no podamos responder a todas las incidencias):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "¿Necesitas ayuda? [Contacta con el servicio de soporte.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "¿Has encontrado una incidencia que no aparece en nuestro [centro de ayuda] (duck://)? Nos interesa mucho saberlo.\n\nCuéntanos qué está pasando:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Además de los detalles introducidos anteriormente, enviamos información anónima con tus comentarios:";
@@ -2694,6 +2748,9 @@
 
 /* Alert title */
 "prompt.custom.url.scheme.title" = "¿Abrir en otra aplicación?";
+
+/* No comment provided by engineer. */
+"Recent Processing Logs" = "Registros de procesamiento recientes";
 
 /* No comment provided by engineer. */
 "Relatives: %@" = "Familiares: %@";
@@ -3178,6 +3235,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "El navegador DuckDuckGo proporciona protecciones de rastreo que están siempre activas. [Más información](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Muestra los registros del último minuto para ayudar a diagnosticar problemas inmediatamente después de una actualización.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Selecciona la opción que describa mejor el problema que has encontrado.";
 
@@ -3210,6 +3270,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "¿Qué sitio web no funciona?";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Estado: invalidado";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Nombre de host almacenado: %@";
@@ -3598,6 +3661,9 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* No comment provided by engineer. */
+"Version: %@" = "Versión: %@";
+
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Buscar";
 
@@ -3859,18 +3925,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Un mensaje de %@:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "Ver oferta";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Ahora no";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Mantente protegido con nuestra VPN, IA privada y mucho más. Vuelve a suscribirte hoy y ahorra un 25 %.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "¡Último día para ahorrar un 25 %!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "AHORRA UN 25 %";
 
@@ -3905,7 +3959,10 @@
 "win-back.campaign.subscription.settings.menu.title" = "Vuelve a suscribirte y ahorra un 25 %";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Vuelve a suscribirte y ahorra un 25 %";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Vuelve a suscribirte";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Mantente protegido con nuestra VPN, IA privada y mucho más.\nOferta por tiempo limitado.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "¿Buscas la versión para Mac?";

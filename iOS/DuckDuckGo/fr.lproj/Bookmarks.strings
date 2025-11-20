@@ -28,12 +28,6 @@
 /* Class = "UILabel"; text = "Favorite"; ObjectID = "mRK-XI-Rr8"; */
 "mRK-XI-Rr8.text" = "Favori";
 
-/* Class = "UISegmentedControl"; NJH-oV-DbS.segmentTitles[0] = "All Bookmarks"; ObjectID = "NJH-oV-DbS"; */
-"NJH-oV-DbS.segmentTitles[0]" = "Tous les signets";
-
-/* Class = "UISegmentedControl"; NJH-oV-DbS.segmentTitles[1] = "Favorites"; ObjectID = "NJH-oV-DbS"; */
-"NJH-oV-DbS.segmentTitles[1]" = "Favoris";
-
 /* Class = "UINavigationItem"; title = "Bookmarks"; ObjectID = "oMv-60-GGW"; */
 "oMv-60-GGW.title" = "Signets";
 
@@ -45,9 +39,6 @@
 
 /* Class = "UIBarButtonItem"; title = "Done"; ObjectID = "RuZ-zV-tu8"; */
 "RuZ-zV-tu8.title" = "Terminé";
-
-/* Class = "UILabel"; text = "No favorites added yet"; ObjectID = "y8y-oO-xBm"; */
-"y8y-oO-xBm.text" = "Aucun favori ajouté pour le moment";
 
 /* Class = "UITextField"; placeholder = "URL"; ObjectID = "YqY-sP-hhb"; */
 "YqY-sP-hhb.placeholder" = "URL";

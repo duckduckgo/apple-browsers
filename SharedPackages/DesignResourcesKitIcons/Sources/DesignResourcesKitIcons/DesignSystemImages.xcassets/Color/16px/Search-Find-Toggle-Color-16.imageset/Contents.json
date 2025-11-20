@@ -1,0 +1,22 @@
+{
+  "images" : [
+    {
+      "filename" : "Search-Find-Toggle-Color-16.svg",
+      "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "Search-Find-Toggle-Color-Dark-16.svg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

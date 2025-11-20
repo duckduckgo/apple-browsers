@@ -1001,6 +1001,14 @@ final class AddressBarViewController: NSViewController {
             return event
         }
 
+        // Handle toggle focused - click outside to deselect
+        if window.firstResponder === addressBarButtonsViewController?.searchModeToggleControl,
+           let clickPoint,
+           clickPoint.distance(to: window.convertPoint(toScreen: event.locationInWindow)) <= Constants.maxClickReleaseDistanceToResignFirstResponder {
+            self.view.window?.makeFirstResponder(nil)
+            return event
+        }
+
         // Handle normal mode - click (same position down+up) outside of the field: resign first responder
         guard window.firstResponder === addressBarTextField.currentEditor(),
               let clickPoint,

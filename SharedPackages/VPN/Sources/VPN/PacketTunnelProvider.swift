@@ -1893,6 +1893,9 @@ extension PacketTunnelProvider {
         let data = VPNConnectionWideEventData(
             extensionType: .unknown,
             startupMethod: startupMethod == .automaticOnDemand ? .automaticOnDemand : .manualByTheSystem,
+            // User cannot onboard during this flow
+            onboardingStatus: .completed,
+            isSetup: .no,
             contextData: WideEventContextData(name: (startupMethod == .automaticOnDemand ? NetworkProtectionFunnelOrigin.others : NetworkProtectionFunnelOrigin.systemSettings).rawValue)
         )
         self.connectionWideEventData = data

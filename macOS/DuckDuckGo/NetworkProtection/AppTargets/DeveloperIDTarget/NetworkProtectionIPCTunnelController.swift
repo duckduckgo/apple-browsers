@@ -308,6 +308,8 @@ private extension NetworkProtectionIPCTunnelController {
             // At this step we don't know the type of extension yet
             extensionType: .unknown,
             startupMethod: .manualByMainApp,
+            onboardingStatus: .unknown,
+            isSetup: .unknown,
             contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
         )
         self.connectionWideEventData = data
@@ -319,6 +321,7 @@ private extension NetworkProtectionIPCTunnelController {
         guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
         data.browserStartDuration?.complete()
         data.overallDuration?.complete()
+        data.browserStartError = .init(error: error, description: description)
         data.errorData = .init(error: error, description: description)
         wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
         self.connectionWideEventData = nil

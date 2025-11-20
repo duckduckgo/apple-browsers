@@ -65,7 +65,7 @@ final class DefaultBucketModifier: BucketModifier {
 
     func bucket(value: Int, pixelName: AttributedMetricPixelName) throws -> Bucket {
         guard let configuration = configurations[pixelName.rawValue] else {
-            Logger.attributedMetric.error("The pixel bucket configuration is missing")
+            Logger.attributedMetric.error("The pixel bucket configuration is missing: \(pixelName.rawValue, privacy: .public)")
             throw BucketModifierError.missingConfiguration
         }
 

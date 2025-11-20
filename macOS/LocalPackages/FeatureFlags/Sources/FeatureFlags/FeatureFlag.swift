@@ -20,9 +20,6 @@ import Foundation
 import BrowserServicesKit
 
 public enum FeatureFlag: String, CaseIterable {
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473003324
-    case debugMenu
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715760000
     case sslCertificatesBypass
 
@@ -53,9 +50,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473771128
     case networkProtectionAppStoreSysexMessage
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866612800704
-    case historyView
 
     /// Subfeature: display the Sites section inside History View
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866716610324
@@ -89,13 +83,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474590440
     case privacyProAuthV2
 
-    // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866472271359
-    case failsafeExampleCrossPlatformFeature
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717037699
-    case failsafeExamplePlatformSpecificSubfeature
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717504694
     case visualUpdates
 
@@ -104,9 +91,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614764239
     case tabCrashDebugging
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616709915
-    case tabCrashRecovery
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382544
     case delayedWebviewPresentation
@@ -281,6 +265,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
     case tabProgressIndicator
 
+    /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
+    case attributedMetrics
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211388368219934?focus=true
     case vpnConnectionWidePixelMeasurement
 
@@ -297,9 +284,7 @@ public enum FeatureFlag: String, CaseIterable {
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature,
-                .failsafeExamplePlatformSpecificSubfeature,
-                .removeWWWInCanonicalizationInThreatProtection,
+        case .removeWWWInCanonicalizationInThreatProtection,
                 .visualUpdatesInternalOnly,
                 .importChromeShortcuts,
                 .updateSafariBookmarksImport,
@@ -340,19 +325,15 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
                 .syncSeamlessAccountSwitching,
-                .historyView,
                 .historyViewSitesSection,
                 .webExtensions,
                 .autoUpdateInDEBUG,
                 .updatesWontAutomaticallyRestartApp,
                 .privacyProAuthV2,
                 .scamSiteProtection,
-                .failsafeExampleCrossPlatformFeature,
-                .failsafeExamplePlatformSpecificSubfeature,
                 .visualUpdates,
                 .visualUpdatesInternalOnly,
                 .tabCrashDebugging,
-                .tabCrashRecovery,
                 .maliciousSiteProtection,
                 .delayedWebviewPresentation,
                 .syncSetupBarcodeIsUrlBased,
@@ -407,14 +388,14 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportNewExperience,
                 .pinnedTabsViewRewrite,
                 .tabProgressIndicator,
+                .attributedMetrics,
                 .vpnConnectionWidePixelMeasurement,
                 .showHideAIGeneratedImagesSection,
                 .standaloneMigration,
                 .blackFridayCampaign,
                 .newTabPageAutoconsentStats:
             return true
-        case .debugMenu,
-                .sslCertificatesBypass,
+        case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
                 .freemiumDBP,
                 .contextualOnboarding,
@@ -430,8 +411,6 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var source: FeatureFlagSource {
         switch self {
-        case .debugMenu:
-            return .internalOnly()
         case .appendAtbToSerpQueries:
             return .internalOnly()
         case .sslCertificatesBypass:
@@ -450,8 +429,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
         case .networkProtectionAppStoreSysexMessage:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage))
-        case .historyView:
-            return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
         case .historyViewSitesSection:
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.sitesSection))
         case .autoUpdateInDEBUG:
@@ -476,18 +453,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPrompts))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
-        case .failsafeExampleCrossPlatformFeature:
-            return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
-        case .failsafeExamplePlatformSpecificSubfeature:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         case .visualUpdates:
             return .remoteReleasable(.subfeature(ExperimentalThemingSubfeature.visualUpdates))
         case .visualUpdatesInternalOnly:
             return .internalOnly()
         case .tabCrashDebugging:
             return .disabled
-        case .tabCrashRecovery:
-            return .remoteReleasable(.feature(.tabCrashRecovery))
         case .delayedWebviewPresentation:
             return .remoteReleasable(.feature(.delayedWebviewPresentation))
         case .dbpRemoteBrokerDelivery:
@@ -598,6 +569,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.pinnedTabsViewRewrite))
         case .tabProgressIndicator:
             return .disabled
+        case .attributedMetrics:
+            return .remoteReleasable(.feature(.attributedMetrics))
         case .vpnConnectionWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
         case .showHideAIGeneratedImagesSection:

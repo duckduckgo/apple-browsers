@@ -28,6 +28,18 @@ public enum QuantisedTimePast: Equatable, Codable {
     /// Duration measured in months (1+ months, 28-day approximation)
     case months(Int)
 
+    /// Human-readable description of the time period
+    public var description: String {
+        switch self {
+        case .none:
+            return "None (install day or invalid)"
+        case .weeks(let count):
+            return count == 1 ? "1 week" : "\(count) weeks"
+        case .months(let count):
+            return count == 1 ? "1 month" : "\(count) months"
+        }
+    }
+
     public static func == (lhs: QuantisedTimePast, rhs: QuantisedTimePast) -> Bool {
         switch (lhs, rhs) {
         case (.none, .none):
@@ -43,7 +55,7 @@ public enum QuantisedTimePast: Equatable, Codable {
 
     /// Calculates quantised time interval between installation and given date.
     ///
-    /// Quantization logic:
+    /// Quantisation logic:
     /// - Day 0 (install day): `.none`
     /// - Days 1-7: `.weeks(1)`
     /// - Days 8-14: `.weeks(2)`

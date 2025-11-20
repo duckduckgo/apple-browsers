@@ -56,11 +56,13 @@ public protocol SecureVaultManagerDelegate: AnyObject, SecureVaultReporting {
     func secureVaultManager(_: SecureVaultManager,
                             promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
                             withTrigger trigger: AutofillUserScript.GetTriggerType,
+                            isMainFrame: Bool,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void)
 
     func secureVaultManager(_: SecureVaultManager,
                             didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
                             withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                            isMainFrame: Bool,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void)
 
     func secureVaultManager(_: SecureVaultManager,
@@ -521,7 +523,7 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
         }
     }
 
-    public func autofillUserScriptDidRequestCreditCard(_: AutofillUserScript, trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void) {
+    public func autofillUserScriptDidRequestCreditCard(_: AutofillUserScript, trigger: AutofillUserScript.GetTriggerType, isMainFrame: Bool, completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void) {
         do {
             let vault = try self.vault ?? AutofillSecureVaultFactory.makeVault(reporter: self.delegate)
             let cards: [SecureVaultModels.CreditCard] = try vault.creditCards()
@@ -532,7 +534,7 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
                 return
             }
 
-            delegate?.secureVaultManager(self, promptUserToAutofillCreditCardWith: cards, withTrigger: trigger) { creditCard in
+            delegate?.secureVaultManager(self, promptUserToAutofillCreditCardWith: cards, withTrigger: trigger, isMainFrame: isMainFrame) { creditCard in
                 guard let creditCard else {
                     completionHandler(nil, .none)
                     return
@@ -607,13 +609,14 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
 
     public func autofillUserScriptDidFocus(_: AutofillUserScript,
                                            mainType: AutofillUserScript.GetAutofillDataMainType,
+                                           isMainFrame: Bool,
                                            completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void) {
         if mainType == .creditCards {
             do {
                 let vault = try self.vault ?? AutofillSecureVaultFactory.makeVault(reporter: self.delegate)
                 let cards: [SecureVaultModels.CreditCard] = try vault.creditCards()
 
-                delegate?.secureVaultManager(self, didFocusFieldFor: mainType, withCreditCards: cards) { creditCard in
+                delegate?.secureVaultManager(self, didFocusFieldFor: mainType, withCreditCards: cards, isMainFrame: isMainFrame) { creditCard in
                     guard let creditCard else {
                         completionHandler(nil, .none)
                         return
@@ -623,13 +626,13 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
             } catch {
                 Logger.secureVault.error("Error requesting credit card: \(error.localizedDescription, privacy: .public)")
                 // Notify delegate regardless so the keyboard accessory is updated correctly
-                delegate?.secureVaultManager(self, didFocusFieldFor: mainType, withCreditCards: []) { _ in
+                delegate?.secureVaultManager(self, didFocusFieldFor: mainType, withCreditCards: [], isMainFrame: isMainFrame) { _ in
                     completionHandler(nil, .none)
                 }
 
             }
         } else {
-            delegate?.secureVaultManager(self, didFocusFieldFor: mainType, withCreditCards: []) { _ in
+            delegate?.secureVaultManager(self, didFocusFieldFor: mainType, withCreditCards: [], isMainFrame: isMainFrame) { _ in
                 completionHandler(nil, .none)
             }
         }

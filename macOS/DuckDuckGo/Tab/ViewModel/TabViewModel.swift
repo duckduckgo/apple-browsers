@@ -393,9 +393,9 @@ final class TabViewModel: NSObject {
         case .bookmarks:
                 .bookmarksTrustedIndicator
         case .history:
-            featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
+            .historyTrustedIndicator
         case .url(let url, _, _) where url.isHistory:
-            featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
+            .historyTrustedIndicator
         case .dataBrokerProtection:
                 .dbpTrustedIndicator
         case .subscription:

@@ -25,11 +25,11 @@ final class BucketModifierTests: XCTestCase {
 
     func testParseConfigurationsValidSettings() throws {
         let settings: [String: Any] = [
-            "user_retention_week": [
+            "attributed_metric_retention_week": [
                 "buckets": [1, 2, 3],
                 "version": 1
             ],
-            "user_retention_month": [
+            "attributed_metric_retention_month": [
                 "buckets": [2, 3, 4, 5],
                 "version": 1
             ]
@@ -55,7 +55,7 @@ final class BucketModifierTests: XCTestCase {
 
     func testParseConfigurationsInvalidSettings() {
         let settings: [String: Any] = [
-            "user_retention_week": "invalid_value"
+            "attributed_metric_retention_week": "invalid_value"
         ]
         let modifier = DefaultBucketModifier()
         XCTAssertThrowsError(try modifier.parseConfigurations(from: settings)) { error in
@@ -70,7 +70,7 @@ final class BucketModifierTests: XCTestCase {
 
     func testParseConfigurationsMissingBuckets() {
         let settings: [String: Any] = [
-            "user_retention_week": [
+            "attributed_metric_retention_week": [
                 "version": 1
             ]
         ]
@@ -87,7 +87,7 @@ final class BucketModifierTests: XCTestCase {
 
     func testParseConfigurationsMalformedStructure() {
         let settings: [String: Any] = [
-            "user_retention_week": [
+            "attributed_metric_retention_week": [
                 "buckets": "not_an_array",
                 "version": 1
             ]
@@ -238,7 +238,7 @@ final class BucketModifierTests: XCTestCase {
 
     func testBucketedValueSingleBucket() throws {
         let settings: [String: Any] = [
-            "user_synced_device": [
+            "attributed_metric_synced_device": [
                 "buckets": [1],
                 "version": 1
             ]
@@ -279,15 +279,15 @@ final class BucketModifierTests: XCTestCase {
 
     func testBucketWithDifferentVersions() throws {
         let settings: [String: Any] = [
-            "user_retention_week": [
+            "attributed_metric_retention_week": [
                 "buckets": [1, 2, 3],
                 "version": 1
             ],
-            "user_retention_month": [
+            "attributed_metric_retention_month": [
                 "buckets": [2, 3, 4, 5],
                 "version": 2
             ],
-            "user_active_past_week": [
+            "attributed_metric_active_past_week": [
                 "buckets": [2, 4],
                 "version": 3
             ]
@@ -310,7 +310,7 @@ final class BucketModifierTests: XCTestCase {
 
     func testBucketWithLargeVersionNumber() throws {
         let settings: [String: Any] = [
-            "user_retention_week": [
+            "attributed_metric_retention_week": [
                 "buckets": [1, 2, 3],
                 "version": 999
             ]
@@ -327,39 +327,39 @@ final class BucketModifierTests: XCTestCase {
 
     private func createModifierWithStandardConfig() -> DefaultBucketModifier {
         let settings: [String: Any] = [
-            "user_retention_week": [
+            "attributed_metric_retention_week": [
                 "buckets": [1, 2, 3],
                 "version": 1
             ],
-            "user_retention_month": [
+            "attributed_metric_retention_month": [
                 "buckets": [2, 3, 4, 5],
                 "version": 1
             ],
-            "user_active_past_week": [
+            "attributed_metric_active_past_week": [
                 "buckets": [2, 4],
                 "version": 1
             ],
-            "user_average_searches_past_week_first_month": [
+            "attributed_metric_average_searches_past_week_first_month": [
                 "buckets": [5, 9],
                 "version": 1
             ],
-            "user_average_searches_past_week": [
+            "attributed_metric_average_searches_past_week": [
                 "buckets": [5, 9],
                 "version": 1
             ],
-            "user_average_ad_clicks_past_week": [
+            "attributed_metric_average_ad_clicks_past_week": [
                 "buckets": [2, 5],
                 "version": 1
             ],
-            "user_average_duck_ai_usage_past_week": [
+            "attributed_metric_average_duck_ai_usage_past_week": [
                 "buckets": [5, 9],
                 "version": 1
             ],
-            "user_subscribed": [
+            "attributed_metric_subscribed": [
                 "buckets": [0, 1],
                 "version": 1
             ],
-            "user_synced_device": [
+            "attributed_metric_synced_device": [
                 "buckets": [1],
                 "version": 1
             ]

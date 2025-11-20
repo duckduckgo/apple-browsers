@@ -307,6 +307,9 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
     func didReportMetric(_ metric: AIChatMetric, completion: (() -> Void)? = nil) {
         switch metric.metricName {
         case .userDidSubmitFirstPrompt, .userDidSubmitPrompt:
+
+            notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
+
             DispatchQueue.main.async { [self] in
                 refreshAtbs(completion: completion)
             }

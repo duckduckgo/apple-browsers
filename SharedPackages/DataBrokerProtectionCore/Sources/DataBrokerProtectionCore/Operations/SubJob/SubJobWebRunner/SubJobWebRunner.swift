@@ -120,6 +120,8 @@ public extension SubJobWebRunning {
             actionsHandler?.captchaTransactionId = nil
             stageCalculator.setStage(.captchaSolve)
             if let captchaData = try? await captchaService.submitCaptchaToBeResolved(for: captchaTransactionId,
+                                                                                     dataBrokerURL: context.dataBroker.url,
+                                                                                     dataBrokerVersion: context.dataBroker.version,
                                                                                      attemptId: stageCalculator.attemptId,
                                                                                      shouldRunNextStep: shouldRunNextStep) {
                 stageCalculator.fireOptOutCaptchaSolve()
@@ -311,6 +313,8 @@ public extension SubJobWebRunning {
             stageCalculator.setStage(.captchaSend)
             actionsHandler?.captchaTransactionId = try await captchaService.submitCaptchaInformation(
                 captchaInfo,
+                dataBrokerURL: context.dataBroker.url,
+                dataBrokerVersion: context.dataBroker.version,
                 attemptId: stageCalculator.attemptId,
                 shouldRunNextStep: shouldRunNextStep)
             stageCalculator.fireOptOutCaptchaSend()

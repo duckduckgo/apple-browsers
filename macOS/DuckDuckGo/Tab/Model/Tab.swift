@@ -1268,6 +1268,7 @@ extension Tab: SERPSettingsUserScriptDelegate {
 
     @MainActor
     func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
+        PixelKit.fire(GeneralPixel.openDuckAIButtonClick, frequency: .dailyAndStandard)
         guard let tabCollection = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
         else {
             assertionFailure("could not access shared tabCollectionViewModel")

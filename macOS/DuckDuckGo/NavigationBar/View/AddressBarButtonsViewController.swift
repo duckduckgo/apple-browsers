@@ -28,6 +28,7 @@ import PixelKit
 import AppKitExtensions
 import AIChat
 import UIComponents
+import DesignResourcesKitIcons
 
 protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 
@@ -380,7 +381,12 @@ final class AddressBarButtonsViewController: NSViewController {
 
         if let superview = aiChatButton.superview {
             aiChatButton.translatesAutoresizingMaskIntoConstraints = false
-            trailingStackViewTrailingViewConstraint.constant = isFocused ? 4 : 3
+            if featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+                /// When the toggle is enabled we need a fixed constant, otherwise the stackview feels wobbly
+                trailingStackViewTrailingViewConstraint.constant = 4
+            } else {
+                trailingStackViewTrailingViewConstraint.constant = isFocused ? 4 : 3
+            }
             NSLayoutConstraint.activate([
                 aiChatButton.topAnchor.constraint(equalTo: superview.topAnchor, constant: 2),
                 aiChatButton.bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -2)
@@ -690,11 +696,15 @@ final class AddressBarButtonsViewController: NSViewController {
         && !isTextFieldValueText
         && !isLocalUrl
 
+        // Hide the left icon when toggle is visible
+        let shouldShowToggle = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+
         imageButtonWrapper.isShown = imageButton.image != nil
         && !isInPopUpWindow
         && (isHypertextUrl || isTextFieldEditorFirstResponder || isEditingMode || isNewTabOrOnboarding)
         && privacyDashboardButton.isHidden
         && !isAnyTrackerAnimationPlaying
+        && !shouldShowToggle
     }
 
     private func updatePrivacyEntryPointIcon() {
@@ -878,6 +888,13 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func updateBookmarkButtonVisibility() {
         guard !isInPopUpWindow else { return }
+
+        if case .editing(.aiChat) = controllerMode {
+            bookmarkButton.isShown = false
+            updateAIChatDividerVisibility()
+            return
+        }
+
         let hasEmptyAddressBar = textFieldValue?.isEmpty ?? true
         var shouldShowBookmarkButton: Bool {
             guard let tabViewModel, tabViewModel.canBeBookmarked else { return false }
@@ -1618,12 +1635,8 @@ final class AddressBarButtonsViewController: NSViewController {
         let toggleControl = CustomToggleControl(frame: NSRect(x: 0, y: 0, width: 72, height: 28))
         toggleControl.translatesAutoresizingMaskIntoConstraints = false
 
-        if let searchImage = NSImage(systemSymbolName: "magnifyingglass", accessibilityDescription: nil) {
-            toggleControl.leftImage = searchImage
-        }
-        if let aiImage = NSImage(systemSymbolName: "wand.and.stars", accessibilityDescription: nil) {
-            toggleControl.rightImage = aiImage
-        }
+        toggleControl.leftSelectedImage = DesignSystemImages.Color.Size16.searchFindToggle
+        toggleControl.rightSelectedImage = DesignSystemImages.Color.Size16.aiChatToggle
 
         applyThemeToToggleControl(toggleControl)
 
@@ -1648,25 +1661,22 @@ final class AddressBarButtonsViewController: NSViewController {
         delegate?.addressBarButtonsViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
     }
 
+    func resetSearchModeToggle() {
+        searchModeToggleControl?.isRightSelected = false
+    }
+
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
-        let theme = themeManager.theme
-        let colorsProvider = theme.colorsProvider
-
-        let backgroundColor: NSColor
-        if NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
-            backgroundColor = colorsProvider.activeAddressBarBackgroundColor.withAlphaComponent(0.5).blended(withFraction: 0.1, of: .white) ?? colorsProvider.activeAddressBarBackgroundColor
-        } else {
-            backgroundColor = colorsProvider.activeAddressBarBackgroundColor.withAlphaComponent(0.5).blended(withFraction: 0.05, of: .black) ?? colorsProvider.activeAddressBarBackgroundColor
-        }
-
-        toggleControl.backgroundColor = backgroundColor
-        toggleControl.selectedBackgroundColor = backgroundColor
-        toggleControl.focusedBackgroundColor = backgroundColor
-        toggleControl.selectionColor = colorsProvider.accentPrimaryColor
-        toggleControl.focusBorderColor = colorsProvider.accentPrimaryColor
-        toggleControl.outerBorderColor = colorsProvider.addressBarOutlineShadow
+        toggleControl.backgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
+        toggleControl.selectedBackgroundColor = .systemRed
+        toggleControl.focusedBackgroundColor = .systemRed
+        toggleControl.selectionColor = NSColor(designSystemColor: .controlsRaisedFillPrimary)
+        toggleControl.focusBorderColor = .systemBlue
+        toggleControl.outerBorderColor = .systemGreen
         toggleControl.outerBorderWidth = 2.0
-        toggleControl.selectionInnerBorderColor = backgroundColor
+        toggleControl.selectionInnerBorderColor = NSColor(designSystemColor: .shadowSecondary)
+
+        toggleControl.leftImage = DesignSystemImages.Glyphs.Size16.findSearch.tinted(with: themeManager.theme.colorsProvider.iconsColor)
+        toggleControl.rightImage = DesignSystemImages.Glyphs.Size16.aiChat.tinted(with: themeManager.theme.colorsProvider.iconsColor)
     }
 
     private func setupAnimationViews() {

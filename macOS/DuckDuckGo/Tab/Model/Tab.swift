@@ -32,6 +32,7 @@ import SpecialErrorPages
 import UserScript
 import WebKit
 import SERPSettings
+import AutoconsentStats
 
 protocol TabDelegate: ContentOverlayUserScriptDelegate {
     func tabWillStartNavigation(_ tab: Tab, isUserInitiated: Bool)
@@ -69,6 +70,7 @@ protocol NewWindowPolicyDecisionMaker {
         var tabCrashAggregator: TabCrashAggregator
         var tabsPreferences: TabsPreferences
         var webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+        var autoconsentStats: AutoconsentStatsCollecting
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -148,11 +150,12 @@ protocol NewWindowPolicyDecisionMaker {
                      aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil,
                      aiChatSidebarProvider: AIChatSidebarProviding? = nil,
                      newTabPageShownPixelSender: NewTabPageShownPixelSender? = nil,
-                     tabCrashAggregator: TabCrashAggregator? = nil
+                     tabCrashAggregator: TabCrashAggregator? = nil,
+                     autoconsentStats: AutoconsentStatsCollecting? = nil
     ) {
 
         let duckPlayer = duckPlayer
-            ?? (AppVersion.runType.requiresEnvironment ? DuckPlayer.shared : DuckPlayer.mock(withMode: .enabled))
+            ?? (AppVersion.runType.requiresEnvironment ? NSApp.delegateTyped.duckPlayer : DuckPlayer.mock(withMode: .enabled))
         let statisticsLoader = statisticsLoader
             ?? (AppVersion.runType.requiresEnvironment ? StatisticsLoader.shared : nil)
         let privacyFeatures = privacyFeatures ?? NSApp.delegateTyped.privacyFeatures
@@ -210,7 +213,8 @@ protocol NewWindowPolicyDecisionMaker {
                   aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
                   aiChatSidebarProvider: aiChatSidebarProvider ?? NSApp.delegateTyped.aiChatSidebarProvider,
                   newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender,
-                  tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator
+                  tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator,
+                  autoconsentStats: autoconsentStats ?? NSApp.delegateTyped.autoconsentStats
         )
     }
 
@@ -259,7 +263,8 @@ protocol NewWindowPolicyDecisionMaker {
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
          aiChatSidebarProvider: AIChatSidebarProviding,
          newTabPageShownPixelSender: NewTabPageShownPixelSender,
-         tabCrashAggregator: TabCrashAggregator
+         tabCrashAggregator: TabCrashAggregator,
+         autoconsentStats: AutoconsentStatsCollecting
     ) {
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
@@ -351,7 +356,8 @@ protocol NewWindowPolicyDecisionMaker {
                                                        aiChatSidebarProvider: aiChatSidebarProvider,
                                                        tabCrashAggregator: tabCrashAggregator,
                                                        tabsPreferences: tabsPreferences,
-                                                       webTrackingProtectionPreferences: webTrackingProtectionPreferences)
+                                                       webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                                       autoconsentStats: autoconsentStats)
             )
         super.init()
         tabGetter = { [weak self] in self }
@@ -1262,6 +1268,7 @@ extension Tab: SERPSettingsUserScriptDelegate {
 
     @MainActor
     func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
+        PixelKit.fire(GeneralPixel.openDuckAIButtonClick, frequency: .dailyAndStandard)
         guard let tabCollection = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
         else {
             assertionFailure("could not access shared tabCollectionViewModel")
@@ -1354,10 +1361,10 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
     func willStart(_ navigation: Navigation) {
 #if DEBUG
         // prevent real navigation actions when running Unit Tests
-        if AppVersion.runType == .unitTests,
+        if [.unitTests, .integrationTests].contains(AppVersion.runType),
            [.http, .https].contains(navigation.url.navigationalScheme),
            self.webView.configuration.urlSchemeHandler(forURLScheme: navigation.url.scheme!) == nil {
-            fatalError("The Unit Test is causing a real navigation action")
+            fatalError("The test is causing a real navigation action to \(navigation.url.absoluteString)")
         }
 #endif
 

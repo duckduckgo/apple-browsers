@@ -416,12 +416,16 @@ class InspectableSyncRequestMaker: SyncRequestMaking {
     }
 
     func makePatchRequest(with result: SyncRequest, clientTimestamp: Date, isCompressed: Bool) throws -> HTTPRequesting {
+        lock.lock()
+        defer { lock.unlock() }
+
         makePatchRequestCallCount += 1
         makePatchRequestCallArgs.append(.init(result: result, clientTimestamp: clientTimestamp, isCompressed: isCompressed))
         return try requestMaker.makePatchRequest(with: result, clientTimestamp: clientTimestamp, isCompressed: isCompressed)
     }
 
     let requestMaker: SyncRequestMaker
+    private let lock = NSLock()
 
     init(requestMaker: SyncRequestMaker) {
         self.requestMaker = requestMaker

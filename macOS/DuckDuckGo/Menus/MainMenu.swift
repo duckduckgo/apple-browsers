@@ -453,7 +453,7 @@ final class MainMenu: NSMenu {
         NSMenuItem(title: "Debug")
             .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))
 #else
-        if featureFlagger.isFeatureOn(.debugMenu) {
+        if internalUserDecider.isInternalUser {
             NSMenuItem(title: "Debug")
                 .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))
         } else {
@@ -928,7 +928,7 @@ final class MainMenu: NSMenu {
     }
 
     private func updateInternalUserItem() {
-        internalUserItem.title = NSApp.delegateTyped.internalUserDecider.isInternalUser ? "Remove Internal User State" : "Set Internal User State"
+        internalUserItem.title = internalUserDecider.isInternalUser ? "Remove Internal User State" : "Set Internal User State"
     }
 
     private func updateAutofillDebugScriptMenuItem() {

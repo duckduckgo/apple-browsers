@@ -69,7 +69,7 @@ public actor NetworkProtectionLatencyMonitor: LatencyMonitoring {
         }
     }
 
-    var isStarted: Bool {
+    public var isStarted: Bool {
         task?.isCancelled == false
     }
 
@@ -77,7 +77,7 @@ public actor NetworkProtectionLatencyMonitor: LatencyMonitoring {
 
     // MARK: - Init & deinit
 
-    init() {
+    public init() {
         Logger.networkProtectionMemory.debug("[+] \(String(describing: self), privacy: .public)")
     }
 

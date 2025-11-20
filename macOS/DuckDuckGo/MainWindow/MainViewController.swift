@@ -44,6 +44,9 @@ final class MainViewController: NSViewController {
     let findInPageViewController: FindInPageViewController
     let fireViewController: FireViewController
     let bookmarksBarViewController: BookmarksBarViewController
+    let aiChatOmnibarContainerViewController: AIChatOmnibarContainerViewController
+    let aiChatOmnibarTextContainerViewController: AIChatOmnibarTextContainerViewController
+    let sharedTextState: AddressBarSharedTextState
     let featureFlagger: FeatureFlagger
     let fireCoordinator: FireCoordinator
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
@@ -51,6 +54,7 @@ final class MainViewController: NSViewController {
     private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
     private let winBackOfferPromptPresenting: WinBackOfferPromptPresenting
     private let tabsPreferences: TabsPreferences
+    private let duckPlayer: DuckPlayer
 
     let tabCollectionViewModel: TabCollectionViewModel
     let bookmarkManager: BookmarkManager
@@ -118,8 +122,12 @@ final class MainViewController: NSViewController {
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences = NSApp.delegateTyped.webTrackingProtectionPreferences,
          cookiePopupProtectionPreferences: CookiePopupProtectionPreferences = NSApp.delegateTyped.cookiePopupProtectionPreferences,
          aiChatPreferences: AIChatPreferences = NSApp.delegateTyped.aiChatPreferences,
+         aboutPreferences: AboutPreferences = NSApp.delegateTyped.aboutPreferences,
+         accessibilityPreferences: AccessibilityPreferences = NSApp.delegateTyped.accessibilityPreferences,
+         duckPlayer: DuckPlayer = NSApp.delegateTyped.duckPlayer,
          themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
+         tabDragAndDropManager: TabDragAndDropManager = NSApp.delegateTyped.tabDragAndDropManager,
          pixelFiring: PixelFiring? = PixelKit.shared,
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider = NSApp.delegateTyped.visualizeFireSettingsDecider,
          vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter = NSApp.delegateTyped.vpnUpsellPopoverPresenter,
@@ -140,13 +148,15 @@ final class MainViewController: NSViewController {
         self.fireCoordinator = fireCoordinator
         self.winBackOfferPromptPresenting = winBackOfferPromptPresenting
         self.tabsPreferences = tabsPreferences
+        self.duckPlayer = duckPlayer
 
         tabBarViewController = TabBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
             fireproofDomains: fireproofDomains,
             activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            tabDragAndDropManager: tabDragAndDropManager
         )
         bookmarksBarVisibilityManager = BookmarksBarVisibilityManager(selectedTabPublisher: tabCollectionViewModel.$selectedTabViewModel.eraseToAnyPublisher())
 
@@ -201,7 +211,10 @@ final class MainViewController: NSViewController {
             tabsPreferences: tabsPreferences,
             webTrackingProtectionPreferences: webTrackingProtectionPreferences,
             cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
-            aiChatPreferences: aiChatPreferences
+            aiChatPreferences: aiChatPreferences,
+            aboutPreferences: aboutPreferences,
+            accessibilityPreferences: accessibilityPreferences,
+            duckPlayer: duckPlayer
         )
         aiChatSidebarPresenter = AIChatSidebarPresenter(
             sidebarHost: browserTabViewController,
@@ -226,6 +239,10 @@ final class MainViewController: NSViewController {
             pixelFiring: pixelFiring
         )
 
+        // Create the shared text state for address bar mode switching
+        let sharedTextState = AddressBarSharedTextState()
+        self.sharedTextState = sharedTextState
+
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
                                                                          downloadListCoordinator: downloadListCoordinator,
                                                                          bookmarkManager: bookmarkManager,
@@ -247,7 +264,9 @@ final class MainViewController: NSViewController {
                                                                          sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
                                                                          defaultBrowserPreferences: defaultBrowserPreferences,
                                                                          downloadsPreferences: downloadsPreferences,
-                                                                         tabsPreferences: tabsPreferences)
+                                                                         tabsPreferences: tabsPreferences,
+                                                                         accessibilityPreferences: accessibilityPreferences,
+                                                                         sharedTextState: sharedTextState)
 
         findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
@@ -256,9 +275,27 @@ final class MainViewController: NSViewController {
             bookmarkManager: bookmarkManager,
             dragDropManager: bookmarkDragDropManager
         )
+
+        // Create the shared AI Chat omnibar controller
+        let aiChatOmnibarController = AIChatOmnibarController(
+            aiChatTabOpener: aiChatTabOpener,
+            sharedTextState: sharedTextState
+        )
+
+        aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(
+            themeManager: themeManager,
+            omnibarController: aiChatOmnibarController
+        )
+        aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(
+            omnibarController: aiChatOmnibarController,
+            sharedTextState: sharedTextState,
+            themeManager: themeManager
+        )
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
 
         super.init(nibName: nil, bundle: nil)
+
+        aiChatOmnibarController.delegate = self
         browserTabViewController.delegate = self
         findInPageViewController.delegate = self
     }
@@ -272,6 +309,8 @@ final class MainViewController: NSViewController {
         addAndLayoutChild(browserTabViewController, into: mainView.webContainerView)
         addAndLayoutChild(findInPageViewController, into: mainView.findInPageContainerView)
         addAndLayoutChild(fireViewController, into: mainView.fireContainerView)
+        addAndLayoutChild(aiChatOmnibarContainerViewController, into: mainView.aiChatOmnibarContainerView)
+        addAndLayoutChild(aiChatOmnibarTextContainerViewController, into: mainView.aiChatOmnibarTextContainerView)
     }
 
     override func viewDidLoad() {
@@ -286,6 +325,9 @@ final class MainViewController: NSViewController {
         mainView.findInPageContainerView.applyDropShadow()
 
         view.registerForDraggedTypes([.URL, .fileURL])
+
+        mainView.setupAIChatOmnibarTextContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
+        mainView.setupAIChatOmnibarContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
     }
 
     override func viewWillAppear() {
@@ -329,7 +371,7 @@ final class MainViewController: NSViewController {
             object: nil,
             queue: .main) { [weak self] _ in
                 self?.showBookmarkPromptIfNeeded()
-        }
+            }
     }
 
     override func viewDidDisappear() {
@@ -403,6 +445,8 @@ final class MainViewController: NSViewController {
         findInPageViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         fireViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         bookmarksBarViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        aiChatOmnibarContainerViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        aiChatOmnibarTextContainerViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
 #endif
     }
 
@@ -424,6 +468,21 @@ final class MainViewController: NSViewController {
 
     func toggleBookmarksBarVisibility() {
         updateBookmarksBarViewVisibility(visible: !isInPopUpWindow && !mainView.isBookmarksBarShown)
+    }
+
+    func updateAIChatOmnibarContainerVisibility(visible: Bool, shouldKeepSelection: Bool = false) {
+        mainView.isAIChatOmnibarContainerShown = visible
+
+        navigationBarViewController.addressBarViewController?.setAIChatOmnibarVisible(visible, shouldKeepSelection: shouldKeepSelection)
+
+        if visible {
+            aiChatOmnibarContainerViewController.startEventMonitoring()
+            aiChatOmnibarTextContainerViewController.startEventMonitoring()
+            aiChatOmnibarTextContainerViewController.focusTextView()
+        } else {
+            aiChatOmnibarContainerViewController.cleanup()
+            aiChatOmnibarTextContainerViewController.cleanup()
+        }
     }
 
     // Can be updated via keyboard shortcut so needs to be internal visibility
@@ -687,7 +746,8 @@ final class MainViewController: NSViewController {
     @objc private func showSetAsDefaultAndAddToDockIfNeeded() {
         defaultBrowserAndDockPromptPresenting.tryToShowPrompt(
             popoverAnchorProvider: getSourceViewToShowSetAsDefaultAndAddToDockPopover,
-            bannerViewHandler: showMessageBanner
+            bannerViewHandler: showMessageBanner,
+            inactiveUserModalWindowProvider: getSourceWindowToShowInactiveUserModal
         )
     }
 
@@ -701,6 +761,13 @@ final class MainViewController: NSViewController {
         } else {
             return navigationBarViewController.addressBarViewController?.view
         }
+    }
+
+    private func getSourceWindowToShowInactiveUserModal() -> NSWindow? {
+        guard isViewLoaded && view.window?.isKeyWindow == true else {
+            return nil
+        }
+        return view.window
     }
 
     private func showMessageBanner(banner: BannerMessageViewController) {
@@ -786,7 +853,6 @@ extension MainViewController {
         }.store(in: &viewEventsCancellables)
     }
 
-    // swiftlint:disable:next cyclomatic_complexity
     func customKeyDown(with event: NSEvent) -> Bool {
         guard let locWindow = self.view.window,
               NSApplication.shared.keyWindow === locWindow else { return false }
@@ -837,24 +903,15 @@ extension MainViewController {
         if isWebViewFocused {
             switch (key, flags, flags.contains(.command)) {
             case ("n", [.command], _),
-                 ("t", [.command], _), ("t", [.command, .shift], _),
-                 ("w", _, true),
-                 ("q", [.command], _),
-                 ("r", [.command], _):
+                ("t", [.command], _), ("t", [.command, .shift], _),
+                ("w", _, true),
+                ("q", [.command], _),
+                ("r", [.command], _):
                 NSApp.menu?.performKeyEquivalent(with: event)
                 return true
             default:
                 break
             }
-        }
-
-        // Handle CMD+Y (history view)
-        if key == "y", flags == .command {
-            if !NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) {
-                (NSApp.mainMenuTyped.historyMenu.accessibilityParent() as? NSMenuItem)?.accessibilityPerformPress()
-                return true
-            }
-            return false
         }
 
         return false
@@ -991,6 +1048,13 @@ extension MainViewController: BrowserTabViewControllerDelegate {
         return false
     }
 
+}
+
+// MARK: - AIChatOmnibarControllerDelegate
+extension MainViewController: AIChatOmnibarControllerDelegate {
+    func aiChatOmnibarControllerDidSubmit(_ controller: AIChatOmnibarController) {
+        updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
+    }
 }
 
 #if DEBUG

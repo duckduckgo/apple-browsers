@@ -23,6 +23,7 @@ import Persistence
 
 protocol OnboardingSearchExperienceProvider {
     var didEnableAIChatSearchInputDuringOnboarding: Bool { get }
+    var didMakeChoiceDuringOnboarding: Bool { get }
     var didApplyOnboardingChoiceSettings: Bool { get set }
 
     func storeAIChatSearchInputDuringOnboardingChoice(enable: Bool)
@@ -38,6 +39,10 @@ final class OnboardingSearchExperience: OnboardingSearchExperienceProvider {
         (
             storage.object(forKey: .didEnableAIChatSearchInputDuringOnboardingKey) as? Bool
         ) ?? .didEnableAIChatSearchInputDuringOnboardingDefaultValue
+    }
+
+    var didMakeChoiceDuringOnboarding: Bool {
+        storage.object(forKey: .didEnableAIChatSearchInputDuringOnboardingKey) != nil
     }
 
     var didApplyOnboardingChoiceSettings: Bool {

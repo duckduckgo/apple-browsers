@@ -74,6 +74,7 @@ protocol SharedColorPaletteDefinition {
     static var containerFillPrimary: DynamicColor { get }
     static var containerFillSecondary: DynamicColor { get }
     static var containerFillTertiary: DynamicColor { get }
+    static var containerBorderTertiary: DynamicColor { get }
 
     // MARK: - Controls Colors
     static var controlsFillPrimary: DynamicColor { get }

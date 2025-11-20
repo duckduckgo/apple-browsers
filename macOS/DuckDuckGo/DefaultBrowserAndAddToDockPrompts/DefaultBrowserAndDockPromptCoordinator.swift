@@ -72,10 +72,12 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     private let isSparkleBuild: Bool
     private let isOnboardingCompleted: () -> Bool
     private let dateProvider: () -> Date
+    private let notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting?
 
     init(
         promptTypeDecider: DefaultBrowserAndDockPromptTypeDeciding,
         store: DefaultBrowserAndDockPromptStorage,
+        notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting?,
         isOnboardingCompleted: @escaping () -> Bool,
         dockCustomization: DockCustomization = DockCustomizer(),
         defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
@@ -91,6 +93,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         self.isSparkleBuild = applicationBuildType.isSparkleBuild
         self.pixelFiring = pixelFiring
         self.dateProvider = dateProvider
+        self.notificationPresenter = notificationPresenter
     }
 
     var evaluatePromptEligibility: DefaultBrowserAndDockPromptType? {
@@ -242,6 +245,10 @@ private extension DefaultBrowserAndDockPromptCoordinator {
         // Set the banner seen only when the user interact with it because we want to show it in every windows.
         if case .active(.banner) = prompt {
             setBannerSeen(shouldHidePermanently: shouldHidePermanently)
+        }
+
+        if case .inactive = prompt {
+            notificationPresenter?.showInactiveUserPromptNotification()
         }
 
         fireDismissActionPixel()

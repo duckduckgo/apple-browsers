@@ -20,253 +20,271 @@ import Foundation
 import BrowserServicesKit
 
 public enum FeatureFlag: String, CaseIterable {
-    case debugMenu
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715760000
     case sslCertificatesBypass
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715841970
     case maliciousSiteProtection
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473245911
     case scamSiteProtection
 
     /// Add experimental atb parameter to SERP queries for internal users to display Privacy Reminder
-    /// https://app.asana.com/0/1199230911884351/1205979030848528/f
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866472784764
     case appendAtbToSerpQueries
 
-    // https://app.asana.com/0/1206488453854252/1207136666798700/f
+    // https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614987519
     case freemiumDBP
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470686549
     case contextualOnboarding
 
-    // https://app.asana.com/0/1201462886803403/1208030658792310/f
+    // https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715698981
     case unknownUsernameCategorization
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614369626
     case credentialsImportPromotionForExistingUsers
 
-    /// https://app.asana.com/0/0/1209402073283584
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473461472
     case networkProtectionAppStoreSysex
 
-    /// https://app.asana.com/0/1203108348835387/1209710972679271/f
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473771128
     case networkProtectionAppStoreSysexMessage
 
-    /// https://app.asana.com/0/1201048563534612/1208850443048685/f
-    case historyView
-
     /// Subfeature: display the Sites section inside History View
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866716610324
     case historyViewSitesSection
 
     /// Enable WebKit page load timing performance reporting
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/XXXXXXXXX?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615625098
     case webKitPerformanceReporting
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615719736
     case autoUpdateInDEBUG
 
-    /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1210099321661462?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615802881
     case updatesWontAutomaticallyRestartApp
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715515023
     case autofillPartialFormSaves
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866714296474
     case autocompleteTabs
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474376005
     case webExtensions
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616130440
     case syncSeamlessAccountSwitching
 
-    /// SAD & ATT Prompts: https://app.asana.com/1/137249556945/project/1206329551987282/task/1210225579353384?focus=true
+    /// SAD & ATT Prompts: https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474521433
     case scheduledSetDefaultBrowserAndAddToDockPrompts
 
-    /// https://app.asana.com/0/72649045549333/1207991044706236/f
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474590440
     case privacyProAuthV2
 
-    // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
-    case failsafeExampleCrossPlatformFeature
-    case failsafeExamplePlatformSpecificSubfeature
-
-    /// https://app.asana.com/0/72649045549333/1209793701087222/f
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717504694
     case visualUpdates
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616568109
     case visualUpdatesInternalOnly
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209227311680179?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614764239
     case tabCrashDebugging
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209227311680179?focus=true
-    case tabCrashRecovery
-
-    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1209499005452053?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382544
     case delayedWebviewPresentation
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1205508328452434?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717886474
     case dbpRemoteBrokerDelivery
 
-    /// https://app.asana.com/1/137249556945/project/481882893211075/task/1210764611054383?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616923544
     case dbpEmailConfirmationDecoupling
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382557
     case syncSetupBarcodeIsUrlBased
 
-    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1210325960030113?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615684438
     case exchangeKeysToSyncWithAnotherDevice
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866613117546
     case canScanUrlBasedSyncSetupBarcodes
 
-    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210052464460517?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866610505232
     case privacyProFreeTrial
 
-    /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1210181044180012?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617269950
     case paidAIChat
 
-    /// https://app.asana.com/1/137249556945/task/1210330600670666
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617356615
     case removeWWWInCanonicalizationInThreatProtection
 
-    /// https://app.asana.com/1/137249556945/project/1209671977594486/task/1210012482760771?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717945014
     case aiChatSidebar
 
-    /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1210012162616039?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475785434
     case aiChatTextSummarization
 
-    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210820085909882?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866718657077
     case aiChatTextTranslation
 
-    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210921598044116?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615582950
     case aiChatPageContext
 
-    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1211026820773885?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617720317
     case aiChatImprovements
 
-    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1211026820773885?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617328244
     case aiChatKeepSession
 
-    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
+    /// Enables the omnibar toggle for AI Chat
+    /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709106
+    case aiChatOmnibarToggle
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476152134
     case osSupportForceUnsupportedMessage
 
-    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476263589
     case osSupportForceWillSoonDropSupportMessage
 
-    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719124742
     case willSoonDropBigSurSupport
 
-    /// https://app.asana.com/1/137249556945/project/1211264967278501/task/1211247682232308?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475316806
     case hangReporting
 
-    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210493210455717?focus=true
-    case shortHistoryMenu
-
-    /// https://app.asana.com/1/137249556945/project/1209825025475019/task/1210649149275753?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476547580
     case importChromeShortcuts
 
-    /// https://app.asana.com/1/137249556945/project/1209825025475019/task/1210649149275753?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866618404342
     case updateSafariBookmarksImport
 
-    /// https://app.asana.com/1/137249556945/project/1209825025475019/task/1210649149275753?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715760013
     case updateFirefoxBookmarksImport
 
-    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1210522798790015?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866618564878
     case disableFireAnimation
 
-    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1210625630564796?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476860577
     case newTabPageOmnibar
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210561963620632?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719732725
     case vpnToolbarUpsell
 
     /// Loading New Tab Page in regular browsing webview
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719013868
     case newTabPagePerTab
 
     /// Managing state of New Tab Page using tab IDs in frontend
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719908836
     case newTabPageTabIDs
 
-    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210380647876463?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866618846917
     /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
     case supportsAlternateStripePaymentFlow
 
-    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211048158968532?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720037380
     case openFireWindowByDefault
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208994157946492?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619027311
     case restoreSessionPrompt
 
-    /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1211122605729911?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473926615
     case duckAISearchParameter
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211148305864314?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719485546
     case refactorOfSyncPreferences
 
-    /// https://app.asana.com/1/137249556945/project/1202926619870900/task/1211148305864315?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619299477
     case newSyncEntryPoints
 
-    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211127159784126?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619360873
     case subscriptionPurchaseWidePixelMeasurement
 
-    /// https://app.asana.com/1/137249556945/project/1203822806345703/task/1211227407476981?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720018164
     case syncFeatureLevel3
 
-    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1208865987567163?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720557742
     case themes
 
-    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211258257937392?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619633097
     case appStoreUpdateFlow
 
-    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1211260578559159?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720696560
     case unifiedURLPredictor
 
-    /// https://app.asana.com/1/137249556945/task/1211354430557015?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619862984?focus=true
     case subscriptionRestoreWidePixelMeasurement
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211555469558398?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619917130
     case authV2WideEventEnabled
 
-    /// https://app.asana.com/1/137249556945/project/1210594645229050/task/1211494295271901?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720972159
     case winBackOffer
 
-    /// https://app.asana.com/1/137249556945/project/1210594645229050/task/1211612114679665?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211969496845106?focus=true
     case blackFridayCampaign
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210417832822045
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477541910
     case fireDialog
+
     /// Toggle for showing the "Manage individual sites" link in Fire dialog
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715393773
     case fireDialogIndividualSitesLink
 
-    ///  https://app.asana.com/1/137249556945/project/72649045549333/task/1207055705580443?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477844148
     case syncCreditCards
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620280912
     case syncIdentities
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211185922947392?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866478543578
     case aiChatDataClearing
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211469820985204?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721266209
     case dataImportNewSafariFilePicker
 
-    /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1211625735257812?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721265889
     case cpmCountPixel
 
-    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211708648644692?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620653515
     case storeSerpSettings
 
-    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620524141
     case blurryAddressBarTahoeFix
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211757211733009?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477623612
     case dataImportNewExperience
 
-    /// https://app.asana.com/1/137249556945/project/492600419927320/task/1210863200265479?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721275379
     case scheduledDefaultBrowserAndDockPromptsInactiveUser
 
-    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1209949983074592?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866478113546
     case pinnedTabsViewRewrite
 
-    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1211708489642640?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
     case tabProgressIndicator
+
+    /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
+    case attributedMetrics
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211388368219934?focus=true
     case vpnConnectionWidePixelMeasurement
 
-    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211579914062173?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721557461
     case showHideAIGeneratedImagesSection
 
     /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
     case standaloneMigration
+
+    /// https://app.asana.com/1/137249556945/project/1163321984198618/task/1203578778040829?focus=true
+    case newTabPageAutoconsentStats
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature,
-                .failsafeExamplePlatformSpecificSubfeature,
-                .removeWWWInCanonicalizationInThreatProtection,
+        case .removeWWWInCanonicalizationInThreatProtection,
                 .visualUpdatesInternalOnly,
                 .importChromeShortcuts,
                 .updateSafariBookmarksImport,
@@ -282,10 +300,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportNewSafariFilePicker,
                 .fireDialog,
                 .fireDialogIndividualSitesLink,
+                .historyViewSitesSection,
                 .blurryAddressBarTahoeFix,
                 .pinnedTabsViewRewrite,
-                .vpnConnectionWidePixelMeasurement,
-                .showHideAIGeneratedImagesSection:
+                .vpnConnectionWidePixelMeasurement:
             true
         default:
             false
@@ -306,19 +324,15 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
                 .syncSeamlessAccountSwitching,
-                .historyView,
                 .historyViewSitesSection,
                 .webExtensions,
                 .autoUpdateInDEBUG,
                 .updatesWontAutomaticallyRestartApp,
                 .privacyProAuthV2,
                 .scamSiteProtection,
-                .failsafeExampleCrossPlatformFeature,
-                .failsafeExamplePlatformSpecificSubfeature,
                 .visualUpdates,
                 .visualUpdatesInternalOnly,
                 .tabCrashDebugging,
-                .tabCrashRecovery,
                 .maliciousSiteProtection,
                 .delayedWebviewPresentation,
                 .syncSetupBarcodeIsUrlBased,
@@ -337,7 +351,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatPageContext,
                 .aiChatImprovements,
                 .aiChatKeepSession,
-                .shortHistoryMenu,
+                .aiChatOmnibarToggle,
                 .importChromeShortcuts,
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
@@ -373,13 +387,14 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dataImportNewExperience,
                 .pinnedTabsViewRewrite,
                 .tabProgressIndicator,
+                .attributedMetrics,
                 .vpnConnectionWidePixelMeasurement,
                 .showHideAIGeneratedImagesSection,
                 .standaloneMigration,
-                .blackFridayCampaign:
+                .blackFridayCampaign,
+                .newTabPageAutoconsentStats:
             return true
-        case .debugMenu,
-                .sslCertificatesBypass,
+        case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
                 .freemiumDBP,
                 .contextualOnboarding,
@@ -395,8 +410,6 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var source: FeatureFlagSource {
         switch self {
-        case .debugMenu:
-            return .internalOnly()
         case .appendAtbToSerpQueries:
             return .internalOnly()
         case .sslCertificatesBypass:
@@ -415,8 +428,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
         case .networkProtectionAppStoreSysexMessage:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage))
-        case .historyView:
-            return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
         case .historyViewSitesSection:
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.sitesSection))
         case .autoUpdateInDEBUG:
@@ -441,18 +452,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPrompts))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
-        case .failsafeExampleCrossPlatformFeature:
-            return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
-        case .failsafeExamplePlatformSpecificSubfeature:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         case .visualUpdates:
             return .remoteReleasable(.subfeature(ExperimentalThemingSubfeature.visualUpdates))
         case .visualUpdatesInternalOnly:
             return .internalOnly()
         case .tabCrashDebugging:
             return .disabled
-        case .tabCrashRecovery:
-            return .remoteReleasable(.feature(.tabCrashRecovery))
         case .delayedWebviewPresentation:
             return .remoteReleasable(.feature(.delayedWebviewPresentation))
         case .dbpRemoteBrokerDelivery:
@@ -483,6 +488,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.improvements))
         case .aiChatKeepSession:
             return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
+        case .aiChatOmnibarToggle:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarToggle))
         case .osSupportForceUnsupportedMessage:
             return .disabled
         case .osSupportForceWillSoonDropSupportMessage:
@@ -491,8 +498,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.willSoonDropBigSurSupport))
         case .hangReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.hangReporting))
-        case .shortHistoryMenu:
-            return .remoteReleasable(.feature(.shortHistoryMenu))
         case .importChromeShortcuts:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.importChromeShortcuts))
         case .updateSafariBookmarksImport:
@@ -552,7 +557,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .cpmCountPixel:
             return .internalOnly()
         case .storeSerpSettings:
-            return .remoteReleasable(.feature(.storeSerpSettings))
+            return .remoteReleasable(.subfeature(SERPSubfeature.storeSerpSettings))
         case .blurryAddressBarTahoeFix:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .dataImportNewExperience:
@@ -563,12 +568,16 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.pinnedTabsViewRewrite))
         case .tabProgressIndicator:
             return .disabled
+        case .attributedMetrics:
+            return .remoteReleasable(.feature(.attributedMetrics))
         case .vpnConnectionWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
         case .showHideAIGeneratedImagesSection:
-            return .remoteReleasable(.feature(.showHideAIGeneratedImagesSection))
+            return .remoteReleasable(.subfeature(AIChatSubfeature.showHideAiGeneratedImages))
         case .standaloneMigration:
             return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
+        case .newTabPageAutoconsentStats:
+            return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.autoconsentStats))
         }
     }
 }

@@ -25,11 +25,13 @@ final class DefaultBrowserAndDockPromptService {
     let featureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let store: DefaultBrowserAndDockPromptKeyValueStore
     let userActivityManager: DefaultBrowserAndDockPromptUserActivityManager
+    let notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting
 
     init(
         featureFlagger: FeatureFlagger,
         privacyConfigManager: PrivacyConfigurationManaging,
         keyValueStore: ThrowingKeyValueStoring,
+        notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting,
         isOnboardingCompletedProvider: @escaping () -> Bool
     ) {
 
@@ -41,6 +43,7 @@ final class DefaultBrowserAndDockPromptService {
 #endif
 
         self.featureFlagger = DefaultBrowserAndDockPromptFeatureFlag(privacyConfigManager: privacyConfigManager, featureFlagger: featureFlagger)
+        self.notificationPresenter = notificationPresenter
         let userActivityStore = DefaultBrowserAndDockPromptUserActivityStore(keyValueFilesStore: keyValueStore)
         userActivityManager = DefaultBrowserAndDockPromptUserActivityManager(store: userActivityStore, dateProvider: defaultBrowserAndDockPromptDateProvider)
 
@@ -60,17 +63,23 @@ final class DefaultBrowserAndDockPromptService {
         let coordinator = DefaultBrowserAndDockPromptCoordinator(
             promptTypeDecider: defaultBrowserAndDockPromptDecider,
             store: store,
+            notificationPresenter: notificationPresenter,
             isOnboardingCompleted: isOnboardingCompletedProvider,
             dateProvider: defaultBrowserAndDockPromptDateProvider
         )
         let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier()
+        let uiProvider = DefaultBrowserAndDockPromptUIProvider()
 
-        presenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier)
+        presenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier, uiProvider: uiProvider)
     }
 
     func applicationDidBecomeActive() {
         guard shouldRecordActivity() else { return }
         userActivityManager.recordActivity()
+    }
+
+    func handleNotificationResponse(_ response: DefaultBrowserAndDockPromptNotificationIdentifier) async {
+        await notificationPresenter.handleNotificationResponse(for: response)
     }
 
     private func shouldRecordActivity() -> Bool {

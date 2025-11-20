@@ -7,10 +7,16 @@ import NetworkExtension
 import Common
 import os.log
 
+protocol PacketTunnelSettingsGenerating: AnyObject {
+    func uapiConfiguration() -> (String, [EndpointResolutionResult?])
+    func endpointUapiConfiguration() -> (String, [EndpointResolutionResult?])
+    func generateNetworkSettings() -> NEPacketTunnelNetworkSettings
+}
+
 /// A type alias for `Result` type that holds a tuple with source and resolved endpoint.
 typealias EndpointResolutionResult = Result<(Endpoint, Endpoint), DNSResolutionError>
 
-final class PacketTunnelSettingsGenerator {
+final class PacketTunnelSettingsGenerator: PacketTunnelSettingsGenerating {
     let tunnelConfiguration: TunnelConfiguration
     let resolvedEndpoints: [Endpoint?]
 

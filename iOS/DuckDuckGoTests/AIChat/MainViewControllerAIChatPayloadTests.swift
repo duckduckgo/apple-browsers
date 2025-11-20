@@ -62,6 +62,7 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
         let db = CoreDataDatabase.bookmarksMock
         let bookmarkDatabaseCleaner = BookmarkDatabaseCleaner(bookmarkDatabase: db, errorEvents: nil)
         let dataProviders = SyncDataProviders(
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
             bookmarksDatabase: db,
             secureVaultFactory: AutofillSecureVaultFactory,
             secureVaultErrorReporter: SecureVaultReporter(),
@@ -90,10 +91,12 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
         let daxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: contextualOnboardingLogicMock,
                                                                      contextualOnboardingPixelReporter: onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
+        let configMock = PrivacyConfigurationManagerMock()
         let tabManager = TabManager(model: tabsModel,
                                     persistence: tabsPersistence,
                                     previewsSource: MockTabPreviewsSource(),
                                     interactionStateSource: interactionStateSource,
+                                    privacyConfigurationManager: configMock,
                                     bookmarksDatabase: db,
                                     historyManager: historyManager,
                                     syncService: syncService,
@@ -117,6 +120,7 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
         )
         
         sut = TestableMainViewController(
+            privacyConfigurationManager: configMock,
             bookmarksDatabase: db,
             bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
             historyManager: historyManager,

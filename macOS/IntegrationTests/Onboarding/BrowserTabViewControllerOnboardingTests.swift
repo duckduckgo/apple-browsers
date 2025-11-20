@@ -178,7 +178,12 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                     featureFlagger: MockFeatureFlagger()
                 ),
                 aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager),
-                accessibilityPreferences: AccessibilityPreferences()
+                accessibilityPreferences: AccessibilityPreferences(),
+                duckPlayer: DuckPlayer(
+                    preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                    internalUserDecider: featureFlagger.internalUserDecider
+                )
             )
             _=viewController.view
             window = MockWindow()

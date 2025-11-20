@@ -133,6 +133,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let aboutPreferences: AboutPreferences
     let accessibilityPreferences: AccessibilityPreferences
+    let duckPlayer: DuckPlayer
 
     let database: Database!
     let bookmarkDatabase: BookmarkDatabase
@@ -160,6 +161,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         customizationModel: newTabPageCustomizationModel,
         bookmarkManager: bookmarkManager,
         faviconManager: faviconManager,
+        duckPlayerHistoryEntryTitleProvider: duckPlayer,
         activeRemoteMessageModel: activeRemoteMessageModel,
         historyCoordinator: historyCoordinator,
         contentBlocking: privacyFeatures.contentBlocking,
@@ -748,6 +750,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             windowControllersManager: windowControllersManager
         )
         accessibilityPreferences = AccessibilityPreferences()
+        duckPlayer = DuckPlayer(
+            preferencesPersistor: DuckPlayerPreferencesUserDefaultsPersistor(),
+            privacyConfigurationManager: privacyConfigurationManager,
+            internalUserDecider: internalUserDecider
+        )
         newTabPageCustomizationModel = NewTabPageCustomizationModel(themeManager: themeManager, appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld,
@@ -774,6 +781,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 startupPreferences: startupPreferences,
                 webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+                duckPlayer: duckPlayer,
                 windowControllersManager: windowControllersManager,
                 bookmarkManager: bookmarkManager,
                 historyCoordinator: historyCoordinator,
@@ -801,6 +809,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             startupPreferences: startupPreferences,
             webTrackingProtectionPreferences: webTrackingProtectionPreferences,
             cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+            duckPlayer: duckPlayer,
             windowControllersManager: windowControllersManager,
             bookmarkManager: bookmarkManager,
             historyCoordinator: historyCoordinator,
@@ -1633,6 +1642,7 @@ extension AppDelegate: UserScriptDependenciesProviding {
             customizationModel: newTabPageCustomizationModel,
             bookmarkManager: bookmarkManager,
             faviconManager: faviconManager,
+            duckPlayerHistoryEntryTitleProvider: duckPlayer,
             contentBlocking: contentBlocking,
             trackerDataManager: contentBlocking.trackerDataManager,
             activeRemoteMessageModel: activeRemoteMessageModel,

@@ -20,15 +20,19 @@ import Foundation
 import Common
 import PixelKit
 
-public class AttributedMetricErrorHandler: EventMapping<DataStorageError> {
+public protocol AttributedMetricErrorHandling {
+    func report(error: any DDGError)
+}
+
+public class AttributedMetricErrorHandler: AttributedMetricErrorHandling {
+
+    let pixelKit: PixelKit
 
     public init(pixelKit: PixelKit) {
-        super.init { event, _, _, _ in
-            pixelKit.fire(AttributedMetricPixel.dataStoreError(error: event))
-        }
+        self.pixelKit = pixelKit
     }
 
-    override init(mapping: @escaping EventMapping<DataStorageError>.Mapping) {
-        fatalError("Use init()")
+    public func report(error: any DDGError) {
+        pixelKit.fire(AttributedMetricPixel.dataStoreError(error: error))
     }
 }

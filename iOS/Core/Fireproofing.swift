@@ -57,6 +57,7 @@ public class UserDefaultsFireproofing: Fireproofing {
     private var allowedDomainsIncludingDuckDuckGo: [String] {
         allowedDomains + [
             URL.ddg.host ?? "",
+            URL.duckAi.host ?? "",
         ]
     }
 

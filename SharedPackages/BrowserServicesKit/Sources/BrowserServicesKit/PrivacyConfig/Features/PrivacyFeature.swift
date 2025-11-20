@@ -66,7 +66,6 @@ public enum PrivacyFeature: String {
     case adAttributionReporting
     case forceOldAppDelegate
     case htmlHistoryPage
-    case shortHistoryMenu
     case tabManager
     case webViewStateRestoration
     case experimentalTheming
@@ -77,7 +76,6 @@ public enum PrivacyFeature: String {
     case iOSBrowserConfig
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlyFeatureForTests
-    case tabCrashRecovery
     case delayedWebviewPresentation
     case disableFireAnimation
     case htmlNewTabPage

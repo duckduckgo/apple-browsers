@@ -56,6 +56,9 @@ public struct UserText {
     public static let actionPrint = NSLocalizedString("action.title.print", value: "Print", comment: "Print action in the menu header")
     public static let actionPrintSite = NSLocalizedString("action.title.print.site", value: "Print", comment: "Print action in the menu list")
     public static let actionOpenAIChat = NSLocalizedString("action.title.duckai", value: "Duck.ai", comment: "Open AI Chat action in the menu list")
+    public static let actionNewAIChat = NSLocalizedString("action.title.aiChat.new", value: "AI Chat", comment: "Start new AI Chat action in the menu list")
+    public static let actionAIChatHistory = NSLocalizedString("action.title.aiChat.history", value: "Duck.ai Chats", comment: "Open AI Chat history action in the menu list")
+    public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
 
     public static let actionOpenBookmarks = NSLocalizedString("action.title.bookmarks", value: "Bookmarks", comment: "Button: Open bookmarks list")
     public static let actionOpenPasswords = NSLocalizedString("action.title.passwords", value: "Passwords", comment: "Button: Open passwords list")
@@ -1861,7 +1864,6 @@ public struct UserText {
     public static let newAddressBarPickerNotNow = NSLocalizedString("new.address.bar.picker.not.now", value: "Not Now", comment: "Not now button for the new address bar picker")
     public static let newAddressBarPickerFooter = NSLocalizedString("new.address.bar.picker.footer", value: "Adjust in Settings > AI Features", comment: "Footer text for the new address bar picker")
     public static let settingsAIPickerSearchAndDuckAI = NSLocalizedString("settings.ai.experimental.picker.search_and_duckai", value: "Search & Duck.ai", comment: "Title for the 'Search & Duck.ai' option in the AI experimental picker")
-    public static let settingsAIPickerAddDuckAIShortcut = NSLocalizedString("settings.ai.experimental.picker.duckai_shortcut", value: "Add Duck.ai Shortcut", comment: "Title for the 'Add Duck.ai Shortcut' option in the AI experimental picker")
 
     public enum MaliciousSiteProtectionSettings {
         public static let header = NSLocalizedString("malicious-site-protection.settings.header", value: "Site Safety Warnings", comment: "Header text for Malicious Site Protection settings")
@@ -1914,45 +1916,9 @@ public struct UserText {
         }
 
         enum SearchExperience {
-            public static let title = NSLocalizedString("onboarding.highlights.searchExperience.title", value: "Want easier access to private AI Chat?", comment: "The title of the onboarding dialog popup to select the preferred search experience.")
-            public static let subtitle = NSLocalizedString("onboarding.highlights.searchExperience.subtitle", value: "Add a Duck.ai shortcut to new tabs and the address bar. Don't want this? Select Search Only.", comment: "The explanation of the onboarding dialog popup to select the preferred search experience.")
+            public static let title = NSLocalizedString("onboarding.highlights.searchExperience.title", value: "Want easy access to private AI chat?", comment: "The title of the onboarding dialog popup to select the preferred search experience.")
             public static let footer = NSLocalizedString("onboarding.highlights.searchExperience.footer", value: "AI features are private and optional. You can make changes in Settings > AI Features.", comment: "The footer disclaimer text for the search experience onboarding screen.")
             public static let cta = NSLocalizedString("onboarding.highlights.searchExperience.cta", value: "Next", comment: "The title of the CTA to progress to the next onboarding screen.")
-            
-            static func subtitleAttributed() -> NSAttributedString {
-                let duckAIShortcutBold = NSLocalizedString(
-                    "onboarding.highlights.searchExperience.subtitle.duckai-shortcut-bold",
-                    value: "Duck.ai shortcut",
-                    comment: "Bold text 'Duck.ai shortcut'. This will replace the first placeholder (%1$@) in the subtitle string."
-                )
-                
-                let searchOnlyBold = NSLocalizedString(
-                    "onboarding.highlights.searchExperience.subtitle.search-only-bold",
-                    value: "Search Only",
-                    comment: "Bold text 'Search Only'. This will replace the second placeholder (%2$@) in the subtitle string."
-                )
-                
-                let fullText = String(format: NSLocalizedString(
-                    "onboarding.highlights.searchExperience.subtitle.formatted",
-                    value: "Add a %1$@ to new tabs and the address bar. Don't want this? Select %2$@.",
-                    comment: "Full message with placeholders: %1$@ will be replaced with 'Duck.ai shortcut' (bold), %2$@ will be replaced with 'Search Only' (bold)."), duckAIShortcutBold, searchOnlyBold)
-                
-                let attributedString = NSMutableAttributedString(string: fullText)
-                
-                let boldAttributes: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.daxBodyBold()
-                ]
-                
-                if let duckAIRange = fullText.range(of: duckAIShortcutBold) {
-                    attributedString.addAttributes(boldAttributes, range: NSRange(duckAIRange, in: fullText))
-                }
-                
-                if let searchOnlyRange = fullText.range(of: searchOnlyBold) {
-                    attributedString.addAttributes(boldAttributes, range: NSRange(searchOnlyRange, in: fullText))
-                }
-                
-                return attributedString
-            }
             
             static func footerAttributed() -> NSAttributedString {
                 let settingsPathBold = NSLocalizedString(

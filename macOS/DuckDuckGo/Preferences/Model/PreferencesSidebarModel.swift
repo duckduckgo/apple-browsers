@@ -67,6 +67,7 @@ final class PreferencesSidebarModel: ObservableObject {
     let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let aiChatPreferences: AIChatPreferences
     let aboutPreferences: AboutPreferences
+    let accessibilityPreferences: AccessibilityPreferences
     let isUsingAuthV2: Bool
 
     @Published private(set) var currentSubscriptionState: PreferencesSidebarSubscriptionState = .init()
@@ -116,6 +117,7 @@ final class PreferencesSidebarModel: ObservableObject {
         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
         aiChatPreferences: AIChatPreferences,
         aboutPreferences: AboutPreferences,
+        accessibilityPreferences: AccessibilityPreferences,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
         self.loadSections = loadSections
@@ -135,6 +137,7 @@ final class PreferencesSidebarModel: ObservableObject {
         self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
         self.aiChatPreferences = aiChatPreferences
         self.aboutPreferences = aboutPreferences
+        self.accessibilityPreferences = accessibilityPreferences
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
 
         self.personalInformationRemovalUpdates = personalInformationRemovalSubject.eraseToAnyPublisher()
@@ -172,6 +175,7 @@ final class PreferencesSidebarModel: ObservableObject {
         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
         aiChatPreferences: AIChatPreferences,
         aboutPreferences: AboutPreferences,
+        accessibilityPreferences: AccessibilityPreferences,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
         let loadSections = { currentSubscriptionFeatures in
@@ -199,6 +203,7 @@ final class PreferencesSidebarModel: ObservableObject {
                   cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
                   aiChatPreferences: aiChatPreferences,
                   aboutPreferences: aboutPreferences,
+                  accessibilityPreferences: accessibilityPreferences,
                   winBackOfferVisibilityManager: winBackOfferVisibilityManager
         )
     }

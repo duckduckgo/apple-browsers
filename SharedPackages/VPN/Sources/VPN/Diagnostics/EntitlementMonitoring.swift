@@ -23,7 +23,7 @@ import Foundation
 /// This protocol defines the interface for monitoring VPN subscription entitlement
 /// status and detecting when access is revoked.
 ///
-protocol EntitlementMonitoring: Actor {
+public protocol EntitlementMonitoring: Actor {
 
     /// Indicates whether the monitor is currently running.
     var isStarted: Bool { get }

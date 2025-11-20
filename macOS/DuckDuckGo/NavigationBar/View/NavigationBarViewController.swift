@@ -157,6 +157,7 @@ final class NavigationBarViewController: NSViewController {
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let downloadsPreferences: DownloadsPreferences
     private let tabsPreferences: TabsPreferences
+    private let accessibilityPreferences: AccessibilityPreferences
     private let showTab: (Tab.TabContent) -> Void
 
     let themeManager: ThemeManaging
@@ -230,6 +231,7 @@ final class NavigationBarViewController: NSViewController {
                        defaultBrowserPreferences: DefaultBrowserPreferences,
                        downloadsPreferences: DownloadsPreferences,
                        tabsPreferences: TabsPreferences,
+                       accessibilityPreferences: AccessibilityPreferences,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
                                Application.appDelegate.windowControllersManager.showTab(with: content)
@@ -264,6 +266,7 @@ final class NavigationBarViewController: NSViewController {
                 defaultBrowserPreferences: defaultBrowserPreferences,
                 downloadsPreferences: downloadsPreferences,
                 tabsPreferences: tabsPreferences,
+                accessibilityPreferences: accessibilityPreferences,
                 showTab: showTab
             )
         }!
@@ -296,6 +299,7 @@ final class NavigationBarViewController: NSViewController {
         defaultBrowserPreferences: DefaultBrowserPreferences,
         downloadsPreferences: DownloadsPreferences,
         tabsPreferences: TabsPreferences,
+        accessibilityPreferences: AccessibilityPreferences,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
@@ -336,6 +340,7 @@ final class NavigationBarViewController: NSViewController {
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.downloadsPreferences = downloadsPreferences
         self.tabsPreferences = tabsPreferences
+        self.accessibilityPreferences = accessibilityPreferences
         self.showTab = showTab
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
         self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
@@ -402,6 +407,7 @@ final class NavigationBarViewController: NSViewController {
                                                                       popovers: popovers,
                                                                       searchPreferences: searchPreferences,
                                                                       tabsPreferences: tabsPreferences,
+                                                                      accessibilityPreferences: accessibilityPreferences,
                                                                       onboardingPixelReporter: onboardingPixelReporter,
                                                                       aiChatMenuConfig: aiChatMenuConfig,
                                                                       aiChatSidebarPresenter: aiChatSidebarPresenter) else {
@@ -553,7 +559,7 @@ final class NavigationBarViewController: NSViewController {
         let performResize = { [weak self] in
             guard let self else { return }
 
-            let isAddressBarFocused = view.window?.firstResponder == addressBarViewController?.addressBarTextField.currentEditor()
+            let isAddressBarFocused = addressBarViewController?.selectionState.isSelected ?? false
 
             let height: NSLayoutConstraint = animated ? navigationBarHeightConstraint.animator() : navigationBarHeightConstraint
             height.constant = addressBarStyleProvider.navigationBarHeight(for: sizeClass, focused: isAddressBarFocused)
@@ -1623,7 +1629,7 @@ final class NavigationBarViewController: NSViewController {
         // This allows the address bar to maintain its width when activating it at narrow widths.
         guard !isInPopUpWindow,
               let addressBarViewController,
-              !addressBarViewController.isFirstResponder || addressBarViewController.isHomePage else {
+              !addressBarViewController.isSelected || addressBarViewController.isHomePage else {
             return
         }
 
@@ -2130,7 +2136,8 @@ extension NavigationBarViewController: AddressBarViewControllerDelegate {
 
     func addressBarViewControllerSearchModeToggleChanged(_ addressBarViewController: AddressBarViewController, isAIChatMode: Bool) {
         if let mainViewController = parent as? MainViewController {
-            mainViewController.updateAIChatOmnibarContainerVisibility(visible: isAIChatMode)
+            // When manually toggling to search mode (!isAIChatMode), keep the address bar selected
+            mainViewController.updateAIChatOmnibarContainerVisibility(visible: isAIChatMode, shouldKeepSelection: !isAIChatMode)
         }
     }
 }

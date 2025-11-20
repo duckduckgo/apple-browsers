@@ -106,7 +106,8 @@ final class OnboardingIntroViewModel: ObservableObject {
         let defaultBrowserEventMapper = DefaultBrowserPromptManagerDebugPixelHandler()
         let onboardingSearchExperienceProvider = OnboardingSearchExperience()
         self.init(
-            defaultBrowserManager: DefaultBrowserManager(defaultBrowserInfoStore: defaultBrowserInfoStore, defaultBrowserEventMapper: defaultBrowserEventMapper),
+            defaultBrowserManager: DefaultBrowserManager(defaultBrowserInfoStore: defaultBrowserInfoStore,
+                                                         defaultBrowserEventMapper: defaultBrowserEventMapper, defaultBrowserChecker: SystemCheckDefaultBrowserService(application: UIApplication.shared)),
             contextualDaxDialogs: daxDialogsManager,
             pixelReporter: pixelReporter,
             onboardingManager: onboardingManager,

@@ -288,8 +288,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - Registration Key
 
-    private lazy var keyStore = NetworkProtectionKeychainKeyStore(keychainType: keychainType,
-                                                                  errorEvents: debugEvents)
+    private var keyStore: NetworkProtectionKeyStore
 
     public let tokenHandlerProvider: () -> any SubscriptionTokenHandling
     @objc
@@ -421,29 +420,20 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
     }()
 
-    private lazy var deviceManager: NetworkProtectionDeviceManagement = NetworkProtectionDeviceManager(
-        environment: self.settings.selectedEnvironment,
-        tokenHandler: self.tokenHandlerProvider(),
-        keyStore: self.keyStore,
-        errorEvents: self.debugEvents
-    )
-
     private lazy var tunnelFailureMonitor = NetworkProtectionTunnelFailureMonitor(handshakeReporter: adapter)
 
-    public lazy var latencyMonitor = NetworkProtectionLatencyMonitor()
-    public lazy var entitlementMonitor = NetworkProtectionEntitlementMonitor()
-    public lazy var serverStatusMonitor = NetworkProtectionServerStatusMonitor(
-        networkClient: NetworkProtectionBackendClient(environment: self.settings.selectedEnvironment),
-        tokenHandler: self.tokenHandlerProvider()
-    )
+    public let latencyMonitor: LatencyMonitoring
+    public let entitlementMonitor: EntitlementMonitoring
 
     private var lastTestFailed = false
-    private let bandwidthAnalyzer = NetworkProtectionConnectionBandwidthAnalyzer()
+    private let bandwidthAnalyzer: BandwidthAnalyzing
     private let tunnelHealth: NetworkProtectionTunnelHealthStore
     private let controllerErrorStore: NetworkProtectionTunnelErrorStore
     private let knownFailureStore: NetworkProtectionKnownFailureStore
     private let snoozeTimingStore: NetworkProtectionSnoozeTimingStore
     private let wireGuardInterface: WireGuardGoInterface
+    private let deviceManager: NetworkProtectionDeviceManagement
+    public let serverStatusMonitor: ServerStatusMonitoring
 
     // MARK: - WideEvent
 
@@ -470,12 +460,18 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 snoozeTimingStore: NetworkProtectionSnoozeTimingStore,
                 wireGuardInterface: WireGuardGoInterface,
                 keychainType: KeychainType,
+                keyStore: NetworkProtectionKeyStore? = nil,
                 tokenHandlerProvider: @escaping () -> any SubscriptionTokenHandling,
                 debugEvents: EventMapping<NetworkProtectionError>,
                 providerEvents: EventMapping<Event>,
                 settings: VPNSettings,
                 defaults: UserDefaults,
                 wideEvent: WideEventManaging = WideEvent(),
+                bandwidthAnalyzer: BandwidthAnalyzing? = nil,
+                latencyMonitor: LatencyMonitoring = NetworkProtectionLatencyMonitor(),
+                entitlementMonitor: EntitlementMonitoring = NetworkProtectionEntitlementMonitor(),
+                deviceManager: NetworkProtectionDeviceManagement? = nil,
+                serverStatusMonitor: ServerStatusMonitoring? = nil,
                 entitlementCheck: (() async -> Result<Bool, Error>)?) {
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
@@ -492,7 +488,28 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         self.settings = settings
         self.defaults = defaults
         self.wideEvent = wideEvent
+        self.bandwidthAnalyzer = bandwidthAnalyzer ?? NetworkProtectionConnectionBandwidthAnalyzer()
+        self.latencyMonitor = latencyMonitor
+        self.entitlementMonitor = entitlementMonitor
         self.entitlementCheck = entitlementCheck
+
+        let keyStore = keyStore ?? NetworkProtectionKeychainKeyStore(
+            keychainType: keychainType,
+            errorEvents: debugEvents
+        )
+        self.keyStore = keyStore
+
+        self.deviceManager = deviceManager ?? NetworkProtectionDeviceManager(
+            environment: settings.selectedEnvironment,
+            tokenHandler: tokenHandlerProvider(),
+            keyStore: keyStore,
+            errorEvents: debugEvents
+        )
+
+        self.serverStatusMonitor = serverStatusMonitor ?? NetworkProtectionServerStatusMonitor(
+            networkClient: NetworkProtectionBackendClient(environment: settings.selectedEnvironment),
+            tokenHandler: tokenHandlerProvider()
+        )
 
         self.wireGuardAdapterEventHandler = WireGuardAdapterEventHandler(
             providerEvents: providerEvents,

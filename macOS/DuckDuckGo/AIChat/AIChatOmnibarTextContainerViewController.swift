@@ -19,7 +19,7 @@
 import Cocoa
 import Combine
 
-final class AIChatOmnibarTextContainerViewController: NSViewController {
+final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpdateListening {
 
     private let backgroundView = MouseBlockingBackgroundView()
     private let containerView = NSView()
@@ -27,9 +27,13 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
     private let textView = NSTextView()
     private let omnibarController: AIChatOmnibarController
     private var cancellables = Set<AnyCancellable>()
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+    private var appearanceCancellable: AnyCancellable?
 
-    init(omnibarController: AIChatOmnibarController) {
+    init(omnibarController: AIChatOmnibarController, themeManager: ThemeManaging) {
         self.omnibarController = omnibarController
+        self.themeManager = themeManager
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -45,18 +49,28 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
         super.viewDidLoad()
         setupUI()
         setupTextViewDelegate()
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     override func viewWillAppear() {
         super.viewWillAppear()
         scrollView.documentView = textView
+        subscribeToViewAppearanceChanges()
+    }
+
+    private func subscribeToViewAppearanceChanges() {
+        appearanceCancellable = view.publisher(for: \.effectiveAppearance)
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.applyThemeStyle()
+            }
     }
 
     private func setupUI() {
         backgroundView.translatesAutoresizingMaskIntoConstraints = false
         backgroundView.wantsLayer = true
-        let colorsProvider = NSApp.delegateTyped.themeManager.theme.colorsProvider
-        backgroundView.layer?.backgroundColor = colorsProvider.suggestionsBackgroundColor.cgColor
         view.addSubview(backgroundView)
 
         containerView.translatesAutoresizingMaskIntoConstraints = false
@@ -71,15 +85,18 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
 
         textView.isEditable = true
         textView.isSelectable = true
-        textView.font = .systemFont(ofSize: 13)
-        textView.backgroundColor = .white
-        textView.textColor = .black
-        textView.textContainerInset = NSSize(width: 10, height: 10)
+        textView.textContainerInset = NSSize(width: 5, height: 9) /// Match address bar text positioning
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
         textView.autoresizingMask = [.width]
         textView.textContainer?.containerSize = NSSize(width: scrollView.contentSize.width, height: .greatestFiniteMagnitude)
         textView.textContainer?.widthTracksTextView = true
+
+        textView.isRichText = false
+        textView.importsGraphics = false
+        textView.allowsDocumentBackgroundColorChange = false
+        textView.usesRuler = false
+        textView.usesFontPanel = false
 
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -92,11 +109,28 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
             containerView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
 
-            scrollView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 10),
-            scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 10),
-            scrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -10),
-            scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -10),
+            scrollView.topAnchor.constraint(equalTo: containerView.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
         ])
+    }
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        let colorsProvider = theme.colorsProvider
+        let addressBarStyleProvider = theme.addressBarStyleProvider
+
+        backgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor
+
+        scrollView.backgroundColor = .clear
+        scrollView.drawsBackground = false
+
+        textView.drawsBackground = false
+        textView.backgroundColor = .clear
+        textView.textColor = colorsProvider.addressBarTextFieldColor
+        textView.font = .systemFont(ofSize: addressBarStyleProvider.defaultAddressBarFontSize, weight: .regular)
+
+        textView.insertionPointColor = colorsProvider.addressBarTextFieldColor
     }
 
     private func setupTextViewDelegate() {
@@ -128,5 +162,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController {
 
     func cleanup() {
         backgroundView.stopListening()
+    }
+
+    func focusTextView() {
+        view.window?.makeFirstResponder(textView)
     }
 }

@@ -342,6 +342,7 @@ class MainViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
+        tabManager.aiChatContentDelegate = self
         bindSyncService()
     }
 
@@ -585,16 +586,6 @@ class MainViewController: UIViewController {
                 previewsSource.update(preview: image, forTab: tab)
                 completion?()
             }
-
-        } else if let currentTab = self.tabManager.current(), currentTab.tabModel.isAITab {
-            currentTab.prepareAIChatPreview(completion: { image in
-                guard let image else {
-                    completion?()
-                    return
-                }
-                self.previewsSource.update(preview: image, forTab: currentTab.tabModel)
-                completion?()
-            })
 
         } else if let currentTab = self.tabManager.current(), currentTab.link != nil {
             // Web view
@@ -1337,6 +1328,21 @@ class MainViewController: UIViewController {
             }
         }
     }
+    
+    /// Loads content into the current AI Chat tab with optional query, auto-send, payload, and tools.
+    ///
+    /// - Parameters:
+    ///   - query: Optional query string to load in AI Chat
+    ///   - autoSend: Whether to automatically send the query. Defaults to `false`.
+    ///   - payload: Optional payload data for AI Chat. Defaults to `nil`.
+    ///   - tools: Optional RAG tools available in AI Chat. Defaults to `nil`.
+    func load(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
+        guard let currentTab else { fatalError("no tab") }
+        
+        prepareTabForRequest {
+            currentTab.load(query, autoSend: autoSend, payload: payload, tools: tools)
+        }
+    }
 
     func executeBookmarklet(_ url: URL) {
         if url.isBookmarklet() {
@@ -1351,7 +1357,6 @@ class MainViewController: UIViewController {
     }
     
     private func prepareTabForRequest(request: () -> Void) {
-        currentTab?.prepareUIForWebModeIfModeIsAI()
         viewCoordinator.navigationBarContainer.alpha = 1
         allowContentUnderflow = false
 
@@ -1389,7 +1394,7 @@ class MainViewController: UIViewController {
 
     fileprivate func select(tab: TabViewController) {
         hideNotificationBarIfBrokenSitePromptShown()
-        if tab.link == nil && tab.tabModel.isWebTab {
+        if tab.link == nil {
             attachHomeScreen()
         } else {
             attachTab(tab: tab)
@@ -1466,7 +1471,7 @@ class MainViewController: UIViewController {
     private func refreshOmniBar() {
         updateOmniBarLoadingState()
 
-        guard let tab = currentTab, tab.link != nil || tab.tabModel.isAITab else {
+        guard let tab = currentTab, tab.link != nil else {
             viewCoordinator.omniBar.stopBrowsing()
             // Clear Dax Easter Egg logo when no tab is active
             viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
@@ -1487,7 +1492,7 @@ class MainViewController: UIViewController {
         Logger.daxEasterEgg.debug("RefreshOmniBar - Stored Logo: \(tab.tabModel.daxEasterEggLogoURL ?? "nil")")
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(tab.tabModel.daxEasterEggLogoURL)
 
-        if tab.tabModel.isAITab {
+        if aichatFullModeFeature.isAvailable && tab.tabModel.isAITab {
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
             viewCoordinator.omniBar.startBrowsing()
@@ -2323,27 +2328,14 @@ class MainViewController: UIViewController {
     ///   - payload: Optional payload data for AI Chat
     ///   - tools: Optional RAG tools available in AI Chat
     private func openAIChatInTab(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
-        // Ensure we have a current tab, creating one if needed
+        
         if currentTab == nil {
             if tabManager.current(createIfNeeded: true) == nil {
                 fatalError("failed to create tab")
             }
         }
 
-        guard let currentTab = currentTab else { fatalError("no tab") }
-
-        currentTab.loadAIChat(
-            
-            query: query,
-            payload: payload,
-            autoSend: autoSend,
-            tools: tools
-        ) { [weak self] in
-            guard let self else { return }
-
-            self.themeColorManager.resetThemeColor()
-            select(tab: currentTab)
-        }
+        load(query, autoSend: autoSend, payload: payload, tools: tools)
     }
 }
 
@@ -2665,6 +2657,9 @@ extension MainViewController: OmniBarDelegate {
         if newTabPageViewController != nil {
             menuEntries = tab.buildShortcutsMenu()
             headerEntries = []
+        } else if aichatFullModeFeature.isAvailable && tab.tabModel.isAITab {
+            menuEntries = tab.buildAITabMenu()
+            headerEntries = tab.buildAITabMenuHeaderContent()
         } else {
             menuEntries = tab.buildBrowsingMenu(with: menuBookmarksViewModel,
                                                 mobileCustomization: mobileCustomization,
@@ -2913,10 +2908,12 @@ extension MainViewController: OmniBarDelegate {
 
     /// Delegate method called when the AI Chat left button is tapped
     func onAIChatLeftButtonPressed() {
+        currentTab?.submitOpenHistoryAction()
     }
 
     /// Delegate method called when the AI Chat right button is tapped
     func onAIChatRightButtonPressed() {
+        currentTab?.submitStartChatAction()
     }
 
     /// Delegate method called when the omnibar branding area is tapped while in AI Chat mode.
@@ -3853,6 +3850,27 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
         } else {
             segueToSettingsAIChat()
         }
+    }
+}
+
+// MARK: - AIChatContentHandlingDelegate
+extension MainViewController: AIChatContentHandlingDelegate {
+    
+    func aiChatContentHandlerDidReceiveOpenSettingsRequest(_ handler:
+                                                           AIChatContentHandling) {
+        if let controller = tabSwitcherController {
+            controller.dismiss(animated: true) {
+                self.segueToSettingsAIChat()
+            }
+        } else {
+            segueToSettingsAIChat()
+        }
+    }
+    
+    func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler:
+                                                        AIChatContentHandling) {
+        guard let tab = self.currentTab?.tabModel else { return }
+        self.closeTab(tab, andOpenEmptyOneAtSamePosition: false)
     }
 }
 

@@ -14645,6 +14645,7 @@
     },
     "Clear All History…" : {
       "comment" : "Main Menu History item",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -29869,6 +29870,19 @@
         }
       }
     },
+    "feedback.problem-subcategory.promotional-messages" : {
+      "comment" : "Problem subcategory for feedback related to promotional messages",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Promotional messages"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
     "feedback.problem-subcategory.site-asks-to-turn-off-ad-blocker" : {
       "comment" : "Problem subcategory for ad blocker detection messages",
       "extractionState" : "extracted_with_value",
@@ -33444,7 +33458,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usuń 1$#@items@."
+            "value" : "Usuń %#@items@."
           },
           "substitutions" : {
             "items" : {
@@ -38229,7 +38243,7 @@
     },
     "history.menu.clear.all.history.description" : {
       "comment" : "Description in the alert with the confirmation to clear all data",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38289,7 +38303,7 @@
     },
     "history.menu.clear.all.history.question" : {
       "comment" : "Alert with the confirmation to clear all history and data",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -78340,6 +78354,32 @@
           }
         }
       }
+    },
+    "sad.att.inactive-user.notification.body" : {
+      "comment" : "Subtitle of system notification asking the user why they dismissed a prompt with the 'No Thanks' button. The parameter %1$@ is the localized 'No Thanks' string.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We’re always looking to improve. Can you tell us why you chose \"%1$@\"?"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "sad.att.inactive-user.notification.title" : {
+      "comment" : "Title of system notification asking the user for quick feedback after declining a prompt by clicking 'No Thanks'.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Got time for quick feedback?"
+          }
+        }
+      },
+      "shouldTranslate" : false
     },
     "sad.att.set-as-default.banner.message" : {
       "comment" : "Body of the banner view that invites users to set DuckDuckGo as their default browser",

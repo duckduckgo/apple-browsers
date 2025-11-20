@@ -1269,6 +1269,7 @@ extension Tab: SERPSettingsUserScriptDelegate {
 
     @MainActor
     func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
+        PixelKit.fire(GeneralPixel.openDuckAIButtonClick, frequency: .dailyAndStandard)
         guard let tabCollection = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
         else {
             assertionFailure("could not access shared tabCollectionViewModel")
@@ -1361,10 +1362,10 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
     func willStart(_ navigation: Navigation) {
 #if DEBUG
         // prevent real navigation actions when running Unit Tests
-        if AppVersion.runType == .unitTests,
+        if [.unitTests, .integrationTests].contains(AppVersion.runType),
            [.http, .https].contains(navigation.url.navigationalScheme),
            self.webView.configuration.urlSchemeHandler(forURLScheme: navigation.url.scheme!) == nil {
-            fatalError("The Unit Test is causing a real navigation action")
+            fatalError("The test is causing a real navigation action to \(navigation.url.absoluteString)")
         }
 #endif
 

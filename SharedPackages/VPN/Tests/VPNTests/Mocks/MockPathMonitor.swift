@@ -1,6 +1,5 @@
 //
-//  UniversalOmniBarStateTests.swift
-//  DuckDuckGo
+//  MockPathMonitor.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,23 +16,25 @@
 //  limitations under the License.
 //
 
-import Foundation
-import XCTest
-@testable import DuckDuckGo
+import NetworkExtension
+import Network
+@testable import VPN
 
-final class UniversalOmniBarStateTests: XCTestCase {
+final class MockPathMonitor: PathMonitoring {
+    var pathUpdateHandler: ((Network.NWPath.Status) -> Void)?
 
-    let enabledVoiceSearchHelper = MockVoiceSearchHelper(isSpeechRecognizerAvailable: true)
-    let disabledVoiceSearchHelper = MockVoiceSearchHelper(isSpeechRecognizerAvailable: false)
-    var mockFeatureFlagger: MockFeatureFlagger!
+    private(set) var startCallCount = 0
+    private(set) var cancelCallCount = 0
 
-    override func setUp() {
-        super.setUp()
-        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+    func start(queue: DispatchQueue) {
+        startCallCount += 1
     }
 
-    override func tearDown() {
-        mockFeatureFlagger = nil
-        super.tearDown()
+    func cancel() {
+        cancelCallCount += 1
+    }
+
+    func emitStatus(_ status: Network.NWPath.Status) {
+        pathUpdateHandler?(status)
     }
 }

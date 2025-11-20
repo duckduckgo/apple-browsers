@@ -1,6 +1,5 @@
 //
-//  UniversalOmniBarStateTests.swift
-//  DuckDuckGo
+//  MockWireGuardAdapterEventHandler.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,23 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
-import XCTest
-@testable import DuckDuckGo
+@testable import VPN
 
-final class UniversalOmniBarStateTests: XCTestCase {
+final class MockWireGuardAdapterEventHandler: WireGuardAdapterEventHandling {
+    private(set) var handledEvents: [WireGuardAdapterEvent] = []
 
-    let enabledVoiceSearchHelper = MockVoiceSearchHelper(isSpeechRecognizerAvailable: true)
-    let disabledVoiceSearchHelper = MockVoiceSearchHelper(isSpeechRecognizerAvailable: false)
-    var mockFeatureFlagger: MockFeatureFlagger!
-
-    override func setUp() {
-        super.setUp()
-        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-    }
-
-    override func tearDown() {
-        mockFeatureFlagger = nil
-        super.tearDown()
+    func handle(_ event: WireGuardAdapterEvent) {
+        handledEvents.append(event)
     }
 }

@@ -1,6 +1,5 @@
 //
-//  UniversalOmniBarStateTests.swift
-//  DuckDuckGo
+//  PacketTunnelProviding.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,22 +17,11 @@
 //
 
 import Foundation
-import XCTest
-@testable import DuckDuckGo
+import NetworkExtension
 
-final class UniversalOmniBarStateTests: XCTestCase {
-
-    let enabledVoiceSearchHelper = MockVoiceSearchHelper(isSpeechRecognizerAvailable: true)
-    let disabledVoiceSearchHelper = MockVoiceSearchHelper(isSpeechRecognizerAvailable: false)
-    var mockFeatureFlagger: MockFeatureFlagger!
-
-    override func setUp() {
-        super.setUp()
-        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-    }
-
-    override func tearDown() {
-        mockFeatureFlagger = nil
-        super.tearDown()
-    }
+protocol PacketTunnelProviding: AnyObject {
+    var reasserting: Bool { get set }
+    func setTunnelNetworkSettings(_ tunnelNetworkSettings: NETunnelNetworkSettings?, completionHandler: (@Sendable (Error?) -> Void)?)
 }
+
+extension NEPacketTunnelProvider: PacketTunnelProviding {}

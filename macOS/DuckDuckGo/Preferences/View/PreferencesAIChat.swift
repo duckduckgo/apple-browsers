@@ -243,6 +243,7 @@ extension Preferences {
                             TextMenuItemCaption(UserText.hideAIGeneratedImagesSettingsDescription)
                                 .padding(.bottom, 6)
                             Button {
+                                PixelKit.fire(GeneralPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
                                 model.openSearchAssistSettings()
                             } label: {
                                 HStack {

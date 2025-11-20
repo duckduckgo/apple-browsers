@@ -1,6 +1,5 @@
 //
-//  UniversalOmniBarStateTests.swift
-//  DuckDuckGo
+//  MockDNSResolver.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,22 +17,18 @@
 //
 
 import Foundation
-import XCTest
-@testable import DuckDuckGo
+@testable import VPN
 
-final class UniversalOmniBarStateTests: XCTestCase {
+final class MockDNSResolver: DNSResolving {
+    var receivedEndpoints: [Endpoint?]?
+    var results: [Result<Endpoint, DNSResolutionError>?]
 
-    let enabledVoiceSearchHelper = MockVoiceSearchHelper(isSpeechRecognizerAvailable: true)
-    let disabledVoiceSearchHelper = MockVoiceSearchHelper(isSpeechRecognizerAvailable: false)
-    var mockFeatureFlagger: MockFeatureFlagger!
-
-    override func setUp() {
-        super.setUp()
-        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+    init(results: [Result<Endpoint, DNSResolutionError>?]) {
+        self.results = results
     }
 
-    override func tearDown() {
-        mockFeatureFlagger = nil
-        super.tearDown()
+    func resolveSync(endpoints: [Endpoint?]) -> [Result<Endpoint, DNSResolutionError>?] {
+        receivedEndpoints = endpoints
+        return results
     }
 }

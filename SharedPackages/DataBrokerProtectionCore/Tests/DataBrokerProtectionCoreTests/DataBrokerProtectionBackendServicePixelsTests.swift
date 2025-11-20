@@ -47,7 +47,6 @@ final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
         XCTAssertNotNil(lastPixel)
         XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.httpCode], "200", "Incorrect statusCode")
         XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.environmentKey], "staging", "Incorrect environment")
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.wasOnWaitlist], "false", "should be true")
     }
 
     func testSendHTTPErrorOnProductionAndWaitlist_thenValidatePixelSent() {
@@ -68,13 +67,17 @@ final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
         let backendPixel = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: mockHandler,
                                                                            settings: settings)
 
-        backendPixel.fireEmptyAccessToken(callSite: .getEmail)
+        backendPixel.fireEmptyAccessToken(callSite: .getEmail,
+                                          dataBrokerURL: nil,
+                                          dataBrokerVersion: nil)
 
         let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last
 
         XCTAssertNotNil(lastPixel)
         XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.environmentKey], "production", "Incorrect environment")
         XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.backendServiceCallSite], "getEmail", "Should be getEmail")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey], "unknown")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.dataBrokerVersionKey], "unknown")
 
     }
 
@@ -84,14 +87,20 @@ final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
         let backendPixel = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: mockHandler,
                                                                            settings: settings)
 
-        backendPixel.fireEmptyAccessToken(callSite: .submitCaptchaInformationRequest)
+        let dataBrokerURL = "fastpeoplesearch.com"
+        let dataBrokerVersion = "1.2.3"
+
+        backendPixel.fireEmptyAccessToken(callSite: .submitCaptchaInformationRequest,
+                                          dataBrokerURL: dataBrokerURL,
+                                          dataBrokerVersion: dataBrokerVersion)
 
         let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last
 
         XCTAssertNotNil(lastPixel)
         XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.environmentKey], "staging", "Incorrect environment")
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.wasOnWaitlist], "false", "should be false")
         XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.backendServiceCallSite], "submitCaptchaInformationRequest", "Should be getEmail")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey], dataBrokerURL)
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.dataBrokerVersionKey], dataBrokerVersion)
 
     }
 

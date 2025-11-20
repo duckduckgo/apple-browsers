@@ -1,7 +1,7 @@
 //
-//  AIChatURLParameters.swift
+//  MockTunnelFileDescriptorProvider.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,9 +16,17 @@
 //  limitations under the License.
 //
 
-public enum AIChatURLParameters {
-    public static let promptQueryName = "q"
-    public static let autoSubmitPromptQueryName = "prompt"
-    public static let autoSubmitPromptQueryValue = "1"
-    public static let toolChoiceName = "toolChoice"
+import Foundation
+@testable import VPN
+
+final class MockTunnelFileDescriptorProvider: TunnelFileDescriptorProviding {
+    var fileDescriptor: Int32?
+
+    init(fileDescriptor: Int32?) {
+        self.fileDescriptor = fileDescriptor
+    }
+
+    func currentFileDescriptor() -> Int32? {
+        fileDescriptor
+    }
 }

@@ -1080,7 +1080,7 @@ final class DataImportViewModelTests: XCTestCase {
             model.selectFile()
 
             // THEN
-            XCTAssertTrue(capturedFileTypes?.contains(.zip) == true)
+            XCTAssertEqual(Set(capturedFileTypes ?? []), Set([.zip, .commaSeparatedText, .json, .html]))
         }
     }
 

@@ -19,25 +19,6 @@
 import Cocoa
 import Combine
 
-/// Custom NSTextView that ensures it can always accept focus when clicked
-private final class FocusableTextView: NSTextView {
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
-        return true
-    }
-    
-    override var acceptsFirstResponder: Bool {
-        return true
-    }
-    
-    override func mouseDown(with event: NSEvent) {
-        // Ensure we become first responder before handling the mouse event
-        if window?.firstResponder != self {
-            window?.makeFirstResponder(self)
-        }
-        super.mouseDown(with: event)
-    }
-}
-
 final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpdateListening, NSTextViewDelegate {
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -124,7 +105,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -4),
             backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             containerView.topAnchor.constraint(equalTo: backgroundView.topAnchor),
@@ -225,5 +206,23 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     func focusTextView() {
         view.window?.makeFirstResponder(textView)
+    }
+}
+
+/// Custom NSTextView that ensures it can always accept focus when clicked
+private final class FocusableTextView: NSTextView {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        return true
+    }
+
+    override var acceptsFirstResponder: Bool {
+        return true
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        if window?.firstResponder != self {
+            window?.makeFirstResponder(self)
+        }
+        super.mouseDown(with: event)
     }
 }

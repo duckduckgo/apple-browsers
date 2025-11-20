@@ -35,8 +35,10 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
         super.tearDown()
     }
 
-    func testExample() throws {
+    func testInactiveUserPromptIsTriggered() throws {
         app.simulateFreshAppInstall()
+        let promptDate = Date().advanced(by: .days(28))
+        app.overrideCurrentDate(with: promptDate)
     }
 }
 
@@ -73,4 +75,32 @@ private extension XCUIApplication {
         XCTAssertTrue(simulateFreshAppInstallMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Simulate Fresh App Install menu item should exist")
         simulateFreshAppInstallMenuItem.click()
     }
+
+    /// Open Debug menu -> Default Browser and Dock Prompt submenu -> Override Current Date
+    func overrideCurrentDate(with newDate: Date) {
+        let debugMenu = menuBars.menuBarItems["Debug"]
+        debugMenu.click()
+
+        let defaultBrowserAndDockPromptSubmenu = menuItems["SAD/ATT Prompts"]
+        XCTAssertTrue(defaultBrowserAndDockPromptSubmenu.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Default Browser and Dock Prompt submenu should exist")
+        defaultBrowserAndDockPromptSubmenu.hover()
+
+        XCTAssertTrue(overrideCurrentDateMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Override Current Date menu item should exist")
+        overrideCurrentDateMenuItem.click()
+
+        let datePicker = datePickers.firstMatch
+        XCTAssertTrue(datePicker.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Date picker should exist")
+        let dateComponents = Calendar.current.dateComponents([.day, .month, .year], from: newDate)
+        guard let day = dateComponents.day,
+              let month = dateComponents.month,
+              let year = dateComponents.year else {
+            XCTFail("Failed to extract date components from \(newDate)")
+            return
+        }
+
+        let dateString = String(format: "%02d/%02d/%04d", day, month, year)
+        datePicker.typeText(dateString)
+        datePicker.typeText("\r") // Enter to confirm
+    }
+
 }

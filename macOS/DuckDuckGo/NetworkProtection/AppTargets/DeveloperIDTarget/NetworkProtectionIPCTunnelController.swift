@@ -308,8 +308,8 @@ private extension NetworkProtectionIPCTunnelController {
             // At this step we don't know the type of extension yet
             extensionType: .unknown,
             startupMethod: .manualByMainApp,
-            onboardingStatus: .unknown,
             isSetup: .unknown,
+            onboardingStatus: .unknown,
             contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
         )
         self.connectionWideEventData = data

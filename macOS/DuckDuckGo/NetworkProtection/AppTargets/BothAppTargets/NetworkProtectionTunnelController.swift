@@ -712,7 +712,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             throw error
         }
         onboardingStatusRawValue = OnboardingStatus.completed.rawValue
-        connectionWideEventData?.onboardingStatus = .completed
 
         switch tunnelManager.connection.status {
         case .invalid:
@@ -999,8 +998,8 @@ private extension NetworkProtectionTunnelController {
         let data = VPNConnectionWideEventData(
             extensionType: .unknown,
             startupMethod: .manualByMainApp,
-            onboardingStatus: toWideEventOnboardingStatus(from: self.onboardingStatusRawValue),
-            isSetup: self.onboardingStatusRawValue == OnboardingStatus.completed.rawValue ? .no : .yes,
+            isSetup: onboardingStatusRawValue == OnboardingStatus.completed.rawValue ? .no : .yes,
+            onboardingStatus: toWideEventOnboardingStatus(from: onboardingStatusRawValue),
             contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.agent.rawValue)
         )
         self.connectionWideEventData = data
@@ -1070,11 +1069,11 @@ private extension NetworkProtectionTunnelController {
             wideEvent.completeFlow(data, status: .unknown(reason: reason.rawValue), onComplete: { _, _ in })
         }
     }
-    
+
     func syncWideEventOnboardingStatus() {
         connectionWideEventData?.onboardingStatus = toWideEventOnboardingStatus(from: onboardingStatusRawValue)
     }
-    
+
     func toWideEventOnboardingStatus(from raw: OnboardingStatus.RawValue) -> VPNConnectionWideEventData.OnboardingStatus {
         if raw == OnboardingStatus.completed.rawValue {
             return .completed

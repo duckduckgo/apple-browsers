@@ -34,8 +34,8 @@ public class VPNConnectionWideEventData: WideEventData {
     // VPN-specific
     public var extensionType: ExtensionType
     public var startupMethod: StartupMethod
-    public var onboardingStatus: OnboardingStatus
     public var isSetup: SetupState
+    public var onboardingStatus: OnboardingStatus?
 
     // Overall duration
     public var overallDuration: WideEvent.MeasuredInterval?
@@ -56,8 +56,8 @@ public class VPNConnectionWideEventData: WideEventData {
 
     public init(extensionType: ExtensionType,
                 startupMethod: StartupMethod,
-                onboardingStatus: OnboardingStatus = .unknown,
                 isSetup: SetupState = .unknown,
+                onboardingStatus: OnboardingStatus? = nil,
                 overallDuration: WideEvent.MeasuredInterval? = nil,
                 browserStartDuration: WideEvent.MeasuredInterval? = nil,
                 controllerStartDuration: WideEvent.MeasuredInterval? = nil,
@@ -113,16 +113,14 @@ extension VPNConnectionWideEventData {
         case manualByMainApp = "manual_by_main_app"
         case manualByTheSystem = "manual_by_the_system"
     }
-    
+
     public enum OnboardingStatus: String, Codable, CaseIterable {
         case needsToAllowExtension = "needs_to_allow_extension"
         case needsToAllowVPNConfiguration = "needs_to_allow_vpn_configuration"
         case completed
         case unknown
-        // Not applicable on iOS
-        case notApplicable = "not_applicable"
     }
-    
+
     public enum SetupState: String, Codable, CaseIterable {
         case yes
         case no
@@ -167,7 +165,10 @@ extension VPNConnectionWideEventData {
         params[WideEventParameter.VPNConnectionFeature.extensionType] = extensionType.rawValue
         params[WideEventParameter.VPNConnectionFeature.startupMethod] = startupMethod.rawValue
         params[WideEventParameter.VPNConnectionFeature.isSetup] = isSetup.rawValue
-        params[WideEventParameter.VPNConnectionFeature.onboardingStatus] = onboardingStatus.rawValue
+
+        if let onboardingStatus {
+            params[WideEventParameter.VPNConnectionFeature.onboardingStatus] = onboardingStatus.rawValue
+        }
 
         // Overall latency
         if let overallDuration = overallDuration?.durationMilliseconds {

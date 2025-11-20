@@ -1,15 +1,6 @@
 {
   "pins" : [
     {
-      "identity" : "apple-toolbox",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/apple-toolbox.git",
-      "state" : {
-        "revision" : "579eb1d65c7f221094856269fc0e457a1c2a6660",
-        "version" : "3.2.1"
-      }
-    },
-    {
       "identity" : "barebonesbrowser",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/BareBonesBrowser.git",

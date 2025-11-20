@@ -362,8 +362,8 @@
 		31E163BA293A56F400963C10 /* BrokenSiteReportingReferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E163B9293A56F400963C10 /* BrokenSiteReportingReferenceTests.swift */; };
 		31E163BD293A579E00963C10 /* PrivacyReferenceTestHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E163BC293A579E00963C10 /* PrivacyReferenceTestHelper.swift */; };
 		31E163C0293A581900963C10 /* privacy-reference-tests in Resources */ = {isa = PBXBuildFile; fileRef = 31E163BF293A581900963C10 /* privacy-reference-tests */; };
-		31E3FD722CE39C4600A392C8 /* AIChatDebugURLSettingsRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E3FD702CE39C4600A392C8 /* AIChatDebugURLSettingsRepresentable.swift */; };
-		31E3FD732CE39C4600A392C8 /* AIChatDebugURLSettingsRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E3FD702CE39C4600A392C8 /* AIChatDebugURLSettingsRepresentable.swift */; };
+		31E3FD722CE39C4600A392C8 /* AIChatDebugURLSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E3FD702CE39C4600A392C8 /* AIChatDebugURLSettings.swift */; };
+		31E3FD732CE39C4600A392C8 /* AIChatDebugURLSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E3FD702CE39C4600A392C8 /* AIChatDebugURLSettings.swift */; };
 		31ECDA112BED339600AE679F /* DataBrokerAuthenticationManagerBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31ECDA102BED339600AE679F /* DataBrokerAuthenticationManagerBuilder.swift */; };
 		31ECDA122BED339600AE679F /* DataBrokerAuthenticationManagerBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31ECDA102BED339600AE679F /* DataBrokerAuthenticationManagerBuilder.swift */; };
 		31ECDA132BED339600AE679F /* DataBrokerAuthenticationManagerBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31ECDA102BED339600AE679F /* DataBrokerAuthenticationManagerBuilder.swift */; };
@@ -2353,6 +2353,7 @@
 		84BD1A8D2E585A5C002512E2 /* test.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 84BD1A8C2E585A5C002512E2 /* test.pdf */; };
 		84BD1A8F2E585A62002512E2 /* lorem_ipsum.html in Resources */ = {isa = PBXBuildFile; fileRef = 84BD1A8E2E585A60002512E2 /* lorem_ipsum.html */; };
 		84BDE72A2E1BE3C60082075D /* NoARCObjCTestUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 84BDE7292E1BE3C60082075D /* NoARCObjCTestUtilities */; };
+		84C100792ECC53280083AB11 /* TabBar.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 84DD63E32E9788960043A25E /* TabBar.storyboard */; };
 		84C176392DF02556001DEEC7 /* CommonObjCExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84C176382DF02556001DEEC7 /* CommonObjCExtensions */; };
 		84C1763B2DF02567001DEEC7 /* CommonObjCExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84C1763A2DF02567001DEEC7 /* CommonObjCExtensions */; };
 		84C176502DF0462F001DEEC7 /* LetsMove in Frameworks */ = {isa = PBXBuildFile; productRef = 84C1764F2DF0462F001DEEC7 /* LetsMove */; };
@@ -2372,7 +2373,6 @@
 		84DC715B2C1C1E9000033B8C /* UserDefaultsWrapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DC71582C1C1E8A00033B8C /* UserDefaultsWrapperTests.swift */; };
 		84DD63DA2E9662700043A25E /* FoundationExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 9F5003282E8D1B73002F98D1 /* FoundationExtensions */; };
 		84DD63DB2E9662700043A25E /* FoundationExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 9F50032A2E8D1B7F002F98D1 /* FoundationExtensions */; };
-		84DD63E42E9788960043A25E /* TabBar.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 84DD63E32E9788960043A25E /* TabBar.storyboard */; };
 		84DD63E52E9788960043A25E /* TabBar.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 84DD63E32E9788960043A25E /* TabBar.storyboard */; };
 		84DDB90A2C92B66E008C997B /* WKVisitedLinkStoreWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DDB9092C92B667008C997B /* WKVisitedLinkStoreWrapper.swift */; };
 		84DDB90B2C92B66E008C997B /* WKVisitedLinkStoreWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DDB9092C92B667008C997B /* WKVisitedLinkStoreWrapper.swift */; };
@@ -4325,7 +4325,7 @@
 		31E163B9293A56F400963C10 /* BrokenSiteReportingReferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrokenSiteReportingReferenceTests.swift; sourceTree = "<group>"; };
 		31E163BC293A579E00963C10 /* PrivacyReferenceTestHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyReferenceTestHelper.swift; sourceTree = "<group>"; };
 		31E163BF293A581900963C10 /* privacy-reference-tests */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = folder; name = "privacy-reference-tests"; path = "../SharedPackages/BrowserServicesKit/Tests/BrowserServicesKitTests/Resources/privacy-reference-tests"; sourceTree = SOURCE_ROOT; };
-		31E3FD702CE39C4600A392C8 /* AIChatDebugURLSettingsRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatDebugURLSettingsRepresentable.swift; sourceTree = "<group>"; };
+		31E3FD702CE39C4600A392C8 /* AIChatDebugURLSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatDebugURLSettings.swift; sourceTree = "<group>"; };
 		31ECDA102BED339600AE679F /* DataBrokerAuthenticationManagerBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerAuthenticationManagerBuilder.swift; sourceTree = "<group>"; };
 		31F25EFE2CC3CA00002F9084 /* AIChatMenuConfigurationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMenuConfigurationTests.swift; sourceTree = "<group>"; };
 		31F28C4C28C8EEC500119F70 /* YoutubePlayerUserScript.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = YoutubePlayerUserScript.swift; sourceTree = "<group>"; };
@@ -6852,7 +6852,7 @@
 		31E3FD712CE39C4600A392C8 /* Debug */ = {
 			isa = PBXGroup;
 			children = (
-				31E3FD702CE39C4600A392C8 /* AIChatDebugURLSettingsRepresentable.swift */,
+				31E3FD702CE39C4600A392C8 /* AIChatDebugURLSettings.swift */,
 			);
 			path = Debug;
 			sourceTree = "<group>";
@@ -12200,7 +12200,6 @@
 				AA585D7A248FD31100E9A3E2 /* Sources */,
 				AA585D7B248FD31100E9A3E2 /* Frameworks */,
 				AA585D7C248FD31100E9A3E2 /* Resources */,
-				B6F2C8722A7A4C7D000498CF /* Make /Applications symlink, remove app on Clean build */,
 				4B2D065D2A11D2AE00DE1F49 /* Embed Login Items */,
 			);
 			buildRules = (
@@ -12780,6 +12779,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				84C100792ECC53280083AB11 /* TabBar.storyboard in Resources */,
 				BBDAA91D2DAD6DAD00555E1E /* fire-button-mouse-over-new.json in Resources */,
 				561D66662B95C45A008ACC5C /* Suggestion.storyboard in Resources */,
 				CD2AB5C72C8223030019EB49 /* phishingHashPrefixes.json in Resources */,
@@ -12822,7 +12822,6 @@
 				AA585D86248FD31400E9A3E2 /* Assets.xcassets in Resources */,
 				AAE246F6270A3D3000BEEAEE /* FirePopoverCollectionViewHeader.xib in Resources */,
 				9FBB0C002CB94FC10006B6A6 /* view_highlight.json in Resources */,
-				84DD63E42E9788960043A25E /* TabBar.storyboard in Resources */,
 				372042E12DF9C04400CE099A /* internal-feedback-autofiller.js in Resources */,
 				4BE5336B286912D40019DBFD /* BookmarksBarCollectionViewItem.xib in Resources */,
 				7B5A23752C46A4A8007213AC /* ExcludedDomains.storyboard in Resources */,
@@ -13153,25 +13152,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "FRAMEWORKS_DIR=\"${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nDYLIB_TARGET_PATH=\"${FRAMEWORKS_DIR}/libswift_Concurrency.dylib\"\n\nif [ ! -e \"${DYLIB_TARGET_PATH}\" ]; then\n\n    DYLIB_PATH=$(find \"${TOOLCHAIN_DIR}/usr/lib\" -path \"*/${HOST_PLATFORM}/libswift_Concurrency.dylib\")\n    echo \"copy ${DYLIB_PATH} to ${DYLIB_TARGET_PATH}\"\n\n    mkdir -p \"${FRAMEWORKS_DIR}\"\n    cp \"${DYLIB_PATH}\" \"${DYLIB_TARGET_PATH}\" || exit 1\n\nelse\n    echo \"${DYLIB_TARGET_PATH} exists 👌\"\nfi\n";
-		};
-		B6F2C8722A7A4C7D000498CF /* Make /Applications symlink, remove app on Clean build */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Make /Applications symlink, remove app on Clean build";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if [[ \"${CONFIGURATION}\" != \"Debug\" ]] || [ \"$ENABLE_PREVIEWS\" = \"YES\" ]; then\n    # run only for Debug builds\n    exit 0\nfi\n\n# if Xcode created real Applications directory inside BUILT_PRODUCTS_DIR \nif [[ ! -L ${BUILT_PRODUCTS_DIR}/Applications ]]; then\n    # we only get here on clean build, remove an existing app in /Applications/DEBUG on clean build\n    echo \"rm -rf /${INSTALL_PATH}/${PRODUCT_NAME}.app\"\n    rm -rf \"/${INSTALL_PATH}/${PRODUCT_NAME}.app\"\n\n    # create /Applications/DEBUG dir\n    echo \"mkdir -p /${INSTALL_PATH}\"\n    mkdir -p \"/${INSTALL_PATH}\"\n\n    # move the app bundle to /Applications/DEBUG\n    echo \"mv ${DSTROOT}/${INSTALL_PATH}/${PRODUCT_NAME}.app /${INSTALL_PATH}/${PRODUCT_NAME}.app\"\n    mv \"${DSTROOT}/${INSTALL_PATH}/${PRODUCT_NAME}.app\" \"/${INSTALL_PATH}/${PRODUCT_NAME}.app\"\n\n    # rm ${BUILT_PRODUCTS_DIR}/Applications directory created by Xcode\n    echo \"rm -rf ${BUILT_PRODUCTS_DIR}/Applications\" \n    rm -rf \"${BUILT_PRODUCTS_DIR}/Applications\"\n    # create ${BUILT_PRODUCTS_DIR}/Applications symlink to /Applications\n    echo \"ln -s /Applications ${BUILT_PRODUCTS_DIR}/Applications\"\n    ln -s /Applications \"${BUILT_PRODUCTS_DIR}/Applications\"\nelse\n    echo \"/Applications symlink 👌\"\nfi\n";
 		};
 		CBCCF59E299667B700C02DFE /* Assert Xcode version */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -13919,7 +13899,7 @@
 				3767318F2C7F32E900EB097B /* SolidColorBackground.swift in Sources */,
 				3706FBD7293F65D500E42796 /* ContentBlockerRulesLists.swift in Sources */,
 				9F1556762DDC0E0C00A35DBA /* DefaultBrowserAndDockPromptFeatureFlagger.swift in Sources */,
-				31E3FD732CE39C4600A392C8 /* AIChatDebugURLSettingsRepresentable.swift in Sources */,
+				31E3FD732CE39C4600A392C8 /* AIChatDebugURLSettings.swift in Sources */,
 				3706FBD8293F65D500E42796 /* NSViewControllerExtension.swift in Sources */,
 				BBBD2A052E2FE4C6005E7664 /* ViewExtensions.swift in Sources */,
 				3706FBD9293F65D500E42796 /* NSAppearanceExtension.swift in Sources */,
@@ -15257,7 +15237,7 @@
 				4BF0E5122AD25A2600FFEC9E /* DuckDuckGoUserAgent.swift in Sources */,
 				AA6EF9AD25066F42004754E6 /* WindowsManager.swift in Sources */,
 				1D43EB3A292B63B00065E5D6 /* BWRequest.swift in Sources */,
-				31E3FD722CE39C4600A392C8 /* AIChatDebugURLSettingsRepresentable.swift in Sources */,
+				31E3FD722CE39C4600A392C8 /* AIChatDebugURLSettings.swift in Sources */,
 				C172E7372C93968E00521D9A /* SyncPromoPixelKitEvent.swift in Sources */,
 				B684121C2B6A1D880092F66A /* ErrorPageHTMLTemplate.swift in Sources */,
 				B65C7DFB2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift in Sources */,

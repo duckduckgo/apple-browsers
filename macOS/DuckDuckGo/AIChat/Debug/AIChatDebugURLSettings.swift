@@ -1,5 +1,5 @@
 //
-//  AIChatDebugURLSettingsRepresentable.swift
+//  AIChatDebugURLSettings.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -17,19 +17,17 @@
 //
 
 import AppKit
+import Macros
+import Persistence
 
-public protocol AIChatDebugURLSettingsRepresentable {
-    var customURLHostname: String? { get }
+@Storage
+protocol AIChatDebugURLSettings: AnyObject, KeyValueStoring {
     var customURL: String? { get set }
-    func reset()
 }
 
-public final class AIChatDebugURLSettings: AIChatDebugURLSettingsRepresentable {
-    private let userDefault: UserDefaults
+extension UserDefaults: AIChatDebugURLSettings {}
 
-    public init(_ userDefault: UserDefaults = .standard) {
-        self.userDefault = userDefault
-    }
+extension AIChatDebugURLSettings {
 
     public var customURLHostname: String? {
         if let customURL = customURL,
@@ -39,31 +37,7 @@ public final class AIChatDebugURLSettings: AIChatDebugURLSettingsRepresentable {
         return nil
     }
 
-    public var customURL: String? {
-        get {
-            userDefault[.customURL]
-        } set {
-            userDefault[.customURL] = newValue
-        }
-    }
-
     public func reset() {
         customURL = nil
     }
-}
-
-private extension UserDefaults {
-    enum Key: String {
-        case customURL
-    }
-
-    subscript<T>(key: Key) -> T? where T: Any {
-        get {
-            return value(forKey: key.rawValue) as? T
-        }
-        set {
-            set(newValue, forKey: key.rawValue)
-        }
-    }
-
 }

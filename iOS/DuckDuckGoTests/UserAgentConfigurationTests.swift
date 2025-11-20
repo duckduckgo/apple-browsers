@@ -19,6 +19,7 @@
 
 import XCTest
 import Persistence
+import PersistenceTestingUtils
 import Common
 import Testing
 @testable import DuckDuckGo
@@ -106,23 +107,6 @@ final class UserAgentConfigurationTests {
         #expect(taskManager.registeredTasks.contains(where: { $0.name == "Update User Agent" }))
     }
 
-    final class MockKeyValueStore: ThrowingKeyValueStoring {
-
-        var store: [String: Data] = [:]
-
-        func object(forKey key: String) throws -> Any? {
-            store[key]
-        }
-
-        func set(_ value: Any?, forKey key: String) throws {
-            store[key] = value as? Data
-        }
-
-        func removeObject(forKey defaultName: String) throws {
-            store[defaultName] = nil
-        }
-
-    }
 
     final class MockLaunchTaskManager: LaunchTaskManaging {
 

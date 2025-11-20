@@ -25,7 +25,7 @@ import BrowserServicesKit
 class AIChatRemoteSettingsTests: XCTestCase {
     var mockPrivacyConfigurationManager: MockPrivacyConfigurationManager!
     var aiChatRemoteSettings: AIChatRemoteSettings!
-    var debugURLProvider: AIChatDebugURLSettingsRepresentable!
+    var debugURLProvider: AIChatDebugURLSettings!
 
     private func setupAIChatRemoteSettings(with config: MockConfig) -> AIChatRemoteSettings {
         let embeddedDataProvider = MockEmbeddedDataProvider()

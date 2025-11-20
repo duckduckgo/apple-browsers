@@ -65,12 +65,11 @@ final class UserScripts: UserScriptsProvider {
     private let contentScopePreferences: ContentScopePreferences
 
     // swiftlint:disable:next cyclomatic_complexity
-    init(with sourceProvider: ScriptSourceProviding, contentScopePreferences: ContentScopePreferences) {
+    init(with sourceProvider: ScriptSourceProviding, contentScopePreferences: ContentScopePreferences, aiChatDebugURLSettings: AIChatDebugURLSettings = UserDefaults.standard) {
         self.contentScopePreferences = contentScopePreferences
         clickToLoadScript = ClickToLoadUserScript()
         contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
-        let aiChatDebugURLSettings = AIChatDebugURLSettings()
         let aiChatHandler = AIChatUserScriptHandler(
             storage: DefaultAIChatPreferencesStorage(),
             windowControllersManager: sourceProvider.windowControllersManager,

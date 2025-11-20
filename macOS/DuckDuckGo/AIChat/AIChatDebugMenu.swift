@@ -22,9 +22,10 @@ import AIChat
 final class AIChatDebugMenu: NSMenu {
     private var storage = DefaultAIChatPreferencesStorage()
     private let customURLLabelMenuItem = NSMenuItem(title: "")
-    private let debugStorage = AIChatDebugURLSettings()
+    private let debugStorage: AIChatDebugURLSettings
 
-    init() {
+    init(debugStorage: AIChatDebugURLSettings = UserDefaults.standard) {
+        self.debugStorage = debugStorage
         super.init(title: "")
 
         buildItems {

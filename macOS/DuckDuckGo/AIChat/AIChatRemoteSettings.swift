@@ -50,14 +50,14 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
     }
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let debugURLSettings: AIChatDebugURLSettingsRepresentable
+    private let debugURLSettings: AIChatDebugURLSettings
     private var settings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         privacyConfigurationManager.privacyConfig.settings(for: .aiChat)
     }
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
-        debugURLSettings: AIChatDebugURLSettingsRepresentable = AIChatDebugURLSettings()
+        debugURLSettings: AIChatDebugURLSettings = UserDefaults.standard
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.debugURLSettings = debugURLSettings

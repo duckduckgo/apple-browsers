@@ -22,34 +22,24 @@ import BrowserServicesKit
 import Common
 import History
 import HistoryView
+import Macros
+import Persistence
 import PixelKit
 
-extension UserDefaultsWrapperKey {
-    static let selectedClearingOption = Self(rawValue: "fire-dialog_selectedClearingOption")
-    static let includeTabsAndWindowsState = Self(rawValue: "fire-dialog_includeTabsAndWindowsState")
-    static let includeHistoryState = Self(rawValue: "fire-dialog_includeHistoryState")
-    static let includeCookiesAndSiteDataState = Self(rawValue: "fire-dialog_includeCookiesAndSiteDataState")
-    static let includeChatHistoryState = Self(rawValue: "fire-dialog_includeChatHistoryState")
-}
-protocol FireDialogViewSettings {
+@Storage
+protocol FireDialogViewSettings: AnyObject, ObservableKeyValueStoring {
+    @Key("fire-dialog_selectedClearingOption")
     var lastSelectedClearingOption: FireDialogViewModel.ClearingOption? { get set }
+    @Key("fire-dialog_includeTabsAndWindowsState")
     var lastIncludeTabsAndWindowsState: Bool? { get set }
+    @Key("fire-dialog_includeHistoryState")
     var lastIncludeHistoryState: Bool? { get set }
+    @Key("fire-dialog_includeCookiesAndSiteDataState")
     var lastIncludeCookiesAndSiteDataState: Bool? { get set }
+    @Key("fire-dialog_includeChatHistoryState")
     var lastIncludeChatHistoryState: Bool? { get set }
 }
-struct DefaultsFireDialogViewSettings: FireDialogViewSettings {
-    @UserDefaultsWrapper(key: .selectedClearingOption)
-    var lastSelectedClearingOption: FireDialogViewModel.ClearingOption?
-    @UserDefaultsWrapper(key: .includeTabsAndWindowsState)
-    var lastIncludeTabsAndWindowsState: Bool?
-    @UserDefaultsWrapper(key: .includeHistoryState)
-    var lastIncludeHistoryState: Bool?
-    @UserDefaultsWrapper(key: .includeCookiesAndSiteDataState)
-    var lastIncludeCookiesAndSiteDataState: Bool?
-    @UserDefaultsWrapper(key: .includeChatHistoryState)
-    var lastIncludeChatHistoryState: Bool?
-}
+extension UserDefaults: FireDialogViewSettings {}
 
 @MainActor
 final class FireDialogViewModel: ObservableObject {
@@ -148,7 +138,7 @@ final class FireDialogViewModel: ObservableObject {
     }
 
     /// Remember last selected scope
-    private var settings: FireDialogViewSettings
+    private var settings: any FireDialogViewSettings
 
     init(fireViewModel: FireViewModel,
          tabCollectionViewModel: TabCollectionViewModel,
@@ -162,7 +152,7 @@ final class FireDialogViewModel: ObservableObject {
          includeCookiesAndSiteData: Bool? = nil,
          includeChatHistory: Bool? = nil,
          mode: Mode = .fireButton,
-         settings: FireDialogViewSettings? = nil,
+         settings: (any FireDialogViewSettings)? = nil,
          scopeCookieDomains: Set<String>? = nil,
          scopeVisits: [Visit]? = nil,
          tld: TLD) {
@@ -181,7 +171,7 @@ final class FireDialogViewModel: ObservableObject {
         // Apply provided scope domains BEFORE computing lists to avoid any flash
         self.scopeCookieDomains = scopeCookieDomains
 
-        self.settings = settings ?? DefaultsFireDialogViewSettings()
+        self.settings = settings ?? UserDefaults.standard
         self.clearingOption = clearingOption ?? self.settings.lastSelectedClearingOption ?? .currentTab
         self.includeTabsAndWindows = includeTabsAndWindows ?? self.settings.lastIncludeTabsAndWindowsState ?? true
         self.includeHistory = includeHistory ?? self.settings.lastIncludeHistoryState ?? true

@@ -52,6 +52,7 @@ let package = Package(
         .library(name: "WKAbstractions", targets: ["WKAbstractions"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/duckduckgo/apple-toolbox.git", revision: "6704f157d3887a6d292a5cb1e6a148e2d1c696fd"),
         .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.4.0"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.0.1"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
@@ -114,6 +115,7 @@ let package = Package(
             name: "Persistence",
             dependencies: [
                 "Common",
+                .product(name: "Macros", package: "apple-toolbox"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

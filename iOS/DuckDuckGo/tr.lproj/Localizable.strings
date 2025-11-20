@@ -463,6 +463,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Email Protection'ı Etkinleştir";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Bitti";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Şifreleri otomatik doldurma etkinleştirildi!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "DuckDuckGo'da kaydettiğiniz şifreleri cihazınızdaki tüm uygulamalarda kullanın.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Diğer Uygulamalarda Otomatik Doldurma";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Diğer Uygulamalarda Otomatik Doldurma Etkinleştirildi";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Ayarlar'da Daha Sonra'yı ayarlayın";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Diğer Uygulamalarda Otomatik Doldurmayı Etkinleştir";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Tüm uygulamalarda şifreleri güvenli bir şekilde otomatik doldurmak için DuckDuckGo'yu kullanın.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Şifre yazmadan uygulamalarınızda hızlıca oturum açın";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Diğer Uygulamalarda Şifreleri Otomatik Doldur";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Aç";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Açık";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Diğer Uygulamalarda Otomatik Doldurma";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Sistem Ayarları'ndan Kapat...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Aç...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "CVV'yi gizle";
 
@@ -799,8 +844,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Şifreleri İçe Aktar";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Seçenekler";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Şifre Seçenekleri";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Otomatik Doldurmayla ilgili bir sorunu bildirin";

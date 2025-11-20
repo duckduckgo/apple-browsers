@@ -287,7 +287,7 @@
 "sync.with.another.device.footer" = "Jūsų duomenys šifruojami ištisiniu būdu, o „DuckDuckGo“ neturi prieigos prie šifravimo rakto.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Saugiai sinchronizuokite žymes ir automatinio pildymo duomenis tarp savo įrenginių.";
+"sync.with.another.device.message" = "Saugiai sinchronizuokite žymes ir slaptažodžius tarp savo įrenginių.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Pradėti sinchronizavimą";

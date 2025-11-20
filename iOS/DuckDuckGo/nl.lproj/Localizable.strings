@@ -463,6 +463,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "E-mailbeveiliging inschakelen";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Klaar";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Automatisch invullen van wachtwoorden geactiveerd!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Gebruik wachtwoorden die je in DuckDuckGo hebt opgeslagen in alle apps op je apparaat.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Automatisch invullen in andere apps";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Automatisch aanvullen in andere apps is ingeschakeld";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Later instellen in de instellingen";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Automatisch invullen in andere apps inschakelen";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Gebruik DuckDuckGo om wachtwoorden voor al je apps veilig automatisch in te vullen.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Meld je snel aan bij je apps zonder wachtwoorden te typen";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Wachtwoorden automatisch invullen in andere apps";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Inschakelen";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Aan";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Automatisch invullen in andere apps";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Uitschakelen in systeeminstellingen...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Inschakelen...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "CVV verbergen";
 
@@ -799,8 +844,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Wachtwoorden importeren";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Opties";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Wachtwoordopties";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Meld een probleem met automatisch invullen";

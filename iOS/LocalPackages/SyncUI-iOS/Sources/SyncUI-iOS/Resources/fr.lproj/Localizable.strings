@@ -287,7 +287,7 @@
 "sync.with.another.device.footer" = "Vos données sont cryptées de bout en bout et DuckDuckGo n'a pas accès à la clé de chiffrement.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Synchronisez en toute sécurité vos favoris et les données de remplissage automatique entre vos appareils.";
+"sync.with.another.device.message" = "Synchronisez en toute sécurité les signets et mots de passe entre vos appareils.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Lancer la synchronisation";

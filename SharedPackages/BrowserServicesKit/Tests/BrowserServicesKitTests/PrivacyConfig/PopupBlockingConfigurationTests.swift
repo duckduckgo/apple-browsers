@@ -175,9 +175,7 @@ final class PopupBlockingConfigurationTests: XCTestCase {
         )
 
         let popupConfig = DefaultPopupBlockingConfiguration(privacyConfigurationManager: privacyConfigManager)
-        #if DEBUG
         popupConfig.assertionHandler = { _, _ in }
-        #endif
 
         // THEN
         XCTAssertEqual(popupConfig.userInitiatedPopupThreshold, 6.0)
@@ -208,9 +206,7 @@ final class PopupBlockingConfigurationTests: XCTestCase {
         )
 
         let popupConfig = DefaultPopupBlockingConfiguration(privacyConfigurationManager: privacyConfigManager)
-        #if DEBUG
         popupConfig.assertionHandler = { _, _ in }
-        #endif
 
         // THEN
         XCTAssertEqual(popupConfig.userInitiatedPopupThreshold, 6.0)

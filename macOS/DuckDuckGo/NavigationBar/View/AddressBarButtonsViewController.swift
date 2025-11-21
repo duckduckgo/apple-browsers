@@ -525,9 +525,9 @@ final class AddressBarButtonsViewController: NSViewController {
         tabViewModel?.$usedPermissions.dropFirst().sink { [weak self] _ in
             self?.updatePermissionButtons()
         }.store(in: &permissionsCancellables)
-       tabViewModel?.tab.popupHandling?.popupOpenedPublisher.sink { [weak self] _ in
-           self?.updatePermissionButtons()
-       }.store(in: &permissionsCancellables)
+        tabViewModel?.tab.popupHandling?.popupOpenedPublisher.sink { [weak self] _ in
+            self?.updatePermissionButtons()
+        }.store(in: &permissionsCancellables)
         tabViewModel?.$permissionAuthorizationQuery.dropFirst().sink { [weak self] _ in
             self?.updatePermissionButtons()
         }.store(in: &permissionsCancellables)
@@ -1600,7 +1600,7 @@ final class AddressBarButtonsViewController: NSViewController {
                               delegate: self,
                               featureFlagger: featureFlagger,
                               hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false)
-            .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
+        .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
     }
 
     @IBAction func externalSchemeButtonAction(_ sender: NSButton) {

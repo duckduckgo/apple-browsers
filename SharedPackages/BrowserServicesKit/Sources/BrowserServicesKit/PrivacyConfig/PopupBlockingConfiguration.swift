@@ -67,7 +67,7 @@ public final class DefaultPopupBlockingConfiguration: PopupBlockingConfiguration
             threshold = doubleValue
         } else {
             assertionHandler(settings[PopupBlockingConfigurationKeys.userInitiatedPopupThreshold] == nil,
-                           "userInitiatedPopupThreshold has unexpected type")
+                             "userInitiatedPopupThreshold has unexpected type")
         }
 
         // Validate threshold is positive, return default if not

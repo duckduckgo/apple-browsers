@@ -178,6 +178,13 @@ public final class CustomToggleControl: NSControl {
         return segment == 0 ? leftSelectedImage : rightSelectedImage
     }
 
+    /// Resets the control to segment 0 without triggering the action
+    public func reset() {
+        guard _selectedSegment != 0 else { return }
+        _selectedSegment = 0
+        animateSelection()
+    }
+
     // MARK: - Initialization
 
     override public init(frame frameRect: NSRect) {

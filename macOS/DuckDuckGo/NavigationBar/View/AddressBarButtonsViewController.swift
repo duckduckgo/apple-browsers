@@ -1684,7 +1684,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     func resetSearchModeToggle() {
-        searchModeToggleControl?.selectedSegment = 0
+        searchModeToggleControl?.reset()
     }
 
     private func updateKeyViewChainForToggle(shouldShowToggle: Bool) {

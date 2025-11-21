@@ -244,9 +244,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721266209
     case dataImportNewSafariFilePicker
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721265889
-    case cpmCountPixel
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620653515
     case storeSerpSettings
 
@@ -402,7 +399,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
                 .scheduledSetDefaultBrowserAndAddToDockPrompts,
-                .cpmCountPixel,
                 .fireDialogIndividualSitesLink,
                 .scheduledDefaultBrowserAndDockPromptsInactiveUser:
             return false
@@ -555,8 +551,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DataImportSubfeature.newSafariFilePicker))
         case .aiChatDataClearing:
             return .remoteReleasable(.feature(.duckAiDataClearing))
-        case .cpmCountPixel:
-            return .internalOnly()
         case .storeSerpSettings:
             return .remoteReleasable(.subfeature(SERPSubfeature.storeSerpSettings))
         case .blurryAddressBarTahoeFix:

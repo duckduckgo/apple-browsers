@@ -408,7 +408,7 @@ extension TabViewController {
                  accessibilityLabel: UserText.actionNewAIChat,
                  image: DesignSystemImages.Glyphs.Size24.aiChatAdd,
                  action: { [weak self] in
-            self?.submitStartChatAction()
+            self?.openNewChatInNewTab()
         })
     }
     

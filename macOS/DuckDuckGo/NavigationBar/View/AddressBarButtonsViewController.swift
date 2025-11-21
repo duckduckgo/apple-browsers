@@ -599,7 +599,7 @@ final class AddressBarButtonsViewController: NSViewController {
         // since NTP has the address bar focused by default
         let hasRequestedPermission = tabViewModel.usedPermissions.values.contains(where: { $0.isRequested })
         let shouldShowWhileFocused = (tabViewModel.tab.content == .newtab) && hasRequestedPermission
-        
+
         permissionButtons.isShown = (shouldShowWhileFocused || !isTextFieldEditorFirstResponder)
         && !isAnyTrackerAnimationPlaying
         && !tabViewModel.isShowingErrorPage

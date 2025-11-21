@@ -43,8 +43,6 @@ class DownloadManager {
          downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler()) {
         self.notificationCenter = notificationCenter
         self.downloadsDirectoryHandler = downloadsDirectoryHandler
-        downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
-        Logger.general.debug("Downloads directory location \(self.downloadsDirectoryHandler.downloadsDirectory.absoluteString)")
     }
 
     func makeDownload(response: URLResponse,
@@ -131,6 +129,7 @@ class DownloadManager {
 
     private func moveToDownloadDirectortIfNeeded(_ download: Download) {
         guard !download.temporary else { return }
+        downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
         move(download, toPath: downloadsDirectoryHandler.downloadsDirectory)
     }
 }

@@ -63,5 +63,6 @@ struct DownloadsDirectoryHandler: DownloadsDirectoryHandling {
 
     func createDownloadsDirectory() {
         try? FileManager.default.createDirectory(at: downloadsDirectory, withIntermediateDirectories: true, attributes: nil)
+        Logger.general.debug("Downloads directory location \(downloadsDirectory.absoluteString)")
     }
 }

@@ -2674,6 +2674,7 @@ extension MainViewController: OmniBarDelegate {
             }))
             presentationCompletion = {
                 // TODO: Missing favorite entry highlight
+                // Wil be added in https://app.asana.com/1/137249556945/task/1212019161027836
             }
 
             controller.modalPresentationStyle = .pageSheet

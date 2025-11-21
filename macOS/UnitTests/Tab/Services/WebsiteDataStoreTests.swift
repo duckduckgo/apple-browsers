@@ -133,6 +133,34 @@ final class WebCacheManagerTests: XCTestCase {
         XCTAssertEqual(dataStore.records.first?.displayName, "duckduckgo.com")
     }
 
+    @MainActor func testWhenClearedThenDuckAiCookiesAndStorageAreRetained() async {
+        let logins = MockPreservedLogins(domains: [
+            "example.com"
+        ])
+
+        let cookieStore = MockHTTPCookieStore(cookies: [
+            .make(domain: "duck.ai")
+        ])
+
+        let dataStore = MockDataStore()
+        dataStore.cookieStore = cookieStore
+        dataStore.records = [
+            MockDataRecord(recordName: "duck.ai")
+        ]
+
+        let webCacheManager = WebCacheManager(fireproofDomains: logins, websiteDataStore: dataStore)
+
+        // Await the clear function directly
+        await webCacheManager.clear()
+
+        // Assertions after the async operation
+        XCTAssertEqual(cookieStore.cookies.count, 1)
+        XCTAssertEqual(cookieStore.cookies[0].domain, "duck.ai")
+
+        XCTAssertEqual(dataStore.records.count, 1)
+        XCTAssertEqual(dataStore.records.first?.displayName, "duck.ai")
+    }
+
     func testWhenClearedThenCookiesForLoginsAreRetained() {
         let logins = MockPreservedLogins(domains: [
             "example.com"

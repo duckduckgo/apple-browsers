@@ -391,6 +391,12 @@ private class TabBarViewModelMock: TabBarViewModel {
             .eraseToAnyPublisher()
     }
 
+    @Published var progress: Double = 0
+    var progressPublisher: Published<Double>.Publisher {
+        $progress
+    }
+    var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never>
+
     init(width: CGFloat = 0, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, pinned: Bool = false, loading: Bool = false, error: WKError? = nil) {
         self.width = width
         self.title = title
@@ -402,5 +408,6 @@ private class TabBarViewModelMock: TabBarViewModel {
         self.isPinned = pinned
         self.isLoading = loading
         self.error = error
+        self.renderingProgressDidChangePublisher = .init()
     }
 }

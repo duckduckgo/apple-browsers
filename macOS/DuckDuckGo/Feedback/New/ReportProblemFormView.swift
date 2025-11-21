@@ -55,13 +55,17 @@ struct ReportProblemFormFlowView: View {
     init(
         canReportBrokenSite: Bool,
         onReportBrokenSite: (() -> Void)?,
+        preselectedCategory: ProblemCategory? = nil,
+        preselectedSubCategory: SubCategory? = nil,
         onClose: @escaping () -> Void,
         onSeeWhatsNew: @escaping () -> Void,
         onResize: @escaping (CGFloat, CGFloat) -> Void
     ) {
         self._viewModel = StateObject(wrappedValue: ReportProblemFormViewModel(
             canReportBrokenSite: canReportBrokenSite,
-            onReportBrokenSite: onReportBrokenSite
+            onReportBrokenSite: onReportBrokenSite,
+            preselectedCategory: preselectedCategory,
+            preselectedSubCategory: preselectedSubCategory
         ))
         self.onClose = onClose
         self.onSeeWhatsNew = onSeeWhatsNew

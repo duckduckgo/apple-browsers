@@ -484,6 +484,9 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     private func applyCustomization() {
+        // Some states (e.g. `AIChatModeState`) do not support customization, i.e we should not show the customizable button
+        guard state.allowCustomization else { return }
+        
         let state = dependencies.mobileCustomization.state
         guard state.isEnabled else {
             barView.customizableButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple, for: .normal)
@@ -740,15 +743,7 @@ extension OmniBarViewController {
 
     /// Enters AI Chat full mode, showing AI Chat-specific UI in the omnibar
     func enterAIChatMode() {
-        let dependencies = state.dependencies
-        let isLoading = state.isLoading
-
-        let baseState: any OmniBarState = state.hasLargeWidth
-            ? LargeOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-            : SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-
-        let aiChatState = UniversalOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: isLoading)
-        refreshState(aiChatState)
+        refreshState(state.onEnterAIChatState)
     }
 }
 

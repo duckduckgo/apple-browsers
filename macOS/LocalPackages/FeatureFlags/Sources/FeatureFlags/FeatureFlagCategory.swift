@@ -25,6 +25,7 @@ public enum FeatureFlagCategory: String, CaseIterable, Comparable {
     case osSupportWarnings = "OS Support Warnings"
     case other = "Other"
     case subscription = "Subscription"
+    case popupBlocking = "Popup Blocking"
     case sync = "Sync"
     case updates = "Updates"
     case vpn = "VPN"
@@ -55,6 +56,7 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .aiChatImprovements,
                 .aiChatKeepSession,
                 .aiChatDataClearing,
+                .aiChatOmnibarToggle,
                 .standaloneMigration:
             return .duckAI
         case .osSupportForceUnsupportedMessage,
@@ -90,6 +92,12 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .tierMessagingEnabled,
                 .allowProTierPurchase:
             return .subscription
+        case .popupBlocking,
+                .extendedUserInitiatedPopupTimeout,
+                .suppressEmptyPopUpsOnApproval,
+                .allowPopupsForCurrentPage,
+                .popupPermissionButtonPersistence:
+            return .popupBlocking
         default:
             return .other
         }

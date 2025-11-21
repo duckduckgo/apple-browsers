@@ -25,6 +25,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Add";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Duck.ai Chats";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "AI Chat";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Duck.ai Settings";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Passwords";
 

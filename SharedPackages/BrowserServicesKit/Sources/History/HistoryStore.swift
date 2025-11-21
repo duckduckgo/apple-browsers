@@ -357,7 +357,8 @@ fileprivate extension HistoryEntry {
                   visits: visits,
                   numberOfTrackersBlocked: Int(numberOfTrackersBlocked),
                   blockedTrackingEntities: Set<String>(blockedTrackingEntities.components(separatedBy: "|")),
-                  trackersFound: historyEntryMO.trackersFound)
+                  trackersFound: historyEntryMO.trackersFound,
+                  cookiePopupBlocked: historyEntryMO.cookiePopupBlocked)
 
         visits.forEach { visit in
             visit.historyEntry = self
@@ -387,6 +388,7 @@ fileprivate extension BrowsingHistoryEntryManagedObject {
         numberOfTrackersBlocked = Int64(entry.numberOfTrackersBlocked)
         blockedTrackingEntities = entry.blockedTrackingEntities.isEmpty ? "" : entry.blockedTrackingEntities.joined(separator: "|")
         trackersFound = entry.trackersFound
+        cookiePopupBlocked = entry.cookiePopupBlocked
     }
 
 }

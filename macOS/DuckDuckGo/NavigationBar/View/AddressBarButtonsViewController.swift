@@ -399,6 +399,20 @@ final class AddressBarButtonsViewController: NSViewController {
 
     override func viewWillAppear() {
         setupButtons()
+
+        // Store reference to DraggingDestinationView for popup window dragging
+        if isInPopUpWindow {
+            guard let customView = view as? AddressBarButtonsView else {
+                assertionFailure("AddressBarButtonsViewController.view should be AddressBarButtonsView")
+                return
+            }
+            assert(type(of: view.superview) == NSView?.self)
+            guard let nextResponder = view.superview?.nextResponder as? DraggingDestinationView else {
+                assertionFailure("Expected DraggingDestinationView as next responder, got \(view.superview?.nextResponder ??? "<nil>")")
+                return
+            }
+            customView.draggingDestinationView = nextResponder
+        }
     }
 
     override func viewWillDisappear() {
@@ -1612,36 +1626,6 @@ final class AddressBarButtonsViewController: NSViewController {
             .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
     }
 
-    override func mouseDown(with event: NSEvent) {
-        if isInPopUpWindow {
-            // The workaround is here to allow dragging a PopUp window
-            // when the event is targeting the AddressBarButtonsViewController‘s view.
-            // Otherwise the event would be redirected to the `view.superview` (Container View)
-            // which will silently ignore it.
-            assert(type(of: view) == NSView.self)
-            assert(type(of: view.superview) == NSView?.self)
-            view.superview?.nextResponder?/* DraggingDestinationView */.mouseDown(with: event) ?? super.mouseDown(with: event)
-        } else {
-            super.mouseDown(with: event)
-        }
-    }
-
-    override func mouseDragged(with event: NSEvent) {
-        if isInPopUpWindow {
-            view.superview?.nextResponder?/* DraggingDestinationView */.mouseDragged(with: event) ?? super.mouseDragged(with: event)
-        } else {
-            super.mouseDragged(with: event)
-        }
-    }
-
-    override func mouseUp(with event: NSEvent) {
-        if isInPopUpWindow {
-            view.superview?.nextResponder?/* DraggingDestinationView */.mouseUp(with: event) ?? super.mouseUp(with: event)
-        } else {
-            super.mouseUp(with: event)
-        }
-    }
-
     // MARK: - Notification Animation
 
     private var animationViewCache = [String: LottieAnimationView]()
@@ -1952,6 +1936,41 @@ final class AddressBarButtonsViewController: NSViewController {
                 self?.stopHighlightingPrivacyShield()
             })
             .store(in: &cancellables)
+    }
+}
+
+/// Custom view for AddressBarButtonsViewController that accepts first mouse in popup windows
+/// to allow dragging the window when it's inactive
+final class AddressBarButtonsView: NSView {
+    weak var draggingDestinationView: NSResponder?
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        return draggingDestinationView != nil
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        if let draggingDestinationView {
+            // Forward to DraggingDestinationView to allow dragging the popup window
+            draggingDestinationView.mouseDown(with: event)
+        } else {
+            super.mouseDown(with: event)
+        }
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        if let draggingDestinationView {
+            draggingDestinationView.mouseDragged(with: event)
+        } else {
+            super.mouseDragged(with: event)
+        }
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        if let draggingDestinationView {
+            draggingDestinationView.mouseUp(with: event)
+        } else {
+            super.mouseUp(with: event)
+        }
     }
 }
 

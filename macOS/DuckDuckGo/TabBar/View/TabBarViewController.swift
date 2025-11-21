@@ -51,7 +51,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     @IBOutlet weak var fireButton: MouseOverAnimationButton!
     @IBOutlet weak var draggingSpace: NSView!
     @IBOutlet weak var windowDraggingViewLeadingConstraint: NSLayoutConstraint!
-    @IBOutlet weak var burnerWindowBackgroundView: NSImageView!
+
+    private var fireWindowBackgroundView: NSImageView?
 
     private var pinnedTabsCollectionView: PinnedTabsCollectionView?
 
@@ -264,7 +265,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         setupPinnedTabsView()
         subscribeToTabModeChanges()
         setupAddTabButton()
-        setupAsBurnerWindowIfNeeded()
+        setupAsBurnerWindowIfNeeded(theme: theme)
         subscribeToPinnedTabsSettingChanged()
         setupScrollButtons()
         setupTabsContainersHeight()
@@ -406,18 +407,48 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         pinnedTabsContainerHeightConstraint.constant = theme.tabStyleProvider.pinnedTabsContainerViewHeight
     }
 
-    private func setupAsBurnerWindowIfNeeded() {
-        if tabCollectionViewModel.isBurner {
-            burnerWindowBackgroundView.image = theme.fireWindowGraphic
-            burnerWindowBackgroundView.isHidden = false
-            fireButton.isAnimationEnabled = false
-            fireButton.backgroundColor = NSColor.fireButtonRedBackground
-            fireButton.mouseOverColor = NSColor.fireButtonRedHover
-            fireButton.mouseDownColor = NSColor.fireButtonRedPressed
-            fireButton.normalTintColor = NSColor.white
-            fireButton.mouseDownTintColor = NSColor.white
-            fireButton.mouseOverTintColor = NSColor.white
+    private func addFireWindowBackgroundViewIfNeeded() {
+        guard !tabCollectionViewModel.isPopup else { return }
+
+        if fireWindowBackgroundView == nil {
+            let imageView = NSImageView()
+            imageView.translatesAutoresizingMaskIntoConstraints = false
+            imageView.imageScaling = .scaleAxesIndependently
+            imageView.imageAlignment = .alignBottom
+            imageView.isHidden = true
+            fireWindowBackgroundView = imageView
         }
+
+        guard let fireWindowBackgroundView, fireWindowBackgroundView.superview == nil else { return }
+
+        view.addSubview(fireWindowBackgroundView, positioned: .above, relativeTo: visualEffectBackgroundView)
+
+        NSLayoutConstraint.activate([
+            fireWindowBackgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -2),
+            fireWindowBackgroundView.topAnchor.constraint(equalTo: view.topAnchor),
+            fireWindowBackgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            fireWindowBackgroundView.widthAnchor.constraint(equalToConstant: 96)
+        ])
+    }
+
+    private func setupAsBurnerWindowIfNeeded(theme: (any ThemeStyleProviding)? = nil) {
+        guard tabCollectionViewModel.isBurner,
+              !tabCollectionViewModel.isPopup else { return }
+
+        fireButton.isAnimationEnabled = false
+        fireButton.backgroundColor = NSColor.fireButtonRedBackground
+        fireButton.mouseOverColor = NSColor.fireButtonRedHover
+        fireButton.mouseDownColor = NSColor.fireButtonRedPressed
+        fireButton.normalTintColor = NSColor.white
+        fireButton.mouseDownTintColor = NSColor.white
+        fireButton.mouseOverTintColor = NSColor.white
+
+        addFireWindowBackgroundViewIfNeeded()
+
+        let currentTheme = theme ?? self.theme
+        guard let fireWindowBackgroundView else { return }
+        fireWindowBackgroundView.image = currentTheme.fireWindowGraphic
+        fireWindowBackgroundView.isHidden = false
     }
 
     private func setupAccessibility() {
@@ -1178,6 +1209,8 @@ extension TabBarViewController: MouseOverButtonDelegate {
 extension TabBarViewController: ThemeUpdateListening {
 
     func applyThemeStyle(theme: any ThemeStyleProviding) {
+        setupAsBurnerWindowIfNeeded(theme: theme)
+
         let colorsProvider = theme.colorsProvider
         let isFireWindow = tabCollectionViewModel.isBurner
 

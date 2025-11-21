@@ -29,6 +29,7 @@ import PixelKit
 final class SubscriptionFlowViewModel: ObservableObject {
     
     let userScript: SubscriptionPagesUserScript
+    let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     let subFeature: any SubscriptionPagesUseSubscriptionFeature
     var webViewModel: AsyncHeadlessWebViewViewModel
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
@@ -76,6 +77,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     init(purchaseURL: URL,
          isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
          subscriptionManager: SubscriptionAuthV1toV2Bridge,
          selectedFeature: SettingsViewModel.SettingsDeepLinkSection? = nil,
@@ -85,6 +87,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
         self.purchaseURL = purchaseURL
         self.userScript = userScript
+        self.userScriptsDependencies = userScriptsDependencies
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager
         self.urlOpener = urlOpener
@@ -96,7 +99,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
         self.webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
                                                             allowedDomains: allowedDomains,
-                                                            contentBlocking: false)
+                                                            userScriptsDependencies: nil)
 
 
         self.webViewModel = AsyncHeadlessWebViewViewModel(userScript: userScript,

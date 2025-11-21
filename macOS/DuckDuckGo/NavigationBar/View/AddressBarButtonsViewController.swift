@@ -595,7 +595,12 @@ final class AddressBarButtonsViewController: NSViewController {
         guard isViewLoaded else { return }
         guard let tabViewModel else { return }
 
-        permissionButtons.isShown = !isTextFieldEditorFirstResponder
+        // Show permission buttons when there's a requested permission on NTP even if address bar is focused,
+        // since NTP has the address bar focused by default
+        let hasRequestedPermission = tabViewModel.usedPermissions.values.contains(where: { $0.isRequested })
+        let shouldShowWhileFocused = (tabViewModel.tab.content == .newtab) && hasRequestedPermission
+
+        permissionButtons.isShown = (shouldShowWhileFocused || !isTextFieldEditorFirstResponder)
         && !isAnyTrackerAnimationPlaying
         && !tabViewModel.isShowingErrorPage
         defer {

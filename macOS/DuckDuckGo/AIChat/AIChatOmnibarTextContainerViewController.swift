@@ -25,6 +25,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         static let bottomPadding: CGFloat = 54.0
         static let minimumPanelHeight: CGFloat = 100.0
         static let maximumPanelHeight: CGFloat = 512.0
+        static let dividerLeadingOffset: CGFloat = -9.0
+        static let dividerTrailingOffset: CGFloat = 77.0
+        static let dividerTopOffset: CGFloat = 8.0
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -141,9 +144,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -Constants.bottomPadding),
 
             // Divider overflows beyond view bounds
-            dividerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -9),
-            dividerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 77),
-            dividerView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 8),
+            dividerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.dividerLeadingOffset),
+            dividerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: Constants.dividerTrailingOffset),
+            dividerView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: Constants.dividerTopOffset),
             dividerView.heightAnchor.constraint(equalToConstant: 1),
         ])
     }
@@ -265,7 +268,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     func updateScrollingBehavior(maxHeight: CGFloat) {
         let desiredHeight = calculateDesiredPanelHeight()
-        let shouldScroll = desiredHeight >= Constants.maximumPanelHeight
+        let effectiveMaxHeight = min(maxHeight, Constants.maximumPanelHeight)
+        let shouldScroll = desiredHeight >= effectiveMaxHeight
 
         scrollView.hasVerticalScroller = shouldScroll
         dividerView.isHidden = !shouldScroll

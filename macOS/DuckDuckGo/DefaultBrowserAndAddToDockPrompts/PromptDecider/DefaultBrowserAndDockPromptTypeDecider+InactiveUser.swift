@@ -47,7 +47,7 @@ extension DefaultBrowserAndDockPromptTypeDecider {
         /// 2. **Inactive period**: User hasn't opened app for ≥7 days (default: `inactiveModalNumberOfInactiveDays`)
         /// 3. **Install age**: App installed for ≥28 days (default: `inactiveModalNumberOfDaysSinceInstall`)
         ///
-        /// **Inactivity Tracking:**
+        /// **Inactivity Recording:**
         /// - `DefaultBrowserAndDockPromptUserActivityManager` records activity on app launch
         /// - Compares last activity date to current date
         /// - See `DefaultBrowserAndDockPromptService.applicationDidBecomeActive()`
@@ -60,11 +60,11 @@ extension DefaultBrowserAndDockPromptTypeDecider {
         /// - If conditions are met, this shows instead of popover/banner
         ///
         /// **Debug:**
-        /// - Use Debug menu → "SAD/ATT Prompts" → "Inactive Modal will show: [date]" to see when eligible
+        /// - Use Debug menu → "SAD/ATT Prompts" → "Inactive User Modal will show: [date]" to see when eligible
         /// - Simulating date alone won't trigger this - need actual inactivity period
         ///
         /// **See also:**
-        /// - `DefaultBrowserAndDockPromptUserActivityManager` - tracks user activity
+        /// - `DefaultBrowserAndDockPromptUserActivityManager` - records recent app usage days
         /// - `DefaultBrowserAndDockPromptFeatureFlagger` - timing values and feature flags
         func promptType() -> DefaultBrowserAndDockPromptPresentationType? {
             // If Feature is disabled return nil

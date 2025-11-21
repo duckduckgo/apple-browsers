@@ -75,6 +75,10 @@ final class DefaultBrowserAndDockPromptTypeDecider: DefaultBrowserAndDockPromptT
     /// 2. **Active user prompts** (popover or banner)
     ///    - See `DefaultBrowserAndDockPromptTypeDecider.ActiveUser`
     ///
+    /// **Remote Configuration:**
+    /// All timing thresholds (install delay, popover→banner delay, banner repeat interval, inactive user thresholds) come from
+    /// `DefaultBrowserAndDockPromptFeatureFlagger` so the schedule can be fine-tuned via Privacy Config.
+    ///
     /// **See also:**
     /// - `DefaultBrowserAndDockPromptTypeDecider.ActiveUser.promptType()` - active user timing
     /// - `DefaultBrowserAndDockPromptTypeDecider.InactiveUser.promptType()` - inactive user timing

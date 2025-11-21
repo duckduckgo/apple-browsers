@@ -20,6 +20,7 @@
 //
 // **PURPOSE:**
 // Encourage users to set DuckDuckGo as default browser and add it to Dock through scheduled prompts.
+// Spec reference: https://app.asana.com/1/137249556945/project/1199230911884351/task/1210225579353384?focus=true
 //
 // **FLOW DIAGRAM:**
 //
@@ -39,26 +40,26 @@
 //         ↓
 //   Returns prompt type or nil
 //         ↓
-//   ┌─────────────┬─────────────┬──────────────────┐
-//   │   Popover   │   Banner    │  Inactive Modal  │
-//   └─────────────┴─────────────┴──────────────────┘
+//   ┌─────────────┬─────────────┬────────────────────────┐
+//   │   Popover   │   Banner    │  Inactive User Modal   │
+//   └─────────────┴─────────────┴────────────────────────┘
 //
 // **PROMPT TYPES & TIMING (default values):**
 //
 // 1. **POPOVER** (first prompt for active users)
-//    - When: ≥14 days after install
+//    - When: ≥14 days after install (remote configurable via Privacy Config)
 //    - Where: Anchored to address bar
 //    - Frequency: Once
 //    - Storage: `popoverShownDate`
 //
 // 2. **BANNER** (follow-up for active users)
-//    - When: ≥14 days after popover seen
+//    - When: ≥14 days after popover seen (earliest 4 weeks from install, remote configurable)
 //    - Where: Persistent bar at top of ALL windows
 //    - Frequency: Can repeat every ≥14 days
 //    - Storage: `bannerShownDate`, `bannerShownOccurrences`
 //    - Can be permanently dismissed: `isBannerPermanentlyDismissed`
 //
-// 3. **INACTIVE MODAL** (re-engagement for inactive users)
+// 3. **INACTIVE USER MODAL** (re-engagement for inactive users)
 //    - When: ≥28 days after install AND ≥7 days inactive
 //    - Where: Modal sheet over main window
 //    - Frequency: Once
@@ -70,6 +71,7 @@
 // - Onboarding must be completed
 // - Feature flags must be enabled
 // - If already default browser (+ in dock for Sparkle) → no prompts
+// - If only one action remains (default browser OR dock), only that action is promoted
 //
 // **KEY CLASSES:**
 // - `DefaultBrowserAndDockPromptCoordinator` (this file): Main decision logic
@@ -91,7 +93,7 @@
 // - `popoverShownDate`: TimeInterval when popover was shown
 // - `bannerShownDate`: TimeInterval when banner was last shown
 // - `bannerShownOccurrences`: Number of times banner shown
-// - `inactiveUserModalShownDate`: TimeInterval when inactive modal was shown
+// - `inactiveUserModalShownDate`: TimeInterval when inactive user modal was shown
 // - `isBannerPermanentlyDismissed`: User clicked "Never Ask Again"
 // - `debugSetDefaultAndAddToDockPromptCurrentDateKey`: Simulated date override (debug only)
 
@@ -231,7 +233,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     /// **Side Effects:**
     /// - **Popover**: Marks `popoverShownDate` immediately (shown once, don't repeat in other windows)
     /// - **Banner**: Does NOT mark as shown here (marked when user interacts, so it shows in all windows)
-    /// - **Inactive Modal**: Marks `inactiveUserModalShownDate` immediately (shown once)
+    /// - **Inactive User Modal**: Marks `inactiveUserModalShownDate` immediately (shown once)
     /// - Fires analytics pixels for impressions
     ///
     /// **See also:**
@@ -300,7 +302,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         /// Marks the prompt as "seen" in storage.
         /// Banner: marked here when user interacts (so it shows in all windows until interaction)
         /// Popover: already marked when shown (in getPromptType), not here
-        /// Inactive Modal: already marked when shown (in getPromptType), not here
+        /// Inactive User Modal: already marked when shown (in getPromptType), not here
         func setPromptSeen() {
             // Do not set popover seen when user interacting with it. Popover is intrusive and we don't want to show in every windows. We set seen when we show it on screen.
             guard prompt == .active(.banner) else { return }

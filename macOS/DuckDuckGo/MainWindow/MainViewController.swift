@@ -371,7 +371,6 @@ final class MainViewController: NSViewController {
     }
 
     /// Called when this window becomes the key window (gains focus).
-    /// This is the trigger point for evaluating whether to show the default browser/dock prompt.
     func windowDidBecomeKey() {
         updateBackMenuItem()
         updateForwardMenuItem()
@@ -745,7 +744,7 @@ final class MainViewController: NSViewController {
     /// 4. If eligible, shows one of three prompt types:
     ///    - **Popover**: Small popup anchored to address bar (first prompt, shown once)
     ///    - **Banner**: Persistent bar at top of window (shown after popover, can repeat)
-    ///    - **Inactive Modal**: Sheet for users who haven't used the app in 7+ days
+    ///    - **Inactive User Modal**: Sheet for users who haven't used the app in 7+ days
     ///
     /// **See also:**
     /// - `DefaultBrowserAndDockPromptPresenter.tryToShowPrompt()` - orchestrates prompt display

@@ -22,7 +22,7 @@ import Combine
 final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpdateListening, NSTextViewDelegate {
 
     private enum Constants {
-        static let bottomPadding: CGFloat = 50.0
+        static let bottomPadding: CGFloat = 54.0
         static let minimumPanelHeight: CGFloat = 100.0
         static let maximumPanelHeight: CGFloat = 512.0
     }

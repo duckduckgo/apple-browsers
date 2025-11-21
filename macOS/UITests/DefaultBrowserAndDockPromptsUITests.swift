@@ -50,7 +50,7 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
 
         // Confirm the prompt
         app.confirmButton.click()
-        XCTAssertTrue(app.inactiveUserPrompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be dismissed after confirming")
+        XCTAssertTrue(app.inactiveUserPrompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be dismissed after clicking confirm button")
     }
 
     // Note that this test only covers the behavior in the app under test, not the system behavior.
@@ -67,7 +67,7 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
 
         // Dismiss the prompt
         app.dismissButton.click()
-        XCTAssertTrue(app.inactiveUserPrompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be dismissed after confirming")
+        XCTAssertTrue(app.inactiveUserPrompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be dismissed after clicking dismiss button")
     }
 }
 
@@ -77,12 +77,12 @@ private extension DefaultBrowserAndDockPromptsUITests {
 
     /// Trigger the provided prompt by simulating window focus changes, and check its existence before and after.
     func triggerPrompt(_ prompt: XCUIElement) {
-        XCTAssertTrue(prompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should not be shown until window regains focus")
+        XCTAssertTrue(prompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Prompt \(prompt.identifier) should not be shown until window regains focus")
 
         app.closeWindow()
         app.openNewWindow()
 
-        XCTAssertTrue(prompt.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be shown when window regains focus after inactive period and installation period have passed")
+        XCTAssertTrue(prompt.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Prompt \(prompt.identifier) should be shown when window regains focus")
     }
 }
 
@@ -129,12 +129,12 @@ private extension XCUIApplication {
 
     /// Open Debug menu -> Default Browser and Dock Prompt submenu -> Simulate Fresh App Install
     func simulateFreshAppInstall() {
-        selectPromptsDebugMenuItem(simulateFreshAppInstallMenuItem)
+        selectMenuItem(simulateFreshAppInstallMenuItem)
     }
 
     /// Open Debug menu -> Default Browser and Dock Prompt submenu -> Override Current Date
     func overrideCurrentDate(with newDate: Date) {
-        selectPromptsDebugMenuItem(overrideCurrentDateMenuItem)
+        selectMenuItem(overrideCurrentDateMenuItem)
 
         let datePicker = datePickers.firstMatch
         XCTAssertTrue(datePicker.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Date picker should exist")
@@ -151,12 +151,8 @@ private extension XCUIApplication {
         datePicker.typeText("\r") // Enter to confirm
     }
 
-    private func selectPromptsDebugMenuItem(_ menuItem: XCUIElement) {
-        debugMenu.click()
-        XCTAssertTrue(promptsDebugMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Default Browser and Dock Prompt submenu should exist")
-        promptsDebugMenu.hover()
-
-        XCTAssertTrue(menuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Override Current Date menu item should exist")
+    private func selectMenuItem(_ menuItem: XCUIElement) {
+        XCTAssertTrue(menuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Menu item \(menuItem.identifier) should exist")
         menuItem.click()
     }
 

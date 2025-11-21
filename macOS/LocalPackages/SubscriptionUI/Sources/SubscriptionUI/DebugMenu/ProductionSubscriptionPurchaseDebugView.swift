@@ -149,7 +149,6 @@ public struct ProductionSubscriptionPurchaseDebugView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(verbatim: "Status")
                     .font(.headline)
-                
                 Text(verbatim: message)
                     .font(.caption)
                     .foregroundColor(viewModel.isError ? .red : .green)
@@ -208,7 +207,7 @@ public final class ProductionSubscriptionPurchaseViewController: NSViewControlle
 
 @available(macOS 12.0, *)
 @MainActor
-class ProductionSubscriptionPurchaseViewModel: ObservableObject {
+final class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var statusMessage: String?
     @Published var isError = false
@@ -249,8 +248,7 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
 
     func loadAvailableProducts() async {
         isLoadingProducts = true
-        
-        // Cast to DefaultStorePurchaseManagerV2 to access availableProducts
+
         guard let defaultManager = subscriptionManager.storePurchaseManager() as? DefaultStorePurchaseManagerV2 else {
             Logger.subscription.error("[ProductionSubscriptionDebug] Could not cast to DefaultStorePurchaseManagerV2")
             isLoadingProducts = false

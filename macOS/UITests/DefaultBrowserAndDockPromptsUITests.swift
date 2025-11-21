@@ -144,6 +144,7 @@ private extension XCUIApplication {
         dateFormatter.dateFormat = DateFormatter.dateFormat(fromTemplate: "MM/dd/yyyy", options: 0, locale: Locale.current)
         let dateString = dateFormatter.string(from: newDate)
 
+        datePicker.click() // Ensure picker has focus
         datePicker.typeText(dateString)
         datePicker.typeText("\r") // Enter to confirm
     }

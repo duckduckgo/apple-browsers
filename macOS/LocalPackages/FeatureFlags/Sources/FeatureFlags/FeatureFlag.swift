@@ -278,18 +278,23 @@ public enum FeatureFlag: String, CaseIterable {
     case newTabPageAutoconsentStats
 
     /// New popup blocking heuristics based on user interaction timing (internal only)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017698257925?focus=true
     case popupBlocking
 
     /// Use extended user-initiated popup timeout (extends from 1s to 6s)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212001891093823?focus=true
     case extendedUserInitiatedPopupTimeout
 
     /// Suppress empty or about: URL popups after permission approval
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300907?focus=true
     case suppressEmptyPopUpsOnApproval
 
     /// Allow all popups for current page after permission approval (until next navigation)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300913?focus=true
     case allowPopupsForCurrentPage
 
     /// Show popup permission button in inactive state when temporary allowance is active
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300919?focus=true
     case popupPermissionButtonPersistence
 }
 

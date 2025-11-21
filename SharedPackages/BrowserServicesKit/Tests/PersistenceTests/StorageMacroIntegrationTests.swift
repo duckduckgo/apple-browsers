@@ -48,20 +48,20 @@ extension UserDefaults: MigrationTestSettings {}
 @Storage
 public protocol IgnoredMembersSettings: KeyValueStoring {
     var value1: String? { get set }
-    
+
     @StorageIgnored
     var customProperty: String? { get }  // Property requiring custom implementation
-    
+
     // Functions and associated types don't need @StorageIgnored - automatically ignored
     func customMethod()
-    
+
     var value2: Int? { get set }
-    
+
     associatedtype CustomType
 }
 extension UserDefaults: IgnoredMembersSettings {
     public typealias CustomType = Void
-    
+
     public var customProperty: String? {
         // Custom computed property implementation
         return "custom-\(value1 ?? "none")"
@@ -173,7 +173,7 @@ extension AppFileStore: InjectionTestSettings {}
 // Service classes that depend on protocol-constrained storage
 public final class ServiceWithStorage {
     let storage: InjectionTestSettings
-    
+
     init(storage: InjectionTestSettings) {
         self.storage = storage
     }
@@ -181,7 +181,7 @@ public final class ServiceWithStorage {
 
 public final class ServiceWithThrowingStorage {
     let storage: ThrowingInjectionSettings
-    
+
     init(storage: ThrowingInjectionSettings) {
         self.storage = storage
     }
@@ -190,7 +190,7 @@ public final class ServiceWithThrowingStorage {
 // Service that requires SPECIFIC subclass (not just protocol) for test isolation
 public final class ServiceWithConstrainedUserDefaults {
     let settings: AppUserDefaults  // Type-constrained to subclass
-    
+
     init(settings: AppUserDefaults) {
         self.settings = settings
     }
@@ -325,21 +325,21 @@ final class StorageMacroIntegrationTests {
         // Then - publisher emits all values
         #expect(receivedValues == [nil, true, false, nil])
     }
-    
+
     @Test("Publisher emits on direct key changes")
     func publisherEmitsOnDirectKeyChanges() {
         var receivedValues: [Bool?] = []
-        
+
         // Given - subscribe to publisher
         defaults.$isFirstLaunch.sink { value in
             receivedValues.append(value)
         }.store(in: &cancellables)
-        
+
         // When - change value directly via UserDefaults.set(_:forKey:)
         defaults.set(true, forKey: "is-first-launch")
         defaults.set(false, forKey: "is-first-launch")
         defaults.removeObject(forKey: "is-first-launch")
-        
+
         // Then - publisher still emits (KVO observes the key)
         #expect(receivedValues == [nil, true, false, nil])
     }
@@ -568,190 +568,190 @@ final class StorageMacroIntegrationTests {
 
         #expect(receivedValue == true)
     }
-    
+
     @Test("MockKeyValueStore publisher emits initial value")
     func mockKeyValueStorePublisherEmitsInitialValue() {
         let mockStore = MockKeyValueStore()
         var receivedValues: [Bool?] = []
-        
+
         // Given - set initial value
         mockStore.isFirstLaunch = true
-        
+
         // When - subscribe to publisher
         mockStore.$isFirstLaunch.sink { value in
             receivedValues.append(value)
         }.store(in: &cancellables)
-        
+
         // Then - receives initial value immediately
         #expect(receivedValues == [true])
-        
+
         // When - change value
         mockStore.isFirstLaunch = false
-        
+
         // Then - receives new value
         #expect(receivedValues == [true, false])
     }
-    
+
     @Test("MockKeyValueStore KeyPath publisher works correctly")
     func mockKeyValueStoreKeyPathPublisherWorksCorrectly() {
         let mockStore = MockKeyValueStore()
         var receivedValues: [Double?] = []
-        
+
         // Given - set initial value
         mockStore.refreshInterval = 15.0
-        
+
         // When - subscribe via KeyPath
         mockStore.publisher(for: \.refreshInterval).sink { value in
             receivedValues.append(value)
         }.store(in: &cancellables)
-        
+
         // Then - receives initial value
         #expect(receivedValues == [15.0])
-        
+
         // When - change value
         mockStore.refreshInterval = 30.0
-        
+
         // Then - receives new value
         #expect(receivedValues == [15.0, 30.0])
     }
-    
+
     @Test("InMemoryKeyValueStore publisher works with @Storage protocol")
     func inMemoryKeyValueStorePublisherWorksWithStorageProtocol() {
         let memoryStore = InMemoryKeyValueStore()
         var publisherValues: [Bool?] = []
-        
+
         // Given - subscribe to publisher
         memoryStore.$isFirstLaunch.sink { value in
             publisherValues.append(value)
         }.store(in: &cancellables)
-        
+
         // When - modify property
         memoryStore.isFirstLaunch = true
-        
+
         // Then - publisher emits
         #expect(publisherValues == [nil, true])  // Initial nil, then true
-        
+
         // When - modify again
         memoryStore.isFirstLaunch = false
-        
+
         // Then - publisher emits again
         #expect(publisherValues == [nil, true, false])
     }
-    
+
     // MARK: - Nested Protocol Tests
-    
+
     @Test("Nested protocol works with MockKeyValueStore")
     func nestedProtocolWorksWithMockKeyValueStore() {
         let mockStore = MockKeyValueStore()
-        
+
         // When - use nested protocol
         mockStore.nestedValue = "test"
         mockStore.nestedCount = 42
-        
+
         // Then - values are stored and retrieved
         #expect(mockStore.nestedValue == "test")
         #expect(mockStore.nestedCount == 42)
     }
-    
+
     @Test("Nested protocol publisher works correctly")
     func nestedProtocolPublisherWorksCorrectly() {
         let mockStore = MockKeyValueStore()
         var receivedValues: [String?] = []
-        
+
         // Given - set initial value
         mockStore.nestedValue = "initial"
-        
+
         // When - subscribe to publisher
         mockStore.$nestedValue.sink { value in
             receivedValues.append(value)
         }.store(in: &cancellables)
-        
+
         // Then - receives initial value
         #expect(receivedValues == ["initial"])
-        
+
         // When - change value
         mockStore.nestedValue = "updated"
-        
+
         // Then - receives new value
         #expect(receivedValues == ["initial", "updated"])
     }
-    
+
     @Test("Nested protocol KeyPath publisher works correctly")
     func nestedProtocolKeyPathPublisherWorksCorrectly() {
         let mockStore = MockKeyValueStore()
         var receivedValues: [Int?] = []
-        
+
         // Given - set initial value
         mockStore.nestedCount = 10
-        
+
         // When - subscribe via KeyPath
         mockStore.publisher(for: \NestedContainer.NestedSettings.nestedCount).sink { value in
             receivedValues.append(value)
         }.store(in: &cancellables)
-        
+
         // Then - receives initial value
         #expect(receivedValues == [10])
-        
+
         // When - change value
         mockStore.nestedCount = 20
-        
+
         // Then - receives new value
         #expect(receivedValues == [10, 20])
     }
-    
+
     @Test("MockKeyValueStore objectWillChange fires with @Storage protocol")
     func mockKeyValueStoreObjectWillChangeFiresWithStorageProtocol() {
         let mockStore = MockKeyValueStore()
         var changeCount = 0
-        
+
         // Given - subscribe to objectWillChange
         mockStore.objectWillChange.sink { _ in
             changeCount += 1
         }.store(in: &cancellables)
         #expect(changeCount == 0)
-        
+
         // When - modify @Storage properties
         mockStore.isFirstLaunch = true
         mockStore.refreshInterval = 10.0
         mockStore.isFirstLaunch = false
-        
+
         // Then - objectWillChange fires for each change
         #expect(changeCount == 3)
     }
-    
+
     @Test("InMemoryKeyValueStore objectWillChange with @Storage protocol")
     func inMemoryKeyValueStoreObjectWillChangeWithStorageProtocol() {
         let memoryStore = InMemoryKeyValueStore()
         var changeCount = 0
-        
+
         // Given - subscribe to objectWillChange
         memoryStore.objectWillChange.sink { _ in
             changeCount += 1
         }.store(in: &cancellables)
         #expect(changeCount == 0)
-        
+
         // When - modify @Storage properties
         memoryStore.isFirstLaunch = true
         memoryStore.isFirstLaunch = false
-        
+
         // Then - objectWillChange fires for each change
         #expect(changeCount == 2)
     }
-    
+
     @Test("Nested protocol objectWillChange works with MockKeyValueStore")
     func nestedProtocolObjectWillChangeWorksWithMockKeyValueStore() {
         let mockStore = MockKeyValueStore()
         var changeCount = 0
-        
+
         // Given - subscribe to objectWillChange
         mockStore.objectWillChange.sink { _ in
             changeCount += 1
         }.store(in: &cancellables)
-        
+
         // When - modify nested protocol properties
         mockStore.nestedValue = "changed"
         mockStore.nestedCount = 999
-        
+
         // Then - objectWillChange fires for each change
         #expect(changeCount == 2)
     }
@@ -850,15 +850,15 @@ final class StorageMacroIntegrationTests {
         #expect(defaults.value1 == "test1")
         #expect(defaults.value2 == 42)
     }
-    
+
     @Test("StorageIgnored property requires custom implementation")
     func storageIgnoredPropertyRequiresCustomImplementation() {
         // Given - @StorageIgnored property with custom implementation
         defaults.value1 = "base"
-        
+
         // When - access custom property
         let customValue = defaults.customProperty
-        
+
         // Then - custom implementation is used
         #expect(customValue == "custom-base")
     }
@@ -868,7 +868,7 @@ final class StorageMacroIntegrationTests {
         // Functions don't need @StorageIgnored - automatically ignored by macro
         defaults.customMethod() // Should not crash
     }
-    
+
     @Test("Associated types work without @StorageIgnored annotation")
     func associatedTypesWorkWithoutStorageIgnoredAnnotation() {
         // Associated types don't need @StorageIgnored - automatically ignored by macro
@@ -965,47 +965,47 @@ final class StorageMacroIntegrationTests {
         // Then - publisher emits
         #expect(receivedValue == .medium)
     }
-    
+
     @Test("String enum publisher emits all changes")
     func stringEnumPublisherEmitsAllChanges() {
         var receivedValues: [Theme?] = []
-        
+
         // Given - subscribe to String enum
         defaults.$theme.sink { value in
             receivedValues.append(value)
         }.store(in: &cancellables)
-        
+
         // When - change through multiple values
         defaults.theme = .light
         defaults.theme = .dark
         defaults.theme = .system
         defaults.theme = nil
         defaults.theme = .light
-        
+
         // Then - all changes emitted
         #expect(receivedValues == [nil, .light, .dark, .system, nil, .light])
     }
-    
+
     @Test("Int enum publisher emits all changes")
     func intEnumPublisherEmitsAllChanges() {
         var receivedValues: [Priority?] = []
-        
+
         // Given - subscribe to Int enum
         defaults.$priority.sink { value in
             receivedValues.append(value)
         }.store(in: &cancellables)
-        
+
         // When - change through multiple values
         defaults.priority = .low
         defaults.priority = .high
         defaults.priority = .medium
         defaults.priority = nil
         defaults.priority = .low
-        
+
         // Then - all changes emitted
         #expect(receivedValues == [nil, .low, .high, .medium, nil, .low])
     }
-    
+
     @Test("Negative Int enum publisher works correctly")
     func negativeIntEnumPublisherWorks() {
         enum Status: Int {
@@ -1013,60 +1013,60 @@ final class StorageMacroIntegrationTests {
             case pending = 0
             case success = 1
         }
-        
+
         // Extend AppSettings to include Status
         var receivedValues: [Int?] = []
-        
+
         // Given - set and read raw values (testing the underlying storage)
         defaults.set(Status.error.rawValue, forKey: "status")
         let stored = defaults.integer(forKey: "status")
         #expect(stored == -1)
-        
+
         // When - change through values
         defaults.set(Status.pending.rawValue, forKey: "status")
         #expect(defaults.integer(forKey: "status") == 0)
-        
+
         defaults.set(Status.success.rawValue, forKey: "status")
         #expect(defaults.integer(forKey: "status") == 1)
     }
-    
+
     @Test("Enum publisher with KeyPath emits all changes")
     func enumPublisherWithKeyPathEmitsAllChanges() {
         var receivedValues: [Priority?] = []
-        
+
         // Given - subscribe via KeyPath
         defaults.publisher(for: \.priority).sink { value in
             receivedValues.append(value)
         }.store(in: &cancellables)
-        
+
         // When - change multiple times
         defaults.priority = .low
         defaults.priority = .medium
         defaults.priority = .high
-        
+
         // Then - all values emitted
         #expect(receivedValues == [nil, .low, .medium, .high])
     }
-    
+
     @Test("Enum updatesPublisher(forKey:) emits for both String and Int enums")
     func enumUpdatesPublisherForKeyWorks() {
         var themeCount = 0
         var priorityCount = 0
-        
+
         // Given - subscribe to both enum types
         defaults.updatesPublisher(forKey: "theme").sink { _ in
             themeCount += 1
         }.store(in: &cancellables)
-        
+
         defaults.updatesPublisher(forKey: "priority").sink { _ in
             priorityCount += 1
         }.store(in: &cancellables)
-        
+
         // When - change both
         defaults.theme = .dark
         defaults.priority = .high
         defaults.theme = .light
-        
+
         // Then - both emit correctly
         #expect(themeCount == 2)  // dark, light
         #expect(priorityCount == 1)  // high
@@ -1219,73 +1219,73 @@ final class StorageMacroIntegrationTests {
     @Test("Property publishers emit initial value on subscription")
     func propertyPublishersEmitInitialValueOnSubscription() {
         var receivedValues: [Bool?] = []
-        
+
         // Given - value exists before subscription
         defaults.isFirstLaunch = true
-        
+
         // When - subscribe to $propertyName publisher
         defaults.$isFirstLaunch.sink { value in
             receivedValues.append(value)
         }.store(in: &cancellables)
-        
+
         // Then - receives initial value immediately
         #expect(receivedValues == [true])
-        
+
         // When - change value
         defaults.isFirstLaunch = false
-        
+
         // Then - receives new value
         #expect(receivedValues == [true, false])
     }
-    
+
     @Test("KeyPath publishers emit initial value on subscription")
     func keyPathPublishersEmitInitialValueOnSubscription() {
         var receivedValues: [Double?] = []
-        
+
         // Given - value exists before subscription
         defaults.refreshInterval = 30.0
-        
+
         // When - subscribe to publisher(for: keyPath)
         defaults.publisher(for: \.refreshInterval).sink { value in
             receivedValues.append(value)
         }.store(in: &cancellables)
-        
+
         // Then - receives initial value immediately
         #expect(receivedValues == [30.0])
-        
+
         // When - change value
         defaults.refreshInterval = 60.0
-        
+
         // Then - receives new value
         #expect(receivedValues == [30.0, 60.0])
     }
-    
+
     @Test("objectWillChange does NOT emit on subscription")
     func objectWillChangeDoesNotEmitOnSubscription() {
         let settings1 = defaults as (any AutoObservationSettings1 & ObservableObject)
         var changeCount = 0
-        
+
         // Trigger observation setup
         _ = defaults.setting1
-        
+
         // Given - value exists before subscription
         defaults.setting1 = "initial"
-        
+
         // When - subscribe to objectWillChange
         settings1.objectWillChange.sink { _ in
             changeCount += 1
         }.store(in: &cancellables)
-        
+
         // Then - should NOT have fired (no initial emission)
         #expect(changeCount == 0)
-        
+
         // When - change value
         defaults.setting1 = "changed"
-        
+
         // Then - fires once for the change
         #expect(changeCount == 1)
     }
-    
+
     @Test("Auto-observation comprehensive isolation")
     func autoObservationComprehensiveIsolation() {
         // Create 4 different UserDefaults instances
@@ -1364,130 +1364,130 @@ final class StorageMacroIntegrationTests {
         #expect(change2aCount == 1)
         #expect(change2bCount == 1)
     }
-    
+
     // MARK: - Edge Case Tests
-    
+
     @Test("Legacy key migration does not re-check after first migration")
     func legacyKeyMigrationOnlyHappensOnce() {
         // Given - legacy key exists
         defaults.set("legacyUser", forKey: "username")
-        
+
         // When - read via new key (triggers migration)
         let first = defaults.username
         #expect(first == "legacyUser")
         #expect(defaults.object(forKey: "newUsername") as? String == "legacyUser")
         #expect(defaults.object(forKey: "username") == nil) // legacy removed
-        
+
         // When - set legacy key again (simulating external write)
         defaults.set("shouldNotMigrate", forKey: "username")
-        
+
         // Then - reading new key should return current value, not re-migrate
         let second = defaults.username
         #expect(second == "legacyUser") // Still has first migrated value
         #expect(defaults.object(forKey: "username") as? String == "shouldNotMigrate") // Legacy key untouched
     }
-    
+
     @Test("Legacy key with wrong type does not crash")
     func legacyKeyWithWrongType() {
         // Given - legacy key with wrong type (String instead of Int)
         defaults.set("notAnInt", forKey: "oldCount")
-        
+
         // When - read via new key expecting Int
         let value = defaults.count
-        
+
         // Then - should return nil gracefully
         #expect(value == nil)
     }
-    
+
     @Test("Both new and legacy keys exist - new key wins")
     func bothNewAndLegacyKeysExist() {
         // Given - both keys exist
         defaults.set("newValue", forKey: "newUsername")
         defaults.set("oldValue", forKey: "username")
-        
+
         // When - read property
         let value = defaults.username
-        
+
         // Then - new key takes precedence
         #expect(value == "newValue")
-        
+
         // And legacy key should not be removed
         #expect(defaults.object(forKey: "username") as? String == "oldValue")
     }
-    
+
     @Test("Publisher emits rapidly for many changes")
     func publisherHandlesRapidChanges() {
         var receivedCount = 0
-        
+
         // Given - subscribe to publisher
         defaults.$isFirstLaunch.sink { _ in
             receivedCount += 1
         }.store(in: &cancellables)
-        
+
         // When - make 50 rapid changes
         for i in 0..<50 {
             defaults.isFirstLaunch = (i % 2 == 0)
         }
-        
+
         // Then - should receive all updates (initial + 50 changes)
         #expect(receivedCount == 51)
     }
-    
+
     @Test("Nil to value to nil cycle works correctly")
     func nilToValueToNilCycle() {
         // Start with nil
         #expect(defaults.refreshInterval == nil)
-        
+
         // Set to value
         defaults.refreshInterval = 30.0
         #expect(defaults.refreshInterval == 30.0)
-        
+
         // Set to different value
         defaults.refreshInterval = 60.0
         #expect(defaults.refreshInterval == 60.0)
-        
+
         // Set back to nil
         defaults.refreshInterval = nil
         #expect(defaults.refreshInterval == nil)
-        
+
         // Verify key is actually removed
         #expect(defaults.object(forKey: "refreshInterval") == nil)
     }
-    
+
     @Test("Multiple subscribers receive all updates")
     func multipleSubscribersReceiveAllUpdates() {
         var subscriber1Values: [Bool?] = []
         var subscriber2Values: [Bool?] = []
         var subscriber3Values: [Bool?] = []
-        
+
         // Given - three subscribers
         defaults.$isFirstLaunch.sink { value in
             subscriber1Values.append(value)
         }.store(in: &cancellables)
-        
+
         defaults.$isFirstLaunch.sink { value in
             subscriber2Values.append(value)
         }.store(in: &cancellables)
-        
+
         defaults.$isFirstLaunch.sink { value in
             subscriber3Values.append(value)
         }.store(in: &cancellables)
-        
+
         // When - make changes
         defaults.isFirstLaunch = true
         defaults.isFirstLaunch = false
-        
+
         // Then - all subscribers receive all updates
         #expect(subscriber1Values == [nil, true, false])
         #expect(subscriber2Values == [nil, true, false])
         #expect(subscriber3Values == [nil, true, false])
     }
-    
+
     @Test("Thread safety: Concurrent reads work correctly")
     func concurrentReadsWorkCorrectly() async {
         // Given - set a value
         defaults.refreshInterval = 30.0
-        
+
         // When - read from multiple threads concurrently
         await withTaskGroup(of: Double?.self) { group in
             for _ in 0..<100 {
@@ -1495,14 +1495,14 @@ final class StorageMacroIntegrationTests {
                     return self.defaults.refreshInterval
                 }
             }
-            
+
             // Then - all reads should succeed and return the correct value
             for await value in group {
                 #expect(value == 30.0)
             }
         }
     }
-    
+
     @Test("Thread safety: Concurrent writes to different keys")
     func concurrentWritesToDifferentKeys() async {
         // When - write different keys from multiple threads
@@ -1516,64 +1516,64 @@ final class StorageMacroIntegrationTests {
                     }
                 }
             }
-            
+
             await group.waitForAll()
         }
-        
+
         // Then - both properties should have some value set
         #expect(defaults.isFirstLaunch != nil || defaults.refreshInterval != nil)
     }
-    
+
     @Test("Large string value persists correctly")
     func largeStringValuePersistsCorrectly() {
         // Given - a large string (1MB)
         let largeString = String(repeating: "A", count: 1_000_000)
-        
+
         // When - store and retrieve
         defaults.set(largeString, forKey: "largeString")
         let retrieved = defaults.object(forKey: "largeString") as? String
-        
+
         // Then - value is preserved
         #expect(retrieved == largeString)
         #expect(retrieved?.count == 1_000_000)
-        
+
         // Cleanup
         defaults.removeObject(forKey: "largeString")
     }
-    
+
     @Test("Large data value persists correctly")
     func largeDataValuePersistsCorrectly() {
         // Given - large data (5MB)
         let largeData = Data(repeating: 0xFF, count: 5_000_000)
-        
+
         // When - store and retrieve
         defaults.set(largeData, forKey: "largeData")
         let retrieved = defaults.object(forKey: "largeData") as? Data
-        
+
         // Then - data is preserved
         #expect(retrieved == largeData)
         #expect(retrieved?.count == 5_000_000)
-        
+
         // Cleanup
         defaults.removeObject(forKey: "largeData")
     }
-    
+
     @Test("Very long key name works")
     func veryLongKeyNameWorks() {
         // Given - a very long key (1000 chars)
         let longKey = String(repeating: "k", count: 1000)
-        
+
         // When - store and retrieve
         defaults.set("testValue", forKey: longKey)
         let retrieved = defaults.object(forKey: longKey) as? String
-        
+
         // Then - works correctly
         #expect(retrieved == "testValue")
-        
+
         // Cleanup
         defaults.removeObject(forKey: longKey)
     }
-    
+
     @Test("Enum with negative Int raw value")
     func enumWithNegativeIntRawValue() {
         // Given - enum with negative raw values
@@ -1582,153 +1582,153 @@ final class StorageMacroIntegrationTests {
             case pending = 0
             case success = 1
         }
-        
+
         // When - store and retrieve negative value
         defaults.set(Status.error.rawValue, forKey: "status")
         let retrieved = defaults.object(forKey: "status") as? Int
-        
+
         // Then - negative value preserved
         #expect(retrieved == -1)
         #expect(Status(rawValue: retrieved!) == .error)
-        
+
         // Cleanup
         defaults.removeObject(forKey: "status")
     }
-    
+
     @Test("UserDefaults suite cleanup verifies no persistent domain remains")
     func userDefaultsSuiteCleanupVerification() {
         let testSuiteName = "test-cleanup-\(UUID().uuidString)"
-        
+
         // Given - create suite and set value
         var testDefaults: UserDefaults? = UserDefaults(suiteName: testSuiteName)
         testDefaults?.set("test", forKey: "key")
         #expect(testDefaults?.object(forKey: "key") as? String == "test")
-        
+
         // When - remove persistent domain and deallocate
         testDefaults?.removePersistentDomain(forName: testSuiteName)
         testDefaults = nil
-        
+
         // Then - recreating suite should have no data
         let newDefaults = UserDefaults(suiteName: testSuiteName)!
         #expect(newDefaults.object(forKey: "key") == nil)
-        
+
         // Cleanup
         newDefaults.removePersistentDomain(forName: testSuiteName)
     }
-    
+
     @Test("Property observation setup is idempotent")
     func propertyObservationSetupIsIdempotent() {
         // Given - access property multiple times to trigger setup
         _ = defaults.setting1
         _ = defaults.setting1
         _ = defaults.setting1
-        
+
         var changeCount = 0
         let settings1 = defaults as (any AutoObservationSettings1 & ObservableObject)
-        
+
         settings1.objectWillChange.sink { _ in
             changeCount += 1
         }.store(in: &cancellables)
-        
+
         // When - modify property
         defaults.setting1 = "test"
-        
+
         // Then - should only receive one notification (not multiple due to multiple setups)
         #expect(changeCount == 1)
     }
-    
+
     @Test("Publisher subscription after value changes emits current value")
     func publisherSubscriptionAfterValueChangesEmitsCurrentValue() {
         var receivedValues: [Bool?] = []
-        
+
         // Given - change value before subscribing
         defaults.isFirstLaunch = true
         defaults.isFirstLaunch = false
-        
+
         // When - subscribe to publisher
         defaults.$isFirstLaunch.sink { value in
             receivedValues.append(value)
         }.store(in: &cancellables)
-        
+
         // Then - receives current value immediately
         #expect(receivedValues == [false])
     }
-    
+
     @Test("Removing persistent domain while observing does not crash")
     func removingPersistentDomainWhileObservingDoesNotCrash() {
         let tempSuiteName = "test-removal-\(UUID().uuidString)"
         let tempDefaults = UserDefaults(suiteName: tempSuiteName)!
         var tempCancellables = Set<AnyCancellable>()
-        
+
         // Given - subscribe to changes
         tempDefaults.publisher(for: \.description).sink { _ in
             // Just observe
         }.store(in: &tempCancellables)
-        
+
         // When - remove persistent domain while observing
         tempDefaults.removePersistentDomain(forName: tempSuiteName)
-        
+
         // Then - should not crash (test passes if no crash)
         #expect(true)
-        
+
         // Cleanup
         tempCancellables.removeAll()
     }
-    
+
     // MARK: - ThrowingValue Tests
-    
+
     @Test("ThrowingValue getter returns value")
     func throwingValueGetterReturnsValue() throws {
         // Given - value exists
         defaults.set(42, forKey: "throwingValue")
-        
+
         // When - get value
         let value = try defaults.throwingValue.get()
-        
+
         // Then - value is returned
         #expect(value == 42)
     }
-    
+
     @Test("ThrowingValue getter returns nil for missing value")
     func throwingValueGetterReturnsNilForMissingValue() throws {
         // Given - no value exists
         defaults.removeObject(forKey: "throwingValue")
-        
+
         // When - get value
         let value = try defaults.throwingValue.get()
-        
+
         // Then - nil is returned
         #expect(value == nil)
     }
-    
+
     @Test("ThrowingValue setter sets value")
     func throwingValueSetterSetsValue() throws {
         // When - set value
         try defaults.throwingValue.set(100)
-        
+
         // Then - value is stored
         let retrieved = defaults.object(forKey: "throwingValue") as? Int
         #expect(retrieved == 100)
     }
-    
+
     @Test("ThrowingValue setter sets nil")
     func throwingValueSetterSetsNil() throws {
         // Given - value exists
         defaults.set(42, forKey: "throwingValue")
-        
+
         // When - set nil
         try defaults.throwingValue.set(nil)
-        
+
         // Then - value is removed
         let retrieved = defaults.object(forKey: "throwingValue")
         #expect(retrieved == nil)
     }
-    
+
     @Test("ThrowingValue with mock store that throws on get")
     func throwingValueWithMockStoreThatThrowsOnGet() throws {
         let mockStore = InMemoryThrowingKeyValueStore()
         mockStore.throwOnRead = NSError(domain: "test", code: 1)
-        
+
         // Given - mock store throws on get
         // When - get value
         do {
@@ -1739,12 +1739,12 @@ final class StorageMacroIntegrationTests {
             #expect((error as NSError).code == 1)
         }
     }
-    
+
     @Test("ThrowingValue with mock store that throws on set")
     func throwingValueWithMockStoreThatThrowsOnSet() throws {
         let mockStore = InMemoryThrowingKeyValueStore()
         mockStore.throwOnSet = NSError(domain: "test", code: 2)
-        
+
         // Given - mock store throws on set
         // When - set value
         do {
@@ -1755,280 +1755,280 @@ final class StorageMacroIntegrationTests {
             #expect((error as NSError).code == 2)
         }
     }
-    
+
     @Test("ThrowingValue can set then get same value")
     func throwingValueCanSetThenGetSameValue() throws {
         // When - set and get
         try defaults.throwingValue.set(999)
         let retrieved = try defaults.throwingValue.get()
-        
+
         // Then - same value returned
         #expect(retrieved == 999)
     }
-    
+
     @Test("ThrowingValue with String type")
     func throwingValueWithStringType() throws {
         // When - set string value
         try defaults.throwingName.set("test")
-        
+
         // Then - value is stored and retrieved
         let retrieved = try defaults.throwingName.get()
         #expect(retrieved == "test")
     }
-    
+
     @Test("ThrowingValue multiple properties are independent")
     func throwingValueMultiplePropertiesAreIndependent() throws {
         // When - set both properties
         try defaults.throwingValue.set(42)
         try defaults.throwingName.set("test")
-        
+
         // Then - both values are independent
         #expect(try defaults.throwingValue.get() == 42)
         #expect(try defaults.throwingName.get() == "test")
-        
+
         // When - set one to nil
         try defaults.throwingValue.set(nil)
-        
+
         // Then - other is unaffected
         #expect(try defaults.throwingValue.get() == nil)
         #expect(try defaults.throwingName.get() == "test")
     }
-    
+
     // MARK: - ObservableThrowingKeyValueStoring Tests
-    
+
     @Test("ObservableThrowingKeyValueStoring getter returns value")
     func observableThrowingValueGetterReturnsValue() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
-        
+
         // Given - value exists
         mockStore.underlyingDict["observableThrowingValue"] = 42
-        
+
         // When - get value
         let value = try mockStore.observableThrowingValue.get()
-        
+
         // Then - value is returned
         #expect(value == 42)
     }
-    
+
     @Test("ObservableThrowingKeyValueStoring setter sets value")
     func observableThrowingValueSetterSetsValue() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
-        
+
         // When - set value
         try mockStore.observableThrowingValue.set(100)
-        
+
         // Then - value is stored
         let retrieved = mockStore.underlyingDict["observableThrowingValue"] as? Int
         #expect(retrieved == 100)
     }
-    
+
     @Test("ObservableThrowingKeyValueStoring objectWillChange fires on set")
     func observableThrowingValueObjectWillChangeFires() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
         var changeCount = 0
-        
+
         // Given - subscribe to objectWillChange
         mockStore.objectWillChange.sink { _ in
             changeCount += 1
         }.store(in: &cancellables)
-        
+
         // When - set value
         try mockStore.observableThrowingValue.set(42)
-        
+
         // Then - objectWillChange fired
         #expect(changeCount == 1)
     }
-    
+
     @Test("ObservableThrowingKeyValueStoring objectWillChange fires on removal")
     func observableThrowingValueObjectWillChangeFiresOnRemoval() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
         var changeCount = 0
-        
+
         // Given - value exists and subscribed
         try mockStore.observableThrowingValue.set(42)
-        
+
         mockStore.objectWillChange.sink { _ in
             changeCount += 1
         }.store(in: &cancellables)
-        
+
         // When - remove value
         try mockStore.observableThrowingValue.set(nil)
-        
+
         // Then - objectWillChange fired
         #expect(changeCount == 1)
     }
-    
+
     @Test("ObservableThrowingKeyValueStoring objectWillChange fires for any key")
     func observableThrowingValueObjectWillChangeFiresForAnyKey() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
         var changeCount = 0
-        
+
         // Given - subscribe to objectWillChange
         mockStore.objectWillChange.sink { _ in
             changeCount += 1
         }.store(in: &cancellables)
-        
+
         // When - change different properties
         try mockStore.observableThrowingValue.set(1)
         try mockStore.observableThrowingName.set("test")
-        
+
         // Then - objectWillChange fired for both
         #expect(changeCount == 2)
     }
-    
+
     @Test("ObservableThrowingKeyValueStoring doesn't fire when get throws")
     func observableThrowingValueDoesntFireWhenGetThrows() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
         mockStore.throwOnRead = NSError(domain: "test", code: 1)
         var changeCount = 0
-        
+
         // Given - subscribe to objectWillChange
         mockStore.objectWillChange.sink { _ in
             changeCount += 1
         }.store(in: &cancellables)
-        
+
         // When - try to get (will throw)
         do {
             _ = try mockStore.observableThrowingValue.get()
         } catch {
             // Expected
         }
-        
+
         // Then - objectWillChange did not fire
         #expect(changeCount == 0)
     }
-    
+
     @Test("ObservableThrowingKeyValueStoring doesn't fire when set throws")
     func observableThrowingValueDoesntFireWhenSetThrows() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
         mockStore.throwOnSet = NSError(domain: "test", code: 2)
         var changeCount = 0
-        
+
         // Given - subscribe to objectWillChange
         mockStore.objectWillChange.sink { _ in
             changeCount += 1
         }.store(in: &cancellables)
-        
+
         // When - try to set (will throw)
         do {
             try mockStore.observableThrowingValue.set(42)
         } catch {
             // Expected
         }
-        
+
         // Then - objectWillChange did not fire
         #expect(changeCount == 0)
     }
-    
+
     @Test("ObservableThrowingKeyValueStoring updatesPublisher emits on change")
     func observableThrowingValueUpdatesPublisherEmitsOnChange() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
         var emissionCount = 0
-        
+
         // Given - subscribe to updatesPublisher
         mockStore.updatesPublisher(forKey: "observableThrowingValue").sink { _ in
             emissionCount += 1
         }.store(in: &cancellables)
-        
+
         // When - set value
         try mockStore.observableThrowingValue.set(42)
-        
+
         // Then - publisher emitted
         #expect(emissionCount == 1)
     }
-    
+
     @Test("ObservableThrowingKeyValueStoring multiple subscribers work")
     func observableThrowingValueMultipleSubscribers() throws {
         let mockStore = InMemoryObservableThrowingKeyValueStore()
         var subscriber1Count = 0
         var subscriber2Count = 0
         var subscriber3Count = 0
-        
+
         // Given - three subscribers
         mockStore.objectWillChange.sink { _ in
             subscriber1Count += 1
         }.store(in: &cancellables)
-        
+
         mockStore.objectWillChange.sink { _ in
             subscriber2Count += 1
         }.store(in: &cancellables)
-        
+
         mockStore.objectWillChange.sink { _ in
             subscriber3Count += 1
         }.store(in: &cancellables)
-        
+
         // When - set value
         try mockStore.observableThrowingValue.set(42)
-        
+
         // Then - all subscribers notified
         #expect(subscriber1Count == 1)
         #expect(subscriber2Count == 1)
         #expect(subscriber3Count == 1)
     }
-    
+
     @Test("ThrowingValue works with different mock stores")
     func throwingValueWorksWithDifferentMockStores() throws {
         let throwingStore = InMemoryThrowingKeyValueStore()
         let observableStore = InMemoryObservableThrowingKeyValueStore()
-        
+
         // When - set values in both
         try throwingStore.throwingValue.set(42)
         try observableStore.observableThrowingValue.set(100)
-        
+
         // Then - values are independent
         #expect(try throwingStore.throwingValue.get() == 42)
         #expect(try observableStore.observableThrowingValue.get() == 100)
     }
-    
+
     // MARK: - ThrowingGetter (Read-Only) Tests
-    
+
     @Test("ThrowingGetter returns value")
     func throwingGetterReturnsValue() throws {
         let mockStore = InMemoryThrowingKeyValueStore()
-        
+
         // Given - value exists
         mockStore.underlyingDict["readOnlyValue"] = 123
-        
+
         // When - get value
         let value = try mockStore.readOnlyValue.get()
-        
+
         // Then - value is returned
         #expect(value == 123)
     }
-    
+
     @Test("ThrowingGetter returns nil for missing value")
     func throwingGetterReturnsNilForMissingValue() throws {
         let mockStore = InMemoryThrowingKeyValueStore()
-        
+
         // Given - no value exists
         mockStore.underlyingDict.removeValue(forKey: "readOnlyValue")
-        
+
         // When - get value
         let value = try mockStore.readOnlyValue.get()
-        
+
         // Then - nil is returned
         #expect(value == nil)
     }
-    
+
     @Test("ThrowingGetter with String type")
     func throwingGetterWithStringType() throws {
         let mockStore = InMemoryThrowingKeyValueStore()
-        
+
         // Given - string value exists
         mockStore.underlyingDict["readOnlyName"] = "readonly"
-        
+
         // When - get value
         let value = try mockStore.readOnlyName.get()
-        
+
         // Then - value is returned
         #expect(value == "readonly")
     }
-    
+
     @Test("ThrowingGetter throws on read error")
     func throwingGetterThrowsOnReadError() throws {
         let mockStore = InMemoryThrowingKeyValueStore()
         mockStore.throwOnRead = NSError(domain: "test", code: 1)
-        
+
         // Given - mock store throws on get
         // When - get value
         do {
@@ -2039,63 +2039,63 @@ final class StorageMacroIntegrationTests {
             #expect((error as NSError).code == 1)
         }
     }
-    
+
     @Test("ThrowingGetter has no set method")
     func throwingGetterHasNoSetMethod() throws {
         let mockStore = InMemoryThrowingKeyValueStore()
-        
+
         // Given - ThrowingGetter type
         let getter = mockStore.readOnlyValue
-        
+
         // Then - ThrowingGetter should not have a set method
         // This is validated at compile time - the type doesn't have .set()
         // Just verify we can use .get()
         _ = try getter.get()
     }
-    
+
     @Test("ThrowingGetter works independently from ThrowingValue")
     func throwingGetterWorksIndependentlyFromThrowingValue() throws {
         let mockStore = InMemoryThrowingKeyValueStore()
-        
+
         // Given - values exist for both types
         mockStore.underlyingDict["throwingValue"] = 42
         mockStore.underlyingDict["readOnlyValue"] = 100
-        
+
         // When - get values
         let throwingValue = try mockStore.throwingValue.get()
         let readOnlyValue = try mockStore.readOnlyValue.get()
-        
+
         // Then - both work independently
         #expect(throwingValue == 42)
         #expect(readOnlyValue == 100)
-        
+
         // And - ThrowingValue can be set
         try mockStore.throwingValue.set(99)
         #expect(try mockStore.throwingValue.get() == 99)
-        
+
         // But - Read-only value remains unchanged
         #expect(try mockStore.readOnlyValue.get() == 100)
     }
-    
+
     // MARK: - Dependency Injection Tests
-    
+
     @Test("UserDefaults subclass conforms to @Storage protocol")
     func userDefaultsSubclassConformsToStorageProtocol() {
         // Given - custom UserDefaults subclass
         let suiteName = "test-\(UUID())"
         let appDefaults = AppUserDefaults(suiteName: suiteName)!
         defer { appDefaults.removePersistentDomain(forName: suiteName) }
-        
+
         // When - use as protocol type
         let storage: InjectionTestSettings = appDefaults
         storage.injectionTestValue = "hello"
         storage.injectionTestCount = 42
-        
+
         // Then - values are stored and retrieved
         #expect(storage.injectionTestValue == "hello")
         #expect(storage.injectionTestCount == 42)
     }
-    
+
     @Test("UserDefaults subclass can be injected into services")
     func userDefaultsSubclassCanBeInjectedIntoServices() {
         // Given - service with protocol-constrained dependency
@@ -2103,81 +2103,81 @@ final class StorageMacroIntegrationTests {
         let appDefaults = AppUserDefaults(suiteName: suiteName)!
         defer { appDefaults.removePersistentDomain(forName: suiteName) }
         let service = ServiceWithStorage(storage: appDefaults)
-        
+
         // When - use through service
         service.storage.injectionTestValue = "injected"
-        
+
         // Then - value persists through protocol
         #expect(service.storage.injectionTestValue == "injected")
     }
-    
+
     @Test("Standard UserDefaults can be injected into services")
     func standardUserDefaultsCanBeInjectedIntoServices() {
         // Given - service with AppUserDefaults subclass
         let suiteName = "test-\(UUID())"
         let appDefaults = AppUserDefaults(suiteName: suiteName)!
         defer { appDefaults.removePersistentDomain(forName: suiteName) }
-        
+
         // Verify AppUserDefaults conforms to the protocol
         let conformsToProtocol = appDefaults is (any InjectionTestSettings)
         #expect(conformsToProtocol)
-        
+
         // When - inject into service
         let service = ServiceWithStorage(storage: appDefaults)
         service.storage.injectionTestCount = 99
-        
+
         // Then - works correctly
         #expect(service.storage.injectionTestCount == 99)
     }
-    
+
     @Test("Custom file store subclass conforms to @Storage protocol")
     func customFileStoreSubclassConformsToStorageProtocol() {
         // Given - custom file store
         let fileStore = AppFileStore()
-        
+
         // When - use as protocol type
         let storage: InjectionTestSettings = fileStore
         storage.injectionTestValue = "file-backed"
         storage.injectionTestCount = 100
-        
+
         // Then - values work correctly
         #expect(storage.injectionTestValue == "file-backed")
         #expect(storage.injectionTestCount == 100)
     }
-    
+
     @Test("Custom file store can be injected into services")
     func customFileStoreCanBeInjectedIntoServices() {
         // Given - service with file store
         let fileStore = AppFileStore()
         let service = ServiceWithStorage(storage: fileStore)
-        
+
         // When - use through service
         service.storage.injectionTestValue = "file-injected"
-        
+
         // Then - value persists
         #expect(service.storage.injectionTestValue == "file-injected")
     }
-    
+
     @Test("UserDefaults can be injected when throwing protocol is required")
     func userDefaultsCanBeInjectedWhenThrowingProtocolRequired() throws {
         // Given - UserDefaults conforms to throwing protocols
         let suiteName = "test-\(UUID())"
         let appDefaults = AppUserDefaults(suiteName: suiteName)!
         defer { appDefaults.removePersistentDomain(forName: suiteName) }
-        
+
         // Verify conformance
         let conformsToThrowingProtocol = appDefaults is ThrowingInjectionSettings
         #expect(conformsToThrowingProtocol)
-        
+
         // When - inject into service requiring throwing protocol
         let service = ServiceWithThrowingStorage(storage: appDefaults)
-        
+
         // Then - throwing operations work
         try service.storage.throwingTestValue.set("throws-ok")
         let retrieved = try service.storage.throwingTestValue.get()
         #expect(retrieved == "throws-ok")
     }
-    
+
     @Test("Protocol constrains injection to specific types")
     func protocolConstrainsInjectionToSpecificTypes() {
         // Given - type-constrained service
@@ -2185,18 +2185,18 @@ final class StorageMacroIntegrationTests {
         let appDefaults = AppUserDefaults(suiteName: suiteName)!
         defer { appDefaults.removePersistentDomain(forName: suiteName) }
         let service = ServiceWithStorage(storage: appDefaults)
-        
+
         // When - modify through service
         service.storage.injectionTestValue = "constrained"
-        
+
         // Then - type is InjectionTestSettings, not generic UserDefaults
         let isProtocolType = service.storage is InjectionTestSettings
         #expect(isProtocolType)
-        
+
         // And - still works correctly
         #expect(service.storage.injectionTestValue == "constrained")
     }
-    
+
     @Test("Multiple services can share same storage instance")
     func multipleServicesCanShareSameStorageInstance() {
         // Given - shared storage instance
@@ -2205,14 +2205,14 @@ final class StorageMacroIntegrationTests {
         defer { sharedDefaults.removePersistentDomain(forName: suiteName) }
         let service1 = ServiceWithStorage(storage: sharedDefaults)
         let service2 = ServiceWithStorage(storage: sharedDefaults)
-        
+
         // When - one service modifies storage
         service1.storage.injectionTestCount = 123
-        
+
         // Then - other service sees the change
         #expect(service2.storage.injectionTestCount == 123)
     }
-    
+
     @Test("Observable protocols work with injected subclasses")
     func observableProtocolsWorkWithInjectedSubclasses() {
         // Given - observable subclass
@@ -2221,22 +2221,22 @@ final class StorageMacroIntegrationTests {
         defer { appDefaults.removePersistentDomain(forName: suiteName) }
         let service = ServiceWithStorage(storage: appDefaults)
         var emissionCount = 0
-        
+
         // When - subscribe to publisher
         service.storage.$injectionTestValue.sink { _ in
             emissionCount += 1
         }.store(in: &cancellables)
-        
+
         // Set initial value
         service.storage.injectionTestValue = "initial"
-        
+
         // Then - publisher emits
         service.storage.injectionTestValue = "changed"
         #expect(emissionCount >= 1)
     }
-    
+
     // MARK: - Test Isolation with UserDefaults Subclasses
-    
+
     @Test("UserDefaults subclass constrains injection to specific type")
     func userDefaultsSubclassConstrainsInjectionToSpecificType() {
         // Given - service that requires specific subclass (not just protocol)
@@ -2244,72 +2244,72 @@ final class StorageMacroIntegrationTests {
         let appDefaults = AppUserDefaults(suiteName: suiteName)!
         defer { appDefaults.removePersistentDomain(forName: suiteName) }
         let service = ServiceWithConstrainedUserDefaults(settings: appDefaults)
-        
+
         // When - modify through service
         service.settings.injectionTestValue = "subclass-specific"
-        
+
         // Then - value is stored correctly
         #expect(service.settings.injectionTestValue == "subclass-specific")
-        
+
         // And - type is AppUserDefaults, not base UserDefaults
         let isAppUserDefaults = service.settings is AppUserDefaults
         #expect(isAppUserDefaults)
-        
+
         // NOTE: The following would be a compile-time error (cannot pass base UserDefaults):
         // let baseDefaults = UserDefaults.standard
         // let invalid = ServiceWithConstrainedUserDefaults(settings: baseDefaults)  // ❌ Compile error
     }
-    
+
     @Test("Isolated test UserDefaults instances don't interfere")
     func isolatedTestUserDefaultsInstancesDontInterfere() {
         // Given - two isolated test instances (each with unique suite)
         let instance1 = IsolatedTestUserDefaults()
         let instance2 = IsolatedTestUserDefaults()
-        
+
         // When - write different values to each
         instance1.injectionTestValue = "instance1-value"
         instance1.injectionTestCount = 111
-        
+
         instance2.injectionTestValue = "instance2-value"
         instance2.injectionTestCount = 222
-        
+
         // Then - values don't interfere with each other
         #expect(instance1.injectionTestValue == "instance1-value")
         #expect(instance1.injectionTestCount == 111)
-        
+
         #expect(instance2.injectionTestValue == "instance2-value")
         #expect(instance2.injectionTestCount == 222)
     }
-    
+
     @Test("Isolated UserDefaults subclass provides clean state per test")
     func isolatedUserDefaultsSubclassProvidesCleanStatePerTest() {
         // Given - isolated instance
         let isolated = IsolatedTestUserDefaults()
-        
+
         // Then - starts with nil values (clean state)
         #expect(isolated.injectionTestValue == nil)
         #expect(isolated.injectionTestCount == nil)
-        
+
         // When - write values
         isolated.injectionTestValue = "test-value"
         isolated.injectionTestCount = 42
-        
+
         // Then - values persist in this instance
         #expect(isolated.injectionTestValue == "test-value")
         #expect(isolated.injectionTestCount == 42)
-        
+
         // When - create new instance
         let newInstance = IsolatedTestUserDefaults()
-        
+
         // Then - new instance has clean state
         #expect(newInstance.injectionTestValue == nil)
         #expect(newInstance.injectionTestCount == nil)
     }
-    
+
     @Test("Multiple tests using subclass-constrained services remain isolated")
     func multipleTestsUsingSubclassConstrainedServicesRemainIsolated() {
         // Simulating multiple test runs with same pattern
-        
+
         // Test run 1
         let service1 = {
             let defaults = AppUserDefaults(suiteName: "test-\(UUID())")!
@@ -2318,7 +2318,7 @@ final class StorageMacroIntegrationTests {
             service.settings.injectionTestCount = 100
             return service
         }()
-        
+
         // Test run 2 (different instance)
         let service2 = {
             let defaults = AppUserDefaults(suiteName: "test-\(UUID())")!
@@ -2327,11 +2327,11 @@ final class StorageMacroIntegrationTests {
             service.settings.injectionTestCount = 200
             return service
         }()
-        
+
         // Then - each service maintains its own state
         #expect(service1.settings.injectionTestValue == "run1")
         #expect(service1.settings.injectionTestCount == 100)
-        
+
         #expect(service2.settings.injectionTestValue == "run2")
         #expect(service2.settings.injectionTestCount == 200)
     }

@@ -453,11 +453,44 @@ public final class CustomToggleControl: NSControl {
         }
         let trackingArea = NSTrackingArea(
             rect: bounds,
-            options: [.activeInKeyWindow, .mouseEnteredAndExited, .mouseMoved],
+            options: [.activeAlways, .mouseEnteredAndExited, .mouseMoved, .inVisibleRect],
             owner: self,
             userInfo: nil
         )
         addTrackingArea(trackingArea)
+    }
+
+    public override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        updateTrackingAreas()
+    }
+
+    public override func viewDidUnhide() {
+        super.viewDidUnhide()
+        updateTrackingAreas()
+        super.toolTip = nil
+    }
+
+    public override func viewDidHide() {
+        super.viewDidHide()
+        super.toolTip = nil
+    }
+
+    public override var isHidden: Bool {
+        didSet {
+            if !isHidden {
+                updateTrackingAreas()
+                super.toolTip = nil
+
+                if let window = window {
+                    let mouseLocationInWindow = window.mouseLocationOutsideOfEventStream
+                    let mouseLocationInView = convert(mouseLocationInWindow, from: nil)
+                    if bounds.contains(mouseLocationInView) {
+                        updateToolTipForMouseLocation(mouseLocationInWindow)
+                    }
+                }
+            }
+        }
     }
 
     deinit {

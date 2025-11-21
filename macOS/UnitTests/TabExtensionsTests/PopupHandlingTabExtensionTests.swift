@@ -444,6 +444,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         // Subscribe to permission query changes
         mockPermissionModel.$authorizationQuery
             .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
             .sink { query in
                 queryAddedExpectation.fulfill()
                 // Grant permission when query is added
@@ -481,9 +482,10 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         // Subscribe to permission query changes
         mockPermissionModel.$authorizationQuery
             .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
             .sink { query in
                 queryAddedExpectation.fulfill()
-                // Grant permission when query is added
+                // Grant permission when query is added (async to simulate real behavior)
                 self.mockPermissionModel.allow(query)
             }
             .store(in: &cancellables)
@@ -519,9 +521,10 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         // Subscribe to permission query changes
         mockPermissionModel.$authorizationQuery
             .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
             .sink { query in
                 queryAddedExpectation.fulfill()
-                // Grant permission when query is added
+                // Grant permission when query is added (async to simulate real behavior)
                 self.mockPermissionModel.allow(query)
             }
             .store(in: &cancellables)
@@ -569,9 +572,10 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         // Subscribe to permission query changes
         mockPermissionModel.$authorizationQuery
             .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
             .sink { query in
                 queryAddedExpectation.fulfill()
-                // Grant permission when query is added
+                // Grant permission when query is added (async to simulate real behavior)
                 self.mockPermissionModel.allow(query)
             }
             .store(in: &cancellables)
@@ -619,9 +623,10 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         // Subscribe to permission query changes
         mockPermissionModel.$authorizationQuery
             .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
             .sink { query in
                 queryAddedExpectation.fulfill()
-                // Grant permission when query is added
+                // Grant permission when query is added (async to simulate real behavior)
                 self.mockPermissionModel.allow(query)
             }
             .store(in: &cancellables)
@@ -669,9 +674,10 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         // Subscribe to permission query changes
         mockPermissionModel.$authorizationQuery
             .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
             .sink { query in
                 queryAddedExpectation.fulfill()
-                // Grant permission when query is added
+                // Grant permission when query is added (async to simulate real behavior)
                 self.mockPermissionModel.allow(query)
             }
             .store(in: &cancellables)
@@ -729,9 +735,10 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         // Subscribe to permission query changes
         mockPermissionModel.$authorizationQuery
             .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
             .sink { query in
                 queryAddedExpectation.fulfill()
-                // Grant permission when query is added
+                // Grant permission when query is added (async to simulate real behavior)
                 self.mockPermissionModel.allow(query)
             }
             .store(in: &cancellables)
@@ -782,6 +789,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         // Subscribe to permission query changes
         mockPermissionModel.$authorizationQuery
             .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
             .sink { query in
                 queryAddedExpectation.fulfill()
                 self.mockPermissionModel.allow(query)
@@ -820,12 +828,16 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         let queryAddedExpectation = expectation(description: "Permission query added")
         let permissionCallbackExpectation = expectation(description: "Permission callback completed")
         permissionCallbackExpectation.isInverted = true
+        let permissionGrantedExpectation = expectation(description: "Permission granted")
 
         mockPermissionModel.$authorizationQuery
             .compactMap { $0 }
             .sink { query in
                 queryAddedExpectation.fulfill()
-                self.mockPermissionModel.allow(query)
+                DispatchQueue.main.async {
+                    self.mockPermissionModel.allow(query)
+                    permissionGrantedExpectation.fulfill()
+                }
             }
             .store(in: &cancellables)
 
@@ -838,7 +850,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         let aboutBlankAction = makeMockNavigationAction(url: URL(string: "about:blank")!, isUserInitiated: false)
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: aboutBlankAction, windowFeatures: windowFeatures)
 
-        wait(for: [queryAddedExpectation], timeout: 1.0)
+        wait(for: [queryAddedExpectation, permissionGrantedExpectation], timeout: 1.0)
         wait(for: [permissionCallbackExpectation], timeout: 0.1)
 
         // THEN - Subsequent about:blank allowed
@@ -967,6 +979,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
 
         mockPermissionModel.$authorizationQuery
             .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
             .sink { query in
                 queryAddedExpectation.fulfill()
                 self.mockPermissionModel.allow(query)

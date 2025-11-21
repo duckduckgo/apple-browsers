@@ -24,6 +24,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private enum Constants {
         static let bottomPadding: CGFloat = 50.0
         static let minimumPanelHeight: CGFloat = 100.0
+        static let maximumPanelHeight: CGFloat = 512.0
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -208,10 +209,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     func calculateDesiredPanelHeight() -> CGFloat {
         guard let layoutManager = textView.layoutManager,
               let textContainer = textView.textContainer else {
-            return Constants.minimumPanelHeight // Fallback to minimum height
+            return Constants.minimumPanelHeight
         }
 
-        // Force layout to ensure we have accurate measurements
         layoutManager.ensureLayout(for: textContainer)
 
         let usedRect = layoutManager.usedRect(for: textContainer)
@@ -219,7 +219,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         let bottomSpacing: CGFloat = Constants.bottomPadding
         let totalHeight = usedRect.height + textInsets.height + textInsets.height + 20 + bottomSpacing
 
-        return totalHeight
+        return min(totalHeight, Constants.maximumPanelHeight)
     }
 
     // MARK: - NSTextViewDelegate
@@ -264,8 +264,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     }
 
     func updateScrollingBehavior(maxHeight: CGFloat) {
-        let contentHeight = calculateDesiredPanelHeight()
-        let shouldScroll = contentHeight > maxHeight
+        let desiredHeight = calculateDesiredPanelHeight()
+        let shouldScroll = desiredHeight >= Constants.maximumPanelHeight
 
         scrollView.hasVerticalScroller = shouldScroll
         dividerView.isHidden = !shouldScroll

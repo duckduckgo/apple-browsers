@@ -39,6 +39,11 @@ final class NavigationBarViewController: NSViewController {
         static let maxDragDistanceToExpandHoveredFolder: CGFloat = 4
         static let dragOverFolderExpandDelay: TimeInterval = 0.3
     }
+    
+#if DEBUG
+    /// Set to true to force downloads and password management buttons to always be visible in popup windows for testing
+    private static var forceShowButtonsInPopup = false
+#endif
 
     @IBOutlet private var goBackButton: MouseOverButton!
     @IBOutlet private var goForwardButton: MouseOverButton!
@@ -70,6 +75,8 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet private var logoWidthConstraint: NSLayoutConstraint!
     @IBOutlet private var backgroundColorView: MouseOverView!
     @IBOutlet private var backgroundBaseColorView: ColorView!
+
+    private var fireWindowBackgroundView: NSImageView?
 
     @IBOutlet private var goBackButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet private var goBackButtonHeightConstraint: NSLayoutConstraint!
@@ -379,6 +386,7 @@ final class NavigationBarViewController: NSViewController {
         addressBarContainer.layer?.masksToBounds = false
 
         setupBackgroundViewsAndColors()
+        setupAsBurnerWindowIfNeeded(theme: theme)
         menuButtons.spacing = theme.navigationToolbarButtonsSpacing
 
         setupNavigationButtons()
@@ -454,6 +462,7 @@ final class NavigationBarViewController: NSViewController {
 
         updateNavigationBarForCurrentWidth()
         sessionRestorePromptCoordinator.markUIReady()
+        setupAsBurnerWindowIfNeeded(theme: theme)
     }
 
     override func viewWillLayout() {
@@ -625,7 +634,13 @@ final class NavigationBarViewController: NSViewController {
             return
         }
 
-        if !isInPopUpWindow, LocalPinningManager.shared.isPinned(.autofill) {
+#if DEBUG
+        if Self.forceShowButtonsInPopup && isInPopUpWindow {
+            passwordManagementButton.isHidden = false
+            return
+        }
+#endif
+        if LocalPinningManager.shared.isPinned(.autofill) {
             passwordManagementButton.isHidden = false
         } else {
             passwordManagementButton.isShown = popovers.isPasswordManagementPopoverShown || isAutoFillAutosaveMessageVisible
@@ -688,6 +703,14 @@ final class NavigationBarViewController: NSViewController {
             }
         }
 
+#if DEBUG
+        if Self.forceShowButtonsInPopup && isInPopUpWindow {
+            downloadsButton.isHidden = false
+            downloadsButton.image = .downloads
+            return
+        }
+#endif
+        
         if LocalPinningManager.shared.isPinned(.downloads) && !isInPopUpWindow {
             downloadsButton.isShown = true
             return
@@ -1050,6 +1073,54 @@ final class NavigationBarViewController: NSViewController {
             backgroundBaseColorView.backgroundColor = colorsProvider.navigationBackgroundColor
             backgroundColorView.isHidden = true
         }
+    }
+
+    private func addFireWindowBackgroundViewIfNeeded() {
+        if fireWindowBackgroundView == nil {
+            let imageView = NSImageView()
+            imageView.translatesAutoresizingMaskIntoConstraints = false
+            imageView.imageScaling = .scaleAxesIndependently
+            imageView.imageAlignment = .alignBottom
+            imageView.isHidden = true
+            fireWindowBackgroundView = imageView
+        }
+
+        guard let fireWindowBackgroundView, fireWindowBackgroundView.superview == nil else { return }
+
+        view.addSubview(fireWindowBackgroundView, positioned: .above, relativeTo: backgroundColorView)
+
+        NSLayoutConstraint.activate([
+            fireWindowBackgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            fireWindowBackgroundView.topAnchor.constraint(equalTo: view.topAnchor),
+            fireWindowBackgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            fireWindowBackgroundView.widthAnchor.constraint(equalToConstant: 96)
+        ])
+    }
+
+    private func setupAsBurnerWindowIfNeeded(theme: (any ThemeStyleProviding)? = nil) {
+        guard tabCollectionViewModel.isBurner, isInPopUpWindow else {
+            return
+        }
+
+        addFireWindowBackgroundViewIfNeeded()
+
+        guard let fireWindowBackgroundView else { return }
+        let currentTheme = theme ?? self.theme
+        fireWindowBackgroundView.image = currentTheme.fireWindowGraphic
+        fireWindowBackgroundView.isHidden = false
+
+        // Set blended background colors for buttons that overlap with fire graphic
+        let navBarColor = currentTheme.colorsProvider.navigationBackgroundColor
+        let blendedMouseOverColor = navBarColor.blended(withFraction: 0.4, of: currentTheme.colorsProvider.buttonMouseOverColor)
+        let blendedMouseDownColor = navBarColor.blended(withFraction: 0.4, of: currentTheme.colorsProvider.buttonMouseDownColor)
+        
+        downloadsButton.backgroundColor = navBarColor.withAlphaComponent(0.4)
+        downloadsButton.mouseOverColor = blendedMouseOverColor
+        downloadsButton.mouseDownColor = blendedMouseDownColor
+        
+        passwordManagementButton.backgroundColor = navBarColor.withAlphaComponent(0.4)
+        passwordManagementButton.mouseOverColor = blendedMouseOverColor
+        passwordManagementButton.mouseDownColor = blendedMouseDownColor
     }
 
     private func setupNavigationButtonsCornerRadius() {
@@ -1787,6 +1858,7 @@ extension NavigationBarViewController: ThemeUpdateListening {
     func applyThemeStyle(theme: ThemeStyleProviding) {
         setupNavigationButtons()
         setupBackgroundViewsAndColors()
+        setupAsBurnerWindowIfNeeded(theme: theme)
     }
 }
 

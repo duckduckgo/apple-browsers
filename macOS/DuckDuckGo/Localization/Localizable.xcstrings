@@ -4517,7 +4517,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Handle Pop-ups For Me"
+            "value" : "Handle Pop-Ups For Me"
           }
         },
         "es" : {
@@ -4697,7 +4697,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Manage Cookie Pop-ups"
+            "value" : "Manage Cookie Pop-Ups"
           }
         },
         "es" : {
@@ -54451,7 +54451,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Pop-up Hidden"
+            "value" : "Pop-Up Hidden"
           }
         },
         "es" : {
@@ -60716,7 +60716,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Allow pop-ups for this visit"
+            "value" : "Only allow pop-ups for this visit"
           }
         },
         "es" : {
@@ -60776,7 +60776,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Pop-up Blocked"
+            "value" : "Pop-Up Blocked"
           }
         },
         "es" : {
@@ -72761,7 +72761,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Cookie Pop-up Protection"
+            "value" : "Cookie Pop-Up Protection"
           }
         },
         "es" : {

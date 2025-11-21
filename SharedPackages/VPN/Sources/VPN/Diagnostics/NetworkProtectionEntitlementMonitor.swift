@@ -34,7 +34,7 @@ public actor NetworkProtectionEntitlementMonitor: EntitlementMonitoring {
         }
     }
 
-    var isStarted: Bool {
+    public var isStarted: Bool {
         task?.isCancelled == false
     }
 

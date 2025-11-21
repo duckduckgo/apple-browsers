@@ -35,24 +35,24 @@ final class MockSERPSettingsProvider: SERPSettingsProviding {
     var eventMapper: EventMapping<SERPSettingsError>?
     var wasStoreSettingsCalled: Bool = false
 
-    #if os(iOS)
+#if os(iOS)
     var aiChatProvider: AIChatSettingsProvider
-    #endif
-    #if os(macOS)
+#endif
+#if os(macOS)
     var aiChatPreferencesStorage: AIChatPreferencesStorage
-    #endif
+#endif
 
     init(keyValueStore: ThrowingKeyValueStoring,
          mockIsSERPSettingsFeatureOn: Bool = true) {
         self.keyValueStore = keyValueStore
         self.mockIsSERPSettingsFeatureOn = mockIsSERPSettingsFeatureOn
 
-        #if os(iOS)
+#if os(iOS)
         self.aiChatProvider = MockAIChatSettingsProvider()
-        #endif
-        #if os(macOS)
+#endif
+#if os(macOS)
         self.aiChatPreferencesStorage = MockAIChatPreferencesStorage()
-        #endif
+#endif
     }
 
     func buildMessageOriginRules() -> [HostnameMatchingRule] {
@@ -117,6 +117,7 @@ final class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     private let showShortcutInAddressBarWhenTypingSubject = PassthroughSubject<Bool, Never>()
     private let openAIChatInSidebarSubject = PassthroughSubject<Bool, Never>()
     private let shouldAutomaticallySendPageContextSubject = PassthroughSubject<Bool, Never>()
+    private let showSearchAndDuckAIToggleSubject = PassthroughSubject<Bool, Never>()
 
     var isAIFeaturesEnabled: Bool = false
     var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> {
@@ -153,6 +154,11 @@ final class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         shouldAutomaticallySendPageContextSubject.eraseToAnyPublisher()
     }
 
+    var showSearchAndDuckAIToggle: Bool = true
+    var showSearchAndDuckAITogglePublisher: AnyPublisher<Bool, Never> {
+        showSearchAndDuckAIToggleSubject.eraseToAnyPublisher()
+    }
+
     func reset() {
         isAIFeaturesEnabled = false
         showShortcutOnNewTabPage = false
@@ -161,6 +167,7 @@ final class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         showShortcutInAddressBarWhenTyping = false
         openAIChatInSidebar = false
         shouldAutomaticallySendPageContext = false
+        showSearchAndDuckAIToggle = true
     }
 }
 #endif

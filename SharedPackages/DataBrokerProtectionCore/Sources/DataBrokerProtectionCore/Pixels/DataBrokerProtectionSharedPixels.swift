@@ -62,7 +62,6 @@ public enum DataBrokerProtectionSharedPixels {
         public static let parentKey = "parent"
         public static let actionIDKey = "action_id"
         public static let environmentKey = "environment"
-        public static let wasOnWaitlist = "was_on_waitlist"
         public static let httpCode = "http_code"
         public static let backendServiceCallSite = "backend_service_callsite"
         public static let isImmediateOperation = "is_manual_scan"
@@ -163,8 +162,8 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutJobAt42DaysUnconfirmed(dataBroker: String)
 
     // Backend service errors
-    case generateEmailHTTPErrorDaily(statusCode: Int, environment: String, wasOnWaitlist: Bool)
-    case emptyAccessTokenDaily(environment: String, wasOnWaitlist: Bool, callSite: BackendServiceCallSite)
+    case generateEmailHTTPErrorDaily(statusCode: Int, environment: String)
+    case emptyAccessTokenDaily(environment: String, callSite: BackendServiceCallSite, dataBroker: String?, brokerVersion: String?)
 
     // Initial scans pixels
     // https://app.asana.com/0/1204006570077678/1206981742767458/f
@@ -466,14 +465,14 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             return [:]
         case .secureVaultKeyStoreReadError(_, let field, _):
             return [Consts.keystoreField: field]
-        case .generateEmailHTTPErrorDaily(let statusCode, let environment, let wasOnWaitlist):
+        case .generateEmailHTTPErrorDaily(let statusCode, let environment):
             return [Consts.environmentKey: environment,
-                    Consts.httpCode: String(statusCode),
-                    Consts.wasOnWaitlist: String(wasOnWaitlist)]
-        case .emptyAccessTokenDaily(let environment, let wasOnWaitlist, let backendServiceCallSite):
+                    Consts.httpCode: String(statusCode)]
+        case .emptyAccessTokenDaily(let environment, let backendServiceCallSite, let dataBroker, let brokerVersion):
             return [Consts.environmentKey: environment,
-                    Consts.wasOnWaitlist: String(wasOnWaitlist),
-                    Consts.backendServiceCallSite: backendServiceCallSite.rawValue]
+                    Consts.backendServiceCallSite: backendServiceCallSite.rawValue,
+                    Consts.dataBrokerParamKey: dataBroker ?? "unknown",
+                    Consts.dataBrokerVersionKey: brokerVersion ?? "unknown"]
         case .initialScanTotalDuration(let duration, let profileQueries):
             return [Consts.durationInMs: String(duration), Consts.profileQueries: String(profileQueries)]
         case .initialScanSiteLoadDuration(let duration, let hasError, let brokerURL):

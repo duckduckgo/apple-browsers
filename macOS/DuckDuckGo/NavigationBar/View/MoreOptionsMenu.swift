@@ -581,18 +581,16 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             .targetting(self)
             .withImage(moreOptionsMenuIconsProvider.downloadsIcon)
 
-        if featureFlagger.isFeatureOn(.historyView) {
-            addItem(withTitle: UserText.mainMenuHistory, action: nil, keyEquivalent: "")
-                .withImage(moreOptionsMenuIconsProvider.historyIcon)
-                .withSubmenu(
-                    HistoryMenu(
-                        location: .moreOptionsMenu,
-                        historyGroupingDataSource: historyCoordinator,
-                        recentlyClosedCoordinator: recentlyClosedCoordinator,
-                        featureFlagger: featureFlagger
-                    )
+        addItem(withTitle: UserText.mainMenuHistory, action: nil, keyEquivalent: "")
+            .withImage(moreOptionsMenuIconsProvider.historyIcon)
+            .withSubmenu(
+                HistoryMenu(
+                    location: .moreOptionsMenu,
+                    historyGroupingDataSource: historyCoordinator,
+                    recentlyClosedCoordinator: recentlyClosedCoordinator,
+                    featureFlagger: featureFlagger
                 )
-        }
+            )
 
         let loginsSubMenu = LoginsSubMenu(targetting: self,
                                           passwordManagerCoordinator: passwordManagerCoordinator,

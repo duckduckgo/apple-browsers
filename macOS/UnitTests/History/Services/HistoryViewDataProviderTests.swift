@@ -37,7 +37,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         burner = CapturingHistoryBurner()
         dateFormatter = MockHistoryViewDateFormatter()
         featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.historyView, .historyViewSitesSection]
+        featureFlagger.enabledFeatureFlags = [.historyViewSitesSection]
         pixelHandler = CapturingHistoryViewDataProviderPixelHandler()
         provider = HistoryViewDataProvider(
             historyDataSource: dataSource,
@@ -687,7 +687,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
 
     @MainActor
     func testPreferredURLPrefersHttpsThenMostRecent() async throws {
-        // Given entries for the same eTLD+1 with both http and https
+        // Given entries for the same eTLD+1 with both http and https, plus other domains
         let httpsURL = try XCTUnwrap("https://example.com".url)
         let httpURL = try XCTUnwrap("http://example.com".url)
         let newer = Date()
@@ -695,7 +695,9 @@ final class HistoryViewDataProviderTests: XCTestCase {
 
         let httpsEntry = HistoryEntry.make(url: httpsURL, visits: [.init(date: newer)])
         let httpEntry = HistoryEntry.make(url: httpURL, visits: [.init(date: older)])
-        dataSource.history = [httpsEntry, httpEntry]
+        let otherEntry1 = HistoryEntry.make(url: try XCTUnwrap("https://duckduckgo.com".url), visits: [.init(date: newer)])
+        let otherEntry2 = HistoryEntry.make(url: try XCTUnwrap("https://wikipedia.org".url), visits: [.init(date: newer)])
+        dataSource.history = [httpsEntry, httpEntry, otherEntry1, otherEntry2]
         await provider.refreshData()
 
         // When
@@ -706,15 +708,48 @@ final class HistoryViewDataProviderTests: XCTestCase {
     }
 
     @MainActor
+    func testSitesSectionItemsPerformance() async throws {
+        throw XCTSkip("Measurement disabled for CI runs")
+
+        // Given a large dataset with entries for multiple domains, each with multiple visits
+        let today = Date()
+        var entries: [HistoryEntry] = []
+        let domains = ["example.com", "duckduckgo.com", "wikipedia.org", "github.com", "stackoverflow.com"]
+        for i in 0..<1000 {
+            let domain = domains[i % domains.count]
+            let url = try XCTUnwrap("https://\(domain)/page\(i)".url)
+            let title = (i % domains.count == 0 && i < domains.count) ? "Root Page" : "Page \(i)"
+            // Create multiple visits per entry
+            var visits: Set<Visit> = []
+            for j in 0..<1000 {
+                let visitDate = today.addingTimeInterval(-Double(i * 100 + j * 10))
+                visits.insert(.init(date: visitDate))
+            }
+            let entry = HistoryEntry.make(url: url, title: title, visits: visits)
+            entries.append(entry)
+        }
+        dataSource.history = entries
+        await provider.refreshData()
+
+        // When/Then - measure performance of sitesSectionItems which exercises
+        // bestMatchingEntry, preferredURL, and bestTitle for all domains
+        measure {
+            _ = provider.sitesSectionItems()
+        }
+    }
+
+    @MainActor
     func testSitesSectionTitlePrefersIndexPageTitle() async throws {
-        // Given: root index page and another page under the same domain
+        // Given: root index page and another page under the same domain, plus other domains
         let indexURL = try XCTUnwrap("https://example.com".url)
         let otherURL = try XCTUnwrap("https://example.com/page".url)
         let today = Date()
 
         let indexEntry = HistoryEntry.make(url: indexURL, title: "Home", visits: [.init(date: today)])
         let otherEntry = HistoryEntry.make(url: otherURL, title: "Other", visits: [.init(date: today)])
-        dataSource.history = [indexEntry, otherEntry]
+        let duckduckgoEntry = HistoryEntry.make(url: try XCTUnwrap("https://duckduckgo.com".url), title: "DuckDuckGo", visits: [.init(date: today)])
+        let wikipediaEntry = HistoryEntry.make(url: try XCTUnwrap("https://wikipedia.org".url), title: "Wikipedia", visits: [.init(date: today)])
+        dataSource.history = [indexEntry, otherEntry, duckduckgoEntry, wikipediaEntry]
         await provider.refreshData()
 
         // When: requesting Sites items
@@ -794,6 +829,8 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .make(url: try XCTUnwrap("https://example.com/page1/page2".url), title: "Page 2", visits: [.init(date: today)]),
             .make(url: try XCTUnwrap("https://example.com".url), title: "Example Home", visits: [.init(date: today)]),
             .make(url: try XCTUnwrap("https://example.com/page".url), title: "Other Page", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://duckduckgo.com".url), title: "DuckDuckGo", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://wikipedia.org".url), title: "Wikipedia", visits: [.init(date: today)]),
         ]
         let title = provider.bestTitle(forSiteDomain: "example.com")
         XCTAssertEqual(title, "Example Home")
@@ -803,7 +840,8 @@ final class HistoryViewDataProviderTests: XCTestCase {
     func testWhenRootIndexPageHasEmptyTitleThenBestTitleReturnsURL() throws {
         let today = Date()
         dataSource.history = [
-            .make(url: try XCTUnwrap("https://example.com".url), title: "", visits: [.init(date: today)])
+            .make(url: try XCTUnwrap("https://example.com".url), title: "", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://duckduckgo.com".url), title: "DuckDuckGo", visits: [.init(date: today)])
         ]
         let title = provider.bestTitle(forSiteDomain: "example.com")
         XCTAssertEqual(title, "https://example.com")
@@ -813,7 +851,8 @@ final class HistoryViewDataProviderTests: XCTestCase {
     func testWhenRootIndexPageHasNilTitleThenBestTitleReturnsURL() throws {
         let today = Date()
         dataSource.history = [
-            .make(url: try XCTUnwrap("https://example.com".url), title: nil, visits: [.init(date: today)])
+            .make(url: try XCTUnwrap("https://example.com".url), title: nil, visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://wikipedia.org".url), title: "Wikipedia", visits: [.init(date: today)])
         ]
         let title = provider.bestTitle(forSiteDomain: "example.com")
         XCTAssertEqual(title, "https://example.com")
@@ -824,7 +863,8 @@ final class HistoryViewDataProviderTests: XCTestCase {
         let today = Date()
         dataSource.history = [
             .make(url: try XCTUnwrap("https://www.example.com".url), title: "WWW Example", visits: [.init(date: today)]),
-            .make(url: try XCTUnwrap("https://example.com/page".url), title: "Other Page", visits: [.init(date: today)])
+            .make(url: try XCTUnwrap("https://example.com/page".url), title: "Other Page", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://duckduckgo.com".url), title: "DuckDuckGo", visits: [.init(date: today)])
         ]
         let title = provider.bestTitle(forSiteDomain: "example.com")
         XCTAssertEqual(title, "WWW Example")
@@ -835,7 +875,8 @@ final class HistoryViewDataProviderTests: XCTestCase {
         let today = Date()
         dataSource.history = [
             .make(url: try XCTUnwrap("https://example.com/".url), title: "Root Slash", visits: [.init(date: today)]),
-            .make(url: try XCTUnwrap("https://example.com/page".url), title: "Other Page", visits: [.init(date: today)])
+            .make(url: try XCTUnwrap("https://example.com/page".url), title: "Other Page", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://github.com".url), title: "GitHub", visits: [.init(date: today)])
         ]
         let title = provider.bestTitle(forSiteDomain: "example.com")
         XCTAssertEqual(title, "Root Slash")
@@ -846,7 +887,9 @@ final class HistoryViewDataProviderTests: XCTestCase {
         let today = Date()
         dataSource.history = [
             .make(url: try XCTUnwrap("http://example.com".url), title: "HTTP Root", visits: [.init(date: today)]),
-            .make(url: try XCTUnwrap("https://example.com".url), title: "HTTPS Root", visits: [.init(date: today)])
+            .make(url: try XCTUnwrap("https://example.com".url), title: "HTTPS Root", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://duckduckgo.com".url), title: "DuckDuckGo", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://wikipedia.org".url), title: "Wikipedia", visits: [.init(date: today)])
         ]
         let title = provider.bestTitle(forSiteDomain: "example.com")
         XCTAssertEqual(title, "HTTPS Root")
@@ -858,7 +901,9 @@ final class HistoryViewDataProviderTests: XCTestCase {
         let newerDate = Date().addingTimeInterval(-3600)
         dataSource.history = [
             .make(url: try XCTUnwrap("https://example.com".url), title: "Older Root", visits: [.init(date: olderDate)]),
-            .make(url: try XCTUnwrap("https://www.example.com".url), title: "Newer Root", visits: [.init(date: newerDate)])
+            .make(url: try XCTUnwrap("https://www.example.com".url), title: "Newer Root", visits: [.init(date: newerDate)]),
+            .make(url: try XCTUnwrap("https://duckduckgo.com".url), title: "DuckDuckGo", visits: [.init(date: newerDate)]),
+            .make(url: try XCTUnwrap("https://github.com".url), title: "GitHub", visits: [.init(date: newerDate)])
         ]
         let title = provider.bestTitle(forSiteDomain: "example.com")
         XCTAssertEqual(title, "Newer Root")
@@ -870,20 +915,40 @@ final class HistoryViewDataProviderTests: XCTestCase {
         let newerDate = Date().addingTimeInterval(-3600)
         dataSource.history = [
             .make(url: try XCTUnwrap("https://example.com/older".url), title: "Older Page", visits: [.init(date: olderDate)]),
-            .make(url: try XCTUnwrap("https://example.com/newer".url), title: "Newer Page", visits: [.init(date: newerDate)])
+            .make(url: try XCTUnwrap("https://example.com/newer".url), title: "Newer Page", visits: [.init(date: newerDate)]),
+            .make(url: try XCTUnwrap("https://duckduckgo.com".url), title: "DuckDuckGo", visits: [.init(date: newerDate)]),
+            .make(url: try XCTUnwrap("https://wikipedia.org".url), title: "Wikipedia", visits: [.init(date: newerDate)])
         ]
         let title = provider.bestTitle(forSiteDomain: "example.com")
         XCTAssertEqual(title, "Newer Page")
     }
 
     @MainActor
-    func testWhenNoRootPageAndMostRecentHasEmptyTitleThenBestTitleReturnsURL() throws {
+    func testWhenNoRootPageThenBestTitlePrefersTitleOverRecency() throws {
+        // When no root page exists, title preference takes precedence over recency
         let olderDate = Date().addingTimeInterval(-7200)
         let newerDate = Date().addingTimeInterval(-3600)
         dataSource.history = [
             .make(url: try XCTUnwrap("https://example.com/older".url), title: "Older Page", visits: [.init(date: olderDate)]),
-            .make(url: try XCTUnwrap("https://example.com/newer".url), title: "", visits: [.init(date: newerDate)])
+            .make(url: try XCTUnwrap("https://example.com/newer".url), title: "", visits: [.init(date: newerDate)]),
+            .make(url: try XCTUnwrap("https://github.com".url), title: "GitHub", visits: [.init(date: newerDate)])
         ]
+        // Title preference takes precedence, so "Older Page" is selected even though newer entry is more recent
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "Older Page")
+    }
+
+    @MainActor
+    func testWhenNoRootPageAndAllHaveEmptyTitlesThenBestTitleReturnsMostRecentURL() throws {
+        // When no root page exists and all entries have empty titles, use most recent
+        let olderDate = Date().addingTimeInterval(-7200)
+        let newerDate = Date().addingTimeInterval(-3600)
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://example.com/older".url), title: "", visits: [.init(date: olderDate)]),
+            .make(url: try XCTUnwrap("https://example.com/newer".url), title: "", visits: [.init(date: newerDate)]),
+            .make(url: try XCTUnwrap("https://github.com".url), title: "GitHub", visits: [.init(date: newerDate)])
+        ]
+        // When all titles are empty, recency determines selection, then URL is returned
         let title = provider.bestTitle(forSiteDomain: "example.com")
         XCTAssertEqual(title, "https://example.com/newer")
     }
@@ -907,7 +972,9 @@ final class HistoryViewDataProviderTests: XCTestCase {
         let olderDate = today.addingTimeInterval(-7200)
         dataSource.history = [
             .make(url: try XCTUnwrap("https://example.com".url), title: "Root Page", visits: [.init(date: olderDate)]),
-            .make(url: try XCTUnwrap("https://subdomain.example.com/newer".url), title: "Subdomain Newer", visits: [.init(date: today)])
+            .make(url: try XCTUnwrap("https://subdomain.example.com/newer".url), title: "Subdomain Newer", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://duckduckgo.com".url), title: "DuckDuckGo", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://wikipedia.org".url), title: "Wikipedia", visits: [.init(date: today)])
         ]
         let title = provider.bestTitle(forSiteDomain: "example.com")
         // Should prefer root even if subdomain is more recent
@@ -919,7 +986,9 @@ final class HistoryViewDataProviderTests: XCTestCase {
         let today = Date()
         dataSource.history = [
             .make(url: try XCTUnwrap("https://example.com".url), title: "HTTPS Root", visits: [.init(date: today.addingTimeInterval(-3600))]),
-            .make(url: try XCTUnwrap("http://example.com/page".url), title: "HTTP Page", visits: [.init(date: today)])
+            .make(url: try XCTUnwrap("http://example.com/page".url), title: "HTTP Page", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://github.com".url), title: "GitHub", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://stackoverflow.com".url), title: "Stack Overflow", visits: [.init(date: today)])
         ]
         let title = provider.bestTitle(forSiteDomain: "example.com")
         XCTAssertEqual(title, "HTTPS Root")
@@ -931,10 +1000,156 @@ final class HistoryViewDataProviderTests: XCTestCase {
         let newerDate = Date().addingTimeInterval(-3600)
         dataSource.history = [
             .make(url: try XCTUnwrap("https://example.com".url), title: "HTTPS Root", visits: [.init(date: olderDate)]),
-            .make(url: try XCTUnwrap("http://example.com".url), title: "HTTP Root", visits: [.init(date: newerDate)])
+            .make(url: try XCTUnwrap("http://example.com".url), title: "HTTP Root", visits: [.init(date: newerDate)]),
+            .make(url: try XCTUnwrap("https://duckduckgo.com".url), title: "DuckDuckGo", visits: [.init(date: newerDate)]),
+            .make(url: try XCTUnwrap("https://wikipedia.org".url), title: "Wikipedia", visits: [.init(date: newerDate)])
         ]
         let title = provider.bestTitle(forSiteDomain: "example.com")
         XCTAssertEqual(title, "HTTPS Root")
+    }
+
+    @MainActor
+    func testWhenAllFactorsEqualThenBestTitlePrefersEntryWithTitle() throws {
+        // Test title preference when HTTPS, root, and domain match are equal
+        let today = Date()
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://example.com".url), title: nil, visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://example.com".url), title: "Has Title", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://duckduckgo.com".url), title: "DuckDuckGo", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://wikipedia.org".url), title: "Wikipedia", visits: [.init(date: today)])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "Has Title")
+    }
+
+    @MainActor
+    func testWhenTitleEmptyVsNonEmptyThenBestTitlePrefersNonEmpty() throws {
+        // Test that non-empty title is preferred even if other entry is more recent
+        let olderDate = Date().addingTimeInterval(-7200)
+        let newerDate = Date().addingTimeInterval(-3600)
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://example.com/page1".url), title: "Has Title", visits: [.init(date: olderDate)]),
+            .make(url: try XCTUnwrap("https://example.com/page2".url), title: "", visits: [.init(date: newerDate)]),
+            .make(url: try XCTUnwrap("https://github.com".url), title: "GitHub", visits: [.init(date: newerDate)])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "Has Title")
+    }
+
+    @MainActor
+    func testWhenBareDomainVsSubdomainThenBestTitlePrefersBareDomain() throws {
+        // Test bare domain preference when root, HTTPS, and title are equal
+        let today = Date()
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://subdomain.example.com".url), title: "Subdomain", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://example.com".url), title: "Bare Domain", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://duckduckgo.com".url), title: "DuckDuckGo", visits: [.init(date: today)])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "Bare Domain")
+    }
+
+    @MainActor
+    func testWhenWWWVsOtherSubdomainThenBestTitlePrefersWWW() throws {
+        // Test www subdomain preference when root, HTTPS, and title are equal
+        let today = Date()
+        dataSource.history = [
+            .make(url: try XCTUnwrap("https://other.example.com".url), title: "Other Subdomain", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://www.example.com".url), title: "WWW", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://github.com".url), title: "GitHub", visits: [.init(date: today)])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "WWW")
+    }
+
+    @MainActor
+    func testWhenMultipleVisitsThenBestTitleUsesMostRecentVisit() throws {
+        // Test that lastVisit (most recent visit) is used for sorting
+        let baseDate = Date().addingTimeInterval(-10000)
+        let olderEntry = HistoryEntry.make(
+            url: try XCTUnwrap("https://example.com/older".url),
+            title: "Older Page",
+            visits: [
+                .init(date: baseDate),
+                .init(date: baseDate.addingTimeInterval(100)),
+                .init(date: baseDate.addingTimeInterval(200))
+            ]
+        )
+        let newerEntry = HistoryEntry.make(
+            url: try XCTUnwrap("https://example.com/newer".url),
+            title: "Newer Page",
+            visits: [
+                .init(date: baseDate.addingTimeInterval(5000)),
+                .init(date: baseDate.addingTimeInterval(5100)),
+                .init(date: baseDate.addingTimeInterval(5200))
+            ]
+        )
+        dataSource.history = [olderEntry, newerEntry, .make(url: try XCTUnwrap("https://duckduckgo.com".url), title: "DuckDuckGo", visits: [.init(date: baseDate.addingTimeInterval(5200))])]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "Newer Page")
+    }
+
+    @MainActor
+    func testComplexSortingAllFactorsThenBestTitlePrefersBestCombination() throws {
+        // Test complex combination: prefer HTTPS root with title, bare domain, most recent
+        let today = Date()
+        let olderDate = today.addingTimeInterval(-3600)
+        dataSource.history = [
+            // HTTP root with title, bare domain, older
+            .make(url: try XCTUnwrap("http://example.com".url), title: "HTTP Root", visits: [.init(date: olderDate)]),
+            // HTTPS non-root with title, bare domain, newer
+            .make(url: try XCTUnwrap("https://example.com/page".url), title: "HTTPS Page", visits: [.init(date: today)]),
+            // HTTPS root with title, subdomain, older
+            .make(url: try XCTUnwrap("https://www.example.com".url), title: "HTTPS WWW", visits: [.init(date: olderDate)]),
+            // HTTPS root with title, bare domain, newer - should win
+            .make(url: try XCTUnwrap("https://example.com".url), title: "HTTPS Root", visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://github.com".url), title: "GitHub", visits: [.init(date: today)])
+        ]
+        let title = provider.bestTitle(forSiteDomain: "example.com")
+        XCTAssertEqual(title, "HTTPS Root")
+    }
+
+    @MainActor
+    func testPreferredURLWithMultipleVisitsThenUsesMostRecentVisit() throws {
+        // Test that preferredURL uses lastVisit for sorting
+        let baseDate = Date().addingTimeInterval(-10000)
+        let olderEntry = HistoryEntry.make(
+            url: try XCTUnwrap("https://example.com/older".url),
+            visits: [
+                .init(date: baseDate),
+                .init(date: baseDate.addingTimeInterval(100))
+            ]
+        )
+        let newerEntry = HistoryEntry.make(
+            url: try XCTUnwrap("https://example.com/newer".url),
+            visits: [
+                .init(date: baseDate.addingTimeInterval(5000)),
+                .init(date: baseDate.addingTimeInterval(5100))
+            ]
+        )
+        dataSource.history = [olderEntry, newerEntry, .make(url: try XCTUnwrap("https://duckduckgo.com".url), visits: [.init(date: baseDate.addingTimeInterval(5100))])]
+        let preferred = provider.preferredURL(forSiteDomain: "example.com")
+        XCTAssertEqual(preferred, try XCTUnwrap("https://example.com/newer".url))
+    }
+
+    @MainActor
+    func testPreferredURLComplexSortingThenPrefersBestCombination() throws {
+        // Test complex combination for preferredURL
+        let today = Date()
+        let olderDate = today.addingTimeInterval(-3600)
+        dataSource.history = [
+            // HTTP root, older
+            .make(url: try XCTUnwrap("http://example.com".url), visits: [.init(date: olderDate)]),
+            // HTTPS non-root, newer
+            .make(url: try XCTUnwrap("https://example.com/page".url), visits: [.init(date: today)]),
+            // HTTPS root, subdomain, older
+            .make(url: try XCTUnwrap("https://www.example.com".url), visits: [.init(date: olderDate)]),
+            // HTTPS root, bare domain, newer - should win
+            .make(url: try XCTUnwrap("https://example.com".url), visits: [.init(date: today)]),
+            .make(url: try XCTUnwrap("https://github.com".url), visits: [.init(date: today)])
+        ]
+        let preferred = provider.preferredURL(forSiteDomain: "example.com")
+        XCTAssertEqual(preferred, try XCTUnwrap("https://example.com".url))
     }
 
     // MARK: - chat history

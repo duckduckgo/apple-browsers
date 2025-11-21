@@ -43,6 +43,18 @@ public final class CustomToggleControl: NSControl {
         didSet { needsDisplay = true }
     }
 
+    public var leftSelectedImage: NSImage? {
+        didSet { needsDisplay = true }
+    }
+
+    public var rightSelectedImage: NSImage? {
+        didSet { needsDisplay = true }
+    }
+
+    public var iconTintColor: NSColor = .labelColor {
+        didSet { needsDisplay = true }
+    }
+
     public var isRightSelected: Bool = false {
         didSet {
             if oldValue != isRightSelected {
@@ -166,12 +178,13 @@ public final class CustomToggleControl: NSControl {
         innerBorderPath.stroke()
         context.restoreGState()
 
-        if let leftImage = leftImage {
-            drawImage(leftImage, in: leftRect, alpha: isRightSelected ? 0.5 : 1.0)
+        let isLeftSelected = !isRightSelected
+        if let leftImg = (isLeftSelected && leftSelectedImage != nil) ? leftSelectedImage : leftImage {
+            drawImage(leftImg, in: leftRect, alpha: 1.0)
         }
 
-        if let rightImage = rightImage {
-            drawImage(rightImage, in: rightRect, alpha: isRightSelected ? 1.0 : 0.5)
+        if let rightImg = (isRightSelected && rightSelectedImage != nil) ? rightSelectedImage : rightImage {
+            drawImage(rightImg, in: rightRect, alpha: 1.0)
         }
 
         if isFocused {
@@ -205,7 +218,7 @@ public final class CustomToggleControl: NSControl {
     }
 
     private func drawImage(_ image: NSImage, in rect: NSRect, alpha: CGFloat) {
-        let imageSize = NSSize(width: bounds.height * 0.5, height: bounds.height * 0.5)
+        let imageSize = image.size
         let imageRect = NSRect(
             x: rect.midX - imageSize.width / 2,
             y: rect.midY - imageSize.height / 2,
@@ -214,7 +227,22 @@ public final class CustomToggleControl: NSControl {
         )
 
         NSGraphicsContext.current?.imageInterpolation = .high
-        image.draw(in: imageRect, from: .zero, operation: .sourceOver, fraction: alpha)
+
+        // For template images, we need to manually tint them for proper color rendering
+        if image.isTemplate {
+            let tintedImage = NSImage(size: image.size, flipped: false) { bounds in
+                self.iconTintColor.set()
+                bounds.fill()
+
+                // Draw the image as a mask using destinationIn to cut out transparent areas
+                image.draw(in: bounds, from: .zero, operation: .destinationIn, fraction: 1.0)
+                return true
+            }
+
+            tintedImage.draw(in: imageRect, from: .zero, operation: .sourceOver, fraction: alpha)
+        } else {
+            image.draw(in: imageRect, from: .zero, operation: .sourceOver, fraction: alpha)
+        }
     }
 
     // MARK: - Animation

@@ -61,38 +61,17 @@ extension TabTitleView {
         }
 
         let previousTitle = titleTextField.stringValue
-        let requiresInitialAlpha = mustApplyInitialAlpha(targetURL: url, previousURL: sourceURL)
+        let mustFadeInLatestTitle = mustAnimateNewTitleFadeIn(targetURL: url, previousURL: sourceURL)
 
         titleTextField.stringValue = title
         previousTextField.stringValue = previousTitle
         sourceURL = url
 
-        if requiresInitialAlpha {
-            titleTextField.alphaValue = ColorAnimation.initialAlpha(url: url)
-        }
-
         guard animated, mustAnimateTitleTransition(title: title, previousTitle: previousTitle) else {
             return
         }
 
-        transitionToLatestTitle(fadeInTitle: requiresInitialAlpha)
-    }
-
-    /// Refreshes the Title Color
-    /// - Important:
-    ///     `alphaValue` is initially set when a new Title is rendered. In order to avoid flickering, we'll skip applying a lower Alpha value
-    ///     We'll also account for the NTP scenario.
-    ///
-    func refreshTitleColorIfNeeded(rendered: Bool, url: URL?) {
-        let fromAlpha = titleTextField.alphaValue
-        let toAlpha = ColorAnimation.titleAlpha(url: url, rendered: rendered)
-
-        guard mustUpdateTitleAlpha(fromAlpha: fromAlpha, toAlpha: toAlpha, url: url) else {
-            return
-        }
-
-        titleTextField.alphaValue = toAlpha
-        transitionTitleToAlpha(toAlpha: toAlpha, fromAlpha: fromAlpha)
+        transitionToLatestTitle(fadeInTitle: mustFadeInLatestTitle)
     }
 
     func reset() {
@@ -159,12 +138,8 @@ private extension TabTitleView {
         title != previousTitle && previousTitle.isEmpty == false
     }
 
-    func mustApplyInitialAlpha(targetURL: URL?, previousURL: URL?) -> Bool {
-        targetURL?.isNTP == true || targetURL?.host?.dropSubdomain() != previousURL?.host?.dropSubdomain()
-    }
-
-    func mustUpdateTitleAlpha(fromAlpha: CGFloat, toAlpha: CGFloat, url: URL?) -> Bool {
-        toAlpha > fromAlpha && url?.isNTP == false
+    func mustAnimateNewTitleFadeIn(targetURL: URL?, previousURL: URL?) -> Bool {
+        targetURL?.host?.dropSubdomain() != previousURL?.host?.dropSubdomain()
     }
 }
 
@@ -227,22 +202,4 @@ private enum TitleAnimation {
     static let slidingOutLastX = CGFloat(-4)
     static let slidingInStartX = CGFloat(-4)
     static let slidingInLastX = CGFloat(0)
-}
-
-private enum ColorAnimation {
-    static let specialTitleAlpha: CGFloat = 0.4
-    static let loadingTitleAlpha: CGFloat = 0.6
-    static let completeTitleAlpha: CGFloat = 1
-
-    static func initialAlpha(url: URL?) -> CGFloat {
-        titleAlpha(url: url, rendered: false)
-    }
-
-    static func titleAlpha(url: URL?, rendered: Bool) -> CGFloat {
-        if let url, url.isNTP {
-            return specialTitleAlpha
-        }
-
-        return rendered ? completeTitleAlpha : loadingTitleAlpha
-    }
 }

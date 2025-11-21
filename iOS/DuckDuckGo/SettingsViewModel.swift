@@ -293,6 +293,22 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var showMenuInSheetBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                self.state.showMenuInSheet
+            },
+            set: {
+                if let overrides = self.featureFlagger.localOverrides,
+                    overrides.override(for: FeatureFlag.browsingMenuSheetPresentation) != $0 {
+
+                    overrides.toggleOverride(for: FeatureFlag.browsingMenuSheetPresentation)
+                    self.state.showMenuInSheet = $0
+                }
+            }
+        )
+    }
+
     var addressBarShowsFullURL: Binding<Bool> {
         Binding<Bool>(
             get: { self.state.showsFullURL },
@@ -717,6 +733,7 @@ extension SettingsViewModel {
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
+            showMenuInSheet: featureFlagger.isFeatureOn(.browsingMenuSheetPresentation),
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,

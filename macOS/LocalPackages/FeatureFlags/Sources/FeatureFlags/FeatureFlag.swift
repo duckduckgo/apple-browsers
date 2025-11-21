@@ -590,7 +590,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .pinnedTabsViewRewrite:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.pinnedTabsViewRewrite))
         case .tabProgressIndicator:
-            return .disabled
+            return .internalOnly()
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .vpnConnectionWidePixelMeasurement:

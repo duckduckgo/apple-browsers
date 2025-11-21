@@ -23,6 +23,7 @@ import Foundation
 import History
 import Navigation
 import WebKit
+import BrowserServicesKit
 
 final class HistoryTabExtension: NSObject {
 
@@ -70,7 +71,8 @@ final class HistoryTabExtension: NSObject {
          historyCoordinating: HistoryCoordinating,
          trackersPublisher: some Publisher<DetectedTracker, Never>,
          urlPublisher: some Publisher<URL?, Never>,
-         titlePublisher: some Publisher<String?, Never>) {
+         titlePublisher: some Publisher<String?, Never>,
+         popupManagedPublisher: AnyPublisher<AutoconsentUserScript.AutoconsentDoneMessage, Never>) {
 
         self.historyCoordinating = historyCoordinating
         self.isCapturingHistory = isCapturingHistory
@@ -106,6 +108,13 @@ final class HistoryTabExtension: NSObject {
             }
             .store(in: &cancellables)
 
+        popupManagedPublisher.sink { [weak self] event in
+            guard let self else { return }
+            MainActor.assumeMainThread {
+                self.handlePopupManaged(event)
+            }
+        }.store(in: &cancellables)
+
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(applicationWillTerminate(_:)),
                                                name: NSApplication.willTerminateNotification,
@@ -136,6 +145,14 @@ final class HistoryTabExtension: NSObject {
 
         guard let url else { return }
         historyCoordinating.updateTitleIfNeeded(title: title, url: url)
+    }
+
+    @MainActor
+    private func handlePopupManaged(_ message: AutoconsentUserScript.AutoconsentDoneMessage) {
+        guard isCapturingHistory else { return }
+
+        guard let url else { return }
+        historyCoordinating.cookiePopupBlocked(on: url)
     }
 
     private func commitBeforeClosing() {

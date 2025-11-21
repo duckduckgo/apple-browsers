@@ -88,6 +88,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     var showShortcutInAddressBarWhenTyping: Bool = true
     var openAIChatInSidebar: Bool = true
     var shouldAutomaticallySendPageContext: Bool = true
+    var showSearchAndDuckAIToggle: Bool = true
 
     let isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
     let showShortcutOnNewTabPagePublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
@@ -96,6 +97,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     let showShortcutInAddressBarWhenTypingPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
     let openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
     let shouldAutomaticallySendPageContextPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let showSearchAndDuckAITogglePublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
 
     func reset() {
         isAIFeaturesEnabled = true
@@ -106,6 +108,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         didDisplayAIChatAddressBarOnboarding = true
         openAIChatInSidebar = true
         shouldAutomaticallySendPageContext = true
+        showSearchAndDuckAIToggle = true
     }
 }
 

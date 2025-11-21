@@ -28,6 +28,7 @@ final class NewTabPageProtectionsReportClientTests: XCTestCase {
     private var model: NewTabPageProtectionsReportModel!
 
     private var privacyStats: CapturingPrivacyStats!
+    private var autoconsentStats: CapturingAutoconsentStats!
     private var settingsPersistor: MockNewTabPageProtectionsReportSettingsPersistor!
     private var trackerDataProvider: MockPrivacyStatsTrackerDataProvider!
 
@@ -38,12 +39,15 @@ final class NewTabPageProtectionsReportClientTests: XCTestCase {
         try await super.setUp()
 
         privacyStats = CapturingPrivacyStats()
+        autoconsentStats = CapturingAutoconsentStats()
         settingsPersistor = MockNewTabPageProtectionsReportSettingsPersistor()
 
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 autoconsentStats: autoconsentStats,
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
-                                                 showBurnAnimation: true)
+                                                 showBurnAnimation: true,
+                                                 isAutoconsentEnabled: { true })
         client = NewTabPageProtectionsReportClient(model: model)
 
         userScript = NewTabPageUserScript()
@@ -126,5 +130,98 @@ final class NewTabPageProtectionsReportClientTests: XCTestCase {
         privacyStats.privacyStatsTotalCount = 1500100900
         let data: NewTabPageDataModel.ProtectionsData = try await messageHelper.handleMessage(named: .getData)
         XCTAssertEqual(data.totalCount, privacyStats.privacyStatsTotalCount)
+    }
+
+    // MARK: - isAutoconsentEnabled Tests
+
+    func testWhenAutoconsentEnabledIsTrueThenGetDataIncludesTotalCookiePopUpsBlocked() async throws {
+        // Setup: Configure autoconsent stats and enable autoconsent
+        autoconsentStats.isEnabledValue = true
+        autoconsentStats.totalCookiePopUpsBlocked = 42
+        privacyStats.privacyStatsTotalCount = 1000
+
+        // Recreate model with isAutoconsentEnabled returning true
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: autoconsentStats,
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+            showBurnAnimation: true,
+            isAutoconsentEnabled: { true }
+        )
+        client = NewTabPageProtectionsReportClient(model: model)
+        client.registerMessageHandlers(for: userScript)
+
+        // Act
+        let data: NewTabPageDataModel.ProtectionsData = try await messageHelper.handleMessage(named: .getData)
+
+        // Assert
+        XCTAssertEqual(data.totalCount, 1000)
+        XCTAssertEqual(data.totalCookiePopUpsBlocked, 42)
+    }
+
+    func testWhenAutoconsentEnabledIsFalseThenGetDataExcludesTotalCookiePopUpsBlocked() async throws {
+        // Setup: Configure autoconsent stats but disable autoconsent
+        autoconsentStats.isEnabledValue = true
+        autoconsentStats.totalCookiePopUpsBlocked = 42
+        privacyStats.privacyStatsTotalCount = 1000
+
+        // Recreate model with isAutoconsentEnabled returning false
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: autoconsentStats,
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+            showBurnAnimation: true,
+            isAutoconsentEnabled: { false }
+        )
+        client = NewTabPageProtectionsReportClient(model: model)
+        client.registerMessageHandlers(for: userScript)
+
+        // Act
+        let data: NewTabPageDataModel.ProtectionsData = try await messageHelper.handleMessage(named: .getData)
+
+        // Assert
+        XCTAssertEqual(data.totalCount, 1000)
+        XCTAssertNil(data.totalCookiePopUpsBlocked, "totalCookiePopUpsBlocked should be nil when isAutoconsentEnabled is false")
+    }
+
+    func testWhenAutoconsentStatsIsDisabledThenGetDataReturnsLegacyFormat() async throws {
+        // Setup: Disable autoconsent stats entirely
+        autoconsentStats.isEnabledValue = false
+        privacyStats.privacyStatsTotalCount = 1000
+
+        // Act
+        let data: NewTabPageDataModel.ProtectionsDataLegacy = try await messageHelper.handleMessage(named: .getData)
+
+        // Assert
+        XCTAssertEqual(data.totalCount, 1000)
+        // ProtectionsDataLegacy doesn't have totalCookiePopUpsBlocked field at all
+    }
+
+    func testWhenAutoconsentEnabledIsTrueButStatsAreZeroThenGetDataIncludesZeroValue() async throws {
+        // Setup: Enable autoconsent but with zero stats
+        autoconsentStats.isEnabledValue = true
+        autoconsentStats.totalCookiePopUpsBlocked = 0
+        privacyStats.privacyStatsTotalCount = 500
+
+        // Recreate model with isAutoconsentEnabled returning true
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: autoconsentStats,
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+            showBurnAnimation: true,
+            isAutoconsentEnabled: { true }
+        )
+        client = NewTabPageProtectionsReportClient(model: model)
+        client.registerMessageHandlers(for: userScript)
+
+        // Act
+        let data: NewTabPageDataModel.ProtectionsData = try await messageHelper.handleMessage(named: .getData)
+
+        // Assert
+        XCTAssertEqual(data.totalCount, 500)
+        XCTAssertEqual(data.totalCookiePopUpsBlocked, 0, "Should include totalCookiePopUpsBlocked even when zero")
     }
 }

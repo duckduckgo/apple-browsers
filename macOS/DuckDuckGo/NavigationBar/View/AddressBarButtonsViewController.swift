@@ -1443,10 +1443,10 @@ final class AddressBarButtonsViewController: NSViewController {
 
         let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
         let shouldShowToggle = isToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
-        
+
         // Update key view chain when toggle visibility changes
         updateKeyViewChainForToggle(shouldShowToggle: shouldShowToggle)
-        
+
         searchModeToggleControl?.isHidden = !shouldShowToggle
 
         if isToggleFeatureEnabled {
@@ -1675,14 +1675,14 @@ final class AddressBarButtonsViewController: NSViewController {
     func resetSearchModeToggle() {
         searchModeToggleControl?.isRightSelected = false
     }
-    
+
     private func updateKeyViewChainForToggle(shouldShowToggle: Bool) {
         guard let addressBarViewController = parent as? AddressBarViewController,
               let addressBarTextField = addressBarViewController.addressBarTextField,
               let toggleControl = searchModeToggleControl else {
             return
         }
-        
+
         if shouldShowToggle {
             if addressBarTextField.nextKeyView != toggleControl {
                 toggleControl.nextKeyView = addressBarTextField.nextKeyView

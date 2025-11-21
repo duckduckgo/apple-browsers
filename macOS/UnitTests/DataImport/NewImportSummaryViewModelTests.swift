@@ -23,11 +23,11 @@ import PixelKitTestingUtilities
 
 @MainActor
 final class NewImportSummaryViewModelTests: XCTestCase {
-    
+
     var mockPreferences: AppearancePreferences!
     var mockPinningManager: MockPinningManager!
     var mockPersistor: MockAppearancePreferencesPersistor!
-    
+
     override func setUp() {
         super.setUp()
         mockPersistor = MockAppearancePreferencesPersistor()
@@ -38,25 +38,25 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         )
         mockPinningManager = MockPinningManager()
     }
-    
+
     override func tearDown() {
         mockPreferences = nil
         mockPinningManager = nil
         mockPersistor = nil
         super.tearDown()
     }
-    
+
     // MARK: - Initialization Tests
-    
+
     func testInitWithSuccessfulBookmarksImport() {
         // Given
         let summary: DataImportSummary = [
             .bookmarks: .success(DataImport.DataTypeSummary(successful: 100, duplicate: 0, failed: 0))
         ]
-        
+
         // When
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
-        
+
         // Then
         XCTAssertEqual(viewModel.items.count, 1)
         guard case .success(let item) = viewModel.items[0] else {
@@ -68,16 +68,16 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         XCTAssertNil(item.failureText)
         XCTAssertNotNil(item.shortcut)
     }
-    
+
     func testInitWithPartialPasswordsImport() {
         // Given
         let summary: DataImportSummary = [
             .passwords: .success(DataImport.DataTypeSummary(successful: 50, duplicate: 5, failed: 3))
         ]
-        
+
         // When
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
-        
+
         // Then
         XCTAssertEqual(viewModel.items.count, 1)
         guard case .success(let item) = viewModel.items[0] else {
@@ -122,10 +122,10 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         let summary: DataImportSummary = [
             .creditCards: .success(DataImport.DataTypeSummary(successful: 10, duplicate: 0, failed: 0))
         ]
-        
+
         // When
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
-        
+
         // Then
         XCTAssertEqual(viewModel.items.count, 1)
         guard case .success(let item) = viewModel.items[0] else {
@@ -134,7 +134,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         }
         XCTAssertNil(item.shortcut)
     }
-    
+
     func testInitWithMultipleDataTypes() {
         // Given
         let summary: DataImportSummary = [
@@ -142,51 +142,51 @@ final class NewImportSummaryViewModelTests: XCTestCase {
             .bookmarks: .success(DataImport.DataTypeSummary(successful: 100, duplicate: 0, failed: 0)),
             .creditCards: .success(DataImport.DataTypeSummary(successful: 5, duplicate: 0, failed: 0))
         ]
-        
+
         // When
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
-        
+
         // Then
         XCTAssertEqual(viewModel.items.count, 3)
         // Items should be sorted by type
     }
-    
+
     func testInitWithFailedImportIncludesFailureItem() {
         // Given
         let summary: DataImportSummary = [
             .bookmarks: .failure(MockDataImportError()),
             .passwords: .success(DataImport.DataTypeSummary(successful: 10, duplicate: 0, failed: 0))
         ]
-        
+
         // When
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
-        
+
         // Then
         XCTAssertEqual(viewModel.items.count, 2)
-        
+
         // First item should be bookmarks failure
         guard case .failure(let title) = viewModel.items[0] else {
             XCTFail("Expected failure item for bookmarks")
             return
         }
         XCTAssertFalse(title.isEmpty)
-        
+
         // Second item should be passwords success
         guard case .success = viewModel.items[1] else {
             XCTFail("Expected success item for passwords")
             return
         }
     }
-    
+
     func testInitWithOnlyDuplicates() {
         // Given
         let summary: DataImportSummary = [
             .bookmarks: .success(DataImport.DataTypeSummary(successful: 0, duplicate: 10, failed: 0))
         ]
-        
+
         // When
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
-        
+
         // Then
         XCTAssertEqual(viewModel.items.count, 1)
         guard case .success(let item) = viewModel.items[0] else {
@@ -197,16 +197,16 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         XCTAssertNotNil(item.duplicateText)
         XCTAssertNil(item.failureText)
     }
-    
+
     func testInitWithOnlyFailures() {
         // Given
         let summary: DataImportSummary = [
             .passwords: .success(DataImport.DataTypeSummary(successful: 0, duplicate: 0, failed: 5))
         ]
-        
+
         // When
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
-        
+
         // Then
         XCTAssertEqual(viewModel.items.count, 1)
         guard case .success(let item) = viewModel.items[0] else {
@@ -217,18 +217,18 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         XCTAssertNil(item.duplicateText)
         XCTAssertNotNil(item.failureText)
     }
-    
+
     // MARK: - Failure Tests
-    
+
     func testInitWithBookmarksFailure() {
         // Given
         let summary: DataImportSummary = [
             .bookmarks: .failure(MockDataImportError())
         ]
-        
+
         // When
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
-        
+
         // Then
         XCTAssertEqual(viewModel.items.count, 1)
         guard case .failure(let title) = viewModel.items[0] else {
@@ -237,16 +237,16 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         }
         XCTAssertFalse(title.isEmpty)
     }
-    
+
     func testInitWithPasswordsFailure() {
         // Given
         let summary: DataImportSummary = [
             .passwords: .failure(MockDataImportError())
         ]
-        
+
         // When
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
-        
+
         // Then
         XCTAssertEqual(viewModel.items.count, 1)
         guard case .failure(let title) = viewModel.items[0] else {
@@ -255,16 +255,16 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         }
         XCTAssertFalse(title.isEmpty)
     }
-    
+
     func testInitWithCreditCardsFailure() {
         // Given
         let summary: DataImportSummary = [
             .creditCards: .failure(MockDataImportError())
         ]
-        
+
         // When
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
-        
+
         // Then
         XCTAssertEqual(viewModel.items.count, 1)
         guard case .failure(let title) = viewModel.items[0] else {
@@ -273,7 +273,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         }
         XCTAssertFalse(title.isEmpty)
     }
-    
+
     func testDidTriggerShortcutOnFailureItemDoesNothing() {
         // Given
         let summary: DataImportSummary = [
@@ -282,17 +282,17 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
         let initialPrefsState = mockPreferences.showBookmarksBar
         let initialPinningState = mockPinningManager.pinnedViews
-        
+
         // When
         viewModel.didTriggerShortcut(on: viewModel.items[0], isOn: true)
-        
+
         // Then - should not change any state
         XCTAssertEqual(mockPreferences.showBookmarksBar, initialPrefsState)
         XCTAssertEqual(mockPinningManager.pinnedViews, initialPinningState)
     }
-    
+
     // MARK: - Shortcut Toggle Tests
-    
+
     func testDidTriggerShortcutForBookmarksUpdatesPreferences() {
         // Given
         let summary: DataImportSummary = [
@@ -300,14 +300,14 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         ]
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
         mockPreferences.showBookmarksBar = false
-        
+
         // When
         viewModel.didTriggerShortcut(on: viewModel.items[0], isOn: true)
-        
+
         // Then
         XCTAssertTrue(mockPreferences.showBookmarksBar)
     }
-    
+
     func testDidTriggerShortcutForBookmarksUpdatesItemState() {
         // Given
         let summary: DataImportSummary = [
@@ -315,10 +315,10 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         ]
         mockPreferences.showBookmarksBar = false
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
-        
+
         // When
         viewModel.didTriggerShortcut(on: viewModel.items[0], isOn: true)
-        
+
         // Then
         guard case .success(let item) = viewModel.items[0] else {
             XCTFail("Expected success item")
@@ -326,7 +326,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         }
         XCTAssertTrue(item.shortcut?.isOn ?? false)
     }
-    
+
     func testDidTriggerShortcutForPasswordsPinsAutofill() {
         // Given
         let summary: DataImportSummary = [
@@ -334,14 +334,14 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         ]
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
         mockPinningManager.pinnedViews = []
-        
+
         // When
         viewModel.didTriggerShortcut(on: viewModel.items[0], isOn: true)
-        
+
         // Then
         XCTAssertTrue(mockPinningManager.pinnedViews.contains(.autofill))
     }
-    
+
     func testDidTriggerShortcutForPasswordsUnpinsAutofill() {
         // Given
         let summary: DataImportSummary = [
@@ -349,14 +349,14 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         ]
         mockPinningManager.pinnedViews = [.autofill]
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
-        
+
         // When
         viewModel.didTriggerShortcut(on: viewModel.items[0], isOn: false)
-        
+
         // Then
         XCTAssertFalse(mockPinningManager.pinnedViews.contains(.autofill))
     }
-    
+
     func testDidTriggerShortcutForPasswordsUpdatesItemState() {
         // Given
         let summary: DataImportSummary = [
@@ -364,10 +364,10 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         ]
         mockPinningManager.pinnedViews = []
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
-        
+
         // When
         viewModel.didTriggerShortcut(on: viewModel.items[0], isOn: true)
-        
+
         // Then
         guard case .success(let item) = viewModel.items[0] else {
             XCTFail("Expected success item")
@@ -375,7 +375,7 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         }
         XCTAssertTrue(item.shortcut?.isOn ?? false)
     }
-    
+
     func testDidTriggerShortcutForCreditCardsDoesNothing() {
         // Given
         let summary: DataImportSummary = [
@@ -384,17 +384,17 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
         let initialPrefsState = mockPreferences.showBookmarksBar
         let initialPinningState = mockPinningManager.pinnedViews
-        
+
         // When
         viewModel.didTriggerShortcut(on: viewModel.items[0], isOn: true)
-        
+
         // Then
         XCTAssertEqual(mockPreferences.showBookmarksBar, initialPrefsState)
         XCTAssertEqual(mockPinningManager.pinnedViews, initialPinningState)
     }
-    
+
     // MARK: - Initial State Tests
-    
+
     func testInitializesShortcutStateFromPreferences() {
         // Given
         mockPreferences.showBookmarksBar = true
@@ -403,20 +403,20 @@ final class NewImportSummaryViewModelTests: XCTestCase {
             .bookmarks: .success(DataImport.DataTypeSummary(successful: 100, duplicate: 0, failed: 0)),
             .passwords: .success(DataImport.DataTypeSummary(successful: 50, duplicate: 0, failed: 0))
         ]
-        
+
         // When
         let viewModel = NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
-        
+
         // Then
         let bookmarksItem = viewModel.items.first { $0.id == DataImport.DataType.bookmarks.rawValue }
         let passwordsItem = viewModel.items.first { $0.id == DataImport.DataType.passwords.rawValue }
-        
+
         if case .success(let item) = bookmarksItem {
             XCTAssertTrue(item.shortcut?.isOn ?? false)
         } else {
             XCTFail("Expected success item for bookmarks")
         }
-        
+
         if case .success(let item) = passwordsItem {
             XCTAssertTrue(item.shortcut?.isOn ?? false)
         } else {
@@ -430,9 +430,9 @@ final class NewImportSummaryViewModelTests: XCTestCase {
 private struct MockDataImportError: DataImportError {
     var action: DataImportAction = .generic
     var type: OperationType = OperationType(rawValue: 0)
-    var underlyingError: Error? = nil
+    var underlyingError: Error?
     var errorType: DataImport.ErrorType = .other
-    
+
     struct OperationType: RawRepresentable, Equatable {
         let rawValue: Int
     }

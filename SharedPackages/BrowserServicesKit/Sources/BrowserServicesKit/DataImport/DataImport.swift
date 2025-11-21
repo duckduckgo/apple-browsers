@@ -75,7 +75,7 @@ public enum DataImport {
         case bookmark(title: String, url: String, errorMessage: String? = nil)
         case password(title: String?, domain: String, username: String, errorMessage: String? = nil)
         case creditCard(maskedNumber: String, cardholderName: String?, errorMessage: String? = nil)
-        
+
         /// Returns true if this item represents a failure (has an error message)
         public var isFailed: Bool {
             switch self {

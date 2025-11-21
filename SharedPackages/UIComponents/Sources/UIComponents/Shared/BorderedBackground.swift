@@ -29,13 +29,13 @@ public struct BorderedBackgroundModifier: ViewModifier {
     let backgroundColor: Color
     let borderColor: Color
     let cornerRadius: CGFloat
-    
+
     init(backgroundColor: Color = Color(designSystemColor: .surfaceSecondary), borderColor: Color = Color(designSystemColor: .lines), cornerRadius: CGFloat = 8) {
         self.backgroundColor = backgroundColor
         self.borderColor = borderColor
         self.cornerRadius = cornerRadius
     }
-    
+
     public func body(content: Content) -> some View {
         content
             .background(
@@ -61,4 +61,3 @@ public extension View {
         modifier(BorderedBackgroundModifier(backgroundColor: color, borderColor: borderColor, cornerRadius: cornerRadius))
     }
 }
-

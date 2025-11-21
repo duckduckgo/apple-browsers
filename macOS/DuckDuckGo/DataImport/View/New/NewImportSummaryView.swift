@@ -101,7 +101,7 @@ struct NewImportSummaryView: View {
                     }
                 }
                 Spacer()
-                
+
                 if item.type == .passwords {
                     Button(action: {
                         onShowDetail?(item.type)

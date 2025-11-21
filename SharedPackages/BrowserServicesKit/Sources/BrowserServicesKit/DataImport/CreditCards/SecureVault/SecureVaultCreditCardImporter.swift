@@ -117,7 +117,7 @@ public final class SecureVaultCreditCardImporter: CreditCardImporter {
         let last4 = String(cardNumber.suffix(4))
         return "****\(last4)"
     }
-    
+
     private func hasNewerExpiryDate(existing: SecureVaultModels.CreditCard,
                                     importing: SecureVaultModels.CreditCard) -> Bool {
         guard let importingMonth = importing.expirationMonth,

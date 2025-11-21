@@ -64,7 +64,7 @@ struct DataImportSummaryDetailView: View {
             Spacer()
         }
     }
-    
+
     /// Displays a summary of the import operation. e.g. "Total Passwords Imported: 1293 / 1300"
     ///
     private var summaryView: some View {
@@ -81,7 +81,7 @@ struct DataImportSummaryDetailView: View {
             Text(summaryText)
                 .font(.system(size: Metrics.fontSize))
                 .foregroundColor(.primary)
-            
+
             Spacer()
 
             iconWithWhiteBackground(
@@ -93,7 +93,7 @@ struct DataImportSummaryDetailView: View {
         .frame(height: Metrics.sectionHeaderHeight)
         .borderedBackground()
     }
-    
+
     /// Displays any duplicated items in the summary.
     ///
     private func duplicatesSection(summary: DataImport.DataTypeSummary) -> some View {
@@ -109,7 +109,7 @@ struct DataImportSummaryDetailView: View {
             }
         )
     }
-    
+
     @ViewBuilder
     private func duplicateRow(item: ImportItem) -> some View {
         if case .password(let _, let domain, let username, _) = item {
@@ -121,7 +121,7 @@ struct DataImportSummaryDetailView: View {
             )
         }
     }
-    
+
     /// Creates a duplicate row with an icon and content.
     ///
     private func duplicateRowContent<Content: View>(
@@ -133,13 +133,13 @@ struct DataImportSummaryDetailView: View {
                 .frame(width: Metrics.iconSize, height: Metrics.iconSize)
                 .foregroundColor(.primary)
                 .padding(.leading, 10)
-            
+
             content()
-            
+
             Spacer()
         }
     }
-    
+
     /// Displays any failed items in the summary.
     ///
     private func failedSection(summary: DataImport.DataTypeSummary) -> some View {
@@ -152,7 +152,7 @@ struct DataImportSummaryDetailView: View {
                         .foregroundColor(.primary)
 
                     Spacer()
-                    
+
                     iconWithWhiteBackground(
                         image: DesignSystemImages.Glyphs.Size24.exclamationSolid,
                         foregroundColor: Color(designSystemColor: .destructivePrimary)
@@ -211,7 +211,7 @@ struct DataImportSummaryDetailView: View {
             Circle()
                 .fill(Color.white)
                 .frame(width: Metrics.iconSize - 2, height: Metrics.iconSize - 2)
-            
+
             Image(nsImage: image)
                 .renderingMode(.template)
                 .frame(width: Metrics.iconSize, height: Metrics.iconSize)
@@ -251,11 +251,11 @@ struct DataImportSummaryDetailView: View {
     private var title: String {
         UserText.importSummaryDetailsPasswordsTitle
     }
-    
+
     private var iconImage: NSImage {
         DesignSystemImages.Glyphs.Size16.keyLogin
     }
-    
+
     private var summaryText: String {
         var successful = 0
         var total = 0
@@ -353,4 +353,3 @@ private struct CloseButtonStyle: ButtonStyle {
     .frame(width: 600, height: 500)
 }
 #endif
-

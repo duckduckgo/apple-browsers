@@ -1327,6 +1327,7 @@ struct UserText {
     static let importCouldNotImportPasswords = NSLocalizedString("import.could.not.import.passwords", value: "Couldn't import Passwords", comment: "Error message when passwords could not be imported")
     static let importCouldNotImportBookmarks = NSLocalizedString("import.could.not.import.bookmarks", value: "Couldn't import Bookmarks", comment: "Error message when bookmarks could not be imported")
     static let importCouldNotImportCreditCards = NSLocalizedString("import.could.not.import.credit-cards", value: "Couldn't import Credit Cards", comment: "Error message when credit cards could not be imported")
+    static let importCouldNotImportFile = NSLocalizedString("import.could.not.import.file", value: "Incorrect file or format, please use a different file.", comment: "Error title when a file could not be imported")
 
     static let openDeveloperTools = NSLocalizedString("main.menu.show.inspector", value: "Open Developer Tools", comment: "Show Web Inspector/Open Developer Tools")
     static let closeDeveloperTools = NSLocalizedString("main.menu.close.inspector", value: "Close Developer Tools", comment: "Hide Web Inspector/Close Developer Tools")

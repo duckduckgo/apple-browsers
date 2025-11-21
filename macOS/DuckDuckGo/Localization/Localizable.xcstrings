@@ -42755,6 +42755,18 @@
         }
       }
     },
+    "import.could.not.import.file" : {
+      "comment" : "Error title when a file could not be imported",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Incorrect file or format, please use a different file."
+          }
+        }
+      }
+    },
     "import.could.not.import.passwords" : {
       "comment" : "Error message when passwords could not be imported",
       "extractionState" : "extracted_with_value",

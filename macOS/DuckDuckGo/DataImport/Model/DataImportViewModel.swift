@@ -70,7 +70,7 @@ struct DataImportViewModel {
         case profilePicker
         case moreInfo
         case fileImport(dataType: DataType, summary: DataImportSummary = [:])
-        case archiveImport(dataTypes: Set<DataType>)
+        case archiveImport(dataTypes: Set<DataType>, summary: DataImportSummary? = nil)
         case summary(DataImportSummary)
         
         var isFileImport: Bool {
@@ -283,7 +283,7 @@ struct DataImportViewModel {
     }
 
     private var dataTypesForImport: Set<DataType> {
-        if case .archiveImport(let dataTypes) = screen {
+        if case .archiveImport(let dataTypes, _) = screen {
             return dataTypes
         }
         // are we handling file import or browser selected data types import?
@@ -318,9 +318,14 @@ struct DataImportViewModel {
             let sourceVersion = importSource.installedAppsMajorVersionDescription(selectedProfile: selectedProfile)
             switch result {
             case .success(let dataTypeSummary):
-                // if a data type can‘t be imported - switch to its file import displaying successful import results
-                if dataTypeSummary.isEmpty, !(screen.isFileImport && screen.fileImportDataType == dataType), nextScreen == nil {
-                    nextScreen = .fileImport(dataType: dataType, summary: summary)
+                if dataTypeSummary.isEmpty, nextScreen == nil {
+                    switch screen {
+                    case .archiveImport(let dataTypes, _):
+                        nextScreen = .archiveImport(dataTypes: dataTypes, summary: summary)
+                    default:
+                        // if a data type can‘t be imported - switch to its file import displaying successful import results
+                        nextScreen = .fileImport(dataType: dataType, summary: summary)
+                    }
                 }
 
                 PixelKit.fire(GeneralPixel.dataImportSucceeded(action: .init(dataType), source: importSource.pixelSourceParameterName, sourceVersion: sourceVersion), frequency: .dailyAndStandard)
@@ -328,13 +333,10 @@ struct DataImportViewModel {
                 // successful imports are appended above
                 self.summary.append( .init(dataType, result) )
 
-                if case .archiveImport(let dataTypes) = screen,
+                if case .archiveImport(let dataTypes, _) = screen,
                     summary.first(where: { $0.value.isSuccess }) == nil {
-                    nextScreen = .archiveImport(dataTypes: dataTypes)
-                }
-
-                // show file import screen when import fails or no bookmarks|passwords found
-                if !((screen.isFileImport && screen.fileImportDataType == dataType) || screen.isArchiveImport), nextScreen == nil {
+                    nextScreen = .archiveImport(dataTypes: dataTypes, summary: summary)
+                } else if !(screen.isFileImport && screen.fileImportDataType == dataType), nextScreen == nil { // show file import screen when import fails or no bookmarks|passwords found
                     // switch to file import of the failed data type displaying successful import results
                     nextScreen = .fileImport(dataType: dataType, summary: summary)
                 }

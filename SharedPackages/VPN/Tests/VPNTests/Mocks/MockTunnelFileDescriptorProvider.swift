@@ -1,7 +1,7 @@
 //
-//  MockAutoconsentDailyStats.swift
+//  MockTunnelFileDescriptorProvider.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,10 +17,16 @@
 //
 
 import Foundation
-@testable import DuckDuckGo_Privacy_Browser
+@testable import VPN
 
-class MockAutoconsentDailyStat: AutoconsentDailyStatsManaging  {
-    func incrementPopupCount() {}
+final class MockTunnelFileDescriptorProvider: TunnelFileDescriptorProviding {
+    var fileDescriptor: Int32?
 
-    func sendDailyPixelIfNeeded() {}
+    init(fileDescriptor: Int32?) {
+        self.fileDescriptor = fileDescriptor
+    }
+
+    func currentFileDescriptor() -> Int32? {
+        fileDescriptor
+    }
 }

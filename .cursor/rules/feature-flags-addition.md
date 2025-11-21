@@ -416,6 +416,71 @@ public enum YourNewFeatureSubfeature: String, PrivacySubfeature {
 
 **Step 3:** Coordinate with backend team to add feature to remote Privacy Config.
 
+### 3.7: Add Feature Flag Category (macOS Only)
+
+**File:** `macOS/LocalPackages/FeatureFlags/Sources/FeatureFlags/FeatureFlagCategory.swift`
+
+On macOS, feature flags can be organized into categories for better organization in the debug menu. Consider if your feature flag should be categorized.
+
+**Available Categories:**
+- `duckAI` - Duck.ai related features
+- `dbp` - Personal Information Removal
+- `subscription` - Subscription/Privacy Pro features
+- `sync` - Sync related features
+- `updates` - Update related features
+- `vpn` - VPN related features
+- `osSupportWarnings` - OS Support Warnings
+- `other` - Default for uncategorized flags
+
+**When to categorize:**
+- If the feature belongs to a clear domain (Subscription, VPN, Sync, Duck.ai, etc.), add it to the appropriate category
+- If unsure or the feature is general browser functionality, it can remain in `.other` (default)
+
+**How to categorize:**
+
+**Step 1:** If needed, add a new category to the enum:
+
+```swift
+public enum FeatureFlagCategory: String, CaseIterable, Comparable {
+    case duckAI = "Duck.ai"
+    // ... existing cases ...
+    case yourNewCategory = "Your Category Name"
+    // ... other cases ...
+}
+```
+
+**Step 2:** Add your feature flag to the appropriate category in the `category` computed property:
+
+```swift
+extension FeatureFlag: FeatureFlagCategorization {
+    public var category: FeatureFlagCategory {
+        switch self {
+        // ... existing cases ...
+        
+        case .yourFeatureFlag1,
+             .yourFeatureFlag2:
+            return .yourCategory
+            
+        default:
+            return .other
+        }
+    }
+}
+```
+
+**Example for Subscription features:**
+
+```swift
+case .privacyProAuthV2,
+     .privacyProFreeTrial,
+     .paidAIChat,
+     .tierMessagingEnabled,
+     .allowProTierPurchase:
+    return .subscription
+```
+
+**Note:** iOS does not have feature flag categories - this is macOS-specific functionality.
+
 ## Step 4: Usage in Code
 
 ### Basic Usage
@@ -687,13 +752,13 @@ When adding a feature flag, ensure you:
 - [ ] Checked for existing similar flags
 - [ ] **Created Asana task in Apple Feature Flags Registry (REQUIRED)**
 - [ ] Asked all required questions
-- [ ] Added enum case with documentation
+- [ ] Added enum case with Asana task link
 - [ ] Updated `defaultValue` switch (if non-default)
 - [ ] Updated `source` switch
 - [ ] Updated `supportsLocalOverriding` switch
 - [ ] Added subfeature to PrivacyFeature.swift (if remote)
+- [ ] Added to appropriate category in FeatureFlagCategory.swift (macOS only, if applicable)
 - [ ] Used descriptive naming
-- [ ] Included Asana task link in code comments
 - [ ] Tested in debug menu
 - [ ] Coordinated with backend (if remote)
 

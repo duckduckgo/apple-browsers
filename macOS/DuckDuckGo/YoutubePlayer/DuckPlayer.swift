@@ -160,11 +160,11 @@ final class DuckPlayer {
     static let duckPlayerHost: String = "player"
     static let commonName = UserText.duckPlayer
 
-    static let shared = DuckPlayer()
-
     var isAvailable: Bool {
         isFeatureEnabled
     }
+
+    let preferences: DuckPlayerPreferences
 
     @Published var mode: DuckPlayerMode
 
@@ -176,10 +176,25 @@ final class DuckPlayer {
         isAvailable || preferences.shouldDisplayContingencyMessage
     }
 
+    convenience init(
+        preferencesPersistor: DuckPlayerPreferencesPersistor,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        internalUserDecider: InternalUserDecider
+    ) {
+        self.init(
+            preferences: DuckPlayerPreferences(
+                persistor: preferencesPersistor,
+                privacyConfigurationManager: privacyConfigurationManager,
+                internalUserDecider: internalUserDecider
+            ),
+            privacyConfigurationManager: privacyConfigurationManager
+        )
+    }
+
     init(
-        preferences: DuckPlayerPreferences = .shared,
-        privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
-        onboardingDecider: DuckPlayerOnboardingDecider = DefaultDuckPlayerOnboardingDecider()
+        preferences: DuckPlayerPreferences,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        onboardingDecider: DuckPlayerOnboardingDecider? = nil
     ) {
         self.preferences = preferences
         isFeatureEnabled = privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .duckPlayer)
@@ -194,7 +209,7 @@ final class DuckPlayer {
             customErrorSignInRequiredSelector = customErrorSettings.signInRequiredSelector
         }
 
-        self.onboardingDecider = onboardingDecider
+        self.onboardingDecider = onboardingDecider ?? DefaultDuckPlayerOnboardingDecider(preferences: preferences)
 
         mode = preferences.duckPlayerMode
         bindDuckPlayerModeIfNeeded()
@@ -297,7 +312,7 @@ final class DuckPlayer {
     private func encodedPlayerSettings(with webView: WKWebView?) async -> InitialPlayerSettings {
         var isPiPEnabled = webView?.configuration.preferences[.allowsPictureInPictureMediaPlayback] == true
 
-        var isAutoplayEnabled = DuckPlayerPreferences.shared.duckPlayerAutoplay
+        var isAutoplayEnabled = preferences.duckPlayerAutoplay
 
         /// If the feature flag is disabled, we want to turn autoPlay to false
         /// https://app.asana.com/0/1204167627774280/1207906550241281/f
@@ -352,7 +367,6 @@ final class DuckPlayer {
     // MARK: - Private
 
     private static let websiteTitlePrefix = "\(commonName) - "
-    private let preferences: DuckPlayerPreferences
 
     private var isFeatureEnabled: Bool = false {
         didSet {
@@ -488,6 +502,10 @@ extension DuckPlayer {
         return DuckPlayer(preferences: preferences, privacyConfigurationManager: privacyConfigurationManager)
     }
 
+    static func mock(withPreferences preferences: DuckPlayerPreferences) -> DuckPlayer {
+        let privacyConfigurationManager = MockPrivacyConfigurationManager()
+        return DuckPlayer(preferences: preferences, privacyConfigurationManager: privacyConfigurationManager)
+    }
 }
 
 #else

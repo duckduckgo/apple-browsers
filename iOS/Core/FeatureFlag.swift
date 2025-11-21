@@ -289,6 +289,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998614203542?focus=true
     case allowProTierPurchase
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211992061067315?focus=true
+    case browsingMenuSheetPresentation
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -309,8 +312,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .syncCreditCards,
              .unifiedURLPredictor,
              .forgetAllInSettings,
-             .vpnConnectionWidePixelMeasurement,
-             .showHideAIGeneratedImagesSection:
+             .vpnConnectionWidePixelMeasurement:
             true
         default:
             false
@@ -380,7 +382,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .standaloneMigration,
              .blackFridayCampaign,
              .tierMessagingEnabled,
-             .allowProTierPurchase:
+             .allowProTierPurchase,
+             .browsingMenuSheetPresentation:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -592,7 +595,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .vpnConnectionWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
         case .onboardingSearchExperience:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(AIChatSubfeature.onboardingSearchExperience))
         case .storeSerpSettings:
             return .remoteReleasable(.subfeature(SERPSubfeature.storeSerpSettings))
         case .showHideAIGeneratedImagesSection:
@@ -603,6 +606,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.tierMessagingEnabled))
         case .allowProTierPurchase:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
+        case .browsingMenuSheetPresentation:
+            return .disabled
         }
     }
 }

@@ -64,16 +64,27 @@ final class TabFaviconView: NSView {
 
 extension TabFaviconView {
 
-    func startSpinnerIfNeeded(url: URL?, isLoading: Bool, error: Error?) {
-        let policy = DefaultLoadingIndicatorPolicy()
-        guard policy.shouldShowLoadingIndicator(url: url, isLoading: isLoading, error: error) else {
+    func startSpinnerIfNeeded(isLoading: Bool, url: URL?, error: Error?) {
+        guard shouldStartSpinner(url: url, isLoading: isLoading, error: error) else {
             stopSpinner()
-            resizeImageIfNeeded(scaleDown: false)
             return
         }
 
         startSpinner()
+    }
+
+    func startSpinner() {
+        spinnerView.startAnimating()
         resizeImageIfNeeded(scaleDown: true)
+    }
+
+    func stopSpinner(animated: Bool = true) {
+        spinnerView.stopAnimating(animated: animated)
+        resizeImageIfNeeded(scaleDown: false)
+    }
+
+    func refreshSpinnerColorsIfNeeded(rendered: Bool) {
+        spinnerView.refreshSpinnerColorsIfNeeded(rendered: rendered)
     }
 
     /// Renders a given Favicon, with a crossfade animation.
@@ -102,16 +113,13 @@ extension TabFaviconView {
 
 private extension TabFaviconView {
 
-    func startSpinner() {
-        spinnerView.startAnimating()
-    }
-
-    func stopSpinner(animated: Bool = true) {
-        spinnerView.stopAnimating(animated: animated)
-    }
-
     func shouldApplyCrossfade(targetImage: NSImage?) -> Bool {
         placeholderView.isShown && targetImage != nil || imageView.image != nil && imageView.image != targetImage
+    }
+
+    func shouldStartSpinner(url: URL?, isLoading: Bool, error: Error?) -> Bool {
+        let policy = DefaultLoadingIndicatorPolicy()
+        return policy.shouldShowLoadingIndicator(url: url, isLoading: isLoading, error: error)
     }
 }
 

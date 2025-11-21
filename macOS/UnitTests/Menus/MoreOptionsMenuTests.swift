@@ -588,6 +588,20 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenTabIsDuckAiThenFireproofSiteItemIsPresentAndDisabled() throws {
+        let url = try XCTUnwrap("https://duck.ai".url)
+        let tab = Tab(content: .url(url, source: .link))
+        tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
+        tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
+
+        setupMoreOptionsMenu()
+        moreOptionsMenu.update()
+
+        let fireproofingItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.fireproofSite })
+        XCTAssertFalse(fireproofingItem.isEnabled)
+    }
+
+    @MainActor
     func testWhenTabSupportsFindInPageThenFindInPageItemIsPresentAndEnabled() throws {
         let tabContentsSupportingFindInPage: [Tab.TabContent] = [
             .url(try XCTUnwrap("https://example.com".url), credential: nil, source: .ui),

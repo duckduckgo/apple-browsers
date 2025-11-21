@@ -49,6 +49,7 @@ final class AIChatPreferences: ObservableObject {
         showShortcutInAddressBar = storage.showShortcutInAddressBar
         openAIChatInSidebar = storage.openAIChatInSidebar
         shouldAutomaticallySendPageContext = storage.shouldAutomaticallySendPageContext
+        showSearchAndDuckAIToggle = storage.showSearchAndDuckAIToggle
 
         subscribeToShowInApplicationMenuSettingsChanges()
     }
@@ -89,6 +90,12 @@ final class AIChatPreferences: ObservableObject {
             .receive(on: DispatchQueue.main)
             .assign(to: \.openAIChatInSidebar, onWeaklyHeld: self)
             .store(in: &cancellables)
+
+        storage.showSearchAndDuckAITogglePublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.showSearchAndDuckAIToggle, onWeaklyHeld: self)
+            .store(in: &cancellables)
     }
 
     // Options visibility
@@ -115,6 +122,10 @@ final class AIChatPreferences: ObservableObject {
 
     var shouldShowHideAIGeneratedImagesSection: Bool {
         featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
+    }
+
+    var shouldShowSearchAndDuckAIToggleOption: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
     }
 
     // Properties for managing the current state of AI Chat preference options
@@ -149,6 +160,10 @@ final class AIChatPreferences: ObservableObject {
 
     @Published var shouldAutomaticallySendPageContext: Bool {
         didSet { storage.shouldAutomaticallySendPageContext = shouldAutomaticallySendPageContext }
+    }
+
+    @Published var showSearchAndDuckAIToggle: Bool {
+        didSet { storage.showSearchAndDuckAIToggle = showSearchAndDuckAIToggle }
     }
 
     @MainActor func openLearnMoreLink() {

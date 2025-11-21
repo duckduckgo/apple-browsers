@@ -395,6 +395,7 @@ private class TabBarViewModelMock: TabBarViewModel {
     var progressPublisher: Published<Double>.Publisher {
         $progress
     }
+
     var loadedPageDOMPublisher: PassthroughSubject<Void, Never>
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never>
 

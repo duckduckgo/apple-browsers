@@ -65,7 +65,6 @@ extension TabViewModel: TabBarViewModel {
             .combineLatest(tab.$error)
             .eraseToAnyPublisher()
     }
-
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { tab.webViewRenderingProgressDidChangePublisher }
     var loadedPageDOMPublisher: PassthroughSubject<Void, Never> {
         tab.loadedPageDOMPublisher
@@ -624,7 +623,7 @@ extension TabBarItemCellView: ThemeUpdateListening {
         rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
     }
 }
-
+// MARK: NSAccessibilityRadioButton
 extension TabBarViewItem/*: NSAccessibilityRadioButton*/ {
 
     @objc func isAccessibilityElement() -> Bool {
@@ -1221,13 +1220,13 @@ final class TabBarViewItem: NSCollectionViewItem {
         cell.startSpinnerIfNeeded(isLoading: isLoading, error: error, url: url)
     }
 
+    private func stopSpinner() {
+        cell.faviconView.stopSpinner()
+    }
+
     private func refreshProgressColors(rendered: Bool) {
         let url = tabViewModel?.url
         cell.refreshProgressColors(rendered: rendered, url: url)
-    }
-
-    private func stopSpinner() {
-        cell.faviconView.stopSpinner()
     }
 
     private func updateAudioPlayState(_ audioState: WKWebView.AudioState) {

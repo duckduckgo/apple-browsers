@@ -18,6 +18,7 @@
 
 import Cocoa
 import WebKit
+import BrowserServicesKit
 
 protocol PermissionContextMenuDelegate: AnyObject {
     func permissionContextMenu(_ menu: PermissionContextMenu, mutePermissions: [PermissionType])
@@ -26,6 +27,8 @@ protocol PermissionContextMenuDelegate: AnyObject {
     func permissionContextMenu(_ menu: PermissionContextMenu, alwaysAllowPermission: PermissionType)
     func permissionContextMenu(_ menu: PermissionContextMenu, alwaysDenyPermission: PermissionType)
     func permissionContextMenu(_ menu: PermissionContextMenu, resetStoredPermission: PermissionType)
+    func permissionContextMenu(_ menu: PermissionContextMenu, resetTemporaryPopupAllowance: Void)
+    func permissionContextMenu(_ menu: PermissionContextMenu, setTemporaryPopupAllowance: Void)
     func permissionContextMenuReloadPage(_ menu: PermissionContextMenu)
 }
 
@@ -35,6 +38,8 @@ final class PermissionContextMenu: NSMenu {
     let permissions: [(key: PermissionType, value: PermissionState)]
     weak var actionDelegate: PermissionContextMenuDelegate?
     private let permissionManager: PermissionManagerProtocol
+    private let featureFlagger: FeatureFlagger
+    private let hasTemporaryPopupAllowance: Bool
 
     required init(coder: NSCoder) {
         fatalError("PermissionContextMenu: Bad initializer")
@@ -43,11 +48,15 @@ final class PermissionContextMenu: NSMenu {
     init(permissionManager: PermissionManagerProtocol,
          permissions: [(key: PermissionType, value: PermissionState)],
          domain: String,
-         delegate: PermissionContextMenuDelegate?) {
+         delegate: PermissionContextMenuDelegate?,
+         featureFlagger: FeatureFlagger,
+         hasTemporaryPopupAllowance: Bool = false) {
         self.permissionManager = permissionManager
         self.domain = domain.droppingWwwPrefix()
         self.permissions = permissions
         self.actionDelegate = delegate
+        self.featureFlagger = featureFlagger
+        self.hasTemporaryPopupAllowance = hasTemporaryPopupAllowance
         super.init(title: "")
 
         setupMenuItems()
@@ -129,18 +138,31 @@ final class PermissionContextMenu: NSMenu {
         }
     }
 
+    private var emptyUrlPopupQueries: [PermissionAuthorizationQuery] = []
+
     private func setupPopupsPermissionsMenuItems() {
         var popupsItemsAdded = false
+
+        // Count total pop-up permissions
+        let popupCount = permissions.filter { $0.key == .popups && $0.value.isRequested }.count
+
         for (permission, state) in permissions {
             guard case (.popups, .requested(let query)) = (permission, state) else { continue }
 
             if !popupsItemsAdded {
-                addItem(.popupPermissionRequested(domain: domain))
-
+                addItem(.popupPermissionRequested(domain: domain, count: popupCount))
                 popupsItemsAdded = true
             }
 
-            addItem(.openPopup(query: query, permission: permission, target: self))
+            // Check if we should group empty/about URLs
+            let shouldGroupEmptyUrls = featureFlagger.isFeatureOn(.popupBlocking) && featureFlagger.isFeatureOn(.suppressEmptyPopUpsOnApproval)
+            let isEmptyUrl = query.url?.isEmpty ?? true || query.url?.navigationalScheme == .about
+
+            if shouldGroupEmptyUrls && isEmptyUrl {
+                emptyUrlPopupQueries.append(query)
+            } else {
+                addItem(.openPopup(query: query, permission: permission, target: self))
+            }
         }
     }
 
@@ -155,7 +177,16 @@ final class PermissionContextMenu: NSMenu {
             addItem(.persistenceHeaderItem(for: permission, on: domain))
 
             let persistedValue = permissionManager.permission(forDomain: domain, permissionType: permission)
-            addItem(.alwaysAsk(permission, on: domain, target: self, isChecked: persistedValue == .ask))
+
+            // Add temporary "Allow for this page" option for pop-ups
+            if permission == .popups,
+               featureFlagger.isFeatureOn(.popupBlocking) && featureFlagger.isFeatureOn(.allowPopupsForCurrentPage) {
+                addItem(.allowPopups(queries: emptyUrlPopupQueries, target: self, isChecked: hasTemporaryPopupAllowance && persistedValue == .ask))
+            }
+
+            // Don't check "Notify" if temporary pop-up allowance is active for this page
+            let isNotifyChecked = (permission == .popups && hasTemporaryPopupAllowance) ? false : (persistedValue == .ask)
+            addItem(.alwaysAsk(permission, on: domain, target: self, isChecked: isNotifyChecked))
 
             if permission.canPersistGrantedDecision {
                 addItem(.alwaysAllow(permission, on: domain, target: self, isChecked: persistedValue == .allow))
@@ -193,6 +224,11 @@ final class PermissionContextMenu: NSMenu {
             return
         }
         actionDelegate?.permissionContextMenu(self, alwaysAllowPermission: permission)
+
+        // Clear temporary pop-up allowance when user selects "Always allow"
+        if permission == .popups {
+            actionDelegate?.permissionContextMenu(self, resetTemporaryPopupAllowance: ())
+        }
     }
     @objc func alwaysAskPermission(_ sender: NSMenuItem) {
         guard let permission = sender.representedObject as? PermissionType else {
@@ -200,6 +236,11 @@ final class PermissionContextMenu: NSMenu {
             return
         }
         actionDelegate?.permissionContextMenu(self, resetStoredPermission: permission)
+
+        // Reset temporary pop-up allowance when user selects "Notify"
+        if permission == .popups {
+            actionDelegate?.permissionContextMenu(self, resetTemporaryPopupAllowance: ())
+        }
     }
     @objc func alwaysDenyPermission(_ sender: NSMenuItem) {
         guard let permission = sender.representedObject as? PermissionType else {
@@ -207,6 +248,11 @@ final class PermissionContextMenu: NSMenu {
             return
         }
         actionDelegate?.permissionContextMenu(self, alwaysDenyPermission: permission)
+
+        // Clear temporary pop-up allowance when user selects "Always deny"
+        if permission == .popups {
+            actionDelegate?.permissionContextMenu(self, resetTemporaryPopupAllowance: ())
+        }
     }
     @objc func reload(_ sender: NSMenuItem) {
         actionDelegate?.permissionContextMenuReloadPage(self)
@@ -218,6 +264,21 @@ final class PermissionContextMenu: NSMenu {
             return
         }
         actionDelegate?.permissionContextMenu(self, allowPermissionQuery: query)
+    }
+
+    @objc func allowMultiplePermissionQueries(_ sender: NSMenuItem) {
+        guard let queries = sender.representedObject as? [PermissionAuthorizationQuery] else {
+            assertionFailure("Expected [PermissionAuthorizationQuery]")
+            return
+        }
+        // Allow all queries in the group
+        for query in queries {
+            actionDelegate?.permissionContextMenu(self, allowPermissionQuery: query)
+        }
+        // Reset any persisted pop-up permission to "Notify" before setting temporary allowance
+        actionDelegate?.permissionContextMenu(self, resetStoredPermission: .popups)
+        // Set temporary pop-up allowance for this page
+        actionDelegate?.permissionContextMenu(self, setTemporaryPopupAllowance: ())
     }
 
     @objc func openSystemPreferences(_ sender: NSMenuItem) {
@@ -356,8 +417,8 @@ private extension NSMenuItem {
         return item
     }
 
-    static func popupPermissionRequested(domain: String?) -> NSMenuItem {
-        let title = UserText.permissionPopupTitle
+    static func popupPermissionRequested(domain: String?, count: Int) -> NSMenuItem {
+        let title = UserText.permissionPopupTitle(count: count)
         let attributedTitle = NSMutableAttributedString(string: title)
         attributedTitle.setAttributes([.font: NSFont.systemFont(ofSize: 11.0)], range: title.fullRange)
 
@@ -395,6 +456,18 @@ private extension NSMenuItem {
         let item = NSMenuItem(title: title, action: #selector(PermissionContextMenu.allowPermissionQuery), keyEquivalent: "")
         item.representedObject = query
         item.target = target
+        return item
+    }
+
+    static func allowPopups(queries: [PermissionAuthorizationQuery], target: PermissionContextMenu, isChecked: Bool) -> NSMenuItem {
+        let item = NSMenuItem(title: UserText.permissionPopupAllowPopupsForPage,
+                              action: #selector(PermissionContextMenu.allowMultiplePermissionQueries),
+                              keyEquivalent: "")
+        item.representedObject = queries
+        item.target = target
+        if isChecked {
+            item.state = .on
+        }
         return item
     }
 

@@ -235,17 +235,12 @@ private enum ColorAnimation {
     static let completeTitleAlpha: CGFloat = 1
 
     static func initialAlpha(url: URL?) -> CGFloat {
-        titleAlpha(url: url, previousURL: nil, rendered: false)
+        titleAlpha(url: url, rendered: false)
     }
 
-    static func titleAlpha(url: URL?, previousURL: URL? = nil, rendered: Bool) -> CGFloat {
+    static func titleAlpha(url: URL?, rendered: Bool) -> CGFloat {
         if let url, url.isNTP {
             return specialTitleAlpha
-        }
-
-        /// Reload / Back / Forward scenario
-        if url?.host == previousURL?.host {
-            return completeTitleAlpha
         }
 
         return rendered ? completeTitleAlpha : loadingTitleAlpha

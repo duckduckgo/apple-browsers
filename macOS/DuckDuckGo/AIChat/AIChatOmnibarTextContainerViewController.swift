@@ -21,6 +21,11 @@ import Combine
 
 final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpdateListening, NSTextViewDelegate {
 
+    private enum Constants {
+        static let bottomPadding: CGFloat = 50.0
+        static let minimumPanelHeight: CGFloat = 100.0
+    }
+
     private let backgroundView = MouseBlockingBackgroundView()
     private let containerView = NSView()
     private let scrollView = NSScrollView()
@@ -87,6 +92,10 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder
+        scrollView.scrollerStyle = .overlay
+        scrollView.verticalScroller?.alphaValue = 0
+        scrollView.horizontalScroller?.alphaValue = 0
+
         containerView.addSubview(scrollView)
 
         textView.isEditable = true
@@ -119,7 +128,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             scrollView.topAnchor.constraint(equalTo: containerView.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -Constants.bottomPadding),
         ])
     }
 
@@ -165,7 +174,13 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     @objc func textDidChange(_ notification: Notification) {
         omnibarController.updateText(textView.string)
+        let currentScrollPosition = scrollView.documentVisibleRect.origin
         updatePanelHeight()
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.textView.scroll(currentScrollPosition)
+        }
     }
 
     private func updatePanelHeight() {
@@ -176,18 +191,16 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     func calculateDesiredPanelHeight() -> CGFloat {
         guard let layoutManager = textView.layoutManager,
               let textContainer = textView.textContainer else {
-            return 100 // Fallback to minimum height
+            return Constants.minimumPanelHeight // Fallback to minimum height
         }
         
         // Force layout to ensure we have accurate measurements
         layoutManager.ensureLayout(for: textContainer)
         
-        // Get the actual height of the text content
         let usedRect = layoutManager.usedRect(for: textContainer)
-        
-        // Add text container insets (top + bottom) and some padding for the panel
         let textInsets = textView.textContainerInset
-        let totalHeight = usedRect.height + textInsets.height + textInsets.height + 20 // 20pt for additional padding
+        let bottomSpacing: CGFloat = Constants.bottomPadding
+        let totalHeight = usedRect.height + textInsets.height + textInsets.height + 20 + bottomSpacing
         
         return totalHeight
     }
@@ -238,9 +251,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         let shouldScroll = contentHeight > maxHeight
         
         scrollView.hasVerticalScroller = shouldScroll
-        
+
         if shouldScroll {
-            // Scroll to bottom when content exceeds visible area
             textView.scrollToEndOfDocument(nil)
         }
     }

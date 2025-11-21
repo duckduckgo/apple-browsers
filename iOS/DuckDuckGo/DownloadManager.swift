@@ -127,7 +127,7 @@ class DownloadManager {
         }
     }
 
-    private func moveToDownloadDirectortIfNeeded(_ download: Download) {
+    private func moveToDownloadDirectoryIfNeeded(_ download: Download) {
         guard !download.temporary else { return }
         downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
         move(download, toPath: downloadsDirectoryHandler.downloadsDirectory)
@@ -199,7 +199,7 @@ extension DownloadManager {
 
 extension DownloadManager: DownloadDelegate {
     func downloadDidFinish(_ download: Download, error: Error?) {
-        moveToDownloadDirectortIfNeeded(download)
+        moveToDownloadDirectoryIfNeeded(download)
         var userInfo: [AnyHashable: Any] = [UserInfoKeys.download: download]
         if let error = error {
             userInfo[UserInfoKeys.error] = error

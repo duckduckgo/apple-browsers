@@ -212,6 +212,8 @@ public extension DesignSystemImages {
 
         public enum Size128 {
             public static var success: DesignSystemImage { .init(resource: .success128) }
+            public static var fileDrag: DesignSystemImage { .init(resource: .fileDrag128) }
+            public static var fileDrop: DesignSystemImage { .init(resource: .fileDrop128) }
         }
     }
 }

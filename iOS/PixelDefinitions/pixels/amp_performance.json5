@@ -1,0 +1,10 @@
+{
+    "m_debug_amp-keyword-detection-performance": {
+        "description": "Fires when history database failed to load.",
+        "owners": ["jaceklyp"],
+        "triggers": ["exception"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "duration", "rounded_url_size"],
+        "expires": "2025-12-19"
+    }
+}

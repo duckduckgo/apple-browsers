@@ -181,6 +181,9 @@ final class AddressBarViewController: NSViewController {
 
     /// save mouse-down position to handle same-place clicks outside of the Address Bar to remove first responder
     private var clickPoint: NSPoint?
+    
+    /// Callback to check if a point (in window coordinates) is within the AI Chat omnibar
+    var isPointInAIChatOmnibar: ((NSPoint) -> Bool)?
 
     weak var delegate: AddressBarViewControllerDelegate?
 
@@ -960,6 +963,15 @@ final class AddressBarViewController: NSViewController {
             }
 
         } else if window.isMainWindow {
+            let locationInWindow = event.locationInWindow
+            
+            // Don't set clickPoint if clicking on AI Chat omnibar container
+            if selectionState == .activeWithAIChat, 
+               let isPointInAIChatOmnibar = isPointInAIChatOmnibar,
+               isPointInAIChatOmnibar(locationInWindow) {
+                return event
+            }
+            
             self.clickPoint = window.convertPoint(toScreen: event.locationInWindow)
         }
         return event

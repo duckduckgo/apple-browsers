@@ -329,11 +329,7 @@ final class MainViewController: NSViewController {
         mainView.setupAIChatOmnibarTextContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
         mainView.setupAIChatOmnibarContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
 
-        // Wire the custom toggle control reference to the AI Chat text container for TAB key navigation
-        wireToggleReferenceToAIChatTextContainer()
-        
-        // Wire the height change callback from text container to main view
-        wireAIChatOmnibarHeightUpdates()
+        wireAIChatOmnibarUpdates()
     }
 
     override func viewWillAppear() {
@@ -535,6 +531,12 @@ final class MainViewController: NSViewController {
         )
     }
 
+    private func wireAIChatOmnibarUpdates() {
+        wireToggleReferenceToAIChatTextContainer()
+        wireAIChatOmnibarHeightUpdates()
+        wireAIChatOmnibarHitTesting()
+    }
+
     @objc private func windowDidResize() {
         guard mainView.isAIChatOmnibarContainerShown else { return }
         
@@ -545,6 +547,28 @@ final class MainViewController: NSViewController {
         // Update scrolling behavior
         let maxHeight = mainView.calculateMaxAIChatOmnibarHeight()
         aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
+    }
+    
+    private func wireAIChatOmnibarHitTesting() {
+        navigationBarViewController.addressBarViewController?.isPointInAIChatOmnibar = { [weak self] locationInWindow in
+            guard let self = self else { return false }
+            guard self.mainView.isAIChatOmnibarContainerShown else { return false }
+            
+            // Check if point is in container view
+            let containerFrame = self.mainView.aiChatOmnibarContainerView.frame
+            let pointInMainView = self.mainView.convert(locationInWindow, from: nil)
+            if containerFrame.contains(pointInMainView) {
+                return true
+            }
+            
+            // Check if point is in text container view
+            let textContainerFrame = self.mainView.aiChatOmnibarTextContainerView.frame
+            if textContainerFrame.contains(pointInMainView) {
+                return true
+            }
+            
+            return false
+        }
     }
 
     // Can be updated via keyboard shortcut so needs to be internal visibility

@@ -1078,7 +1078,7 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
 
             updateMode()
             addressBarTextField.makeMeFirstResponder()
-            
+
             if shouldRestoreFromSharedState {
                 addressBarTextField.setCursorPositionAfterRestore()
             }

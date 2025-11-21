@@ -26,7 +26,6 @@ import os.log
 public struct PixelParameters {
     public static let url = "url"
     public static let duration = "dur"
-    public static let urlLength = "url_length"
     static let test = "test"
     public static let appVersion = "appVersion"
     public static let osVersion = "osVersion"

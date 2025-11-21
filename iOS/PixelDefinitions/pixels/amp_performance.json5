@@ -1,6 +1,6 @@
 {
     "m_debug_amp-keyword-detection-performance": {
-        "description": "Fires when history database failed to load.",
+        "description": "Fires when AMP keyword lookup takes longer than 5s, causing the app to hang.",
         "owners": ["jaceklyp"],
         "triggers": ["exception"],
         "suffixes": ["platform", "form_factor"],

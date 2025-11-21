@@ -138,15 +138,12 @@ private extension XCUIApplication {
 
         let datePicker = datePickers.firstMatch
         XCTAssertTrue(datePicker.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Date picker should exist")
-        let dateComponents = Calendar.current.dateComponents([.day, .month, .year], from: newDate)
-        guard let day = dateComponents.day,
-              let month = dateComponents.month,
-              let year = dateComponents.year else {
-            XCTFail("Failed to extract date components from \(newDate)")
-            return
-        }
 
-        let dateString = String(format: "%02d/%02d/%04d", day, month, year)
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale.current
+        dateFormatter.dateFormat = DateFormatter.dateFormat(fromTemplate: "MM/dd/yyyy", options: 0, locale: Locale.current)
+        let dateString = dateFormatter.string(from: newDate)
+
         datePicker.typeText(dateString)
         datePicker.typeText("\r") // Enter to confirm
     }

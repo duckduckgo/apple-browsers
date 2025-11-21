@@ -56,6 +56,9 @@ public struct UserText {
     public static let actionPrint = NSLocalizedString("action.title.print", value: "Print", comment: "Print action in the menu header")
     public static let actionPrintSite = NSLocalizedString("action.title.print.site", value: "Print", comment: "Print action in the menu list")
     public static let actionOpenAIChat = NSLocalizedString("action.title.duckai", value: "Duck.ai", comment: "Open AI Chat action in the menu list")
+    public static let actionNewAIChat = NSLocalizedString("action.title.aiChat.new", value: "AI Chat", comment: "Start new AI Chat action in the menu list")
+    public static let actionAIChatHistory = NSLocalizedString("action.title.aiChat.history", value: "Duck.ai Chats", comment: "Open AI Chat history action in the menu list")
+    public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
 
     public static let actionOpenBookmarks = NSLocalizedString("action.title.bookmarks", value: "Bookmarks", comment: "Button: Open bookmarks list")
     public static let actionOpenPasswords = NSLocalizedString("action.title.passwords", value: "Passwords", comment: "Button: Open passwords list")
@@ -1381,7 +1384,7 @@ public struct UserText {
     public static let settingsIcon = NSLocalizedString("settings.icon", value: "App Icon", comment: "Settings screen cell text for app icon selection")
     public static let settingsFirebutton = NSLocalizedString("settings.firebutton", value: "Fire Button Animation", comment: "Settings screen cell text for fire button animation")
     public static let settingsText = NSLocalizedString("settings.text.size", value: "Default Text Zoom", comment: "Settings screen cell text for text size")
-    public static let settingsAddressBar = NSLocalizedString("settings.appearance.address.bar", value: "Address Bar Position", comment: "Settings screen cell text for addess bar position")
+    public static let settingsAddressBarPosition = NSLocalizedString("settings.appearance.address.bar", value: "Address Bar Position", comment: "Settings screen cell text for addess bar position")
     public static let settingsFullURL = NSLocalizedString("settings.address.full.url", value: "Show Full Site Address", comment: "Settings screen cell title for toggling full URL visibility in address bar")
     public static let settingsRefreshButtonPositionTitle = NSLocalizedString("settings.refreshButton.position.title", value: "Reload Button Position", comment: "Settings screen cell text for setting the refresh button position.")
     public static let settingsRefreshButtonPositionAddressBar = NSLocalizedString("settings.refreshButton.position.addressBar", value: "Address Bar", comment: "Settings screen option to set refresh button in the address bar")
@@ -1634,6 +1637,16 @@ public struct UserText {
     public static let subscriptionRestoreExpiredFoundMessage = NSLocalizedString("subscription.expired.alert.message", value: "The subscription associated with this Apple Account is no longer active.", comment: "Alert content for not found subscription")
     public static let subscriptionRestoreNotFoundPlans = NSLocalizedString("subscription.notFound.view.plans", value: "View Plans", comment: "View plans button text")
     public static let subscriptionRestoreSuccessfulTitle = NSLocalizedString("subscription.restore.success.alert.title", value: "You’re all set.", comment: "Alert title for restored purchase")
+    
+    // Black Friday Campaign
+    public static let blackFridayCampaignViewPlansCTAFormat = NSLocalizedString("black-friday.campaign.view.plans.cta",
+                                                                               value: "Save %d%% on First Year",
+                                                                               comment: "View plans button text during Black Friday campaign")
+
+    public static func blackFridayCampaignViewPlansCTA(discountPercent: Int) -> String {
+        String(format: blackFridayCampaignViewPlansCTAFormat, discountPercent)
+    }
+    
     public static let subscriptionRestoreSuccessfulMessage = NSLocalizedString("subscription.restore.success.alert.message", value: "Your purchases have been restored.", comment: "Alert message for restored purchase")
     public static let subscriptionRestoreSuccessfulButton = NSLocalizedString("subscription.restore.success.alert.button", value: "OK", comment: "Alert button text for restored purchase alert")
 
@@ -1666,16 +1679,12 @@ public struct UserText {
     static let winBackCampaignModalCTA = NSLocalizedString("win-back.campaign.modal.cta", value: "See Offer", comment: "CTA of the modal dialog promoting the win-back campaign")
     static let winBackCampaignModalDismiss = NSLocalizedString("win-back.campaign.modal.dismiss", value: "Not Now", comment: "Dismiss of the modal dialog promoting the win-back campaign")
 
-    static let winBackCampaignLastDayMessageTitle = NSLocalizedString("win-back.campaign.last-day.message.title", value: "Last day to save 25%!", comment: "Title of message displayed on the last day of the win-back campaign")
-    static let winBackCampaignLastDayMessageText = NSLocalizedString("win-back.campaign.last-day.message.text", value: "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%.", comment: "Message of the message displayed on the last day of the win-back campaign")
-    static let winBackCampaignLastDayMessageCTA = NSLocalizedString("win-back.campaign.last-day.message.cta", value: "See Offer", comment: "CTA of the message displayed on the last day of the win-back campaign")
-    static let winBackCampaignLastDayMessageDismiss = NSLocalizedString("win-back.campaign.last-day.message.dismiss", value: "Not Now", comment: "Dismiss of the message displayed on the last day of the win-back campaign")
-
     static let winBackCampaignMenuBadgeText = NSLocalizedString("win-back.campaign.menu.badge.text", value: "SAVE 25%", comment: "Text for the badge displayed on the Subscription menu item during the win-back campaign")
 
     static let winBackCampaignSubscriptionSettingsMenuLoggedOutSubtitle = NSLocalizedString("win-back.campaign.subscription.settings.menu.logged-out.subtitle", value: "Limited time offer!", comment: "Subtitle of the Subscription settings menu item during the win-back campaign")
 
-    static let winBackCampaignSubscriptionSettingsPageResubscribeCTA = NSLocalizedString("win-back.campaign.subscription.settings.page.resubscribe.cta", value: "Resubscribe and Save 25%", comment: "CTA of the message displayed for logged in users to resubscribe during the win-back campaign")
+    static let winBackCampaignSubscriptionSettingsPageResubscribeCTA = NSLocalizedString("win-back.campaign.subscription.settings.page.resubscribe.cta", value: "Resubscribe", comment: "CTA of the message displayed for logged in users to resubscribe during the win-back campaign")
+    static let winBackCampaignSubscriptionSettingsPageResubscribeSubtitle = NSLocalizedString("win-back.campaign.subscription.settings.page.resubscribe.subtitle", value: "Stay protected with our VPN, private AI, and more.\nLimited time offer.", comment: "Subtitle for resubscribe CTA for users eligible for the win-back offer.")
 
     static let winBackCampaignSubscriptionSettingsMenuTitle = NSLocalizedString("win-back.campaign.subscription.settings.menu.title", value: "Resubscribe and Save 25%", comment: "Title of the Subscription settings menu item during the win-back campaign")
     static let winBackCampaignSubscriptionSettingsMenuSubtitle = NSLocalizedString("win-back.campaign.subscription.settings.menu.subtitle", value: "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%.\nLimited time offer.", comment: "Subtitle of the Subscription settings menu item during the win-back campaign")
@@ -1787,6 +1796,10 @@ public struct UserText {
 
     public static let settingsAiFeaturesSearchAssistSubtitle = NSLocalizedString("settings.features.assist.subtitle", value: "Choose how often you want AI-assisted answers to appear in your searches", comment: "A description of what the AI Chat toggle does")
 
+    public static let settingsAiFeaturesHideAIGeneratedImages = NSLocalizedString("settings.aifeatures.hide.ai.generated.images", value: "Hide AI-Generated Images", comment: "Title of hide AI-generated images settings link")
+
+    public static let settingsAiFeaturesHideAIGeneratedImagesSubtitle = NSLocalizedString("settings.aifeatures.hide.ai.generated.images.subtitle", value: "Filters out AI-Generated images from image search results", comment: "Description of what the hide AI-generated images feature does")
+
     public static let settingsAiChatShortcuts = NSLocalizedString("settings.aichat.shortcuts", value: "Duck.ai Shortcuts", comment: "Settings screen text for showing AI Chat in various places in the app")
 
     public static let settingsManageAIChatShortcuts = NSLocalizedString("settings.aichat.manage.shortcuts", value: "Manage Duck.ai Shortcuts", comment: "Top level settings for managing AI Chat shortcuts")
@@ -1884,14 +1897,6 @@ public struct UserText {
         public enum BrowsersComparison {
             public static let title = NSLocalizedString("onboarding.highlights.browsers.title", value: "Protections activated!", comment: "The title of the dialog to show the privacy features that DuckDuckGo offers")
             public static let cta = NSLocalizedString("onboarding.browsers.cta", value: "Choose Your Browser", comment: "Button to change the default browser")
-
-            public enum Features {
-                public static let privateSearch = NSLocalizedString("onboarding.browsers.features.privateSearch.title", value: "Search privately by default", comment: "Message to highlight browser capability of private searches")
-                public static let trackerBlockers = NSLocalizedString("onboarding.highlights.browsers.features.trackerBlocker.title", value: "Block 3rd-party trackers", comment: "Message to highlight browser capability of blocking 3rd-party trackers")
-                public static let cookiePopups = NSLocalizedString("onboarding.highlights.browsers.features.cookiePopups.title", value: "Block cookie pop-ups", comment: "Message to highlight how the browser allows you to block cookie pop-ups")
-                public static let creepyAds = NSLocalizedString("onboarding.highlights.browsers.features.creepyAds.title", value: "Block targeted ads", comment: "Message to highlight browser capability of blocking creepy ads")
-                public static let eraseBrowsingData = NSLocalizedString("onboarding.highlights.browsers.features.eraseBrowsingData.title", value: "Delete browsing data with one button", comment: "Message to highlight browser capability of swiftly erase browsing data")
-            }
         }
 
         enum AppIconSelection {
@@ -1908,6 +1913,37 @@ public struct UserText {
             public static let bottomTitle = NSLocalizedString("onboarding.highlights.addressBarPosition.bottom.title", value: "Bottom", comment: "The title of the option to set the address bar to the bottom.")
             public static let bottomMessage = NSLocalizedString("onboarding.highlights.addressBarPosition.bottom.message", value: "Easy to reach", comment: "The message of the option to set the address bar to the bottom.")
             public static let cta = NSLocalizedString("onboarding.highlights.addressBarPosition.cta", value: "Next", comment: "The title of the CTA to progress to the next onboarding screen.")
+        }
+
+        enum SearchExperience {
+            public static let title = NSLocalizedString("onboarding.highlights.searchExperience.title", value: "Want easy access to private AI chat?", comment: "The title of the onboarding dialog popup to select the preferred search experience.")
+            public static let footer = NSLocalizedString("onboarding.highlights.searchExperience.footer", value: "AI features are private and optional. You can make changes in Settings > AI Features.", comment: "The footer disclaimer text for the search experience onboarding screen.")
+            public static let cta = NSLocalizedString("onboarding.highlights.searchExperience.cta", value: "Next", comment: "The title of the CTA to progress to the next onboarding screen.")
+            
+            static func footerAttributed() -> NSAttributedString {
+                let settingsPathBold = NSLocalizedString(
+                    "onboarding.highlights.searchExperience.footer.settings-path-bold",
+                    value: "Settings > AI Features.",
+                    comment: "Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string."
+                )
+                
+                let fullText = String(format: NSLocalizedString(
+                    "onboarding.highlights.searchExperience.footer.formatted",
+                    value: "AI features are private and optional. You can make changes in %@",
+                    comment: "Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold)."), settingsPathBold)
+                
+                let attributedString = NSMutableAttributedString(string: fullText)
+                
+                let boldAttributes: [NSAttributedString.Key: Any] = [
+                    .font: UIFont.daxFootnoteSemibold()
+                ]
+                
+                if let settingsPathRange = fullText.range(of: settingsPathBold) {
+                    attributedString.addAttributes(boldAttributes, range: NSRange(settingsPathRange, in: fullText))
+                }
+                
+                return attributedString
+            }
         }
 
         enum ContextualOnboarding {
@@ -2010,6 +2046,8 @@ public struct UserText {
     public static let dataImportSummarySyncPasswords = NSLocalizedString("data.import.summary.button.title.sync.passwords", value: "Passwords", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
     public static let dataImportSummarySyncBookmarks = NSLocalizedString("data.import.summary.button.title.sync.bookmarks", value: "Bookmarks", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
     public static let dataImportSummarySyncData = NSLocalizedString("data.import.summary.button.title.sync.data", value: "Data", comment: "Parameter for data.import.summary.button.title.sync")
+    public static let dataImportSummaryVisitSyncSettings = NotLocalizedString("data.import.summary.message.sync.settings", value: "Visit Settings to securely sync bookmarks and passwords between your devices.", comment: "Message informing the user to visit settings to sync bookmarks and passwords. Used from What's New and for en_US locale only.")
+
     public enum SubscriptionPromotionOnboarding {
         public enum Promo {
             static let title = NSLocalizedString("onboarding.privacypro.promo.title", value: "Oh, before I forget...", comment: "The title of the onboarding dialog that promotes Privacy Pro")

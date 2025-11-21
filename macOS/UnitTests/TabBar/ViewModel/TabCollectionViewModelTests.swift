@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Combine
+import SharedTestUtilities
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 // MARK: - Tests for TabCollectionViewModel with PinnedTabsManager but without pinned tabs
@@ -341,7 +343,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     func testWhenInsertOrAppendCalledPreferencesAreRespected() {
         let persistor = MockTabsPreferencesPersistor()
         var tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
-                                                            tabsPreferences: TabsPreferences(persistor: persistor))
+                                                            tabsPreferences: TabsPreferences(persistor: persistor, windowControllersManager: WindowControllersManagerMock()))
 
         let index = tabCollectionViewModel.tabCollection.tabs.count
         tabCollectionViewModel.insertOrAppendNewTab()
@@ -349,7 +351,7 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         persistor.newTabPosition = .nextToCurrent
         tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
-                                                        tabsPreferences: TabsPreferences(persistor: persistor))
+                                                        tabsPreferences: TabsPreferences(persistor: persistor, windowControllersManager: WindowControllersManagerMock()))
 
         tabCollectionViewModel.appendNewTab()
         tabCollectionViewModel.select(at: .unpinned(0))
@@ -637,6 +639,53 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssertEqual(destinationTabCollectionViewModel.tabs.count, 3)
         XCTAssertEqual(destinationTabCollectionViewModel.tabs[0].content, sourceTabContent0)
         XCTAssertEqual(destinationTabCollectionViewModel.tabs[1].content, sourceTabContent1)
+    }
+
+    // MARK: - New Window Logic
+
+    @MainActor
+    func testSingleUnpinnedTabCannotBeMovedToNewWindow() throws {
+        let sourceTabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+
+        // WHEN
+        XCTAssertEqual(sourceTabCollectionViewModel.allTabsCount, 1)
+
+        // VERIFY
+        XCTAssertFalse(sourceTabCollectionViewModel.canMoveTabToNewWindow(tabIndex: .unpinned(0)))
+    }
+
+    @MainActor
+    func testSingleUnpinnedTabCanBeMovedToNewWindowWhenThereIsAtLeastOnePinnedTab() throws {
+        let sourceTabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let sourceTabContent0: TabContent = .url(.duckDuckGo, source: .link)
+
+        // GIVEN
+        sourceTabCollectionViewModel.appendNewTab(with: sourceTabContent0)
+        sourceTabCollectionViewModel.pinTab(at: 1)
+
+        // WHEN
+        XCTAssertEqual(sourceTabCollectionViewModel.tabs.count, 1)
+        XCTAssertEqual(sourceTabCollectionViewModel.pinnedTabs.count, 1)
+
+        // VERIFY
+        XCTAssertTrue(sourceTabCollectionViewModel.canMoveTabToNewWindow(tabIndex: .unpinned(0)))
+    }
+
+    @MainActor
+    func testPinnedTabCannotBeMovedIntoNewWindow() throws {
+        let sourceTabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let sourceTabContent0: TabContent = .url(.duckDuckGo, source: .link)
+
+        // GIVEN
+        sourceTabCollectionViewModel.appendNewTab(with: sourceTabContent0)
+        sourceTabCollectionViewModel.pinTab(at: 1)
+
+        // WHEN
+        XCTAssertEqual(sourceTabCollectionViewModel.tabs.count, 1)
+        XCTAssertEqual(sourceTabCollectionViewModel.pinnedTabs.count, 1)
+
+        // VERIFY
+        XCTAssertFalse(sourceTabCollectionViewModel.canMoveTabToNewWindow(tabIndex: .pinned(0)))
     }
 
     // MARK: - Publishers

@@ -39,7 +39,38 @@ final class RootViewV2Tests: XCTestCase {
         let vpnGatekeeper = MockVPNFeatureGatekeeper(canStartVPN: false, isInstalled: false, isVPNVisible: false, onboardStatusPublisher: Just(.completed).eraseToAnyPublisher())
         mockWinBackOfferVisibilityManager = MockWinBackOfferVisibilityManager()
 
-        sidebarModel = PreferencesSidebarModel(privacyConfigurationManager: MockPrivacyConfigurationManaging(), featureFlagger: MockFeatureFlagger(), syncService: ddsSyncing, vpnGatekeeper: vpnGatekeeper, includeDuckPlayer: false, includeAIChat: true, subscriptionManager: SubscriptionAuthV1toV2BridgeMock(), aiFeaturesStatusProvider: MockAIChatPreferences(), winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager)
+        let windowControllersManager = WindowControllersManagerMock()
+        let featureFlagger = MockFeatureFlagger()
+
+        sidebarModel = PreferencesSidebarModel(
+            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+            featureFlagger: featureFlagger,
+            syncService: ddsSyncing,
+            vpnGatekeeper: vpnGatekeeper,
+            includeDuckPlayer: false,
+            includeAIChat: true,
+            subscriptionManager: SubscriptionAuthV1toV2BridgeMock(),
+            defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
+            downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
+            searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            aiChatPreferences: AIChatPreferences(
+                storage: MockAIChatPreferencesStorage(),
+                aiChatMenuConfiguration: MockAIChatConfig(),
+                windowControllersManager: WindowControllersManagerMock(),
+                featureFlagger: MockFeatureFlagger()
+            ),
+            aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager),
+            accessibilityPreferences: AccessibilityPreferences(),
+            duckPlayerPreferences: DuckPlayerPreferences(
+                persistor: DuckPlayerPreferencesPersistorMock(),
+                privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                internalUserDecider: featureFlagger.internalUserDecider
+            ),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
+        )
         subscriptionManager = SubscriptionManagerMockV2()
         subscriptionUIHandler = SubscriptionUIHandlerMock( didPerformActionCallback: { _ in })
         showTabCalled = false

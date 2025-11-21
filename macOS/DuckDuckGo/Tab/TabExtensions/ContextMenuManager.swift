@@ -64,7 +64,7 @@ final class ContextMenuManager: NSObject {
     @MainActor
     init(contextMenuScriptPublisher: some Publisher<ContextMenuUserScript?, Never>,
          contentPublisher: some Publisher<Tab.TabContent, Never>,
-         tabsPreferences: TabsPreferences = TabsPreferences.shared,
+         tabsPreferences: TabsPreferences,
          isLoadedInSidebar: Bool = false,
          internalUserDecider: InternalUserDecider,
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,

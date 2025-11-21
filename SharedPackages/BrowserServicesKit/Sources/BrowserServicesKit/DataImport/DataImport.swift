@@ -16,13 +16,17 @@
 //  limitations under the License.
 //
 
-import SecureStorage
-import PixelKit
 import Foundation
+import PixelKit
+import SecureStorage
 
 public enum DataImport {
 
-    public enum Source: String, RawRepresentable, CaseIterable, Equatable {
+    public enum Source: String, RawRepresentable, CaseIterable, Equatable, Identifiable {
+        public var id: String {
+            rawValue
+        }
+
         case brave
         case chrome
         case chromium
@@ -82,9 +86,6 @@ public enum DataImport {
             self.successful = successful
             self.duplicate = duplicate
             self.failed = failed
-        }
-        public init(_ bookmarksImportSummary: BookmarksImportSummary) {
-            self.init(successful: bookmarksImportSummary.successful, duplicate: bookmarksImportSummary.duplicates, failed: bookmarksImportSummary.failed)
         }
     }
 

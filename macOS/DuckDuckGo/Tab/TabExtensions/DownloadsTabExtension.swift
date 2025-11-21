@@ -58,7 +58,7 @@ final class DownloadsTabExtension: NSObject {
 
     weak var delegate: TabDownloadsDelegate?
 
-    init(downloadManager: FileDownloadManagerProtocol, isBurner: Bool, downloadsPreferences: DownloadsPreferences = .shared) {
+    init(downloadManager: FileDownloadManagerProtocol, downloadsPreferences: DownloadsPreferences, isBurner: Bool) {
         self.downloadManager = downloadManager
         self.isBurner = isBurner
         self.downloadsPreferences = downloadsPreferences

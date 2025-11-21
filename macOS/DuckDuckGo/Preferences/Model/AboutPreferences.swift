@@ -25,19 +25,20 @@ import PixelKit
 
 final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
-    static let shared = AboutPreferences(internalUserDecider: NSApp.delegateTyped.internalUserDecider)
-
     let appVersionModel: AppVersionModel
     @Published var featureFlagOverrideToggle = false
     private let featureFlagger: FeatureFlagger
+    let windowControllersManager: WindowControllersManagerProtocol
     let supportedOSChecker: SupportedOSChecking
     private var cancellables = Set<AnyCancellable>()
 
-    private init(internalUserDecider: InternalUserDecider,
-                 featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-                 supportedOSChecker: SupportedOSChecking? = nil) {
+    init(internalUserDecider: InternalUserDecider,
+         featureFlagger: FeatureFlagger,
+         windowControllersManager: WindowControllersManagerProtocol,
+         supportedOSChecker: SupportedOSChecking? = nil) {
 
         self.featureFlagger = featureFlagger
+        self.windowControllersManager = windowControllersManager
         self.appVersionModel = .init(appVersion: AppVersion(), internalUserDecider: internalUserDecider)
         self.supportedOSChecker = supportedOSChecker ?? SupportedOSChecker(featureFlagger: featureFlagger)
         internalUserDecider.isInternalUserPublisher

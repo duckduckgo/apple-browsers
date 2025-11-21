@@ -24,6 +24,12 @@ import UIComponents
 
 struct SettingsAIExperimentalPickerView: View {
     @Binding var isDuckAISelected: Bool
+    let showNewBadgeForDuckAI: Bool
+
+    init(isDuckAISelected: Binding<Bool>, showNewBadgeForDuckAI: Bool = true) {
+        self._isDuckAISelected = isDuckAISelected
+        self.showNewBadgeForDuckAI = showNewBadgeForDuckAI
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: SettingsAIExperimentalPickerViewLayout.optionsHorizontalSpacing) {
@@ -42,7 +48,7 @@ struct SettingsAIExperimentalPickerView: View {
                 selectedImage: .aiExperimentalOn,
                 unselectedImage: .aiExperimentalOff,
                 title: UserText.settingsAIPickerSearchAndDuckAI,
-                showNewBadge: true
+                showNewBadge: showNewBadgeForDuckAI
             ) {
                 isDuckAISelected = true
             }

@@ -16,17 +16,116 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import Combine
 import Common
+import FeatureFlags
 import History
 import HistoryView
 import Onboarding
 import PrivacyDashboard
+import SharedTestUtilities
 import struct SwiftUI.AnyView
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
+
+class MockDefaultBrowserProvider: DefaultBrowserProvider {
+    var bundleIdentifier: String = "test"
+    var defaultBrowserURL: URL?
+    var isDefault: Bool = false
+
+    func presentDefaultBrowserPrompt() throws {}
+    func openSystemPreferences() {}
+}
+
+class MockDownloadsPreferencesPersistor: DownloadsPreferencesPersistor {
+
+    var selectedDownloadLocation: String?
+    var alwaysRequestDownloadLocation: Bool
+    var defaultDownloadLocation: URL?
+    var lastUsedCustomDownloadLocation: String?
+    var shouldOpenPopupOnCompletion: Bool
+
+    var _isDownloadLocationValid: (URL) -> Bool
+
+    func isDownloadLocationValid(_ location: URL) -> Bool {
+        _isDownloadLocationValid(location)
+    }
+
+    init(
+        selectedDownloadLocation: String? = nil,
+        alwaysRequestDownloadLocation: Bool = false,
+        shouldOpenPopupOnCompletion: Bool = true,
+        defaultDownloadLocation: URL? = FileManager.default.temporaryDirectory,
+        lastUsedCustomDownloadLocation: String? = nil,
+        isDownloadLocationValid: @escaping (URL) -> Bool = { _ in true }
+    ) {
+        self.selectedDownloadLocation = selectedDownloadLocation
+        self.alwaysRequestDownloadLocation = alwaysRequestDownloadLocation
+        self.shouldOpenPopupOnCompletion = shouldOpenPopupOnCompletion
+        self.defaultDownloadLocation = defaultDownloadLocation
+        self.lastUsedCustomDownloadLocation = lastUsedCustomDownloadLocation
+        self._isDownloadLocationValid = isDownloadLocationValid
+    }
+}
+
+class MockWebTrackingProtectionPreferencesPersistor: WebTrackingProtectionPreferencesPersistor {
+    var gpcEnabled: Bool = false
+}
+
+class MockCookiePopupProtectionPreferencesPersistor: CookiePopupProtectionPreferencesPersistor {
+    var autoconsentEnabled: Bool = false
+}
+
+class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
+    var isAIFeaturesEnabled: Bool = true
+    var didDisplayAIChatAddressBarOnboarding: Bool = true
+    var showShortcutOnNewTabPage: Bool = true
+    var showShortcutInApplicationMenu: Bool = true
+    var showShortcutInAddressBar: Bool = true
+    var showShortcutInAddressBarWhenTyping: Bool = true
+    var openAIChatInSidebar: Bool = true
+    var shouldAutomaticallySendPageContext: Bool = true
+    var showSearchAndDuckAIToggle: Bool = true
+
+    let isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let showShortcutOnNewTabPagePublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let showShortcutInAddressBarPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let showShortcutInAddressBarWhenTypingPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let shouldAutomaticallySendPageContextPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let showSearchAndDuckAITogglePublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+
+    func reset() {
+        isAIFeaturesEnabled = true
+        showShortcutOnNewTabPage = true
+        showShortcutInApplicationMenu = true
+        showShortcutInAddressBar = true
+        showShortcutInAddressBarWhenTyping = true
+        didDisplayAIChatAddressBarOnboarding = true
+        openAIChatInSidebar = true
+        shouldAutomaticallySendPageContext = true
+        showSearchAndDuckAIToggle = true
+    }
+}
+
+final class MockAIChatConfig: AIChatMenuVisibilityConfigurable {
+    var shouldDisplayNewTabPageShortcut = false
+    var shouldDisplayApplicationMenuShortcut = false
+    var shouldDisplayAddressBarShortcut = false
+    var shouldDisplayAnyAIChatFeature = false
+    var shouldOpenAIChatInSidebar = false
+    var shouldDisplaySummarizationMenuItem = false
+    var shouldDisplayTranslationMenuItem = false
+    var shouldAutomaticallySendPageContext = false
+    var shouldDisplayAddressBarShortcutWhenTyping: Bool = false
+    var shouldShowSettingsImprovements: Bool = false
+    var shouldAutomaticallySendPageContextTelemetryValue: Bool?
+    let valuesChangedPublisher = PassthroughSubject<Void, Never>()
+}
 
 @available(macOS 12.0, *)
 final class BrowserTabViewControllerOnboardingTests: XCTestCase {
@@ -45,9 +144,11 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     @MainActor override func setUp() {
         autoreleasepool {
-            let tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
             featureFlagger = MockFeatureFlagger()
-            featureFlagger.enabledFeatureFlags = [.contextualOnboarding, .newTabPagePerTab]
+            featureFlagger.featuresStub = [
+                FeatureFlag.contextualOnboarding.rawValue: true,
+                FeatureFlag.newTabPagePerTab.rawValue: true
+            ]
             pixelReporter = CapturingOnboardingPixelReporter()
             dialogProvider = MockDialogsProvider()
             factory = CapturingDialogFactory(expectation: expectation)
@@ -59,9 +160,34 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
             NSError.disableSwizzledDescription = true
 
             tab = Tab(content: .url(URL.duckDuckGo, credential: nil, source: .appOpenUrl), webViewConfiguration: schemeHandler.webViewConfiguration())
-            let tabViewModel = TabViewModel(tab: tab)
-            viewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, onboardingPixelReporter: pixelReporter, onboardingDialogTypeProvider: dialogProvider, onboardingDialogFactory: factory, featureFlagger: featureFlagger)
-            viewController.tabViewModel = tabViewModel
+            let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab], isPopup: false))
+            let windowControllersManager = WindowControllersManagerMock()
+            viewController = BrowserTabViewController(
+                tabCollectionViewModel: tabCollectionViewModel,
+                onboardingPixelReporter: pixelReporter,
+                onboardingDialogTypeProvider: dialogProvider,
+                onboardingDialogFactory: factory,
+                featureFlagger: featureFlagger,
+                defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
+                downloadsPreferences: DownloadsPreferences(persistor: MockDownloadsPreferencesPersistor()),
+                searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                aiChatPreferences: AIChatPreferences(
+                    storage: MockAIChatPreferencesStorage(),
+                    aiChatMenuConfiguration: MockAIChatConfig(),
+                    windowControllersManager: windowControllersManager,
+                    featureFlagger: MockFeatureFlagger()
+                ),
+                aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager),
+                accessibilityPreferences: AccessibilityPreferences(),
+                duckPlayer: DuckPlayer(
+                    preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                    internalUserDecider: featureFlagger.internalUserDecider
+                )
+            )
             _=viewController.view
             window = MockWindow()
             window.contentViewController = viewController
@@ -90,7 +216,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     func testWhenNavigationCompletedAndFeatureIsOffThenTurnOffFeature() throws {
-        featureFlagger.enabledFeatureFlags = [.newTabPagePerTab]
+        featureFlagger.featuresStub = [FeatureFlag.newTabPagePerTab.rawValue: true]
         let expectation = self.expectation(description: "Wait for turnOffFeatureCalled to be called")
         dialogProvider.turnOffFeatureCalledExpectation = expectation
 
@@ -296,7 +422,6 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     func testWhenGotItButtonPressedThenAskDelegateToRemoveViewHighlights() throws {
-        throw XCTSkip("Flaky Test")
         // GIVEN
         let expectation = self.expectation(description: "Wait for webViewDidFinishNavigationPublisher to emit")
         let delegate = BrowserTabViewControllerDelegateSpy()

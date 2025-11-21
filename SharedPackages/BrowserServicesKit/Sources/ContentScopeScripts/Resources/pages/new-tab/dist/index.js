@@ -7329,6 +7329,14 @@
           title: t4("nextSteps_pinAppToTaskbarWindows_title"),
           summary: t4("nextSteps_pinAppToTaskbarWindows_summary"),
           actionText: t4("nextSteps_pinAppToTaskbarWindows_actionText")
+        }),
+        /** @param {(translationId: keyof enStrings) => string} t */
+        subscription: (t4) => ({
+          id: "subscription",
+          icon: "Subscription",
+          title: t4("nextSteps_subscription_title"),
+          summary: t4("nextSteps_subscription_summary"),
+          actionText: t4("nextSteps_subscription_actionText")
         })
       };
       otherText = {
@@ -30082,6 +30090,18 @@
     nextSteps_pinAppToTaskbarWindows_confirmationText: {
       title: "Pinned to Taskbar!",
       note: "Button text after clicking on the Next Steps card for adding DDG app to OS dock"
+    },
+    nextSteps_subscription_title: {
+      title: "Unlock Premium Features",
+      note: "Title of the Next Steps card for unlocking your free trial of DuckDuckGo subscription"
+    },
+    nextSteps_subscription_summary: {
+      title: "Get a free trial of our subscription featuring VPN + 3 other advanced features.",
+      note: "Summary of the Next Steps card about the DuckDuckGo subscription"
+    },
+    nextSteps_subscription_actionText: {
+      title: "Try for Free",
+      note: "Button text of the Next Steps card for trying the DuckDuckGo subscription"
     },
     favorites_show_less: {
       title: "Show less",

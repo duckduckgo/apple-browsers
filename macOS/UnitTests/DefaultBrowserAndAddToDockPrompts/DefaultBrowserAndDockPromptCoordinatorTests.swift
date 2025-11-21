@@ -28,6 +28,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
     private var dockCustomizerMock: DockCustomizerMock!
     private var applicationBuildTypeMock: ApplicationBuildTypeMock!
     private var storeMock: MockDefaultBrowserAndDockPromptStore!
+    private var notificationPresenterMock: MockDefaultBrowserAndDockPromptNotificationPresenter!
     private var pixelKitMock: PixelKitMock!
     private var timeTraveller: TimeTraveller!
     private var isOnboardingCompleted = true
@@ -41,6 +42,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         dockCustomizerMock = DockCustomizerMock()
         applicationBuildTypeMock = ApplicationBuildTypeMock()
         storeMock = MockDefaultBrowserAndDockPromptStore()
+        notificationPresenterMock = MockDefaultBrowserAndDockPromptNotificationPresenter()
         timeTraveller = TimeTraveller(date: Self.now)
     }
 
@@ -50,6 +52,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         dockCustomizerMock = nil
         applicationBuildTypeMock = nil
         storeMock = nil
+        notificationPresenterMock = nil
         timeTraveller = nil
         pixelKitMock = nil
 
@@ -64,6 +67,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         return DefaultBrowserAndDockPromptCoordinator(
             promptTypeDecider: promptTypeDeciderMock,
             store: storeMock,
+            notificationPresenter: notificationPresenterMock,
             isOnboardingCompleted: { self.isOnboardingCompleted },
             dockCustomization: dockCustomizerMock,
             defaultBrowserProvider: defaultBrowserProviderMock,
@@ -147,7 +151,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         // GIVEN
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
-        promptTypeDeciderMock.promptTypeToReturn = .banner
+        promptTypeDeciderMock.promptTypeToReturn = .active(.banner)
         isOnboardingCompleted = false
         let sut = makeSUT()
 
@@ -159,7 +163,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         // GIVEN
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
-        promptTypeDeciderMock.promptTypeToReturn = .banner
+        promptTypeDeciderMock.promptTypeToReturn = .active(.banner)
         isOnboardingCompleted = false
         let sut = makeSUT()
 
@@ -178,7 +182,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         // GIVEN
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = true
-        promptTypeDeciderMock.promptTypeToReturn = .banner
+        promptTypeDeciderMock.promptTypeToReturn = .active(.banner)
         let sut = makeSUT()
 
         // THEN
@@ -189,11 +193,11 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         // GIVEN
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
-        promptTypeDeciderMock.promptTypeToReturn = .banner
+        promptTypeDeciderMock.promptTypeToReturn = .active(.banner)
         let sut = makeSUT()
 
         // THEN
-        XCTAssertEqual(sut.getPromptType(), .banner)
+        XCTAssertEqual(sut.getPromptType(), .active(.banner))
     }
 
     func testGetPromptTypeReturnsPromptWhenBrowserIsNotAddedToDock() {
@@ -201,17 +205,17 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
         applicationBuildTypeMock.isSparkleBuild = true
-        promptTypeDeciderMock.promptTypeToReturn = .banner
+        promptTypeDeciderMock.promptTypeToReturn = .active(.banner)
         let sut = makeSUT()
 
         // THEN
-        XCTAssertEqual(sut.getPromptType(), .banner)
+        XCTAssertEqual(sut.getPromptType(), .active(.banner))
     }
 
     func testGetPromptTypeSetPopoverSeenWhenPromptReturnedIsPopover() {
         // GIVEN
         defaultBrowserProviderMock.isDefault = false
-        promptTypeDeciderMock.promptTypeToReturn = .popover
+        promptTypeDeciderMock.promptTypeToReturn = .active(.popover)
         XCTAssertNil(storeMock.popoverShownDate)
         let sut = makeSUT()
 
@@ -219,8 +223,23 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let result = sut.getPromptType()
 
         // THEN
-        XCTAssertEqual(result, .popover)
+        XCTAssertEqual(result, .active(.popover))
         XCTAssertEqual(storeMock.popoverShownDate, Self.now.timeIntervalSince1970)
+    }
+
+    func testGetPromptTypeSetInactiveUserModalSeenWhenPromptReturnedIsInactive() {
+        // GIVEN
+        defaultBrowserProviderMock.isDefault = false
+        promptTypeDeciderMock.promptTypeToReturn = .inactive
+        XCTAssertNil(storeMock.inactiveUserModalShownDate)
+        let sut = makeSUT()
+
+        // WHEN
+        let result = sut.getPromptType()
+
+        // THEN
+        XCTAssertEqual(result, .inactive)
+        XCTAssertEqual(storeMock.inactiveUserModalShownDate, Self.now.timeIntervalSince1970)
     }
 
     // MARK: - Prompt confirmation tests
@@ -233,7 +252,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT()
 
         // WHEN
-        sut.confirmAction(for: .popover)
+        sut.confirmAction(for: .active(.popover))
 
         // THEN
         XCTAssertTrue(dockCustomizerMock.dockStatus)
@@ -248,7 +267,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT()
 
         // WHEN
-        sut.confirmAction(for: .popover)
+        sut.confirmAction(for: .active(.popover))
 
         // THEN
         XCTAssertTrue(dockCustomizerMock.dockStatus)
@@ -263,7 +282,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT()
 
         // WHEN
-        sut.confirmAction(for: .popover)
+        sut.confirmAction(for: .active(.popover))
 
         // THEN
         XCTAssertFalse(dockCustomizerMock.wasAddToDockCalled)
@@ -278,7 +297,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT()
 
         // WHEN
-        sut.confirmAction(for: .popover)
+        sut.confirmAction(for: .active(.popover))
 
         // THEN
         XCTAssertFalse(dockCustomizerMock.wasAddToDockCalled)
@@ -293,13 +312,15 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT()
         XCTAssertNil(storeMock.bannerShownDate)
         XCTAssertNil(storeMock.popoverShownDate)
+        XCTAssertNil(storeMock.inactiveUserModalShownDate)
 
         // WHEN
-        sut.confirmAction(for: .banner)
+        sut.confirmAction(for: .active(.banner))
 
         // THEN
         XCTAssertEqual(storeMock.bannerShownDate, Self.now.timeIntervalSince1970)
         XCTAssertNil(storeMock.popoverShownDate)
+        XCTAssertNil(storeMock.inactiveUserModalShownDate)
     }
 
     func testConfirmActionDoesNotSetPopoverSeen() {
@@ -310,13 +331,34 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT()
         XCTAssertNil(storeMock.bannerShownDate)
         XCTAssertNil(storeMock.popoverShownDate)
+        XCTAssertNil(storeMock.inactiveUserModalShownDate)
 
         // WHEN
-        sut.confirmAction(for: .popover)
+        sut.confirmAction(for: .active(.popover))
 
         // THEN
         XCTAssertNil(storeMock.bannerShownDate)
         XCTAssertNil(storeMock.popoverShownDate)
+        XCTAssertNil(storeMock.inactiveUserModalShownDate)
+    }
+
+    func testConfirmActionDoesNotSetInactiveUserModalSeen() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        let sut = makeSUT()
+        XCTAssertNil(storeMock.bannerShownDate)
+        XCTAssertNil(storeMock.popoverShownDate)
+        XCTAssertNil(storeMock.inactiveUserModalShownDate)
+
+        // WHEN
+        sut.confirmAction(for: .inactive)
+
+        // THEN
+        XCTAssertNil(storeMock.bannerShownDate)
+        XCTAssertNil(storeMock.popoverShownDate)
+        XCTAssertNil(storeMock.inactiveUserModalShownDate)
     }
 
     // MARK: - Dismiss Action tests
@@ -332,7 +374,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         XCTAssertNil(storeMock.popoverShownDate)
 
         // WHEN
-        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: false))
+        sut.dismissAction(.userInput(prompt: .active(.banner), shouldHidePermanently: false))
 
         // THEN
         XCTAssertEqual(storeMock.bannerShownDate, Self.now.timeIntervalSince1970)
@@ -351,7 +393,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         XCTAssertNil(storeMock.popoverShownDate)
 
         // WHEN
-        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: true))
+        sut.dismissAction(.userInput(prompt: .active(.banner), shouldHidePermanently: true))
 
         // THEN
         XCTAssertEqual(storeMock.bannerShownDate, Self.now.timeIntervalSince1970)
@@ -370,7 +412,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         XCTAssertNil(storeMock.popoverShownDate)
 
         // WHEN
-        sut.dismissAction(.userInput(prompt: .popover, shouldHidePermanently: true))
+        sut.dismissAction(.userInput(prompt: .active(.popover), shouldHidePermanently: true))
 
         // THEN
         XCTAssertNil(storeMock.bannerShownDate)
@@ -385,7 +427,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
 
         // WHEN
-        sut.dismissAction(.statusUpdate(prompt: .banner))
+        sut.dismissAction(.statusUpdate(prompt: .active(.banner)))
 
         // THEN
         XCTAssertEqual(storeMock.bannerShownDate, Self.now.timeIntervalSince1970)
@@ -399,11 +441,61 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
 
         // WHEN
-        sut.dismissAction(.statusUpdate(prompt: .popover))
+        sut.dismissAction(.statusUpdate(prompt: .active(.popover)))
 
         // THEN
         XCTAssertNil(storeMock.popoverShownDate)
         XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
+    }
+
+    func testDismissActionUserInputForInactivePromptTriggersNotification() {
+        // GIVEN
+        let sut = makeSUT()
+        XCTAssertFalse(notificationPresenterMock.inactiveUserPromptNotificationShown)
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .inactive, shouldHidePermanently: false))
+
+        // THEN
+        XCTAssertTrue(notificationPresenterMock.inactiveUserPromptNotificationShown)
+    }
+
+    func testDismissActionStatusUpdateForInactivePromptDoesNotTriggerNotification() {
+        // GIVEN
+        let sut = makeSUT()
+        XCTAssertFalse(notificationPresenterMock.inactiveUserPromptNotificationShown)
+
+        // WHEN
+        sut.dismissAction(.statusUpdate(prompt: .inactive))
+
+        // THEN
+        XCTAssertFalse(notificationPresenterMock.inactiveUserPromptNotificationShown)
+    }
+
+    func testDismissActionsForBannerPromptDoNotTriggerNotification() {
+        // GIVEN
+        let sut = makeSUT()
+        XCTAssertFalse(notificationPresenterMock.inactiveUserPromptNotificationShown)
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .active(.banner), shouldHidePermanently: false))
+        sut.dismissAction(.statusUpdate(prompt: .active(.banner)))
+
+        // THEN
+        XCTAssertFalse(notificationPresenterMock.inactiveUserPromptNotificationShown)
+    }
+
+    func testDismissActionsForPopoverPromptDoNotTriggerNotification() {
+        // GIVEN
+        let sut = makeSUT()
+        XCTAssertFalse(notificationPresenterMock.inactiveUserPromptNotificationShown)
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .active(.popover), shouldHidePermanently: false))
+        sut.dismissAction(.statusUpdate(prompt: .active(.popover)))
+
+        // THEN
+        XCTAssertFalse(notificationPresenterMock.inactiveUserPromptNotificationShown)
     }
 
     // MARK: - Popover Pixels
@@ -411,7 +503,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
     func testFirePopoverSeenPixelTypeBothWhenPopoverPromptIsReturned() {
         // GIVEN
         applicationBuildTypeMock.isSparkleBuild = true
-        promptTypeDeciderMock.promptTypeToReturn = .popover
+        promptTypeDeciderMock.promptTypeToReturn = .active(.popover)
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverImpression(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
@@ -427,7 +519,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
     func testFirePopoverSeenPixelTypeSADOnlyWhenPopoverPromptIsReturned() {
         // GIVEN
         applicationBuildTypeMock.isSparkleBuild = true
-        promptTypeDeciderMock.promptTypeToReturn = .popover
+        promptTypeDeciderMock.promptTypeToReturn = .active(.popover)
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverImpression(type: .setAsDefaultPrompt), frequency: .standard)
@@ -443,7 +535,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
     func testFirePopoverSeenPixelTypeATTOnlyWhenPopoverPromptIsReturned() {
         // GIVEN
         applicationBuildTypeMock.isSparkleBuild = true
-        promptTypeDeciderMock.promptTypeToReturn = .popover
+        promptTypeDeciderMock.promptTypeToReturn = .active(.popover)
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
         let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverImpression(type: .addToDockPrompt), frequency: .standard)
@@ -465,7 +557,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        sut.confirmAction(for: .popover)
+        sut.confirmAction(for: .active(.popover))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -480,7 +572,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        sut.confirmAction(for: .popover)
+        sut.confirmAction(for: .active(.popover))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -495,7 +587,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        sut.confirmAction(for: .popover)
+        sut.confirmAction(for: .active(.popover))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -510,7 +602,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        sut.dismissAction(.userInput(prompt: .popover, shouldHidePermanently: true))
+        sut.dismissAction(.userInput(prompt: .active(.popover), shouldHidePermanently: true))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -525,7 +617,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        sut.dismissAction(.userInput(prompt: .popover, shouldHidePermanently: true))
+        sut.dismissAction(.userInput(prompt: .active(.popover), shouldHidePermanently: true))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -540,7 +632,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        sut.dismissAction(.userInput(prompt: .popover, shouldHidePermanently: true))
+        sut.dismissAction(.userInput(prompt: .active(.popover), shouldHidePermanently: true))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -554,7 +646,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [])
 
         // WHEN
-        sut.dismissAction(.statusUpdate(prompt: .popover))
+        sut.dismissAction(.statusUpdate(prompt: .active(.popover)))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -565,7 +657,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
     func testFireBannerSeenPixelTypeBothWhenBannerPromptIsReturned() {
         // GIVEN
         applicationBuildTypeMock.isSparkleBuild = true
-        promptTypeDeciderMock.promptTypeToReturn = .banner
+        promptTypeDeciderMock.promptTypeToReturn = .active(.banner)
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         storeMock.bannerShownOccurrences = 6
@@ -582,7 +674,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
     func testFireBannerSeenPixelTypeSADOnlyWhenBannerPromptIsReturned() {
         // GIVEN
         applicationBuildTypeMock.isSparkleBuild = true
-        promptTypeDeciderMock.promptTypeToReturn = .banner
+        promptTypeDeciderMock.promptTypeToReturn = .active(.banner)
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
         storeMock.bannerShownOccurrences = 9
@@ -599,7 +691,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
     func testFireBannerSeenPixelTypeATTOnlyWhenBannerPromptIsReturned() {
         // GIVEN
         applicationBuildTypeMock.isSparkleBuild = true
-        promptTypeDeciderMock.promptTypeToReturn = .banner
+        promptTypeDeciderMock.promptTypeToReturn = .active(.banner)
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
         storeMock.bannerShownOccurrences = 10
@@ -623,7 +715,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        sut.confirmAction(for: .banner)
+        sut.confirmAction(for: .active(.banner))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -639,7 +731,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        sut.confirmAction(for: .banner)
+        sut.confirmAction(for: .active(.banner))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -655,7 +747,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        sut.confirmAction(for: .banner)
+        sut.confirmAction(for: .active(.banner))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -671,7 +763,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        sut.confirmAction(for: .banner)
+        sut.confirmAction(for: .active(.banner))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -686,7 +778,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: false))
+        sut.dismissAction(.userInput(prompt: .active(.banner), shouldHidePermanently: false))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -701,7 +793,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: false))
+        sut.dismissAction(.userInput(prompt: .active(.banner), shouldHidePermanently: false))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -716,7 +808,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: false))
+        sut.dismissAction(.userInput(prompt: .active(.banner), shouldHidePermanently: false))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -731,7 +823,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: true))
+        sut.dismissAction(.userInput(prompt: .active(.banner), shouldHidePermanently: true))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -746,7 +838,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: true))
+        sut.dismissAction(.userInput(prompt: .active(.banner), shouldHidePermanently: true))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -761,7 +853,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: true))
+        sut.dismissAction(.userInput(prompt: .active(.banner), shouldHidePermanently: true))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -775,53 +867,164 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [])
 
         // WHEN
-        sut.dismissAction(.statusUpdate(prompt: .banner))
+        sut.dismissAction(.statusUpdate(prompt: .active(.banner)))
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
     }
 
-}
+    // MARK: - Inactive User Modal Pixels
 
-final class FeatureFlaggerMock: FeatureFlagger {
-    var internalUserDecider: InternalUserDecider
-    var localOverrides: FeatureFlagLocalOverriding?
+    func testFireInactiveUserModalSeenPixelTypeBothWhenInactiveUserModalPromptIsReturned() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        promptTypeDeciderMock.promptTypeToReturn = .inactive
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalImpression(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
-    var mockActiveExperiments: [String: ExperimentData] = [:]
+        // WHEN
+         _ = sut.getPromptType()
 
-    var enabledFeatureFlags: [FeatureFlag] = []
-
-    var cohortToReturn: (any FeatureFlagCohortDescribing)?
-
-    public init(internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring()),
-                enabledFeatureFlags: [FeatureFlag] = []) {
-        self.internalUserDecider = internalUserDecider
-        self.enabledFeatureFlags = enabledFeatureFlags
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
     }
 
-    func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
-        guard let flag = featureFlag as? FeatureFlag else {
-            return false
-        }
-        guard enabledFeatureFlags.contains(flag) else {
-            return false
-        }
-        return true
+    func testFireInactiveUserModalSeenPixelTypeSADOnlyWhenInactiveUserModalPromptIsReturned() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        promptTypeDeciderMock.promptTypeToReturn = .inactive
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = true
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalImpression(type: .setAsDefaultPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+         _ = sut.getPromptType()
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
     }
 
-    func getCohortIfEnabled(_ subfeature: any PrivacySubfeature) -> CohortID? {
-        return nil
+    func testFireInactiveUserModalSeenPixelTypeATDOnlyWhenInactiveUserModalPromptIsReturned() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        promptTypeDeciderMock.promptTypeToReturn = .inactive
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalImpression(type: .addToDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+         _ = sut.getPromptType()
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
     }
 
-    func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
-        if isFeatureOn(for: featureFlag, allowOverride: false) {
-            return cohortToReturn
-        } else {
-            return nil
-        }
+    func testFireInactiveUserModalConfirmActionTypeBothWhenInactiveUserModalConfirmAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalConfirmButtonClicked(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.confirmAction(for: .inactive)
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
     }
 
-    var allActiveExperiments: Experiments {
-        mockActiveExperiments
+    func testFireInactiveUserModalConfirmActionTypeSADOnlyWheInactiveUserModalConfirmAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = true
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalConfirmButtonClicked(type: .setAsDefaultPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.confirmAction(for: .inactive)
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
     }
+
+    func testFireInactiveUserModalConfirmActionTypeATDOnlyWhenInactiveUserModalConfirmAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalConfirmButtonClicked(type: .addToDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.confirmAction(for: .inactive)
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireInactiveUserModalDismissedTypeBothWhenInactiveUserModalDismissAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalDismissed(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .inactive, shouldHidePermanently: true))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireInactiveUserModalDismissedTypeSADOnlyWhenInactiveUserModalDismissAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = true
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalDismissed(type: .setAsDefaultPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .inactive, shouldHidePermanently: true))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireInactiveUserModalDismissedTypeATDOnlyWhenInactiveUserModalDismissAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalDismissed(type: .addToDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .inactive, shouldHidePermanently: true))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireInactiveUserModalDismissedUponStatusUpdateThenDoesNotFireDismissPixel() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        let sut = makeSUT(expectedFireCalls: [])
+
+        // WHEN
+        sut.dismissAction(.statusUpdate(prompt: .inactive))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
 }

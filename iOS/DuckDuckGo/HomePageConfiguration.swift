@@ -30,19 +30,19 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     // MARK: - Messages
     
     private var homeMessageStorage: HomeMessageStorage
-    private var remoteMessagingClient: RemoteMessagingClient
+    private var remoteMessagingStore: RemoteMessagingStoring
     private let subscriptionDataReporter: SubscriptionDataReporting
     private let isStillOnboarding: () -> Bool
 
     var homeMessages: [HomeMessage] = []
 
     init(variantManager: VariantManager? = nil,
-         remoteMessagingClient: RemoteMessagingClient,
+         remoteMessagingStore: RemoteMessagingStoring,
          subscriptionDataReporter: SubscriptionDataReporting,
          isStillOnboarding: @escaping () -> Bool
     ) {
         homeMessageStorage = HomeMessageStorage(variantManager: variantManager)
-        self.remoteMessagingClient = remoteMessagingClient
+        self.remoteMessagingStore = remoteMessagingStore
         self.subscriptionDataReporter = subscriptionDataReporter
         self.isStillOnboarding = isStillOnboarding
         homeMessages = buildHomeMessages()
@@ -68,7 +68,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     }
 
     private func remoteMessageToShow() -> HomeMessage? {
-        guard let remoteMessageToPresent = remoteMessagingClient.store.fetchScheduledRemoteMessage() else { return nil }
+        guard let remoteMessageToPresent = remoteMessagingStore.fetchScheduledRemoteMessage(surfaces: .newTabPage) else { return nil }
         Logger.remoteMessaging.info("Remote message to show: \(remoteMessageToPresent.id, privacy: .public)")
         return .remoteMessage(remoteMessage: remoteMessageToPresent)
     }
@@ -78,7 +78,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         switch homeMessage {
         case .remoteMessage(let remoteMessage):
             Logger.remoteMessaging.info("Home message dismissed: \(remoteMessage.id)")
-            await remoteMessagingClient.store.dismissRemoteMessage(withID: remoteMessage.id)
+            await remoteMessagingStore.dismissRemoteMessage(withID: remoteMessage.id)
             if let index = homeMessages.firstIndex(of: homeMessage) {
                 homeMessages.remove(at: index)
             }
@@ -97,14 +97,14 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
                            withAdditionalParameters: additionalParameters(for: remoteMessage.id))
             }
 
-            if !remoteMessagingClient.store.hasShownRemoteMessage(withID: remoteMessage.id) {
+            if !remoteMessagingStore.hasShownRemoteMessage(withID: remoteMessage.id) {
                 Logger.remoteMessaging.info("Remote message shown for first time: \(remoteMessage.id, privacy: .public)")
                 if remoteMessage.isMetricsEnabled {
                     Pixel.fire(pixel: .remoteMessageShownUnique,
                                withAdditionalParameters: additionalParameters(for: remoteMessage.id))
                 }
                 Task {
-                    await remoteMessagingClient.store.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
+                    await remoteMessagingStore.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
                 }
             }
 

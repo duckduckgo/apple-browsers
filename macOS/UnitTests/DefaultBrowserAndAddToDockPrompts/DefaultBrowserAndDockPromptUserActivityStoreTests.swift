@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
-import Testing
+import Foundation
 import PersistenceTestingUtils
+import Testing
+
 @testable import DuckDuckGo_Privacy_Browser
 
 @Suite("Default Browser and Dock Prompt - User Activity Store")

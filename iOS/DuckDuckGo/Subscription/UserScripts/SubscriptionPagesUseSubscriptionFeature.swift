@@ -842,9 +842,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
                 purchasePlatform: .appStore,
                 subscriptionIdentifier: subscriptionSelection.id,
                 freeTrialEligible: freeTrialEligible,
-                contextData: WideEventContextData(name: subscriptionAttributionOrigin),
-                appData: WideEventAppData(internalUser: internalUserDecider.isInternalUser)
-            )
+                contextData: WideEventContextData(name: subscriptionAttributionOrigin))
 
             self.wideEventData = data
             wideEvent.startFlow(data)

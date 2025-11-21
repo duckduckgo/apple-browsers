@@ -127,61 +127,44 @@ class TabTests: XCTestCase {
         XCTAssertTrue(tab?.viewed ?? false)
     }
 
-    func testWhenTabTypeIsWebThenIsWebTabReturnsTrue() {
+    func testWhenTabHasRegularURLThenIsAITabReturnsFalse() {
         // Given
         let tab = Tab(link: link())
 
-        // When
-        tab.type = .web
-
         // Then
-        XCTAssertTrue(tab.isWebTab)
         XCTAssertFalse(tab.isAITab)
     }
 
-    func testWhenTabTypeIsAIChatThenIsAITabReturnsTrue() {
-        // Given
-        let tab = Tab(link: link())
-
-        // When
-        tab.type = .aiChat
+    func testWhenTabHasDuckAIURLThenIsAITabReturnsTrue() {
+        // Given - URL with duck.ai host
+        let aiURL = URL(string: "https://duck.ai/chat")!
+        let tab = Tab(link: Link(title: "AI Chat", url: aiURL))
 
         // Then
         XCTAssertTrue(tab.isAITab)
-        XCTAssertFalse(tab.isWebTab)
     }
 
-    func testWhenWebTabHasLinkThenIsWebTabWithLinkReturnsTrue() {
-        // Given
-        let tab = Tab(link: link())
-        tab.type = .web
+    func testWhenTabHasDuckDuckGoAIChatQueryThenIsAITabReturnsTrue() {
+        // Given - duckduckgo.com URL with ia=chat
+        let aiURL = URL(string: "https://duckduckgo.com/?ia=chat")!
+        let tab = Tab(link: Link(title: "AI Chat", url: aiURL))
 
         // Then
-        XCTAssertTrue(tab.isWebTabWithLink)
+        XCTAssertTrue(tab.isAITab)
     }
 
-    func testWhenWebTabHasNoLinkThenIsWebTabWithLinkReturnsFalse() {
+    func testWhenTabHasNoLinkThenIsAITabReturnsFalse() {
         // Given
         let tab = Tab()
-        tab.type = .web
 
         // Then
-        XCTAssertFalse(tab.isWebTabWithLink)
+        XCTAssertFalse(tab.isAITab)
     }
 
-    func testWhenAIChatTabThenIsWebTabWithLinkReturnsFalse() {
-        // Given
-        let tab = Tab(link: link())
-        tab.type = .aiChat
-
-        // Then
-        XCTAssertFalse(tab.isWebTabWithLink)
-    }
-
-    func testWhenAIChatTabEncodedThenDecodesAsAIChatType() {
-        // Given
-        let tabToEncode = Tab(link: link())
-        tabToEncode.type = .aiChat
+    func testWhenAIChatTabEncodedThenDecodesWithCorrectType() {
+        // Given - Tab with Duck AI URL
+        let aiURL = URL(string: "https://duck.ai/chat")!
+        let tabToEncode = Tab(link: Link(title: "AI Chat", url: aiURL))
 
         guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
                                                            requiringSecureCoding: false) else {
@@ -195,13 +178,11 @@ class TabTests: XCTestCase {
         // Then
         XCTAssertNotNil(decodedTab)
         XCTAssertTrue(decodedTab?.isAITab ?? false)
-        XCTAssertFalse(decodedTab?.isWebTab ?? true)
     }
 
-    func testWhenWebTabEncodedThenDecodesAsWebType() {
-        // Given
+    func testWhenWebTabEncodedThenDecodesWithCorrectType() {
+        // Given - Tab with regular URL
         let tabToEncode = Tab(link: link())
-        tabToEncode.type = .web
 
         guard let data = try? NSKeyedArchiver.archivedData(withRootObject: tabToEncode,
                                                            requiringSecureCoding: false) else {
@@ -214,7 +195,6 @@ class TabTests: XCTestCase {
 
         // Then
         XCTAssertNotNil(decodedTab)
-        XCTAssertTrue(decodedTab?.isWebTab ?? false)
         XCTAssertFalse(decodedTab?.isAITab ?? true)
     }
 
@@ -224,8 +204,33 @@ class TabTests: XCTestCase {
 
         // Then
         XCTAssertNotNil(tab?.link)
-        XCTAssertTrue(tab?.isWebTab ?? false)
         XCTAssertFalse(tab?.isAITab ?? true)
+    }
+
+    func testWhenTabLinkChangesToAIURLThenIsAITabReturnsTrue() {
+        // Given
+        let tab = Tab(link: link())
+        XCTAssertFalse(tab.isAITab)
+
+        // When - Change to Duck AI URL
+        let aiURL = URL(string: "https://duck.ai/chat")!
+        tab.link = Link(title: "AI Chat", url: aiURL)
+
+        // Then
+        XCTAssertTrue(tab.isAITab)
+    }
+
+    func testWhenTabLinkChangesFromAIURLToRegularURLThenIsAITabReturnsFalse() {
+        // Given - Tab with Duck AI URL
+        let aiURL = URL(string: "https://duck.ai/chat")!
+        let tab = Tab(link: Link(title: "AI Chat", url: aiURL))
+        XCTAssertTrue(tab.isAITab)
+
+        // When - Change to regular URL
+        tab.link = link()
+
+        // Then
+        XCTAssertFalse(tab.isAITab)
     }
 
     func testWhenSameObjectThenEqualsPasses() {

@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AutoconsentStats
 import Bookmarks
 import BrokenSitePrompt
 import BrowserServicesKit
@@ -24,6 +25,7 @@ import Cocoa
 import Combine
 import Common
 import Configuration
+import ContentScopeScripts
 import CoreData
 import Crashes
 import DataBrokerProtection_macOS
@@ -37,7 +39,6 @@ import Lottie
 import MetricKit
 import Network
 import Networking
-import VPN
 import NetworkProtectionIPC
 import NewTabPage
 import os.log
@@ -50,9 +51,10 @@ import ServiceManagement
 import Subscription
 import SyncDataProviders
 import UserNotifications
+import Utilities
+import VPN
 import VPNAppState
 import WebKit
-import ContentScopeScripts
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -87,12 +89,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let watchdog: Watchdog
     private let watchdogSleepMonitor: WatchdogSleepMonitor
+    private var hangReportingFeatureMonitor: HangReportingFeatureMonitor?
 
     let keyValueStore: ThrowingKeyValueStoring
 
     let faviconManager: FaviconManager
     let pinnedTabsManager = PinnedTabsManager()
-    let pinnedTabsManagerProvider: PinnedTabsManagerProviding!
+    let tabDragAndDropManager: TabDragAndDropManager
+    let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider
@@ -106,7 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var autoClearHandler: AutoClearHandler!
     private(set) var autofillPixelReporter: AutofillPixelReporter?
 
-    private(set) var syncDataProviders: SyncDataProviders?
+    private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
     private var isSyncInProgressCancellable: AnyCancellable?
     private var syncFeatureFlagsCancellable: AnyCancellable?
@@ -122,6 +126,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let appearancePreferences: AppearancePreferences
     let dataClearingPreferences: DataClearingPreferences
     let startupPreferences: StartupPreferences
+    let defaultBrowserPreferences: DefaultBrowserPreferences
+    let downloadsPreferences: DownloadsPreferences
+    let searchPreferences: SearchPreferences
+    let tabsPreferences: TabsPreferences
+    let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+    let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
+    let aboutPreferences: AboutPreferences
+    let accessibilityPreferences: AccessibilityPreferences
+    let duckPlayer: DuckPlayer
 
     let database: Database!
     let bookmarkDatabase: BookmarkDatabase
@@ -135,6 +148,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
     let fireCoordinator: FireCoordinator
     let permissionManager: PermissionManager
+    let recentlyClosedCoordinator: RecentlyClosedCoordinating
+    let downloadManager: FileDownloadManagerProtocol
+    let downloadListCoordinator: DownloadListCoordinator
 
     let autoconsentManagement = AutoconsentManagement()
 
@@ -146,6 +162,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         customizationModel: newTabPageCustomizationModel,
         bookmarkManager: bookmarkManager,
         faviconManager: faviconManager,
+        duckPlayerHistoryEntryTitleProvider: duckPlayer,
         activeRemoteMessageModel: activeRemoteMessageModel,
         historyCoordinator: historyCoordinator,
         contentBlocking: privacyFeatures.contentBlocking,
@@ -158,7 +175,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         visualizeFireAnimationDecider: visualizeFireSettingsDecider,
         featureFlagger: featureFlagger,
         windowControllersManager: windowControllersManager,
-        tabsPreferences: TabsPreferences.shared,
+        tabsPreferences: tabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
         winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
     )
@@ -169,8 +186,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSidebarProvider: AIChatSidebarProviding
+    let aiChatPreferences: AIChatPreferences
 
     let privacyStats: PrivacyStatsCollecting
+    let autoconsentStats: AutoconsentStatsCollecting
     let activeRemoteMessageModel: ActiveRemoteMessageModel
     let newTabPageCustomizationModel: NewTabPageCustomizationModel
     let remoteMessagingClient: RemoteMessagingClient!
@@ -182,6 +201,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         vpnUpsellVisibilityManager: vpnUpsellVisibilityManager
     )
     let themeManager: ThemeManager
+
+    let displaysTabsProgressIndicator: Bool
 
     let wideEvent: WideEventManaging
     let isUsingAuthV2: Bool
@@ -247,17 +268,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Win-back Campaign
     lazy var winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = {
-        #if DEBUG || REVIEW
+        let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+#if DEBUG || REVIEW
         let winBackOfferDebugStore = WinBackOfferDebugStore(keyValueStore: keyValueStore)
         let dateProvider: () -> Date = { winBackOfferDebugStore.simulatedTodayDate }
-        #else
-        let dateProvider: () -> Date = Date.init
-        #endif
-
-        return WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
-                                            winbackOfferStore: winbackOfferStore,
-                                            winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider,
-                                            dateProvider: dateProvider)
+        winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
+                                                                      winbackOfferStore: winbackOfferStore,
+                                                                      winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider,
+                                                                      dateProvider: dateProvider)
+#else
+        winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
+                                                                      winbackOfferStore: winbackOfferStore,
+                                                                      winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider)
+#endif
+        return winBackOfferVisibilityManager
     }()
 
     lazy var winbackOfferStore: WinbackOfferStoring = {
@@ -276,6 +300,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     lazy var winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator = {
         return WinBackOfferPromotionViewCoordinator(winBackOfferVisibilityManager: winBackOfferVisibilityManager)
     }()
+
+    let blackFridayCampaignProvider: BlackFridayCampaignProviding
 
     // MARK: - Wide Event Service
 
@@ -461,7 +487,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.featureFlagger = featureFlagger
 
-        contentScopePreferences = ContentScopePreferences()
+        displaysTabsProgressIndicator = featureFlagger.isFeatureOn(.tabProgressIndicator)
 
         aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
         aiChatMenuConfiguration = AIChatMenuConfiguration(
@@ -513,11 +539,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         bookmarkDragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
-        pinnedTabsManagerProvider = PinnedTabsManagerProvider()
-
 #if DEBUG || REVIEW
         let defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
-        let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate }
+        let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate ?? Date() }
 #else
         let defaultBrowserAndDockPromptDateProvider: () -> Date = Date.init
 #endif
@@ -538,7 +562,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
         let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
+        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager, userDefaults: .subs) { accessType, error in
             PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
                                                                                  accessError: error,
                                                                                  source: KeychainErrorSource.shared,
@@ -642,6 +666,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         VPNAppState(defaults: .netP).isAuthV2Enabled = isUsingAuthV2
 
+        pinnedTabsManagerProvider = PinnedTabsManagerProvider(sharedPinedTabsManager: pinnedTabsManager)
+
         let windowControllersManager = WindowControllersManager(
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
             subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(
@@ -655,7 +681,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger
         )
+        tabsPreferences = TabsPreferences(persistor: TabsPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
+        windowControllersManager.tabsPreferences = tabsPreferences
         self.windowControllersManager = windowControllersManager
+
+        pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
+        pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
+
+        contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
+        webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
+        cookiePopupProtectionPreferences = CookiePopupProtectionPreferences(persistor: CookiePopupProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
+        aiChatPreferences = AIChatPreferences(
+            storage: DefaultAIChatPreferencesStorage(),
+            aiChatMenuConfiguration: aiChatMenuConfiguration,
+            windowControllersManager: windowControllersManager,
+            featureFlagger: featureFlagger
+        )
 
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(
             tabShower: windowControllersManager,
@@ -664,7 +705,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
         self.autoconsentDailyStats = AutoconsentDailyStats(keyValueStore: keyValueStore, featureFlagger: featureFlagger)
 
-        themeManager = ThemeManager(appearancePreferences: appearancePreferences, internalUserDecider: internalUserDecider)
+        themeManager = ThemeManager(appearancePreferences: appearancePreferences, internalUserDecider: internalUserDecider, featureFlagger: featureFlagger)
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
@@ -697,7 +738,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             aiChatHistoryCleaner: aiChatHistoryCleaner
         )
         visualizeFireSettingsDecider = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
-        startupPreferences = StartupPreferences(persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore), appearancePreferences: appearancePreferences)
+        startupPreferences = StartupPreferences(
+            persistor: StartupPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
+            windowControllersManager: windowControllersManager,
+            appearancePreferences: appearancePreferences
+        )
+        defaultBrowserPreferences = DefaultBrowserPreferences()
+        searchPreferences = SearchPreferences(persistor: SearchPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
+        aboutPreferences = AboutPreferences(
+            internalUserDecider: internalUserDecider,
+            featureFlagger: featureFlagger,
+            windowControllersManager: windowControllersManager
+        )
+        accessibilityPreferences = AccessibilityPreferences()
+        duckPlayer = DuckPlayer(
+            preferencesPersistor: DuckPlayerPreferencesUserDefaultsPersistor(),
+            privacyConfigurationManager: privacyConfigurationManager,
+            internalUserDecider: internalUserDecider
+        )
         newTabPageCustomizationModel = NewTabPageCustomizationModel(themeManager: themeManager, appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld,
@@ -722,6 +780,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 onboardingNavigationDelegate: windowControllersManager,
                 appearancePreferences: appearancePreferences,
                 startupPreferences: startupPreferences,
+                webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+                duckPlayer: duckPlayer,
                 windowControllersManager: windowControllersManager,
                 bookmarkManager: bookmarkManager,
                 historyCoordinator: historyCoordinator,
@@ -747,6 +808,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onboardingNavigationDelegate: windowControllersManager,
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+            duckPlayer: duckPlayer,
             windowControllersManager: windowControllersManager,
             bookmarkManager: bookmarkManager,
             historyCoordinator: historyCoordinator,
@@ -779,9 +843,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         let onboardingManager = onboardingContextualDialogsManager
+        let notificationPresenter = DefaultBrowserAndDockPromptNotificationPresenter(reportABrowserProblemPresenter: Self.openReportABrowserProblem)
         defaultBrowserAndDockPromptService = DefaultBrowserAndDockPromptService(featureFlagger: featureFlagger,
                                                                                 privacyConfigManager: privacyConfigurationManager,
                                                                                 keyValueStore: keyValueStore,
+                                                                                notificationPresenter: notificationPresenter,
                                                                                 isOnboardingCompletedProvider: { onboardingManager.state == .onboardingCompleted })
 
         if AppVersion.runType.requiresEnvironment {
@@ -797,6 +863,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 remoteMessagingAvailabilityProvider: PrivacyConfigurationRemoteMessagingAvailabilityProvider(
                     privacyConfigurationManager: privacyConfigurationManager
                 ),
+                remoteMessagingSurfacesProvider: DefaultRemoteMessagingSurfacesProvider(),
                 subscriptionManager: subscriptionAuthV1toV2Bridge,
                 featureFlagger: self.featureFlagger,
                 configurationURLProvider: configurationURLProvider,
@@ -851,6 +918,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
 #endif
+        autoconsentStats = AutoconsentStats(keyValueStore: keyValueStore, featureFlagger: featureFlagger)
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
 
 #if !APPSTORE
@@ -863,13 +931,48 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         watchdogSleepMonitor = WatchdogSleepMonitor(watchdog: watchdog)
 
 #if !DEBUG
-        // Start UI hang watchdog
-        if featureFlagger.isFeatureOn(.hangReporting) {
-            Task { [watchdog] in
-                await watchdog.start()
-            }
+        if AppVersion.runType == .normal {
+            hangReportingFeatureMonitor = HangReportingFeatureMonitor(
+                privacyConfigurationManager: privacyConfigurationManager,
+                featureFlagger: featureFlagger,
+                watchdog: watchdog
+            )
         }
 #endif
+
+        recentlyClosedCoordinator = RecentlyClosedCoordinator(windowControllersManager: windowControllersManager, pinnedTabsManagerProvider: pinnedTabsManagerProvider)
+        downloadsPreferences = DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor())
+        downloadManager = FileDownloadManager(preferences: downloadsPreferences)
+#if DEBUG
+        if AppVersion.runType.requiresEnvironment {
+            downloadListCoordinator = DownloadListCoordinator(
+                store: DownloadListStore(database: database.db),
+                downloadManager: downloadManager,
+                windowControllersManager: windowControllersManager
+            )
+        } else {
+            downloadListCoordinator = DownloadListCoordinator(
+                store: DownloadListStore(database: nil),
+                downloadManager: downloadManager,
+                windowControllersManager: windowControllersManager
+            )
+        }
+#else
+        downloadListCoordinator = DownloadListCoordinator(
+            store: DownloadListStore(database: database.db),
+            downloadManager: downloadManager,
+            windowControllersManager: windowControllersManager
+        )
+#endif
+
+        tabDragAndDropManager = TabDragAndDropManager()
+
+        blackFridayCampaignProvider = DefaultBlackFridayCampaignProvider(
+            privacyConfigurationManager: privacyConfigurationManager,
+            isFeatureEnabled: { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.blackFridayCampaign) ?? false
+            }
+        )
 
         super.init()
 
@@ -882,6 +985,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         stateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                              startupPreferences: startupPreferences,
+                                                             tabsPreferences: tabsPreferences,
                                                              keyValueStore: keyValueStore,
                                                              sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
                                                              pixelFiring: PixelKit.shared)
@@ -919,15 +1023,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSWindow.allowsAutomaticWindowTabbing = false
         // Fix SwifUI context menus and its owner View leaking
         SwiftUIContextMenuRetainCycleFix.setUp()
-
-#if !DEBUG
-        // Start UI hang watchdog
-        if featureFlagger.isFeatureOn(.hangReporting) {
-            Task {
-                await watchdog.start()
-            }
-        }
-#endif
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -956,8 +1051,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         LottieConfiguration.shared.renderingEngine = .mainThread
 
         configurationManager.start()
-        _ = DownloadListCoordinator.shared
-        _ = RecentlyClosedCoordinator.shared
 
         let isFirstLaunch = LocalStatisticsStore().atb == nil
 
@@ -1107,9 +1200,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidBecomeActive(_ notification: Notification) {
         guard didFinishLaunching else { return }
 
-        fireDailyActiveUserPixel()
-        fireDailyFireWindowConfigurationPixel()
+        fireDailyActiveUserPixels()
+        fireDailyFireWindowConfigurationPixels()
+
         autoconsentDailyStats.sendDailyPixelIfNeeded()
+        fireAutoconsentDailyPixel()
 
         initializeSync()
 
@@ -1139,20 +1234,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         defaultBrowserAndDockPromptService.applicationDidBecomeActive()
     }
 
-    private func fireDailyActiveUserPixel() {
+    private func fireDailyActiveUserPixels() {
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyActiveUser), frequency: .legacyDaily)
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault)), frequency: .daily)
 #if SPARKLE
-        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyActiveUser(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .legacyDaily)
-#else
-        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyActiveUser(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: nil)), frequency: .legacyDaily)
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyAddedToDock(isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .daily)
 #endif
     }
 
-    private func fireDailyFireWindowConfigurationPixel() {
-        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfiguration(
-            startupFireWindow: startupPreferences.startupWindowType == .fireWindow,
-            openFireWindowByDefault: dataClearingPreferences.shouldOpenFireWindowByDefault,
+    private func fireDailyFireWindowConfigurationPixels() {
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfigurationStartupFireWindowEnabled(
+            startupFireWindow: startupPreferences.startupWindowType == .fireWindow
+        )), frequency: .daily)
+
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled(
+            openFireWindowByDefault: dataClearingPreferences.shouldOpenFireWindowByDefault
+        )), frequency: .daily)
+
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyFireWindowConfigurationFireAnimationEnabled(
             fireAnimationEnabled: dataClearingPreferences.isFireAnimationEnabled
         )), frequency: .daily)
+    }
+
+    private func fireAutoconsentDailyPixel() {
+        guard featureFlagger.isFeatureOn(.newTabPageAutoconsentStats) else { return }
+
+        Task {
+            let dailyStats = await autoconsentStats.fetchAutoconsentDailyUsagePack().asPixelParameters()
+            PixelKit.fire(AutoconsentPixel.usageStats(stats: dailyStats), frequency: .daily)
+        }
     }
 
     private func initializeSync() {
@@ -1163,11 +1273,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        if !FileDownloadManager.shared.downloads.isEmpty {
+        if !downloadManager.downloads.isEmpty {
             // if there‘re downloads without location chosen yet (save dialog should display) - ignore them
-            let activeDownloads = Set(FileDownloadManager.shared.downloads.filter { $0.state.isDownloading })
+            let activeDownloads = Set(downloadManager.downloads.filter { $0.state.isDownloading })
             if !activeDownloads.isEmpty {
-                let alert = NSAlert.activeDownloadsTerminationAlert(for: FileDownloadManager.shared.downloads)
+                let alert = NSAlert.activeDownloadsTerminationAlert(for: downloadManager.downloads)
                 let downloadsFinishedCancellable = FileDownloadManager.observeDownloadsFinished(activeDownloads) {
                     // close alert and burn the window when all downloads finished
                     NSApp.stopModal(withCode: .OK)
@@ -1178,8 +1288,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     return .terminateCancel
                 }
             }
-            FileDownloadManager.shared.cancelAll(waitUntilDone: true)
-            DownloadListCoordinator.shared.sync()
+            downloadManager.cancelAll(waitUntilDone: true)
+            downloadListCoordinator.sync()
         }
 
         // Cancel any active update tracking flow
@@ -1300,7 +1410,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let environment = defaultEnvironment
 #endif
         let syncErrorHandler = SyncErrorHandler()
-        let syncDataProviders = SyncDataProviders(
+        let syncDataProviders = SyncDataProvidersSource(
             bookmarksDatabase: bookmarkDatabase.db,
             bookmarkManager: bookmarkManager,
             appearancePreferences: appearancePreferences,
@@ -1509,15 +1619,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 extension AppDelegate: UNUserNotificationCenterDelegate {
 
     func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                willPresent notification: UNNotification,
-                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        completionHandler(.banner)
+                                willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+        return .banner
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                didReceive response: UNNotificationResponse,
-                                withCompletionHandler completionHandler: @escaping () -> Void) {
-        completionHandler()
+                                didReceive response: UNNotificationResponse) async {
+        if let notificationIdentifier = DefaultBrowserAndDockPromptNotificationIdentifier(rawValue: response.notification.request.identifier) {
+            await defaultBrowserAndDockPromptService.handleNotificationResponse(notificationIdentifier)
+        }
     }
 
 }
@@ -1535,6 +1645,7 @@ extension AppDelegate: UserScriptDependenciesProviding {
             customizationModel: newTabPageCustomizationModel,
             bookmarkManager: bookmarkManager,
             faviconManager: faviconManager,
+            duckPlayerHistoryEntryTitleProvider: duckPlayer,
             contentBlocking: contentBlocking,
             trackerDataManager: contentBlocking.trackerDataManager,
             activeRemoteMessageModel: activeRemoteMessageModel,
@@ -1547,7 +1658,7 @@ extension AppDelegate: UserScriptDependenciesProviding {
             keyValueStore: keyValueStore,
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
-            tabsPreferences: TabsPreferences.shared,
+            tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
             winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
         )

@@ -22,10 +22,6 @@ import Foundation
 @MainActor
 final class TabDragAndDropManager {
 
-    static let shared = TabDragAndDropManager()
-
-    private init() { }
-
     struct Unit {
         weak var tabCollectionViewModel: TabCollectionViewModel?
         var index: TabIndex

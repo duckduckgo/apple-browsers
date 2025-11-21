@@ -21,7 +21,9 @@ import Common
 import History
 import HistoryView
 import PersistenceTestingUtils
+import SharedTestUtilities
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ScriptSourceProviderTests: XCTestCase {
@@ -48,16 +50,19 @@ final class ScriptSourceProviderTests: XCTestCase {
 
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
 
+        let featureFlagger = MockFeatureFlagger()
+        let privacyConfigurationManager = MockPrivacyConfigurationManager()
         let appearancePreferences = AppearancePreferences(
             keyValueStore: try MockKeyValueFileStore(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
-        )
-        let startupPreferences = StartupPreferences(
-            persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
-            appearancePreferences: appearancePreferences
+            privacyConfigurationManager: privacyConfigurationManager,
+            featureFlagger: featureFlagger
         )
         let windowControllersManager = WindowControllersManagerMock()
+        let startupPreferences = StartupPreferences(
+            persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
+            windowControllersManager: windowControllersManager,
+            appearancePreferences: appearancePreferences
+        )
         let fireCoordinator = FireCoordinator(tld: TLD(),
                                               featureFlagger: Application.appDelegate.featureFlagger,
                                               historyCoordinating: HistoryCoordinatingMock(),
@@ -70,13 +75,15 @@ final class ScriptSourceProviderTests: XCTestCase {
                                               historyProvider: MockHistoryViewDataProvider())
         let sourceProvider = ScriptSourceProvider(
             configStorage: MockConfigurationStore(),
-            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
-            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(),
+            privacyConfigurationManager: privacyConfigurationManager,
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
+            duckPlayer: DuckPlayer(preferencesPersistor: DuckPlayerPreferencesPersistorMock(), privacyConfigurationManager: privacyConfigurationManager, internalUserDecider: featureFlagger.internalUserDecider),
             contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
             trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()),
             experimentManager: experimentManager,
             tld: Application.appDelegate.tld,
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: featureFlagger,
             onboardingNavigationDelegate: CapturingOnboardingNavigation(),
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,

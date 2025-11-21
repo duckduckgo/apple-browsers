@@ -27,10 +27,12 @@ extension Preferences {
     struct EmailProtectionView: View, PreferencesTabOpening {
         var emailManager: EmailManager
         @ObservedObject var protectionStatus: PrivacyProtectionStatus
+        let windowControllersManager: WindowControllersManagerProtocol
 
-        init(emailManager: EmailManager, protectionStatus: PrivacyProtectionStatus?) {
+        init(emailManager: EmailManager, protectionStatus: PrivacyProtectionStatus?, windowControllersManager: WindowControllersManagerProtocol) {
             self.emailManager = emailManager
             self.protectionStatus = protectionStatus ?? PrivacyProtectionStatus()
+            self.windowControllersManager = windowControllersManager
         }
 
         var body: some View {

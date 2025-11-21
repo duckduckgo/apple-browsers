@@ -16,10 +16,13 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Combine
+import Common
 import Foundation
 import History
 import os.log
+import SharedTestUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -190,11 +193,8 @@ final class FireTests: XCTestCase {
         let permissionManager = PermissionManagerMock()
         let faviconManager = FaviconManagerMock()
 
-        let pinnedTabs: [Tab] = [
-            .init(content: .url("https://duck.com/".url!, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration()),
-            .init(content: .url("https://spreadprivacy.com/".url!, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration()),
-            .init(content: .url("https://wikipedia.org/".url!, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration())
-        ]
+        let urls = ["https://duck.com/", "https://spreadprivacy.com/", "https://wikipedia.org/"].map { $0.url! }
+        let pinnedTabs: [Tab] = urls.map { Tab(content: .url($0, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration()) }
         pinnedTabsManagerProvider.newPinnedTabsManager = PinnedTabsManager(tabCollection: .init(tabs: pinnedTabs))
 
         let fire = Fire(cacheManager: manager,
@@ -222,7 +222,7 @@ final class FireTests: XCTestCase {
 
         // Verify: No new tab is inserted because pinned tabs exist (window stays open with pinned tabs only)
         XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 0, "No new regular tab should be inserted when pinned tabs exist")
-        XCTAssertEqual(pinnedTabsManagerProvider.newPinnedTabsManager.tabCollection.tabs.map(\.content.userEditableUrl), pinnedTabs.map(\.content.userEditableUrl), "Pinned tabs should be preserved")
+        XCTAssertEqual(tabCollectionViewModel.pinnedTabsCollection?.tabs.map(\.content.userEditableUrl), urls as [URL?], "Pinned tabs should be preserved")
     }
 
     @MainActor
@@ -309,6 +309,7 @@ final class FireTests: XCTestCase {
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                                     service: service,
                                                                     startupPreferences: NSApp.delegateTyped.startupPreferences,
+                                                                    tabsPreferences: NSApp.delegateTyped.tabsPreferences,
                                                                     keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                                     sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator,
                                                                     pixelFiring: nil)
@@ -332,6 +333,7 @@ final class FireTests: XCTestCase {
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                                     service: service,
                                                                     startupPreferences: NSApp.delegateTyped.startupPreferences,
+                                                                    tabsPreferences: NSApp.delegateTyped.tabsPreferences,
                                                                     keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                                     sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator,
                                                                     pixelFiring: nil)
@@ -538,6 +540,67 @@ final class FireTests: XCTestCase {
         await fulfillment(of: [burningExpectation], timeout: 5)
     }
 
+    // MARK: - Helpers
+
+    @MainActor
+    func testWhenBurnAllIsCalled_AutoconsentStatsAreCleared() async {
+        let autoconsentStats = AutoconsentStatsMock()
+
+        // Simulate some recorded stats
+        await autoconsentStats.recordAutoconsentAction(clicksMade: 5, timeSpent: 10.0)
+        let initialPopUpsBlocked = await autoconsentStats.fetchTotalCookiePopUpsBlocked()
+        XCTAssertEqual(initialPopUpsBlocked, 1)
+
+        let fire = Fire(autoconsentStats: autoconsentStats,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+                        tld: Application.appDelegate.tld)
+
+        let burningExpectation = expectation(description: "Burning")
+
+        fire.burnAll {
+            XCTAssertTrue(autoconsentStats.clearAutoconsentStatsCalled)
+            burningExpectation.fulfill()
+        }
+
+        await fulfillment(of: [burningExpectation], timeout: 5)
+
+        // Verify stats were actually cleared
+        let clearedStats = await autoconsentStats.fetchAutoconsentDailyUsagePack()
+        XCTAssertEqual(clearedStats.totalCookiePopUpsBlocked, 0)
+        XCTAssertEqual(clearedStats.totalClicksMadeBlockingCookiePopUps, 0)
+        XCTAssertEqual(clearedStats.totalTotalTimeSpentBlockingCookiePopUps, 0.0)
+    }
+
+    @MainActor
+    func testWhenBurnEntityIsCalled_WithCookiesAndSiteData_AutoconsentStatsAreCleared() async {
+        let autoconsentStats = AutoconsentStatsMock()
+
+        // Simulate some recorded stats
+        await autoconsentStats.recordAutoconsentAction(clicksMade: 10, timeSpent: 25.5)
+        let initialPopUpsBlocked = await autoconsentStats.fetchTotalCookiePopUpsBlocked()
+        XCTAssertEqual(initialPopUpsBlocked, 1)
+
+        let fire = Fire(autoconsentStats: autoconsentStats,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+                        tld: Application.appDelegate.tld)
+
+        let burningExpectation = expectation(description: "Burning")
+
+        fire.burnEntity(.none(selectedDomains: Set()),
+                       includingHistory: false,
+                       includeCookiesAndSiteData: true,
+                       includeChatHistory: false) {
+            XCTAssertTrue(autoconsentStats.clearAutoconsentStatsCalled)
+            burningExpectation.fulfill()
+        }
+
+        await fulfillment(of: [burningExpectation], timeout: 5)
+
+        // Verify stats were actually cleared
+        let clearedPopUpsBlocked = await autoconsentStats.fetchTotalCookiePopUpsBlocked()
+        XCTAssertEqual(clearedPopUpsBlocked, 0)
+    }
+
     @MainActor
     func preparePersistedState(withFileName fileName: String) -> FileStore {
         let fileStore = FileStoreMock()
@@ -551,16 +614,20 @@ final class FireTests: XCTestCase {
         return fileStore
     }
 
+    @MainActor
+    private func makeTab(url: URL) -> Tab {
+        Tab(content: .url(url, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration(), extensionsBuilder: TestTabExtensionsBuilder())
+    }
+
 }
 
 fileprivate extension TabCollectionViewModel {
 
     @MainActor
     static func makeTabCollectionViewModel(with pinnedTabsManagerProvider: PinnedTabsManagerProviding) -> TabCollectionViewModel {
-
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(), pinnedTabsManagerProvider: pinnedTabsManagerProvider)
-        tabCollectionViewModel.append(tab: Tab(content: .none))
-        tabCollectionViewModel.append(tab: Tab(content: .none))
+        tabCollectionViewModel.append(tab: Tab(content: .none, extensionsBuilder: TestTabExtensionsBuilder()))
+        tabCollectionViewModel.append(tab: Tab(content: .none, extensionsBuilder: TestTabExtensionsBuilder()))
         return tabCollectionViewModel
     }
 
@@ -595,3 +662,6 @@ private class WKVisitedLinkStoreMock: NSObject {
     }
 
 }
+
+extension FileStoreMock: FileStore {}
+extension MockAIChatHistoryCleaner: AIChatHistoryCleaning {}

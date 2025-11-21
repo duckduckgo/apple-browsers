@@ -129,18 +129,7 @@ This is the DuckDuckGo browser for iOS and macOS, built with privacy-first princ
 
 **NEVER use `print()` in production code. ALWAYS use appropriate Logger extensions:**
 
-```swift
-import os.log
-
-✅ // GOOD: Use Logger extensions for different contexts
-Logger.general.debug("Service state changed: \(newState)")
-Logger.network.info("HTTP request completed: \(response.statusCode)")
-Logger.ui.debug("View layout updated with \(items.count) items")
-
-❌ // BAD: Using print() statements
-print("Service state changed")  // Never use print()
-print("DEBUG: \(someValue)")    // Use Logger.debug() instead
-```
+**Example:** See [logging-guidelines.swift](general/logging-guidelines.swift)
 
 **Available Logger categories:**
 - `Logger.general` - General app functionality
@@ -155,29 +144,10 @@ print("DEBUG: \(someValue)")    // Use Logger.debug() instead
 - Integration with system logging infrastructure
 
 ## Dependency Injection Pattern (iOS)
-```swift
-// ✅ CORRECT pattern used throughout codebase
-final class FeatureViewModel: ObservableObject {
-    private let service: FeatureServiceProtocol
-    
-    init(dependencies: DependencyProvider = AppDependencyProvider.shared) {
-        self.service = dependencies.featureService
-    }
-}
-```
+**Example:** See [dependency-injection-pattern.swift](general/dependency-injection-pattern.swift)
 
 ## Design System Usage (MANDATORY)
-```swift
-// ✅ REQUIRED - Use DesignResourcesKit
-Text("Title")
-    .foregroundColor(Color(designSystemColor: .textPrimary))
-
-Image(uiImage: DesignSystemImages.Color.Size24.bookmark)
-
-// ❌ FORBIDDEN - Hardcoded colors/icons
-Text("Title").foregroundColor(.black)
-Image(systemName: "bookmark")
-```
+**Example:** See [design-system-usage.swift](general/design-system-usage.swift)
 
 ## When to Consult Specific Rules
 - **New ViewModels**: `architecture.md` + `swiftui-style.md` + `anti-patterns.md`
@@ -221,25 +191,10 @@ Image(systemName: "bookmark")
 5. Only then execute test commands
 
 #### What NOT to Do:
-```bash
-# ❌ WRONG - Never do these automatically
-git add .
-git commit -m "Updated files"
-git push origin main
-swift test
-npm test
-xcodebuild test
-```
+**Example:** See [git-workflow-wrong.sh](general/git-workflow-wrong.sh)
 
 #### What TO Do:
-```bash
-# ✅ CORRECT - Ask first
-echo "I've made the requested changes. Would you like me to:"
-echo "1. Commit these changes?"
-echo "2. Run the tests?" 
-echo "3. Push to remote?"
-# Wait for user response before any commands
-```
+**Example:** See [git-workflow-correct.sh](general/git-workflow-correct.sh)
 
 **These rules have NO exceptions. Always ask before executing git or test commands.**
 

@@ -50,6 +50,8 @@ struct LargeOmniBarState {
         var onEnterPadState: OmniBarState { return self }
         var onEnterPhoneState: OmniBarState { return SmallOmniBarState.HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onReloadState: OmniBarState { return BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onEnterAIChatState: OmniBarState { self }
+
         var showSearchLoupe: Bool { !dependencies.voiceSearchHelper.isVoiceSearchEnabled }
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
 
@@ -95,6 +97,8 @@ struct LargeOmniBarState {
         var onEnterPadState: OmniBarState { return self }
         var onEnterPhoneState: OmniBarState { return SmallOmniBarState.HomeTextEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onReloadState: OmniBarState { return HomeTextEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onEnterAIChatState: OmniBarState { self }
+
         var showSearchLoupe: Bool { !dependencies.voiceSearchHelper.isVoiceSearchEnabled }
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
 
@@ -133,6 +137,8 @@ struct LargeOmniBarState {
         var onEnterPadState: OmniBarState { return self }
         var onEnterPhoneState: OmniBarState { return SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onReloadState: OmniBarState { return HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onEnterAIChatState: OmniBarState { self }
+
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
 
         let isBrowsing = false
@@ -169,6 +175,8 @@ struct LargeOmniBarState {
         var onEnterPadState: OmniBarState { return self }
         var onEnterPhoneState: OmniBarState { return SmallOmniBarState.BrowsingEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onReloadState: OmniBarState { return BrowsingEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onEnterAIChatState: OmniBarState { self }
+
         var showSearchLoupe: Bool { !dependencies.voiceSearchHelper.isVoiceSearchEnabled }
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
 
@@ -206,6 +214,8 @@ struct LargeOmniBarState {
         var onEnterPadState: OmniBarState { return self }
         var onEnterPhoneState: OmniBarState { return SmallOmniBarState.BrowsingTextEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onReloadState: OmniBarState { return BrowsingTextEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onEnterAIChatState: OmniBarState { self }
+
         let showSearchLoupe = false
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
 
@@ -229,10 +239,7 @@ struct LargeOmniBarState {
         let showClear = false
         var showAbort: Bool { isLoading }
         var showRefresh: Bool { return !isLoading && dependencies.isRefreshButtonEnabled }
-        var showCustomizableButton: Bool {
-            guard dependencies.mobileCustomization.state.isEnabled else { return true }
-            return dependencies.mobileCustomization.state.currentAddressBarButton != .none
-        }
+        let showCustomizableButton = true
         let showMenu = true
         let showSettings = false
         let showCancel = false
@@ -248,6 +255,8 @@ struct LargeOmniBarState {
         var onEnterPadState: OmniBarState { return self }
         var onEnterPhoneState: OmniBarState { return SmallOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onReloadState: OmniBarState { return BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onEnterAIChatState: OmniBarState { self }
+
 
         let isBrowsing = true
 

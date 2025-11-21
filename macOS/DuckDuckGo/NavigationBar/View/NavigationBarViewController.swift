@@ -60,7 +60,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet private var navigationButtons: NSStackView!
     @IBOutlet private var addressBarContainer: NSView!
     @IBOutlet private var daxLogo: NSImageView!
-    @IBOutlet private var addressBarStack: NSStackView!
+    @IBOutlet var addressBarStack: NSStackView!
 
     @IBOutlet private(set) var menuButtons: NSStackView!
 
@@ -115,10 +115,12 @@ final class NavigationBarViewController: NSViewController {
     private let bookmarkDragDropManager: BookmarkDragDropManager
     private let bookmarkManager: BookmarkManager
     private let historyCoordinator: HistoryCoordinator
+    private let recentlyClosedCoordinator: RecentlyClosedCoordinating
     private let fireproofDomains: FireproofDomains
     private let contentBlocking: ContentBlockingProtocol
     private let permissionManager: PermissionManagerProtocol
     private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
+    private let sharedTextState: AddressBarSharedTextState
 
     private var subscriptionManager: SubscriptionAuthV1toV2Bridge {
         Application.appDelegate.subscriptionAuthV1toV2Bridge
@@ -157,8 +159,13 @@ final class NavigationBarViewController: NSViewController {
 
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
     private let featureFlagger: FeatureFlagger
+    private let searchPreferences: SearchPreferences
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
+    private let defaultBrowserPreferences: DefaultBrowserPreferences
+    private let downloadsPreferences: DownloadsPreferences
+    private let tabsPreferences: TabsPreferences
+    private let accessibilityPreferences: AccessibilityPreferences
     private let showTab: (Tab.TabContent) -> Void
 
     let themeManager: ThemeManaging
@@ -208,10 +215,11 @@ final class NavigationBarViewController: NSViewController {
     // MARK: View Lifecycle
 
     static func create(tabCollectionViewModel: TabCollectionViewModel,
-                       downloadListCoordinator: DownloadListCoordinator = .shared,
+                       downloadListCoordinator: DownloadListCoordinator,
                        bookmarkManager: BookmarkManager,
                        bookmarkDragDropManager: BookmarkDragDropManager,
                        historyCoordinator: HistoryCoordinator,
+                       recentlyClosedCoordinator: RecentlyClosedCoordinating,
                        contentBlocking: ContentBlockingProtocol,
                        fireproofDomains: FireproofDomains,
                        permissionManager: PermissionManagerProtocol,
@@ -220,12 +228,19 @@ final class NavigationBarViewController: NSViewController {
                        autofillPopoverPresenter: AutofillPopoverPresenter,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+                       searchPreferences: SearchPreferences,
+                       webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
                        themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
                        aiChatSidebarPresenter: AIChatSidebarPresenting,
                        vpnUpsellVisibilityManager: VPNUpsellVisibilityManager = NSApp.delegateTyped.vpnUpsellVisibilityManager,
                        vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
                        sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
+                       defaultBrowserPreferences: DefaultBrowserPreferences,
+                       downloadsPreferences: DownloadsPreferences,
+                       tabsPreferences: TabsPreferences,
+                       accessibilityPreferences: AccessibilityPreferences,
+                       sharedTextState: AddressBarSharedTextState,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
                                Application.appDelegate.windowControllersManager.showTab(with: content)
@@ -240,6 +255,7 @@ final class NavigationBarViewController: NSViewController {
                 bookmarkManager: bookmarkManager,
                 bookmarkDragDropManager: bookmarkDragDropManager,
                 historyCoordinator: historyCoordinator,
+                recentlyClosedCoordinator: recentlyClosedCoordinator,
                 contentBlocking: contentBlocking,
                 fireproofDomains: fireproofDomains,
                 permissionManager: permissionManager,
@@ -248,12 +264,19 @@ final class NavigationBarViewController: NSViewController {
                 autofillPopoverPresenter: autofillPopoverPresenter,
                 brokenSitePromptLimiter: brokenSitePromptLimiter,
                 featureFlagger: featureFlagger,
+                searchPreferences: searchPreferences,
+                webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 themeManager: themeManager,
                 aiChatMenuConfig: aiChatMenuConfig,
                 aiChatSidebarPresenter: aiChatSidebarPresenter,
                 vpnUpsellVisibilityManager: vpnUpsellVisibilityManager,
                 vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
                 sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
+                defaultBrowserPreferences: defaultBrowserPreferences,
+                downloadsPreferences: downloadsPreferences,
+                tabsPreferences: tabsPreferences,
+                accessibilityPreferences: accessibilityPreferences,
+                sharedTextState: sharedTextState,
                 showTab: showTab
             )
         }!
@@ -266,6 +289,7 @@ final class NavigationBarViewController: NSViewController {
         bookmarkManager: BookmarkManager,
         bookmarkDragDropManager: BookmarkDragDropManager,
         historyCoordinator: HistoryCoordinator,
+        recentlyClosedCoordinator: RecentlyClosedCoordinating,
         contentBlocking: ContentBlockingProtocol,
         fireproofDomains: FireproofDomains,
         permissionManager: PermissionManagerProtocol,
@@ -274,12 +298,19 @@ final class NavigationBarViewController: NSViewController {
         autofillPopoverPresenter: AutofillPopoverPresenter,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
         featureFlagger: FeatureFlagger,
+        searchPreferences: SearchPreferences,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         themeManager: ThemeManaging,
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         aiChatSidebarPresenter: AIChatSidebarPresenting,
         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter,
         sessionRestorePromptCoordinator: SessionRestorePromptCoordinating,
+        defaultBrowserPreferences: DefaultBrowserPreferences,
+        downloadsPreferences: DownloadsPreferences,
+        tabsPreferences: TabsPreferences,
+        accessibilityPreferences: AccessibilityPreferences,
+        sharedTextState: AddressBarSharedTextState,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
@@ -288,6 +319,9 @@ final class NavigationBarViewController: NSViewController {
             bookmarkDragDropManager: bookmarkDragDropManager,
             contentBlocking: contentBlocking,
             fireproofDomains: fireproofDomains,
+            downloadsPreferences: downloadsPreferences,
+            downloadListCoordinator: downloadListCoordinator,
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences,
             permissionManager: permissionManager,
             networkProtectionPopoverManager: networkProtectionPopoverManager,
             autofillPopoverPresenter: autofillPopoverPresenter,
@@ -304,19 +338,36 @@ final class NavigationBarViewController: NSViewController {
         self.bookmarkManager = bookmarkManager
         self.bookmarkDragDropManager = bookmarkDragDropManager
         self.historyCoordinator = historyCoordinator
+        self.recentlyClosedCoordinator = recentlyClosedCoordinator
         self.contentBlocking = contentBlocking
         self.permissionManager = permissionManager
         self.fireproofDomains = fireproofDomains
         self.brokenSitePromptLimiter = brokenSitePromptLimiter
         self.featureFlagger = featureFlagger
+        self.searchPreferences = searchPreferences
         self.themeManager = themeManager
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
+        self.defaultBrowserPreferences = defaultBrowserPreferences
+        self.downloadsPreferences = downloadsPreferences
+        self.tabsPreferences = tabsPreferences
+        self.accessibilityPreferences = accessibilityPreferences
+        self.sharedTextState = sharedTextState
         self.showTab = showTab
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
         self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
-        goBackButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .back, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
-        goForwardButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .forward, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
+        goBackButtonMenuDelegate = NavigationButtonMenuDelegate(
+            buttonType: .back,
+            tabCollectionViewModel: tabCollectionViewModel,
+            historyCoordinator: historyCoordinator,
+            tabsPreferences: tabsPreferences
+        )
+        goForwardButtonMenuDelegate = NavigationButtonMenuDelegate(
+            buttonType: .forward,
+            tabCollectionViewModel: tabCollectionViewModel,
+            historyCoordinator: historyCoordinator,
+            tabsPreferences: tabsPreferences
+        )
         super.init(coder: coder)
     }
 
@@ -366,9 +417,13 @@ final class NavigationBarViewController: NSViewController {
                                                                       permissionManager: permissionManager,
                                                                       burnerMode: burnerMode,
                                                                       popovers: popovers,
+                                                                      searchPreferences: searchPreferences,
+                                                                      tabsPreferences: tabsPreferences,
+                                                                      accessibilityPreferences: accessibilityPreferences,
                                                                       onboardingPixelReporter: onboardingPixelReporter,
                                                                       aiChatMenuConfig: aiChatMenuConfig,
-                                                                      aiChatSidebarPresenter: aiChatSidebarPresenter) else {
+                                                                      aiChatSidebarPresenter: aiChatSidebarPresenter,
+                                                                      sharedTextState: sharedTextState) else {
             fatalError("NavigationBarViewController: Failed to init AddressBarViewController")
         }
 
@@ -394,7 +449,6 @@ final class NavigationBarViewController: NSViewController {
         setupNetworkProtectionButton()
 
         subscribeToThemeChanges()
-        subscribeToSelectedTabViewModel()
         listenToPasswordManagerNotifications()
         listenToMessageNotifications()
         listenToFeedbackFormNotifications()
@@ -452,6 +506,8 @@ final class NavigationBarViewController: NSViewController {
     }
 
     override func viewWillAppear() {
+        // Subscribe in viewWillAppear to prevent leaks in tests
+        subscribeToSelectedTabViewModel()
         // should be called when the view is about to appear,
         // otherwise the progress indicator gets misplaced
         subscribeToDownloads()
@@ -480,6 +536,8 @@ final class NavigationBarViewController: NSViewController {
      * > `force` parameter is only used by `HistoryDebugMenu`.
      */
     func presentHistoryViewOnboardingIfNeeded(force: Bool = false) {
+        guard !isInPopUpWindow else { return }
+
         let onboardingDecider = HistoryViewOnboardingDecider()
         guard force || onboardingDecider.shouldPresentOnboarding,
               !tabCollectionViewModel.isBurner,
@@ -518,10 +576,10 @@ final class NavigationBarViewController: NSViewController {
         let performResize = { [weak self] in
             guard let self else { return }
 
-            let isAddressBarFocused = view.window?.firstResponder == addressBarViewController?.addressBarTextField.currentEditor()
+            let isAddressBarFocused = addressBarViewController?.selectionState.isSelected ?? false
 
             let height: NSLayoutConstraint = animated ? navigationBarHeightConstraint.animator() : navigationBarHeightConstraint
-            height.constant = addressBarStyleProvider.navigationBarHeight(for: sizeClass)
+            height.constant = addressBarStyleProvider.navigationBarHeight(for: sizeClass, focused: isAddressBarFocused)
 
             let barTop: NSLayoutConstraint = animated ? addressBarTopConstraint.animator() : addressBarTopConstraint
             barTop.constant = addressBarStyleProvider.addressBarTopPadding(for: sizeClass, focused: isAddressBarFocused)
@@ -1139,6 +1197,7 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func subscribeToSelectedTabViewModel() {
+        guard selectedTabViewModelCancellable == nil else { return }
         selectedTabViewModelCancellable = tabCollectionViewModel.$selectedTabViewModel.receive(on: DispatchQueue.main).sink { [weak self] _ in
             self?.subscribeToNavigationActionFlags()
             self?.subscribeToCredentialsToSave()
@@ -1155,6 +1214,7 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func subscribeToDownloads() {
+        guard downloadsCancellables.isEmpty else { return }
         // show Downloads button on download completion for downloads started from non-Fire window
         downloadListCoordinator.updates
             .filter { update in
@@ -1164,7 +1224,7 @@ final class NavigationBarViewController: NSViewController {
             .throttle(for: 0.5, scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] _ in
                 guard let self, !self.isDownloadsPopoverShown,
-                      DownloadsPreferences.shared.shouldOpenPopupOnCompletion,
+                      downloadsPreferences.shouldOpenPopupOnCompletion,
                       downloadsButton.window?.isKeyWindow == true else { return }
 
                 self.popovers.showDownloadsPopoverAndAutoHide(from: downloadsButton, popoverDelegate: self, downloadsDelegate: self)
@@ -1302,7 +1362,7 @@ final class NavigationBarViewController: NSViewController {
         // Create behavior using current event
         let behavior = LinkOpenBehavior(
             event: NSApp.currentEvent,
-            switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+            switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
             canOpenLinkInCurrentTab: true
         )
 
@@ -1342,7 +1402,7 @@ final class NavigationBarViewController: NSViewController {
 
         let behavior = LinkOpenBehavior(
             event: NSApp.currentEvent,
-            switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+            switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
             canOpenLinkInCurrentTab: true
         )
 
@@ -1384,6 +1444,7 @@ final class NavigationBarViewController: NSViewController {
         let menu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
                                    bookmarkManager: bookmarkManager,
                                    historyCoordinator: historyCoordinator,
+                                   recentlyClosedCoordinator: recentlyClosedCoordinator,
                                    fireproofDomains: fireproofDomains,
                                    passwordManagerCoordinator: PasswordManagerCoordinator.shared,
                                    vpnFeatureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager),
@@ -1391,6 +1452,7 @@ final class NavigationBarViewController: NSViewController {
                                    subscriptionManager: subscriptionManager,
                                    freemiumDBPFeature: freemiumDBPFeature,
                                    dockCustomizer: dockCustomization,
+                                   defaultBrowserPreferences: defaultBrowserPreferences,
                                    isUsingAuthV2: subscriptionManager is DefaultSubscriptionManagerV2)
 
         menu.actionDelegate = self
@@ -1439,7 +1501,7 @@ final class NavigationBarViewController: NSViewController {
         guard view.window?.isKeyWindow == true, (self.presentedViewControllers ?? []).isEmpty else { return }
 
         DispatchQueue.main.async {
-            let viewController = PopoverMessageViewController(message: "DuckDuckGo VPN was uninstalled")
+            let viewController = PopoverMessageViewController(message: UserText.vpnWasUninstalled)
             viewController.show(onParent: self, relativeTo: self.optionsButton)
         }
     }
@@ -1646,7 +1708,7 @@ final class NavigationBarViewController: NSViewController {
         // This allows the address bar to maintain its width when activating it at narrow widths.
         guard !isInPopUpWindow,
               let addressBarViewController,
-              !addressBarViewController.isFirstResponder || addressBarViewController.isHomePage else {
+              !addressBarViewController.isSelected || addressBarViewController.isHomePage else {
             return
         }
 
@@ -2149,6 +2211,13 @@ extension NavigationBarViewController: AddressBarViewControllerDelegate {
 
         if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
             resizeAddressBar(for: addressBarSizeClass, animated: false)
+        }
+    }
+
+    func addressBarViewControllerSearchModeToggleChanged(_ addressBarViewController: AddressBarViewController, isAIChatMode: Bool) {
+        if let mainViewController = parent as? MainViewController {
+            // When manually toggling to search mode (!isAIChatMode), keep the address bar selected
+            mainViewController.updateAIChatOmnibarContainerVisibility(visible: isAIChatMode, shouldKeepSelection: !isAIChatMode)
         }
     }
 }

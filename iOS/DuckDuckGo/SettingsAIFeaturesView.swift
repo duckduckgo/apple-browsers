@@ -24,6 +24,7 @@ import DesignResourcesKitIcons
 import BrowserServicesKit
 import Common
 import Networking
+import PixelKit
 
 struct SettingsAIFeaturesView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
@@ -125,14 +126,6 @@ struct SettingsAIFeaturesView: View {
                         SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
                                          accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
                     }
-                    
-                    if viewModel.shouldShowSERPSettingsFollowUpQuestions {
-                        Section(header: Text(UserText.aiChatSettingsAllowFollowUpQuestionsSectionTitle),
-                                footer: Text(UserText.aiChatSettingsAllowFollowUpQuestionsDescription)) {
-                            SettingsCellView(label: UserText.aiChatSettingsAllowFollowUpQuestionsToggle,
-                                             accessory: .toggle(isOn: viewModel.serpSettingsFollowUpQuestionsBinding))
-                        }
-                    }
                 }
             }
 
@@ -145,6 +138,21 @@ struct SettingsAIFeaturesView: View {
                                              image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist))
                         }
                         .listRowBackground(Color(designSystemColor: .surface))
+
+                        if viewModel.shouldShowHideAIGeneratedImagesSection {
+                            NavigationLink(destination:
+                                SERPSettingsView(page: .hideAIGeneratedImages)
+                                    .environmentObject(viewModel)
+                                    .onAppear {
+                                        PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
+                                    }
+                            ) {
+                                SettingsCellView(label: UserText.settingsAiFeaturesHideAIGeneratedImages,
+                                                 subtitle: UserText.settingsAiFeaturesHideAIGeneratedImagesSubtitle,
+                                                 image: Image(uiImage: DesignSystemImages.Glyphs.Size24.imageAIHide))
+                            }
+                            .listRowBackground(Color(designSystemColor: .surface))
+                        }
                     } else {
                         SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
                                          subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,

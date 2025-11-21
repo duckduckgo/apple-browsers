@@ -229,6 +229,9 @@ extension Pixel {
         case onboardingIntroChooseCustomAppIconColorCTAPressed
         case onboardingIntroChooseAddressBarImpressionUnique
         case onboardingIntroBottomAddressBarSelected
+        case onboardingIntroChooseSearchExperienceImpressionUnique
+        case onboardingIntroAIChatSelected
+        case onboardingIntroSearchOnlySelected
 
         case onboardingContextualSearchOptionTappedUnique
         case onboardingContextualSearchCustomUnique
@@ -462,6 +465,9 @@ extension Pixel {
         case autofillCardsManagementDeleteCard
         case autofillCardsManagementSaveCard
         case autofillCardsManagementUpdateCard
+
+        case autofillCardsAutofilledInMainframe
+        case autofillCardsAutofilledInIframe
 
         case autofillManagementScreenVisitSurveyAvailable
 
@@ -712,7 +718,9 @@ extension Pixel {
         case remoteMessagePrimaryActionClicked
         case remoteMessageSecondaryActionClicked
         case remoteMessageSheet
-        
+        case remoteMessageCardShown
+        case remoteMessageCardClicked
+
         // MARK: debug pixels
         case dbCrashDetected(appIdentifier: String?)
         case dbCrashDetectedDaily(appIdentifier: String?)
@@ -788,6 +796,8 @@ extension Pixel {
         case adAttributionLogicRequestingAttributionTimedOut
         case adAttributionLogicWrongVendorOnSuccessfulCompilation
         case adAttributionLogicWrongVendorOnFailedCompilation
+
+        case debugTabSwitcherDidChangeInvalidState
 
         case debugBookmarksInitialStructureQueryFailed
         case debugBookmarksDatabaseFileMissing
@@ -1304,15 +1314,15 @@ extension Pixel {
         // MARK: WebView Error Page Shown
         case webViewErrorPageShown
 
-        case webViewExternalSchemeNavigationXSafariHTTPSCancel
-        case webViewExternalSchemeNavigationXSafariHTTPSContinue
-
         // MARK: Browsing
         case stopPageLoad
 
         // MARK: Launch time
         case appDidFinishLaunchingTime(time: BucketAggregation)
         case appDidShowUITime(time: BucketAggregation)
+
+        // MARK: Scene lifecycle
+        case sceneDidDisconnectAndAttemptedToReconnect
 
         // MARK: AI Chat
         case aiChatNoRemoteSettingsFound(settings: String)
@@ -1334,8 +1344,6 @@ extension Pixel {
         case aiChatSettingsBrowserMenuTurnedOn
         case aiChatSettingsTabManagerTurnedOff
         case aiChatSettingsTabManagerTurnedOn
-        case aiChatSettingsSERPFollowupTurnedOff
-        case aiChatSettingsSERPFollowupTurnedOn
         case aiChatSettingsDisplayed
         case aiChatSettingsEnabled
         case aiChatSettingsDisabled
@@ -1383,6 +1391,12 @@ extension Pixel {
         // MARK: AI Chat History Deletion
         case aiChatHistoryDeleteSuccessful
         case aiChatHistoryDeleteFailed
+
+        // MARK: Customization
+        case customizationAddressBarStarted
+        case customizationAddressBarSelected
+        case customizationToolbarStarted
+        case customizationToolbarSelected
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1652,6 +1666,9 @@ extension Pixel.Event {
         case .onboardingIntroChooseCustomAppIconColorCTAPressed: return "m_preonboarding_icon_color_chosen"
         case .onboardingIntroChooseAddressBarImpressionUnique: return "m_preonboarding_choose_address_bar_impressions_unique"
         case .onboardingIntroBottomAddressBarSelected: return "m_preonboarding_bottom_address_bar_selected"
+        case .onboardingIntroChooseSearchExperienceImpressionUnique: return "m_preonboarding_choose_search_experience_impressions_unique"
+        case .onboardingIntroAIChatSelected: return "m_preonboarding_aichat_selected"
+        case .onboardingIntroSearchOnlySelected: return "m_preonboarding_search_only_selected"
 
         case .onboardingContextualSearchOptionTappedUnique: return "m_onboarding_search_option_tapped_unique"
         case .onboardingContextualSiteOptionTappedUnique: return "m_onboarding_visit_site_option_tapped_unique"
@@ -1860,6 +1877,9 @@ extension Pixel.Event {
         case .autofillCardsManagementSaveCard: return "autofill_cards_management_save_card"
         case .autofillCardsManagementUpdateCard: return "autofill_cards_management_update_card"
 
+        case .autofillCardsAutofilledInMainframe: return "autofill_cards_autofilled_in_mainframe"
+        case .autofillCardsAutofilledInIframe: return "autofill_cards_autofilled_in_iframe"
+
         case .autofillManagementScreenVisitSurveyAvailable: return "m_autofill_management_screen_visit_survey_available"
 
         case .getDesktopCopy: return "m_get_desktop_copy"
@@ -2060,6 +2080,8 @@ extension Pixel.Event {
         case .remoteMessagePrimaryActionClicked: return "m_remote_message_primary_action_clicked"
         case .remoteMessageSecondaryActionClicked: return "m_remote_message_secondary_action_clicked"
         case .remoteMessageSheet: return "m_remote_message_sheet"
+        case .remoteMessageCardShown: return "m_remote_message_card_shown"
+        case .remoteMessageCardClicked: return "m_remote_message_card_clicked"
 
             // MARK: debug pixels
 
@@ -2086,7 +2108,9 @@ extension Pixel.Event {
         case .dbRemoteMessagingUpdateMessageShownError: return "m_d_db_rm_update_message_shown"
         case .dbRemoteMessagingUpdateMessageStatusError: return "m_d_db_rm_update_message_status"
         case .dbLocalAuthenticationError: return "m_d_local_auth_error"
-            
+
+        case .debugTabSwitcherDidChangeInvalidState: return "m_debug_tabswitcher_didchange_invalidstate"
+
         case .debugBookmarksMigratedMoreThanOnce: return "m_debug_bookmarks_migrated-more-than-once"
             
         case .configurationFetchInfo: return "m_d_cfgfetch"
@@ -2642,12 +2666,13 @@ extension Pixel.Event {
 
         // MARK: Browsing
         case .stopPageLoad: return "m_stop-page-load"
-        case .webViewExternalSchemeNavigationXSafariHTTPSCancel: return "m_webview_external-scheme-navigation_x-safari-https_cancel"
-        case .webViewExternalSchemeNavigationXSafariHTTPSContinue: return "m_webview_external-scheme-navigation_x-safari-https_continue"
 
         // MARK: Launch time
         case .appDidFinishLaunchingTime(let time): return "m_debug_app-did-finish-launching-time-\(time)"
         case .appDidShowUITime(let time): return "m_debug_app-did-show-ui-time-2-\(time)"
+
+        // MARK: Scene lifecycle
+        case .sceneDidDisconnectAndAttemptedToReconnect: return "m_debug_scene-did-disconnect-and-attempted-to-reconnect"
 
         // MARK: AI Chat
         case .aiChatNoRemoteSettingsFound(let settings):
@@ -2669,8 +2694,6 @@ extension Pixel.Event {
         case .aiChatSettingsBrowserMenuTurnedOn: return "m_aichat_settings_browser_menu_turned_on"
         case .aiChatSettingsTabManagerTurnedOff: return "m_aichat_settings_tab_manager_turned_off"
         case .aiChatSettingsTabManagerTurnedOn: return "m_aichat_settings_tab_manager_turned_on"
-        case .aiChatSettingsSERPFollowupTurnedOff: return "m_aichat_settings_serp_followup_turned_off"
-        case .aiChatSettingsSERPFollowupTurnedOn: return "m_aichat_settings_serp_followup_turned_on"
         case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
         case .aiChatSettingsEnabled: return "m_aichat_settings_enabled"
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
@@ -2846,6 +2869,13 @@ extension Pixel.Event {
         case .recreateTmpWebViewFallbackFailed: return "m_debug_recreate-tmp-webview-fallback-failed"
         case .contentBlockingCompilationFailedMissingTmpDir: return "m_debug_content-blocking-compilation-failed-missing-tmp-dir"
         case .tmpDirStillMissingAfterRecreation: return "m_debug_tmp-dir-still-missing-after-recreation"
+
+        // MARK: Customization
+        case .customizationAddressBarStarted: return "m_customization_addressbar_started"
+        case .customizationAddressBarSelected: return "m_customization_addressbar_selected"
+        case .customizationToolbarStarted: return "m_customization_toolbar_started"
+        case .customizationToolbarSelected: return "m_customization_toolbar_selected"
+
         }
     }
 }

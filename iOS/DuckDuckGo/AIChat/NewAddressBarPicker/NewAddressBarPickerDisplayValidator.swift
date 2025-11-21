@@ -38,6 +38,7 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
     private let experimentalAIChatManager: ExperimentalAIChatManager
     private let appSettings: AppSettings
     private let pickerStorage: NewAddressBarPickerStorageReading
+    private let searchExperienceOnboardingProvider: OnboardingSearchExperienceProvider
 
     // MARK: - Initialization
     
@@ -47,12 +48,14 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         experimentalAIChatManager: ExperimentalAIChatManager,
         appSettings: AppSettings,
         pickerStorage: NewAddressBarPickerStorage,
+        searchExperienceOnboardingProvider: OnboardingSearchExperienceProvider
     ) {
         self.aiChatSettings = aiChatSettings
         self.featureFlagger = featureFlagger
         self.experimentalAIChatManager = experimentalAIChatManager
         self.appSettings = appSettings
         self.pickerStorage = pickerStorage
+        self.searchExperienceOnboardingProvider = searchExperienceOnboardingProvider
     }
     
     // MARK: - Public Interface
@@ -72,7 +75,10 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
         
         guard isFeatureFlagEnabled else { return false }
         Logger.addressBarPicker.info("✓ Feature flag is enabled")
-        
+
+        guard canShowPickerAfterOnboardingSelection else { return false }
+        Logger.addressBarPicker.info("✓ Passes onboarding selection check")
+
         guard !isAIChatSearchInputEnabled else { return false }
         Logger.addressBarPicker.info("✓ AIChat address bar is disabled")
 
@@ -108,6 +114,12 @@ struct NewAddressBarPickerDisplayValidator: NewAddressBarPickerDisplayValidating
 
     private var hasForceChoiceBeenShown: Bool {
         pickerStorage.hasBeenShown
+    }
+
+    private var canShowPickerAfterOnboardingSelection: Bool {
+        guard featureFlagger.isFeatureOn(.onboardingSearchExperience) else { return true }
+        guard searchExperienceOnboardingProvider.didMakeChoiceDuringOnboarding else { return true }
+        return searchExperienceOnboardingProvider.didEnableAIChatSearchInputDuringOnboarding
     }
 
     private var isRunningUITests: Bool {

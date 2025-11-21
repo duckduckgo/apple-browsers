@@ -20,6 +20,7 @@ import Common
 import UserScript
 import Foundation
 import WebKit
+import Persistence
 #if os(macOS)
 import Combine
 #endif
@@ -102,7 +103,7 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     ///
     /// Required for pushing messages from native to SERP
     /// (e.g., AI settings changes).
-    weak var webView: WKWebView?
+    public weak var webView: WKWebView?
 
     /// Security policy for message origin validation.
     ///
@@ -119,7 +120,7 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     ///
     /// Handles the actual persistence, platform-specific AI state queries,
     /// and feature flag checks.
-    private let serpSettingsProviding: SERPSettingsProviding
+    private var serpSettingsProviding: SERPSettingsProviding
 
 #if os(macOS)
     /// Combine cancellable for AI features publisher subscription.
@@ -167,6 +168,15 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
         }
         #endif
     }
+
+#if os(iOS)
+    /// Sets the store where to save the SERP settings. This is used on `iOS only`.
+    ///
+    /// - Parameter store: A `ThrowingKeyValueStoring` concrecte object.
+    public func setStore(_ store: ThrowingKeyValueStoring) {
+        self.serpSettingsProviding.keyValueStore = store
+    }
+#endif
 
     // MARK: - Subfeature
 
@@ -269,9 +279,9 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     /// ## Parameter Format
     ///
     /// The parameters dictionary can contain:
-    /// - `"return": "privateSearch"` - Navigate to privacy settings
-    /// - `"return": "aiFeatures"` - Navigate to AI settings after closing tab
-    /// - `"screen": "aiFeatures"` - Navigate directly to AI settings
+    /// - `"return": "privateSearch"` - Navigating back from Privacy Settings on SERP after tapping 'Save & Exit' (macOS only)
+    /// - `"return": "aiFeatures"` - Navigating back from Privacy Settings on SERP after tapping 'Save & Exit' (macOS only)
+    /// - `"screen": "aiFeatures"` - Navigate directly to AI settings after user tapped 'Open Duck.Ai Settings' on the SERP
     ///
     /// - Parameters:
     ///   - params: Dictionary specifying which screen to open
@@ -281,14 +291,11 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     private func openNativeSettings(params: Any, message: UserScriptMessage) -> Encodable? {
         guard let parameters = params as? [String: String] else { return nil }
 
-        // Check "return" parameter for navigation after closing tab
         if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.privateSearch {
-            delegate?.serpSettingsUserScriptDidRequestToOpenPrivacySettings(self)
+            delegate?.serpSettingsUserScriptDidRequestToCloseTab(self)
         } else if parameters[SERPSettingsConstants.returnParameterKey] == SERPSettingsConstants.aiFeatures {
-            delegate?.serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(self)
-        }
-        // Check "screen" parameter for direct navigation
-        else if parameters[SERPSettingsConstants.screenParameterKey] == SERPSettingsConstants.aiFeatures {
+            delegate?.serpSettingsUserScriptDidRequestToCloseTab(self)
+        } else if parameters[SERPSettingsConstants.screenParameterKey] == SERPSettingsConstants.aiFeatures {
             delegate?.serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(self)
         }
 
@@ -306,7 +313,7 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
     /// - Returns: Boolean indicating if AI chat is enabled
     @MainActor
     private func isNativeDuckAiEnabled(params: Any, message: UserScriptMessage) -> Encodable? {
-        return serpSettingsProviding.isAIChatEnabled
+        return NativeDuckAIState(enabled: serpSettingsProviding.isAIChatEnabled)
     }
 
     // MARK: - Native to SERP Communication
@@ -330,7 +337,7 @@ public final class SERPSettingsUserScript: NSObject, Subfeature {
         }
 
         broker?.push(method: SERPSettingsUserScriptMessages.nativeDuckAiSettingChanged.rawValue,
-                     params: serpSettingsProviding.isAIChatEnabled,
+                     params: NativeDuckAIState(enabled: serpSettingsProviding.isAIChatEnabled),
                      for: self,
                      into: webView)
     }
@@ -355,3 +362,9 @@ public extension Notification.Name {
     static let aiChatSettingsChanged = Notification.Name("com.duckduckgo.aichat.settings.changed")
 }
 #endif
+
+/// Model that holds the state of the Duck.ai state
+/// Needed for sending/receiving between SERP and Native.
+struct NativeDuckAIState: Encodable {
+    let enabled: Bool
+}

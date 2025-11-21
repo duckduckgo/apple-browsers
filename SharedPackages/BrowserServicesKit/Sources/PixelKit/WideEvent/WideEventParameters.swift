@@ -75,12 +75,12 @@ public enum WideEventParameter {
         static let platform = "global.platform"
         static let type = "global.type"
         static let sampleRate = "global.sample_rate"
-        static let formFactor = "global.form_factor"
     }
 
     public enum App {
         static let name = "app.name"
         static let version = "app.version"
+        static let formFactor = "app.form_factor"
         static let internalUser = "app.internal_user"
     }
 
@@ -95,6 +95,7 @@ public enum WideEventParameter {
 
         public static let errorDomain = "feature.data.error.domain"
         public static let errorCode = "feature.data.error.code"
+        public static let errorDescription = "feature.data.error.description"
         public static let underlyingErrorDomain = "feature.data.error.underlying_domain"
         public static let underlyingErrorCode = "feature.data.error.underlying_code"
     }

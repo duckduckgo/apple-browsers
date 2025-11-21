@@ -24,6 +24,7 @@ public enum FeatureFlagCategory: String, CaseIterable, Comparable {
     case dbp = "Personal Information Removal"
     case osSupportWarnings = "OS Support Warnings"
     case other = "Other"
+    case popupBlocking = "Popup Blocking"
     case sync = "Sync"
     case updates = "Updates"
     case vpn = "VPN"
@@ -77,6 +78,12 @@ extension FeatureFlag: FeatureFlagCategorization {
         case .dbpEmailConfirmationDecoupling,
                 .dbpRemoteBrokerDelivery:
             return .dbp
+        case .popupBlocking,
+                .extendedUserInitiatedPopupTimeout,
+                .suppressEmptyPopUpsOnApproval,
+                .allowPopupsForCurrentPage,
+                .popupPermissionButtonPersistence:
+            return .popupBlocking
         default:
             return .other
         }

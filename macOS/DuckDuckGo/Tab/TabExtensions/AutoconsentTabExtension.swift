@@ -36,6 +36,7 @@ final class AutoconsentTabExtension {
     private var userScriptCancellables = Set<AnyCancellable>()
     private let autoconsentStats: AutoconsentStatsCollecting
     private let featureFlagger: FeatureFlagger
+    private let popupManagedSubject = PassthroughSubject<AutoconsentUserScript.AutoconsentDoneMessage, Never>()
 
     private(set) weak var autoconsentUserScript: UserScriptWithAutoconsent? {
         didSet {
@@ -66,6 +67,7 @@ final class AutoconsentTabExtension {
         autoconsentUserScript.popupManagedPublisher
             .sink { [weak self] event in
                 self?.handlePopupManaged(event)
+                self?.popupManagedSubject.send(event)
             }
             .store(in: &userScriptCancellables)
     }
@@ -82,14 +84,14 @@ final class AutoconsentTabExtension {
 
 protocol AutoconsentProtocol: AnyObject {
     var autoconsentUserScript: UserScriptWithAutoconsent? { get }
-    var popupManagedPublisher: AnyPublisher<AutoconsentUserScript.AutoconsentDoneMessage, Never>? { get }
+    var popupManagedPublisher: AnyPublisher<AutoconsentUserScript.AutoconsentDoneMessage, Never> { get }
 }
 
 extension AutoconsentTabExtension: AutoconsentProtocol, TabExtension {
     func getPublicProtocol() -> AutoconsentProtocol { self }
 
-    var popupManagedPublisher: AnyPublisher<AutoconsentUserScript.AutoconsentDoneMessage, Never>? {
-        (autoconsentUserScript as? AutoconsentUserScript)?.popupManagedPublisher
+    var popupManagedPublisher: AnyPublisher<AutoconsentUserScript.AutoconsentDoneMessage, Never> {
+        popupManagedSubject.eraseToAnyPublisher()
     }
 }
 

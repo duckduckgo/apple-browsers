@@ -27,6 +27,7 @@ public final class CustomToggleControl: NSControl {
     // MARK: - Key Code Constants
 
     private enum KeyCode {
+        static let tab: UInt16 = 48
         static let space: UInt16 = 49
         static let `return`: UInt16 = 36
         static let leftArrow: UInt16 = 123
@@ -289,14 +290,8 @@ public final class CustomToggleControl: NSControl {
 
     public override func keyDown(with event: NSEvent) {
         switch event.keyCode {
-        case KeyCode.space:
+        case KeyCode.space, KeyCode.return:
             isRightSelected.toggle()
-        case KeyCode.return:
-            isRightSelected.toggle()
-            // Move to previous key view
-            if let previousKeyView = self.previousKeyView {
-                window?.makeFirstResponder(previousKeyView)
-            }
         case KeyCode.leftArrow:
             isRightSelected = false
         case KeyCode.rightArrow:

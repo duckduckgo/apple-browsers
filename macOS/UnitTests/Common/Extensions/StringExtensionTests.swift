@@ -39,4 +39,26 @@ class StringExtensionTests: XCTestCase {
         XCTAssertEqual(URLError(URLError.Code.cannotConnectToHost, userInfo: [NSLocalizedDescriptionKey: "Could not connect to the server."]).localizedDescription.escapedUnicodeHtmlString(), "Could not connect to the server.")
     }
 
+    func testDropSubdomainDoesntDropDomainWhenTLDHasTwoComponents() {
+        let sample = [
+            ("lantean.com.ar", "lantean.com.ar"),
+        ]
+
+        for (source, expected) in sample {
+            XCTAssertEqual(source.dropSubdomain(), expected)
+        }
+    }
+
+    func testDropSubdomainEffectivelyDropsDomainComponent() {
+        let sample = [
+            ("www.duckduckgo.com", "duckduckgo.com"),
+            ("hostname.duckduckgo.com", "duckduckgo.com"),
+            ("www.lantean.co", "lantean.co"),
+            ("www.lantean.com.ar", "lantean.com.ar")
+        ]
+
+        for (source, expected) in sample {
+            XCTAssertEqual(source.dropSubdomain(), expected)
+        }
+    }
 }

@@ -42,6 +42,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
     private var textChangeCancellable: AnyCancellable?
+    private var windowFrameObserver: AnyCancellable?
+    private var viewBoundsObserver: AnyCancellable?
 
     required init?(coder: NSCoder) {
         fatalError("AIChatOmnibarContainerViewController: Bad initializer")
@@ -173,18 +175,37 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     func startEventMonitoring() {
         backgroundView.startListening()
         addShadowToWindow()
+        observeWindowFrameChanges()
     }
 
     /// Stops event monitoring. Call this when the view controller is about to be dismissed.
     func cleanup() {
         backgroundView.stopListening()
         shadowView.removeFromSuperview()
+        windowFrameObserver?.cancel()
+        windowFrameObserver = nil
+        viewBoundsObserver?.cancel()
+        viewBoundsObserver = nil
     }
 
     private func addShadowToWindow() {
         guard shadowView.superview == nil else { return }
         view.window?.contentView?.addSubview(shadowView)
         layoutShadowView()
+    }
+
+    private func observeWindowFrameChanges() {
+        guard let window = view.window else { return }
+
+        windowFrameObserver = window.publisher(for: \.frame)
+            .sink { [weak self] _ in
+                self?.layoutShadowView()
+            }
+
+        viewBoundsObserver = view.publisher(for: \.bounds)
+            .sink { [weak self] _ in
+                self?.layoutShadowView()
+            }
     }
 
     private func layoutShadowView() {

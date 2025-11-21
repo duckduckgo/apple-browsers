@@ -46,6 +46,7 @@ final class MainViewController: NSViewController {
     let bookmarksBarViewController: BookmarksBarViewController
     let aiChatOmnibarContainerViewController: AIChatOmnibarContainerViewController
     let aiChatOmnibarTextContainerViewController: AIChatOmnibarTextContainerViewController
+    let sharedTextState: AddressBarSharedTextState
     let featureFlagger: FeatureFlagger
     let fireCoordinator: FireCoordinator
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
@@ -126,6 +127,7 @@ final class MainViewController: NSViewController {
          duckPlayer: DuckPlayer = NSApp.delegateTyped.duckPlayer,
          themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
+         tabDragAndDropManager: TabDragAndDropManager = NSApp.delegateTyped.tabDragAndDropManager,
          pixelFiring: PixelFiring? = PixelKit.shared,
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider = NSApp.delegateTyped.visualizeFireSettingsDecider,
          vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter = NSApp.delegateTyped.vpnUpsellPopoverPresenter,
@@ -153,7 +155,8 @@ final class MainViewController: NSViewController {
             bookmarkManager: bookmarkManager,
             fireproofDomains: fireproofDomains,
             activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            tabDragAndDropManager: tabDragAndDropManager
         )
         bookmarksBarVisibilityManager = BookmarksBarVisibilityManager(selectedTabPublisher: tabCollectionViewModel.$selectedTabViewModel.eraseToAnyPublisher())
 
@@ -236,6 +239,10 @@ final class MainViewController: NSViewController {
             pixelFiring: pixelFiring
         )
 
+        // Create the shared text state for address bar mode switching
+        let sharedTextState = AddressBarSharedTextState()
+        self.sharedTextState = sharedTextState
+
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
                                                                          downloadListCoordinator: downloadListCoordinator,
                                                                          bookmarkManager: bookmarkManager,
@@ -258,7 +265,8 @@ final class MainViewController: NSViewController {
                                                                          defaultBrowserPreferences: defaultBrowserPreferences,
                                                                          downloadsPreferences: downloadsPreferences,
                                                                          tabsPreferences: tabsPreferences,
-                                                                         accessibilityPreferences: accessibilityPreferences)
+                                                                         accessibilityPreferences: accessibilityPreferences,
+                                                                         sharedTextState: sharedTextState)
 
         findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
@@ -269,7 +277,10 @@ final class MainViewController: NSViewController {
         )
 
         // Create the shared AI Chat omnibar controller
-        let aiChatOmnibarController = AIChatOmnibarController(aiChatTabOpener: aiChatTabOpener)
+        let aiChatOmnibarController = AIChatOmnibarController(
+            aiChatTabOpener: aiChatTabOpener,
+            sharedTextState: sharedTextState
+        )
 
         aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(
             themeManager: themeManager,
@@ -277,6 +288,7 @@ final class MainViewController: NSViewController {
         )
         aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(
             omnibarController: aiChatOmnibarController,
+            sharedTextState: sharedTextState,
             themeManager: themeManager
         )
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
@@ -316,6 +328,9 @@ final class MainViewController: NSViewController {
 
         mainView.setupAIChatOmnibarTextContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
         mainView.setupAIChatOmnibarContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
+
+        // Wire the custom toggle control reference to the AI Chat text container for TAB key navigation
+        wireToggleReferenceToAIChatTextContainer()
     }
 
     override func viewWillAppear() {
@@ -374,13 +389,18 @@ final class MainViewController: NSViewController {
         mainView.findInPageContainerView.applyDropShadow()
     }
 
+    /// Called when this window becomes the key window (gains focus).
     func windowDidBecomeKey() {
         updateBackMenuItem()
         updateForwardMenuItem()
         updateReloadMenuItem()
         updateStopMenuItem()
         browserTabViewController.windowDidBecomeKey()
-        showSetAsDefaultAndAddToDockIfNeeded()
+        if !isInPopUpWindow {
+            // Evaluate and potentially show default browser/dock prompt
+            // See showSetAsDefaultAndAddToDockIfNeeded() for full flow documentation
+            showSetAsDefaultAndAddToDockIfNeeded()
+        }
         showWinBackOfferIfNeeded()
     }
 
@@ -473,6 +493,13 @@ final class MainViewController: NSViewController {
         }
     }
 
+    private func wireToggleReferenceToAIChatTextContainer() {
+        /// This enables TAB key navigation from AI Chat mode to the toggle
+        if let searchModeToggleControl = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.searchModeToggleControl {
+            aiChatOmnibarTextContainerViewController.customToggleControl = searchModeToggleControl
+        }
+    }
+
     // Can be updated via keyboard shortcut so needs to be internal visibility
     func updateBookmarksBarViewVisibility(visible showBookmarksBar: Bool) {
         if showBookmarksBar {
@@ -552,7 +579,7 @@ final class MainViewController: NSViewController {
             .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self else { return }
+                guard let self, !self.isInPopUpWindow else { return }
                 navigationBarViewController.presentHistoryViewOnboardingIfNeeded()
             }
     }
@@ -731,7 +758,27 @@ final class MainViewController: NSViewController {
             }
     }
 
+    /// **ENTRY POINT for Default Browser & Dock Prompts**
+    ///
+    /// This is called when a main window becomes key (see `windowDidBecomeKey()`).
+    /// It triggers the prompt system to evaluate if any prompt should be shown.
+    ///
+    /// **Flow:**
+    /// 1. Calls `DefaultBrowserAndDockPromptPresenter.tryToShowPrompt()`
+    /// 2. Presenter asks `DefaultBrowserAndDockPromptCoordinator.getPromptType()` to determine eligibility
+    /// 3. Coordinator checks: onboarding status, default browser/dock status, and timing rules
+    /// 4. If eligible, shows one of three prompt types:
+    ///    - **Popover**: Small popup anchored to address bar (first prompt, shown once)
+    ///    - **Banner**: Persistent bar at top of window (shown after popover, can repeat)
+    ///    - **Inactive User Modal**: Sheet for users who haven't used the app in 7+ days
+    ///
+    /// **See also:**
+    /// - `DefaultBrowserAndDockPromptPresenter.tryToShowPrompt()` - orchestrates prompt display
+    /// - `DefaultBrowserAndDockPromptCoordinator.getPromptType()` - determines which prompt to show
+    /// - `DefaultBrowserAndDockPromptTypeDecider` - implements timing logic
     @objc private func showSetAsDefaultAndAddToDockIfNeeded() {
+        guard !isInPopUpWindow else { return }
+
         defaultBrowserAndDockPromptPresenting.tryToShowPrompt(
             popoverAnchorProvider: getSourceViewToShowSetAsDefaultAndAddToDockPopover,
             bannerViewHandler: showMessageBanner,
@@ -758,6 +805,20 @@ final class MainViewController: NSViewController {
         return view.window
     }
 
+    /// **BANNER DISPLAY HANDLER**
+    ///
+    /// Called by `DefaultBrowserAndDockPromptPresenter` when a banner prompt should be shown.
+    /// The banner is a persistent bar displayed at the top of the window with action buttons.
+    ///
+    /// **Banner Lifecycle:**
+    /// - Created in `DefaultBrowserAndDockPromptPresenter.getBanner()`
+    /// - Displayed here in the main view's banner container
+    /// - Shown in ALL windows until user takes action (confirm, dismiss, or close)
+    /// - Dismissed via `hideBanner()` when user interacts or banner is closed
+    ///
+    /// **See also:**
+    /// - `DefaultBrowserAndDockPromptPresenter.getBanner()` - creates the banner view controller
+    /// - `hideBanner()` - removes the banner from view
     private func showMessageBanner(banner: BannerMessageViewController) {
         if mainView.isBannerViewShown { return } // If view is being shown already we do not want to show it.
 

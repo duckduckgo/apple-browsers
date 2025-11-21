@@ -139,7 +139,7 @@ public final class AMPCanonicalExtractor: NSObject {
             let magnitude = charCount > 0 ? Int(log10(Double(charCount))) : 0
             let roundingFactor = Int(pow(10.0, max(2.0, Double(magnitude))))
             let roundedCount = (charCount / roundingFactor) * roundingFactor
-            
+
             let params: [String: String] = [
                 "duration": String(duration),
                 "rounded_url_length": String(roundedCount)

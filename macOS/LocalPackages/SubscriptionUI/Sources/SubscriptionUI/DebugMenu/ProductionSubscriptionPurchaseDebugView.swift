@@ -1,6 +1,5 @@
 //
 //  ProductionSubscriptionPurchaseDebugView.swift
-//  SubscriptionUI
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,7 +15,6 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-
 import AppKit
 import SwiftUI
 import Subscription
@@ -26,12 +24,12 @@ import OSLog
 public struct ProductionSubscriptionPurchaseDebugView: View {
     @StateObject private var viewModel: ProductionSubscriptionPurchaseViewModel
     let dismissAction: () -> Void
-    
+
     public init(subscriptionManager: SubscriptionManagerV2, dismissAction: @escaping () -> Void) {
         _viewModel = StateObject(wrappedValue: ProductionSubscriptionPurchaseViewModel(subscriptionManager: subscriptionManager))
         self.dismissAction = dismissAction
     }
-    
+
     public var body: some View {
         VStack(spacing: 0) {
             ScrollView {
@@ -44,9 +42,7 @@ public struct ProductionSubscriptionPurchaseDebugView: View {
                 .padding()
             }
             .frame(minWidth: 500, minHeight: 400)
-            
             Divider()
-            
             HStack {
                 Spacer()
                 Button(UserText.cancelButtonTitle) {
@@ -70,12 +66,11 @@ public struct ProductionSubscriptionPurchaseDebugView: View {
             Text(verbatim: viewModel.alertMessage)
         }
     }
-    
+
     private var accountSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(verbatim: "Account")
                 .font(.headline)
-            
             if viewModel.isLoadingExternalID {
                 Text(verbatim: "Checking for existing account...")
                     .font(.subheadline)
@@ -101,12 +96,11 @@ public struct ProductionSubscriptionPurchaseDebugView: View {
             }
         }
     }
-    
+
     private var currentSubscriptionsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(verbatim: "Current Subscriptions")
                 .font(.headline)
-            
             if let productIDs = viewModel.purchasedProductIDs, !productIDs.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(productIDs, id: \.self) { productID in
@@ -126,12 +120,11 @@ public struct ProductionSubscriptionPurchaseDebugView: View {
             }
         }
     }
-    
+
     private var availableSubscriptionsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(verbatim: "Available Products")
                 .font(.headline)
-            
             if viewModel.isLoadingProducts {
                 Text(verbatim: "Loading available products...")
                     .font(.subheadline)
@@ -149,7 +142,7 @@ public struct ProductionSubscriptionPurchaseDebugView: View {
             }
         }
     }
-    
+
     @ViewBuilder
     private var statusSection: some View {
         if let message = viewModel.statusMessage {
@@ -163,7 +156,7 @@ public struct ProductionSubscriptionPurchaseDebugView: View {
             }
         }
     }
-    
+
     private func subscriptionRow(identifier: String) -> some View {
         Button {
             Task {
@@ -187,31 +180,28 @@ public struct ProductionSubscriptionPurchaseDebugView: View {
 
 @available(macOS 12.0, *)
 public final class ProductionSubscriptionPurchaseViewController: NSViewController {
-    
+
     private let subscriptionManager: SubscriptionManagerV2
-    
+
     public required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     public init(subscriptionManager: SubscriptionManagerV2) {
         self.subscriptionManager = subscriptionManager
         super.init(nibName: nil, bundle: nil)
     }
-    
+
     public override func loadView() {
         let purchaseView = ProductionSubscriptionPurchaseDebugView(subscriptionManager: subscriptionManager, dismissAction: { [weak self] in
             guard let self = self else { return }
             self.presentingViewController?.dismiss(self)
         })
-        
         let hostingView = NSHostingView(rootView: purchaseView)
-        
         view = NSView(frame: NSRect(x: 0, y: 0, width: 500, height: 500))
         hostingView.frame = view.bounds
         hostingView.autoresizingMask = [.height, .width]
         hostingView.translatesAutoresizingMaskIntoConstraints = true
-        
         view.addSubview(hostingView)
     }
 }
@@ -229,13 +219,13 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
     @Published var purchasedProductIDs: [String]?
     @Published var availableSubscriptions: [String] = []
     @Published var isLoadingProducts = true
-    
+
     private let subscriptionManager: SubscriptionManagerV2
-    
+
     init(subscriptionManager: SubscriptionManagerV2) {
         self.subscriptionManager = subscriptionManager
     }
-    
+
     func loadExistingExternalID() async {
         isLoadingExternalID = true
         do {
@@ -250,13 +240,13 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
         }
         isLoadingExternalID = false
     }
-    
+
     func loadPurchasedProductIDs() async {
         let productIDs = subscriptionManager.storePurchaseManager().purchasedProductIDs
         purchasedProductIDs = productIDs
         Logger.subscription.info("[ProductionSubscriptionDebug] Found \(productIDs.count) purchased product(s): \(productIDs)")
     }
-    
+
     func loadAvailableProducts() async {
         isLoadingProducts = true
         
@@ -266,20 +256,16 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
             isLoadingProducts = false
             return
         }
-        
+
         // Update available products from StoreKit first
         await defaultManager.updateAvailableProducts()
-        
         let products = defaultManager.availableProducts
         let productIDs = products.map { $0.id }
-        
         availableSubscriptions = productIDs.sorted()
-        
         Logger.subscription.info("[ProductionSubscriptionDebug] Loaded \(productIDs.count) available products")
-        
         isLoadingProducts = false
     }
-    
+
     func displayName(for identifier: String) -> String {
         if identifier.contains("monthly") {
             if identifier.contains("freetrial") {
@@ -294,18 +280,17 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
         }
         return identifier
     }
-    
+
     func purchaseSubscription(identifier: String) async {
         isLoading = true
         isError = false
         statusMessage = "Starting purchase for \(displayName(for: identifier))..."
-        
+
         // Use existing external ID if available, otherwise generate new
         let externalID = existingExternalID ?? UUID().uuidString
         let isNewAccount = existingExternalID == nil
-        
         Logger.subscription.info("[ProductionSubscriptionDebug] Using external ID: \(externalID) (new: \(isNewAccount))")
-        
+
         // Direct purchase bypassing AppStorePurchaseFlow
         let result = await subscriptionManager.storePurchaseManager().purchaseSubscription(with: identifier, externalID: externalID)
 
@@ -316,25 +301,21 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
             isError = false
             alertMessage = "Purchase successful! \(accountStatus)\n\nExternal ID: \(externalID)"
             showAlert = true
-            
+
             // Store the external ID for future purchases if this was a new account
             if isNewAccount {
                 existingExternalID = externalID
                 Logger.subscription.info("[ProductionSubscriptionDebug] Stored new external ID for future purchases: \(externalID)")
             }
-            
+
             // Refresh purchased product IDs to show the new purchase
             await loadPurchasedProductIDs()
-            
             Logger.subscription.info("[ProductionSubscriptionDebug] Purchase successful: \(identifier)")
-            
         case .failure(let error):
             statusMessage = "❌ Purchase failed: \(error.localizedDescription)"
             isError = true
             Logger.subscription.error("[ProductionSubscriptionDebug] Purchase failed: \(error.localizedDescription)")
         }
-        
         isLoading = false
     }
 }
-

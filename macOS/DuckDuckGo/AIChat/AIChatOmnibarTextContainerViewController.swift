@@ -30,6 +30,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private let containerView = NSView()
     private let scrollView = NSScrollView()
     private let textView = FocusableTextView()
+    private let dividerView = ColorView(frame: .zero)
     private let omnibarController: AIChatOmnibarController
     private let sharedTextState: AddressBarSharedTextState
     private var cancellables = Set<AnyCancellable>()
@@ -37,8 +38,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
     weak var customToggleControl: NSControl?
-    
-    // Height calculation callback
     var heightDidChange: ((CGFloat) -> Void)?
 
     init(omnibarController: AIChatOmnibarController, sharedTextState: AddressBarSharedTextState, themeManager: ThemeManaging) {
@@ -54,6 +53,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     override func loadView() {
         view = MouseOverView()
+        view.wantsLayer = true
+        view.layer?.masksToBounds = false
     }
 
     override func viewDidLoad() {
@@ -82,9 +83,12 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private func setupUI() {
         backgroundView.translatesAutoresizingMaskIntoConstraints = false
         backgroundView.wantsLayer = true
+        backgroundView.layer?.masksToBounds = false
         view.addSubview(backgroundView)
 
         containerView.translatesAutoresizingMaskIntoConstraints = false
+        containerView.wantsLayer = true
+        containerView.layer?.masksToBounds = false
         backgroundView.addSubview(containerView)
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -97,6 +101,11 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         scrollView.horizontalScroller?.alphaValue = 0
 
         containerView.addSubview(scrollView)
+
+        dividerView.translatesAutoresizingMaskIntoConstraints = false
+        dividerView.backgroundColor = NSColor.separatorColor
+        dividerView.isHidden = true
+        view.addSubview(dividerView)
 
         textView.isEditable = true
         textView.isSelectable = true
@@ -129,6 +138,12 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -Constants.bottomPadding),
+
+            // Divider overflows beyond view bounds
+            dividerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -9),
+            dividerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 77),
+            dividerView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 8),
+            dividerView.heightAnchor.constraint(equalToConstant: 1),
         ])
     }
 
@@ -147,6 +162,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         textView.font = .systemFont(ofSize: addressBarStyleProvider.defaultAddressBarFontSize, weight: .regular)
 
         textView.insertionPointColor = colorsProvider.addressBarTextFieldColor
+
+        dividerView.backgroundColor = NSColor.separatorColor
     }
 
     private func setupTextViewDelegate() {
@@ -193,15 +210,15 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
               let textContainer = textView.textContainer else {
             return Constants.minimumPanelHeight // Fallback to minimum height
         }
-        
+
         // Force layout to ensure we have accurate measurements
         layoutManager.ensureLayout(for: textContainer)
-        
+
         let usedRect = layoutManager.usedRect(for: textContainer)
         let textInsets = textView.textContainerInset
         let bottomSpacing: CGFloat = Constants.bottomPadding
         let totalHeight = usedRect.height + textInsets.height + textInsets.height + 20 + bottomSpacing
-        
+
         return totalHeight
     }
 
@@ -249,8 +266,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     func updateScrollingBehavior(maxHeight: CGFloat) {
         let contentHeight = calculateDesiredPanelHeight()
         let shouldScroll = contentHeight > maxHeight
-        
+
         scrollView.hasVerticalScroller = shouldScroll
+        dividerView.isHidden = !shouldScroll
 
         if shouldScroll {
             textView.scrollToEndOfDocument(nil)

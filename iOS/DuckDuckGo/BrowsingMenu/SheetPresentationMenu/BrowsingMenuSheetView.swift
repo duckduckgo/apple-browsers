@@ -76,40 +76,6 @@ struct BrowsingMenuSheetView: View {
             actionToPerform()
             onDismiss()
         })
-//        .toolbar {
-//            ToolbarItemGroup(placement: .bottomBar) {
-//                Spacer()
-//
-//                Button(action: {
-//                    print("Button 1 tapped")
-//                }) {
-//                    VStack {
-//                        Image(uiImage: DesignSystemImages.Glyphs.Size24.settings)
-//                    }
-//                }
-////                .padding(.horizontal, 8)
-//
-//                Button(action: {
-//                    print("Button 2 tapped")
-//                }) {
-//                    VStack {
-//                        Image(uiImage: DesignSystemImages.Glyphs.Size24.add)
-//                    }
-//                }
-////                .padding(.horizontal, 8)
-//
-//                Button(action: {
-//                    print("Button 3 tapped")
-//                }) {
-//                    VStack {
-//                        Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat)
-//                    }
-//                }
-////                .padding(.horizontal, 8)
-//
-//                Spacer()
-//            }
-//        }
         .tint(Color(designSystemColor: .textPrimary))
     }
 }
@@ -174,7 +140,6 @@ private struct MenuHeaderButton: View {
     }
 
 }
-
 
 private extension BrowsingMenuEntry {
     var isSeparator: Bool {

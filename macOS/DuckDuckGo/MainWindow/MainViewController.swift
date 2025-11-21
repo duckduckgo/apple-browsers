@@ -487,7 +487,6 @@ final class MainViewController: NSViewController {
             aiChatOmnibarTextContainerViewController.startEventMonitoring()
             aiChatOmnibarTextContainerViewController.focusTextView()
             
-            // Trigger initial height calculation
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 let desiredHeight = self.aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
@@ -513,19 +512,15 @@ final class MainViewController: NSViewController {
     }
 
     private func wireAIChatOmnibarHeightUpdates() {
-        // Set up the height change callback from text container to main view
         aiChatOmnibarTextContainerViewController.heightDidChange = { [weak self] desiredHeight in
             guard let self = self else { return }
             
-            // Update the panel height with animation
             self.mainView.updateAIChatOmnibarContainerHeight(desiredHeight, animated: true)
             
-            // Update scrolling behavior based on max height
             let maxHeight = self.mainView.calculateMaxAIChatOmnibarHeight()
             self.aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
         }
         
-        // Observe window frame changes to recalculate max height
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(windowDidResize),
@@ -543,11 +538,9 @@ final class MainViewController: NSViewController {
     @objc private func windowDidResize() {
         guard mainView.isAIChatOmnibarContainerShown else { return }
         
-        // Recalculate and update panel height when window resizes
         let currentHeight = mainView.aiChatOmnibarContainerView.frame.height
         mainView.updateAIChatOmnibarContainerHeight(currentHeight, animated: false)
         
-        // Update scrolling behavior
         let maxHeight = mainView.calculateMaxAIChatOmnibarHeight()
         aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
     }
@@ -557,14 +550,12 @@ final class MainViewController: NSViewController {
             guard let self = self else { return false }
             guard self.mainView.isAIChatOmnibarContainerShown else { return false }
             
-            // Check if point is in container view
             let containerFrame = self.mainView.aiChatOmnibarContainerView.frame
             let pointInMainView = self.mainView.convert(locationInWindow, from: nil)
             if containerFrame.contains(pointInMainView) {
                 return true
             }
             
-            // Check if point is in text container view
             let textContainerFrame = self.mainView.aiChatOmnibarTextContainerView.frame
             if textContainerFrame.contains(pointInMainView) {
                 return true

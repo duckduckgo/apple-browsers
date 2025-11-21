@@ -965,8 +965,7 @@ final class AddressBarViewController: NSViewController {
         } else if window.isMainWindow {
             let locationInWindow = event.locationInWindow
             
-            // Don't set clickPoint if clicking on AI Chat omnibar container
-            if selectionState == .activeWithAIChat, 
+            if selectionState == .activeWithAIChat,
                let isPointInAIChatOmnibar = isPointInAIChatOmnibar,
                isPointInAIChatOmnibar(locationInWindow) {
                 return event

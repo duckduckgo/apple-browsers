@@ -774,7 +774,7 @@ extension DataImportViewModel {
 
         case .initiateImport, .continue:
             importButtonPressed()
-
+            
         case .selectFile:
             selectFile()
 
@@ -791,7 +791,7 @@ extension DataImportViewModel {
             self.dismiss(using: dismiss)
         case .done:
             self.dismiss(using: dismiss)
-            case .sync:
+        case .sync:
             launchSync(using: dismiss)
         }
     }

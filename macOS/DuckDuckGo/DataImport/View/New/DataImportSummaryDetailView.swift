@@ -196,9 +196,11 @@ struct DataImportSummaryDetailView: View {
             .foregroundColor(.primary)
 
         if let secondary {
+            // swiftlint:disable shorthand_operator
             result = result + Text(secondary)
                 .font(.system(size: Metrics.fontSize))
                 .foregroundColor(.secondary)
+            // swiftlint:enable shorthand_operator
         }
 
         return result
